@@ -75,8 +75,7 @@ export function validateMatchmakingDetailsFinished(
   return MatchmakingDetailsFinishedSchema.parse(data);
 }
 
-export interface ChampionshipDetailsFinished
-  extends FaceitMatchDetailsFinished {
+export interface ChampionshipDetailsFinished extends FaceitMatchDetailsFinished {
   competition_type: "championship";
   round: number;
   group: number;

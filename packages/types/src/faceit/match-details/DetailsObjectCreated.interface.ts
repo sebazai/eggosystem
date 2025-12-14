@@ -23,14 +23,12 @@ interface MatchmakingDetailsObjectCreatedBase extends DetailsObjectCreatedBase {
   competition_type: "matchmaking";
 }
 
-interface MatchmakingDetailsObjectCreatedCheckIn
-  extends MatchmakingDetailsObjectCreatedBase {
+interface MatchmakingDetailsObjectCreatedCheckIn extends MatchmakingDetailsObjectCreatedBase {
   teams: unknown; // {}
   status: typeof FaceitMatchStatus.CHECK_IN;
 }
 
-interface MatchmakingDetailsObjectCreatedVoting
-  extends MatchmakingDetailsObjectCreatedBase {
+interface MatchmakingDetailsObjectCreatedVoting extends MatchmakingDetailsObjectCreatedBase {
   teams: FaceitMatchTeams;
   status: typeof FaceitMatchStatus.VOTING;
 }
@@ -77,43 +75,37 @@ export function validateMatchmakingDetailsObjectCreated(
   return MatchmakingDetailsObjectCreatedSchema.parse(data);
 }
 
-interface ChampionshipDetailsObjectCreatedBase
-  extends DetailsObjectCreatedBase {
+interface ChampionshipDetailsObjectCreatedBase extends DetailsObjectCreatedBase {
   organizer_id: string;
   competition_type: "championship";
   round: number;
   group: number;
 }
 
-interface ChampionshipDetailsObjectCreatedCheckIn
-  extends ChampionshipDetailsObjectCreatedBase {
+interface ChampionshipDetailsObjectCreatedCheckIn extends ChampionshipDetailsObjectCreatedBase {
   teams: unknown; // {}
   status: typeof FaceitMatchStatus.CHECK_IN;
 }
 
-export interface ChampionshipDetailsObjectCreatedVoting
-  extends ChampionshipDetailsObjectCreatedBase {
+export interface ChampionshipDetailsObjectCreatedVoting extends ChampionshipDetailsObjectCreatedBase {
   teams: FaceitMatchTeams;
   status: typeof FaceitMatchStatus.VOTING;
   scheduled_at?: number;
 }
 
-interface ChampionshipDetailsObjectCreatedScheduled
-  extends ChampionshipDetailsObjectCreatedBase {
+interface ChampionshipDetailsObjectCreatedScheduled extends ChampionshipDetailsObjectCreatedBase {
   teams: FaceitMatchTeams;
   status: typeof FaceitMatchStatus.SCHEDULED;
   scheduled_at: number;
 }
 
-interface ChampionshipDetailsObjectCreatedOnGoing
-  extends ChampionshipDetailsObjectCreatedBase {
+interface ChampionshipDetailsObjectCreatedOnGoing extends ChampionshipDetailsObjectCreatedBase {
   teams: FaceitMatchTeams;
   status: typeof FaceitMatchStatus.ONGOING;
   scheduled_at?: number;
 }
 
-interface ChampionshipDetailsObjectCreatedFinished
-  extends ChampionshipDetailsObjectCreatedBase {
+interface ChampionshipDetailsObjectCreatedFinished extends ChampionshipDetailsObjectCreatedBase {
   teams: FaceitMatchTeams;
   status: typeof FaceitMatchStatus.FINISHED;
   scheduled_at?: number;

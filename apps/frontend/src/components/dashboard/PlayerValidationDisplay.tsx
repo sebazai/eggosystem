@@ -288,9 +288,9 @@ export function PlayerValidationDisplay({
                 {getStatusIcon(
                   Boolean(
                     validationResult.profile.success &&
-                      validationResult.profile.data?.work_email_verified &&
-                      validationResult.profile.data?.is_valid_full_name &&
-                      validationResult.profile.data?.is_valid_work_email
+                    validationResult.profile.data?.work_email_verified &&
+                    validationResult.profile.data?.is_valid_full_name &&
+                    validationResult.profile.data?.is_valid_work_email
                   ),
                   "md"
                 )}
@@ -354,9 +354,9 @@ export function PlayerValidationDisplay({
               {getStatusBadge(
                 Boolean(
                   validationResult.profile.success &&
-                    validationResult.profile.data?.work_email_verified &&
-                    validationResult.profile.data?.is_valid_full_name &&
-                    validationResult.profile.data?.is_valid_work_email
+                  validationResult.profile.data?.work_email_verified &&
+                  validationResult.profile.data?.is_valid_full_name &&
+                  validationResult.profile.data?.is_valid_work_email
                 )
               )}
             </div>

@@ -9,8 +9,7 @@ export interface SeasonLeagueWithMappings {
   mappings: Array<SeasonLeagueExternalId> | null;
 }
 
-export interface SeasonLeagueExternalIdWithStage
-  extends SeasonLeagueExternalId {
+export interface SeasonLeagueExternalIdWithStage extends SeasonLeagueExternalId {
   stage_name: string;
 }
 
