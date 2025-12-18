@@ -142,6 +142,75 @@ export default function NewFeaturesPage() {
           </div>
         </section>
 
+        {/* December 8, 2025 Features */}
+        <section className="bg-card p-6 rounded-lg shadow-md">
+          <div className="flex items-center gap-2 mb-6 text-kanaliiga-orange border-b pb-2">
+            <CalendarDays className="h-5 w-5" />
+            <h2 className="text-xl font-bold">December 8, 2025</h2>
+          </div>
+
+          <div className="space-y-8">
+            <div className="flex flex-col md:flex-row gap-6">
+              <div className="md:flex-1">
+                <h3 className="text-xl font-bold mb-2">
+                  Map Picks & Bans Spider Chart 🕸️
+                </h3>
+                <p className="mb-2">
+                  Teams now have a new spider chart visualization showing their
+                  map picks and bans history! This helps you quickly understand
+                  a team&apos;s map preferences and avoid patterns.
+                </p>
+
+                <h4 className="font-bold text-lg mb-2">Key Features</h4>
+                <ul className="list-disc pl-5 mb-3">
+                  <li>
+                    <span className="font-medium">Dual Radar Lines</span> -
+                    Picks shown in blue (solid), bans shown in orange (dashed)
+                    for easy visual distinction
+                  </li>
+                  <li>
+                    <span className="font-medium">Accessibility First</span> -
+                    Colorblind-friendly blue/orange palette with pattern
+                    differentiation (dashed lines for bans)
+                  </li>
+                  <li>
+                    <span className="font-medium">Filter Compatible</span> -
+                    Works with season, league, and stage filters to see
+                    historical trends
+                  </li>
+                  <li>
+                    <span className="font-medium">Side-by-Side View</span> -
+                    Displayed next to the existing Map Performance radar for
+                    comprehensive analysis
+                  </li>
+                </ul>
+
+                <p className="mb-2">
+                  Use this to scout opponents&apos; map preferences before
+                  matches, or analyze your own team&apos;s tendencies to
+                  diversify your map pool strategy!
+                </p>
+
+                <div className="mt-3 p-2 bg-muted/50 rounded-md text-sm">
+                  <strong>Where to find it:</strong> Go to any team&apos;s page
+                  and click on the &quot;Map Statistics&quot; tab. The new chart
+                  appears on the right side next to the Map Performance radar.
+                </div>
+              </div>
+
+              <div className="md:w-2/5">
+                <Image
+                  src={createNextUrl("/images/features/pickbans-preview.png")}
+                  width={600}
+                  height={350}
+                  alt="Map Picks & Bans Spider Chart Preview"
+                  className="rounded-lg shadow-md border border-gray-200 dark:border-gray-700"
+                />
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* November 24, 2025 Features */}
         <section className="bg-card p-6 rounded-lg shadow-md">
           <div className="flex items-center gap-2 mb-6 text-kanaliiga-orange border-b pb-2">

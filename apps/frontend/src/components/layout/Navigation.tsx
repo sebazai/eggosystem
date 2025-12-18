@@ -195,8 +195,16 @@ const getDefaultMenuItems = (
       },
       {
         title: "Leaderboards",
-        url: "/leaderboards",
-        hasFilters: true
+        url: "#",
+        hasFilters: false,
+        items: [
+          {
+            title: "Player Leaderboards",
+            url: "/leaderboards",
+            hasFilters: true
+          },
+          { title: "Hall of Fame", url: "/hall-of-fame", hasFilters: false }
+        ]
       },
       {
         title: "Kanahautomo",
