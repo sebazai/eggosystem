@@ -203,7 +203,8 @@ const getDefaultMenuItems = (
             url: "/leaderboards",
             hasFilters: true
           },
-          { title: "Hall of Fame", url: "/hall-of-fame", hasFilters: false }
+          { title: "Hall of Fame", url: "/hall-of-fame", hasFilters: false },
+          { title: "Season Results", url: "/season-results", hasFilters: false }
         ]
       },
       {
