@@ -93,6 +93,7 @@ const getMapStatsWithSides = async (
     ) side ON side.match_game_id = mg.id
     WHERE ${filterQuery}
     GROUP BY mg.map_id, maps.name
+    ORDER BY maps.name ASC
   `;
 
   const params = [
