@@ -51,6 +51,12 @@ export const seasonFormSchema = z
       .url("Payment link must be a valid URL")
       .optional()
       .nullable(),
+    registration_price: z
+      .number()
+      .min(0, "Registration price must be positive")
+      .optional()
+      .nullable(),
+    has_vat: z.boolean(),
     timezone: z.string().optional()
   })
   .refine(
@@ -115,4 +121,6 @@ export interface SeasonFormRaw {
   platform: SeasonPlatform;
   is_round_robin_bo2_as_2xbo1: boolean;
   payment_link: string | null;
+  registration_price: number | null;
+  has_vat: boolean;
 }

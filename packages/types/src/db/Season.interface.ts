@@ -21,6 +21,8 @@ export interface Season {
   is_round_robin_bo2_as_2xbo1: boolean;
   grand_final_round_one_only: boolean;
   payment_link: string | null;
+  registration_price: number | null;
+  has_vat: boolean;
 }
 
 export interface InsertSeason {
@@ -37,4 +39,6 @@ export interface InsertSeason {
   end_date: Nullable<Date>;
   is_round_robin_bo2_as_2xbo1?: boolean;
   payment_link?: Nullable<string>;
+  registration_price?: Nullable<number>;
+  has_vat?: boolean;
 }

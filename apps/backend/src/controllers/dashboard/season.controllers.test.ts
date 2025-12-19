@@ -45,6 +45,8 @@ describe("Dashboard Season Controllers", () => {
     platform: SeasonPlatform.Kanaliiga,
     is_round_robin_bo2_as_2xbo1: false,
     payment_link: "https://example.com/payment",
+    registration_price: 150,
+    has_vat: true,
     timezone: "Europe/Helsinki"
   };
 
@@ -143,7 +145,9 @@ describe("Dashboard Season Controllers", () => {
         platform: SeasonPlatform.Kanaliiga,
         is_round_robin_bo2_as_2xbo1: false,
         payment_link: null,
-        grand_final_round_one_only: false
+        grand_final_round_one_only: false,
+        registration_price: null,
+        has_vat: true
       });
 
       mockUpdateSeason.mockResolvedValue({ affectedRows: 1 });
@@ -213,7 +217,9 @@ describe("Dashboard Season Controllers", () => {
         platform: SeasonPlatform.Kanaliiga,
         is_round_robin_bo2_as_2xbo1: false,
         payment_link: null,
-        grand_final_round_one_only: false
+        grand_final_round_one_only: false,
+        registration_price: null,
+        has_vat: true
       });
 
       await updateSeasonController(mockRequest, mockResponse, mockNext);
@@ -243,7 +249,9 @@ describe("Dashboard Season Controllers", () => {
         platform: SeasonPlatform.Kanaliiga,
         is_round_robin_bo2_as_2xbo1: false,
         payment_link: null,
-        grand_final_round_one_only: false
+        grand_final_round_one_only: false,
+        registration_price: null,
+        has_vat: true
       });
 
       const dbError = new Error("Database update failed");

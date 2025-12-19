@@ -117,7 +117,9 @@ export const createSeasonController = async (
         : null,
       platform: validatedData.platform,
       is_round_robin_bo2_as_2xbo1: validatedData.is_round_robin_bo2_as_2xbo1,
-      payment_link: validatedData.payment_link || null
+      payment_link: validatedData.payment_link || null,
+      registration_price: validatedData.registration_price ?? null,
+      has_vat: validatedData.has_vat
     };
 
     // Create the season in the database
@@ -178,7 +180,9 @@ export const updateSeasonController = async (
         : null,
       platform: validatedData.platform,
       is_round_robin_bo2_as_2xbo1: validatedData.is_round_robin_bo2_as_2xbo1,
-      payment_link: validatedData.payment_link || null
+      payment_link: validatedData.payment_link || null,
+      registration_price: validatedData.registration_price ?? null,
+      has_vat: validatedData.has_vat
     };
 
     // Update the season in the database

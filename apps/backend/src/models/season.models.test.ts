@@ -26,7 +26,9 @@ describe("Season Models", () => {
         end_date: "2024-12-31",
         platform: SeasonPlatform.Kanaliiga,
         is_round_robin_bo2_as_2xbo1: false,
-        payment_link: "https://example.com/payment"
+        payment_link: "https://example.com/payment",
+        registration_price: 150,
+        has_vat: true
       };
 
       mockRunQuery.mockResolvedValue({ insertId: 123 });
@@ -67,7 +69,9 @@ describe("Season Models", () => {
         end_date: null,
         platform: SeasonPlatform.Kanaliiga,
         is_round_robin_bo2_as_2xbo1: false,
-        payment_link: null
+        payment_link: null,
+        registration_price: null,
+        has_vat: true
       };
 
       mockRunQuery.mockResolvedValue({ insertId: 456 });
@@ -105,7 +109,9 @@ describe("Season Models", () => {
         end_date: "2024-12-31",
         platform: SeasonPlatform.FACEIT,
         is_round_robin_bo2_as_2xbo1: true,
-        payment_link: "https://example.com/new-payment"
+        payment_link: "https://example.com/new-payment",
+        registration_price: 200,
+        has_vat: false
       };
 
       mockRunQuery.mockResolvedValue({ affectedRows: 1 });
@@ -148,7 +154,9 @@ describe("Season Models", () => {
         end_date: null,
         platform: SeasonPlatform.Kanaliiga,
         is_round_robin_bo2_as_2xbo1: false,
-        payment_link: null
+        payment_link: null,
+        registration_price: null,
+        has_vat: true
       };
 
       mockRunQuery.mockResolvedValue({ affectedRows: 1 });
@@ -188,7 +196,9 @@ describe("Season Models", () => {
         platform: SeasonPlatform.Kanaliiga,
         is_round_robin_bo2_as_2xbo1: false,
         payment_link: "https://example.com/payment",
-        grand_final_round_one_only: false
+        grand_final_round_one_only: false,
+        registration_price: 150,
+        has_vat: true
       };
 
       mockRunQuery.mockResolvedValue([mockSeason]);
