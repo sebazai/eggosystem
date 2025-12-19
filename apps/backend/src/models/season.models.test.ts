@@ -49,7 +49,9 @@ describe("Season Models", () => {
           seasonData.end_date,
           seasonData.platform,
           seasonData.is_round_robin_bo2_as_2xbo1,
-          seasonData.payment_link
+          seasonData.payment_link,
+          seasonData.registration_price,
+          seasonData.has_vat
         ],
         undefined
       );
@@ -133,6 +135,8 @@ describe("Season Models", () => {
           seasonData.platform,
           seasonData.is_round_robin_bo2_as_2xbo1,
           seasonData.payment_link,
+          seasonData.registration_price,
+          seasonData.has_vat,
           seasonId
         ],
         undefined
