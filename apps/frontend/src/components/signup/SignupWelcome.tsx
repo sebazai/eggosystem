@@ -92,12 +92,13 @@ export const SignupWelcome = ({ seasonId }: SignupWelcomeProps) => {
           <li className="text-lg font-semibold">
             Normal Fee{" "}
             <span>
-              {seasonDetails.registration_price != null
+              {seasonDetails.registration_price !== undefined &&
+              seasonDetails.registration_price !== null
                 ? `${seasonDetails.registration_price}€`
                 : "150€"}
             </span>{" "}
             <span className="text-sm text-gray-600 dark:text-muted-foreground">
-              {seasonDetails.has_vat ? "(includes VAT)" : "(+VAT)"}
+              {Boolean(seasonDetails.has_vat) ? "(includes VAT)" : "(+VAT)"}
             </span>
           </li>
         </ul>
