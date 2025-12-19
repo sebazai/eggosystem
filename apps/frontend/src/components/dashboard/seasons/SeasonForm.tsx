@@ -65,7 +65,9 @@ export function SeasonForm({
       platform: initialValues?.platform || SeasonPlatform.Kanaliiga,
       is_round_robin_bo2_as_2xbo1:
         initialValues?.is_round_robin_bo2_as_2xbo1 || false,
-      payment_link: initialValues?.payment_link || null
+      payment_link: initialValues?.payment_link || null,
+      registration_price: initialValues?.registration_price || null,
+      has_vat: initialValues?.has_vat ?? true
     },
     mode: "onTouched"
   });
@@ -95,7 +97,9 @@ export function SeasonForm({
         end_date: data.end_date || null,
         platform: data.platform,
         is_round_robin_bo2_as_2xbo1: data.is_round_robin_bo2_as_2xbo1,
-        payment_link: data.payment_link || null
+        payment_link: data.payment_link || null,
+        registration_price: data.registration_price || null,
+        has_vat: data.has_vat
       };
 
       await onSubmit(rawData);
@@ -390,6 +394,60 @@ export function SeasonForm({
                     Link to payment page for participation fee
                   </p>
                   <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Registration Price */}
+            <FormField
+              control={form.control}
+              name="registration_price"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Registration Price (Optional)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder="e.g., 150"
+                      {...field}
+                      value={field.value ?? ""}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        field.onChange(value === "" ? null : parseFloat(value));
+                      }}
+                      disabled={isFormDisabled}
+                    />
+                  </FormControl>
+                  <p className="text-sm text-muted-foreground">
+                    Participation fee in euros (€)
+                  </p>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Has VAT Checkbox */}
+            <FormField
+              control={form.control}
+              name="has_vat"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                      disabled={isFormDisabled}
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel>Price includes VAT</FormLabel>
+                    <p className="text-sm text-muted-foreground">
+                      If checked, displays &quot;(includes VAT)&quot;. If
+                      unchecked, displays &quot;(+VAT)&quot;.
+                    </p>
+                  </div>
                 </FormItem>
               )}
             />

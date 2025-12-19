@@ -15,7 +15,9 @@ export const createMockSeason = (
   organizer_id?: number,
   is_round_robin_bo2_as_2xbo1?: boolean,
   grand_final_round_one_only?: boolean,
-  payment_link?: string | null
+  payment_link?: string | null,
+  registration_price?: number | null,
+  has_vat?: boolean
 ): Season => {
   return {
     id,
@@ -31,7 +33,9 @@ export const createMockSeason = (
     end_date: end_date ?? null,
     is_round_robin_bo2_as_2xbo1: is_round_robin_bo2_as_2xbo1 ?? false,
     grand_final_round_one_only: grand_final_round_one_only ?? false,
-    payment_link: payment_link ?? null
+    payment_link: payment_link ?? null,
+    registration_price: registration_price ?? null,
+    has_vat: has_vat ?? true
   };
 };
 
@@ -47,7 +51,9 @@ export const createMockInsertSeason = (
   game_id?: number,
   game_type_id?: number,
   organizer_id?: number,
-  is_round_robin_bo2_as_2xbo1?: boolean
+  is_round_robin_bo2_as_2xbo1?: boolean,
+  registration_price?: number | null,
+  has_vat?: boolean
 ): InsertSeason => {
   return {
     id,
@@ -61,6 +67,8 @@ export const createMockInsertSeason = (
     platform: platform as SeasonPlatform,
     start_date: new Date(start_date),
     end_date: end_date ? new Date(end_date) : null,
-    is_round_robin_bo2_as_2xbo1: is_round_robin_bo2_as_2xbo1 ?? false
+    is_round_robin_bo2_as_2xbo1: is_round_robin_bo2_as_2xbo1 ?? false,
+    registration_price: registration_price ?? null,
+    has_vat: has_vat ?? true
   };
 };

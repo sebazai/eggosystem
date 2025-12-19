@@ -158,8 +158,10 @@ export const createSeason = async (
       end_date,
       platform,
       is_round_robin_bo2_as_2xbo1,
-      payment_link
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      payment_link,
+      registration_price,
+      has_vat
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   const result = await runQuery<{ insertId: number }>(
@@ -176,7 +178,9 @@ export const createSeason = async (
       seasonData.end_date,
       seasonData.platform,
       seasonData.is_round_robin_bo2_as_2xbo1,
-      seasonData.payment_link
+      seasonData.payment_link,
+      seasonData.registration_price,
+      seasonData.has_vat
     ],
     connection
   );
@@ -202,7 +206,9 @@ export const updateSeason = async (
       end_date = ?,
       platform = ?,
       is_round_robin_bo2_as_2xbo1 = ?,
-      payment_link = ?
+      payment_link = ?,
+      registration_price = ?,
+      has_vat = ?
     WHERE id = ?
   `;
 
@@ -221,6 +227,8 @@ export const updateSeason = async (
       seasonData.platform,
       seasonData.is_round_robin_bo2_as_2xbo1,
       seasonData.payment_link,
+      seasonData.registration_price,
+      seasonData.has_vat,
       seasonId
     ],
     connection

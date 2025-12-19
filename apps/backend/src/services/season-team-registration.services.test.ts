@@ -66,7 +66,9 @@ describe("Season team registration services", () => {
     app_id: 730,
     is_round_robin_bo2_as_2xbo1: false,
     grand_final_round_one_only: false,
-    payment_link: null
+    payment_link: null,
+    registration_price: null,
+    has_vat: true
   } satisfies SeasonDetails;
 
   beforeAll(async () => {
