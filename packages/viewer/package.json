@@ -23,8 +23,8 @@
   "author": "Sebastian Sergelius",
   "license": "GPL-3.0",
   "dependencies": {
-    "react": "19.2.1",
-    "react-dom": "19.2.1"
+    "react": "19.2.3",
+    "react-dom": "19.2.3"
   },
   "devDependencies": {
     "@eggosystem/tsconfig": "workspace:*",
@@ -34,11 +34,11 @@
     "@vitejs/plugin-react": "5.1.2",
     "dotenv": "17.2.3",
     "typescript": "5.9.3",
-    "vite": "7.2.7"
+    "vite": "7.3.0"
   },
   "peerDependencies": {
-    "react": "19.2.1",
-    "react-dom": "19.2.1"
+    "react": "19.2.3",
+    "react-dom": "19.2.3"
   },
   "exports": {
     ".": {

@@ -66,8 +66,14 @@ export function SeasonForm({
       is_round_robin_bo2_as_2xbo1:
         initialValues?.is_round_robin_bo2_as_2xbo1 || false,
       payment_link: initialValues?.payment_link || null,
-      registration_price: initialValues?.registration_price || null,
-      has_vat: initialValues?.has_vat ?? true
+      registration_price:
+        initialValues?.registration_price !== undefined
+          ? initialValues.registration_price
+          : null,
+      has_vat:
+        initialValues?.has_vat !== undefined
+          ? Boolean(initialValues.has_vat)
+          : true
     },
     mode: "onTouched"
   });
@@ -98,8 +104,12 @@ export function SeasonForm({
         platform: data.platform,
         is_round_robin_bo2_as_2xbo1: data.is_round_robin_bo2_as_2xbo1,
         payment_link: data.payment_link || null,
-        registration_price: data.registration_price || null,
-        has_vat: data.has_vat
+        registration_price:
+          data.registration_price !== undefined &&
+          data.registration_price !== null
+            ? data.registration_price
+            : null,
+        has_vat: Boolean(data.has_vat)
       };
 
       await onSubmit(rawData);
@@ -436,7 +446,7 @@ export function SeasonForm({
                 <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                   <FormControl>
                     <Checkbox
-                      checked={field.value}
+                      checked={Boolean(field.value)}
                       onCheckedChange={field.onChange}
                       disabled={isFormDisabled}
                     />

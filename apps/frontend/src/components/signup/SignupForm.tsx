@@ -220,9 +220,10 @@ export const SignupForm = ({
     validExternalTeamId
   ]);
 
-  const hasAcceptedTermsAndConditions = watch(
-    "captainHasReadTermAndConditions"
-  );
+  const hasAcceptedTermsAndConditions = useWatch({
+    control,
+    name: "captainHasReadTermAndConditions"
+  });
 
   const validOrganizationSelection = Boolean(
     (validOrgId.success && validOrgId.data.organizationId !== -1) ||

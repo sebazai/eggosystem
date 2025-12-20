@@ -3,6 +3,7 @@ import { createHash } from "crypto";
 import { expireIn30Days, redisClient } from "../utils/redisClient";
 import { getActiveSeasonForAppId } from "../models/season.models";
 import { logger } from "../utils/app-logger";
+import { normalizeParsedParams } from "../utils/normalize-parsed-params";
 
 interface CacheResponseOptions {
   cachePrefix: string;
@@ -62,8 +63,9 @@ export function cacheResponseMiddleware({
       return;
     }
 
+    const normalizedParams = normalizeParsedParams(searchParams);
     const cacheKey = `${cachePrefix}${req.path}:${createHash("sha1")
-      .update(JSON.stringify(searchParams))
+      .update(JSON.stringify(normalizedParams))
       .digest("hex")}`;
 
     try {
