@@ -98,7 +98,7 @@ export const SignupWelcome = ({ seasonId }: SignupWelcomeProps) => {
                 : "150€"}
             </span>{" "}
             <span className="text-sm text-gray-600 dark:text-muted-foreground">
-              {Boolean(seasonDetails.has_vat) ? "(includes VAT)" : "(+VAT)"}
+              {seasonDetails.has_vat ? "(includes VAT)" : "(+VAT)"}
             </span>
           </li>
         </ul>
