@@ -25,6 +25,10 @@ Vaaleanruskea: #d09158 / hsl(29, 56%, 58%) */
   }
 }
 
+html[data-scroll-behavior="smooth"] {
+  scroll-behavior: smooth;
+}
+
 :root {
   --kanaliiga-orange: hsl(35, 93%, 49%);
   --kanaliiga-light-brown: hsl(29, 56%, 58%);
