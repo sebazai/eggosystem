@@ -71,11 +71,7 @@ export const generateFiltersParamQuery = ({
     maps.forEach((map) => params.append("map_ids", String(map)));
   if (player_name) params.append("player_name", player_name);
 
-  const sortedQuery = Array.from(params.entries())
-    .sort(([keyA], [keyB]) => keyA.localeCompare(keyB))
-    .map(([key, value]) => `${key}=${value}`)
-    .join("&");
-  return sortedQuery;
+  return params.toString();
 };
 
 export const expressFetcher = async <T>(
