@@ -7,6 +7,7 @@ import express from "express";
 import { createExpressTestApp } from "../../../test-utils";
 import dashboardRouter from "./index";
 import { authenticateJWT } from "../../../middlewares/auth.middleware";
+import { createMockUserPayload } from "@eggosystem/types";
 
 // Mock the auth services
 jest.mock("../../../services/auth.services");
@@ -35,15 +36,11 @@ jest.mock("../../../middlewares/auth.middleware", () => ({
     }
 
     // Mock authenticated user
-    req.auth = {
+    req.auth = createMockUserPayload({
       account_id: 1,
-      provider: "steam",
       provider_id: "12345",
-      permissions: [],
-      roles: [],
-      nickname: "testuser",
-      jti: "test-jti"
-    };
+      nickname: "testuser"
+    });
     next();
   },
   checkPermissions: jest.requireActual("../../../middlewares/auth.middleware")

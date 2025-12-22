@@ -3,7 +3,7 @@ import { getUserDiscordStatus } from "./discord.controllers";
 import { runQuery } from "../db/mysqlRunQuery";
 import { logger } from "../utils/app-logger";
 import { getDiscordUsernameByAccountId } from "../models/discord.models";
-import type { UserPayload } from "@eggosystem/types";
+import { type UserPayload, createMockUserPayload } from "@eggosystem/types";
 
 // Mock dependencies
 jest.mock("../db/mysqlRunQuery");
@@ -30,14 +30,11 @@ describe("Discord Controllers", () => {
     mockStatus = jest.fn().mockReturnThis();
 
     mockRequest = {
-      auth: {
+      auth: createMockUserPayload({
         account_id: 123,
         provider_id: "steam123",
-        permissions: [],
-        roles: [],
-        nickname: "testuser",
-        provider: "steam"
-      } as UserPayload
+        nickname: "testuser"
+      })
     };
 
     mockResponse = {

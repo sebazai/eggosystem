@@ -19,6 +19,7 @@ import {
   type Team,
   type OrganizationTeamTrophies
 } from "@eggosystem/types";
+import { createMockOrganization, createMockTeam } from "@eggosystem/types";
 
 // Mock the models
 jest.mock("../models/organization.models");
@@ -43,26 +44,23 @@ const mockGetOrganizationDiscordInviteLink =
   >;
 
 // Test data objects
-const mockOrganization: Organizations = {
+const mockOrganization = createMockOrganization({
   id: 123,
-  name: "Test Organization",
-  organization_code: "TEST",
   website: "https://test.com",
   country: "US",
   logo: "test-logo.png",
   discord_invite_link: "https://discord.gg/test",
   sort_order: 1
-};
+});
 
 const mockOrganizations: Organizations[] = [mockOrganization];
 
 const mockApprovedTeams: Team[] = [
-  {
-    id: 1,
+  createMockTeam({
     name: "Team A",
     team_logo: "team-a-logo.png",
     org_approved: true
-  }
+  })
 ];
 
 const mockTrophies: OrganizationTeamTrophies[] = [

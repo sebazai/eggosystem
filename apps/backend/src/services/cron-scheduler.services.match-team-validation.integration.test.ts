@@ -90,14 +90,21 @@ describe("Match Team Validation Integration Test", () => {
       [TEST_CHAMPIONSHIP_ID, TEST_SEASON_ID, TEST_LEAGUE_ID, TEST_STAGE_ID]
     );
 
-    // Insert test teams
+    // Insert test teams (using unique names to avoid conflicts)
     await runQuery(
       `INSERT INTO Teams (id, organization_id, name, team_logo)
        VALUES 
-         (?, NULL, 'Team A', 'team_a.png'),
-         (?, NULL, 'Team B', 'team_b.png'),
-         (?, NULL, 'Team C', 'team_c.png')`,
-      [TEST_TEAM_A_ID, TEST_TEAM_B_ID, TEST_TEAM_C_ID]
+         (?, NULL, ?, 'team_a.png'),
+         (?, NULL, ?, 'team_b.png'),
+         (?, NULL, ?, 'team_c.png')`,
+      [
+        TEST_TEAM_A_ID,
+        `Team A ${TEST_SEASON_ID}`,
+        TEST_TEAM_B_ID,
+        `Team B ${TEST_SEASON_ID}`,
+        TEST_TEAM_C_ID,
+        `Team C ${TEST_SEASON_ID}`
+      ]
     );
 
     // Insert SeasonLeagueTeams with external_team_id

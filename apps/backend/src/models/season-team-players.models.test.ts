@@ -10,6 +10,7 @@ import type {
   SeasonTeamPlayer,
   SeasonLeagueTeam
 } from "@eggosystem/types";
+import { createMockSeasonLeagueTeam } from "@eggosystem/types";
 
 // Mock dependencies
 jest.mock("./season-league-team.models");
@@ -82,21 +83,17 @@ describe("season-team-players.models", () => {
       }
     };
 
-    const mockSeasonLeagueTeam1: SeasonLeagueTeam = {
+    const mockSeasonLeagueTeam1 = createMockSeasonLeagueTeam({
       season_id: 1,
       team_id: 101,
-      league_id: 1,
-      placement: null,
-      position_offset: null
-    };
+      league_id: 1
+    });
 
-    const mockSeasonLeagueTeam2: SeasonLeagueTeam = {
+    const mockSeasonLeagueTeam2 = createMockSeasonLeagueTeam({
       season_id: 1,
       team_id: 102,
-      league_id: 1,
-      placement: null,
-      position_offset: null
-    };
+      league_id: 1
+    });
 
     const mockSeasonTeamPlayers: SeasonTeamPlayer[] = [
       {

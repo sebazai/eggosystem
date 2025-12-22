@@ -11,6 +11,10 @@ import type {
 } from "@eggosystem/types";
 import { SeasonPlatform } from "@eggosystem/types";
 import {
+  createMockActiveSignupOrSeasonForAppId,
+  createMockOrganizer
+} from "@eggosystem/types";
+import {
   getActiveSeasonForApp,
   getActiveSignupOrActiveSeasonForAppController,
   getActiveSignupSeasonForApp
@@ -34,15 +38,14 @@ const mockGetActiveSignupOrActiveSeasonForAppId =
   >;
 const mockRedisClient = redisClient as jest.Mocked<typeof redisClient>;
 
-const mockActiveSeason = {
+const mockActiveSeason = createMockActiveSignupOrSeasonForAppId({
   season_id: 456,
   platform: SeasonPlatform.FACEIT,
   signup_end_date: "2024-12-31",
-  full_name: "Test Season Full Name",
   signup_start_date: "2024-12-01",
   start_date: "2024-12-31",
   end_date: "2025-03-31"
-} satisfies ActiveSignupOrSeasonForAppId;
+});
 
 // Type definitions for test requests
 type TestRequestWithParams<P = Record<string, string>> =

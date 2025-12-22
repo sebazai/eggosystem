@@ -10,7 +10,8 @@ import {
   type SteamPlayer,
   type Team,
   type UpdateSeasonTeamRegistration,
-  createMockInsertSeason
+  createMockInsertSeason,
+  createMockSeason
 } from "@eggosystem/types";
 import {
   cleanUpTestUser,
@@ -50,7 +51,6 @@ describe("Season team registration services", () => {
   const tomorrow = new Date(now);
   tomorrow.setDate(now.getDate() + 1);
   const insertSeason = createMockInsertSeason({
-    id: 1,
     name: "Test Season",
     full_name: "CS2 Test Season",
     signup_start_date: yesterday,
@@ -60,19 +60,20 @@ describe("Season team registration services", () => {
   });
 
   const seasonDetails = {
-    ...insertSeason,
-    signup_start_date: insertSeason?.signup_start_date?.toDateString() ?? null,
-    signup_end_date: insertSeason?.signup_end_date?.toDateString() ?? null,
-    start_date: insertSeason?.start_date?.toDateString(),
-    end_date: insertSeason?.end_date?.toDateString() ?? null,
-    app_id: 730,
-    is_round_robin_bo2_as_2xbo1: false,
-    grand_final_round_one_only: false,
-    payment_link: null,
-    registration_price: null,
-    has_vat: true,
-    early_bird_price_discount: null,
-    early_bird_price_discount_end_date: null
+    ...createMockSeason({
+      id: insertSeason.id,
+      name: insertSeason.name,
+      full_name: insertSeason.full_name,
+      signup_start_date:
+        insertSeason?.signup_start_date?.toISOString().split("T")[0] ?? null,
+      signup_end_date:
+        insertSeason?.signup_end_date?.toISOString().split("T")[0] ?? null,
+      platform: insertSeason.platform,
+      start_date:
+        insertSeason?.start_date?.toISOString().split("T")[0] ?? "2024-01-01",
+      end_date: insertSeason?.end_date?.toISOString().split("T")[0] ?? null
+    }),
+    app_id: 730
   } satisfies SeasonDetails;
 
   beforeAll(async () => {

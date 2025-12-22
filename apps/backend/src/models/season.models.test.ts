@@ -5,7 +5,6 @@ import {
   createMockSeason,
   createMockSeasonFormRaw
 } from "@eggosystem/types";
-import type { SeasonFormRaw, Season } from "@eggosystem/types";
 
 jest.mock("../db/mysqlRunQuery");
 

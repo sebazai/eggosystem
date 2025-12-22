@@ -6,130 +6,35 @@ glob: "**/*.test.{ts,tsx}"
 
 # Test Utilities and Factory Functions
 
-## Overview
-
-This project uses factory functions for creating test data to maintain a single source of truth and reduce duplication across test files.
-
 ## Core Principle
 
-**Always use factory functions instead of inline test data objects.** When an interface changes, you should only need to update the factory function, not every test file.
+**Always use factory functions instead of inline test data objects.** Factory functions provide a single source of truth and reduce duplication across test files.
 
-## Available Factory Functions
+## Available Factories
 
-### Season Factories
+Factory functions are co-located with their type definitions and exported from `@eggosystem/types`:
 
-Test utilities are co-located with their types:
+- **DB entities**: `packages/types/src/db/EntityName.test-utils.ts`
+- **Other types**: `packages/types/src/module/EntityName.test-utils.ts`
 
-- **Season mocks** (`packages/types/src/db/Season.test-utils.ts`):
-  - `createMockSeason(overrides?: Partial<Season>)` - Creates a complete Season object
-  - `createMockInsertSeason(overrides?: Partial<InsertSeason>)` - Creates InsertSeason for database inserts
+All factories follow the pattern: `createMockEntityName(overrides?: Partial<EntityName>)`
 
-- **SeasonForm mocks** (`packages/types/src/seasons/SeasonForm.test-utils.ts`):
-  - `createMockSeasonFormValues(overrides?: Partial<SeasonFormValues>)` - Creates SeasonFormValues for form inputs
-  - `createMockSeasonFormRaw(overrides?: Partial<SeasonFormRaw>)` - Creates SeasonFormRaw for database operations
-
-All factories are exported from `@eggosystem/types` and accept partial overrides, allowing you to customize only the fields you need for your test.
-
-## Usage Patterns
-
-### Basic Usage
+## Usage
 
 ```typescript
-// ✅ GOOD: Use factory with defaults
-const season = createMockSeason();
+// Use factory with defaults
+const entity = createMockEntityName();
 
-// ✅ GOOD: Override specific fields
-const customSeason = createMockSeason({
-  id: 123,
-  name: "Custom Season",
-  platform: SeasonPlatform.FACEIT
-});
+// Override specific fields
+const customEntity = createMockEntityName({ id: 123, name: "Custom" });
 ```
 
-### Anti-Patterns
+## Creating New Factories
 
-```typescript
-// ❌ BAD: Inline object - duplicates interface definition
-const season: Season = {
-  id: 1,
-  game_id: 1,
-  game_type_id: 1,
-  organizer_id: 1,
-  name: "Test Season",
-  full_name: "Test Season Full Name"
-  // ... many more fields
-};
-
-// ❌ BAD: Partial object without factory
-const season = {
-  id: 123,
-  name: "Test"
-} as Season; // Type casting hides missing fields
-```
-
-## Creating New Factory Functions
-
-When you need to create test data for a new entity:
-
-1. **Create a co-located test-utils file** next to the type definition
-   - For DB types: `packages/types/src/db/EntityName.test-utils.ts`
-   - For other types: `packages/types/src/module/EntityName.test-utils.ts`
-   - Accept `Partial<EntityType>` as parameter
-   - Provide sensible defaults for all required fields
-   - Use spread operator to merge defaults with overrides
-   - Add JSDoc comments with usage examples
-
-2. **Export from the module's index file**
-   - Add `export * from "./EntityName.test-utils";` to the module's `index.ts`
-   - This makes the factory available from `@eggosystem/types`
-
-3. **Update tests to use the factory**
-   - Replace inline objects with factory calls
-   - Use partial overrides to customize only what's needed
-
-**Note**: The old `packages/types/src/test/mocks.ts` file re-exports for backward compatibility, but new factories should be co-located with their types.
-
-### Example Factory Function
-
-````typescript
-/**
- * Creates a mock Entity object with sensible defaults.
- * Accepts partial overrides to customize specific fields.
- *
- * @param overrides - Partial Entity object to override defaults
- * @returns Complete Entity object with defaults and overrides applied
- *
- * @example
- * ```typescript
- * const entity = createMockEntity();
- * const customEntity = createMockEntity({ id: 123, name: "Custom" });
- * ```
- */
-export const createMockEntity = (overrides?: Partial<Entity>): Entity => {
-  return {
-    id: 1,
-    name: "Test Entity",
-    // ... other defaults
-    ...overrides
-  };
-};
-````
-
-## Maintenance Guidelines
-
-### When Adding New Fields
-
-1. **Update the factory function** in the co-located test-utils file (e.g., `EntityName.test-utils.ts`)
-   - Add the new field with a sensible default value
-   - Ensure the default makes sense for most test cases
-
-2. **Tests automatically benefit** - no need to update individual test files
-
-### When Changing Field Types
-
-1. **Update the factory function** with the new type
-2. **Run tests** to identify any that need adjustment
-3. **Update affected tests** using factory overrides if needed
+1. Create a co-located `EntityName.test-utils.ts` file next to the type definition
+2. Export the factory from the module's `index.ts` file
+3. Provide sensible defaults for all required fields
+4. Accept `Partial<EntityType>` for overrides
 
 ## Benefits
 
@@ -137,7 +42,6 @@ export const createMockEntity = (overrides?: Partial<Entity>): Entity => {
 - **Type safety**: TypeScript ensures overrides match the interface
 - **Consistency**: All tests use the same default values
 - **Maintainability**: Easier to update test data across the codebase
-- **Readability**: Tests focus on what's different, not boilerplate
 
 ## Related Rules
 

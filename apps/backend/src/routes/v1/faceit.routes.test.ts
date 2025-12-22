@@ -49,7 +49,8 @@ import {
   type SeasonLeague,
   type MatchStatusFinishedWebhook,
   SeasonPlatform,
-  createMockSeason
+  createMockSeason,
+  createMockOrganizer
 } from "@eggosystem/types";
 
 const mockGetOrganizerByFaceitIdAndGameAppId =
@@ -925,13 +926,9 @@ export const validWebhookPayloadObjectCreated = {
   }
 } satisfies MatchObjectCreatedWebhook;
 
-const mockOrganizer = {
-  id: 1,
-  name: "Test Organizer",
-  faceit_id: "08b06cfc-74d0-454b-9a51-feda4b6b18da",
-  created_at: new Date(),
-  updated_at: new Date()
-};
+const mockOrganizer = createMockOrganizer({
+  faceit_id: "08b06cfc-74d0-454b-9a51-feda4b6b18da"
+});
 
 describe("FaceIT Routes - Webhook", () => {
   beforeEach(() => {
@@ -2037,15 +2034,11 @@ describe("FaceIT Routes - Webhook", () => {
         // Mock active season with grand_final_round_one_only = true
         mockGetOrganizerActiveSeasonForApp.mockResolvedValue(
           createMockSeason({
-            id: 1,
             signup_start_date: null,
             signup_end_date: null,
             platform: SeasonPlatform.FACEIT,
             start_date: "2025-01-01",
-            end_date: null,
-            grand_final_round_one_only: true,
-            payment_link: null,
-            registration_price: null
+            grand_final_round_one_only: true
           })
         );
 
@@ -2099,15 +2092,11 @@ describe("FaceIT Routes - Webhook", () => {
         // Mock active season with grand_final_round_one_only = true
         mockGetOrganizerActiveSeasonForApp.mockResolvedValue(
           createMockSeason({
-            id: 1,
             signup_start_date: null,
             signup_end_date: null,
             platform: SeasonPlatform.FACEIT,
             start_date: "2025-01-01",
-            end_date: null,
-            grand_final_round_one_only: true,
-            payment_link: null,
-            registration_price: null
+            grand_final_round_one_only: true
           })
         );
 
@@ -2155,15 +2144,10 @@ describe("FaceIT Routes - Webhook", () => {
         // Mock active season with grand_final_round_one_only = false
         mockGetOrganizerActiveSeasonForApp.mockResolvedValue(
           createMockSeason({
-            id: 1,
             signup_start_date: null,
             signup_end_date: null,
             platform: SeasonPlatform.FACEIT,
-            start_date: "2025-01-01",
-            end_date: null,
-            grand_final_round_one_only: false,
-            payment_link: null,
-            registration_price: null
+            start_date: "2025-01-01"
           })
         );
 
@@ -2217,12 +2201,10 @@ describe("FaceIT Routes - Webhook", () => {
         // Mock active season with grand_final_round_one_only = undefined
         mockGetOrganizerActiveSeasonForApp.mockResolvedValue(
           createMockSeason({
-            id: 1,
             signup_start_date: null,
             signup_end_date: null,
             platform: SeasonPlatform.FACEIT,
-            start_date: "2025-01-01",
-            end_date: null
+            start_date: "2025-01-01"
           })
         );
 
@@ -2418,15 +2400,11 @@ describe("FaceIT Routes - Webhook", () => {
         // Mock active season with grand_final_round_one_only = true
         mockGetOrganizerActiveSeasonForApp.mockResolvedValue(
           createMockSeason({
-            id: 1,
             signup_start_date: null,
             signup_end_date: null,
             platform: SeasonPlatform.FACEIT,
             start_date: "2025-01-01",
-            end_date: null,
-            grand_final_round_one_only: true,
-            payment_link: null,
-            registration_price: null
+            grand_final_round_one_only: true
           })
         );
 

@@ -45,7 +45,6 @@ const mockSeason = createMockSeason({
   id: 123,
   name: "Test Season",
   full_name: "Test Season Full Name",
-  signup_start_date: "2024-01-01",
   signup_end_date: "2024-12-31",
   platform: SeasonPlatform.FACEIT,
   start_date: "2024-01-01",

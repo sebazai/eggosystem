@@ -11,7 +11,6 @@ import {
 import type { RequestWithBody, RequestWithParams } from "@eggosystem/types";
 import type { SeasonFormValues } from "@eggosystem/types";
 import {
-  SeasonPlatform,
   createMockSeason,
   createMockSeasonFormValues
 } from "@eggosystem/types";

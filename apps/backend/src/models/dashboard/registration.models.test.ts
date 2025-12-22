@@ -1,6 +1,9 @@
 import * as registrationModels from "./registration.models";
 import { runQuery } from "../../db/mysqlRunQuery";
-import type { PlayerFullName } from "@eggosystem/types";
+import {
+  type PlayerFullName,
+  createMockPlayerFullName
+} from "@eggosystem/types";
 
 jest.mock("../../db/mysqlRunQuery");
 
@@ -11,10 +14,10 @@ describe("Dashboard Registration Models", () => {
     });
 
     it("should return player full name when player exists", async () => {
-      const mockPlayerFullName: PlayerFullName = {
+      const mockPlayerFullName = createMockPlayerFullName({
         steam_id: "12345678901234567",
         full_name: "John Doe"
-      };
+      });
 
       (runQuery as jest.Mock).mockResolvedValue([mockPlayerFullName]);
 
@@ -40,10 +43,10 @@ describe("Dashboard Registration Models", () => {
     });
 
     it("should handle null full_name", async () => {
-      const mockPlayerFullName: PlayerFullName = {
+      const mockPlayerFullName = createMockPlayerFullName({
         steam_id: "12345678901234567",
         full_name: null
-      };
+      });
 
       (runQuery as jest.Mock).mockResolvedValue([mockPlayerFullName]);
 

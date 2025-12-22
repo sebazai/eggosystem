@@ -5,7 +5,8 @@ import { PlayerValidationForm } from "./PlayerValidationForm";
 import {
   EligiblePlayerForValidationSteamId,
   SeasonPlatform,
-  createMockSeason
+  createMockSeason,
+  createMockActiveSignupOrSeasonForAppId
 } from "@eggosystem/types";
 
 // Mock the UI components
@@ -177,7 +178,9 @@ describe("PlayerValidationForm", () => {
     })
   ];
 
-  const mockActiveSeason = { season_id: 14 };
+  const mockActiveSeason = createMockActiveSignupOrSeasonForAppId({
+    season_id: 14
+  });
 
   const defaultProps = {
     steamId: "",

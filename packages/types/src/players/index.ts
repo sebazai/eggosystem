@@ -6,6 +6,7 @@ export * from "./PlayerStatsTable.interface";
 export * from "./PlayerTeamDetailsByFilters.interface";
 export * from "./PlayerSkillDiagram.interface";
 export * from "./PlayerFullName.interface";
+export * from "./PlayerFullName.test-utils";
 export * from "./PlayerMapStats.interface";
 export * from "./PlayerHistoricalData.interface";
 export * from "./PlayerHistoricalAverage.interface";
