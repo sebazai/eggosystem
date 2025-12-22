@@ -49,8 +49,8 @@ export function SeasonsPageClient() {
         });
         toast.success(`Season updated successfully!`);
         setSelectedSeasonId(null);
-        // Refetch seasons data
-        await mutate("/api/v1/seasons");
+        // Refetch seasons data (don't await to avoid blocking)
+        void mutate("/api/v1/seasons");
       } else {
         // Create new season
         const result = await clientApiFetch<{ seasonId: number }>(
@@ -62,8 +62,8 @@ export function SeasonsPageClient() {
         );
         toast.success(`Season created successfully! ID: ${result.seasonId}`);
         setIsCreating(false);
-        // Refetch seasons data
-        await mutate("/api/v1/seasons");
+        // Refetch seasons data (don't await to avoid blocking)
+        void mutate("/api/v1/seasons");
       }
     } catch (error) {
       console.error("Error saving season:", error);
