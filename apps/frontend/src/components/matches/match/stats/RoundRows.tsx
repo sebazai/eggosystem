@@ -170,9 +170,26 @@ const RoundIcon = ({
     </div>
   );
 
-  const tooltipText = getEndReasonText(
+  const endReasonText = getEndReasonText(
     round.round_end_reason_info,
     round.plant_site
+  );
+
+  // Opening kill indicator dot color
+  const firstKillDotColor =
+    round.first_kill === "CT"
+      ? "bg-blue-400"
+      : round.first_kill === "T"
+        ? "bg-yellow-400"
+        : null;
+
+  const tooltipContent = (
+    <div className="space-y-0.5">
+      <div>{endReasonText}</div>
+      {round.first_kill && (
+        <div className="text-xs">Opening kill: {round.first_kill}</div>
+      )}
+    </div>
   );
 
   return (
@@ -185,23 +202,27 @@ const RoundIcon = ({
       {isMobile ? (
         <Popover>
           <PopoverTrigger asChild>{content}</PopoverTrigger>
-          <PopoverContent
-            side="top"
-            className="text-sm rounded shadow-lg z-[100]"
-          >
-            {tooltipText}
+          <PopoverContent side="top" className="text-sm rounded shadow-lg z-[100]">
+            {tooltipContent}
           </PopoverContent>
         </Popover>
       ) : (
         <Tooltip>
           <TooltipTrigger asChild>{content}</TooltipTrigger>
-          <TooltipContent
-            side="top"
-            className="text-sm rounded shadow-lg z-[100]"
-          >
-            {tooltipText}
+          <TooltipContent side="top" className="z-[100]">
+            {tooltipContent}
           </TooltipContent>
         </Tooltip>
+      )}
+      {/* Opening Kill Indicator Dot */}
+      {firstKillDotColor && (
+        <span
+          className={cn(
+            "absolute -bottom-1 -right-1 w-2.5 h-2.5 rounded-full border border-background",
+            firstKillDotColor
+          )}
+          title={`${round.first_kill} got opening kill`}
+        />
       )}
       <span className="absolute -bottom-6 text-xs text-muted-foreground">
         {round.round_number}
@@ -221,6 +242,7 @@ export const RoundInfo = ({
     isProcessing,
     isLoading: isLoadingViewerDataUntilReady
   } = use2DViewerDataUntilReady(matchGameId.toString());
+
   if (isLoading) return <div>Loading...</div>;
   if (isError) return <div>Error loading round info</div>;
   const firstRound = roundInfo?.[0];
@@ -258,12 +280,12 @@ export const RoundInfo = ({
           {(isProcessing ||
             isLoadingViewerData ||
             isLoadingViewerDataUntilReady) && (
-            <Spinner
-              thickness="thick"
-              color="kanaliigaOrange"
-              className="ml-2"
-            />
-          )}
+              <Spinner
+                thickness="thick"
+                color="kanaliigaOrange"
+                className="ml-2"
+              />
+            )}
           {!(isProcessing || isLoadingViewerData) && hasViewerData && (
             <Button
               variant="kanaliigaOrange"
