@@ -28,7 +28,7 @@ jest.mock("../../middlewares/auth.middleware", () => {
   const actual = jest.requireActual("../../middlewares/auth.middleware");
   return {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    authenticateJWT: (req: any, res: any, next: any) => {
+    authenticateJWT: async (req: any, res: any, next: any) => {
       // Check if Authorization header is present
       const authHeader = req.headers.authorization;
       if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -41,11 +41,18 @@ jest.mock("../../middlewares/auth.middleware", () => {
         });
       }
 
+      // Get roles from mocked function to populate req.auth.roles
+      // This allows checkJWTPermissions to read roles from req.auth.roles
+      const roles = await getRolesForAccountId(1);
+      const permissions = await getPermissionsForAccountId(1);
+
       // Mock authenticated user
       req.auth = createMockUserPayload({
         account_id: 1,
         provider_id: "12345",
-        nickname: "testuser"
+        nickname: "testuser",
+        roles,
+        permissions
       });
       next();
     },
