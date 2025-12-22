@@ -2050,7 +2050,9 @@ describe("FaceIT Routes - Webhook", () => {
           grand_final_round_one_only: true,
           payment_link: null,
           registration_price: null,
-          has_vat: true
+          has_vat: true,
+          early_bird_price_discount: null,
+          early_bird_price_discount_end_date: null
         });
 
         // Create webhook payload for group 3 round 1 match
@@ -2117,7 +2119,9 @@ describe("FaceIT Routes - Webhook", () => {
           grand_final_round_one_only: true,
           payment_link: null,
           registration_price: null,
-          has_vat: true
+          has_vat: true,
+          early_bird_price_discount: null,
+          early_bird_price_discount_end_date: null
         });
 
         // Create webhook payload for group 3 round 2 match
@@ -2178,7 +2182,9 @@ describe("FaceIT Routes - Webhook", () => {
           grand_final_round_one_only: false,
           payment_link: null,
           registration_price: null,
-          has_vat: true
+          has_vat: true,
+          early_bird_price_discount: null,
+          early_bird_price_discount_end_date: null
         });
 
         // Create webhook payload for group 3 round 2 match
@@ -2450,7 +2456,9 @@ describe("FaceIT Routes - Webhook", () => {
           grand_final_round_one_only: true,
           payment_link: null,
           registration_price: null,
-          has_vat: true
+          has_vat: true,
+          early_bird_price_discount: null,
+          early_bird_price_discount_end_date: null
         });
 
         // Test round 3 (should be skipped)

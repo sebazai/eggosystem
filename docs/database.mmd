@@ -117,6 +117,11 @@ erDiagram
 "TeamRosters" }o--|| "SteamPlayers" : ""
 "TeamRosters" }o--|| "Teams" : ""
 "Teams" }o--o| "Organizations" : ""
+"TrophyAssignments" }o--o| "Leagues" : ""
+"TrophyAssignments" }o--|| "Seasons" : ""
+"TrophyAssignments" }o--o| "SteamPlayers" : ""
+"TrophyAssignments" }o--o| "Teams" : ""
+"TrophyAssignments" }o--|| "Trophies" : ""
 "UserPolicyAcceptances" }o--|| "Accounts" : ""
 
 "AccountCasterUrls" {
@@ -367,6 +372,17 @@ erDiagram
 "Teams" {
   int_10__unsigned id PK
   int_10__unsigned organization_id FK
+}
+"Trophies" {
+  int_10__unsigned id PK
+}
+"TrophyAssignments" {
+  int_10__unsigned id PK
+  int_10__unsigned trophy_id FK
+  int_10__unsigned team_id FK
+  bigint_20_ steam_id FK
+  int_10__unsigned season_id FK
+  int_10__unsigned league_id FK
 }
 "UserPolicyAcceptances" {
   int_10__unsigned id PK
