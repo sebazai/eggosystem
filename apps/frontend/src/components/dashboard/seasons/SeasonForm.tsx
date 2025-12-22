@@ -539,8 +539,10 @@ export function SeasonForm({
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Creating Season...
+                  {mode === "edit" ? "Saving Season..." : "Creating Season..."}
                 </>
+              ) : mode === "edit" ? (
+                "Save Season"
               ) : (
                 "Create Season"
               )}

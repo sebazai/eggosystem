@@ -87,7 +87,12 @@ export function SeasonsPageClient() {
       end_date: season.end_date || null,
       platform: season.platform,
       is_round_robin_bo2_as_2xbo1: season.is_round_robin_bo2_as_2xbo1,
-      payment_link: season.payment_link || null
+      payment_link: season.payment_link || null,
+      registration_price: season.registration_price ?? null,
+      has_vat: season.has_vat,
+      early_bird_price_discount: season.early_bird_price_discount ?? null,
+      early_bird_price_discount_end_date:
+        season.early_bird_price_discount_end_date || null
     };
   };
 
