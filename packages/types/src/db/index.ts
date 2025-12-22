@@ -13,6 +13,7 @@ export * from "./PlayerStat.interface";
 export * from "./PlayerTrade.interface";
 export * from "./Reservation.interface";
 export * from "./Season.interface";
+export * from "./Season.test-utils";
 export * from "./SeasonLeague.interface";
 export * from "./SeasonLeagueTeam.interface";
 export * from "./SeasonPlayerRank.interface";

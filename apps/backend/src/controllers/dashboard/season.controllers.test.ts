@@ -10,7 +10,11 @@ import {
 } from "../../models/season.models";
 import type { RequestWithBody, RequestWithParams } from "@eggosystem/types";
 import type { SeasonFormValues } from "@eggosystem/types";
-import { SeasonPlatform } from "@eggosystem/types";
+import {
+  SeasonPlatform,
+  createMockSeason,
+  createMockSeasonFormValues
+} from "@eggosystem/types";
 import { ZodError } from "zod";
 
 // Mock the models
@@ -32,23 +36,7 @@ describe("Dashboard Season Controllers", () => {
   let mockJson: jest.MockedFunction<Response["json"]>;
   let mockStatus: jest.MockedFunction<Response["status"]>;
 
-  const validSeasonData: SeasonFormValues = {
-    game_id: 1,
-    game_type_id: 1,
-    organizer_id: 1,
-    name: "Test Season",
-    full_name: "Test Season Full Name",
-    signup_start_date: "2024-01-01T00:00:00",
-    signup_end_date: "2024-01-15T23:59:59",
-    start_date: "2024-02-01",
-    end_date: "2024-12-31",
-    platform: SeasonPlatform.Kanaliiga,
-    is_round_robin_bo2_as_2xbo1: false,
-    payment_link: "https://example.com/payment",
-    registration_price: 150,
-    has_vat: true,
-    timezone: "Europe/Helsinki"
-  };
+  const validSeasonData = createMockSeasonFormValues();
 
   beforeEach(() => {
     mockJson = jest.fn().mockReturnThis();
@@ -131,26 +119,18 @@ describe("Dashboard Season Controllers", () => {
       } as RequestWithParams<{ id: string }> &
         RequestWithBody<SeasonFormValues>;
 
-      mockGetSeasonById.mockResolvedValue({
-        id: 123,
-        game_id: 1,
-        game_type_id: 1,
-        organizer_id: 1,
-        name: "Old Season",
-        full_name: "Old Season Full Name",
-        signup_start_date: "2024-01-01",
-        signup_end_date: "2024-01-15",
-        start_date: "2024-02-01",
-        end_date: "2024-12-31",
-        platform: SeasonPlatform.Kanaliiga,
-        is_round_robin_bo2_as_2xbo1: false,
-        payment_link: null,
-        grand_final_round_one_only: false,
-        registration_price: null,
-        has_vat: true,
-        early_bird_price_discount: null,
-        early_bird_price_discount_end_date: null
-      });
+      mockGetSeasonById.mockResolvedValue(
+        createMockSeason({
+          id: 123,
+          name: "Old Season",
+          full_name: "Old Season Full Name",
+          signup_start_date: "2024-01-01",
+          signup_end_date: "2024-01-15",
+          end_date: "2024-12-31",
+          payment_link: null,
+          registration_price: null
+        })
+      );
 
       mockUpdateSeason.mockResolvedValue({ affectedRows: 1 });
 
@@ -205,26 +185,18 @@ describe("Dashboard Season Controllers", () => {
       } as unknown as RequestWithParams<{ id: string }> &
         RequestWithBody<SeasonFormValues>;
 
-      mockGetSeasonById.mockResolvedValue({
-        id: 123,
-        game_id: 1,
-        game_type_id: 1,
-        organizer_id: 1,
-        name: "Old Season",
-        full_name: "Old Season Full Name",
-        signup_start_date: "2024-01-01",
-        signup_end_date: "2024-01-15",
-        start_date: "2024-02-01",
-        end_date: "2024-12-31",
-        platform: SeasonPlatform.Kanaliiga,
-        is_round_robin_bo2_as_2xbo1: false,
-        payment_link: null,
-        grand_final_round_one_only: false,
-        registration_price: null,
-        has_vat: true,
-        early_bird_price_discount: null,
-        early_bird_price_discount_end_date: null
-      });
+      mockGetSeasonById.mockResolvedValue(
+        createMockSeason({
+          id: 123,
+          name: "Old Season",
+          full_name: "Old Season Full Name",
+          signup_start_date: "2024-01-01",
+          signup_end_date: "2024-01-15",
+          end_date: "2024-12-31",
+          payment_link: null,
+          registration_price: null
+        })
+      );
 
       await updateSeasonController(mockRequest, mockResponse, mockNext);
 
@@ -239,26 +211,18 @@ describe("Dashboard Season Controllers", () => {
       } as RequestWithParams<{ id: string }> &
         RequestWithBody<SeasonFormValues>;
 
-      mockGetSeasonById.mockResolvedValue({
-        id: 123,
-        game_id: 1,
-        game_type_id: 1,
-        organizer_id: 1,
-        name: "Old Season",
-        full_name: "Old Season Full Name",
-        signup_start_date: "2024-01-01",
-        signup_end_date: "2024-01-15",
-        start_date: "2024-02-01",
-        end_date: "2024-12-31",
-        platform: SeasonPlatform.Kanaliiga,
-        is_round_robin_bo2_as_2xbo1: false,
-        payment_link: null,
-        grand_final_round_one_only: false,
-        registration_price: null,
-        has_vat: true,
-        early_bird_price_discount: null,
-        early_bird_price_discount_end_date: null
-      });
+      mockGetSeasonById.mockResolvedValue(
+        createMockSeason({
+          id: 123,
+          name: "Old Season",
+          full_name: "Old Season Full Name",
+          signup_start_date: "2024-01-01",
+          signup_end_date: "2024-01-15",
+          end_date: "2024-12-31",
+          payment_link: null,
+          registration_price: null
+        })
+      );
 
       const dbError = new Error("Database update failed");
       mockUpdateSeason.mockRejectedValue(dbError);

@@ -45,17 +45,19 @@ import { faceitEloToLevel } from "../utils/faceit-utils";
 describe("Season team registration services", () => {
   process.env.PRIVACY_POLICY_VERSION = "1";
   const now = new Date();
-  const yesterday = new Date().setDate(now.getDate() - 1);
-  const tomorrow = new Date().setDate(now.getDate() + 1);
-  const insertSeason = createMockInsertSeason(
-    1,
-    "Test Season",
-    "CS2 Test Season",
-    String(yesterday),
-    String(tomorrow),
-    SeasonPlatform.FACEIT,
-    String(tomorrow)
-  );
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  const tomorrow = new Date(now);
+  tomorrow.setDate(now.getDate() + 1);
+  const insertSeason = createMockInsertSeason({
+    id: 1,
+    name: "Test Season",
+    full_name: "CS2 Test Season",
+    signup_start_date: yesterday,
+    signup_end_date: tomorrow,
+    platform: SeasonPlatform.FACEIT,
+    start_date: tomorrow
+  });
 
   const seasonDetails = {
     ...insertSeason,

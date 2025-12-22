@@ -41,16 +41,16 @@ const mockGetSeasonDetailsById = getSeasonDetailsById as jest.MockedFunction<
 >;
 
 // Test data objects
-const mockSeason = createMockSeason(
-  123,
-  "Test Season",
-  "Test Season Full Name",
-  "2024-01-01",
-  "2024-12-31",
-  SeasonPlatform.FACEIT,
-  "2024-01-01",
-  "2024-12-31"
-);
+const mockSeason = createMockSeason({
+  id: 123,
+  name: "Test Season",
+  full_name: "Test Season Full Name",
+  signup_start_date: "2024-01-01",
+  signup_end_date: "2024-12-31",
+  platform: SeasonPlatform.FACEIT,
+  start_date: "2024-01-01",
+  end_date: "2024-12-31"
+});
 
 const mockSeasonDetails = {
   ...mockSeason,

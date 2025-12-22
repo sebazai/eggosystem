@@ -27,26 +27,26 @@ const mockUsePlayerValidation = usePlayerValidation as jest.MockedFunction<
 
 // Mock data
 const mockSeasons = [
-  createMockSeason(
-    1,
-    "Season 1",
-    "Season 1 - FACEIT",
-    "2024-01-01",
-    "2024-01-31",
-    "faceit",
-    "2024-02-01",
-    "2024-04-30"
-  ),
-  createMockSeason(
-    2,
-    "Season 2",
-    "Season 2 - Esportal",
-    "2024-05-01",
-    "2024-05-31",
-    "esportal",
-    "2024-06-01",
-    "2024-08-31"
-  )
+  createMockSeason({
+    id: 1,
+    name: "Season 1",
+    full_name: "Season 1 - FACEIT",
+    signup_start_date: "2024-01-01",
+    signup_end_date: "2024-01-31",
+    platform: SeasonPlatform.FACEIT,
+    start_date: "2024-02-01",
+    end_date: "2024-04-30"
+  }),
+  createMockSeason({
+    id: 2,
+    name: "Season 2",
+    full_name: "Season 2 - Esportal",
+    signup_start_date: "2024-05-01",
+    signup_end_date: "2024-05-31",
+    platform: SeasonPlatform.Esportal,
+    start_date: "2024-06-01",
+    end_date: "2024-08-31"
+  })
 ];
 
 const mockValidationResultSuccess: PlayerValidationResult = {

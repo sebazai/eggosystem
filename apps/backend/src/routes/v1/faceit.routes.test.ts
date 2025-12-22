@@ -48,7 +48,8 @@ import {
   type Season,
   type SeasonLeague,
   type MatchStatusFinishedWebhook,
-  type SeasonPlatform
+  SeasonPlatform,
+  createMockSeason
 } from "@eggosystem/types";
 
 const mockGetOrganizerByFaceitIdAndGameAppId =
@@ -2034,26 +2035,19 @@ describe("FaceIT Routes - Webhook", () => {
     describe("Group 3 (Grand Final) Matches", () => {
       it("should process group 3 round 1 matches normally when grand_final_round_one_only is true", async () => {
         // Mock active season with grand_final_round_one_only = true
-        mockGetOrganizerActiveSeasonForApp.mockResolvedValue({
-          id: 1,
-          game_id: 1,
-          game_type_id: 1,
-          organizer_id: 1,
-          name: "Test Season",
-          full_name: "Test Season Full Name",
-          signup_start_date: null,
-          signup_end_date: null,
-          platform: "FACEIT" as SeasonPlatform,
-          start_date: "2025-01-01",
-          end_date: null,
-          is_round_robin_bo2_as_2xbo1: false,
-          grand_final_round_one_only: true,
-          payment_link: null,
-          registration_price: null,
-          has_vat: true,
-          early_bird_price_discount: null,
-          early_bird_price_discount_end_date: null
-        });
+        mockGetOrganizerActiveSeasonForApp.mockResolvedValue(
+          createMockSeason({
+            id: 1,
+            signup_start_date: null,
+            signup_end_date: null,
+            platform: SeasonPlatform.FACEIT,
+            start_date: "2025-01-01",
+            end_date: null,
+            grand_final_round_one_only: true,
+            payment_link: null,
+            registration_price: null
+          })
+        );
 
         // Create webhook payload for group 3 round 1 match
         const group3Round1Webhook = {
@@ -2103,26 +2097,19 @@ describe("FaceIT Routes - Webhook", () => {
 
       it("should skip group 3 round 2+ matches when grand_final_round_one_only is true", async () => {
         // Mock active season with grand_final_round_one_only = true
-        mockGetOrganizerActiveSeasonForApp.mockResolvedValue({
-          id: 1,
-          game_id: 1,
-          game_type_id: 1,
-          organizer_id: 1,
-          name: "Test Season",
-          full_name: "Test Season Full Name",
-          signup_start_date: null,
-          signup_end_date: null,
-          platform: "FACEIT" as SeasonPlatform,
-          start_date: "2025-01-01",
-          end_date: null,
-          is_round_robin_bo2_as_2xbo1: false,
-          grand_final_round_one_only: true,
-          payment_link: null,
-          registration_price: null,
-          has_vat: true,
-          early_bird_price_discount: null,
-          early_bird_price_discount_end_date: null
-        });
+        mockGetOrganizerActiveSeasonForApp.mockResolvedValue(
+          createMockSeason({
+            id: 1,
+            signup_start_date: null,
+            signup_end_date: null,
+            platform: SeasonPlatform.FACEIT,
+            start_date: "2025-01-01",
+            end_date: null,
+            grand_final_round_one_only: true,
+            payment_link: null,
+            registration_price: null
+          })
+        );
 
         // Create webhook payload for group 3 round 2 match
         const group3Round2Webhook = {
@@ -2166,26 +2153,19 @@ describe("FaceIT Routes - Webhook", () => {
 
       it("should process group 3 round 2+ matches when grand_final_round_one_only is false", async () => {
         // Mock active season with grand_final_round_one_only = false
-        mockGetOrganizerActiveSeasonForApp.mockResolvedValue({
-          id: 1,
-          game_id: 1,
-          game_type_id: 1,
-          organizer_id: 1,
-          name: "Test Season",
-          full_name: "Test Season Full Name",
-          signup_start_date: null,
-          signup_end_date: null,
-          platform: "FACEIT" as SeasonPlatform,
-          start_date: "2025-01-01",
-          end_date: null,
-          is_round_robin_bo2_as_2xbo1: false,
-          grand_final_round_one_only: false,
-          payment_link: null,
-          registration_price: null,
-          has_vat: true,
-          early_bird_price_discount: null,
-          early_bird_price_discount_end_date: null
-        });
+        mockGetOrganizerActiveSeasonForApp.mockResolvedValue(
+          createMockSeason({
+            id: 1,
+            signup_start_date: null,
+            signup_end_date: null,
+            platform: SeasonPlatform.FACEIT,
+            start_date: "2025-01-01",
+            end_date: null,
+            grand_final_round_one_only: false,
+            payment_link: null,
+            registration_price: null
+          })
+        );
 
         // Create webhook payload for group 3 round 2 match
         const group3Round2Webhook = {
@@ -2235,20 +2215,16 @@ describe("FaceIT Routes - Webhook", () => {
 
       it("should process group 3 round 2+ matches when grand_final_round_one_only is undefined", async () => {
         // Mock active season with grand_final_round_one_only = undefined
-        mockGetOrganizerActiveSeasonForApp.mockResolvedValue({
-          id: 1,
-          game_id: 1,
-          game_type_id: 1,
-          organizer_id: 1,
-          name: "Test Season",
-          full_name: "Test Season Full Name",
-          signup_start_date: null,
-          signup_end_date: null,
-          platform: "FACEIT" as SeasonPlatform,
-          start_date: "2025-01-01",
-          end_date: null,
-          is_round_robin_bo2_as_2xbo1: false
-        } as Season);
+        mockGetOrganizerActiveSeasonForApp.mockResolvedValue(
+          createMockSeason({
+            id: 1,
+            signup_start_date: null,
+            signup_end_date: null,
+            platform: SeasonPlatform.FACEIT,
+            start_date: "2025-01-01",
+            end_date: null
+          })
+        );
 
         // Create webhook payload for group 3 round 2 match
         const group3Round2Webhook = {
@@ -2440,26 +2416,19 @@ describe("FaceIT Routes - Webhook", () => {
 
       it("should handle different round numbers correctly", async () => {
         // Mock active season with grand_final_round_one_only = true
-        mockGetOrganizerActiveSeasonForApp.mockResolvedValue({
-          id: 1,
-          game_id: 1,
-          game_type_id: 1,
-          organizer_id: 1,
-          name: "Test Season",
-          full_name: "Test Season Full Name",
-          signup_start_date: null,
-          signup_end_date: null,
-          platform: "FACEIT" as SeasonPlatform,
-          start_date: "2025-01-01",
-          end_date: null,
-          is_round_robin_bo2_as_2xbo1: false,
-          grand_final_round_one_only: true,
-          payment_link: null,
-          registration_price: null,
-          has_vat: true,
-          early_bird_price_discount: null,
-          early_bird_price_discount_end_date: null
-        });
+        mockGetOrganizerActiveSeasonForApp.mockResolvedValue(
+          createMockSeason({
+            id: 1,
+            signup_start_date: null,
+            signup_end_date: null,
+            platform: SeasonPlatform.FACEIT,
+            start_date: "2025-01-01",
+            end_date: null,
+            grand_final_round_one_only: true,
+            payment_link: null,
+            registration_price: null
+          })
+        );
 
         // Test round 3 (should be skipped)
         const group3Round3Webhook = {
