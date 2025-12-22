@@ -1,4 +1,7 @@
-import { type UserPolicyAcceptance, type Account } from "@eggosystem/types";
+import {
+  createMockAccount,
+  createMockUserPolicyAcceptance
+} from "@eggosystem/types";
 import { updateAccountProfileController } from "./account.controllers";
 import { getConnection } from "../db/mysqlConnection";
 import * as accountModels from "../models/account.models";
@@ -9,19 +12,16 @@ jest.mock("../db/mysqlConnection", () => ({
   getConnection: jest.fn()
 }));
 
-const mockedAccount = {
-  id: 1,
+const mockedAccount = createMockAccount({
   steam_id: "12345",
   nickname: "TestUser",
   full_name: "Test User",
   work_email: "new@kana.fi",
   work_email_verified: false,
-  work_email_token: null,
-  work_email_token_expires_at: null,
   is_work_email_personal_email: false,
   updated_at: "",
   created_at: ""
-} satisfies Account;
+});
 
 describe("updateProfile Controller", () => {
   let req: Partial<Request>;
@@ -111,16 +111,11 @@ describe("updateProfile Controller", () => {
   });
 
   it("should update profile and policy acceptance if user exists", async () => {
-    jest.spyOn(accountModels, "userPolicyAcceptance").mockResolvedValue({
-      id: 0,
-      account_id: 0,
-      accepted_privacy_policy: false,
-      accepted_marketing: false,
-      accepted_tournament_newsletter: true,
-      created_at: new Date(),
-      updated_at: new Date(),
-      privacy_policy_version: ""
-    } satisfies UserPolicyAcceptance);
+    jest.spyOn(accountModels, "userPolicyAcceptance").mockResolvedValue(
+      createMockUserPolicyAcceptance({
+        accepted_tournament_newsletter: true
+      })
+    );
     const updatedAccountSpy = jest
       .spyOn(accountModels, "updateAccountData")
       .mockResolvedValue(undefined);
@@ -154,10 +149,10 @@ describe("updateProfile Controller", () => {
   });
 
   it("should insert policy acceptance if none exists", async () => {
-    const newMock: Account = {
-      ..._.cloneDeep(mockedAccount),
+    const newMock = createMockAccount({
+      ...mockedAccount,
       work_email: "test@example.com"
-    };
+    });
 
     jest.spyOn(accountModels, "getAccountById").mockResolvedValue(newMock);
     jest.spyOn(accountModels, "userPolicyAcceptance").mockResolvedValue(null);
@@ -193,13 +188,13 @@ describe("updateProfile Controller", () => {
 
   it("should preserve existing work email token when work email has not changed", async () => {
     // Create account with existing unverified work email and token
-    const accountWithExistingToken: Account = {
+    const accountWithExistingToken = createMockAccount({
       ...mockedAccount,
       work_email: "test@example.com",
       work_email_verified: false,
       work_email_token: "existing-token-123",
       work_email_token_expires_at: new Date("2024-12-31").toISOString()
-    };
+    });
 
     jest
       .spyOn(accountModels, "getAccountById")

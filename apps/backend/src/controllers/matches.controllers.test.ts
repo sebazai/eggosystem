@@ -43,6 +43,7 @@ import {
   type SeasonPlatform,
   type MatchMapsPlayed
 } from "@eggosystem/types";
+import { createMockMatch } from "@eggosystem/types";
 
 // Mock the models
 jest.mock("../models/match.models");
@@ -88,34 +89,22 @@ const mockGetActiveSeasonForAppId =
   >;
 
 // Test data objects
-const mockMatch = {
+const mockMatch = createMockMatch({
   id: 123,
-  league_id: 1,
-  season_id: 1,
-  stage: 1,
-  match_date: "2024-01-01",
   start_time: "12:00:00",
   end_time: "14:00:00",
-  best_of: 1,
   external_match_room_id: "123",
-  status: "FINISHED",
-  round: 1,
-  group: 1
-} satisfies Match;
+  status: "FINISHED"
+});
 
 const mockMatchWithBreadcrumb = {
-  id: 123,
-  league_id: 1,
-  season_id: 1,
-  stage: 1,
-  match_date: "2024-01-01",
-  start_time: "12:00:00",
-  end_time: "14:00:00",
-  best_of: 1,
-  external_match_room_id: "123",
-  status: "FINISHED",
-  round: 1,
-  group: 1,
+  ...createMockMatch({
+    id: 123,
+    start_time: "12:00:00",
+    end_time: "14:00:00",
+    external_match_room_id: "123",
+    status: "FINISHED"
+  }),
   name: "Test Stage"
 } satisfies Match & Stage;
 

@@ -4,6 +4,7 @@ import { ManualPlayerApprovalForm } from "./ManualPlayerApprovalForm";
 import { useSelectableTeams } from "@/hooks/data/dashboard/useSelectableTeams";
 import { useSelectableOrgs } from "@/hooks/data/dashboard/useSelectableOrgs";
 import { usePlayerFullName } from "@/hooks/data/dashboard/usePlayerFullName";
+import { createMockTeam, createMockOrganization } from "@eggosystem/types";
 
 jest.mock("@/hooks/data/dashboard/useSelectableTeams");
 jest.mock("@/hooks/data/dashboard/useSelectableOrgs");
@@ -20,8 +21,16 @@ const mockUsePlayerFullName = usePlayerFullName as jest.MockedFunction<
 >;
 
 describe("ManualPlayerApprovalForm", () => {
-  const mockTeams = [{ id: 1, name: "Team Alpha", organization_id: 1 }];
-  const mockOrgs = [{ id: 1, name: "Org Alpha", organization_code: "ALPHA" }];
+  const mockTeams = [
+    createMockTeam({ id: 1, name: "Team Alpha", organization_id: 1 })
+  ];
+  const mockOrgs = [
+    createMockOrganization({
+      id: 1,
+      name: "Org Alpha",
+      organization_code: "ALPHA"
+    })
+  ];
   const mockPlayerFullName = {
     fullName: "John Doe",
     loading: false,

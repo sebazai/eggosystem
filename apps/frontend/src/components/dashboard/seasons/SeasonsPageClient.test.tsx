@@ -53,62 +53,38 @@ const mockMutate = mutate as jest.MockedFunction<typeof mutate>;
 
 describe("SeasonsPageClient", () => {
   const mockSeasons: Season[] = [
-    createMockSeason(
-      1,
-      "Season 1",
-      "Full Season 1 Name",
-      "2024-01-01T00:00:00Z",
-      "2024-01-15T23:59:59Z",
-      SeasonPlatform.Kanaliiga,
-      "2024-02-01",
-      "2024-12-31",
-      1,
-      1,
-      1,
-      false,
-      false,
-      "https://example.com/payment",
-      150,
-      true,
-      0.2,
-      "2024-01-10T23:59:59Z"
-    ),
-    createMockSeason(
-      2,
-      "Season 2",
-      "Full Season 2 Name",
-      "2025-01-01T00:00:00Z",
-      "2025-01-15T23:59:59Z",
-      SeasonPlatform.FACEIT,
-      "2025-02-01",
-      null,
-      1,
-      1,
-      1,
-      true,
-      false,
-      null,
-      null,
-      false
-    ),
-    createMockSeason(
-      3,
-      "Past Season",
-      "Past Season Full Name",
-      "2023-01-01T00:00:00Z",
-      "2023-01-15T23:59:59Z",
-      SeasonPlatform.Kanaliiga,
-      "2023-02-01",
-      "2023-12-31",
-      1,
-      1,
-      1,
-      false,
-      false,
-      null,
-      100,
-      false
-    )
+    createMockSeason({
+      name: "Season 1",
+      full_name: "Full Season 1 Name",
+      end_date: "2024-12-31",
+      payment_link: "https://example.com/payment",
+      registration_price: 150,
+      early_bird_price_discount: 0.2,
+      early_bird_price_discount_end_date: "2024-01-10"
+    }),
+    createMockSeason({
+      id: 2,
+      name: "Season 2",
+      full_name: "Full Season 2 Name",
+      signup_start_date: "2025-01-01",
+      signup_end_date: "2025-01-15",
+      platform: SeasonPlatform.FACEIT,
+      start_date: "2025-02-01",
+      is_round_robin_bo2_as_2xbo1: true,
+      has_vat: false
+    }),
+    createMockSeason({
+      id: 3,
+      name: "Past Season",
+      full_name: "Past Season Full Name",
+      signup_start_date: "2023-01-01",
+      signup_end_date: "2023-01-15",
+      platform: SeasonPlatform.Kanaliiga,
+      start_date: "2023-02-01",
+      end_date: "2023-12-31",
+      registration_price: 100,
+      has_vat: false
+    })
   ];
 
   beforeEach(() => {
@@ -470,26 +446,21 @@ describe("SeasonsPageClient", () => {
     it("should correctly map all season fields to form values", async () => {
       const user = userEvent.setup();
 
-      const seasonWithAllFields = createMockSeason(
-        10,
-        "Test Season",
-        "Test Full Name",
-        "2024-01-01T00:00:00Z",
-        "2024-01-15T23:59:59Z",
-        SeasonPlatform.Kanaliiga,
-        "2024-02-01",
-        "2024-12-31",
-        1,
-        1,
-        1,
-        true,
-        false,
-        "https://test.com/payment",
-        200,
-        false,
-        0.15,
-        "2024-01-10T23:59:59Z"
-      );
+      const seasonWithAllFields = createMockSeason({
+        id: 10,
+        name: "Test Season",
+        full_name: "Test Full Name",
+        signup_start_date: "2024-01-01",
+        signup_end_date: "2024-01-15",
+        start_date: "2024-02-01",
+        end_date: "2024-12-31",
+        is_round_robin_bo2_as_2xbo1: true,
+        payment_link: "https://test.com/payment",
+        registration_price: 200,
+        has_vat: false,
+        early_bird_price_discount: 0.15,
+        early_bird_price_discount_end_date: "2024-01-10"
+      });
 
       mockUseAllSeasons.mockReturnValue({
         seasons: [seasonWithAllFields],
@@ -528,26 +499,16 @@ describe("SeasonsPageClient", () => {
     it("should handle null values correctly", async () => {
       const user = userEvent.setup();
 
-      const seasonWithNulls = createMockSeason(
-        11,
-        "Null Season",
-        "Null Full Name",
-        "2024-01-01T00:00:00Z",
-        "2024-01-15T23:59:59Z",
-        SeasonPlatform.FACEIT,
-        "2024-02-01",
-        null,
-        1,
-        1,
-        1,
-        false,
-        false,
-        null,
-        null,
-        false,
-        null,
-        null
-      );
+      const seasonWithNulls = createMockSeason({
+        id: 11,
+        name: "Null Season",
+        full_name: "Null Full Name",
+        signup_start_date: "2024-01-01",
+        signup_end_date: "2024-01-15",
+        platform: SeasonPlatform.FACEIT,
+        start_date: "2024-02-01",
+        has_vat: false
+      });
 
       mockUseAllSeasons.mockReturnValue({
         seasons: [seasonWithNulls],

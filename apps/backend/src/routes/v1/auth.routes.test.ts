@@ -8,6 +8,7 @@ import * as accountModels from "../../models/account.models";
 import jwt from "jsonwebtoken";
 import { UnauthorizedError } from "../../utils/errors";
 import { expressErrorHandler } from "../../middlewares/express-error-handler";
+import { createMockUserPayload } from "@eggosystem/types";
 
 jest.mock("jsonwebtoken", () => ({
   sign: jest.fn((payload, secret, _options) => {
@@ -38,14 +39,11 @@ jest.mock("express-jwt", () => ({
 
         // Only allow "valid_token" as a valid token
         if (token === "valid_token") {
-          req.auth = {
+          req.auth = createMockUserPayload({
             account_id: 1,
             provider_id: "76561198049745649",
-            provider: "steam",
-            permissions: [],
-            roles: [],
             nickname: "sububobi"
-          };
+          });
           next();
         } else {
           return next(new UnauthorizedError("Unauthorized"));

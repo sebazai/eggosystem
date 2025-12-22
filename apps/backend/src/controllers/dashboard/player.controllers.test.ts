@@ -1,7 +1,10 @@
 import type { Response } from "express";
 import {
   EligiblePlayerForValidationSteamId,
-  type RequestWithParams
+  type RequestWithParams,
+  createMockSteamPlayer,
+  createMockAccount,
+  createMockSeasonPlayerRank
 } from "@eggosystem/types";
 import {
   addPlayerToTeamController,
@@ -132,13 +135,18 @@ describe("addPlayerToTeamController", () => {
 
     mockRunQuery.mockResolvedValueOnce([
       {
-        steam_id: EligiblePlayerForValidationSteamId,
-        nickname: "Test Player",
-        account_id: 123,
+        ...createMockSteamPlayer({
+          steam_id: EligiblePlayerForValidationSteamId,
+          nickname: "Test Player",
+          account_id: 123
+        }),
+        ...createMockAccount({
+          id: 123,
+          work_email_verified: true,
+          work_email: "test@example.com",
+          is_work_email_personal_email: false
+        }),
         discord: "test#1234",
-        work_email_verified: true,
-        work_email: "test@example.com",
-        is_work_email_personal_email: false,
         is_valid_work_email: true,
         is_valid_full_name: true
       }
@@ -239,13 +247,18 @@ describe("addPlayerToTeamController", () => {
 
     mockRunQuery.mockResolvedValueOnce([
       {
-        steam_id: EligiblePlayerForValidationSteamId,
-        nickname: "Test Player",
-        account_id: 123,
+        ...createMockSteamPlayer({
+          steam_id: EligiblePlayerForValidationSteamId,
+          nickname: "Test Player",
+          account_id: 123
+        }),
+        ...createMockAccount({
+          id: 123,
+          work_email_verified: true,
+          work_email: "test@example.com",
+          is_work_email_personal_email: false
+        }),
         discord: "test#1234",
-        work_email_verified: true,
-        work_email: "test@example.com",
-        is_work_email_personal_email: false,
         is_valid_work_email: true,
         is_valid_full_name: true
       }
@@ -286,14 +299,14 @@ describe("addPlayerToTeamController", () => {
     ]);
 
     mockRunQuery.mockResolvedValueOnce([
-      {
+      createMockSeasonPlayerRank({
         id: 1,
         cs2_rank: 15,
         faceit_level: 7,
         faceit_elo: 2000,
         cs_hours: 1500,
         kana_elo: 300
-      }
+      })
     ]);
 
     mockRunQuery.mockResolvedValueOnce([{ tier: 2 }]);
@@ -383,13 +396,18 @@ describe("addPlayerToTeamController", () => {
 
     mockRunQuery.mockResolvedValueOnce([
       {
-        steam_id: EligiblePlayerForValidationSteamId,
-        nickname: "Test Player",
-        account_id: 123,
+        ...createMockSteamPlayer({
+          steam_id: EligiblePlayerForValidationSteamId,
+          nickname: "Test Player",
+          account_id: 123
+        }),
+        ...createMockAccount({
+          id: 123,
+          work_email_verified: true,
+          work_email: "test@example.com",
+          is_work_email_personal_email: false
+        }),
         discord: "test#1234",
-        work_email_verified: true,
-        work_email: "test@example.com",
-        is_work_email_personal_email: false,
         is_valid_work_email: true,
         is_valid_full_name: true
       }
@@ -490,14 +508,14 @@ describe("addSubstitutePlayerController", () => {
     mockRunQuery.mockResolvedValueOnce([{ count: 1 }]);
     // Mock SeasonPlayerRanks check - player already has complete data
     mockRunQuery.mockResolvedValueOnce([
-      {
+      createMockSeasonPlayerRank({
         id: 1,
         cs2_rank: 15000,
         faceit_level: 5,
         faceit_elo: 1500,
         cs_hours: 1000,
         kana_elo: 150
-      }
+      })
     ]);
     // Mock tier query - not tier 1
     mockRunQuery.mockResolvedValueOnce([{ tier: 2 }]);
@@ -667,14 +685,14 @@ describe("addSubstitutePlayerController", () => {
     mockRunQuery.mockResolvedValueOnce([{ count: 1 }]);
     // Mock SeasonPlayerRanks check - player already has complete data
     mockRunQuery.mockResolvedValueOnce([
-      {
+      createMockSeasonPlayerRank({
         id: 1,
         cs2_rank: 15000,
         faceit_level: 5,
         faceit_elo: 1500,
         cs_hours: 1000,
         kana_elo: 150
-      }
+      })
     ]);
     // Mock tier query - tier 1 (Masters) to skip eligibility
     mockRunQuery.mockResolvedValueOnce([{ tier: 1 }]);
@@ -749,14 +767,14 @@ describe("addSubstitutePlayerController", () => {
     mockRunQuery.mockResolvedValueOnce([{ count: 1 }]);
     // Mock SeasonPlayerRanks check - player already has complete data
     mockRunQuery.mockResolvedValueOnce([
-      {
+      createMockSeasonPlayerRank({
         id: 1,
         cs2_rank: 15000,
         faceit_level: 5,
         faceit_elo: 1500,
         cs_hours: 1000,
         kana_elo: 150
-      }
+      })
     ]);
     // Mock tier query - tier 1 (Masters) to skip eligibility
     mockRunQuery.mockResolvedValueOnce([{ tier: 1 }]);

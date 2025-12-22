@@ -4,15 +4,16 @@ process.env.BACKEND_SERVICE_API_KEY = "test-api-key";
 
 import request from "supertest";
 import type express from "express";
-import { createExpressTestApp } from "../../../../test-utils";
-import seasonRouter from "../../season.routes";
+import { createExpressTestApp } from "../../test-utils";
+import seasonRouter from "./season.routes";
+import { createMockUserPayload } from "@eggosystem/types";
 
 // Mock the auth services
-jest.mock("../../../../services/auth.services");
+jest.mock("../../services/auth.services");
 import {
   getPermissionsForAccountId,
   getRolesForAccountId
-} from "../../../../services/auth.services";
+} from "../../services/auth.services";
 
 const mockGetPermissionsForAccountId =
   getPermissionsForAccountId as jest.MockedFunction<
@@ -23,11 +24,11 @@ const mockGetRolesForAccountId = getRolesForAccountId as jest.MockedFunction<
 >;
 
 // Mock JWT authentication
-jest.mock("../../../../middlewares/auth.middleware", () => {
-  const actual = jest.requireActual("../../../../middlewares/auth.middleware");
+jest.mock("../../middlewares/auth.middleware", () => {
+  const actual = jest.requireActual("../../middlewares/auth.middleware");
   return {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    authenticateJWT: (req: any, res: any, next: any) => {
+    authenticateJWT: async (req: any, res: any, next: any) => {
       // Check if Authorization header is present
       const authHeader = req.headers.authorization;
       if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -40,16 +41,19 @@ jest.mock("../../../../middlewares/auth.middleware", () => {
         });
       }
 
+      // Get roles from mocked function to populate req.auth.roles
+      // This allows checkJWTPermissions to read roles from req.auth.roles
+      const roles = await getRolesForAccountId(1);
+      const permissions = await getPermissionsForAccountId(1);
+
       // Mock authenticated user
-      req.auth = {
+      req.auth = createMockUserPayload({
         account_id: 1,
-        provider: "steam",
         provider_id: "12345",
-        permissions: [],
-        roles: [],
         nickname: "testuser",
-        jti: "test-jti"
-      };
+        roles,
+        permissions
+      });
       next();
     },
     checkPermissions: actual.checkPermissions,
@@ -58,7 +62,7 @@ jest.mock("../../../../middlewares/auth.middleware", () => {
 });
 
 // Mock fantasy controllers and models to avoid database calls
-jest.mock("../../../../controllers/fantasy.controllers", () => ({
+jest.mock("../../controllers/fantasy.controllers", () => ({
   getFantasyPlayersByLeagueController: jest.fn((req, res) => {
     res.status(200).json([]);
   }),
@@ -96,12 +100,12 @@ jest.mock("../../../../controllers/fantasy.controllers", () => ({
     res.status(200).json([]);
   })
 }));
-jest.mock("../../../../models/fantasy.models");
-jest.mock("../../../../db/mysqlRunQuery");
-jest.mock("../../../../services/fantasy-value.service");
-jest.mock("../../../../utils/week-calculation");
+jest.mock("../../models/fantasy.models");
+jest.mock("../../db/mysqlRunQuery");
+jest.mock("../../services/fantasy-value.service");
+jest.mock("../../utils/week-calculation");
 
-describe("Fantasy Routes Authentication Tests", () => {
+describe("Season Routes Authentication Tests", () => {
   let app: express.Application;
   let cleanup: () => void;
 
@@ -122,6 +126,32 @@ describe("Fantasy Routes Authentication Tests", () => {
   });
 
   describe("Unauthenticated Access", () => {
+    it("should return 401 for GET /:season_id/faceit-links without auth", async () => {
+      const response = await request(app)
+        .get("/api/v1/seasons/1/faceit-links")
+        .expect(401);
+
+      expect(response.body).toMatchObject({
+        type: "about:blank",
+        title: "Unauthorized",
+        status: 401,
+        detail: "Forbidden: Requires authentication"
+      });
+    });
+
+    it("should return 401 for GET /:season_id/captains without auth", async () => {
+      const response = await request(app)
+        .get("/api/v1/seasons/1/captains")
+        .expect(401);
+
+      expect(response.body).toMatchObject({
+        type: "about:blank",
+        title: "Unauthorized",
+        status: 401,
+        detail: "Forbidden: Requires authentication"
+      });
+    });
+
     it("should return 401 for POST /:season_id/fantasy/teams without auth", async () => {
       const response = await request(app)
         .post("/api/v1/seasons/1/fantasy/teams")
@@ -205,6 +235,43 @@ describe("Fantasy Routes Authentication Tests", () => {
   });
 
   describe("Public Routes (No Authentication Required)", () => {
+    it("should allow GET / without auth", async () => {
+      const response = await request(app).get("/api/v1/seasons");
+
+      // Should not return 401 - might return 200 or other status
+      expect(response.status).not.toBe(401);
+    });
+
+    it("should allow GET /:id without auth", async () => {
+      const response = await request(app).get("/api/v1/seasons/1");
+
+      // Should not return 401
+      expect(response.status).not.toBe(401);
+    });
+
+    it("should allow GET /:id/details without auth", async () => {
+      const response = await request(app).get("/api/v1/seasons/1/details");
+
+      // Should not return 401
+      expect(response.status).not.toBe(401);
+    });
+
+    it("should allow GET /:season_id/leagues without auth", async () => {
+      const response = await request(app).get("/api/v1/seasons/1/leagues");
+
+      // Should not return 401
+      expect(response.status).not.toBe(401);
+    });
+
+    it("should allow GET /:season_id/fantasy/teams/:steam_id without auth", async () => {
+      const response = await request(app).get(
+        "/api/v1/seasons/1/fantasy/teams/76561198012345678"
+      );
+
+      // Should not return 401
+      expect(response.status).not.toBe(401);
+    });
+
     it("should allow GET /:season_id/fantasy/leagues/:league_id/players without auth", async () => {
       const response = await request(app).get(
         "/api/v1/seasons/1/fantasy/leagues/1/players"
@@ -259,6 +326,15 @@ describe("Fantasy Routes Authentication Tests", () => {
     beforeEach(() => {
       mockGetPermissionsForAccountId.mockResolvedValue([]);
       mockGetRolesForAccountId.mockResolvedValue([]);
+    });
+
+    it("should allow GET /:season_id/faceit-links with authentication", async () => {
+      const response = await request(app)
+        .get("/api/v1/seasons/1/faceit-links")
+        .set("Authorization", "Bearer valid-token");
+
+      // Should not return 401 - might return 404 or other status
+      expect(response.status).not.toBe(401);
     });
 
     it("should allow POST /:season_id/fantasy/teams with authentication", async () => {
@@ -316,6 +392,78 @@ describe("Fantasy Routes Authentication Tests", () => {
 
       // Should not return 401
       expect(response.status).not.toBe(401);
+    });
+  });
+
+  describe("Authenticated with Insufficient Permissions", () => {
+    beforeEach(() => {
+      // Mock authenticated user with no permissions/roles
+      mockGetPermissionsForAccountId.mockResolvedValue([]);
+      mockGetRolesForAccountId.mockResolvedValue([]);
+    });
+
+    it("should return 403 for GET /:season_id/captains with no required roles", async () => {
+      const response = await request(app)
+        .get("/api/v1/seasons/1/captains")
+        .set("Authorization", "Bearer valid-token")
+        .expect(403);
+
+      expect(response.body).toMatchObject({
+        type: "about:blank",
+        title: "Forbidden",
+        status: 403,
+        detail: "Forbidden: Insufficient permissions"
+      });
+    });
+  });
+
+  describe("Authenticated with Required Roles", () => {
+    it("should allow GET /:season_id/captains with admin role", async () => {
+      mockGetPermissionsForAccountId.mockResolvedValue([]);
+      mockGetRolesForAccountId.mockResolvedValue(["admin"]);
+
+      const response = await request(app)
+        .get("/api/v1/seasons/1/captains")
+        .set("Authorization", "Bearer valid-token");
+
+      // Should not return 403
+      expect(response.status).not.toBe(403);
+    });
+
+    it("should allow GET /:season_id/captains with captain role", async () => {
+      mockGetPermissionsForAccountId.mockResolvedValue([]);
+      mockGetRolesForAccountId.mockResolvedValue(["captain"]);
+
+      const response = await request(app)
+        .get("/api/v1/seasons/1/captains")
+        .set("Authorization", "Bearer valid-token");
+
+      // Should not return 403
+      expect(response.status).not.toBe(403);
+    });
+
+    it("should allow GET /:season_id/captains with helpdesk role", async () => {
+      mockGetPermissionsForAccountId.mockResolvedValue([]);
+      mockGetRolesForAccountId.mockResolvedValue(["helpdesk"]);
+
+      const response = await request(app)
+        .get("/api/v1/seasons/1/captains")
+        .set("Authorization", "Bearer valid-token");
+
+      // Should not return 403
+      expect(response.status).not.toBe(403);
+    });
+
+    it("should allow GET /:season_id/captains with caster role", async () => {
+      mockGetPermissionsForAccountId.mockResolvedValue([]);
+      mockGetRolesForAccountId.mockResolvedValue(["caster"]);
+
+      const response = await request(app)
+        .get("/api/v1/seasons/1/captains")
+        .set("Authorization", "Bearer valid-token");
+
+      // Should not return 403
+      expect(response.status).not.toBe(403);
     });
   });
 });

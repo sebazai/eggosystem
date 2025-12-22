@@ -671,20 +671,38 @@ export const TabPlayers = ({
     const maxPlayers = 9;
     const importedCount = Math.min(players.length, maxPlayers);
 
-    // Remove excess players if current count exceeds imported + extra slots
-    while (fields.length > Math.max(importedCount, minPlayers)) {
-      remove(fields.length - 1);
+    // Calculate how many slots we need
+    const targetSlots = Math.max(importedCount, minPlayers);
+    const currentLength = fields.length;
+
+    // Remove excess players if current count exceeds target
+    // Note: We need to remove from the end, and fields.length doesn't update synchronously
+    // so we calculate how many to remove upfront
+    const removeCount = currentLength - targetSlots;
+    if (removeCount > 0) {
+      // Create array of indices to remove (from end to start)
+      const indicesToRemove = Array.from(
+        { length: removeCount },
+        (_, i) => currentLength - 1 - i
+      );
+      // Remove all at once by calling remove for each
+      for (const idx of indicesToRemove) {
+        remove(idx);
+      }
     }
 
     // Add missing player slots if needed
-    while (fields.length < importedCount) {
-      append({
-        accountId: 0,
-        steamId: "",
-        nickname: "",
-        captain: false,
-        coCaptain: false
-      });
+    const addCount = importedCount - currentLength;
+    if (addCount > 0) {
+      for (let i = 0; i < addCount; i++) {
+        append({
+          accountId: 0,
+          steamId: "",
+          nickname: "",
+          captain: false,
+          coCaptain: false
+        });
+      }
     }
 
     // Set the player data

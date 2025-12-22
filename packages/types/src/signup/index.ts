@@ -172,3 +172,5 @@ export {
   baseSignupFormSchema,
   signupFormSchema
 };
+
+export * from "./SignupForm.test-utils";

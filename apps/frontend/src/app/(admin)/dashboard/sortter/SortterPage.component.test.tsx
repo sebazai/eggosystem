@@ -8,6 +8,7 @@ import {
   type TeamSortterValues,
   type Season,
   type PlayerSortterValues,
+  SeasonPlatform,
   createMockSeason
 } from "@eggosystem/types";
 
@@ -429,36 +430,36 @@ describe("SortterPage Component Tests", () => {
   ];
 
   const mockSeasons: Season[] = [
-    createMockSeason(
-      15,
-      "Season 15",
-      "Season 15 Full Name",
-      "2023-07-01",
-      "2023-07-31",
-      "kanaliiga",
-      "2023-08-01",
-      "2023-12-31"
-    ),
-    createMockSeason(
-      16,
-      "Season 16",
-      "Season 16 Full Name",
-      "2024-01-01",
-      "2024-01-31",
-      "steam",
-      "2024-02-01",
-      "2024-06-30"
-    ),
-    createMockSeason(
-      17,
-      "Season 17",
-      "Season 17 Full Name",
-      "2024-07-01",
-      "2024-07-31",
-      "steam",
-      "2024-08-01",
-      "2024-12-31"
-    )
+    createMockSeason({
+      id: 15,
+      name: "Season 15",
+      full_name: "Season 15 Full Name",
+      signup_start_date: "2023-07-01",
+      signup_end_date: "2023-07-31",
+      platform: SeasonPlatform.Kanaliiga,
+      start_date: "2023-08-01",
+      end_date: "2023-12-31"
+    }),
+    createMockSeason({
+      id: 16,
+      name: "Season 16",
+      full_name: "Season 16 Full Name",
+      signup_start_date: "2024-01-01",
+      signup_end_date: "2024-01-31",
+      platform: SeasonPlatform.Kanaliiga,
+      start_date: "2024-02-01",
+      end_date: "2024-06-30"
+    }),
+    createMockSeason({
+      id: 17,
+      name: "Season 17",
+      full_name: "Season 17 Full Name",
+      signup_start_date: "2024-07-01",
+      signup_end_date: "2024-07-31",
+      platform: SeasonPlatform.Kanaliiga,
+      start_date: "2024-08-01",
+      end_date: "2024-12-31"
+    })
   ];
 
   const mockPlayerValues: PlayerSortterValues[] = [

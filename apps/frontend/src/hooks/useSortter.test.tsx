@@ -3,6 +3,7 @@ import { useSortter } from "@/hooks/data/dashboard/useSortter";
 import { clientApiFetch } from "@/lib/apiClient";
 import { toast } from "sonner";
 import { CommentsProvider } from "@/contexts/CommentsContext";
+import { createMockSeason } from "@eggosystem/types";
 
 // Mock the clientApiFetch
 jest.mock("@/lib/apiClient", () => ({
@@ -154,7 +155,7 @@ describe("useSortter", () => {
 
   it("should handle comment changes (no-op function)", async () => {
     // Mock data
-    const mockSeasons = [{ id: 2, name: "Season 2" }];
+    const mockSeasons = [createMockSeason({ id: 2, name: "Season 2" })];
     const mockTeams = [
       {
         team_id: 1,
@@ -215,7 +216,7 @@ describe("useSortter", () => {
 
   it("should handle division changes", async () => {
     // Mock data
-    const mockSeasons = [{ id: 2, name: "Season 2" }];
+    const mockSeasons = [createMockSeason({ id: 2, name: "Season 2" })];
     const mockTeams = [
       {
         team_id: 1,
@@ -283,7 +284,7 @@ describe("useSortter", () => {
 
   it("should save placements successfully", async () => {
     // Mock data
-    const mockSeasons = [{ id: 2, name: "Season 2" }];
+    const mockSeasons = [createMockSeason({ id: 2, name: "Season 2" })];
     const mockTeams = [
       {
         team_id: 1,
@@ -379,7 +380,7 @@ describe("useSortter", () => {
 
   it("should handle save placements failure", async () => {
     // Mock data
-    const mockSeasons = [{ id: 2, name: "Season 2" }];
+    const mockSeasons = [createMockSeason({ id: 2, name: "Season 2" })];
     const mockTeams = [
       {
         team_id: 1,
@@ -447,7 +448,7 @@ describe("useSortter", () => {
 
   it("should not save placements in view mode", async () => {
     // Mock data
-    const mockSeasons = [{ id: 2, name: "Season 2" }];
+    const mockSeasons = [createMockSeason({ id: 2, name: "Season 2" })];
     const mockTeams = [
       {
         team_id: 1,
