@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { validateNumericParams } from "../../../middlewares/validate-numeric-params";
 import {
+  getSeasonByIdController,
   getTeamsForSeasonController,
   checkPlayerAdditionEligibilityController,
   createSeasonController,
@@ -11,6 +12,9 @@ const router = Router();
 
 // POST /api/v1/dashboard/seasons
 router.post("/", createSeasonController);
+
+// GET /api/v1/dashboard/seasons/:id
+router.get("/:id", validateNumericParams(), getSeasonByIdController);
 
 // PUT /api/v1/dashboard/seasons/:id
 router.put("/:id", validateNumericParams(), updateSeasonController);

@@ -28,7 +28,9 @@ describe("Season Models", () => {
         is_round_robin_bo2_as_2xbo1: false,
         payment_link: "https://example.com/payment",
         registration_price: 150,
-        has_vat: true
+        has_vat: true,
+        early_bird_price_discount: null,
+        early_bird_price_discount_end_date: null
       };
 
       mockRunQuery.mockResolvedValue({ insertId: 123 });
@@ -51,7 +53,9 @@ describe("Season Models", () => {
           seasonData.is_round_robin_bo2_as_2xbo1,
           seasonData.payment_link,
           seasonData.registration_price,
-          seasonData.has_vat
+          seasonData.has_vat,
+          seasonData.early_bird_price_discount,
+          seasonData.early_bird_price_discount_end_date
         ],
         undefined
       );
@@ -73,7 +77,9 @@ describe("Season Models", () => {
         is_round_robin_bo2_as_2xbo1: false,
         payment_link: null,
         registration_price: null,
-        has_vat: true
+        has_vat: true,
+        early_bird_price_discount: null,
+        early_bird_price_discount_end_date: null
       };
 
       mockRunQuery.mockResolvedValue({ insertId: 456 });
@@ -113,7 +119,9 @@ describe("Season Models", () => {
         is_round_robin_bo2_as_2xbo1: true,
         payment_link: "https://example.com/new-payment",
         registration_price: 200,
-        has_vat: false
+        has_vat: false,
+        early_bird_price_discount: null,
+        early_bird_price_discount_end_date: null
       };
 
       mockRunQuery.mockResolvedValue({ affectedRows: 1 });
@@ -137,6 +145,8 @@ describe("Season Models", () => {
           seasonData.payment_link,
           seasonData.registration_price,
           seasonData.has_vat,
+          seasonData.early_bird_price_discount,
+          seasonData.early_bird_price_discount_end_date,
           seasonId
         ],
         undefined
@@ -160,7 +170,9 @@ describe("Season Models", () => {
         is_round_robin_bo2_as_2xbo1: false,
         payment_link: null,
         registration_price: null,
-        has_vat: true
+        has_vat: true,
+        early_bird_price_discount: null,
+        early_bird_price_discount_end_date: null
       };
 
       mockRunQuery.mockResolvedValue({ affectedRows: 1 });
@@ -202,7 +214,9 @@ describe("Season Models", () => {
         payment_link: "https://example.com/payment",
         grand_final_round_one_only: false,
         registration_price: 150,
-        has_vat: true
+        has_vat: true,
+        early_bird_price_discount: null,
+        early_bird_price_discount_end_date: null
       };
 
       mockRunQuery.mockResolvedValue([mockSeason]);

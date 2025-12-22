@@ -68,7 +68,9 @@ describe("Season team registration services", () => {
     grand_final_round_one_only: false,
     payment_link: null,
     registration_price: null,
-    has_vat: true
+    has_vat: true,
+    early_bird_price_discount: null,
+    early_bird_price_discount_end_date: null
   } satisfies SeasonDetails;
 
   beforeAll(async () => {

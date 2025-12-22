@@ -57,6 +57,20 @@ export const seasonFormSchema = z
       .optional()
       .nullable(),
     has_vat: z.boolean(),
+    early_bird_price_discount: z
+      .number()
+      .min(0, "Early bird discount must be positive")
+      .max(1, "Early bird discount must be between 0 and 1")
+      .optional()
+      .nullable(),
+    early_bird_price_discount_end_date: z
+      .string()
+      .refine(
+        (val) => !val || !isNaN(Date.parse(val)),
+        "Invalid early bird discount end date format"
+      )
+      .optional()
+      .nullable(),
     timezone: z.string().optional()
   })
   .refine(
@@ -123,4 +137,6 @@ export interface SeasonFormRaw {
   payment_link: string | null;
   registration_price: number | null;
   has_vat: boolean;
+  early_bird_price_discount: number | null;
+  early_bird_price_discount_end_date: string | null;
 }
