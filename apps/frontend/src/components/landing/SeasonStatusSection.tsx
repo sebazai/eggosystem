@@ -1,19 +1,12 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo } from "react";
 import Link from "next/link";
 import { useActiveSignupOrActiveSeasonForApp } from "@/hooks/data/useActiveSignupOrActiveSeasonForApp";
 import { createNextUrl } from "@/lib/utils";
 import { SeasonButtons } from "./SeasonButtons";
 
 export function SeasonStatusSection() {
-  // Track if component is mounted (client-side)
-  const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
   // Get current season (CS2 app ID is 730)
   const { signupOrActiveSeason, isLoading } =
     useActiveSignupOrActiveSeasonForApp(730);
@@ -21,7 +14,7 @@ export function SeasonStatusSection() {
 
   // Determine season status based on dates - only calculate on client to avoid hydration mismatch
   const seasonStatus = useMemo(() => {
-    if (!signupOrActiveSeason || !isMounted) {
+    if (!signupOrActiveSeason) {
       return { isSeasonLive: false, isSignupOpen: false, seasonNumber: null };
     }
 
@@ -62,9 +55,9 @@ export function SeasonStatusSection() {
       : (signupOrActiveSeason.season_id?.toString() ?? "Unknown");
 
     return { isSeasonLive, isSignupOpen, seasonNumber };
-  }, [signupOrActiveSeason, isMounted]);
+  }, [signupOrActiveSeason]);
 
-  if (isLoading || !isMounted) {
+  if (isLoading) {
     return (
       <div className="animate-pulse">
         <div className="h-10 bg-slate-700 rounded w-3/4 mb-6"></div>
@@ -140,7 +133,7 @@ export function SeasonStatusSection() {
         <div className="text-center pb-3 flex flex-col sm:flex-row gap-4 sm:gap-4 sm:justify-center">
           <Link
             href={createNextUrl(`/seasons/${currentSeasonId}/signup`)}
-            className="inline-flex items-center justify-center rounded-md text-lg py-2 px-6 font-medium bg-green-600 text-white hover:bg-green-700 transition-colors"
+            className="inline-flex items-center justify-center rounded-md text-lg py-2 px-6 font-medium bg-kanaliiga-orange text-white hover:bg-kanaliiga-orange/70 transition-colors"
           >
             Register Your Team →
           </Link>
