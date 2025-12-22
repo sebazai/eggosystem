@@ -6,19 +6,16 @@ import { redisClient } from "../utils/redisClient";
 
 import * as authControllers from "../controllers/auth.controllers";
 import * as authServices from "../services/auth.services";
-import type { UserPayload } from "@eggosystem/types";
+import { type UserPayload, createMockUserPayload } from "@eggosystem/types";
 
 describe("AuthControllers utils", () => {
   describe("generateTokens", () => {
     it("should generate tokens", () => {
-      const user = {
+      const user = createMockUserPayload({
         provider_id: "12345",
         nickname: "enzoj",
-        provider: "steam",
-        permissions: [],
-        roles: [],
         account_id: 1
-      } satisfies UserPayload;
+      });
       const jti = "123123";
 
       const signSpy = jest
@@ -94,14 +91,11 @@ describe("AuthControllers", () => {
         .spyOn(uuid, "v4")
         .mockImplementation((() => "123123") as typeof uuid.v4);
       req = {
-        user: {
+        user: createMockUserPayload({
           account_id: 1,
-          provider: "steam",
           provider_id: "12345",
-          permissions: [],
-          roles: [],
           nickname: "enzoj"
-        } satisfies UserPayload
+        })
       };
     });
 

@@ -5,7 +5,7 @@ import {
 } from "./match-streams.models";
 import { runQuery } from "../db/mysqlRunQuery";
 import { ConflictError } from "../utils/errors";
-import type { Reservation } from "@eggosystem/types";
+import { createMockReservation } from "@eggosystem/types";
 
 jest.mock("../db/mysqlRunQuery");
 jest.mock("crypto", () => ({
@@ -17,13 +17,13 @@ jest.mock("crypto", () => ({
 
 const mockRunQuery = runQuery as jest.Mock;
 
-const mockReservation: Reservation = {
+const mockReservation = createMockReservation({
   id: 1,
   stream_url: "https://twitch.tv/testcaster",
   hash: "test-hash",
   match_id: 123,
   account_id: 1
-};
+});
 
 describe("match-streams models", () => {
   afterEach(() => {

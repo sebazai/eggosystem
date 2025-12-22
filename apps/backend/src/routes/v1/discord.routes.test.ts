@@ -8,8 +8,8 @@ import { authenticateJWT } from "../../middlewares/auth.middleware";
 import discordRouter from "./discord.routes";
 import { getUserDiscordStatus } from "../../controllers/discord.controllers";
 import type { Request, Response, NextFunction } from "express";
-import type { UserPayload } from "@eggosystem/types";
 import { UnauthorizedError } from "../../utils/errors";
+import { createMockUserPayload } from "@eggosystem/types";
 
 // Mock dependencies
 jest.mock("../../middlewares/auth.middleware");
@@ -69,14 +69,11 @@ describe("Discord Routes", () => {
     it("should call getUserDiscordStatus when authenticated", async () => {
       mockAuthenticateJWT.mockImplementation(
         async (req: Request, res: Response, next: NextFunction) => {
-          req.auth = {
+          req.auth = createMockUserPayload({
             account_id: 123,
             provider_id: "steam123",
-            permissions: [],
-            roles: [],
-            nickname: "testuser",
-            provider: "steam"
-          } as UserPayload;
+            nickname: "testuser"
+          });
           next();
         }
       );
@@ -104,14 +101,11 @@ describe("Discord Routes", () => {
     it("should handle errors from getUserDiscordStatus", async () => {
       mockAuthenticateJWT.mockImplementation(
         async (req: Request, res: Response, next: NextFunction) => {
-          req.auth = {
+          req.auth = createMockUserPayload({
             account_id: 123,
             provider_id: "steam123",
-            permissions: [],
-            roles: [],
-            nickname: "testuser",
-            provider: "steam"
-          } as UserPayload;
+            nickname: "testuser"
+          });
           next();
         }
       );

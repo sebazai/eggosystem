@@ -117,26 +117,26 @@ describe("AddSubstitutePlayerPage", () => {
     // Default mock implementations
     mockUseAllSeasons.mockReturnValue({
       seasons: [
-        createMockSeason(
-          1,
-          "Season 1",
-          "Season 1",
-          "2024-01-01",
-          "2024-01-31",
-          SeasonPlatform.FACEIT,
-          "2024-02-01",
-          "2024-03-31"
-        ),
-        createMockSeason(
-          2,
-          "Season 2",
-          "Season 2",
-          "2024-04-01",
-          "2024-04-30",
-          SeasonPlatform.FACEIT,
-          "2024-05-01",
-          "2024-06-30"
-        )
+        createMockSeason({
+          id: 1,
+          name: "Season 1",
+          full_name: "Season 1",
+          signup_start_date: "2024-01-01",
+          signup_end_date: "2024-01-31",
+          platform: SeasonPlatform.FACEIT,
+          start_date: "2024-02-01",
+          end_date: "2024-03-31"
+        }),
+        createMockSeason({
+          id: 2,
+          name: "Season 2",
+          full_name: "Season 2",
+          signup_start_date: "2024-04-01",
+          signup_end_date: "2024-04-30",
+          platform: SeasonPlatform.FACEIT,
+          start_date: "2024-05-01",
+          end_date: "2024-06-30"
+        })
       ],
       isLoading: false,
       isError: null,

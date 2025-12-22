@@ -96,16 +96,16 @@ describe("addChampionshipToDatabase", () => {
   });
 
   it("throws when season league cannot be resolved from name prefix", async () => {
-    const mockSeason = createMockSeason(
-      77,
-      "S4",
-      "Season 4",
-      new Date().toISOString().slice(0, 10),
-      new Date().toISOString().slice(0, 10),
-      SeasonPlatform.FACEIT,
-      new Date().toISOString().slice(0, 10),
-      null
-    );
+    const mockSeason = createMockSeason({
+      id: 77,
+      name: "S4",
+      full_name: "Season 4",
+      signup_start_date: new Date().toISOString().slice(0, 10),
+      signup_end_date: new Date().toISOString().slice(0, 10),
+      platform: SeasonPlatform.FACEIT,
+      start_date: new Date().toISOString().slice(0, 10),
+      end_date: null
+    });
     mockGetOrganizerFaceitActiveSeasonForApp.mockResolvedValueOnce(mockSeason);
 
     mockGetSeasonLeagueBySeasonAndFaceitName.mockResolvedValueOnce(undefined);
@@ -129,16 +129,16 @@ describe("addChampionshipToDatabase", () => {
   });
 
   it("inserts with stage=1 and is_round_robin_bo2_as_2xbo1=true for roundRobin", async () => {
-    const mockSeason = createMockSeason(
-      77,
-      "S4",
-      "Season 4",
-      new Date().toISOString().slice(0, 10),
-      new Date().toISOString().slice(0, 10),
-      SeasonPlatform.FACEIT,
-      new Date().toISOString().slice(0, 10),
-      null
-    );
+    const mockSeason = createMockSeason({
+      id: 77,
+      name: "S4",
+      full_name: "Season 4",
+      signup_start_date: new Date().toISOString().slice(0, 10),
+      signup_end_date: new Date().toISOString().slice(0, 10),
+      platform: SeasonPlatform.FACEIT,
+      start_date: new Date().toISOString().slice(0, 10),
+      end_date: null
+    });
     mockGetOrganizerFaceitActiveSeasonForApp.mockResolvedValueOnce(mockSeason);
 
     mockGetSeasonLeagueBySeasonAndFaceitName.mockResolvedValueOnce({
@@ -169,16 +169,16 @@ describe("addChampionshipToDatabase", () => {
   });
 
   it("inserts with stage=2 and is_round_robin_bo2_as_2xbo1=false for singleElimination", async () => {
-    const mockSeason = createMockSeason(
-      88,
-      "S4",
-      "Season 4",
-      new Date().toISOString().slice(0, 10),
-      new Date().toISOString().slice(0, 10),
-      SeasonPlatform.FACEIT,
-      new Date().toISOString().slice(0, 10),
-      null
-    );
+    const mockSeason = createMockSeason({
+      id: 88,
+      name: "S4",
+      full_name: "Season 4",
+      signup_start_date: new Date().toISOString().slice(0, 10),
+      signup_end_date: new Date().toISOString().slice(0, 10),
+      platform: SeasonPlatform.FACEIT,
+      start_date: new Date().toISOString().slice(0, 10),
+      end_date: null
+    });
     mockGetOrganizerFaceitActiveSeasonForApp.mockResolvedValueOnce(mockSeason);
 
     mockGetSeasonLeagueBySeasonAndFaceitName.mockResolvedValueOnce({

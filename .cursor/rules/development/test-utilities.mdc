@@ -1,0 +1,49 @@
+---
+description: Test utilities and factory functions for creating test data
+alwaysApply: false
+glob: "**/*.test.{ts,tsx}"
+---
+
+# Test Utilities and Factory Functions
+
+## Core Principle
+
+**Always use factory functions instead of inline test data objects.** Factory functions provide a single source of truth and reduce duplication across test files.
+
+## Available Factories
+
+Factory functions are co-located with their type definitions and exported from `@eggosystem/types`:
+
+- **DB entities**: `packages/types/src/db/EntityName.test-utils.ts`
+- **Other types**: `packages/types/src/module/EntityName.test-utils.ts`
+
+All factories follow the pattern: `createMockEntityName(overrides?: Partial<EntityName>)`
+
+## Usage
+
+```typescript
+// Use factory with defaults
+const entity = createMockEntityName();
+
+// Override specific fields
+const customEntity = createMockEntityName({ id: 123, name: "Custom" });
+```
+
+## Creating New Factories
+
+1. Create a co-located `EntityName.test-utils.ts` file next to the type definition
+2. Export the factory from the module's `index.ts` file
+3. Provide sensible defaults for all required fields
+4. Accept `Partial<EntityType>` for overrides
+
+## Benefits
+
+- **Single source of truth**: Interface changes only require updating the factory
+- **Type safety**: TypeScript ensures overrides match the interface
+- **Consistency**: All tests use the same default values
+- **Maintainability**: Easier to update test data across the codebase
+
+## Related Rules
+
+- See `testing-strategy.mdc` for overall testing approach
+- See `tdd-workflow.mdc` for test-driven development patterns

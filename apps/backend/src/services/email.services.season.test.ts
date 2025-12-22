@@ -1,7 +1,11 @@
 import { sendSeasonCaptainWelcomeEmail } from "./email.services";
 import { getSeasonById } from "../models/season.models";
 import { getGameById } from "../models/game.models";
-import { SeasonPlatform } from "@eggosystem/types";
+import {
+  SeasonPlatform,
+  createMockSeason,
+  createMockGame
+} from "@eggosystem/types";
 
 // Shared mock transporter and sendMail
 const mockSendMail = jest.fn();
@@ -36,36 +40,22 @@ describe("Season Captain Welcome Email Services", () => {
     { nickname: "Player2", steam_id: "76561198000000002" }
   ];
 
-  const mockGame = {
-    id: 1,
-    name: "Counter-Strike 2",
-    abbreviation: "CS2",
-    app_id: 730
-  };
+  const mockGame = createMockGame();
 
   describe("sendSeasonCaptainWelcomeEmail", () => {
     it("should include payment link in email when season has payment_link", async () => {
       const paymentLink = "https://example.com/payment/season1";
-      const mockSeason = {
-        id: 1,
-        game_id: 1,
-        game_type_id: 1,
-        organizer_id: 1,
+      const mockSeason = createMockSeason({
         name: "Test Season",
         full_name: "Test Season Full Name",
-        signup_start_date: "2024-01-01T00:00:00Z",
-        signup_end_date: "2024-01-15T23:59:59Z",
+        signup_start_date: "2024-01-01",
+        signup_end_date: "2024-01-15",
         start_date: "2024-02-01",
         end_date: "2024-12-31",
         platform: SeasonPlatform.Kanaliiga,
-        is_round_robin_bo2_as_2xbo1: false,
-        grand_final_round_one_only: false,
         payment_link: paymentLink,
-        registration_price: 150,
-        has_vat: true,
-        early_bird_price_discount: null,
-        early_bird_price_discount_end_date: null
-      };
+        registration_price: 150
+      });
 
       mockGetSeasonById.mockResolvedValue(mockSeason);
       mockGetGameById.mockResolvedValue(mockGame);
@@ -90,26 +80,17 @@ describe("Season Captain Welcome Email Services", () => {
     });
 
     it("should not include payment section when season has no payment_link", async () => {
-      const mockSeason = {
-        id: 1,
-        game_id: 1,
-        game_type_id: 1,
-        organizer_id: 1,
+      const mockSeason = createMockSeason({
         name: "Test Season",
         full_name: "Test Season Full Name",
-        signup_start_date: "2024-01-01T00:00:00Z",
-        signup_end_date: "2024-01-15T23:59:59Z",
+        signup_start_date: "2024-01-01",
+        signup_end_date: "2024-01-15",
         start_date: "2024-02-01",
         end_date: "2024-12-31",
         platform: SeasonPlatform.Kanaliiga,
-        is_round_robin_bo2_as_2xbo1: false,
-        grand_final_round_one_only: false,
         payment_link: null,
-        registration_price: null,
-        has_vat: true,
-        early_bird_price_discount: null,
-        early_bird_price_discount_end_date: null
-      };
+        registration_price: null
+      });
 
       mockGetSeasonById.mockResolvedValue(mockSeason);
       mockGetGameById.mockResolvedValue(mockGame);
@@ -134,26 +115,22 @@ describe("Season Captain Welcome Email Services", () => {
     it("should use the payment_link from the season fetched from database", async () => {
       const expectedPaymentLink =
         "https://custom-payment.example.com/season-123";
-      const mockSeason = {
+      const mockSeason = createMockSeason({
         id: 123,
-        game_id: 1,
-        game_type_id: 1,
-        organizer_id: 1,
         name: "Season 123",
         full_name: "Full Season 123 Name",
-        signup_start_date: "2024-01-01T00:00:00Z",
-        signup_end_date: "2024-01-15T23:59:59Z",
+        signup_start_date: "2024-01-01",
+        signup_end_date: "2024-01-15",
         start_date: "2024-02-01",
         end_date: "2024-12-31",
         platform: SeasonPlatform.FACEIT,
         is_round_robin_bo2_as_2xbo1: true,
-        grand_final_round_one_only: false,
         payment_link: expectedPaymentLink,
         registration_price: 200,
         has_vat: false,
         early_bird_price_discount: 0.2,
-        early_bird_price_discount_end_date: "2024-01-10T23:59:59Z"
-      };
+        early_bird_price_discount_end_date: "2024-01-10"
+      });
 
       mockGetSeasonById.mockResolvedValue(mockSeason);
       mockGetGameById.mockResolvedValue(mockGame);

@@ -36,8 +36,10 @@ describe("addSignupForSeason - database transaction testing", () => {
     })
   };
   const now = new Date();
-  const yesterday = new Date().setDate(now.getDate() - 1);
-  const tomorrow = new Date().setDate(now.getDate() + 1);
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  const tomorrow = new Date(now);
+  tomorrow.setDate(now.getDate() + 1);
 
   beforeEach(() => {
     req = {
@@ -55,15 +57,15 @@ describe("addSignupForSeason - database transaction testing", () => {
       .spyOn(db, "getConnection")
       .mockResolvedValue(mockConnection as unknown as PoolConnection);
     jest.spyOn(seasonModels, "getSeasonDetailsById").mockResolvedValue({
-      ...createMockSeason(
-        1,
-        "Test Season",
-        "CS2 Test Season",
-        String(yesterday),
-        String(tomorrow),
-        SeasonPlatform.FACEIT,
-        String(tomorrow)
-      ),
+      ...createMockSeason({
+        id: 1,
+        name: "Test Season",
+        full_name: "CS2 Test Season",
+        signup_start_date: yesterday.toISOString().split("T")[0],
+        signup_end_date: tomorrow.toISOString().split("T")[0],
+        platform: SeasonPlatform.FACEIT,
+        start_date: tomorrow.toISOString().split("T")[0]
+      }),
       app_id: 730
     } satisfies SeasonDetails);
     jest

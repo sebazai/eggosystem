@@ -56,16 +56,16 @@ const mockUser = {
   roles: []
 };
 
-const mockSeason = createMockSeason(
-  1,
-  "Test Season",
-  "Test Season Full Name",
-  new Date().toISOString(),
-  new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-  SeasonPlatform.Kanaliiga,
-  new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-  new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString()
-);
+const mockSeason = createMockSeason({
+  id: 1,
+  name: "Test Season",
+  full_name: "Test Season Full Name",
+  signup_start_date: new Date().toISOString(),
+  signup_end_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+  platform: SeasonPlatform.Kanaliiga,
+  start_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+  end_date: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString()
+});
 
 const mockSeasonDetails = {
   ...mockSeason,

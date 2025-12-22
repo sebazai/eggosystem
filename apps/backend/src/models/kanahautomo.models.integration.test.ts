@@ -45,16 +45,16 @@ describe("Kanahautomo Models Integration Tests", () => {
   let testOrganizationId: number;
   let testOrganizationId2: number;
 
-  const testSeason: InsertSeason = createMockInsertSeason(
-    999,
-    "Test Season",
-    "CS2 Test Season",
-    "2024-01-01",
-    "2024-12-31",
-    SeasonPlatform.FACEIT,
-    "2024-02-01",
-    null
-  );
+  const testSeason: InsertSeason = createMockInsertSeason({
+    id: 999,
+    name: "Test Season",
+    full_name: "CS2 Test Season",
+    signup_start_date: new Date("2024-01-01"),
+    signup_end_date: new Date("2024-12-31"),
+    platform: SeasonPlatform.FACEIT,
+    start_date: new Date("2024-02-01"),
+    end_date: null
+  });
   beforeAll(async () => {
     // Set up test data
     await insertTestSeason(testSeason);

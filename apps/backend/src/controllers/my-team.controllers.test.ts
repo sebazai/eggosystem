@@ -1,5 +1,9 @@
 import type { Request, Response, NextFunction } from "express";
-import type { MyTeamDetails, MyTeamUpcomingMatch } from "@eggosystem/types";
+import {
+  type MyTeamDetails,
+  type MyTeamUpcomingMatch,
+  createMockUserPayload
+} from "@eggosystem/types";
 import {
   getMyTeamsController,
   getMyTeamsUpcomingMatchesController
@@ -30,14 +34,11 @@ describe("My Team Controllers", () => {
     mockStatus = jest.fn().mockReturnThis();
 
     mockReq = {
-      auth: {
+      auth: createMockUserPayload({
         account_id: 123,
         provider_id: "76561198000000001",
-        permissions: [],
-        roles: [],
-        nickname: "TestPlayer",
-        provider: "steam"
-      }
+        nickname: "TestPlayer"
+      })
     };
 
     mockRes = {

@@ -21,16 +21,12 @@ const mockUseSeasonDetails = useSeasonDetails as jest.MockedFunction<
   typeof useSeasonDetails
 >;
 
-const mockSeason = createMockSeason(
-  1,
-  "Test Season",
-  "Test Season Full Name",
-  new Date().toISOString(),
-  new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-  SeasonPlatform.Kanaliiga,
-  new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-  new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString()
-);
+const mockSeason = createMockSeason({
+  signup_start_date: new Date().toISOString(),
+  signup_end_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+  start_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+  end_date: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString()
+});
 
 const mockSeasonDetails = {
   ...mockSeason,
@@ -136,26 +132,19 @@ describe("SignupWelcome", () => {
       const futureDate = new Date(
         Date.now() + 7 * 24 * 60 * 60 * 1000
       ).toISOString();
-      const seasonWithEarlyBird = createMockSeason(
-        1,
-        "Test Season",
-        "Test Season Full Name",
-        new Date().toISOString(),
-        new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-        SeasonPlatform.Kanaliiga,
-        new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-        new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
-        1,
-        1,
-        1,
-        false,
-        false,
-        null,
-        150, // registration_price
-        true, // has_vat
-        0.2, // 20% discount
-        futureDate // end date in future
-      );
+      const seasonWithEarlyBird = createMockSeason({
+        signup_start_date: new Date().toISOString(),
+        signup_end_date: new Date(
+          Date.now() + 7 * 24 * 60 * 60 * 1000
+        ).toISOString(),
+        start_date: new Date(
+          Date.now() + 14 * 24 * 60 * 60 * 1000
+        ).toISOString(),
+        end_date: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
+        registration_price: 150,
+        early_bird_price_discount: 0.2,
+        early_bird_price_discount_end_date: futureDate
+      });
 
       const seasonDetailsWithEarlyBird = {
         ...seasonWithEarlyBird,
@@ -184,26 +173,19 @@ describe("SignupWelcome", () => {
 
     it("should display early bird pricing with expiration date when active", () => {
       const futureDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-      const seasonWithEarlyBird = createMockSeason(
-        1,
-        "Test Season",
-        "Test Season Full Name",
-        new Date().toISOString(),
-        new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-        SeasonPlatform.Kanaliiga,
-        new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-        new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
-        1,
-        1,
-        1,
-        false,
-        false,
-        null,
-        150,
-        true,
-        0.2,
-        futureDate.toISOString()
-      );
+      const seasonWithEarlyBird = createMockSeason({
+        signup_start_date: new Date().toISOString(),
+        signup_end_date: new Date(
+          Date.now() + 7 * 24 * 60 * 60 * 1000
+        ).toISOString(),
+        start_date: new Date(
+          Date.now() + 14 * 24 * 60 * 60 * 1000
+        ).toISOString(),
+        end_date: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
+        registration_price: 150,
+        early_bird_price_discount: 0.2,
+        early_bird_price_discount_end_date: futureDate.toISOString()
+      });
 
       const seasonDetailsWithEarlyBird = {
         ...seasonWithEarlyBird,
@@ -229,26 +211,19 @@ describe("SignupWelcome", () => {
       const pastDate = new Date(
         Date.now() - 7 * 24 * 60 * 60 * 1000
       ).toISOString();
-      const seasonWithExpiredEarlyBird = createMockSeason(
-        1,
-        "Test Season",
-        "Test Season Full Name",
-        new Date().toISOString(),
-        new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-        SeasonPlatform.Kanaliiga,
-        new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-        new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
-        1,
-        1,
-        1,
-        false,
-        false,
-        null,
-        150,
-        true,
-        0.2, // discount exists
-        pastDate // but end date is in the past
-      );
+      const seasonWithExpiredEarlyBird = createMockSeason({
+        signup_start_date: new Date().toISOString(),
+        signup_end_date: new Date(
+          Date.now() + 7 * 24 * 60 * 60 * 1000
+        ).toISOString(),
+        start_date: new Date(
+          Date.now() + 14 * 24 * 60 * 60 * 1000
+        ).toISOString(),
+        end_date: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
+        registration_price: 150,
+        early_bird_price_discount: 0.2,
+        early_bird_price_discount_end_date: pastDate
+      });
 
       const seasonDetailsWithExpiredEarlyBird = {
         ...seasonWithExpiredEarlyBird,
@@ -273,26 +248,17 @@ describe("SignupWelcome", () => {
     });
 
     it("should not display early bird pricing when discount is not configured", () => {
-      const seasonWithoutEarlyBird = createMockSeason(
-        1,
-        "Test Season",
-        "Test Season Full Name",
-        new Date().toISOString(),
-        new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-        SeasonPlatform.Kanaliiga,
-        new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-        new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
-        1,
-        1,
-        1,
-        false,
-        false,
-        null,
-        150,
-        true,
-        null, // no discount
-        null // no end date
-      );
+      const seasonWithoutEarlyBird = createMockSeason({
+        signup_start_date: new Date().toISOString(),
+        signup_end_date: new Date(
+          Date.now() + 7 * 24 * 60 * 60 * 1000
+        ).toISOString(),
+        start_date: new Date(
+          Date.now() + 14 * 24 * 60 * 60 * 1000
+        ).toISOString(),
+        end_date: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
+        registration_price: 150
+      });
 
       const seasonDetailsWithoutEarlyBird = {
         ...seasonWithoutEarlyBird,
@@ -317,26 +283,18 @@ describe("SignupWelcome", () => {
     });
 
     it("should use season payment_link when it is set", () => {
-      const seasonWithPaymentLink = createMockSeason(
-        1,
-        "Test Season",
-        "Test Season Full Name",
-        new Date().toISOString(),
-        new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-        SeasonPlatform.Kanaliiga,
-        new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-        new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
-        1,
-        1,
-        1,
-        false,
-        false,
-        "https://custom-payment.example.com/season-123",
-        150,
-        true,
-        null,
-        null
-      );
+      const seasonWithPaymentLink = createMockSeason({
+        signup_start_date: new Date().toISOString(),
+        signup_end_date: new Date(
+          Date.now() + 7 * 24 * 60 * 60 * 1000
+        ).toISOString(),
+        start_date: new Date(
+          Date.now() + 14 * 24 * 60 * 60 * 1000
+        ).toISOString(),
+        end_date: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
+        payment_link: "https://custom-payment.example.com/season-123",
+        registration_price: 150
+      });
 
       const seasonDetailsWithPaymentLink = {
         ...seasonWithPaymentLink,
@@ -363,26 +321,17 @@ describe("SignupWelcome", () => {
     });
 
     it("should use default payment link when season payment_link is not set", () => {
-      const seasonWithoutPaymentLink = createMockSeason(
-        1,
-        "Test Season",
-        "Test Season Full Name",
-        new Date().toISOString(),
-        new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-        SeasonPlatform.Kanaliiga,
-        new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-        new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
-        1,
-        1,
-        1,
-        false,
-        false,
-        null, // no payment_link
-        150,
-        true,
-        null,
-        null
-      );
+      const seasonWithoutPaymentLink = createMockSeason({
+        signup_start_date: new Date().toISOString(),
+        signup_end_date: new Date(
+          Date.now() + 7 * 24 * 60 * 60 * 1000
+        ).toISOString(),
+        start_date: new Date(
+          Date.now() + 14 * 24 * 60 * 60 * 1000
+        ).toISOString(),
+        end_date: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
+        registration_price: 150
+      });
 
       const seasonDetailsWithoutPaymentLink = {
         ...seasonWithoutPaymentLink,
@@ -412,26 +361,19 @@ describe("SignupWelcome", () => {
       const futureDate = new Date(
         Date.now() + 7 * 24 * 60 * 60 * 1000
       ).toISOString();
-      const seasonWithZeroDiscount = createMockSeason(
-        1,
-        "Test Season",
-        "Test Season Full Name",
-        new Date().toISOString(),
-        new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-        SeasonPlatform.Kanaliiga,
-        new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-        new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
-        1,
-        1,
-        1,
-        false,
-        false,
-        null,
-        150,
-        true,
-        0, // invalid discount (0)
-        futureDate
-      );
+      const seasonWithZeroDiscount = createMockSeason({
+        signup_start_date: new Date().toISOString(),
+        signup_end_date: new Date(
+          Date.now() + 7 * 24 * 60 * 60 * 1000
+        ).toISOString(),
+        start_date: new Date(
+          Date.now() + 14 * 24 * 60 * 60 * 1000
+        ).toISOString(),
+        end_date: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
+        registration_price: 150,
+        early_bird_price_discount: 0,
+        early_bird_price_discount_end_date: futureDate
+      });
 
       const seasonDetailsWithZeroDiscount = {
         ...seasonWithZeroDiscount,
@@ -458,26 +400,19 @@ describe("SignupWelcome", () => {
       const futureDate = new Date(
         Date.now() + 7 * 24 * 60 * 60 * 1000
       ).toISOString();
-      const seasonWithInvalidDiscount = createMockSeason(
-        1,
-        "Test Season",
-        "Test Season Full Name",
-        new Date().toISOString(),
-        new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-        SeasonPlatform.Kanaliiga,
-        new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-        new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
-        1,
-        1,
-        1,
-        false,
-        false,
-        null,
-        150,
-        true,
-        1.0, // invalid discount (>= 1)
-        futureDate
-      );
+      const seasonWithInvalidDiscount = createMockSeason({
+        signup_start_date: new Date().toISOString(),
+        signup_end_date: new Date(
+          Date.now() + 7 * 24 * 60 * 60 * 1000
+        ).toISOString(),
+        start_date: new Date(
+          Date.now() + 14 * 24 * 60 * 60 * 1000
+        ).toISOString(),
+        end_date: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
+        registration_price: 150,
+        early_bird_price_discount: 1.0,
+        early_bird_price_discount_end_date: futureDate
+      });
 
       const seasonDetailsWithInvalidDiscount = {
         ...seasonWithInvalidDiscount,
@@ -504,26 +439,30 @@ describe("SignupWelcome", () => {
       const futureDate = new Date(
         Date.now() + 7 * 24 * 60 * 60 * 1000
       ).toISOString();
-      const seasonWithEarlyBird = createMockSeason(
-        1,
-        "Test Season",
-        "Test Season Full Name",
-        new Date().toISOString(),
-        new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-        SeasonPlatform.Kanaliiga,
-        new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-        new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
-        1,
-        1,
-        1,
-        false,
-        false,
-        null,
-        150, // registration_price
-        true,
-        0.2, // 20% discount
-        futureDate
-      );
+      const seasonWithEarlyBird = createMockSeason({
+        id: 1,
+        name: "Test Season",
+        full_name: "Test Season Full Name",
+        signup_start_date: new Date().toISOString(),
+        signup_end_date: new Date(
+          Date.now() + 7 * 24 * 60 * 60 * 1000
+        ).toISOString(),
+        platform: SeasonPlatform.Kanaliiga,
+        start_date: new Date(
+          Date.now() + 14 * 24 * 60 * 60 * 1000
+        ).toISOString(),
+        end_date: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
+        game_id: 1,
+        game_type_id: 1,
+        organizer_id: 1,
+        is_round_robin_bo2_as_2xbo1: false,
+        grand_final_round_one_only: false,
+        payment_link: null,
+        registration_price: 150,
+        has_vat: true,
+        early_bird_price_discount: 0.2,
+        early_bird_price_discount_end_date: futureDate
+      });
 
       const seasonDetailsWithEarlyBird = {
         ...seasonWithEarlyBird,
@@ -547,26 +486,19 @@ describe("SignupWelcome", () => {
       const futureDate = new Date(
         Date.now() + 7 * 24 * 60 * 60 * 1000
       ).toISOString();
-      const seasonWithEarlyBird = createMockSeason(
-        1,
-        "Test Season",
-        "Test Season Full Name",
-        new Date().toISOString(),
-        new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-        SeasonPlatform.Kanaliiga,
-        new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-        new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
-        1,
-        1,
-        1,
-        false,
-        false,
-        null,
-        200, // registration_price
-        true,
-        0.1, // 10% discount
-        futureDate
-      );
+      const seasonWithEarlyBird = createMockSeason({
+        signup_start_date: new Date().toISOString(),
+        signup_end_date: new Date(
+          Date.now() + 7 * 24 * 60 * 60 * 1000
+        ).toISOString(),
+        start_date: new Date(
+          Date.now() + 14 * 24 * 60 * 60 * 1000
+        ).toISOString(),
+        end_date: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
+        registration_price: 200,
+        early_bird_price_discount: 0.1,
+        early_bird_price_discount_end_date: futureDate
+      });
 
       const seasonDetailsWithEarlyBird = {
         ...seasonWithEarlyBird,
@@ -590,26 +522,19 @@ describe("SignupWelcome", () => {
       const futureDate = new Date(
         Date.now() + 7 * 24 * 60 * 60 * 1000
       ).toISOString();
-      const seasonWithNullPrice = createMockSeason(
-        1,
-        "Test Season",
-        "Test Season Full Name",
-        new Date().toISOString(),
-        new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-        SeasonPlatform.Kanaliiga,
-        new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-        new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
-        1,
-        1,
-        1,
-        false,
-        false,
-        null,
-        null, // null registration_price
-        true,
-        0.2, // 20% discount
-        futureDate
-      );
+      const seasonWithNullPrice = createMockSeason({
+        signup_start_date: new Date().toISOString(),
+        signup_end_date: new Date(
+          Date.now() + 7 * 24 * 60 * 60 * 1000
+        ).toISOString(),
+        start_date: new Date(
+          Date.now() + 14 * 24 * 60 * 60 * 1000
+        ).toISOString(),
+        end_date: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
+        registration_price: null,
+        early_bird_price_discount: 0.2,
+        early_bird_price_discount_end_date: futureDate
+      });
 
       const seasonDetailsWithNullPrice = {
         ...seasonWithNullPrice,
@@ -634,26 +559,30 @@ describe("SignupWelcome", () => {
       const futureDate = new Date(
         Date.now() + 7 * 24 * 60 * 60 * 1000
       ).toISOString();
-      const seasonWithEarlyBird = createMockSeason(
-        1,
-        "Test Season",
-        "Test Season Full Name",
-        new Date().toISOString(),
-        new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-        SeasonPlatform.Kanaliiga,
-        new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-        new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
-        1,
-        1,
-        1,
-        false,
-        false,
-        null,
-        150,
-        true, // has_vat
-        0.2,
-        futureDate
-      );
+      const seasonWithEarlyBird = createMockSeason({
+        id: 1,
+        name: "Test Season",
+        full_name: "Test Season Full Name",
+        signup_start_date: new Date().toISOString(),
+        signup_end_date: new Date(
+          Date.now() + 7 * 24 * 60 * 60 * 1000
+        ).toISOString(),
+        platform: SeasonPlatform.Kanaliiga,
+        start_date: new Date(
+          Date.now() + 14 * 24 * 60 * 60 * 1000
+        ).toISOString(),
+        end_date: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
+        game_id: 1,
+        game_type_id: 1,
+        organizer_id: 1,
+        is_round_robin_bo2_as_2xbo1: false,
+        grand_final_round_one_only: false,
+        payment_link: null,
+        registration_price: 150,
+        has_vat: true,
+        early_bird_price_discount: 0.2,
+        early_bird_price_discount_end_date: futureDate
+      });
 
       const seasonDetailsWithEarlyBird = {
         ...seasonWithEarlyBird,
@@ -678,26 +607,20 @@ describe("SignupWelcome", () => {
       const futureDate = new Date(
         Date.now() + 7 * 24 * 60 * 60 * 1000
       ).toISOString();
-      const seasonWithEarlyBird = createMockSeason(
-        1,
-        "Test Season",
-        "Test Season Full Name",
-        new Date().toISOString(),
-        new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-        SeasonPlatform.Kanaliiga,
-        new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-        new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
-        1,
-        1,
-        1,
-        false,
-        false,
-        null,
-        150,
-        false, // has_vat = false
-        0.2,
-        futureDate
-      );
+      const seasonWithEarlyBird = createMockSeason({
+        signup_start_date: new Date().toISOString(),
+        signup_end_date: new Date(
+          Date.now() + 7 * 24 * 60 * 60 * 1000
+        ).toISOString(),
+        start_date: new Date(
+          Date.now() + 14 * 24 * 60 * 60 * 1000
+        ).toISOString(),
+        end_date: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
+        registration_price: 150,
+        has_vat: false,
+        early_bird_price_discount: 0.2,
+        early_bird_price_discount_end_date: futureDate
+      });
 
       const seasonDetailsWithEarlyBird = {
         ...seasonWithEarlyBird,
