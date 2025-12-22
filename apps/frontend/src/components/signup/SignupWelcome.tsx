@@ -16,9 +16,9 @@ interface SignupWelcomeProps {
 export const SignupWelcome = ({ seasonId }: SignupWelcomeProps) => {
   const { seasonDetails, isLoading, isError, isValidating } =
     useSeasonDetails(seasonId);
-  const { user, loading } = useAuth();
+  const { user } = useAuth();
 
-  if (isLoading || isValidating || loading) {
+  if (isLoading || isValidating) {
     return <ContentContainer>Loading...</ContentContainer>;
   }
   if (isError || !seasonDetails) {
