@@ -9,6 +9,7 @@ import { SeasonsPageClient } from "./SeasonsPageClient";
 import { useAllSeasons } from "@/hooks/data/useAllSeasons";
 import { useGames } from "@/hooks/data/useGames";
 import { useGameTypes } from "@/hooks/data/useGameTypes";
+import { useSeason } from "@/hooks/data/useSeason";
 import { clientApiFetch } from "@/lib/apiClient";
 import { toast } from "sonner";
 import {
@@ -22,6 +23,7 @@ import { renderWithSWR, clearAllMocks } from "@/test-utils/test-utils";
 jest.mock("@/hooks/data/useAllSeasons");
 jest.mock("@/hooks/data/useGames");
 jest.mock("@/hooks/data/useGameTypes");
+jest.mock("@/hooks/data/useSeason");
 jest.mock("@/lib/apiClient");
 jest.mock("sonner", () => ({
   toast: {
@@ -37,6 +39,7 @@ const mockUseGames = useGames as jest.MockedFunction<typeof useGames>;
 const mockUseGameTypes = useGameTypes as jest.MockedFunction<
   typeof useGameTypes
 >;
+const mockUseSeason = useSeason as jest.MockedFunction<typeof useSeason>;
 const mockClientApiFetch = clientApiFetch as jest.MockedFunction<
   typeof clientApiFetch
 >;
@@ -129,6 +132,13 @@ describe("SeasonsPageClient", () => {
         },
         { id: 2, name: "Wingman", game_id: 1, min_players: 2, max_players: 2 }
       ],
+      isLoading: false,
+      isError: undefined,
+      isValidating: false
+    });
+    // Default mock for useSeason - returns undefined (no season loaded)
+    mockUseSeason.mockReturnValue({
+      season: undefined,
       isLoading: false,
       isError: undefined,
       isValidating: false
@@ -285,6 +295,14 @@ describe("SeasonsPageClient", () => {
   describe("Edit Season", () => {
     it("should show edit form when Edit button is clicked on a season", async () => {
       const user = userEvent.setup();
+      // Mock useSeason to return the first season when seasonId is 1
+      mockUseSeason.mockReturnValue({
+        season: mockSeasons[0]!,
+        isLoading: false,
+        isError: undefined,
+        isValidating: false
+      });
+
       renderWithSWR(<SeasonsPageClient />);
 
       // Find and click edit button (there should be multiple edit buttons)
@@ -295,7 +313,9 @@ describe("SeasonsPageClient", () => {
       expect(screen.getByText("Edit Season")).toBeInTheDocument();
       expect(screen.getByText("← Back to List")).toBeInTheDocument();
       // Check that form fields are populated with initial values
-      expect(screen.getByDisplayValue("Season 1")).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByDisplayValue("Season 1")).toBeInTheDocument();
+      });
       expect(
         screen.getByDisplayValue("Full Season 1 Name")
       ).toBeInTheDocument();
@@ -303,6 +323,14 @@ describe("SeasonsPageClient", () => {
 
     it("should pass correct initial values when editing a season", async () => {
       const user = userEvent.setup();
+      // Mock useSeason to return the first season when seasonId is 1
+      mockUseSeason.mockReturnValue({
+        season: mockSeasons[0]!,
+        isLoading: false,
+        isError: undefined,
+        isValidating: false
+      });
+
       renderWithSWR(<SeasonsPageClient />);
 
       // Find and click edit button
@@ -310,8 +338,10 @@ describe("SeasonsPageClient", () => {
       expect(editButtons.length).toBeGreaterThan(0);
       await user.click(editButtons[0]!);
 
-      // Check that form fields are populated with initial values from the season
-      expect(screen.getByDisplayValue("Season 1")).toBeInTheDocument();
+      // Wait for form to load and check that form fields are populated with initial values from the season
+      await waitFor(() => {
+        expect(screen.getByDisplayValue("Season 1")).toBeInTheDocument();
+      });
       expect(
         screen.getByDisplayValue("Full Season 1 Name")
       ).toBeInTheDocument();
@@ -331,6 +361,13 @@ describe("SeasonsPageClient", () => {
     it("should update a season when form is submitted in edit mode", async () => {
       const user = userEvent.setup();
       mockClientApiFetch.mockResolvedValue({ affectedRows: 1 });
+      // Mock useSeason to return the first season when seasonId is 1
+      mockUseSeason.mockReturnValue({
+        season: mockSeasons[0]!,
+        isLoading: false,
+        isError: undefined,
+        isValidating: false
+      });
 
       renderWithSWR(<SeasonsPageClient />);
 
@@ -344,7 +381,7 @@ describe("SeasonsPageClient", () => {
         expect(screen.getByDisplayValue("Season 1")).toBeInTheDocument();
       });
 
-      // Submit form (values should already be filled from initialValues)
+      // Submit form (values should already be filled from season data)
       const submitButton = screen.getByRole("button", { name: /save season/i });
       await user.click(submitButton);
 
@@ -366,6 +403,13 @@ describe("SeasonsPageClient", () => {
       const user = userEvent.setup();
       const error = new Error("Failed to update season");
       mockClientApiFetch.mockRejectedValue(error);
+      // Mock useSeason to return the first season when seasonId is 1
+      mockUseSeason.mockReturnValue({
+        season: mockSeasons[0]!,
+        isLoading: false,
+        isError: undefined,
+        isValidating: false
+      });
 
       renderWithSWR(<SeasonsPageClient />);
 
@@ -437,7 +481,7 @@ describe("SeasonsPageClient", () => {
     });
   });
 
-  describe("getInitialValues", () => {
+  describe("Form Data Mapping", () => {
     it("should correctly map all season fields to form values", async () => {
       const user = userEvent.setup();
 
@@ -464,6 +508,13 @@ describe("SeasonsPageClient", () => {
 
       mockUseAllSeasons.mockReturnValue({
         seasons: [seasonWithAllFields],
+        isLoading: false,
+        isError: undefined,
+        isValidating: false
+      });
+      // Mock useSeason to return the season when seasonId is 10
+      mockUseSeason.mockReturnValue({
+        season: seasonWithAllFields,
         isLoading: false,
         isError: undefined,
         isValidating: false
@@ -515,6 +566,13 @@ describe("SeasonsPageClient", () => {
 
       mockUseAllSeasons.mockReturnValue({
         seasons: [seasonWithNulls],
+        isLoading: false,
+        isError: undefined,
+        isValidating: false
+      });
+      // Mock useSeason to return the season when seasonId is 11
+      mockUseSeason.mockReturnValue({
+        season: seasonWithNulls,
         isLoading: false,
         isError: undefined,
         isValidating: false

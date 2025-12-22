@@ -36,6 +36,25 @@ const convertToUTC = (dateString: string, timezone?: string): string => {
 };
 
 /**
+ * Controller to get a single season by ID
+ * Returns the season data for editing
+ */
+export const getSeasonByIdController = async (
+  req: RequestWithParams<{ id: string }>,
+  res: Response
+): Promise<void> => {
+  const seasonId = Number(req.params.id);
+  const season = await getSeasonById(seasonId);
+
+  if (!season) {
+    res.status(404).json({ message: "Season not found" });
+    return;
+  }
+
+  res.json(season);
+};
+
+/**
  * Controller to get all teams for a specific season
  * Returns teams with their league information
  * Supports query parameter ?context=registration to fetch teams from SeasonTeamRegistrationPlayers

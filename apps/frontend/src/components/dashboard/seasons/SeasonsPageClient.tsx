@@ -2,14 +2,11 @@
 
 import { useState, useMemo } from "react";
 import { SeasonForm } from "@/components/dashboard/seasons/SeasonForm";
-import {
-  type SeasonFormRaw,
-  type Season,
-  type SeasonFormValues
-} from "@eggosystem/types";
+import { type SeasonFormRaw, type Season } from "@eggosystem/types";
 import { toast } from "sonner";
 import { clientApiFetch } from "@/lib/apiClient";
 import { useAllSeasons } from "@/hooks/data/useAllSeasons";
+import { mutate } from "swr";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Pencil, Plus, ChevronDown, ChevronUp } from "lucide-react";
@@ -17,22 +14,22 @@ import { Badge } from "@/components/ui/badge";
 
 export function SeasonsPageClient() {
   const { seasons, isLoading } = useAllSeasons();
-  const [selectedSeason, setSelectedSeason] = useState<Season | null>(null);
+  const [selectedSeasonId, setSelectedSeasonId] = useState<number | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [showAllSeasons, setShowAllSeasons] = useState(false);
 
   const handleCreateNew = () => {
-    setSelectedSeason(null);
+    setSelectedSeasonId(null);
     setIsCreating(true);
   };
 
   const handleEdit = (season: Season) => {
-    setSelectedSeason(season);
+    setSelectedSeasonId(season.id);
     setIsCreating(false);
   };
 
   const handleCancel = () => {
-    setSelectedSeason(null);
+    setSelectedSeasonId(null);
     setIsCreating(false);
   };
 
@@ -44,14 +41,16 @@ export function SeasonsPageClient() {
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
       };
 
-      if (selectedSeason) {
+      if (selectedSeasonId) {
         // Update existing season
-        await clientApiFetch(`/api/v1/dashboard/seasons/${selectedSeason.id}`, {
+        await clientApiFetch(`/api/v1/dashboard/seasons/${selectedSeasonId}`, {
           method: "PUT",
           body: JSON.stringify(requestData)
         });
         toast.success(`Season updated successfully!`);
-        setSelectedSeason(null);
+        setSelectedSeasonId(null);
+        // Refetch seasons data
+        await mutate("/api/v1/seasons");
       } else {
         // Create new season
         const result = await clientApiFetch<{ seasonId: number }>(
@@ -63,6 +62,8 @@ export function SeasonsPageClient() {
         );
         toast.success(`Season created successfully! ID: ${result.seasonId}`);
         setIsCreating(false);
+        // Refetch seasons data
+        await mutate("/api/v1/seasons");
       }
     } catch (error) {
       console.error("Error saving season:", error);
@@ -71,29 +72,6 @@ export function SeasonsPageClient() {
       );
       throw error; // Re-throw to let the form handle the error state
     }
-  };
-
-  // Convert Season to SeasonFormValues for editing
-  const getInitialValues = (season: Season): Partial<SeasonFormValues> => {
-    return {
-      game_id: season.game_id,
-      game_type_id: season.game_type_id,
-      organizer_id: season.organizer_id,
-      name: season.name,
-      full_name: season.full_name,
-      signup_start_date: season.signup_start_date || null,
-      signup_end_date: season.signup_end_date || null,
-      start_date: season.start_date,
-      end_date: season.end_date || null,
-      platform: season.platform,
-      is_round_robin_bo2_as_2xbo1: season.is_round_robin_bo2_as_2xbo1,
-      payment_link: season.payment_link || null,
-      registration_price: season.registration_price ?? null,
-      has_vat: season.has_vat,
-      early_bird_price_discount: season.early_bird_price_discount ?? null,
-      early_bird_price_discount_end_date:
-        season.early_bird_price_discount_end_date || null
-    };
   };
 
   // Categorize seasons
@@ -150,7 +128,7 @@ export function SeasonsPageClient() {
   }, [seasons]);
 
   // Show form if creating or editing
-  if (isCreating || selectedSeason) {
+  if (isCreating || selectedSeasonId) {
     return (
       <div className="space-y-4">
         <Button variant="outline" onClick={handleCancel}>
@@ -158,10 +136,8 @@ export function SeasonsPageClient() {
         </Button>
         <SeasonForm
           onSubmit={handleSubmit}
-          initialValues={
-            selectedSeason ? getInitialValues(selectedSeason) : undefined
-          }
-          mode={selectedSeason ? "edit" : "create"}
+          seasonId={selectedSeasonId ?? undefined}
+          mode={selectedSeasonId ? "edit" : "create"}
         />
       </div>
     );
