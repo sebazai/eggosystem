@@ -119,8 +119,17 @@ export const SignupWelcome = ({ seasonId }: SignupWelcomeProps) => {
           We cover organizing costs in CS2 tournaments by collecting
           participation fees from teams. The fee is per a participating team.
           Please pay your team&apos;s participation fee by purchasing it from{" "}
-          <Link target="_blank" href={"https://www.kanaliiga.fi/kauppa"}>
-            www.kanaliiga.fi/kauppa
+          <Link
+            target="_blank"
+            href={
+              seasonDetails.payment_link || "https://www.kanaliiga.fi/kauppa"
+            }
+          >
+            {seasonDetails.payment_link
+              ? seasonDetails.payment_link
+                  .replace(/^https?:\/\//, "")
+                  .replace(/\/$/, "")
+              : "www.kanaliiga.fi/kauppa"}
           </Link>
           . Unpaid fee will automatically disqualify your team. You may request
           for a return if your team cannot participate for any reason. In case
