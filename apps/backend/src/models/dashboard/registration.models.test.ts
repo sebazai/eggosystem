@@ -1,9 +1,6 @@
 import * as registrationModels from "./registration.models";
 import { runQuery } from "../../db/mysqlRunQuery";
-import {
-  type PlayerFullName,
-  createMockPlayerFullName
-} from "@eggosystem/types";
+import { createMockPlayerFullName } from "@eggosystem/types";
 
 jest.mock("../../db/mysqlRunQuery");
 

@@ -5,11 +5,7 @@ import {
 import { getSeasonLeagueTeamByExternalId } from "./season-league-team.models";
 import { getHubMatchesByExternalMatchRoomId } from "./match.models";
 import { redisClient } from "../utils/redisClient";
-import type {
-  FaceitMatchTeams,
-  SeasonTeamPlayer,
-  SeasonLeagueTeam
-} from "@eggosystem/types";
+import type { FaceitMatchTeams, SeasonTeamPlayer } from "@eggosystem/types";
 import { createMockSeasonLeagueTeam } from "@eggosystem/types";
 
 // Mock dependencies

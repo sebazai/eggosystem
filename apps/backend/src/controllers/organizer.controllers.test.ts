@@ -5,15 +5,9 @@ import {
   getActiveSignupOrActiveSeasonForAppId
 } from "../models/season.models";
 import { redisClient } from "../utils/redisClient";
-import type {
-  ActiveSignupOrSeasonForAppId,
-  RequestWithParams
-} from "@eggosystem/types";
+import type { RequestWithParams } from "@eggosystem/types";
 import { SeasonPlatform } from "@eggosystem/types";
-import {
-  createMockActiveSignupOrSeasonForAppId,
-  createMockOrganizer
-} from "@eggosystem/types";
+import { createMockActiveSignupOrSeasonForAppId } from "@eggosystem/types";
 import {
   getActiveSeasonForApp,
   getActiveSignupOrActiveSeasonForAppController,

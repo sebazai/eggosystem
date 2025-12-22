@@ -5,7 +5,7 @@ import {
 } from "./match-streams.models";
 import { runQuery } from "../db/mysqlRunQuery";
 import { ConflictError } from "../utils/errors";
-import { type Reservation, createMockReservation } from "@eggosystem/types";
+import { createMockReservation } from "@eggosystem/types";
 
 jest.mock("../db/mysqlRunQuery");
 jest.mock("crypto", () => ({

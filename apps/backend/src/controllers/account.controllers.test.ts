@@ -1,6 +1,4 @@
 import {
-  type UserPolicyAcceptance,
-  type Account,
   createMockAccount,
   createMockUserPolicyAcceptance
 } from "@eggosystem/types";

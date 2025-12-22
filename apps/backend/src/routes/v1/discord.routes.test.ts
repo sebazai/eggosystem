@@ -8,7 +8,6 @@ import { authenticateJWT } from "../../middlewares/auth.middleware";
 import discordRouter from "./discord.routes";
 import { getUserDiscordStatus } from "../../controllers/discord.controllers";
 import type { Request, Response, NextFunction } from "express";
-import type { UserPayload } from "@eggosystem/types";
 import { UnauthorizedError } from "../../utils/errors";
 import { createMockUserPayload } from "@eggosystem/types";
 

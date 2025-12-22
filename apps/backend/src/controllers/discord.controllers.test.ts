@@ -3,7 +3,7 @@ import { getUserDiscordStatus } from "./discord.controllers";
 import { runQuery } from "../db/mysqlRunQuery";
 import { logger } from "../utils/app-logger";
 import { getDiscordUsernameByAccountId } from "../models/discord.models";
-import { type UserPayload, createMockUserPayload } from "@eggosystem/types";
+import { createMockUserPayload } from "@eggosystem/types";
 
 // Mock dependencies
 jest.mock("../db/mysqlRunQuery");

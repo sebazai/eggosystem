@@ -1,4 +1,3 @@
-import { SeasonPlatform } from "../enums";
 import type { SignupFormValues, SignupPlayerType } from "./index";
 
 /**
