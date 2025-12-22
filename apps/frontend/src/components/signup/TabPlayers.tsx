@@ -671,20 +671,38 @@ export const TabPlayers = ({
     const maxPlayers = 9;
     const importedCount = Math.min(players.length, maxPlayers);
 
-    // Remove excess players if current count exceeds imported + extra slots
-    while (fields.length > Math.max(importedCount, minPlayers)) {
-      remove(fields.length - 1);
+    // Calculate how many slots we need
+    const targetSlots = Math.max(importedCount, minPlayers);
+    const currentLength = fields.length;
+
+    // Remove excess players if current count exceeds target
+    // Note: We need to remove from the end, and fields.length doesn't update synchronously
+    // so we calculate how many to remove upfront
+    const removeCount = currentLength - targetSlots;
+    if (removeCount > 0) {
+      // Create array of indices to remove (from end to start)
+      const indicesToRemove = Array.from(
+        { length: removeCount },
+        (_, i) => currentLength - 1 - i
+      );
+      // Remove all at once by calling remove for each
+      for (const idx of indicesToRemove) {
+        remove(idx);
+      }
     }
 
     // Add missing player slots if needed
-    while (fields.length < importedCount) {
-      append({
-        accountId: 0,
-        steamId: "",
-        nickname: "",
-        captain: false,
-        coCaptain: false
-      });
+    const addCount = importedCount - currentLength;
+    if (addCount > 0) {
+      for (let i = 0; i < addCount; i++) {
+        append({
+          accountId: 0,
+          steamId: "",
+          nickname: "",
+          captain: false,
+          coCaptain: false
+        });
+      }
     }
 
     // Set the player data
@@ -788,18 +806,18 @@ export const TabPlayers = ({
                               className={cn(
                                 "w-full ",
                                 hasErrors &&
-                                  !loadingStates[index] &&
-                                  "border-red-500 focus:border-red-500 focus:ring-red-500",
+                                !loadingStates[index] &&
+                                "border-red-500 focus:border-red-500 focus:ring-red-500",
                                 !hasErrors &&
-                                  !loadingStates[index] &&
-                                  !isEmptySteamId &&
-                                  "border-green-500 focus:border-green-500 focus:ring-green-500",
+                                !loadingStates[index] &&
+                                !isEmptySteamId &&
+                                "border-green-500 focus:border-green-500 focus:ring-green-500",
                                 loadingStates[index] && "border-yellow-500",
                                 // Add padding for search button when visible
                                 !isValidSteamId(field.value) &&
-                                  field.value.trim() !== "" &&
-                                  !loadingStates[index] &&
-                                  "pr-10"
+                                field.value.trim() !== "" &&
+                                !loadingStates[index] &&
+                                "pr-10"
                               )}
                               onClick={(e) => e.stopPropagation()}
                               disabled={loadingStates[index]}
@@ -1135,11 +1153,11 @@ export const TabPlayers = ({
 
                   {steamIds.filter((id) => !!id && id === player.steamId)
                     .length > 1 && (
-                    <div className="text-yellow-500 text-xs flex gap-2 items-center py-1">
-                      <TriangleAlert className="h-4 w-4" /> Duplicate steam id
-                      detected
-                    </div>
-                  )}
+                      <div className="text-yellow-500 text-xs flex gap-2 items-center py-1">
+                        <TriangleAlert className="h-4 w-4" /> Duplicate steam id
+                        detected
+                      </div>
+                    )}
 
                   <Button
                     variant="destructive"
