@@ -160,8 +160,10 @@ export const createSeason = async (
       is_round_robin_bo2_as_2xbo1,
       payment_link,
       registration_price,
-      has_vat
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      has_vat,
+      early_bird_price_discount,
+      early_bird_price_discount_end_date
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   const result = await runQuery<{ insertId: number }>(
@@ -180,7 +182,9 @@ export const createSeason = async (
       seasonData.is_round_robin_bo2_as_2xbo1,
       seasonData.payment_link,
       seasonData.registration_price,
-      seasonData.has_vat
+      seasonData.has_vat,
+      seasonData.early_bird_price_discount,
+      seasonData.early_bird_price_discount_end_date
     ],
     connection
   );
@@ -208,7 +212,9 @@ export const updateSeason = async (
       is_round_robin_bo2_as_2xbo1 = ?,
       payment_link = ?,
       registration_price = ?,
-      has_vat = ?
+      has_vat = ?,
+      early_bird_price_discount = ?,
+      early_bird_price_discount_end_date = ?
     WHERE id = ?
   `;
 
@@ -229,6 +235,8 @@ export const updateSeason = async (
       seasonData.payment_link,
       seasonData.registration_price,
       seasonData.has_vat,
+      seasonData.early_bird_price_discount,
+      seasonData.early_bird_price_discount_end_date,
       seasonId
     ],
     connection

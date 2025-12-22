@@ -13,6 +13,39 @@ interface SignupWelcomeProps {
   seasonId: string;
 }
 
+const calculateEarlyBirdPricing = (
+  registrationPrice: number | null | undefined,
+  discount: number | null | undefined,
+  endDate: string | null | undefined
+) => {
+  const now = new Date();
+  const basePrice =
+    registrationPrice !== undefined && registrationPrice !== null
+      ? registrationPrice
+      : 150;
+
+  if (
+    !discount ||
+    !endDate ||
+    discount <= 0 ||
+    discount >= 1 ||
+    new Date(endDate) <= now
+  ) {
+    return {
+      isActive: false,
+      originalPrice: basePrice,
+      discountedPrice: basePrice
+    };
+  }
+
+  const discountedPrice = basePrice * (1 - discount);
+  return {
+    isActive: true,
+    originalPrice: basePrice,
+    discountedPrice: Math.round(discountedPrice * 100) / 100 // Round to 2 decimal places
+  };
+};
+
 export const SignupWelcome = ({ seasonId }: SignupWelcomeProps) => {
   const { seasonDetails, isLoading, isError, isValidating } =
     useSeasonDetails(seasonId);
@@ -28,6 +61,12 @@ export const SignupWelcome = ({ seasonId }: SignupWelcomeProps) => {
       </ContentContainer>
     );
   }
+
+  const pricing = calculateEarlyBirdPricing(
+    seasonDetails.registration_price,
+    seasonDetails.early_bird_price_discount,
+    seasonDetails.early_bird_price_discount_end_date
+  );
 
   return (
     <div>
@@ -89,18 +128,44 @@ export const SignupWelcome = ({ seasonId }: SignupWelcomeProps) => {
           service request in the Discord as soon as possible!
         </p>
         <ul className="list-disc list-inside p-4">
-          <li className="text-lg font-semibold">
-            Normal Fee{" "}
-            <span>
-              {seasonDetails.registration_price !== undefined &&
-              seasonDetails.registration_price !== null
-                ? `${seasonDetails.registration_price}€`
-                : "150€"}
-            </span>{" "}
-            <span className="text-sm text-gray-600 dark:text-muted-foreground">
-              {seasonDetails.has_vat ? "(includes VAT)" : "(+VAT)"}
-            </span>
-          </li>
+          {pricing.isActive ? (
+            <>
+              <li className="text-lg font-semibold">
+                Early Bird Fee{" "}
+                <span className="text-green-600 dark:text-green-400">
+                  {pricing.discountedPrice}€
+                </span>{" "}
+                <span className="text-sm text-gray-600 dark:text-muted-foreground line-through">
+                  (was {pricing.originalPrice}€)
+                </span>{" "}
+                <span className="text-sm text-gray-600 dark:text-muted-foreground">
+                  {seasonDetails.has_vat ? "(includes VAT)" : "(+VAT)"}
+                </span>
+              </li>
+              <li className="text-lg font-semibold text-gray-500 dark:text-gray-400">
+                Normal Fee{" "}
+                <span className="line-through">{pricing.originalPrice}€</span>{" "}
+                <span className="text-sm text-gray-600 dark:text-muted-foreground">
+                  {seasonDetails.has_vat ? "(includes VAT)" : "(+VAT)"}
+                </span>
+              </li>
+              {seasonDetails.early_bird_price_discount_end_date && (
+                <span className="text-sm text-gray-600 dark:text-muted-foreground italic">
+                  Early bird pricing ends on{" "}
+                  {convertTimeToLocalTimeWithoutSeconds(
+                    seasonDetails.early_bird_price_discount_end_date
+                  )}
+                </span>
+              )}
+            </>
+          ) : (
+            <li className="text-lg font-semibold">
+              Normal Fee <span>{pricing.originalPrice}€</span>{" "}
+              <span className="text-sm text-gray-600 dark:text-muted-foreground">
+                {seasonDetails.has_vat ? "(includes VAT)" : "(+VAT)"}
+              </span>
+            </li>
+          )}
         </ul>
       </div>
       <div className="pb-8">

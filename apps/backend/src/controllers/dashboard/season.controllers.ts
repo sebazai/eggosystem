@@ -119,7 +119,16 @@ export const createSeasonController = async (
       is_round_robin_bo2_as_2xbo1: validatedData.is_round_robin_bo2_as_2xbo1,
       payment_link: validatedData.payment_link || null,
       registration_price: validatedData.registration_price ?? null,
-      has_vat: validatedData.has_vat
+      has_vat: validatedData.has_vat,
+      early_bird_price_discount:
+        validatedData.early_bird_price_discount ?? null,
+      early_bird_price_discount_end_date:
+        validatedData.early_bird_price_discount_end_date
+          ? convertToUTC(
+              validatedData.early_bird_price_discount_end_date,
+              validatedData.timezone
+            )
+          : null
     };
 
     // Create the season in the database
@@ -182,7 +191,16 @@ export const updateSeasonController = async (
       is_round_robin_bo2_as_2xbo1: validatedData.is_round_robin_bo2_as_2xbo1,
       payment_link: validatedData.payment_link || null,
       registration_price: validatedData.registration_price ?? null,
-      has_vat: validatedData.has_vat
+      has_vat: validatedData.has_vat,
+      early_bird_price_discount:
+        validatedData.early_bird_price_discount ?? null,
+      early_bird_price_discount_end_date:
+        validatedData.early_bird_price_discount_end_date
+          ? convertToUTC(
+              validatedData.early_bird_price_discount_end_date,
+              validatedData.timezone
+            )
+          : null
     };
 
     // Update the season in the database

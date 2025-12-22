@@ -17,7 +17,9 @@ export const createMockSeason = (
   grand_final_round_one_only?: boolean,
   payment_link?: string | null,
   registration_price?: number | null,
-  has_vat?: boolean
+  has_vat?: boolean,
+  early_bird_price_discount?: number | null,
+  early_bird_price_discount_end_date?: string | null
 ): Season => {
   return {
     id,
@@ -35,7 +37,10 @@ export const createMockSeason = (
     grand_final_round_one_only: grand_final_round_one_only ?? false,
     payment_link: payment_link ?? null,
     registration_price: registration_price ?? null,
-    has_vat: has_vat ?? true
+    has_vat: has_vat ?? true,
+    early_bird_price_discount: early_bird_price_discount ?? null,
+    early_bird_price_discount_end_date:
+      early_bird_price_discount_end_date ?? null
   };
 };
 

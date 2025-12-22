@@ -23,6 +23,8 @@ export interface Season {
   payment_link: string | null;
   registration_price: number | null;
   has_vat: boolean;
+  early_bird_price_discount: number | null;
+  early_bird_price_discount_end_date: string | null;
 }
 
 export interface InsertSeason {
@@ -41,4 +43,6 @@ export interface InsertSeason {
   payment_link?: Nullable<string>;
   registration_price?: Nullable<number>;
   has_vat?: boolean;
+  early_bird_price_discount?: Nullable<number>;
+  early_bird_price_discount_end_date?: Nullable<Date>;
 }

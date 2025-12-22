@@ -73,7 +73,13 @@ export function SeasonForm({
       has_vat:
         initialValues?.has_vat !== undefined
           ? Boolean(initialValues.has_vat)
-          : true
+          : true,
+      early_bird_price_discount:
+        initialValues?.early_bird_price_discount !== undefined
+          ? initialValues.early_bird_price_discount
+          : null,
+      early_bird_price_discount_end_date:
+        initialValues?.early_bird_price_discount_end_date || null
     },
     mode: "onTouched"
   });
@@ -109,7 +115,14 @@ export function SeasonForm({
           data.registration_price !== null
             ? data.registration_price
             : null,
-        has_vat: Boolean(data.has_vat)
+        has_vat: Boolean(data.has_vat),
+        early_bird_price_discount:
+          data.early_bird_price_discount !== undefined &&
+          data.early_bird_price_discount !== null
+            ? data.early_bird_price_discount
+            : null,
+        early_bird_price_discount_end_date:
+          data.early_bird_price_discount_end_date || null
       };
 
       await onSubmit(rawData);
@@ -458,6 +471,65 @@ export function SeasonForm({
                       unchecked, displays &quot;(+VAT)&quot;.
                     </p>
                   </div>
+                </FormItem>
+              )}
+            />
+
+            {/* Early Bird Price Discount */}
+            <FormField
+              control={form.control}
+              name="early_bird_price_discount"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Early Bird Discount (Optional)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max="1"
+                      placeholder="e.g., 0.2 for 20% discount"
+                      {...field}
+                      value={field.value ?? ""}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        field.onChange(value === "" ? null : parseFloat(value));
+                      }}
+                      disabled={isFormDisabled}
+                    />
+                  </FormControl>
+                  <p className="text-sm text-muted-foreground">
+                    Discount as decimal (0.2 = 20% off). Must be between 0 and
+                    1.
+                  </p>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Early Bird Discount End Date */}
+            <FormField
+              control={form.control}
+              name="early_bird_price_discount_end_date"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Early Bird Discount End Date (Optional)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="datetime-local"
+                      {...field}
+                      value={field.value ? field.value.slice(0, 16) : ""}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        field.onChange(value ? `${value}:00` : null);
+                      }}
+                      disabled={isFormDisabled}
+                    />
+                  </FormControl>
+                  <p className="text-sm text-muted-foreground">
+                    Date and time when the early bird discount expires
+                  </p>
+                  <FormMessage />
                 </FormItem>
               )}
             />

@@ -147,7 +147,9 @@ describe("Dashboard Season Controllers", () => {
         payment_link: null,
         grand_final_round_one_only: false,
         registration_price: null,
-        has_vat: true
+        has_vat: true,
+        early_bird_price_discount: null,
+        early_bird_price_discount_end_date: null
       });
 
       mockUpdateSeason.mockResolvedValue({ affectedRows: 1 });
@@ -219,7 +221,9 @@ describe("Dashboard Season Controllers", () => {
         payment_link: null,
         grand_final_round_one_only: false,
         registration_price: null,
-        has_vat: true
+        has_vat: true,
+        early_bird_price_discount: null,
+        early_bird_price_discount_end_date: null
       });
 
       await updateSeasonController(mockRequest, mockResponse, mockNext);
@@ -251,7 +255,9 @@ describe("Dashboard Season Controllers", () => {
         payment_link: null,
         grand_final_round_one_only: false,
         registration_price: null,
-        has_vat: true
+        has_vat: true,
+        early_bird_price_discount: null,
+        early_bird_price_discount_end_date: null
       });
 
       const dbError = new Error("Database update failed");
