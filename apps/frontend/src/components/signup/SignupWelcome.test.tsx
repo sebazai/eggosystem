@@ -316,6 +316,98 @@ describe("SignupWelcome", () => {
       expect(screen.getByText(/150€/i)).toBeInTheDocument();
     });
 
+    it("should use season payment_link when it is set", () => {
+      const seasonWithPaymentLink = createMockSeason(
+        1,
+        "Test Season",
+        "Test Season Full Name",
+        new Date().toISOString(),
+        new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        SeasonPlatform.Kanaliiga,
+        new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+        new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
+        1,
+        1,
+        1,
+        false,
+        false,
+        "https://custom-payment.example.com/season-123",
+        150,
+        true,
+        null,
+        null
+      );
+
+      const seasonDetailsWithPaymentLink = {
+        ...seasonWithPaymentLink,
+        app_id: 730
+      } satisfies SeasonDetails;
+
+      mockUseSeasonDetails.mockReturnValue({
+        seasonDetails: seasonDetailsWithPaymentLink,
+        isLoading: false,
+        isError: undefined,
+        isValidating: false
+      });
+
+      renderWithSWR(<SignupWelcome seasonId="1" />);
+
+      // Should use the custom payment link
+      const paymentLink = screen.getByRole("link", {
+        name: /custom-payment\.example\.com\/season-123/i
+      });
+      expect(paymentLink).toHaveAttribute(
+        "href",
+        "https://custom-payment.example.com/season-123"
+      );
+    });
+
+    it("should use default payment link when season payment_link is not set", () => {
+      const seasonWithoutPaymentLink = createMockSeason(
+        1,
+        "Test Season",
+        "Test Season Full Name",
+        new Date().toISOString(),
+        new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        SeasonPlatform.Kanaliiga,
+        new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+        new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
+        1,
+        1,
+        1,
+        false,
+        false,
+        null, // no payment_link
+        150,
+        true,
+        null,
+        null
+      );
+
+      const seasonDetailsWithoutPaymentLink = {
+        ...seasonWithoutPaymentLink,
+        app_id: 730
+      } satisfies SeasonDetails;
+
+      mockUseSeasonDetails.mockReturnValue({
+        seasonDetails: seasonDetailsWithoutPaymentLink,
+        isLoading: false,
+        isError: undefined,
+        isValidating: false
+      });
+
+      renderWithSWR(<SignupWelcome seasonId="1" />);
+
+      // Should use the default payment link
+      const paymentLink = screen.getByRole("link", {
+        name: /www\.kanaliiga\.fi\/kauppa/i
+      });
+      expect(paymentLink).toHaveAttribute(
+        "href",
+        "https://www.kanaliiga.fi/kauppa"
+      );
+    });
+
     it("should not display early bird pricing when discount is 0", () => {
       const futureDate = new Date(
         Date.now() + 7 * 24 * 60 * 60 * 1000
