@@ -262,6 +262,27 @@ interface DemoRoundImpacts {
   WinProbImpact: string | number;
 }
 
+/**
+ * Kill event from the demo parser
+ */
+export interface KillEvent {
+  round_number: number;
+  time_in_round: number; // Seconds since round start
+  killer: number; // Steam ID as number (uint64 in Go)
+  killer_team: "CT" | "T";
+  victim: number; // Steam ID as number
+  victim_team: "CT" | "T";
+  weapon: string;
+  is_headshot: boolean;
+  is_penetration: boolean; // Wall-bang
+  is_first_kill: boolean;
+  cts_alive_after: number; // After this kill
+  ts_alive_after: number; // After this kill
+  bomb_planted: boolean; // Was bomb planted at time of kill
+  assister: number; // Steam ID (0 = no assister)
+  is_flash_assist: boolean;
+}
+
 export interface ParsedPayload {
   Score: DemoScore;
   Players: DemoPlayers;
@@ -270,6 +291,7 @@ export interface ParsedPayload {
   RoundInfo: number[];
   NewRoundInfo: DemoNewRoundInfo;
   RoundImpacts: DemoRoundImpacts[];
+  KillLog?: KillEvent[]; // Optional - new field from parser
 }
 
 /**
