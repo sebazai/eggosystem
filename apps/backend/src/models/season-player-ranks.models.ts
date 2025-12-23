@@ -169,3 +169,23 @@ export const getTopXPlayersKanaElo = async (x: number) => {
     [x]
   );
 };
+
+/**
+ * Get the latest season_id for a player from SeasonPlayerRanks
+ * @param steam_id The steam ID of the player
+ * @returns The latest season_id or null if not found
+ */
+export const getLatestSeasonForPlayer = async (
+  steam_id: string
+): Promise<number | null> => {
+  const [result] = await runQuery<
+    Array<{ latest_season_id: number | null } | undefined>
+  >(
+    `SELECT MAX(season_id) as latest_season_id 
+     FROM SeasonPlayerRanks 
+     WHERE steam_id = ?`,
+    [steam_id]
+  );
+
+  return result?.latest_season_id ?? null;
+};
