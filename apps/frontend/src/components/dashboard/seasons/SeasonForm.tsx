@@ -34,6 +34,10 @@ import {
 import { useGames } from "@/hooks/data/useGames";
 import { useGameTypes } from "@/hooks/data/useGameTypes";
 import { useSeason } from "@/hooks/data/useSeason";
+import {
+  convertLocalDateTimeToISO,
+  formatDateTimeForInput
+} from "@/lib/date-utils";
 
 interface SeasonFormProps {
   onSubmit?: (data: SeasonFormRaw) => void | Promise<void>;
@@ -75,8 +79,8 @@ export function SeasonForm({
       organizer_id: season.organizer_id,
       name: season.name,
       full_name: season.full_name,
-      signup_start_date: season.signup_start_date || null,
-      signup_end_date: season.signup_end_date || null,
+      signup_start_date: formatDateTimeForInput(season.signup_start_date),
+      signup_end_date: formatDateTimeForInput(season.signup_end_date),
       start_date: formatDateForInput(season.start_date) || "",
       end_date: formatDateForInput(season.end_date),
       platform: season.platform,
@@ -85,8 +89,9 @@ export function SeasonForm({
       registration_price: season.registration_price ?? null,
       has_vat: season.has_vat,
       early_bird_price_discount: season.early_bird_price_discount ?? null,
-      early_bird_price_discount_end_date:
-        season.early_bird_price_discount_end_date || null
+      early_bird_price_discount_end_date: formatDateTimeForInput(
+        season.early_bird_price_discount_end_date
+      )
     };
   };
 
@@ -132,15 +137,18 @@ export function SeasonForm({
 
     setIsSubmitting(true);
     try {
-      // Convert form data to raw format for API
       const rawData: SeasonFormRaw = {
         game_id: data.game_id,
         game_type_id: data.game_type_id,
         organizer_id: data.organizer_id || 1,
         name: data.name,
         full_name: data.full_name,
-        signup_start_date: data.signup_start_date || null,
-        signup_end_date: data.signup_end_date || null,
+        signup_start_date: convertLocalDateTimeToISO(
+          data.signup_start_date ?? null
+        ),
+        signup_end_date: convertLocalDateTimeToISO(
+          data.signup_end_date ?? null
+        ),
         start_date: data.start_date,
         end_date: data.end_date || null,
         platform: data.platform,
@@ -157,8 +165,9 @@ export function SeasonForm({
           data.early_bird_price_discount !== null
             ? data.early_bird_price_discount
             : null,
-        early_bird_price_discount_end_date:
-          data.early_bird_price_discount_end_date || null
+        early_bird_price_discount_end_date: convertLocalDateTimeToISO(
+          data.early_bird_price_discount_end_date ?? null
+        )
       };
 
       await onSubmit(rawData);
@@ -386,10 +395,9 @@ export function SeasonForm({
                       <Input
                         type="datetime-local"
                         {...field}
-                        value={field.value ? field.value.slice(0, 16) : ""}
+                        value={field.value || ""}
                         onChange={(e) => {
-                          const value = e.target.value;
-                          field.onChange(value ? `${value}:00` : null);
+                          field.onChange(e.target.value || null);
                         }}
                         disabled={isFormDisabled}
                       />
@@ -410,10 +418,9 @@ export function SeasonForm({
                       <Input
                         type="datetime-local"
                         {...field}
-                        value={field.value ? field.value.slice(0, 16) : ""}
+                        value={field.value || ""}
                         onChange={(e) => {
-                          const value = e.target.value;
-                          field.onChange(value ? `${value}:00` : null);
+                          field.onChange(e.target.value || null);
                         }}
                         disabled={isFormDisabled}
                       />
@@ -574,10 +581,9 @@ export function SeasonForm({
                       <Input
                         type="datetime-local"
                         {...field}
-                        value={field.value ? field.value.slice(0, 16) : ""}
+                        value={field.value || ""}
                         onChange={(e) => {
-                          const value = e.target.value;
-                          field.onChange(value ? `${value}:00` : null);
+                          field.onChange(e.target.value || null);
                         }}
                         disabled={isFormDisabled}
                       />

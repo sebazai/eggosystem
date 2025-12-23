@@ -128,9 +128,23 @@ export interface SeasonFormRaw {
   organizer_id: number;
   name: string;
   full_name: string;
+  /**
+   * Signup start date in ISO 8601 UTC format (e.g., '2025-01-15T10:30:00.000Z')
+   * Frontend converts local time to UTC before sending, backend stores as-is
+   */
   signup_start_date: string | null;
+  /**
+   * Signup end date in ISO 8601 UTC format (e.g., '2025-01-15T10:30:00.000Z')
+   * Frontend converts local time to UTC before sending, backend stores as-is
+   */
   signup_end_date: string | null;
+  /**
+   * Start date as DATE (YYYY-MM-DD format)
+   */
   start_date: string;
+  /**
+   * End date as DATE (YYYY-MM-DD format) or null
+   */
   end_date: string | null;
   platform: SeasonPlatform;
   is_round_robin_bo2_as_2xbo1: boolean;
@@ -138,5 +152,9 @@ export interface SeasonFormRaw {
   registration_price: number | null;
   has_vat: boolean;
   early_bird_price_discount: number | null;
+  /**
+   * Early bird discount end date in ISO 8601 UTC format (e.g., '2025-01-15T10:30:00.000Z')
+   * Frontend converts local time to UTC before sending, backend stores as-is
+   */
   early_bird_price_discount_end_date: string | null;
 }

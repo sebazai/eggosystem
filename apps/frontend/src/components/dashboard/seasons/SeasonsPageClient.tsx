@@ -35,17 +35,11 @@ export function SeasonsPageClient() {
 
   const handleSubmit = async (data: SeasonFormRaw) => {
     try {
-      // Add timezone information to the request
-      const requestData = {
-        ...data,
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
-      };
-
       if (selectedSeasonId) {
         // Update existing season
         await clientApiFetch(`/api/v1/dashboard/seasons/${selectedSeasonId}`, {
           method: "PUT",
-          body: JSON.stringify(requestData)
+          body: JSON.stringify(data)
         });
         toast.success(`Season updated successfully!`);
         setSelectedSeasonId(null);
@@ -57,7 +51,7 @@ export function SeasonsPageClient() {
           "/api/v1/dashboard/seasons",
           {
             method: "POST",
-            body: JSON.stringify(requestData)
+            body: JSON.stringify(data)
           }
         );
         toast.success(`Season created successfully! ID: ${result.seasonId}`);

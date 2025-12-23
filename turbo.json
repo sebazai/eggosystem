@@ -55,7 +55,8 @@
         "RABBITMQ_VHOST",
         "CSRANKKER_BACKEND_API",
         "IMAGE_SERVICE_URL",
-        "IMAGE_SERVICE_API_KEY"
+        "IMAGE_SERVICE_API_KEY",
+        "IMAGE_SERVICE_BASE_URL"
       ],
       "dependsOn": ["^build"],
       "inputs": [

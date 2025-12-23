@@ -1,5 +1,40 @@
 import moment from "moment-timezone";
 
+/**
+ * Formats a UTC date for database insertion (MySQL format)
+ * @param utcDate - Date object or ISO string in UTC
+ * @returns MySQL datetime format string (e.g., '2025-01-15 10:30:00')
+ */
+export const formatDateForDatabase = (utcDate: Date | string): string => {
+  // Parse directly as UTC to avoid timezone issues
+  // If it's a string, parse it as UTC ISO string
+  // If it's a Date object, convert to ISO string first, then parse as UTC
+  const isoString =
+    typeof utcDate === "string" ? utcDate : utcDate.toISOString();
+  const utcMoment = moment.utc(isoString);
+  // Format as MySQL datetime (YYYY-MM-DD HH:mm:ss)
+  return utcMoment.format("YYYY-MM-DD HH:mm:ss");
+};
+
+/**
+ * Converts a database date string to ISO 8601 format with UTC indicator
+ * Database returns dates as strings (due to dateStrings: true)
+ * For timestamp columns, MariaDB returns them in session timezone (UTC after our migration)
+ * @param dbDateString - Date string from database (YYYY-MM-DD HH:mm:ss format)
+ * @returns ISO 8601 string with UTC indicator (e.g., '2025-01-15T10:30:00Z') or null
+ */
+export const formatDateFromDatabase = (
+  dbDateString: string | null | undefined
+): string | null => {
+  if (!dbDateString) {
+    return null;
+  }
+  // Parse as UTC (since session timezone is UTC)
+  const utcMoment = moment.utc(dbDateString, "YYYY-MM-DD HH:mm:ss");
+  // Return as ISO string with Z indicator
+  return utcMoment.toISOString();
+};
+
 export const getSevenDaysLaterInMillis = () => {
   const now = new Date();
   const sevenDaysLater = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);

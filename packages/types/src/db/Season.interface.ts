@@ -13,10 +13,24 @@ export interface Season {
   organizer_id: Organizer["id"];
   name: string;
   full_name: string;
+  /**
+   * Signup start date in UTC, ISO 8601 format with 'Z' indicator (e.g., '2025-01-15T10:30:00Z')
+   * Stored as TIMESTAMP in database (UTC)
+   */
   signup_start_date: string | null;
+  /**
+   * Signup end date in UTC, ISO 8601 format with 'Z' indicator (e.g., '2025-01-15T10:30:00Z')
+   * Stored as TIMESTAMP in database (UTC)
+   */
   signup_end_date: string | null;
   platform: SeasonPlatform;
-  start_date: string; // DATE stored as string (ISO format)
+  /**
+   * Start date as DATE (YYYY-MM-DD format)
+   */
+  start_date: string;
+  /**
+   * End date as DATE (YYYY-MM-DD format) or null
+   */
   end_date: string | null;
   is_round_robin_bo2_as_2xbo1: boolean;
   grand_final_round_one_only: boolean;
@@ -24,6 +38,10 @@ export interface Season {
   registration_price: number | null;
   has_vat: boolean;
   early_bird_price_discount: number | null;
+  /**
+   * Early bird discount end date in UTC, ISO 8601 format with 'Z' indicator (e.g., '2025-01-15T10:30:00Z')
+   * Stored as TIMESTAMP in database (UTC)
+   */
   early_bird_price_discount_end_date: string | null;
 }
 

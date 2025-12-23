@@ -16,23 +16,14 @@ import {
   type SeasonFormValues
 } from "@eggosystem/types";
 import { ZodError } from "zod";
+import { formatDateForDatabase } from "../../utils/date-utils";
 
-// Helper function to convert local datetime to UTC MySQL format
-const convertToUTC = (dateString: string, timezone?: string): string => {
-  // Create date object from the input string
-  const localDate = new Date(dateString);
-
-  // If timezone is provided, we need to interpret the date in that timezone
-  if (timezone) {
-    // Convert to UTC by adjusting for timezone offset
-    const utcDate = new Date(
-      localDate.getTime() - localDate.getTimezoneOffset() * 60000
-    );
-    return utcDate.toISOString().replace("T", " ").replace("Z", "");
-  }
-
-  // Fallback: treat as UTC
-  return localDate.toISOString().replace("T", " ").replace("Z", "");
+// Helper function to format UTC ISO string for database
+// Frontend already converts local time to UTC ISO strings, so we just format for MySQL
+const formatDateForDB = (dateString: string): string => {
+  // Date string is already in UTC ISO format (e.g., "2025-01-15T16:30:00.000Z")
+  // Just format it for MySQL datetime format
+  return formatDateForDatabase(dateString);
 };
 
 /**
@@ -123,10 +114,10 @@ export const createSeasonController = async (
       name: validatedData.name,
       full_name: validatedData.full_name,
       signup_start_date: validatedData.signup_start_date
-        ? convertToUTC(validatedData.signup_start_date, validatedData.timezone)
+        ? formatDateForDB(validatedData.signup_start_date)
         : null,
       signup_end_date: validatedData.signup_end_date
-        ? convertToUTC(validatedData.signup_end_date, validatedData.timezone)
+        ? formatDateForDB(validatedData.signup_end_date)
         : null,
       start_date: new Date(validatedData.start_date)
         .toISOString()
@@ -143,10 +134,7 @@ export const createSeasonController = async (
         validatedData.early_bird_price_discount ?? null,
       early_bird_price_discount_end_date:
         validatedData.early_bird_price_discount_end_date
-          ? convertToUTC(
-              validatedData.early_bird_price_discount_end_date,
-              validatedData.timezone
-            )
+          ? formatDateForDB(validatedData.early_bird_price_discount_end_date)
           : null
     };
 
@@ -195,10 +183,10 @@ export const updateSeasonController = async (
       name: validatedData.name,
       full_name: validatedData.full_name,
       signup_start_date: validatedData.signup_start_date
-        ? convertToUTC(validatedData.signup_start_date, validatedData.timezone)
+        ? formatDateForDB(validatedData.signup_start_date)
         : null,
       signup_end_date: validatedData.signup_end_date
-        ? convertToUTC(validatedData.signup_end_date, validatedData.timezone)
+        ? formatDateForDB(validatedData.signup_end_date)
         : null,
       start_date: new Date(validatedData.start_date)
         .toISOString()
@@ -215,10 +203,7 @@ export const updateSeasonController = async (
         validatedData.early_bird_price_discount ?? null,
       early_bird_price_discount_end_date:
         validatedData.early_bird_price_discount_end_date
-          ? convertToUTC(
-              validatedData.early_bird_price_discount_end_date,
-              validatedData.timezone
-            )
+          ? formatDateForDB(validatedData.early_bird_price_discount_end_date)
           : null
     };
 
