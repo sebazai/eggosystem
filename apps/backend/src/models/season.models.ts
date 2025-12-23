@@ -37,7 +37,7 @@ export const getSeasonById = async (
   id: number,
   connection?: PoolConnection
 ) => {
-  const [data] = await runQuery<[Season | undefined]>(
+  const [data] = await runQuery<Array<Season | undefined>>(
     "SELECT * FROM Seasons WHERE id = ?",
     [id],
     connection
