@@ -44,7 +44,9 @@ export default async function Layout({ children, params }: LayoutProps) {
   if (new Date(seasonDetails.signup_start_date).getTime() > serverTime) {
     return (
       <ContentContainer>
-        <span>Season sign up has not started yet. Please come back on </span>
+        <span>
+          Season sign up has not started yet. Please come back on&nbsp;
+        </span>
         <ClientDateDisplay utcDateString={seasonDetails.signup_start_date} />
         <span>.</span>
       </ContentContainer>
