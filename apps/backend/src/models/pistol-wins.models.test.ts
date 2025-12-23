@@ -35,7 +35,11 @@ describe("getTeamPistolWins", () => {
         team_name: "7dos",
         pistol_rounds_played: 4,
         pistol_rounds_won: 4,
-        pistol_win_percentage: 100.0
+        pistol_win_percentage: 100.0,
+        t_pistol_rounds_played: 2,
+        t_pistol_rounds_won: 2,
+        ct_pistol_rounds_played: 2,
+        ct_pistol_rounds_won: 2
       },
       {
         season_id: 14,
@@ -46,7 +50,11 @@ describe("getTeamPistolWins", () => {
         team_name: "7dos",
         pistol_rounds_played: 10,
         pistol_rounds_won: 8,
-        pistol_win_percentage: 80.0
+        pistol_win_percentage: 80.0,
+        t_pistol_rounds_played: 5,
+        t_pistol_rounds_won: 4,
+        ct_pistol_rounds_played: 5,
+        ct_pistol_rounds_won: 4
       }
     ];
 
@@ -82,7 +90,11 @@ describe("getTeamPistolWins", () => {
         team_name: "7dos",
         pistol_rounds_played: 4,
         pistol_rounds_won: 4,
-        pistol_win_percentage: 100.0
+        pistol_win_percentage: 100.0,
+        t_pistol_rounds_played: 2,
+        t_pistol_rounds_won: 2,
+        ct_pistol_rounds_played: 2,
+        ct_pistol_rounds_won: 2
       }
     ];
 

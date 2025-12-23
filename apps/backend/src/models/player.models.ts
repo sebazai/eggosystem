@@ -24,9 +24,9 @@ export const getPlayerBySteamId = async (steam_id: string) => {
   return runQuery<
     Array<
       | Pick<
-        SteamPlayer,
-        "nickname" | "steam_id" | "faceit_nickname" | "avatar"
-      >
+          SteamPlayer,
+          "nickname" | "steam_id" | "faceit_nickname" | "avatar"
+        >
       | undefined
     >
   >(
@@ -360,13 +360,14 @@ export const getAllPlayerStatsByFilters = async ({
     INNER JOIN SteamPlayers p ON p.steam_id = ps.steam_id
     INNER JOIN MatchGames mg ON mg.id = ps.match_game_id
     INNER JOIN Matches m ON m.id = mg.match_id
-    ${teamIdsJoin
-      ? `
+    ${
+      teamIdsJoin
+        ? `
         INNER JOIN MatchTeams mt ON mt.match_id = m.id 
         INNER JOIN SeasonTeamPlayers stp ON stp.season_id = m.season_id AND stp.steam_id = p.steam_id AND stp.team_id = mt.team_id
         INNER JOIN Teams t ON t.id = stp.team_id
         `
-      : ""
+        : ""
     }
     ${whereClause}
     GROUP BY p.steam_id, p.nickname
@@ -1139,8 +1140,10 @@ export const getPlayerMapStatsWithFilters = async (
       `;
 
       const tradeableParams: (string | number)[] = [steam_id, mapId];
-      if (season_ids && season_ids.length > 0) tradeableParams.push(...season_ids);
-      if (league_ids && league_ids.length > 0) tradeableParams.push(...league_ids);
+      if (season_ids && season_ids.length > 0)
+        tradeableParams.push(...season_ids);
+      if (league_ids && league_ids.length > 0)
+        tradeableParams.push(...league_ids);
       if (team_ids && team_ids.length > 0) tradeableParams.push(...team_ids);
       if (stages && stages.length > 0) tradeableParams.push(...stages);
 

@@ -88,10 +88,11 @@ function PlayerTabLayoutContent({
             <Link
               key={tab.value}
               href={`${tab.pathname}?${searchParams.toString()}`}
-              className={`py-3 px-2 sm:px-5 bg-transparent text-sm sm:text-base font-semibold hover:bg-kanaliiga-light-brown/10 focus:outline-none cursor-pointer text-center ${isActiveTab(tab.pathname)
-                ? "bg-kanaliiga-light-brown/20 border-b-2 border-kanaliiga-orange"
-                : ""
-                }`}
+              className={`py-3 px-2 sm:px-5 bg-transparent text-sm sm:text-base font-semibold hover:bg-kanaliiga-light-brown/10 focus:outline-none cursor-pointer text-center ${
+                isActiveTab(tab.pathname)
+                  ? "bg-kanaliiga-light-brown/20 border-b-2 border-kanaliiga-orange"
+                  : ""
+              }`}
             >
               {tab.label}
             </Link>

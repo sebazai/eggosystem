@@ -11,3 +11,4 @@ export * from "./TeamsByLeague.interface";
 export * from "./TeamCaptain.interface";
 export * from "./MyTeam.interface";
 export * from "./TeamMapVetoStats.interface";
+export * from "./TeamTradeMapStats.interface";

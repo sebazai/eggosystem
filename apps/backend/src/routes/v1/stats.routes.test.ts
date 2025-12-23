@@ -95,7 +95,11 @@ describe("Team Stats Routes - Integration Tests", () => {
         team_name: "7dos",
         pistol_rounds_played: 4,
         pistol_rounds_won: 4,
-        pistol_win_percentage: 100.0
+        pistol_win_percentage: 100,
+        ct_pistol_rounds_played: 2,
+        ct_pistol_rounds_won: 2,
+        t_pistol_rounds_played: 2,
+        t_pistol_rounds_won: 2
       };
 
       expect(response.body.data[0]).toEqual(expectedResult);

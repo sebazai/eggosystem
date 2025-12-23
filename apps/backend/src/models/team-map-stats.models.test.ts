@@ -63,14 +63,20 @@ describe("Team Map Stats Models", () => {
       const sqlQuery = mockRunQuery.mock.calls[0][0] as string;
       const sqlParams = mockRunQuery.mock.calls[0][1] as (string | number)[];
 
+      // Check that it uses a derived table for the team parameter
+      expect(sqlQuery).toContain("FROM (SELECT ? as tid) p");
+      expect(sqlQuery).toContain("CROSS JOIN MatchGames mg");
+
       // Check that it's using a subquery for side stats
       expect(sqlQuery).toContain("LEFT JOIN (");
       expect(sqlQuery).toContain("FROM PlayerStats ps");
       expect(sqlQuery).toContain(
-        "JOIN SeasonTeamPlayers stp ON stp.steam_id = ps.steam_id AND stp.team_id = ? AND stp.season_id = ("
+        "JOIN SeasonTeamPlayers stp ON stp.steam_id = ps.steam_id AND stp.season_id = ("
       );
-      expect(sqlQuery).toContain("GROUP BY ps.match_game_id");
-      expect(sqlQuery).toContain(") side ON side.match_game_id = mg.id");
+      expect(sqlQuery).toContain("GROUP BY ps.match_game_id, stp.team_id");
+      expect(sqlQuery).toContain(
+        ") side ON side.match_game_id = mg.id AND side.stat_team_id = p.tid"
+      );
 
       // Check that we're selecting summed side stats
       expect(sqlQuery).toContain("SUM(side.game_kills_ct) as kills_ct");
@@ -78,10 +84,10 @@ describe("Team Map Stats Models", () => {
       expect(sqlQuery).toContain("SUM(side.game_kills_t) as kills_t");
       expect(sqlQuery).toContain("SUM(side.game_deaths_t) as deaths_t");
 
-      // Check parameters
-      expect(sqlParams[0]).toBe(1650); // team_id for TeamGameScores join
-      expect(sqlParams[1]).toBe(1650); // team_id for SeasonTeamPlayers join
-      expect(sqlParams[2]).toBe(14); // season_id from parsedParams
+      // Check parameters - now just [teamId, ...filterParams]
+      expect(sqlParams).toHaveLength(2);
+      expect(sqlParams[0]).toBe(1650); // team_id in derived table
+      expect(sqlParams[1]).toBe(14); // season_id from parsedParams
 
       // Check that result contains expected data
       expect(result).toHaveLength(2);
@@ -103,7 +109,27 @@ describe("Team Map Stats Models", () => {
         kills_ct: 130,
         deaths_ct: 121,
         kills_t: 142,
-        deaths_t: 130
+        deaths_t: 130,
+        // Openings stats
+        first_kills: 0,
+        first_deaths: 0,
+        first_kills_t: 0,
+        first_deaths_t: 0,
+        first_kills_ct: 0,
+        first_deaths_ct: 0,
+        // Advantage stats
+        fk_5v4_won: 0,
+        fk_5v4_total: 0,
+        fk_4v5_won: 0,
+        fk_4v5_total: 0,
+        fk_5v4_won_ct: 0,
+        fk_5v4_total_ct: 0,
+        fk_5v4_won_t: 0,
+        fk_5v4_total_t: 0,
+        fk_4v5_won_ct: 0,
+        fk_4v5_total_ct: 0,
+        fk_4v5_won_t: 0,
+        fk_4v5_total_t: 0
       });
 
       // Check second map
@@ -123,7 +149,27 @@ describe("Team Map Stats Models", () => {
         kills_ct: 145,
         deaths_ct: 100,
         kills_t: 82,
-        deaths_t: 100
+        deaths_t: 100,
+        // Openings stats
+        first_kills: 0,
+        first_deaths: 0,
+        first_kills_t: 0,
+        first_deaths_t: 0,
+        first_kills_ct: 0,
+        first_deaths_ct: 0,
+        // Advantage stats
+        fk_5v4_won: 0,
+        fk_5v4_total: 0,
+        fk_4v5_won: 0,
+        fk_4v5_total: 0,
+        fk_5v4_won_ct: 0,
+        fk_5v4_total_ct: 0,
+        fk_5v4_won_t: 0,
+        fk_5v4_total_t: 0,
+        fk_4v5_won_ct: 0,
+        fk_4v5_total_ct: 0,
+        fk_4v5_won_t: 0,
+        fk_4v5_total_t: 0
       });
     });
   });
