@@ -202,7 +202,10 @@ const RoundIcon = ({
       {isMobile ? (
         <Popover>
           <PopoverTrigger asChild>{content}</PopoverTrigger>
-          <PopoverContent side="top" className="text-sm rounded shadow-lg z-[100]">
+          <PopoverContent
+            side="top"
+            className="text-sm rounded shadow-lg z-[100]"
+          >
             {tooltipContent}
           </PopoverContent>
         </Popover>
@@ -280,12 +283,12 @@ export const RoundInfo = ({
           {(isProcessing ||
             isLoadingViewerData ||
             isLoadingViewerDataUntilReady) && (
-              <Spinner
-                thickness="thick"
-                color="kanaliigaOrange"
-                className="ml-2"
-              />
-            )}
+            <Spinner
+              thickness="thick"
+              color="kanaliigaOrange"
+              className="ml-2"
+            />
+          )}
           {!(isProcessing || isLoadingViewerData) && hasViewerData && (
             <Button
               variant="kanaliigaOrange"
