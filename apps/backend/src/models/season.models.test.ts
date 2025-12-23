@@ -1,18 +1,41 @@
 import { createSeason, updateSeason, getSeasonById } from "./season.models";
 import { runQuery } from "../db/mysqlRunQuery";
+import { getConnection } from "../db/mysqlConnection";
 import {
   SeasonPlatform,
   createMockSeason,
   createMockSeasonFormRaw
 } from "@eggosystem/types";
+import type { PoolConnection } from "mysql2/promise";
 
 jest.mock("../db/mysqlRunQuery");
+jest.mock("../db/mysqlConnection");
+jest.mock("./season-active-map-pool.models", () => ({
+  setActiveMapPoolForSeason: jest.fn().mockResolvedValue(undefined),
+  getActiveMapPoolBySeasonId: jest.fn().mockResolvedValue([1, 2, 3])
+}));
 
 const mockRunQuery = runQuery as jest.MockedFunction<typeof runQuery>;
+const mockGetConnection = getConnection as jest.MockedFunction<
+  typeof getConnection
+>;
+
+function getMockConnection(): PoolConnection {
+  return {
+    beginTransaction: jest.fn().mockResolvedValue(undefined),
+    commit: jest.fn().mockResolvedValue(undefined),
+    rollback: jest.fn().mockResolvedValue(undefined),
+    release: jest.fn().mockResolvedValue(undefined)
+  } as unknown as PoolConnection;
+}
 
 describe("Season Models", () => {
+  let mockConnection: PoolConnection;
+
   beforeEach(() => {
     jest.clearAllMocks();
+    mockConnection = getMockConnection();
+    mockGetConnection.mockResolvedValue(mockConnection);
   });
 
   describe("createSeason", () => {
@@ -23,6 +46,8 @@ describe("Season Models", () => {
 
       const result = await createSeason(seasonData);
 
+      expect(mockGetConnection).toHaveBeenCalled();
+      expect(mockConnection.beginTransaction).toHaveBeenCalled();
       expect(mockRunQuery).toHaveBeenCalledWith(
         expect.stringContaining("INSERT INTO Seasons"),
         [
@@ -43,8 +68,10 @@ describe("Season Models", () => {
           seasonData.early_bird_price_discount,
           seasonData.early_bird_price_discount_end_date
         ],
-        undefined
+        mockConnection
       );
+      expect(mockConnection.commit).toHaveBeenCalled();
+      expect(mockConnection.release).toHaveBeenCalled();
       expect(result).toEqual({ insertId: 123 });
     });
 
@@ -71,8 +98,9 @@ describe("Season Models", () => {
           null,
           null
         ]),
-        undefined
+        mockConnection
       );
+      expect(mockConnection.commit).toHaveBeenCalled();
       expect(result).toEqual({ insertId: 456 });
     });
   });
@@ -94,6 +122,8 @@ describe("Season Models", () => {
 
       const result = await updateSeason(seasonId, seasonData);
 
+      expect(mockGetConnection).toHaveBeenCalled();
+      expect(mockConnection.beginTransaction).toHaveBeenCalled();
       expect(mockRunQuery).toHaveBeenCalledWith(
         expect.stringContaining("UPDATE Seasons SET"),
         [
@@ -115,8 +145,10 @@ describe("Season Models", () => {
           seasonData.early_bird_price_discount_end_date,
           seasonId
         ],
-        undefined
+        mockConnection
       );
+      expect(mockConnection.commit).toHaveBeenCalled();
+      expect(mockConnection.release).toHaveBeenCalled();
       expect(result).toEqual({ affectedRows: 1 });
     });
 
@@ -147,8 +179,9 @@ describe("Season Models", () => {
           null,
           seasonId
         ]),
-        undefined
+        mockConnection
       );
+      expect(mockConnection.commit).toHaveBeenCalled();
       expect(result).toEqual({ affectedRows: 1 });
     });
   });

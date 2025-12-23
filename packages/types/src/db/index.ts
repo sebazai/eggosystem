@@ -14,6 +14,8 @@ export * from "./PlayerTrade.interface";
 export * from "./Reservation.interface";
 export * from "./Season.interface";
 export * from "./Season.test-utils";
+export * from "./SeasonActiveMapPool.interface";
+export * from "./SeasonActiveMapPool.test-utils";
 export * from "./SteamPlayer.test-utils";
 export * from "./Team.test-utils";
 export * from "./Organizer.test-utils";

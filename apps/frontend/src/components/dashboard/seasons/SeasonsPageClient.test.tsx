@@ -10,6 +10,7 @@ import { useAllSeasons } from "@/hooks/data/useAllSeasons";
 import { useGames } from "@/hooks/data/useGames";
 import { useGameTypes } from "@/hooks/data/useGameTypes";
 import { useSeason } from "@/hooks/data/useSeason";
+import { useMaps } from "@/hooks/data/useMaps";
 import { clientApiFetch } from "@/lib/apiClient";
 import { toast } from "sonner";
 import {
@@ -25,11 +26,23 @@ jest.mock("@/hooks/data/useAllSeasons");
 jest.mock("@/hooks/data/useGames");
 jest.mock("@/hooks/data/useGameTypes");
 jest.mock("@/hooks/data/useSeason");
+jest.mock("@/hooks/data/useMaps");
 jest.mock("@/lib/apiClient");
-jest.mock("swr", () => ({
-  ...jest.requireActual("swr"),
-  mutate: jest.fn()
-}));
+jest.mock("swr", () => {
+  const actualSWR = jest.requireActual("swr");
+  return {
+    __esModule: true,
+    default: jest.fn(() => ({
+      data: undefined,
+      error: undefined,
+      isLoading: false,
+      isValidating: false,
+      mutate: jest.fn()
+    })),
+    mutate: jest.fn(),
+    SWRConfig: actualSWR.SWRConfig
+  };
+});
 jest.mock("sonner", () => ({
   toast: {
     success: jest.fn(),
@@ -45,6 +58,7 @@ const mockUseGameTypes = useGameTypes as jest.MockedFunction<
   typeof useGameTypes
 >;
 const mockUseSeason = useSeason as jest.MockedFunction<typeof useSeason>;
+const mockUseMaps = useMaps as jest.MockedFunction<typeof useMaps>;
 const mockClientApiFetch = clientApiFetch as jest.MockedFunction<
   typeof clientApiFetch
 >;
@@ -122,6 +136,17 @@ describe("SeasonsPageClient", () => {
     // Default mock for useSeason - returns undefined (no season loaded)
     mockUseSeason.mockReturnValue({
       season: undefined,
+      isLoading: false,
+      isError: undefined,
+      isValidating: false
+    });
+    mockUseMaps.mockReturnValue({
+      maps: [
+        { id: 1, name: "Dust 2" },
+        { id: 2, name: "Mirage" },
+        { id: 3, name: "Inferno" }
+      ],
+      mapsRecord: { 1: "Dust 2", 2: "Mirage", 3: "Inferno" },
       isLoading: false,
       isError: undefined,
       isValidating: false
@@ -209,10 +234,20 @@ describe("SeasonsPageClient", () => {
         }) || startDateInputs[0]!;
       await user.type(startDateInput, "2024-02-01");
 
-      // Submit form
-      const submitButton = screen.getByRole("button", {
-        name: /create season/i
+      // Select at least one map (required by schema)
+      const mapCheckbox = screen.getByLabelText(/dust 2/i);
+      await user.click(mapCheckbox);
+
+      // Wait for form to be ready and submit button to be enabled
+      const submitButton = await waitFor(() => {
+        const button = screen.getByRole("button", {
+          name: /create season/i
+        });
+        expect(button).not.toBeDisabled();
+        return button;
       });
+
+      // Submit form
       await user.click(submitButton);
 
       await waitFor(() => {
@@ -260,14 +295,23 @@ describe("SeasonsPageClient", () => {
         }) || startDateInputs[0]!;
       await user.type(startDateInput, "2024-02-01");
 
-      // Submit form
-      const submitButton = screen.getByRole("button", {
-        name: /create season/i
+      // Select at least one map (required by schema)
+      const mapCheckbox = screen.getByLabelText(/dust 2/i);
+      await user.click(mapCheckbox);
+
+      // Wait for form to be ready and submit button to be enabled
+      const submitButton = await waitFor(() => {
+        const button = screen.getByRole("button", {
+          name: /create season/i
+        });
+        expect(button).not.toBeDisabled();
+        return button;
       });
 
       // Suppress console.error for this test since we're testing error handling
       const consoleSpy = jest.spyOn(console, "error").mockImplementation();
 
+      // Submit form
       await user.click(submitButton);
 
       await waitFor(() => {

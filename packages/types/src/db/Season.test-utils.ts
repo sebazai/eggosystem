@@ -41,6 +41,7 @@ export const createMockSeason = (overrides?: Partial<Season>): Season => {
     has_vat: true,
     early_bird_price_discount: null,
     early_bird_price_discount_end_date: null,
+    active_map_pool: [1, 2, 3],
     ...overrides
   };
 };
