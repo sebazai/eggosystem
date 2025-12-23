@@ -69,7 +69,8 @@ describe("ClientDateDisplay", () => {
 
   it("handles invalid date strings gracefully", () => {
     render(<ClientDateDisplay utcDateString="invalid-date" />);
-    // Should still render something (the invalid date string with UTC)
+    // When date parsing fails, the component should fall back to the original string
+    // The component should render the invalid string with UTC label
     expect(screen.getByText(/invalid-date.*UTC/)).toBeInTheDocument();
   });
 

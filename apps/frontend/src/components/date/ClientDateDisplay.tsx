@@ -46,11 +46,16 @@ export function ClientDateDisplay({
     let fallbackFormatted: string;
     try {
       const date = new Date(utcDateString);
-      fallbackFormatted = date.toLocaleString("en-US", {
-        dateStyle: "long",
-        timeStyle: "short",
-        timeZone: "UTC"
-      });
+      // Check if date is valid (Invalid Date objects have NaN getTime())
+      if (isNaN(date.getTime())) {
+        fallbackFormatted = utcDateString;
+      } else {
+        fallbackFormatted = date.toLocaleString("en-US", {
+          dateStyle: "long",
+          timeStyle: "short",
+          timeZone: "UTC"
+        });
+      }
     } catch (_error) {
       fallbackFormatted = utcDateString;
     }
