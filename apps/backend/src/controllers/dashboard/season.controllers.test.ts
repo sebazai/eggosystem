@@ -231,4 +231,168 @@ describe("Dashboard Season Controllers", () => {
       expect(mockNext).toHaveBeenCalledWith(dbError);
     });
   });
+
+  describe("timezone conversion", () => {
+    it("should convert signup dates from GMT+8 timezone to UTC when creating", async () => {
+      const mockRequest = {
+        body: {
+          ...validSeasonData,
+          start_date: "2025-02-01",
+          end_date: "2025-12-31",
+          signup_start_date: "2025-01-15T18:30:00.000Z",
+          signup_end_date: "2025-01-20T18:30:00.000Z",
+          timezone: "Asia/Shanghai" // GMT+8
+        }
+      } as RequestWithBody<SeasonFormValues>;
+
+      mockCreateSeason.mockResolvedValue({ insertId: 123 });
+
+      await createSeasonController(mockRequest, mockResponse, mockNext);
+
+      // Verify that dates were converted to UTC MySQL format
+      expect(mockCreateSeason).toHaveBeenCalled();
+      expect(mockNext).not.toHaveBeenCalled();
+
+      // The dates should be in UTC format (18:30 GMT+8 = 10:30 UTC)
+      const callArgs = mockCreateSeason.mock.calls[0][0];
+      expect(callArgs.signup_start_date).toMatch(
+        /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/
+      );
+      expect(callArgs.signup_end_date).toMatch(
+        /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/
+      );
+
+      expect(callArgs.signup_start_date).toBe("2025-01-15 10:30:00");
+      expect(callArgs.signup_end_date).toBe("2025-01-20 10:30:00");
+    });
+
+    it("should convert dates from GMT-5 timezone to UTC when creating", async () => {
+      const mockRequest = {
+        body: {
+          ...validSeasonData,
+          start_date: "2025-02-01",
+          end_date: "2025-12-31",
+          signup_start_date: "2025-01-15T10:30:00.000Z",
+          signup_end_date: "2025-01-20T10:30:00.000Z",
+          timezone: "America/New_York" // GMT-5 (EST)
+        }
+      } as RequestWithBody<SeasonFormValues>;
+
+      mockCreateSeason.mockResolvedValue({ insertId: 123 });
+
+      await createSeasonController(mockRequest, mockResponse, mockNext);
+
+      expect(mockCreateSeason).toHaveBeenCalled();
+      const callArgs = mockCreateSeason.mock.calls[0][0];
+      // 10:30 AM EST = 3:30 PM UTC
+      expect(callArgs.signup_start_date).toBe("2025-01-15 15:30:00");
+      expect(callArgs.signup_end_date).toBe("2025-01-20 15:30:00");
+    });
+
+    it("should convert early_bird_price_discount_end_date with timezone", async () => {
+      const mockRequest = {
+        body: {
+          ...validSeasonData,
+          start_date: "2025-02-01",
+          end_date: "2025-12-31",
+          early_bird_price_discount_end_date: "2025-01-10T18:30:00.000Z",
+          timezone: "Europe/Helsinki"
+        }
+      } as RequestWithBody<SeasonFormValues>;
+
+      mockCreateSeason.mockResolvedValue({ insertId: 123 });
+
+      await createSeasonController(mockRequest, mockResponse, mockNext);
+
+      expect(mockCreateSeason).toHaveBeenCalled();
+      const callArgs = mockCreateSeason.mock.calls[0][0];
+      // 6:30 PM Helsinki (UTC+2 in winter) = 4:30 PM UTC
+      expect(callArgs.early_bird_price_discount_end_date).toBe(
+        "2025-01-10 16:30:00"
+      );
+    });
+
+    it("should handle dates without timezone (treat as UTC)", async () => {
+      const mockRequest = {
+        body: {
+          ...validSeasonData,
+          start_date: "2025-02-01", // Ensure start_date is after signup dates
+          end_date: "2025-12-31", // Ensure end_date is after start_date
+          signup_start_date: "2025-01-15T10:30:00.000Z",
+          signup_end_date: "2025-01-20T10:30:00.000Z",
+          timezone: undefined // Explicitly remove timezone - should treat as UTC
+        }
+      } as RequestWithBody<SeasonFormValues>;
+
+      mockCreateSeason.mockResolvedValue({ insertId: 123 });
+
+      await createSeasonController(mockRequest, mockResponse, mockNext);
+
+      expect(mockCreateSeason).toHaveBeenCalled();
+      const callArgs = mockCreateSeason.mock.calls[0][0];
+      expect(callArgs.signup_start_date).toMatch(
+        /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/
+      );
+      expect(callArgs.signup_end_date).toMatch(
+        /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/
+      );
+      const inputDate = new Date("2025-01-15T10:30:00.000Z");
+      const outputDate = new Date(callArgs.signup_start_date + ":00Z");
+      expect(outputDate.getTime()).toBe(inputDate.getTime());
+      expect(callArgs.signup_start_date).toBe("2025-01-15 10:30:00");
+      expect(callArgs.signup_end_date).toBe("2025-01-20 10:30:00");
+    });
+
+    it("should convert dates with timezone when updating", async () => {
+      const mockRequest = {
+        params: { id: "123" },
+        body: {
+          ...validSeasonData,
+          start_date: "2025-02-01",
+          end_date: "2025-12-31",
+          signup_start_date: "2025-01-15T18:30:00.000Z",
+          signup_end_date: "2025-01-20T18:30:00.000Z",
+          timezone: "Asia/Shanghai"
+        }
+      } as RequestWithParams<{ id: string }> &
+        RequestWithBody<SeasonFormValues>;
+
+      mockGetSeasonById.mockResolvedValue(
+        createMockSeason({
+          id: 123,
+          signup_start_date: "2025-01-15T10:30:00Z",
+          signup_end_date: "2025-01-20T10:30:00Z"
+        })
+      );
+
+      mockUpdateSeason.mockResolvedValue({ affectedRows: 1 });
+
+      await updateSeasonController(mockRequest, mockResponse, mockNext);
+
+      expect(mockUpdateSeason).toHaveBeenCalled();
+      const callArgs = mockUpdateSeason.mock.calls[0][1];
+      expect(callArgs.signup_start_date).toBe("2025-01-15 10:30:00");
+      expect(callArgs.signup_end_date).toBe("2025-01-20 10:30:00");
+    });
+
+    it("should handle null date values", async () => {
+      const mockRequest = {
+        body: {
+          ...validSeasonData,
+          signup_start_date: null,
+          signup_end_date: null,
+          early_bird_price_discount_end_date: null
+        }
+      } as RequestWithBody<SeasonFormValues>;
+
+      mockCreateSeason.mockResolvedValue({ insertId: 123 });
+
+      await createSeasonController(mockRequest, mockResponse, mockNext);
+
+      const callArgs = mockCreateSeason.mock.calls[0][0];
+      expect(callArgs.signup_start_date).toBeNull();
+      expect(callArgs.signup_end_date).toBeNull();
+      expect(callArgs.early_bird_price_discount_end_date).toBeNull();
+    });
+  });
 });

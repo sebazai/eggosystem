@@ -10,8 +10,11 @@ export const convertClientDateToUTC = (
   dateString: string,
   clientTimezone: string
 ): string => {
+  // Strip 'Z' if present - we want to interpret the time as local time in client's timezone
+  // Frontend sends ISO strings with 'Z', but the time represents local time, not UTC
+  const dateStringWithoutZ = dateString.replace(/Z$/, "");
   // Parse the date string in the client's timezone
-  const clientDate = moment.tz(dateString, clientTimezone);
+  const clientDate = moment.tz(dateStringWithoutZ, clientTimezone);
   // Convert to UTC and return as ISO string
   return clientDate.utc().toISOString();
 };
@@ -22,9 +25,12 @@ export const convertClientDateToUTC = (
  * @returns MySQL datetime format string (e.g., '2025-01-15 10:30:00')
  */
 export const formatDateForDatabase = (utcDate: Date | string): string => {
-  const date = typeof utcDate === "string" ? new Date(utcDate) : utcDate;
-  // Ensure we're working with UTC
-  const utcMoment = moment.utc(date);
+  // Parse directly as UTC to avoid timezone issues
+  // If it's a string, parse it as UTC ISO string
+  // If it's a Date object, convert to ISO string first, then parse as UTC
+  const isoString =
+    typeof utcDate === "string" ? utcDate : utcDate.toISOString();
+  const utcMoment = moment.utc(isoString);
   // Format as MySQL datetime (YYYY-MM-DD HH:mm:ss)
   return utcMoment.format("YYYY-MM-DD HH:mm:ss");
 };
