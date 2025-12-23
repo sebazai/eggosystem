@@ -64,9 +64,42 @@ export const getCS2RankFromLeetify = async (steam_id: string) => {
 
     if (!result.ok) {
       const duration = clearAbortTimeout();
-      logger.warn(
-        `[Leetify] API returned ${result.status} ${result.statusText} for steam_id: ${steam_id} (${duration}ms)`
-      );
+
+      // Enhanced logging for rate limit errors (429)
+      if (result.status === 429) {
+        const retryAfter = result.headers.get("Retry-After");
+        const rateLimitRemaining = result.headers.get("X-RateLimit-Remaining");
+        const rateLimitReset = result.headers.get("X-RateLimit-Reset");
+
+        // Parse error message from response body if available
+        let errorMessage = "unknown error";
+        try {
+          const errorBody = await result.json().catch(() => ({}));
+          if (
+            errorBody &&
+            typeof errorBody === "object" &&
+            "error" in errorBody
+          ) {
+            errorMessage = String(errorBody.error);
+          }
+        } catch {
+          // If parsing fails, use default message
+        }
+
+        logger.error(
+          `[Leetify] Rate limit exceeded (429) for steam_id: ${steam_id} (${duration}ms). ` +
+            `Error message: "${errorMessage}". ` +
+            `Retry-After: ${retryAfter || "not provided"}, ` +
+            `RateLimit-Remaining: ${rateLimitRemaining || "not provided"}, ` +
+            `RateLimit-Reset: ${rateLimitReset || "not provided"}. ` +
+            `System will fall back to Redis cache or database. Consider implementing rate limit handling or caching strategy.`
+        );
+      } else {
+        logger.warn(
+          `[Leetify] API returned ${result.status} ${result.statusText} for steam_id: ${steam_id} (${duration}ms)`
+        );
+      }
+
       return undefined;
     }
 

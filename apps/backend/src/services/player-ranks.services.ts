@@ -112,32 +112,54 @@ const getRankFromCache = async (
 
 /**
  * Cache rank data in Redis
+ * Wraps caching in try-catch to ensure it never fails the main operation
  */
 const cacheRankData = async (
   steam_id: string,
   rankData: CS2LeetifyAvgRank
 ): Promise<void> => {
-  const redisKey = `730-${steam_id}-rank`;
-  await redisClient.set(
-    redisKey,
-    JSON.stringify(rankData),
-    "EX",
-    expireIn30Days
-  );
-  logger.debug(`[Rank] Cached rank data for steam_id: ${steam_id}`);
+  try {
+    const redisKey = `730-${steam_id}-rank`;
+    await redisClient.set(
+      redisKey,
+      JSON.stringify(rankData),
+      "EX",
+      expireIn30Days
+    );
+    logger.debug(`[Rank] Cached rank data for steam_id: ${steam_id}`);
+  } catch (error) {
+    // Log error but don't fail - caching is best effort
+    logger.warn(
+      `[Rank] Failed to cache rank data for steam_id: ${steam_id}`,
+      error
+    );
+  }
 };
 
 /**
  * Get rank from external sources (Leetify)
+ * Always caches successful fetches to Redis, regardless of user existence in DB
  */
 const getRankFromExternalSources = async (
   steam_id: string
 ): Promise<CS2LeetifyAvgRank | null> => {
   const leetifyRank = await getCS2RankFromLeetify(steam_id);
   if (leetifyRank) {
+    // Always cache successful fetches to Redis, even if user doesn't exist in DB
+    // This prevents unnecessary API calls and rate limiting
     await cacheRankData(steam_id, leetifyRank);
+    logger.info(
+      `[Rank] Fetched and cached rank from Leetify for steam_id: ${steam_id}, rank: ${leetifyRank.average_rank}`
+    );
     return leetifyRank;
   }
+
+  // Log when external source fails (could be rate limit, network error, or no data)
+  // Check logs for [Leetify] prefix to see specific error details
+  logger.debug(
+    `[Rank] External source (Leetify) returned no rank for steam_id: ${steam_id}. ` +
+      `Will fall back to database if available. Check [Leetify] logs for error details.`
+  );
 
   return null;
 };
@@ -210,12 +232,21 @@ export const getCSRank = async (
     }
 
     // 4. Try database fallback
+    // Note: If Leetify returned 429 (rate limit), we're falling back to database/cache
+    // This is expected behavior to avoid hitting rate limits
     const fallbackRank = await getRankFromDatabaseFallback(steam_id);
     if (fallbackRank) {
+      logger.info(
+        `[Rank] Using database fallback for steam_id: ${steam_id} after external source failure. ` +
+          `This may indicate rate limiting - check [Leetify] logs for 429 errors.`
+      );
       return fallbackRank;
     }
 
-    logger.warn(`[Rank] No rank found for steam_id: ${steam_id}`);
+    logger.warn(
+      `[Rank] No rank found for steam_id: ${steam_id} from any source (database, cache, external API, or fallback). ` +
+        `If Leetify returned 429, consider checking Redis cache or waiting before retrying.`
+    );
     return {
       average_rank: -1,
       rank_updated_at: null
