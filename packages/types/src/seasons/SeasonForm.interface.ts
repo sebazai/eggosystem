@@ -71,7 +71,10 @@ export const seasonFormSchema = z
       )
       .optional()
       .nullable(),
-    timezone: z.string().optional()
+    timezone: z.string().optional(),
+    active_map_pool: z
+      .array(z.number().int().positive())
+      .min(1, "At least one map must be selected")
   })
   .refine(
     (data) => {
@@ -157,4 +160,9 @@ export interface SeasonFormRaw {
    * Frontend converts local time to UTC before sending, backend stores as-is
    */
   early_bird_price_discount_end_date: string | null;
+  /**
+   * Active map pool - array of map IDs that are active for this season
+   * Must contain at least one map ID
+   */
+  active_map_pool: number[];
 }
