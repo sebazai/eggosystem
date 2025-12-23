@@ -7,6 +7,8 @@ import {
 } from "../../../controllers/dashboard/player.controllers";
 import { validateNumericParams } from "../../../middlewares/validate-numeric-params";
 import { getPlayerBySteamIdController } from "../../../controllers/players.controllers";
+import { calculateKanaEloForAllPlayersController } from "../../../controllers/kanaelo.controllers";
+import { checkPermissions } from "../../../middlewares/auth.middleware";
 
 const router = Router();
 
@@ -31,5 +33,14 @@ router.get("/:steam_id", getPlayerBySteamIdController);
 
 // POST /api/v1/dashboard/players/:steam_id/prepare-for-signup
 router.post("/:steam_id/prepare-for-signup", preparePlayerForSignupController);
+
+// POST /api/v1/dashboard/players/kanaelo/bulk
+router.post(
+  "/kanaelo/bulk",
+  checkPermissions({
+    fallbackRoles: ["admin"]
+  }),
+  calculateKanaEloForAllPlayersController
+);
 
 export default router;

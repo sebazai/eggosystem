@@ -1,4 +1,5 @@
 import { FaceitSyncButton } from "@/components/dashboard/FaceitSyncButton";
+import { KanaEloCalculateButton } from "@/components/dashboard/KanaEloCalculateButton";
 
 export default async function Page() {
   return (
@@ -8,7 +9,14 @@ export default async function Page() {
           <h2 className="mb-4 text-lg font-semibold">FACEIT Integration</h2>
           <FaceitSyncButton />
         </div>
-        <div className="aspect-video rounded-xl bg-muted/50" />
+        <div className="rounded-xl bg-muted/50 p-4">
+          <h2 className="mb-4 text-lg font-semibold">KanaElo Calculation</h2>
+          <p className="mb-4 text-sm text-muted-foreground">
+            Calculate kana_elo for all players using CSRankker API and update
+            SteamPlayerKanaElo table
+          </p>
+          <KanaEloCalculateButton />
+        </div>
         <div className="aspect-video rounded-xl bg-muted/50" />
       </div>
       <div className="min-h-[100vh] flex-1 rounded-xl bg-muted/50 md:min-h-min" />

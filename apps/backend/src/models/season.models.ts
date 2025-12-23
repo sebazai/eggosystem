@@ -113,6 +113,16 @@ export const getActiveSeasonForAppId = async (
   return activeSeason;
 };
 
+/**
+ * Get active season ID for CS2 (app_id 730, organizer_id 1)
+ * Used as fallback when player has no season history
+ * @returns Active season ID or null if not found
+ */
+export const getActiveSeasonId = async (): Promise<number | null> => {
+  const activeSeason = await getActiveOrLatestSeasonForAppId(1, 730);
+  return activeSeason?.season_id ?? null;
+};
+
 export const getActiveSignupSeasonForAppId = async (
   organizer_id: number,
   app_id: number
