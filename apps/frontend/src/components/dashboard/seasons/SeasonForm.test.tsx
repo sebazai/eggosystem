@@ -3,12 +3,13 @@
  */
 
 import React from "react";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { SeasonForm } from "./SeasonForm";
 import { useGames } from "@/hooks/data/useGames";
 import { useGameTypes } from "@/hooks/data/useGameTypes";
 import { useSeason } from "@/hooks/data/useSeason";
+import { useMaps } from "@/hooks/data/useMaps";
 import {
   SeasonPlatform,
   type Season,
@@ -20,6 +21,7 @@ import { renderWithSWR, clearAllMocks } from "@/test-utils/test-utils";
 jest.mock("@/hooks/data/useGames");
 jest.mock("@/hooks/data/useGameTypes");
 jest.mock("@/hooks/data/useSeason");
+jest.mock("@/hooks/data/useMaps");
 // Mock timezone utility
 jest.mock("@/lib/timezone", () => ({
   getUserTimezone: jest.fn(() => "America/New_York"),
@@ -35,6 +37,7 @@ const mockUseGameTypes = useGameTypes as jest.MockedFunction<
   typeof useGameTypes
 >;
 const mockUseSeason = useSeason as jest.MockedFunction<typeof useSeason>;
+const mockUseMaps = useMaps as jest.MockedFunction<typeof useMaps>;
 
 describe("SeasonForm - Timezone Conversion", () => {
   const mockOnSubmit = jest.fn();
@@ -65,6 +68,17 @@ describe("SeasonForm - Timezone Conversion", () => {
     });
     mockUseSeason.mockReturnValue({
       season: undefined,
+      isLoading: false,
+      isError: undefined,
+      isValidating: false
+    });
+    mockUseMaps.mockReturnValue({
+      maps: [
+        { id: 1, name: "Dust 2" },
+        { id: 2, name: "Mirage" },
+        { id: 3, name: "Inferno" }
+      ],
+      mapsRecord: { 1: "Dust 2", 2: "Mirage", 3: "Inferno" },
       isLoading: false,
       isError: undefined,
       isValidating: false
@@ -178,10 +192,19 @@ describe("SeasonForm - Timezone Conversion", () => {
       await userEvent.clear(signupEndInput);
       await userEvent.type(signupEndInput, "2025-01-20T15:45");
 
-      // Submit form
-      const submitButton = screen.getByRole("button", {
-        name: /create season/i
+      // Select at least one map (required by schema)
+      const mapCheckbox = screen.getByLabelText(/dust 2/i);
+      await userEvent.click(mapCheckbox);
+
+      // Wait for form to be ready and submit button to be enabled
+      const submitButton = await waitFor(() => {
+        const button = screen.getByRole("button", {
+          name: /create season/i
+        });
+        expect(button).not.toBeDisabled();
+        return button;
       });
+
       await userEvent.click(submitButton);
 
       await waitFor(() => {
@@ -219,10 +242,20 @@ describe("SeasonForm - Timezone Conversion", () => {
       const startDateInputs = screen.getAllByLabelText(/start date/i);
       await userEvent.type(startDateInputs[0]!, "2025-02-01");
 
-      // Submit form
-      const submitButton = screen.getByRole("button", {
-        name: /create season/i
+      // Select at least one map (required by schema)
+      const mapCheckbox = screen.getByLabelText(/dust 2/i);
+      await userEvent.click(mapCheckbox);
+
+      // Wait for form to be ready and submit button to be enabled
+      const submitButton = await waitFor(() => {
+        const button = screen.getByRole("button", {
+          name: /create season/i
+        });
+        expect(button).not.toBeDisabled();
+        return button;
       });
+
+      // Click the submit button to trigger form submission
       await userEvent.click(submitButton);
 
       await waitFor(() => {
@@ -254,10 +287,21 @@ describe("SeasonForm - Timezone Conversion", () => {
       const startDateInputs = screen.getAllByLabelText(/start date/i);
       await userEvent.type(startDateInputs[0]!, "2025-02-01");
 
+      // Select at least one map (required by schema)
+      const mapCheckbox = screen.getByLabelText(/dust 2/i);
+      await userEvent.click(mapCheckbox);
+
       // Leave signup dates empty
-      const submitButton = screen.getByRole("button", {
-        name: /create season/i
+      // Wait for form to be ready and submit button to be enabled
+      const submitButton = await waitFor(() => {
+        const button = screen.getByRole("button", {
+          name: /create season/i
+        });
+        expect(button).not.toBeDisabled();
+        return button;
       });
+
+      // Click the submit button to trigger form submission
       await userEvent.click(submitButton);
 
       await waitFor(() => {
