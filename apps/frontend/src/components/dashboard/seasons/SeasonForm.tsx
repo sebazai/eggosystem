@@ -34,6 +34,7 @@ import {
 import { useGames } from "@/hooks/data/useGames";
 import { useGameTypes } from "@/hooks/data/useGameTypes";
 import { useSeason } from "@/hooks/data/useSeason";
+import { getUserTimezone } from "@/lib/timezone";
 
 interface SeasonFormProps {
   onSubmit?: (data: SeasonFormRaw) => void | Promise<void>;
@@ -69,14 +70,32 @@ export function SeasonForm({
       }
     };
 
+    // Convert UTC ISO datetime strings to local datetime-local format (YYYY-MM-DDTHH:mm)
+    const formatDateTimeForInput = (dateStr: string | null): string | null => {
+      if (!dateStr) return null;
+      try {
+        // Parse UTC date string
+        const utcDate = new Date(dateStr);
+        // Get local date components
+        const year = utcDate.getFullYear();
+        const month = String(utcDate.getMonth() + 1).padStart(2, "0");
+        const day = String(utcDate.getDate()).padStart(2, "0");
+        const hours = String(utcDate.getHours()).padStart(2, "0");
+        const minutes = String(utcDate.getMinutes()).padStart(2, "0");
+        return `${year}-${month}-${day}T${hours}:${minutes}`;
+      } catch {
+        return null;
+      }
+    };
+
     return {
       game_id: season.game_id,
       game_type_id: season.game_type_id,
       organizer_id: season.organizer_id,
       name: season.name,
       full_name: season.full_name,
-      signup_start_date: season.signup_start_date || null,
-      signup_end_date: season.signup_end_date || null,
+      signup_start_date: formatDateTimeForInput(season.signup_start_date),
+      signup_end_date: formatDateTimeForInput(season.signup_end_date),
       start_date: formatDateForInput(season.start_date) || "",
       end_date: formatDateForInput(season.end_date),
       platform: season.platform,
@@ -85,8 +104,10 @@ export function SeasonForm({
       registration_price: season.registration_price ?? null,
       has_vat: season.has_vat,
       early_bird_price_discount: season.early_bird_price_discount ?? null,
-      early_bird_price_discount_end_date:
-        season.early_bird_price_discount_end_date || null
+      early_bird_price_discount_end_date: formatDateTimeForInput(
+        season.early_bird_price_discount_end_date
+      ),
+      timezone: getUserTimezone()
     };
   };
 
@@ -108,7 +129,8 @@ export function SeasonForm({
       registration_price: null,
       has_vat: true,
       early_bird_price_discount: null,
-      early_bird_price_discount_end_date: null
+      early_bird_price_discount_end_date: null,
+      timezone: getUserTimezone()
     },
     mode: "onTouched"
   });
@@ -132,15 +154,39 @@ export function SeasonForm({
 
     setIsSubmitting(true);
     try {
+      // Convert datetime-local values to ISO format with timezone
+      // datetime-local inputs return values in local timezone (YYYY-MM-DDTHH:mm)
+      // We need to convert them to ISO format for the backend
+      const convertLocalDateTimeToISO = (
+        localDateTime: string | null
+      ): string | null => {
+        if (!localDateTime) return null;
+        try {
+          // Parse as local time and convert to ISO string
+          // datetime-local format is YYYY-MM-DDTHH:mm, we need to add seconds
+          const dateTimeStr =
+            localDateTime.length === 16 ? `${localDateTime}:00` : localDateTime;
+          const localDate = new Date(dateTimeStr);
+          return localDate.toISOString();
+        } catch {
+          return null;
+        }
+      };
+
       // Convert form data to raw format for API
+      // The backend will handle timezone conversion using the timezone field
       const rawData: SeasonFormRaw = {
         game_id: data.game_id,
         game_type_id: data.game_type_id,
         organizer_id: data.organizer_id || 1,
         name: data.name,
         full_name: data.full_name,
-        signup_start_date: data.signup_start_date || null,
-        signup_end_date: data.signup_end_date || null,
+        signup_start_date: convertLocalDateTimeToISO(
+          data.signup_start_date ?? null
+        ),
+        signup_end_date: convertLocalDateTimeToISO(
+          data.signup_end_date ?? null
+        ),
         start_date: data.start_date,
         end_date: data.end_date || null,
         platform: data.platform,
@@ -157,8 +203,9 @@ export function SeasonForm({
           data.early_bird_price_discount !== null
             ? data.early_bird_price_discount
             : null,
-        early_bird_price_discount_end_date:
-          data.early_bird_price_discount_end_date || null
+        early_bird_price_discount_end_date: convertLocalDateTimeToISO(
+          data.early_bird_price_discount_end_date ?? null
+        )
       };
 
       await onSubmit(rawData);
@@ -386,10 +433,9 @@ export function SeasonForm({
                       <Input
                         type="datetime-local"
                         {...field}
-                        value={field.value ? field.value.slice(0, 16) : ""}
+                        value={field.value || ""}
                         onChange={(e) => {
-                          const value = e.target.value;
-                          field.onChange(value ? `${value}:00` : null);
+                          field.onChange(e.target.value || null);
                         }}
                         disabled={isFormDisabled}
                       />
@@ -410,10 +456,9 @@ export function SeasonForm({
                       <Input
                         type="datetime-local"
                         {...field}
-                        value={field.value ? field.value.slice(0, 16) : ""}
+                        value={field.value || ""}
                         onChange={(e) => {
-                          const value = e.target.value;
-                          field.onChange(value ? `${value}:00` : null);
+                          field.onChange(e.target.value || null);
                         }}
                         disabled={isFormDisabled}
                       />
@@ -574,10 +619,9 @@ export function SeasonForm({
                       <Input
                         type="datetime-local"
                         {...field}
-                        value={field.value ? field.value.slice(0, 16) : ""}
+                        value={field.value || ""}
                         onChange={(e) => {
-                          const value = e.target.value;
-                          field.onChange(value ? `${value}:00` : null);
+                          field.onChange(e.target.value || null);
                         }}
                         disabled={isFormDisabled}
                       />

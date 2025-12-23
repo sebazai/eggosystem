@@ -1,5 +1,53 @@
 import moment from "moment-timezone";
 
+/**
+ * Converts a date string from client timezone to UTC ISO string
+ * @param dateString - Date string in any format (ISO, local datetime, etc.)
+ * @param clientTimezone - IANA timezone identifier (e.g., 'Europe/Helsinki', 'America/New_York')
+ * @returns ISO 8601 string in UTC format (e.g., '2025-01-15T10:30:00Z')
+ */
+export const convertClientDateToUTC = (
+  dateString: string,
+  clientTimezone: string
+): string => {
+  // Parse the date string in the client's timezone
+  const clientDate = moment.tz(dateString, clientTimezone);
+  // Convert to UTC and return as ISO string
+  return clientDate.utc().toISOString();
+};
+
+/**
+ * Formats a UTC date for database insertion (MySQL format)
+ * @param utcDate - Date object or ISO string in UTC
+ * @returns MySQL datetime format string (e.g., '2025-01-15 10:30:00')
+ */
+export const formatDateForDatabase = (utcDate: Date | string): string => {
+  const date = typeof utcDate === "string" ? new Date(utcDate) : utcDate;
+  // Ensure we're working with UTC
+  const utcMoment = moment.utc(date);
+  // Format as MySQL datetime (YYYY-MM-DD HH:mm:ss)
+  return utcMoment.format("YYYY-MM-DD HH:mm:ss");
+};
+
+/**
+ * Converts a database date string to ISO 8601 format with UTC indicator
+ * Database returns dates as strings (due to dateStrings: true)
+ * For timestamp columns, MariaDB returns them in session timezone (UTC after our migration)
+ * @param dbDateString - Date string from database (YYYY-MM-DD HH:mm:ss format)
+ * @returns ISO 8601 string with UTC indicator (e.g., '2025-01-15T10:30:00Z') or null
+ */
+export const formatDateFromDatabase = (
+  dbDateString: string | null | undefined
+): string | null => {
+  if (!dbDateString) {
+    return null;
+  }
+  // Parse as UTC (since session timezone is UTC)
+  const utcMoment = moment.utc(dbDateString, "YYYY-MM-DD HH:mm:ss");
+  // Return as ISO string with Z indicator
+  return utcMoment.toISOString();
+};
+
 export const getSevenDaysLaterInMillis = () => {
   const now = new Date();
   const sevenDaysLater = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);

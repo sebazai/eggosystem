@@ -16,23 +16,22 @@ import {
   type SeasonFormValues
 } from "@eggosystem/types";
 import { ZodError } from "zod";
+import {
+  convertClientDateToUTC,
+  formatDateForDatabase
+} from "../../utils/date-utils";
 
-// Helper function to convert local datetime to UTC MySQL format
+// Helper function to convert client timezone date to UTC MySQL format
 const convertToUTC = (dateString: string, timezone?: string): string => {
-  // Create date object from the input string
-  const localDate = new Date(dateString);
-
-  // If timezone is provided, we need to interpret the date in that timezone
+  // If timezone is provided, interpret the date in that timezone and convert to UTC
   if (timezone) {
-    // Convert to UTC by adjusting for timezone offset
-    const utcDate = new Date(
-      localDate.getTime() - localDate.getTimezoneOffset() * 60000
-    );
-    return utcDate.toISOString().replace("T", " ").replace("Z", "");
+    const utcISOString = convertClientDateToUTC(dateString, timezone);
+    return formatDateForDatabase(utcISOString);
   }
 
-  // Fallback: treat as UTC
-  return localDate.toISOString().replace("T", " ").replace("Z", "");
+  // Fallback: treat as UTC (assume dateString is already in UTC or ISO format)
+  // Parse and format for database
+  return formatDateForDatabase(dateString);
 };
 
 /**

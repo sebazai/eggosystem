@@ -7,9 +7,25 @@ import type {
 } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
 import { type PoolConnection } from "mysql2/promise";
+import { formatDateFromDatabase } from "../utils/date-utils";
+
+/**
+ * Formats date fields in a Season object to ISO 8601 with UTC indicator
+ */
+const formatSeasonDates = (season: Season): Season => {
+  return {
+    ...season,
+    signup_start_date: formatDateFromDatabase(season.signup_start_date),
+    signup_end_date: formatDateFromDatabase(season.signup_end_date),
+    early_bird_price_discount_end_date: formatDateFromDatabase(
+      season.early_bird_price_discount_end_date
+    )
+  };
+};
 
 export const getSeasons = async () => {
-  return runQuery<Season[]>("SELECT * FROM Seasons");
+  const seasons = await runQuery<Season[]>("SELECT * FROM Seasons");
+  return seasons.map(formatSeasonDates);
 };
 
 export const getSeasonById = async (
@@ -21,7 +37,7 @@ export const getSeasonById = async (
     [id],
     connection
   );
-  return data;
+  return data ? formatSeasonDates(data) : undefined;
 };
 
 export const getSeasonByIdOrThrow = async (
@@ -40,7 +56,11 @@ export const getSeasonDetailsById = async (id: number) => {
     "SELECT s.*, g.app_id FROM Seasons s JOIN Games g ON s.game_id = g.id WHERE s.id = ?",
     [id]
   );
-  return data;
+  if (data) {
+    // SeasonDetails extends Season, so we can format it the same way
+    return formatSeasonDates(data as unknown as Season) as SeasonDetails;
+  }
+  return undefined;
 };
 
 export const getActiveOrLatestSeasonForAppId = async (
@@ -109,6 +129,14 @@ export const getActiveSignupSeasonForAppId = async (
      LIMIT 1;`,
     [app_id, organizer_id]
   );
+  if (activeSignupSeason) {
+    return {
+      ...activeSignupSeason,
+      signup_end_date: formatDateFromDatabase(
+        activeSignupSeason.signup_end_date
+      )
+    };
+  }
   return activeSignupSeason;
 };
 
@@ -138,6 +166,17 @@ export const getActiveSignupOrActiveSeasonForAppId = async (
      LIMIT 1;`,
     [app_id, organizer_id]
   );
+  if (activeSignupOrActiveSeason) {
+    return {
+      ...activeSignupOrActiveSeason,
+      signup_start_date: formatDateFromDatabase(
+        activeSignupOrActiveSeason.signup_start_date
+      ),
+      signup_end_date: formatDateFromDatabase(
+        activeSignupOrActiveSeason.signup_end_date
+      )
+    };
+  }
   return activeSignupOrActiveSeason;
 };
 

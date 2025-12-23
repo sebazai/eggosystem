@@ -1,8 +1,11 @@
+"use server";
+
 import type { SeasonDetails } from "@eggosystem/types";
 import type React from "react";
 
 import { envConfig } from "@/configs/env";
 import { ContentContainer } from "@/components/layout/ContentContainer";
+import { ClientDateDisplay } from "@/components/date/ClientDateDisplay";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -41,7 +44,9 @@ export default async function Layout({ children, params }: LayoutProps) {
   if (new Date(seasonDetails.signup_start_date).getTime() > serverTime) {
     return (
       <ContentContainer>
-        {`Season sign up has not started yet. Please come back on ${new Date(seasonDetails.signup_start_date).toUTCString()}.`}
+        <span>Season sign up has not started yet. Please come back on </span>
+        <ClientDateDisplay utcDateString={seasonDetails.signup_start_date} />
+        <span>.</span>
       </ContentContainer>
     );
   }
