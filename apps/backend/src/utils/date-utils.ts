@@ -1,25 +1,6 @@
 import moment from "moment-timezone";
 
 /**
- * Converts a date string from client timezone to UTC ISO string
- * @param dateString - Date string in any format (ISO, local datetime, etc.)
- * @param clientTimezone - IANA timezone identifier (e.g., 'Europe/Helsinki', 'America/New_York')
- * @returns ISO 8601 string in UTC format (e.g., '2025-01-15T10:30:00Z')
- */
-export const convertClientDateToUTC = (
-  dateString: string,
-  clientTimezone: string
-): string => {
-  // Strip 'Z' if present - we want to interpret the time as local time in client's timezone
-  // Frontend sends ISO strings with 'Z', but the time represents local time, not UTC
-  const dateStringWithoutZ = dateString.replace(/Z$/, "");
-  // Parse the date string in the client's timezone
-  const clientDate = moment.tz(dateStringWithoutZ, clientTimezone);
-  // Convert to UTC and return as ISO string
-  return clientDate.utc().toISOString();
-};
-
-/**
  * Formats a UTC date for database insertion (MySQL format)
  * @param utcDate - Date object or ISO string in UTC
  * @returns MySQL datetime format string (e.g., '2025-01-15 10:30:00')
