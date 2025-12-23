@@ -8,6 +8,11 @@ import type {
 import { runQuery } from "../db/mysqlRunQuery";
 import { type PoolConnection } from "mysql2/promise";
 import { formatDateFromDatabase } from "../utils/date-utils";
+import { getConnection } from "../db/mysqlConnection";
+import {
+  setActiveMapPoolForSeason,
+  getActiveMapPoolBySeasonId
+} from "./season-active-map-pool.models";
 
 /**
  * Formats date fields in a Season object to ISO 8601 with UTC indicator
@@ -37,7 +42,16 @@ export const getSeasonById = async (
     [id],
     connection
   );
-  return data ? formatSeasonDates(data) : undefined;
+  if (!data) {
+    return undefined;
+  }
+  const season = formatSeasonDates(data);
+  // Get active map pool
+  const activeMapPool = await getActiveMapPoolBySeasonId(id, connection);
+  return {
+    ...season,
+    active_map_pool: activeMapPool
+  };
 };
 
 export const getSeasonByIdOrThrow = async (
@@ -190,10 +204,22 @@ export const getActiveSignupOrActiveSeasonForAppId = async (
   return activeSignupOrActiveSeason;
 };
 
-export const createSeason = async (
+/**
+ * Internal function to create a season with active map pool.
+ * Requires a connection and does not manage transactions.
+ * @param seasonData - Season data including active_map_pool
+ * @param connection - Database connection (required)
+ * @returns Insert result with season ID
+ */
+const createSeasonWithMapPool = async (
   seasonData: SeasonFormRaw,
-  connection?: PoolConnection
+  connection: PoolConnection
 ): Promise<{ insertId: number }> => {
+  // Validate active_map_pool
+  if (!seasonData.active_map_pool || seasonData.active_map_pool.length === 0) {
+    throw new Error("Active map pool must contain at least one map");
+  }
+
   const query = `
     INSERT INTO Seasons (
       game_id,
@@ -238,14 +264,58 @@ export const createSeason = async (
     connection
   );
 
+  // Set active map pool
+  await setActiveMapPoolForSeason(
+    result.insertId,
+    seasonData.active_map_pool,
+    connection
+  );
+
   return result;
 };
 
-export const updateSeason = async (
+/**
+ * Create a new season with active map pool.
+ * Manages its own database transaction.
+ * @param seasonData - Season data including active_map_pool
+ * @returns Insert result with season ID
+ */
+export const createSeason = async (
+  seasonData: SeasonFormRaw
+): Promise<{ insertId: number }> => {
+  const connection = await getConnection();
+
+  try {
+    await connection.beginTransaction();
+    const result = await createSeasonWithMapPool(seasonData, connection);
+    await connection.commit();
+    return result;
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+};
+
+/**
+ * Internal function to update a season with active map pool.
+ * Requires a connection and does not manage transactions.
+ * @param seasonId - Season ID to update
+ * @param seasonData - Season data including active_map_pool
+ * @param connection - Database connection (required)
+ * @returns Update result with affected rows
+ */
+const updateSeasonWithMapPool = async (
   seasonId: number,
   seasonData: SeasonFormRaw,
-  connection?: PoolConnection
+  connection: PoolConnection
 ): Promise<{ affectedRows: number }> => {
+  // Validate active_map_pool
+  if (!seasonData.active_map_pool || seasonData.active_map_pool.length === 0) {
+    throw new Error("Active map pool must contain at least one map");
+  }
+
   const query = `
     UPDATE Seasons SET
       game_id = ?,
@@ -291,5 +361,42 @@ export const updateSeason = async (
     connection
   );
 
+  // Set active map pool
+  await setActiveMapPoolForSeason(
+    seasonId,
+    seasonData.active_map_pool,
+    connection
+  );
+
   return result;
+};
+
+/**
+ * Update an existing season with active map pool.
+ * Manages its own database transaction.
+ * @param seasonId - Season ID to update
+ * @param seasonData - Season data including active_map_pool
+ * @returns Update result with affected rows
+ */
+export const updateSeason = async (
+  seasonId: number,
+  seasonData: SeasonFormRaw
+): Promise<{ affectedRows: number }> => {
+  const connection = await getConnection();
+
+  try {
+    await connection.beginTransaction();
+    const result = await updateSeasonWithMapPool(
+      seasonId,
+      seasonData,
+      connection
+    );
+    await connection.commit();
+    return result;
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
 };
