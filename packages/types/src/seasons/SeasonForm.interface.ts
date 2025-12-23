@@ -129,13 +129,13 @@ export interface SeasonFormRaw {
   name: string;
   full_name: string;
   /**
-   * Signup start date in ISO 8601 format (e.g., '2025-01-15T10:30:00.000Z')
-   * Backend will convert from client timezone to UTC before storing in database
+   * Signup start date in ISO 8601 UTC format (e.g., '2025-01-15T10:30:00.000Z')
+   * Frontend converts local time to UTC before sending, backend stores as-is
    */
   signup_start_date: string | null;
   /**
-   * Signup end date in ISO 8601 format (e.g., '2025-01-15T10:30:00.000Z')
-   * Backend will convert from client timezone to UTC before storing in database
+   * Signup end date in ISO 8601 UTC format (e.g., '2025-01-15T10:30:00.000Z')
+   * Frontend converts local time to UTC before sending, backend stores as-is
    */
   signup_end_date: string | null;
   /**
@@ -153,8 +153,8 @@ export interface SeasonFormRaw {
   has_vat: boolean;
   early_bird_price_discount: number | null;
   /**
-   * Early bird discount end date in ISO 8601 format (e.g., '2025-01-15T10:30:00.000Z')
-   * Backend will convert from client timezone to UTC before storing in database
+   * Early bird discount end date in ISO 8601 UTC format (e.g., '2025-01-15T10:30:00.000Z')
+   * Frontend converts local time to UTC before sending, backend stores as-is
    */
   early_bird_price_discount_end_date: string | null;
 }

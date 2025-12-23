@@ -232,16 +232,16 @@ describe("Dashboard Season Controllers", () => {
     });
   });
 
-  describe("timezone conversion", () => {
-    it("should convert signup dates from GMT+8 timezone to UTC when creating", async () => {
+  describe("date formatting", () => {
+    it("should format UTC ISO strings to MySQL format when creating", async () => {
       const mockRequest = {
         body: {
           ...validSeasonData,
           start_date: "2025-02-01",
           end_date: "2025-12-31",
+          // Frontend sends UTC ISO strings (already converted from local time)
           signup_start_date: "2025-01-15T18:30:00.000Z",
-          signup_end_date: "2025-01-20T18:30:00.000Z",
-          timezone: "Asia/Shanghai" // GMT+8
+          signup_end_date: "2025-01-20T18:30:00.000Z"
         }
       } as RequestWithBody<SeasonFormValues>;
 
@@ -249,11 +249,10 @@ describe("Dashboard Season Controllers", () => {
 
       await createSeasonController(mockRequest, mockResponse, mockNext);
 
-      // Verify that dates were converted to UTC MySQL format
       expect(mockCreateSeason).toHaveBeenCalled();
       expect(mockNext).not.toHaveBeenCalled();
 
-      // The dates should be in UTC format (18:30 GMT+8 = 10:30 UTC)
+      // Backend should format UTC ISO strings to MySQL format (no conversion, just formatting)
       const callArgs = mockCreateSeason.mock.calls[0][0];
       expect(callArgs.signup_start_date).toMatch(
         /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/
@@ -261,20 +260,18 @@ describe("Dashboard Season Controllers", () => {
       expect(callArgs.signup_end_date).toMatch(
         /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/
       );
-
-      expect(callArgs.signup_start_date).toBe("2025-01-15 10:30:00");
-      expect(callArgs.signup_end_date).toBe("2025-01-20 10:30:00");
+      // 18:30 UTC should be stored as 18:30 (no conversion)
+      expect(callArgs.signup_start_date).toBe("2025-01-15 18:30:00");
+      expect(callArgs.signup_end_date).toBe("2025-01-20 18:30:00");
     });
 
-    it("should convert dates from GMT-5 timezone to UTC when creating", async () => {
+    it("should format early_bird_price_discount_end_date correctly", async () => {
       const mockRequest = {
         body: {
           ...validSeasonData,
           start_date: "2025-02-01",
           end_date: "2025-12-31",
-          signup_start_date: "2025-01-15T10:30:00.000Z",
-          signup_end_date: "2025-01-20T10:30:00.000Z",
-          timezone: "America/New_York" // GMT-5 (EST)
+          early_bird_price_discount_end_date: "2025-01-10T16:30:00.000Z"
         }
       } as RequestWithBody<SeasonFormValues>;
 
@@ -284,43 +281,21 @@ describe("Dashboard Season Controllers", () => {
 
       expect(mockCreateSeason).toHaveBeenCalled();
       const callArgs = mockCreateSeason.mock.calls[0][0];
-      // 10:30 AM EST = 3:30 PM UTC
-      expect(callArgs.signup_start_date).toBe("2025-01-15 15:30:00");
-      expect(callArgs.signup_end_date).toBe("2025-01-20 15:30:00");
-    });
-
-    it("should convert early_bird_price_discount_end_date with timezone", async () => {
-      const mockRequest = {
-        body: {
-          ...validSeasonData,
-          start_date: "2025-02-01",
-          end_date: "2025-12-31",
-          early_bird_price_discount_end_date: "2025-01-10T18:30:00.000Z",
-          timezone: "Europe/Helsinki"
-        }
-      } as RequestWithBody<SeasonFormValues>;
-
-      mockCreateSeason.mockResolvedValue({ insertId: 123 });
-
-      await createSeasonController(mockRequest, mockResponse, mockNext);
-
-      expect(mockCreateSeason).toHaveBeenCalled();
-      const callArgs = mockCreateSeason.mock.calls[0][0];
-      // 6:30 PM Helsinki (UTC+2 in winter) = 4:30 PM UTC
+      // UTC ISO string should be formatted to MySQL format
       expect(callArgs.early_bird_price_discount_end_date).toBe(
         "2025-01-10 16:30:00"
       );
     });
 
-    it("should handle dates without timezone (treat as UTC)", async () => {
+    it("should format UTC ISO strings correctly (timezone field is ignored)", async () => {
       const mockRequest = {
         body: {
           ...validSeasonData,
-          start_date: "2025-02-01", // Ensure start_date is after signup dates
-          end_date: "2025-12-31", // Ensure end_date is after start_date
+          start_date: "2025-02-01",
+          end_date: "2025-12-31",
           signup_start_date: "2025-01-15T10:30:00.000Z",
           signup_end_date: "2025-01-20T10:30:00.000Z",
-          timezone: undefined // Explicitly remove timezone - should treat as UTC
+          timezone: "Europe/Helsinki" // This field is ignored - dates are already in UTC
         }
       } as RequestWithBody<SeasonFormValues>;
 
@@ -330,20 +305,12 @@ describe("Dashboard Season Controllers", () => {
 
       expect(mockCreateSeason).toHaveBeenCalled();
       const callArgs = mockCreateSeason.mock.calls[0][0];
-      expect(callArgs.signup_start_date).toMatch(
-        /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/
-      );
-      expect(callArgs.signup_end_date).toMatch(
-        /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/
-      );
-      const inputDate = new Date("2025-01-15T10:30:00.000Z");
-      const outputDate = new Date(callArgs.signup_start_date + ":00Z");
-      expect(outputDate.getTime()).toBe(inputDate.getTime());
+      // Dates are stored as-is (no timezone conversion)
       expect(callArgs.signup_start_date).toBe("2025-01-15 10:30:00");
       expect(callArgs.signup_end_date).toBe("2025-01-20 10:30:00");
     });
 
-    it("should convert dates with timezone when updating", async () => {
+    it("should format dates when updating", async () => {
       const mockRequest = {
         params: { id: "123" },
         body: {
@@ -351,8 +318,7 @@ describe("Dashboard Season Controllers", () => {
           start_date: "2025-02-01",
           end_date: "2025-12-31",
           signup_start_date: "2025-01-15T18:30:00.000Z",
-          signup_end_date: "2025-01-20T18:30:00.000Z",
-          timezone: "Asia/Shanghai"
+          signup_end_date: "2025-01-20T18:30:00.000Z"
         }
       } as RequestWithParams<{ id: string }> &
         RequestWithBody<SeasonFormValues>;
@@ -371,8 +337,9 @@ describe("Dashboard Season Controllers", () => {
 
       expect(mockUpdateSeason).toHaveBeenCalled();
       const callArgs = mockUpdateSeason.mock.calls[0][1];
-      expect(callArgs.signup_start_date).toBe("2025-01-15 10:30:00");
-      expect(callArgs.signup_end_date).toBe("2025-01-20 10:30:00");
+      // UTC ISO strings should be formatted to MySQL format
+      expect(callArgs.signup_start_date).toBe("2025-01-15 18:30:00");
+      expect(callArgs.signup_end_date).toBe("2025-01-20 18:30:00");
     });
 
     it("should handle null date values", async () => {
