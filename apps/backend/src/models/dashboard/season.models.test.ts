@@ -71,6 +71,13 @@ describe("Season Models", () => {
         }
       ]);
 
+      // Mock for getActiveMapPoolBySeasonId (called by getSeasonById)
+      mockRunQuery.mockResolvedValueOnce([
+        { map_id: 1 },
+        { map_id: 2 },
+        { map_id: 3 }
+      ]);
+
       mockRunQuery.mockResolvedValueOnce([
         {
           team_id: 1,
@@ -101,7 +108,7 @@ describe("Season Models", () => {
         "76561198028510846"
       );
 
-      expect(mockRunQuery).toHaveBeenCalledTimes(6);
+      expect(mockRunQuery).toHaveBeenCalledTimes(7);
 
       expect(mockRunQuery.mock.calls[0][0]).toContain("SELECT slt.league_id");
       expect(mockRunQuery.mock.calls[1][0]).toContain(
@@ -110,13 +117,14 @@ describe("Season Models", () => {
       expect(mockRunQuery.mock.calls[2][0]).toContain(
         "SELECT * FROM Seasons WHERE id = ?"
       );
-      expect(mockRunQuery.mock.calls[3][0]).toContain(
+      expect(mockRunQuery.mock.calls[3][0]).toContain("SELECT map_id");
+      expect(mockRunQuery.mock.calls[4][0]).toContain(
         "WITH FilteredPlayers AS"
       );
-      expect(mockRunQuery.mock.calls[4][0]).toContain(
+      expect(mockRunQuery.mock.calls[5][0]).toContain(
         "WITH TeamPlayersKanaElo AS"
       );
-      expect(mockRunQuery.mock.calls[5][0]).toContain(
+      expect(mockRunQuery.mock.calls[6][0]).toContain(
         "SELECT l.name AS league_name"
       );
 
@@ -290,6 +298,13 @@ describe("Season Models", () => {
         }
       ]);
 
+      // Mock for getActiveMapPoolBySeasonId (called by getSeasonById)
+      mockRunQuery.mockResolvedValueOnce([
+        { map_id: 1 },
+        { map_id: 2 },
+        { map_id: 3 }
+      ]);
+
       mockRunQuery.mockResolvedValueOnce([
         {
           league_id: 1
@@ -375,6 +390,13 @@ describe("Season Models", () => {
           id: 1,
           max_players: 9
         }
+      ]);
+
+      // Mock for getActiveMapPoolBySeasonId (called by getSeasonById)
+      mockRunQuery.mockResolvedValueOnce([
+        { map_id: 1 },
+        { map_id: 2 },
+        { map_id: 3 }
       ]);
 
       // Return data for league query but empty array for selected team query

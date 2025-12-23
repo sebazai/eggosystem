@@ -1,7 +1,8 @@
 import { type Response, type NextFunction } from "express";
 import {
   createSeasonController,
-  updateSeasonController
+  updateSeasonController,
+  getSeasonByIdController
 } from "./season.controllers";
 import {
   createSeason,
@@ -31,7 +32,7 @@ const mockGetSeasonById = getSeasonById as jest.MockedFunction<
 
 describe("Dashboard Season Controllers", () => {
   let mockResponse: Response;
-  let mockNext: NextFunction;
+  let mockNext: jest.MockedFunction<NextFunction>;
   let mockJson: jest.MockedFunction<Response["json"]>;
   let mockStatus: jest.MockedFunction<Response["status"]>;
 
@@ -360,6 +361,141 @@ describe("Dashboard Season Controllers", () => {
       expect(callArgs.signup_start_date).toBeNull();
       expect(callArgs.signup_end_date).toBeNull();
       expect(callArgs.early_bird_price_discount_end_date).toBeNull();
+    });
+  });
+
+  describe("active_map_pool validation", () => {
+    it("should create a season with valid active_map_pool", async () => {
+      const mockRequest = {
+        body: {
+          ...validSeasonData,
+          active_map_pool: [1, 2, 3]
+        }
+      } as RequestWithBody<SeasonFormValues>;
+
+      mockCreateSeason.mockResolvedValue({ insertId: 123 });
+
+      await createSeasonController(mockRequest, mockResponse, mockNext);
+
+      expect(mockCreateSeason).toHaveBeenCalledWith(
+        expect.objectContaining({
+          active_map_pool: [1, 2, 3]
+        })
+      );
+      expect(mockNext).not.toHaveBeenCalled();
+    });
+
+    it("should reject empty active_map_pool array", async () => {
+      const mockRequest = {
+        body: {
+          ...validSeasonData,
+          active_map_pool: []
+        }
+      } as unknown as RequestWithBody<SeasonFormValues>;
+
+      await createSeasonController(mockRequest, mockResponse, mockNext);
+
+      expect(mockCreateSeason).not.toHaveBeenCalled();
+      expect(mockNext).toHaveBeenCalledWith(expect.any(ZodError));
+      const zodError = mockNext.mock.calls[0]?.[0] as unknown as ZodError;
+      expect(zodError?.issues[0]?.message).toContain(
+        "At least one map must be selected"
+      );
+    });
+
+    it("should reject missing active_map_pool field", async () => {
+      const mockRequest = {
+        body: {
+          ...validSeasonData
+        }
+      } as RequestWithBody<SeasonFormValues>;
+      // Remove active_map_pool to simulate missing field
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      delete (mockRequest.body as any).active_map_pool;
+
+      await createSeasonController(mockRequest, mockResponse, mockNext);
+
+      expect(mockCreateSeason).not.toHaveBeenCalled();
+      expect(mockNext).toHaveBeenCalledWith(expect.any(ZodError));
+    });
+
+    it("should update a season with valid active_map_pool", async () => {
+      const mockRequest = {
+        params: { id: "123" },
+        body: {
+          ...validSeasonData,
+          active_map_pool: [4, 5, 6]
+        }
+      } as RequestWithParams<{ id: string }> &
+        RequestWithBody<SeasonFormValues>;
+
+      mockGetSeasonById.mockResolvedValue(
+        createMockSeason({
+          id: 123,
+          active_map_pool: [1, 2, 3]
+        })
+      );
+
+      mockUpdateSeason.mockResolvedValue({ affectedRows: 1 });
+
+      await updateSeasonController(mockRequest, mockResponse, mockNext);
+
+      expect(mockUpdateSeason).toHaveBeenCalledWith(
+        123,
+        expect.objectContaining({
+          active_map_pool: [4, 5, 6]
+        })
+      );
+      expect(mockNext).not.toHaveBeenCalled();
+    });
+
+    it("should reject empty active_map_pool array when updating", async () => {
+      const mockRequest = {
+        params: { id: "123" },
+        body: {
+          ...validSeasonData,
+          active_map_pool: []
+        }
+      } as RequestWithParams<{ id: string }> &
+        RequestWithBody<SeasonFormValues>;
+
+      mockGetSeasonById.mockResolvedValue(
+        createMockSeason({
+          id: 123,
+          active_map_pool: [1, 2, 3]
+        })
+      );
+
+      await updateSeasonController(mockRequest, mockResponse, mockNext);
+
+      expect(mockUpdateSeason).not.toHaveBeenCalled();
+      expect(mockNext).toHaveBeenCalledWith(expect.any(ZodError));
+      const zodError = mockNext.mock.calls[0]?.[0] as unknown as ZodError;
+      expect(zodError?.issues[0]?.message).toContain(
+        "At least one map must be selected"
+      );
+    });
+
+    it("should include active_map_pool in getSeasonById response", async () => {
+      const mockRequest = {
+        params: { id: "123" }
+      } as RequestWithParams<{ id: string }>;
+
+      const mockSeason = createMockSeason({
+        id: 123,
+        active_map_pool: [1, 2, 3, 4]
+      });
+
+      mockGetSeasonById.mockResolvedValue(mockSeason);
+
+      await getSeasonByIdController(mockRequest, mockResponse);
+
+      expect(mockGetSeasonById).toHaveBeenCalledWith(123);
+      expect(mockJson).toHaveBeenCalledWith(
+        expect.objectContaining({
+          active_map_pool: [1, 2, 3, 4]
+        })
+      );
     });
   });
 });

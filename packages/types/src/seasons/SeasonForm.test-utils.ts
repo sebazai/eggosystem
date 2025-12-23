@@ -40,6 +40,7 @@ export const createMockSeasonFormValues = (
     registration_price: 150,
     has_vat: true,
     timezone: "Europe/Helsinki",
+    active_map_pool: [1, 2, 3],
     ...overrides
   };
 };
@@ -84,6 +85,7 @@ export const createMockSeasonFormRaw = (
     has_vat: true,
     early_bird_price_discount: null,
     early_bird_price_discount_end_date: null,
+    active_map_pool: [1, 2, 3],
     ...overrides
   };
 };

@@ -34,6 +34,7 @@ import {
 import { useGames } from "@/hooks/data/useGames";
 import { useGameTypes } from "@/hooks/data/useGameTypes";
 import { useSeason } from "@/hooks/data/useSeason";
+import { useMaps } from "@/hooks/data/useMaps";
 import {
   convertLocalDateTimeToISO,
   formatDateTimeForInput
@@ -56,6 +57,7 @@ export function SeasonForm({
   const { games, isLoading: gamesLoading } = useGames();
   const { gameTypes, isLoading: gameTypesLoading } = useGameTypes();
   const { season, isLoading: seasonLoading } = useSeason(seasonId ?? null);
+  const { maps, isLoading: mapsLoading } = useMaps();
 
   // Convert Season to SeasonFormValues for editing
   const getInitialValues = (season: Season): SeasonFormValues => {
@@ -91,7 +93,8 @@ export function SeasonForm({
       early_bird_price_discount: season.early_bird_price_discount ?? null,
       early_bird_price_discount_end_date: formatDateTimeForInput(
         season.early_bird_price_discount_end_date
-      )
+      ),
+      active_map_pool: season.active_map_pool || []
     };
   };
 
@@ -113,7 +116,8 @@ export function SeasonForm({
       registration_price: null,
       has_vat: true,
       early_bird_price_discount: null,
-      early_bird_price_discount_end_date: null
+      early_bird_price_discount_end_date: null,
+      active_map_pool: []
     },
     mode: "onTouched"
   });
@@ -167,7 +171,8 @@ export function SeasonForm({
             : null,
         early_bird_price_discount_end_date: convertLocalDateTimeToISO(
           data.early_bird_price_discount_end_date ?? null
-        )
+        ),
+        active_map_pool: data.active_map_pool
       };
 
       await onSubmit(rawData);
@@ -184,7 +189,8 @@ export function SeasonForm({
     isSubmitting ||
     gamesLoading ||
     gameTypesLoading ||
-    seasonLoading;
+    seasonLoading ||
+    mapsLoading;
 
   return (
     <Card className="w-full max-w-2xl">
@@ -590,6 +596,70 @@ export function SeasonForm({
                     </FormControl>
                     <p className="text-sm text-muted-foreground">
                       Date and time when the early bird discount expires
+                    </p>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Active Map Pool */}
+              <FormField
+                control={form.control}
+                name="active_map_pool"
+                render={({ field }) => (
+                  <FormItem>
+                    <RequiredFormLabel required>
+                      Active Map Pool
+                    </RequiredFormLabel>
+                    <div className="space-y-3">
+                      {mapsLoading ? (
+                        <div className="flex items-center space-x-2">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <span className="text-sm text-muted-foreground">
+                            Loading maps...
+                          </span>
+                        </div>
+                      ) : maps.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">
+                          No maps available
+                        </p>
+                      ) : (
+                        <div className="grid grid-cols-2 gap-3">
+                          {maps.map((map) => (
+                            <FormItem
+                              key={map.id}
+                              className="flex flex-row items-start space-x-3 space-y-0"
+                            >
+                              <FormControl>
+                                <Checkbox
+                                  checked={
+                                    field.value?.includes(map.id) || false
+                                  }
+                                  onCheckedChange={(checked) => {
+                                    const currentValue = field.value || [];
+                                    if (checked) {
+                                      field.onChange([...currentValue, map.id]);
+                                    } else {
+                                      field.onChange(
+                                        currentValue.filter(
+                                          (id) => id !== map.id
+                                        )
+                                      );
+                                    }
+                                  }}
+                                  disabled={isFormDisabled}
+                                />
+                              </FormControl>
+                              <FormLabel className="font-normal cursor-pointer">
+                                {map.name}
+                              </FormLabel>
+                            </FormItem>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Select at least one map to be active for this season
                     </p>
                     <FormMessage />
                   </FormItem>

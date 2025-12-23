@@ -92,65 +92,155 @@ describe("addPlayerToTeamController", () => {
     mockGetConnection.mockResolvedValue(mockConnection as never);
   });
 
-  it("should add an eligible player to the team", async () => {
-    mockRunQuery.mockResolvedValueOnce([
-      { steam_id: "76561198000000001" },
-      { steam_id: "76561198000000002" }
-    ]);
+  /**
+   * Sets up common mocks for the initial queries that are called
+   * when adding a player to a team (before eligibility check)
+   */
+  const setupCommonInitialMocks = (options?: {
+    primaryPlayers?: Array<{ steam_id: string }>;
+    season?: { id: number; max_players: number };
+    mapPool?: Array<{ map_id: number }>;
+    seasonPlayerRank?: Array<{
+      id: number;
+      cs2_rank: number | null;
+      faceit_level: number | null;
+      faceit_elo: number | null;
+      cs_hours: number | null;
+      kana_elo: number | null;
+    }>;
+    tier?: number;
+  }) => {
+    const {
+      primaryPlayers = [
+        { steam_id: "76561198000000001" },
+        { steam_id: "76561198000000002" }
+      ],
+      season = { id: 14, max_players: 9 },
+      mapPool = [{ map_id: 1 }, { map_id: 2 }, { map_id: 3 }],
+      seasonPlayerRank,
+      tier = 2
+    } = options || {};
 
-    mockRunQuery.mockResolvedValueOnce([
+    // 1. getPrimaryPlayersForTeam query
+    mockRunQuery.mockResolvedValueOnce(primaryPlayers);
+
+    // 2. getSeasonById query
+    mockRunQuery.mockResolvedValueOnce([season]);
+
+    // 3. getActiveMapPoolBySeasonId (called by getSeasonById)
+    mockRunQuery.mockResolvedValueOnce(mapPool);
+
+    // 4. SeasonPlayerRanks query (if provided)
+    if (seasonPlayerRank !== undefined) {
+      mockRunQuery.mockResolvedValueOnce(seasonPlayerRank);
+    }
+
+    // 5. Tier query
+    if (tier !== undefined) {
+      mockRunQuery.mockResolvedValueOnce([{ tier }]);
+    }
+  };
+
+  /**
+   * Creates a mock player profile response (SteamPlayer + Account combined)
+   */
+  const createMockPlayerProfile = (overrides?: {
+    steam_id?: string;
+    nickname?: string;
+    account_id?: number;
+    work_email_verified?: boolean;
+    work_email?: string;
+    is_work_email_personal_email?: boolean;
+    discord?: string;
+  }) => {
+    const {
+      steam_id = EligiblePlayerForValidationSteamId,
+      nickname = "Test Player",
+      account_id = 123,
+      work_email_verified = true,
+      work_email = "test@example.com",
+      is_work_email_personal_email = false,
+      discord = "test#1234"
+    } = overrides || {};
+
+    return [
       {
-        id: 14,
-        max_players: 9
+        ...createMockSteamPlayer({
+          steam_id,
+          nickname,
+          account_id
+        }),
+        ...createMockAccount({
+          id: account_id,
+          work_email_verified,
+          work_email,
+          is_work_email_personal_email
+        }),
+        discord,
+        is_valid_work_email: true,
+        is_valid_full_name: true
       }
-    ]);
+    ];
+  };
 
-    mockRunQuery.mockResolvedValueOnce([
-      {
-        id: 1,
-        cs2_rank: 15,
-        faceit_level: 7,
-        faceit_elo: 2000,
-        cs_hours: 1500,
-        kana_elo: 200
-      }
-    ]);
+  /**
+   * Sets up the mock for checkPlayerAdditionEligibility
+   */
+  const setupEligibilityMock = (options: {
+    canAddPlayer: boolean;
+    newPlayerKanaElo?: number;
+    currentTop3Avg?: number;
+    currentTop4Avg?: number;
+    newAvgWithPlayer?: number;
+    leagueName?: string;
+  }) => {
+    const {
+      canAddPlayer,
+      newPlayerKanaElo = 200,
+      currentTop3Avg = 205,
+      currentTop4Avg = 200,
+      newAvgWithPlayer = 204,
+      leagueName = "Test League"
+    } = options;
 
-    mockRunQuery.mockResolvedValueOnce([{ tier: 2 }]);
     mockSeasonModels.checkPlayerAdditionEligibility.mockResolvedValueOnce({
       selectedTeam: {
         team_id: 1650,
         team_name: "Test Team",
-        current_top3_avg: 205,
-        current_top4_avg: 200,
-        new_player_kana_elo: 200,
-        new_avg_with_player: 204
+        current_top3_avg: currentTop3Avg,
+        current_top4_avg: currentTop4Avg,
+        new_player_kana_elo: newPlayerKanaElo,
+        new_avg_with_player: newAvgWithPlayer
       },
       topTeamsInLeague: [
         { team_id: 1, team_name: "Top Team", avg4: 210, rank: 1 }
       ],
-      canAddPlayer: true,
-      league_name: "Test League"
+      canAddPlayer,
+      league_name: leagueName
+    });
+  };
+
+  it("should add an eligible player to the team", async () => {
+    setupCommonInitialMocks({
+      seasonPlayerRank: [
+        {
+          id: 1,
+          cs2_rank: 15,
+          faceit_level: 7,
+          faceit_elo: 2000,
+          cs_hours: 1500,
+          kana_elo: 200
+        }
+      ]
     });
 
-    mockRunQuery.mockResolvedValueOnce([
-      {
-        ...createMockSteamPlayer({
-          steam_id: EligiblePlayerForValidationSteamId,
-          nickname: "Test Player",
-          account_id: 123
-        }),
-        ...createMockAccount({
-          id: 123,
-          work_email_verified: true,
-          work_email: "test@example.com",
-          is_work_email_personal_email: false
-        }),
-        discord: "test#1234",
-        is_valid_work_email: true,
-        is_valid_full_name: true
-      }
-    ]);
+    setupEligibilityMock({
+      canAddPlayer: true,
+      newPlayerKanaElo: 200,
+      newAvgWithPlayer: 204
+    });
+
+    mockRunQuery.mockResolvedValueOnce(createMockPlayerProfile());
 
     mockPlayerModels.setPlayerKanaElo.mockResolvedValueOnce(true);
 
@@ -199,16 +289,9 @@ describe("addPlayerToTeamController", () => {
   });
 
   it("should create player data if missing in SeasonPlayerRanks", async () => {
-    mockRunQuery.mockResolvedValueOnce([{ steam_id: "76561198000000001" }]);
-
-    mockRunQuery.mockResolvedValueOnce([
-      {
-        id: 14,
-        max_players: 9
-      }
-    ]);
-
-    mockRunQuery.mockResolvedValueOnce([]);
+    setupCommonInitialMocks({
+      seasonPlayerRank: []
+    });
 
     mockPlayerRankServices.getCSRank.mockResolvedValueOnce({
       average_rank: 15000,
@@ -227,42 +310,13 @@ describe("addPlayerToTeamController", () => {
       }
     });
 
-    mockRunQuery.mockResolvedValueOnce([{ tier: 2 }]);
-
-    mockSeasonModels.checkPlayerAdditionEligibility.mockResolvedValueOnce({
-      selectedTeam: {
-        team_id: 1650,
-        team_name: "Test Team",
-        current_top3_avg: 205,
-        current_top4_avg: 200,
-        new_player_kana_elo: 200,
-        new_avg_with_player: 204
-      },
-      topTeamsInLeague: [
-        { team_id: 1, team_name: "Top Team", avg4: 210, rank: 1 }
-      ],
+    setupEligibilityMock({
       canAddPlayer: true,
-      league_name: "Test League"
+      newPlayerKanaElo: 200,
+      newAvgWithPlayer: 204
     });
 
-    mockRunQuery.mockResolvedValueOnce([
-      {
-        ...createMockSteamPlayer({
-          steam_id: EligiblePlayerForValidationSteamId,
-          nickname: "Test Player",
-          account_id: 123
-        }),
-        ...createMockAccount({
-          id: 123,
-          work_email_verified: true,
-          work_email: "test@example.com",
-          is_work_email_personal_email: false
-        }),
-        discord: "test#1234",
-        is_valid_work_email: true,
-        is_valid_full_name: true
-      }
-    ]);
+    mockRunQuery.mockResolvedValueOnce(createMockPlayerProfile());
 
     mockRankModels.insertPlayerRankForSeason.mockResolvedValueOnce(
       {} as unknown
@@ -288,43 +342,24 @@ describe("addPlayerToTeamController", () => {
   });
 
   it("should reject ineligible players", async () => {
-    // 1. getPrimaryPlayersForTeam query
-    mockRunQuery.mockResolvedValueOnce([{ steam_id: "76561198000000001" }]);
-    // 2. getSeasonById query
-    mockRunQuery.mockResolvedValueOnce([
-      {
-        id: 14,
-        max_players: 9
-      }
-    ]);
+    setupCommonInitialMocks({
+      seasonPlayerRank: [
+        createMockSeasonPlayerRank({
+          id: 1,
+          cs2_rank: 15,
+          faceit_level: 7,
+          faceit_elo: 2000,
+          cs_hours: 1500,
+          kana_elo: 300
+        })
+      ]
+    });
 
-    mockRunQuery.mockResolvedValueOnce([
-      createMockSeasonPlayerRank({
-        id: 1,
-        cs2_rank: 15,
-        faceit_level: 7,
-        faceit_elo: 2000,
-        cs_hours: 1500,
-        kana_elo: 300
-      })
-    ]);
-
-    mockRunQuery.mockResolvedValueOnce([{ tier: 2 }]);
-
-    mockSeasonModels.checkPlayerAdditionEligibility.mockResolvedValueOnce({
-      selectedTeam: {
-        team_id: 1650,
-        team_name: "Test Team",
-        current_top3_avg: 205,
-        current_top4_avg: 210,
-        new_player_kana_elo: 300,
-        new_avg_with_player: 220
-      },
-      topTeamsInLeague: [
-        { team_id: 1, team_name: "Top Team", avg4: 210, rank: 1 }
-      ],
+    setupEligibilityMock({
       canAddPlayer: false,
-      league_name: "Test League"
+      newPlayerKanaElo: 300,
+      currentTop4Avg: 210,
+      newAvgWithPlayer: 220
     });
 
     // Call the controller
@@ -355,63 +390,26 @@ describe("addPlayerToTeamController", () => {
   });
 
   it("should handle database errors", async () => {
-    // 1. getPrimaryPlayersForTeam query
-    mockRunQuery.mockResolvedValueOnce([{ steam_id: "76561198000000001" }]);
-    // 2. getSeasonById query
-    mockRunQuery.mockResolvedValueOnce([
-      {
-        id: 14,
-        max_players: 9
-      }
-    ]);
-
-    mockRunQuery.mockResolvedValueOnce([
-      {
-        id: 1,
-        cs2_rank: 15,
-        faceit_level: 7,
-        faceit_elo: 2000,
-        cs_hours: 1500,
-        kana_elo: 200
-      }
-    ]);
-
-    mockRunQuery.mockResolvedValueOnce([{ tier: 2 }]);
-
-    mockSeasonModels.checkPlayerAdditionEligibility.mockResolvedValueOnce({
-      selectedTeam: {
-        team_id: 1650,
-        team_name: "Test Team",
-        current_top3_avg: 205,
-        current_top4_avg: 200,
-        new_player_kana_elo: 200,
-        new_avg_with_player: 204
-      },
-      topTeamsInLeague: [
-        { team_id: 1, team_name: "Top Team", avg4: 210, rank: 1 }
-      ],
-      canAddPlayer: true,
-      league_name: "Test League"
+    setupCommonInitialMocks({
+      seasonPlayerRank: [
+        {
+          id: 1,
+          cs2_rank: 15,
+          faceit_level: 7,
+          faceit_elo: 2000,
+          cs_hours: 1500,
+          kana_elo: 200
+        }
+      ]
     });
 
-    mockRunQuery.mockResolvedValueOnce([
-      {
-        ...createMockSteamPlayer({
-          steam_id: EligiblePlayerForValidationSteamId,
-          nickname: "Test Player",
-          account_id: 123
-        }),
-        ...createMockAccount({
-          id: 123,
-          work_email_verified: true,
-          work_email: "test@example.com",
-          is_work_email_personal_email: false
-        }),
-        discord: "test#1234",
-        is_valid_work_email: true,
-        is_valid_full_name: true
-      }
-    ]);
+    setupEligibilityMock({
+      canAddPlayer: true,
+      newPlayerKanaElo: 200,
+      newAvgWithPlayer: 204
+    });
+
+    mockRunQuery.mockResolvedValueOnce(createMockPlayerProfile());
 
     mockPlayerModels.setPlayerKanaElo.mockRejectedValueOnce(
       new Error("Failed to update player's kana_elo")

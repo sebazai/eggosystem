@@ -43,6 +43,11 @@ export interface Season {
    * Stored as TIMESTAMP in database (UTC)
    */
   early_bird_price_discount_end_date: string | null;
+  /**
+   * Active map pool - array of map IDs that are active for this season
+   * Must contain at least one map ID
+   */
+  active_map_pool: number[];
 }
 
 export interface InsertSeason {
