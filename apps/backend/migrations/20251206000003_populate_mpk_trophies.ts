@@ -51,12 +51,6 @@ export async function up(knex: Knex): Promise<void> {
     ORDER BY m.season_id, m.league_id
   `);
 
-  console.log(
-    `Found ${seasonLeagues[0].length} season/league combinations to process`
-  );
-
-  let totalAssignments = 0;
-
   // For each season/league combination, get top 3 kana rating players
   for (const sl of seasonLeagues[0]) {
     const { season_id, league_id } = sl;
@@ -119,12 +113,9 @@ export async function up(knex: Knex): Promise<void> {
           league_id: league_id,
           custom_text: null
         });
-        totalAssignments++;
       }
     }
   }
-
-  console.log(`Created ${totalAssignments} MKP trophy assignments`);
 }
 
 export async function down(knex: Knex): Promise<void> {
