@@ -23,3 +23,18 @@ export const getAllRegisteredPlayersForSeason = async (
   // Extract just the steam IDs from the results
   return results.map((player) => player.steam_id);
 };
+
+/**
+ * Gets all players from SteamPlayers table
+ * Returns their steam IDs to be used for kanaelo calculation
+ *
+ * @returns Array of steam IDs
+ */
+export const getAllPlayersFromSteamPlayers = async (): Promise<string[]> => {
+  const query = `SELECT steam_id FROM SteamPlayers`;
+
+  const results = await runQuery<{ steam_id: string }[]>(query);
+
+  // Extract just the steam IDs from the results
+  return results.map((player) => player.steam_id);
+};
