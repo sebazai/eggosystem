@@ -179,16 +179,37 @@ const getMapStatsWithSides = async (
   `;
 
   // Execute all queries in parallel
-  const [baseStats, sideStats, advantageStats] = await Promise.all([
-    runQuery<BaseMapStats[]>(baseStatsQuery, [
-      teamId,
-      teamId,
-      teamId,
-      ...filterParams
-    ]),
-    runQuery<SideStats[]>(sideStatsQuery, [teamId, ...filterParams]),
-    runQuery<AdvantageStats[]>(advantageStatsQuery, [teamId, ...filterParams])
-  ]);
+  const [baseStatsResult, sideStatsResult, advantageStatsResult] =
+    await Promise.allSettled([
+      runQuery<BaseMapStats[]>(baseStatsQuery, [
+        teamId,
+        teamId,
+        teamId,
+        ...filterParams
+      ]),
+      runQuery<SideStats[]>(sideStatsQuery, [teamId, ...filterParams]),
+      runQuery<AdvantageStats[]>(advantageStatsQuery, [teamId, ...filterParams])
+    ]);
+
+  // Extract results, using empty arrays as fallback if a query failed
+  const baseStats =
+    baseStatsResult.status === "fulfilled"
+      ? baseStatsResult.value
+      : (console.error("Base stats query failed:", baseStatsResult.reason),
+        [] as BaseMapStats[]);
+  const sideStats =
+    sideStatsResult.status === "fulfilled"
+      ? sideStatsResult.value
+      : (console.error("Side stats query failed:", sideStatsResult.reason),
+        [] as SideStats[]);
+  const advantageStats =
+    advantageStatsResult.status === "fulfilled"
+      ? advantageStatsResult.value
+      : (console.error(
+          "Advantage stats query failed:",
+          advantageStatsResult.reason
+        ),
+        [] as AdvantageStats[]);
 
   // Create maps for quick lookup
   const sideStatsMap = new Map(sideStats.map((s) => [s.map_id, s]));

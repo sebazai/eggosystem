@@ -360,12 +360,8 @@ export const handleSignupFormForSeasonUpdate = async (
   formData: SignupFormValues,
   connection?: PoolConnection
 ) => {
-  const captainSteamId = formData.players.find(
-    (p: { captain?: boolean; steamId: string }) => p.captain
-  )?.steamId;
-  const coCaptainSteamId = formData.players.find(
-    (p: { coCaptain?: boolean; steamId: string }) => p.coCaptain
-  )?.steamId;
+  const captainSteamId = formData.players.find((p) => p.captain)?.steamId;
+  const coCaptainSteamId = formData.players.find((p) => p.coCaptain)?.steamId;
 
   if (!captainSteamId) {
     throw new Error("Could not determine new captain.");
@@ -383,15 +379,13 @@ export const handleSignupFormForSeasonUpdate = async (
       external_platform_id: formData.teamExternalId ?? null,
       terms_and_conditions_approved: formData.captainHasReadTermAndConditions
     },
-    formData.players.map(
-      (player: { steamId: string; captain?: boolean; coCaptain?: boolean }) => {
-        return {
-          steam_id: player.steamId,
-          is_captain: captainSteamId === player.steamId,
-          is_co_captain: coCaptainSteamId === player.steamId
-        };
-      }
-    ),
+    formData.players.map((player) => {
+      return {
+        steam_id: player.steamId,
+        is_captain: captainSteamId === player.steamId,
+        is_co_captain: coCaptainSteamId === player.steamId
+      };
+    }),
     connection
   );
 };
@@ -444,12 +438,8 @@ export const handleSignupFormForSeason = async (
   formData: SignupFormValues,
   connection?: PoolConnection
 ) => {
-  const captainSteamId = formData.players.find(
-    (p: { captain?: boolean; steamId: string }) => p.captain
-  )?.steamId;
-  const coCaptainSteamId = formData.players.find(
-    (p: { coCaptain?: boolean; steamId: string }) => p.coCaptain
-  )?.steamId;
+  const captainSteamId = formData.players.find((p) => p.captain)?.steamId;
+  const coCaptainSteamId = formData.players.find((p) => p.coCaptain)?.steamId;
 
   if (!captainSteamId) {
     throw new BadRequestError("Could not determine captain.");
@@ -458,15 +448,13 @@ export const handleSignupFormForSeason = async (
     throw new BadRequestError("Could not determine co-captain.");
   }
 
-  const playerInsertData = formData.players.map(
-    (player: { steamId: string; captain?: boolean; coCaptain?: boolean }) => {
-      return {
-        steam_id: player.steamId,
-        is_captain: captainSteamId === player.steamId,
-        is_co_captain: coCaptainSteamId === player.steamId
-      };
-    }
-  );
+  const playerInsertData = formData.players.map((player) => {
+    return {
+      steam_id: player.steamId,
+      is_captain: captainSteamId === player.steamId,
+      is_co_captain: coCaptainSteamId === player.steamId
+    };
+  });
 
   // If someone selected a team that is not tied to organization
   const [rogueTeam] = await getTeamWithIdWithoutOrg(formData.teamId);
