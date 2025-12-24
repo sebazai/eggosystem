@@ -27,7 +27,10 @@ import {
   csrankkerValidSteamId,
   csrankkerNotFoundSteamId,
   csrankkerNetworkErrorSteamId,
-  csrankkerInvalidJsonSteamId
+  csrankkerInvalidJsonSteamId,
+  csrankkerHighKanaEloSteamId,
+  csrankkerMediumKanaEloSteamId,
+  csrankkerLowKanaEloSteamId
 } from "./csrankker/test-ids.js";
 
 export const mswServer: SetupServerApi = setupServer(...handlers);
@@ -52,7 +55,10 @@ export {
   csrankkerValidSteamId,
   csrankkerNotFoundSteamId,
   csrankkerNetworkErrorSteamId,
-  csrankkerInvalidJsonSteamId
+  csrankkerInvalidJsonSteamId,
+  csrankkerHighKanaEloSteamId,
+  csrankkerMediumKanaEloSteamId,
+  csrankkerLowKanaEloSteamId
 };
 
 export { validSignupData, invalidSignupData } from "./fixtures/index.js";

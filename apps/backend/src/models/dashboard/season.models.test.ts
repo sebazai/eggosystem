@@ -1,6 +1,13 @@
 import { checkPlayerAdditionEligibility } from "./season.models";
 import { runQuery } from "../../db/mysqlRunQuery";
-import { mswServer, http, HttpResponse } from "@eggosystem/shared-msw";
+import {
+  mswServer,
+  csrankkerHighKanaEloSteamId,
+  csrankkerMediumKanaEloSteamId,
+  csrankkerLowKanaEloSteamId,
+  csrankkerNetworkErrorSteamId,
+  csrankkerNotFoundSteamId
+} from "@eggosystem/shared-msw";
 
 // Mock the database
 jest.mock("../../db/mysqlRunQuery");
@@ -22,36 +29,7 @@ describe("Season Models", () => {
 
   describe("checkPlayerAdditionEligibility", () => {
     it("should return eligibility analysis for a player with CSRankker data", async () => {
-      // Set up MSW handler for this specific test to return kana_elo 1600
-      mswServer.use(
-        http.get(
-          "https://csrankker.kanaliiga.fi/api/v1/kanaelo/:steamId",
-          () => {
-            return HttpResponse.json({
-              status: "success",
-              result: {
-                steamId: "76561198028510846",
-                seasonId: 14,
-                originalKanaelo: 1500,
-                stabilizedKanaelo: 1600,
-                stabilizationInfo: {
-                  confidence: 0.8,
-                  adjustmentFactor: 0.1,
-                  method: "bayesian"
-                },
-                components: {
-                  trueLevel: 1200,
-                  mm: 100,
-                  hour: 200,
-                  kana: 100
-                },
-                calculus: "formula",
-                timestamp: "2023-01-01T00:00:00Z"
-              }
-            });
-          }
-        )
-      );
+      // Uses csrankkerMediumKanaEloSteamId which returns stabilizedKanaelo: 1600
 
       mockRunQuery.mockResolvedValueOnce([
         {
@@ -105,7 +83,7 @@ describe("Season Models", () => {
       const result = await checkPlayerAdditionEligibility(
         1,
         1,
-        "76561198028510846"
+        csrankkerMediumKanaEloSteamId
       );
 
       expect(mockRunQuery).toHaveBeenCalledTimes(7);
@@ -140,36 +118,7 @@ describe("Season Models", () => {
     });
 
     it("should return false for canAddPlayer when new average is higher than top team", async () => {
-      // Set up MSW handler to return high kana_elo (2000) for this test
-      mswServer.use(
-        http.get(
-          "https://csrankker.kanaliiga.fi/api/v1/kanaelo/:steamId",
-          () => {
-            return HttpResponse.json({
-              status: "success",
-              result: {
-                steamId: "76561198028510846",
-                seasonId: 14,
-                originalKanaelo: 2000,
-                stabilizedKanaelo: 2000,
-                stabilizationInfo: {
-                  confidence: 0.8,
-                  adjustmentFactor: 0.1,
-                  method: "bayesian"
-                },
-                components: {
-                  trueLevel: 1200,
-                  mm: 100,
-                  hour: 200,
-                  kana: 100
-                },
-                calculus: "formula",
-                timestamp: "2023-01-01T00:00:00Z"
-              }
-            });
-          }
-        )
-      );
+      // Uses csrankkerHighKanaEloSteamId which returns stabilizedKanaelo: 2000
 
       // 1. getPrimaryPlayersForTeam query
       mockRunQuery.mockResolvedValueOnce([
@@ -229,7 +178,7 @@ describe("Season Models", () => {
       const result = await checkPlayerAdditionEligibility(
         14,
         2053,
-        "76561198028510846"
+        csrankkerHighKanaEloSteamId
       );
 
       // With a high kana_elo player (2000) added to a team with avg 1500,
@@ -238,15 +187,7 @@ describe("Season Models", () => {
     });
 
     it("should handle CSRankker API errors gracefully", async () => {
-      // Set up MSW handler to simulate a network error
-      mswServer.use(
-        http.get(
-          "https://csrankker.kanaliiga.fi/api/v1/kanaelo/:steamId",
-          () => {
-            return HttpResponse.error();
-          }
-        )
-      );
+      // Uses csrankkerNetworkErrorSteamId which returns a network error
 
       // 1. getPrimaryPlayersForTeam query
       mockRunQuery.mockResolvedValueOnce([{ steam_id: "76561198000000001" }]);
@@ -265,28 +206,14 @@ describe("Season Models", () => {
       ]);
 
       await expect(
-        checkPlayerAdditionEligibility(1, 1, "123456789")
+        checkPlayerAdditionEligibility(1, 1, csrankkerNetworkErrorSteamId)
       ).rejects.toThrow(
         "Failed to fetch stabilized kana_elo from CSRankker: Failed to fetch"
       );
     });
 
     it("should handle CSRankker API non-success status", async () => {
-      // Set up MSW handler to return an error status
-      mswServer.use(
-        http.get(
-          "https://csrankker.kanaliiga.fi/api/v1/kanaelo/:steamId",
-          () => {
-            return HttpResponse.json(
-              {
-                status: "error",
-                message: "Player not found"
-              },
-              { status: 400 }
-            );
-          }
-        )
-      );
+      // Uses csrankkerNotFoundSteamId which returns 404
 
       // 1. getPrimaryPlayersForTeam query
       mockRunQuery.mockResolvedValueOnce([{ steam_id: "76561198000000001" }]);
@@ -312,29 +239,12 @@ describe("Season Models", () => {
       ]);
 
       await expect(
-        checkPlayerAdditionEligibility(1, 1, "123456789")
-      ).rejects.toThrow("CSRankker API returned 400: Bad Request");
+        checkPlayerAdditionEligibility(1, 1, csrankkerNotFoundSteamId)
+      ).rejects.toThrow("CSRankker API returned 404: Not Found");
     });
 
     it("should throw error if team not found in season", async () => {
-      // Set up MSW handler for this test
-      mswServer.use(
-        http.get(
-          "https://csrankker.kanaliiga.fi/api/v1/kanaelo/:steamId",
-          () => {
-            return HttpResponse.json({
-              status: "success",
-              result: {
-                steamId: "123456789",
-                seasonId: 15,
-                originalKanaelo: 250,
-                stabilizedKanaelo: 240,
-                timestamp: "2025-07-15T22:11:17.792Z"
-              }
-            });
-          }
-        )
-      );
+      // Uses csrankkerLowKanaEloSteamId which returns stabilizedKanaelo: 240
 
       // Reset mock and set up for this test
       mockRunQuery.mockReset();
@@ -343,41 +253,12 @@ describe("Season Models", () => {
       mockRunQuery.mockResolvedValueOnce([]);
 
       await expect(
-        checkPlayerAdditionEligibility(1, 999, "123456789")
+        checkPlayerAdditionEligibility(1, 999, csrankkerLowKanaEloSteamId)
       ).rejects.toThrow("Team 999 not found in season 1");
     });
 
     it("should throw error if team analysis fails", async () => {
-      // Set up MSW handler for this test
-      mswServer.use(
-        http.get(
-          "https://csrankker.kanaliiga.fi/api/v1/kanaelo/:steamId",
-          () => {
-            return HttpResponse.json({
-              status: "success",
-              result: {
-                steamId: "123456789",
-                seasonId: 15,
-                originalKanaelo: 250,
-                stabilizedKanaelo: 240,
-                stabilizationInfo: {
-                  confidence: 0.8,
-                  adjustmentFactor: 0.96,
-                  method: "kanarating-stabilization"
-                },
-                components: {
-                  trueLevel: 100,
-                  mm: 80,
-                  hour: 20,
-                  kana: 40
-                },
-                calculus: "100 + 80 + 20 + 40",
-                timestamp: "2025-07-15T22:11:17.792Z"
-              }
-            });
-          }
-        )
-      );
+      // Uses csrankkerLowKanaEloSteamId which returns stabilizedKanaelo: 240
 
       // Reset mock and set up for this test
       mockRunQuery.mockReset();
@@ -405,10 +286,134 @@ describe("Season Models", () => {
         .mockResolvedValueOnce([]);
 
       await expect(
-        checkPlayerAdditionEligibility(1, 1, "123456789")
+        checkPlayerAdditionEligibility(1, 1, csrankkerLowKanaEloSteamId)
       ).rejects.toThrow(
         "Could not analyze team 1 - team may not have enough players in season 1"
       );
+    });
+
+    it("should exclude discarded players from selected team eligibility calculation", async () => {
+      // Uses csrankkerMediumKanaEloSteamId which returns stabilizedKanaelo: 1600
+
+      mockRunQuery.mockResolvedValueOnce([
+        {
+          league_id: 1
+        }
+      ]);
+
+      mockRunQuery.mockResolvedValueOnce([
+        { steam_id: "76561198000000001" },
+        { steam_id: "76561198000000002" }
+      ]);
+
+      mockRunQuery.mockResolvedValueOnce([
+        {
+          id: 1,
+          max_players: 9
+        }
+      ]);
+
+      // Mock for getActiveMapPoolBySeasonId (called by getSeasonById)
+      mockRunQuery.mockResolvedValueOnce([
+        { map_id: 1 },
+        { map_id: 2 },
+        { map_id: 3 }
+      ]);
+
+      mockRunQuery.mockResolvedValueOnce([
+        {
+          team_id: 1,
+          team_name: "Team 1",
+          current_top3_avg: 1500,
+          current_top4_avg: 1450
+        }
+      ]);
+
+      mockRunQuery.mockResolvedValueOnce([
+        {
+          team_id: 2,
+          team_name: "Top Team",
+          avg4: 1800,
+          rank: 1
+        }
+      ]);
+
+      mockRunQuery.mockResolvedValueOnce([
+        {
+          league_name: "League 1"
+        }
+      ]);
+
+      await checkPlayerAdditionEligibility(1, 1, csrankkerMediumKanaEloSteamId);
+
+      // Verify the selected team query includes discarded_at IS NULL
+      const selectedTeamQueryCall = mockRunQuery.mock.calls.find((call) =>
+        call[0].includes("WITH FilteredPlayers AS")
+      );
+      expect(selectedTeamQueryCall).toBeDefined();
+      expect(selectedTeamQueryCall?.[0]).toContain("discarded_at IS NULL");
+    });
+
+    it("should exclude discarded players from top teams eligibility calculation", async () => {
+      // Uses csrankkerMediumKanaEloSteamId which returns stabilizedKanaelo: 1600
+
+      mockRunQuery.mockResolvedValueOnce([
+        {
+          league_id: 1
+        }
+      ]);
+
+      mockRunQuery.mockResolvedValueOnce([
+        { steam_id: "76561198000000001" },
+        { steam_id: "76561198000000002" }
+      ]);
+
+      mockRunQuery.mockResolvedValueOnce([
+        {
+          id: 1,
+          max_players: 9
+        }
+      ]);
+
+      // Mock for getActiveMapPoolBySeasonId (called by getSeasonById)
+      mockRunQuery.mockResolvedValueOnce([
+        { map_id: 1 },
+        { map_id: 2 },
+        { map_id: 3 }
+      ]);
+
+      mockRunQuery.mockResolvedValueOnce([
+        {
+          team_id: 1,
+          team_name: "Team 1",
+          current_top3_avg: 1500,
+          current_top4_avg: 1450
+        }
+      ]);
+
+      mockRunQuery.mockResolvedValueOnce([
+        {
+          team_id: 2,
+          team_name: "Top Team",
+          avg4: 1800,
+          rank: 1
+        }
+      ]);
+
+      mockRunQuery.mockResolvedValueOnce([
+        {
+          league_name: "League 1"
+        }
+      ]);
+
+      await checkPlayerAdditionEligibility(1, 1, csrankkerMediumKanaEloSteamId);
+
+      // Verify the top teams query includes discarded_at IS NULL
+      const topTeamsQueryCall = mockRunQuery.mock.calls.find((call) =>
+        call[0].includes("WITH TeamPlayersKanaElo AS")
+      );
+      expect(topTeamsQueryCall).toBeDefined();
+      expect(topTeamsQueryCall?.[0]).toContain("discarded_at IS NULL");
     });
   });
 });

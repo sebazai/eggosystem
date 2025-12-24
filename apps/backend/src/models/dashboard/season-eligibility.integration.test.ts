@@ -63,7 +63,7 @@ describe("Season Eligibility Integration Tests", () => {
     );
 
     await runQuery(
-      "DELETE FROM Teams WHERE id IN (9991, 9992, 9993, 9995)",
+      "DELETE FROM Teams WHERE id IN (9991, 9992, 9993, 9995, 9996, 9997)",
       [],
       connection
     );
@@ -73,7 +73,7 @@ describe("Season Eligibility Integration Tests", () => {
     await runQuery("DELETE FROM Seasons WHERE id = 999", [], connection);
 
     await runQuery(
-      "DELETE FROM SteamPlayers WHERE steam_id IN ('76561198028510846', '76561198028510847', '76561198028510848', '76561198028510849', '76561198028510850', '76561198028510851', '76561198028510852', '76561198028510853', '76561198028510854', '76561198028510855', '76561198028510856', '76561198028510857', '76561198028510858', '76561198028510859', '76561198028510860', '76561198028510861', '76561198028510862', '76561198028510863', '76561198028510864', '76561198028510865')",
+      "DELETE FROM SteamPlayers WHERE steam_id IN ('76561198028510846', '76561198028510847', '76561198028510848', '76561198028510849', '76561198028510850', '76561198028510851', '76561198028510852', '76561198028510853', '76561198028510854', '76561198028510855', '76561198028510856', '76561198028510857', '76561198028510858', '76561198028510859', '76561198028510860', '76561198028510861', '76561198028510862', '76561198028510863', '76561198028510864', '76561198028510865', '76561198028510866', '76561198028510867', '76561198028510868', '76561198028510869', '76561198028510870', '76561198028510871', '76561198028510872')",
       [],
       connection
     );
@@ -159,7 +159,8 @@ describe("Season Eligibility Integration Tests", () => {
          ('76561198028510862', 1, 'Player17'),
          ('76561198028510863', 1, 'Player18'),
          ('76561198028510864', 1, 'Player19'),
-         ('76561198028510865', 1, 'Player20')`,
+         ('76561198028510865', 1, 'Player20'),
+         ('76561198028510866', 1, 'Player21')`,
       [],
       connection
     );
@@ -498,6 +499,162 @@ describe("Season Eligibility Integration Tests", () => {
       // Normal calculation: top3 = (1800 + 1700 + 1600) / 3 = 1700
       expect(result.selectedTeam.current_top3_avg).toBe(1700);
       expect(result.selectedTeam.new_avg_with_player).toBe(1725);
+    });
+  });
+
+  describe("Discarded Players Exclusion", () => {
+    it("should exclude discarded players from selected team eligibility calculation", async () => {
+      // Create a team with a discarded player
+      // Use new players that aren't already assigned to other teams
+      await runQuery(
+        `INSERT INTO Teams (id, organization_id, name, team_logo)
+         VALUES (9996, 1, 'Team Epsilon Test', 'epsilon.png')`,
+        [],
+        connection
+      );
+
+      await runQuery(
+        `INSERT INTO SeasonLeagueTeams (season_id, team_id, league_id)
+         VALUES (999, 9996, 999)`,
+        [],
+        connection
+      );
+
+      // Create new Steam players for this test
+      await runQuery(
+        `INSERT INTO SteamPlayers (steam_id, account_id, nickname)
+         VALUES 
+           ('76561198028510867', 1, 'EpsilonPlayer1'),
+           ('76561198028510868', 1, 'EpsilonPlayer2'),
+           ('76561198028510869', 1, 'EpsilonPlayer3'),
+           ('76561198028510870', 1, 'EpsilonPlayer4')`,
+        [],
+        connection
+      );
+
+      // Add player ranks for these new players
+      await runQuery(
+        `INSERT INTO SeasonPlayerRanks (season_id, steam_id, kana_elo, cs2_rank, faceit_level, faceit_elo, cs_hours)
+         VALUES 
+           (999, '76561198028510867', 1800, 15, 8, 2000, 1000),
+           (999, '76561198028510868', 1700, 14, 7, 1900, 950),
+           (999, '76561198028510869', 1600, 13, 6, 1800, 900),
+           (999, '76561198028510870', 2000, 18, 10, 2500, 2000)`,
+        [],
+        connection
+      );
+
+      // Insert players: one will be discarded, others are active
+      await runQuery(
+        `INSERT INTO SeasonTeamPlayers (season_id, team_id, steam_id, role, is_captain, is_co_captain, match_id, discarded_at)
+         VALUES 
+           (999, 9996, '76561198028510867', 'primary', 1, 0, NULL, NULL),
+           (999, 9996, '76561198028510868', 'primary', 0, 1, NULL, NULL),
+           (999, 9996, '76561198028510869', 'primary', 0, 0, NULL, NULL),
+           (999, 9996, '76561198028510870', 'primary', 0, 0, NULL, NOW())`,
+        [],
+        connection
+      );
+
+      const result = await checkPlayerAdditionEligibility(
+        999,
+        9996,
+        "76561198028510846",
+        { connection }
+      );
+
+      // Should only consider non-discarded players: 1800, 1700, 1600
+      // Top 3 average: (1800 + 1700 + 1600) / 3 = 1700
+      // The discarded player with 2000 kana_elo should NOT be included
+      expect(result.selectedTeam.current_top3_avg).toBe(1700);
+      expect(result.selectedTeam.current_top4_avg).toBe(1700); // Only 3 active players
+      expect(result.selectedTeam.team_id).toBe(9996);
+      expect(result.selectedTeam.team_name).toBe("Team Epsilon Test");
+    });
+
+    it("should exclude discarded players from top teams eligibility calculation", async () => {
+      // Discard a high-elo player from Team Beta to test top teams query
+      await runQuery(
+        `UPDATE SeasonTeamPlayers 
+         SET discarded_at = NOW(), discarded_by = 1
+         WHERE season_id = 999 AND team_id = 9992 AND steam_id = '76561198028510853'`,
+        [],
+        connection
+      );
+
+      // Team Beta now has: 1000, 900, 800 (1100 player discarded)
+      // Top 3 average: (1000 + 900 + 800) / 3 = 900
+      // Top 4 average: (1000 + 900 + 800) / 4 = 675 (only 3 players)
+
+      const result = await checkPlayerAdditionEligibility(
+        999,
+        9991,
+        "76561198028510846",
+        { connection }
+      );
+
+      // Verify Team Beta's average is recalculated without the discarded player
+      const teamBeta = result.topTeamsInLeague.find(
+        (team) => team.team_id === 9992
+      );
+      expect(teamBeta).toBeDefined();
+      // Team Beta should have avg4 = 900 (not 950 which would include the discarded 1100 player)
+      expect(teamBeta?.avg4).toBe(900);
+    });
+
+    it("should handle team with all players discarded", async () => {
+      // Create a team where all players are discarded
+      await runQuery(
+        `INSERT INTO Teams (id, organization_id, name, team_logo)
+         VALUES (9997, 1, 'Team Zeta Test', 'zeta.png')`,
+        [],
+        connection
+      );
+
+      await runQuery(
+        `INSERT INTO SeasonLeagueTeams (season_id, team_id, league_id)
+         VALUES (999, 9997, 999)`,
+        [],
+        connection
+      );
+
+      // Create new Steam players for this test
+      await runQuery(
+        `INSERT INTO SteamPlayers (steam_id, account_id, nickname)
+         VALUES 
+           ('76561198028510871', 1, 'ZetaPlayer1'),
+           ('76561198028510872', 1, 'ZetaPlayer2')`,
+        [],
+        connection
+      );
+
+      // Add player ranks
+      await runQuery(
+        `INSERT INTO SeasonPlayerRanks (season_id, steam_id, kana_elo, cs2_rank, faceit_level, faceit_elo, cs_hours)
+         VALUES 
+           (999, '76561198028510871', 1500, 12, 5, 1700, 850),
+           (999, '76561198028510872', 1400, 11, 4, 1600, 800)`,
+        [],
+        connection
+      );
+
+      await runQuery(
+        `INSERT INTO SeasonTeamPlayers (season_id, team_id, steam_id, role, is_captain, is_co_captain, match_id, discarded_at)
+         VALUES 
+           (999, 9997, '76561198028510871', 'primary', 1, 0, NULL, NOW()),
+           (999, 9997, '76561198028510872', 'primary', 0, 1, NULL, NOW())`,
+        [],
+        connection
+      );
+
+      // Should throw error because team has no active players
+      await expect(
+        checkPlayerAdditionEligibility(999, 9997, "76561198028510846", {
+          connection
+        })
+      ).rejects.toThrow(
+        "Could not analyze team 9997 - team may not have enough players in season 999"
+      );
     });
   });
 });
