@@ -73,8 +73,6 @@ export const getCS2RankFromLeetify = async (steam_id: string) => {
 
     if (!result.ok) {
       const duration = clearAbortTimeout();
-
-      // Enhanced logging for rate limit errors (429)
       if (result.status === 429) {
         await setRateLimitForService(
           "Leetify",
