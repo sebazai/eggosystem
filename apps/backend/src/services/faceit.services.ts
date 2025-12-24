@@ -33,6 +33,10 @@ import { getActiveSeasonChampionshipIds } from "../models/season-league-external
 import { getReservationsWithEmailForMatch } from "../models/match-streams.models";
 import { sendMatchScheduleChangeEmail } from "./email.services";
 import { runQuery } from "../db/mysqlRunQuery";
+import {
+  getRateLimitForService,
+  setRateLimitForService
+} from "../utils/rate-limit-utils";
 
 export const convertFaceitGameToAppId = (game: string) => {
   switch (game) {
@@ -60,6 +64,11 @@ export const fetchFaceitPlayerData = async (
   const redisData = await redisClient.get(redisKey);
   if (redisData) {
     return JSON.parse(redisData) as FaceitPlayerDetails;
+  }
+
+  const rateLimit = await getRateLimitForService("FaceIT");
+  if (rateLimit) {
+    return null;
   }
 
   const { controller, clearAbortTimeout } = createAbortController(
@@ -91,6 +100,14 @@ export const fetchFaceitPlayerData = async (
           `[FaceIT] Player not found for steam_id: ${steam_id} (${duration}ms)`
         );
         return null;
+      }
+
+      if (response.status === 429) {
+        await setRateLimitForService(
+          "FaceIT",
+          response.headers.get("Retry-After"),
+          response.headers.get("X-RateLimit-Reset")
+        );
       }
 
       throw new Error(
