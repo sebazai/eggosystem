@@ -57,10 +57,44 @@ export const getSeasonTeamPlayersBySteamIds = async (
 ) => {
   const questionMarks = steamIds.map(() => "?").join(",");
   const result = await runQuery<Array<SeasonTeamPlayer>>(
-    `SELECT * FROM SeasonTeamPlayers WHERE season_id = ? AND team_id = ? AND steam_id IN (${questionMarks})`,
+    `SELECT * FROM SeasonTeamPlayers WHERE season_id = ? AND team_id = ? AND steam_id IN (${questionMarks}) AND discarded_at IS NULL`,
     [seasonId, teamId, ...steamIds]
   );
   return result;
+};
+
+export const discardSeasonTeamPlayer = async (
+  seasonId: number,
+  teamId: number,
+  steamId: string,
+  discardedByAccountId: number,
+  connection?: PoolConnection
+) => {
+  // First verify the player exists and is not already discarded
+  const existingPlayer = await runQuery<Array<SeasonTeamPlayer>>(
+    `SELECT * FROM SeasonTeamPlayers WHERE season_id = ? AND team_id = ? AND steam_id = ?`,
+    [seasonId, teamId, steamId],
+    connection
+  );
+
+  if (!existingPlayer || existingPlayer.length === 0 || !existingPlayer[0]) {
+    throw new Error(
+      `Player with steam_id ${steamId} not found in team ${teamId} for season ${seasonId}`
+    );
+  }
+
+  if (existingPlayer[0].discarded_at !== null) {
+    throw new Error(
+      `Player with steam_id ${steamId} is already discarded from team ${teamId} for season ${seasonId}`
+    );
+  }
+
+  // Update the player to mark as discarded
+  await runQuery(
+    `UPDATE SeasonTeamPlayers SET discarded_at = NOW(), discarded_by = ? WHERE season_id = ? AND team_id = ? AND steam_id = ?`,
+    [discardedByAccountId, seasonId, teamId, steamId],
+    connection
+  );
 };
 
 export const validatePlayersInTeams = async (

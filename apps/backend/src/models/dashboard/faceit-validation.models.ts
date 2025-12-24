@@ -34,7 +34,7 @@ export const getHubTeamRoster = async (
       stp.role
     FROM SeasonTeamPlayers stp
     JOIN SteamPlayers sp ON stp.steam_id = sp.steam_id
-    WHERE stp.season_id = ? AND stp.team_id = ?
+    WHERE stp.season_id = ? AND stp.team_id = ? AND stp.discarded_at IS NULL
   `;
 
   return runQuery<HubTeamPlayer[]>(query, [season_id, team_id]);
@@ -93,7 +93,7 @@ export const getSeasonTeamsWithRoster = async (
         )
         FROM SeasonTeamPlayers stp
         JOIN SteamPlayers sp ON stp.steam_id = sp.steam_id
-        WHERE stp.team_id = t.id AND stp.season_id = str.season_id
+        WHERE stp.team_id = t.id AND stp.season_id = str.season_id AND stp.discarded_at IS NULL
       ) as players
     FROM Teams t
     JOIN SeasonTeamRegistrations str ON t.id = str.team_id

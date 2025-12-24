@@ -102,6 +102,11 @@ const data: { navMain: Array<MenuItem> } = {
           title: "Substitute",
           url: createDashboardNextUrl("players/substitute"),
           requiredRoles: ["helpdesk", "admin"]
+        },
+        {
+          title: "Remove from team",
+          url: createDashboardNextUrl("players/discard"),
+          requiredRoles: ["helpdesk", "admin"]
         }
       ] satisfies Array<SubMenuItem>
     },

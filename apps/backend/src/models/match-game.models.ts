@@ -466,7 +466,7 @@ const getTeamIdByPlayerSteamIdsAndGameId = async (
       JOIN Matches m ON mg.match_id = m.id 
       JOIN MatchTeams mt ON m.id = mt.match_id 
       JOIN SeasonTeamPlayers stp ON mt.team_id = stp.team_id AND mt.season_id = stp.season_id 
-      WHERE ${query}`;
+      WHERE ${query} AND stp.discarded_at IS NULL`;
   return runQuery<Array<{ team_id: number } | undefined>>(
     baseQuery,
     queryParams,

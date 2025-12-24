@@ -310,6 +310,7 @@ export const getTeamPlayerValuesLive = async (
     ) teams_in_match ON teams_in_match.match_id = stp.match_id
     WHERE stp.season_id = ?
       AND stp.team_id = ?
+      AND stp.discarded_at IS NULL
     GROUP BY
       sp.nickname,
       sp.steam_id,

@@ -94,6 +94,8 @@ erDiagram
 "Reservations" }o--|| "Matches" : ""
 "RolePermissions" }o--|| "Permissions" : ""
 "RolePermissions" }o--|| "Roles" : ""
+"SeasonActiveMapPool" }o--|| "Maps" : ""
+"SeasonActiveMapPool" }o--|| "Seasons" : ""
 "SeasonLeagueExternalIds" }o--|| "SeasonLeagues" : ""
 "SeasonLeagueExternalIds" }o--|| "Stages" : ""
 "SeasonLeagues" }o--|| "Leagues" : ""
@@ -289,9 +291,6 @@ erDiagram
   bigint_20_ killer_steam_id FK
   bigint_20_ victim_steam_id FK
 }
-"PublicEmailDomains" {
-  int_10__unsigned id PK
-}
 "Reservations" {
   int_10__unsigned id PK
   int_10__unsigned match_id FK
@@ -303,6 +302,10 @@ erDiagram
 }
 "Roles" {
   int_10__unsigned id PK
+}
+"SeasonActiveMapPool" {
+  int_10__unsigned season_id PK
+  tinyint_3__unsigned map_id PK
 }
 "SeasonLeagueExternalIds" {
   int_10__unsigned id PK
