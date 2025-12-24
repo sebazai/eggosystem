@@ -989,7 +989,7 @@ describe("season-team-players.models", () => {
           mockConnection
         )
       ).rejects.toThrow(
-        "Please assign a new captain for the team before removing the current captain"
+        "Please assign a new captain in role management for the team before removing the current captain"
       );
     });
   });

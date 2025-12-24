@@ -93,7 +93,7 @@ export const discardSeasonTeamPlayer = async (
   // Check if player is a captain - cannot discard captain without assigning a new one first
   if (existingPlayer.is_captain) {
     throw new BadRequestError(
-      "Please assign a new captain for the team before removing the current captain"
+      "Please assign a new captain in role management for the team before removing the current captain"
     );
   }
 
