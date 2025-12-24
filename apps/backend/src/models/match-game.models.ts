@@ -32,6 +32,7 @@ import { upsertPlayerStatsForGame } from "./player-stats.models";
 import { upsertPlayerTradesForGame } from "./player-trades.models";
 import { upsertMapRoundStats } from "./map-round-stat.models";
 import { getMatchTeamMapVetoPicksAndDeciders } from "./match-team-map-veto.models";
+import { upsertKillLogsForGame } from "./kill-log.models";
 
 export const getGameTeamRoundBreakdown = async (match_game_id: number) => {
   const query = `
@@ -484,7 +485,8 @@ export const saveParsedDemoDataForGame = async (
     NewRoundInfo: RoundInfo,
     Trades,
     Clutches: _Clutches,
-    RoundImpacts: _RoundImpacts
+    RoundImpacts: _RoundImpacts,
+    KillLog
   } = parsed_payload;
 
   const connection = await getConnection();
@@ -564,7 +566,17 @@ export const saveParsedDemoDataForGame = async (
         ctTeamIdTeam2: counterTerroristTeam.team_id,
         mapRoundStats: RoundInfo.Rounds,
         connection
-      })
+      }),
+      // Save kill logs if present (new field from parser)
+      ...(KillLog && KillLog.length > 0
+        ? [
+            upsertKillLogsForGame({
+              matchGameId,
+              killLogs: KillLog,
+              connection
+            })
+          ]
+        : [])
     ]);
 
     await connection.commit();
