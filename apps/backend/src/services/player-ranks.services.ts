@@ -118,22 +118,14 @@ const cacheRankData = async (
   steam_id: string,
   rankData: CS2LeetifyAvgRank
 ): Promise<void> => {
-  try {
-    const redisKey = `730-${steam_id}-rank`;
-    await redisClient.set(
-      redisKey,
-      JSON.stringify(rankData),
-      "EX",
-      expireIn30Days
-    );
-    logger.debug(`[Rank] Cached rank data for steam_id: ${steam_id}`);
-  } catch (error) {
-    // Log error but don't fail - caching is best effort
-    logger.warn(
-      `[Rank] Failed to cache rank data for steam_id: ${steam_id}`,
-      error
-    );
-  }
+  const redisKey = `730-${steam_id}-rank`;
+  await redisClient.set(
+    redisKey,
+    JSON.stringify(rankData),
+    "EX",
+    expireIn30Days
+  );
+  logger.info(`[Rank] Cached rank data for steam_id: ${steam_id}`);
 };
 
 /**
@@ -145,22 +137,15 @@ const getRankFromExternalSources = async (
 ): Promise<CS2LeetifyAvgRank | null> => {
   const leetifyRank = await getCS2RankFromLeetify(steam_id);
   if (leetifyRank) {
-    // Always cache successful fetches to Redis, even if user doesn't exist in DB
-    // This prevents unnecessary API calls and rate limiting
     await cacheRankData(steam_id, leetifyRank);
     logger.info(
       `[Rank] Fetched and cached rank from Leetify for steam_id: ${steam_id}, rank: ${leetifyRank.average_rank}`
     );
     return leetifyRank;
   }
-
-  // Log when external source fails (could be rate limit, network error, or no data)
-  // Check logs for [Leetify] prefix to see specific error details
-  logger.debug(
-    `[Rank] External source (Leetify) returned no rank for steam_id: ${steam_id}. ` +
-      `Will fall back to database if available. Check [Leetify] logs for error details.`
+  logger.info(
+    `[Rank] External source (Leetify) returned no rank for steam_id: ${steam_id}.`
   );
-
   return null;
 };
 

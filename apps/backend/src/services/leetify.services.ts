@@ -6,6 +6,10 @@ import {
 } from "@eggosystem/types";
 import { logger } from "../utils/app-logger";
 import { createAbortController } from "../utils/fetch-utils";
+import {
+  getRateLimitForService,
+  setRateLimitForService
+} from "../utils/rate-limit-utils";
 
 const isMatchmakingRank = (game: GameRanks): game is MatchmakingRankType =>
   game.dataSource === "matchmaking";
@@ -48,6 +52,11 @@ const getAverageRankForGames = (games: GameRanks[]) => {
 };
 
 export const getCS2RankFromLeetify = async (steam_id: string) => {
+  const rateLimit = await getRateLimitForService("Leetify");
+  if (rateLimit) {
+    return undefined;
+  }
+
   const webURL = `https://api.cs-prod.leetify.com/api/profile/id/${steam_id}`;
 
   const { controller, clearAbortTimeout } = createAbortController(
@@ -67,32 +76,10 @@ export const getCS2RankFromLeetify = async (steam_id: string) => {
 
       // Enhanced logging for rate limit errors (429)
       if (result.status === 429) {
-        const retryAfter = result.headers.get("Retry-After");
-        const rateLimitRemaining = result.headers.get("X-RateLimit-Remaining");
-        const rateLimitReset = result.headers.get("X-RateLimit-Reset");
-
-        // Parse error message from response body if available
-        let errorMessage = "unknown error";
-        try {
-          const errorBody = await result.json().catch(() => ({}));
-          if (
-            errorBody &&
-            typeof errorBody === "object" &&
-            "error" in errorBody
-          ) {
-            errorMessage = String(errorBody.error);
-          }
-        } catch {
-          // If parsing fails, use default message
-        }
-
-        logger.error(
-          `[Leetify] Rate limit exceeded (429) for steam_id: ${steam_id} (${duration}ms). ` +
-            `Error message: "${errorMessage}". ` +
-            `Retry-After: ${retryAfter || "not provided"}, ` +
-            `RateLimit-Remaining: ${rateLimitRemaining || "not provided"}, ` +
-            `RateLimit-Reset: ${rateLimitReset || "not provided"}. ` +
-            `System will fall back to Redis cache or database. Consider implementing rate limit handling or caching strategy.`
+        await setRateLimitForService(
+          "Leetify",
+          result.headers.get("Retry-After"),
+          result.headers.get("X-RateLimit-Reset")
         );
       } else {
         logger.warn(
