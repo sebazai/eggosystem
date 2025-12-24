@@ -2,7 +2,7 @@ import { type NextFunction, type Response } from "express";
 
 import { checkPlayerAdditionEligibility } from "../../models/dashboard/season.models";
 import { runQuery } from "../../db/mysqlRunQuery";
-import { BadRequestError } from "../../utils/errors";
+import { BadRequestError, UnauthorizedError } from "../../utils/errors";
 import { getConnection } from "../../db/mysqlConnection";
 import {
   getCSRank,
@@ -11,7 +11,10 @@ import {
 import { insertPlayerRankForSeason } from "../../models/season-player-ranks.models";
 import { getFaceITCS2Rank } from "../../services/faceit.services";
 import { setPlayerKanaElo } from "../../models/player.models";
-import { insertSeasonTeamPlayer } from "../../models/season-team-players.models";
+import {
+  insertSeasonTeamPlayer,
+  discardSeasonTeamPlayer
+} from "../../models/season-team-players.models";
 import { insertSeasonTeamRegistrationPlayer } from "../../models/season-team-registration-player.models";
 import {
   type RequestWithParamsAndBody,
@@ -744,4 +747,37 @@ export const preparePlayerForSignupController = async (
   } catch (error) {
     return next(error);
   }
+};
+
+/**
+ * Controller to discard a player from a team (soft delete)
+ * Sets discarded_at timestamp and discarded_by account_id
+ */
+export const discardPlayerController = async (
+  req: RequestWithParams<{
+    season_id: string;
+    team_id: string;
+    steam_id: string;
+  }>,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  if (!req.auth || !req.auth.account_id) {
+    return next(new UnauthorizedError("Authentication required"));
+  }
+
+  const seasonId = Number(req.params.season_id);
+  const teamId = Number(req.params.team_id);
+  const steamId = req.params.steam_id;
+  const accountId = req.auth.account_id as number;
+
+  await discardSeasonTeamPlayer(seasonId, teamId, steamId, accountId);
+
+  res.status(200).json({
+    message: "Player successfully discarded from the team",
+    steam_id: steamId,
+    team_id: teamId,
+    season_id: seasonId,
+    discarded_by: accountId
+  });
 };
