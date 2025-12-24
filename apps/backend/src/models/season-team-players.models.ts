@@ -11,6 +11,7 @@ import { buildInsertQueryParts } from "../db/utils";
 import { getSeasonLeagueTeamByExternalId } from "./season-league-team.models";
 import { redisClient } from "../utils/redisClient";
 import { getHubMatchesByExternalMatchRoomId } from "./match.models";
+import { BadRequestError } from "../utils/errors";
 
 export const insertSeasonTeamPlayer = async (
   seasonId: number,
@@ -71,21 +72,28 @@ export const discardSeasonTeamPlayer = async (
   connection?: PoolConnection
 ) => {
   // First verify the player exists and is not already discarded
-  const existingPlayer = await runQuery<Array<SeasonTeamPlayer>>(
+  const [existingPlayer] = await runQuery<Array<SeasonTeamPlayer>>(
     `SELECT * FROM SeasonTeamPlayers WHERE season_id = ? AND team_id = ? AND steam_id = ?`,
     [seasonId, teamId, steamId],
     connection
   );
 
-  if (!existingPlayer || existingPlayer.length === 0 || !existingPlayer[0]) {
-    throw new Error(
+  if (!existingPlayer) {
+    throw new BadRequestError(
       `Player with steam_id ${steamId} not found in team ${teamId} for season ${seasonId}`
     );
   }
 
-  if (existingPlayer[0].discarded_at !== null) {
-    throw new Error(
+  if (existingPlayer.discarded_at !== null) {
+    throw new BadRequestError(
       `Player with steam_id ${steamId} is already discarded from team ${teamId} for season ${seasonId}`
+    );
+  }
+
+  // Check if player is a captain - cannot discard captain without assigning a new one first
+  if (existingPlayer.is_captain) {
+    throw new BadRequestError(
+      "Please assign a new captain for the team before removing the current captain"
     );
   }
 

@@ -960,5 +960,37 @@ describe("season-team-players.models", () => {
         `Player with steam_id ${steamId} is already discarded from team ${teamId} for season ${seasonId}`
       );
     });
+
+    it("should throw error if player is a captain", async () => {
+      // Arrange
+      const seasonId = 1;
+      const teamId = 101;
+      const steamId = "steam123";
+      const accountId = 42;
+      const mockConnection = {} as unknown as PoolConnection;
+
+      const mockRunQuery = jest.requireMock("../db/mysqlRunQuery").runQuery;
+      mockRunQuery.mockResolvedValueOnce([
+        createMockSeasonTeamPlayer({
+          season_id: seasonId,
+          team_id: teamId,
+          steam_id: steamId,
+          is_captain: true
+        })
+      ]); // Player is a captain
+
+      // Act & Assert
+      await expect(
+        discardSeasonTeamPlayer(
+          seasonId,
+          teamId,
+          steamId,
+          accountId,
+          mockConnection
+        )
+      ).rejects.toThrow(
+        "Please assign a new captain for the team before removing the current captain"
+      );
+    });
   });
 });
