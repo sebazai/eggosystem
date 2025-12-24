@@ -112,6 +112,7 @@ const getRankFromCache = async (
 
 /**
  * Cache rank data in Redis
+ * Wraps caching in try-catch to ensure it never fails the main operation
  */
 const cacheRankData = async (
   steam_id: string,
@@ -124,11 +125,12 @@ const cacheRankData = async (
     "EX",
     expireIn30Days
   );
-  logger.debug(`[Rank] Cached rank data for steam_id: ${steam_id}`);
+  logger.info(`[Rank] Cached rank data for steam_id: ${steam_id}`);
 };
 
 /**
  * Get rank from external sources (Leetify)
+ * Always caches successful fetches to Redis, regardless of user existence in DB
  */
 const getRankFromExternalSources = async (
   steam_id: string
@@ -136,9 +138,14 @@ const getRankFromExternalSources = async (
   const leetifyRank = await getCS2RankFromLeetify(steam_id);
   if (leetifyRank) {
     await cacheRankData(steam_id, leetifyRank);
+    logger.info(
+      `[Rank] Fetched and cached rank from Leetify for steam_id: ${steam_id}, rank: ${leetifyRank.average_rank}`
+    );
     return leetifyRank;
   }
-
+  logger.info(
+    `[Rank] External source (Leetify) returned no rank for steam_id: ${steam_id}.`
+  );
   return null;
 };
 
@@ -210,12 +217,21 @@ export const getCSRank = async (
     }
 
     // 4. Try database fallback
+    // Note: If Leetify returned 429 (rate limit), we're falling back to database/cache
+    // This is expected behavior to avoid hitting rate limits
     const fallbackRank = await getRankFromDatabaseFallback(steam_id);
     if (fallbackRank) {
+      logger.info(
+        `[Rank] Using database fallback for steam_id: ${steam_id} after external source failure. ` +
+          `This may indicate rate limiting - check [Leetify] logs for 429 errors.`
+      );
       return fallbackRank;
     }
 
-    logger.warn(`[Rank] No rank found for steam_id: ${steam_id}`);
+    logger.warn(
+      `[Rank] No rank found for steam_id: ${steam_id} from any source (database, cache, external API, or fallback). ` +
+        `If Leetify returned 429, consider checking Redis cache or waiting before retrying.`
+    );
     return {
       average_rank: -1,
       rank_updated_at: null

@@ -6,7 +6,6 @@ import {
   createAccountForSteam,
   updateSteamLinkedAccountUsername
 } from "../models/auth.models";
-import { clearPossibleRedisCacheForNewUser } from "../services/redis.services";
 import type { SteamUserPayload } from "@eggosystem/types";
 import { logger } from "../utils/app-logger";
 
@@ -27,7 +26,6 @@ passport.use(
             steamDisplayName: profile.displayName,
             steamRealname: profile._json.realname
           });
-          await clearPossibleRedisCacheForNewUser(profile.id);
           return done(null, {
             account_id: insert.account_id,
             provider_id: profile.id,

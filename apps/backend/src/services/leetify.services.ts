@@ -6,6 +6,10 @@ import {
 } from "@eggosystem/types";
 import { logger } from "../utils/app-logger";
 import { createAbortController } from "../utils/fetch-utils";
+import {
+  getRateLimitForService,
+  setRateLimitForService
+} from "../utils/rate-limit-utils";
 
 const isMatchmakingRank = (game: GameRanks): game is MatchmakingRankType =>
   game.dataSource === "matchmaking";
@@ -48,6 +52,11 @@ const getAverageRankForGames = (games: GameRanks[]) => {
 };
 
 export const getCS2RankFromLeetify = async (steam_id: string) => {
+  const rateLimit = await getRateLimitForService("Leetify");
+  if (rateLimit) {
+    return undefined;
+  }
+
   const webURL = `https://api.cs-prod.leetify.com/api/profile/id/${steam_id}`;
 
   const { controller, clearAbortTimeout } = createAbortController(
@@ -64,9 +73,18 @@ export const getCS2RankFromLeetify = async (steam_id: string) => {
 
     if (!result.ok) {
       const duration = clearAbortTimeout();
-      logger.warn(
-        `[Leetify] API returned ${result.status} ${result.statusText} for steam_id: ${steam_id} (${duration}ms)`
-      );
+      if (result.status === 429) {
+        await setRateLimitForService(
+          "Leetify",
+          result.headers.get("Retry-After"),
+          result.headers.get("X-RateLimit-Reset")
+        );
+      } else {
+        logger.warn(
+          `[Leetify] API returned ${result.status} ${result.statusText} for steam_id: ${steam_id} (${duration}ms)`
+        );
+      }
+
       return undefined;
     }
 
