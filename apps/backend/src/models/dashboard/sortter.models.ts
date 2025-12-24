@@ -121,9 +121,12 @@ export const getTeamValuesForSortter = async (
   try {
     // Get all team flag keys for the current season
     const flagKeys = await redisClient.keys(`team-flag:s${seasonId}:*`);
-    console.warn(
-      `Found ${flagKeys.length} team flag keys for season ${seasonId}`
-    );
+
+    // Handle case where Redis might return undefined/null (e.g., in tests)
+    if (!flagKeys || !Array.isArray(flagKeys)) {
+      // Redis unavailable or returned invalid data, skip flag checking but return results
+      return results;
+    }
 
     if (flagKeys.length > 0) {
       // Create a set of flagged team IDs for quick lookup

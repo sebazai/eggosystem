@@ -32,7 +32,9 @@ export async function seed(knex: Knex): Promise<void> {
 
   const splittableLines = withTriggers
     .replaceAll(/END\n/g, "END;#!#")
-    .replaceAll(/NOW\(\)/g, "NOW();#!#")
+    // Only replace NOW() when it's at the end of a statement (followed by semicolon or end of line)
+    // Don't replace NOW() inside expressions like NOW() - INTERVAL
+    .replaceAll(/NOW\(\)(?=\s*;)/g, "NOW();#!#")
     .replaceAll(/DELIMITER ;/g, "");
 
   const statements = splittableLines.split("#!#");
