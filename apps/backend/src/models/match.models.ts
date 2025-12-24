@@ -993,7 +993,7 @@ export const getMatchTeamLineups = async (matchId: number) => {
       FROM Matches m
       JOIN MatchTeams mt ON m.id = mt.match_id
       JOIN Teams t ON mt.team_id = t.id
-      JOIN SeasonTeamPlayers stp ON stp.team_id = t.id AND stp.season_id = m.season_id
+      JOIN SeasonTeamPlayers stp ON stp.team_id = t.id AND stp.season_id = m.season_id AND stp.discarded_at IS NULL
       JOIN SteamPlayers sp ON stp.steam_id = sp.steam_id
       LEFT JOIN SeasonPlayerRanks spr_current ON spr_current.steam_id = sp.steam_id AND spr_current.season_id = m.season_id
       LEFT JOIN LatestPlayerRanks spr_latest ON spr_latest.steam_id = sp.steam_id AND spr_latest.rank_recency = 1
