@@ -1,13 +1,17 @@
 export interface RegistrationDraftRaw {
-  organizationId: number;
-  teamId: number;
+  organizationId?: number;
+  teamId?: number;
   newOrganization?: {
-    name: string;
-    website: string;
-    organization_code: string;
+    name?: string;
+    website?: string;
+    organization_code?: string;
+    image_data?: string;
+    image_filename?: string;
   };
   newTeam?: {
-    name: string;
+    name?: string;
+    image_data?: string;
+    image_filename?: string;
   };
   teamExternalId?: string;
   captainHasReadTermAndConditions: boolean;
@@ -36,8 +40,9 @@ export function isRegistrationDraftRaw(
     "players"
   ];
   if (Object.keys(d).some((k) => !allowedRootKeys.includes(k))) return false;
-  if (typeof d.organizationId !== "number") return false;
-  if (typeof d.teamId !== "number") return false;
+  if ("organizationId" in d && typeof d.organizationId !== "number")
+    return false;
+  if ("teamId" in d && typeof d.teamId !== "number") return false;
   if (typeof d.captainHasReadTermAndConditions !== "boolean") return false;
   if (!Array.isArray(d.players)) return false;
   for (const p of d.players) {
@@ -66,24 +71,58 @@ export function isRegistrationDraftRaw(
     if (typeof d.newOrganization !== "object" || d.newOrganization === null)
       return false;
     const org = d.newOrganization as Record<string, unknown>;
-    const allowedOrgKeys = ["name", "website", "organization_code"];
+    const allowedOrgKeys = [
+      "name",
+      "website",
+      "organization_code",
+      "image_data",
+      "image_filename"
+    ];
     if (Object.keys(org).some((k) => !allowedOrgKeys.includes(k))) return false;
-    if (typeof org.name !== "string" || org.name.length > 100) return false;
-    if (typeof org.website !== "string" || org.website.length > 100)
+    // Allow partial data - only validate fields that are present
+    if (
+      "name" in org &&
+      (typeof org.name !== "string" || org.name.length > 100)
+    )
       return false;
     if (
-      typeof org.organization_code !== "string" ||
-      org.organization_code.length > 100
+      "website" in org &&
+      (typeof org.website !== "string" || org.website.length > 100)
+    )
+      return false;
+    if (
+      "organization_code" in org &&
+      (typeof org.organization_code !== "string" ||
+        org.organization_code.length > 100)
+    )
+      return false;
+    if ("image_data" in org && typeof org.image_data !== "string") return false;
+    if (
+      "image_filename" in org &&
+      (typeof org.image_filename !== "string" ||
+        org.image_filename.length > 255)
     )
       return false;
   }
   if (d.newTeam !== undefined) {
     if (typeof d.newTeam !== "object" || d.newTeam === null) return false;
     const team = d.newTeam as Record<string, unknown>;
-    const allowedTeamKeys = ["name"];
+    const allowedTeamKeys = ["name", "image_data", "image_filename"];
     if (Object.keys(team).some((k) => !allowedTeamKeys.includes(k)))
       return false;
-    if (typeof team.name !== "string" || team.name.length > 100) return false;
+    if (
+      "name" in team &&
+      (typeof team.name !== "string" || team.name.length > 100)
+    )
+      return false;
+    if ("image_data" in team && typeof team.image_data !== "string")
+      return false;
+    if (
+      "image_filename" in team &&
+      (typeof team.image_filename !== "string" ||
+        team.image_filename.length > 255)
+    )
+      return false;
   }
   if (
     d.teamExternalId !== undefined &&

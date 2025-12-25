@@ -135,6 +135,8 @@ const TestWrapper = ({
           seasonId={seasonId}
           validCaptainSelection={true}
           prefilledPlayerSteamIds={[]}
+          isEditMode={false}
+          submitInitiated={false}
         />
       </Tabs>
     </FormProvider>

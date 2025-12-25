@@ -32,6 +32,7 @@ export const createMockOrganization = (
     country: "FI",
     sort_order: null,
     discord_invite_link: null,
+    status: "active",
     ...overrides
   };
 };

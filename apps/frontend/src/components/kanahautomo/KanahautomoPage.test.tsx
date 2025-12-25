@@ -8,6 +8,7 @@ import { useAuth } from "@/context/AuthContext";
 import React from "react";
 import { clientApiFetch } from "@/lib/apiClient";
 import { useRouter } from "next/navigation";
+import { createMockOrganization } from "@eggosystem/types";
 
 // Mock the hooks
 jest.mock("@/hooks/data/useOrganizations");
@@ -68,7 +69,7 @@ const mockUser = {
 
 // Memoized mock return values
 const stableMockOrganizations = [
-  {
+  createMockOrganization({
     id: 1,
     name: "Test Organization 1",
     logo: "logo1.png",
@@ -77,8 +78,8 @@ const stableMockOrganizations = [
     country: "Finland",
     sort_order: 1,
     discord_invite_link: "https://discord.com/invite/test"
-  },
-  {
+  }),
+  createMockOrganization({
     id: 2,
     name: "Test Organization 2",
     logo: "logo2.png",
@@ -87,8 +88,8 @@ const stableMockOrganizations = [
     country: "Finland",
     sort_order: 2,
     discord_invite_link: null
-  },
-  {
+  }),
+  createMockOrganization({
     id: 3,
     name: "Test Organization 3",
     logo: "logo3.png",
@@ -97,7 +98,7 @@ const stableMockOrganizations = [
     country: "Finland",
     sort_order: 3,
     discord_invite_link: null
-  }
+  })
 ];
 const stableMockOrgStatus = [
   {

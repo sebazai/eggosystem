@@ -27,16 +27,17 @@ import {
   SeasonPlatform,
   type FaceITTeamDetails,
   type SignupFormValues,
-  type SignupPlayerType
+  type SignupPlayerType,
+  signupFormSchema,
+  baseSignupFormSchema
 } from "@eggosystem/types";
-import { signupFormSchema, baseSignupFormSchema } from "@eggosystem/types";
 import { CopyInput } from "@/components/inputs/CopyInput";
 import { envConfig } from "@/configs/env";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RequiredFormLabel } from "@/components/ui/RequiredFormLabel";
 import { toast } from "sonner";
 import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
-
+import { useCreateOrganizationForSignup } from "@/hooks/data/useCreateOrganizationForSignup";
 interface SignupFormProps {
   seasonId: string;
   platform: SeasonPlatform;
@@ -294,10 +295,17 @@ export const SignupForm = ({
           body: JSON.stringify(convertedData)
         }
       );
-      setSuccessMessage(`Team registered succesfully, please remember to`);
-      toast.success(
-        "Team registered successfully, please remember to pay participation fee."
-      );
+      if (editValues) {
+        setSuccessMessage("Team updated successfully");
+        toast.success("Team updated successfully", {
+          description: "Your team information has been saved."
+        });
+      } else {
+        setSuccessMessage(`Team registered succesfully, please remember to`);
+        toast.success(
+          "Team registered successfully, please remember to pay participation fee."
+        );
+      }
       setEditUrl(
         `${createBaseUrl()}/seasons/${seasonId}/signup/team/${returnValue.team_id}/edit`
       );
@@ -362,31 +370,45 @@ export const SignupForm = ({
   };
 
   const saveAsDraft = async (formData: SignupFormValues) => {
-    // Convert all Steam IDs to SteamID64 format before saving
-    const convertedData = await convertSteamIdsToSteamId64(formData);
+    try {
+      const convertedData = await convertSteamIdsToSteamId64(formData);
 
-    const formDataStripped = {
-      ...convertedData,
-      players: convertedData.players.map((player) => ({
-        accountId: player.accountId,
-        steamId: player.steamId,
-        nickname: player.nickname,
-        captain: player.captain,
-        coCaptain: player.coCaptain
-      }))
-    } satisfies SignupFormValues;
-    await clientApiFetch(`/api/v1/registrations/season/${seasonId}/draft`, {
-      method: "POST",
-      body: JSON.stringify(formDataStripped)
-    });
-    setSuccessMessage("Saved draft for 30 days.");
-    toast.success("Draft saved successfully", {
-      description: "You can continue editing your draft later on this page."
-    });
+      const formDataStripped = {
+        ...convertedData,
+        players: convertedData.players.map((player) => ({
+          accountId: player.accountId,
+          steamId: player.steamId,
+          nickname: player.nickname,
+          captain: player.captain,
+          coCaptain: player.coCaptain
+        }))
+      };
+      await clientApiFetch(`/api/v1/registrations/season/${seasonId}/draft`, {
+        method: "POST",
+        body: JSON.stringify(formDataStripped)
+      });
+      setSuccessMessage("Saved draft for 30 days.");
+      toast.success("Draft saved successfully", {
+        description: "You can continue editing your draft later on this page."
+      });
 
-    // Invalidate the edit form data cache to ensure fresh data is loaded
-    onDraftSaved?.();
+      // Invalidate the edit form data cache to ensure fresh data is loaded
+      onDraftSaved?.();
+    } catch (error) {
+      if (error instanceof ApiError) {
+        toast.error(error.message || "Failed to save draft");
+      } else {
+        toast.error("Failed to save draft. Please try again.");
+      }
+      console.error("Error saving draft:", error);
+    }
   };
+
+  const { createOrganization, isCreating: isCreatingOrg } =
+    useCreateOrganizationForSignup({
+      seasonId,
+      setValue
+    });
 
   if (!user) {
     return <RequiresSteamLogin />;
@@ -404,7 +426,18 @@ export const SignupForm = ({
     );
   }
 
-  const onNext = (value: string) => {
+  const onNext = async (value: string) => {
+    if (
+      value === "team" &&
+      watchOrgId === -1 &&
+      watchNewOrg &&
+      !isCreatingOrg
+    ) {
+      const organizationId = await createOrganization(watchNewOrg);
+      if (!organizationId) {
+        return;
+      }
+    }
     setActiveTab(value);
   };
 
@@ -413,6 +446,9 @@ export const SignupForm = ({
     validTeamSelection &&
     validPlayerSelectionWithCaptains &&
     hasAcceptedTermsAndConditions;
+
+  const isSubmittingOrHasSubmitted =
+    form.formState.isSubmitting || form.formState.isSubmitSuccessful;
 
   return (
     <FormProvider {...form}>
@@ -425,13 +461,14 @@ export const SignupForm = ({
 
             <Tabs
               value={activeTab}
-              onValueChange={setActiveTab}
+              onValueChange={form.formState.isSubmitting ? undefined : onNext}
               className="space-y-2 md:space-y-6"
             >
               <TabsList className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 h-full w-full">
                 <TabsTrigger
                   value="organization"
                   className="w-full sm:w-auto border border-transparent hover:bg-gray-200 rounded-md transition"
+                  disabled={isSubmittingOrHasSubmitted}
                 >
                   Organization{" "}
                   {validOrganizationSelection && (
@@ -445,7 +482,9 @@ export const SignupForm = ({
                 <TabsTrigger
                   value="team"
                   className="w-full sm:w-auto border border-transparent hover:bg-gray-200 rounded-md transition"
-                  disabled={!validOrganizationSelection}
+                  disabled={
+                    !validOrganizationSelection || isSubmittingOrHasSubmitted
+                  }
                 >
                   Team{" "}
                   {validTeamSelection && (
@@ -459,7 +498,7 @@ export const SignupForm = ({
                 <TabsTrigger
                   value="players"
                   className="w-full sm:w-auto border border-transparent hover:bg-gray-200 rounded-md transition"
-                  disabled={!validTeamSelection}
+                  disabled={!validTeamSelection || isSubmittingOrHasSubmitted}
                 >
                   Players{" "}
                   {validPlayerSelectionWithCaptains && (
@@ -476,10 +515,13 @@ export const SignupForm = ({
                 control={control}
                 resetField={resetField}
                 setValue={setValue}
+                watch={watch}
                 onNext={onNext}
                 validOrganizationSelection={validOrganizationSelection}
                 watchOrgId={watchOrgId}
                 isEditMode={isEditMode}
+                submitInitiated={isSubmittingOrHasSubmitted}
+                isCreatingOrg={isCreatingOrg}
               />
 
               <TabTeam
@@ -487,12 +529,14 @@ export const SignupForm = ({
                 control={control}
                 resetField={resetField}
                 setValue={setValue}
+                watch={watch}
                 onNext={onNext}
                 validTeamSelection={validTeamSelection}
                 watchTeamId={watchTeamId}
                 platform={seasonDetails.platform}
                 fetchingExternalData={fetchingExternalData}
                 isEditMode={isEditMode}
+                submitInitiated={isSubmittingOrHasSubmitted}
               />
 
               <TabPlayers
@@ -512,6 +556,8 @@ export const SignupForm = ({
                 validCaptainSelection={validCaptainSelection}
                 prefilledPlayerSteamIds={prefilledPlayerSteamIds}
                 teamId={watchTeamId}
+                isEditMode={isEditMode}
+                submitInitiated={isSubmittingOrHasSubmitted}
               />
             </Tabs>
 
@@ -552,13 +598,11 @@ export const SignupForm = ({
               type="submit"
               variant="outline"
               className="w-full"
-              disabled={
-                form.formState.isSubmitting ||
-                form.formState.isSubmitSuccessful ||
-                !canSubmit
-              }
+              disabled={isSubmittingOrHasSubmitted || !canSubmit}
             >
-              Submit
+              {form.formState.isSubmitting
+                ? "Processing submission..."
+                : "Submit"}
             </Button>
 
             <FormField
@@ -575,6 +619,7 @@ export const SignupForm = ({
                           Boolean(checked)
                         )
                       }
+                      disabled={form.formState.isSubmitting}
                       data-testid="terms-conditions-checkbox"
                     />
                   </FormControl>
