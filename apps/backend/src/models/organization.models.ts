@@ -8,7 +8,6 @@ import { runQuery } from "../db/mysqlRunQuery";
 import { cleanWWWUrl } from "../utils/urlSanitize";
 import type { PoolConnection } from "mysql2/promise";
 import { buildInsertQueryParts } from "../db/utils";
-import { BadRequestError } from "../utils/errors";
 
 export const getOrganizations = async (
   searchParams?: string,

@@ -374,15 +374,7 @@ export const SignupForm = ({
       const convertedData = await convertSteamIdsToSteamId64(formData);
 
       const formDataStripped = {
-        organizationId: convertedData.organizationId ?? -1,
-        teamId: convertedData.teamId ?? -1,
-        ...(convertedData.newOrganization && {
-          newOrganization: convertedData.newOrganization
-        }),
-        ...(convertedData.newTeam && { newTeam: convertedData.newTeam }),
-        teamExternalId: convertedData.teamExternalId || "",
-        captainHasReadTermAndConditions:
-          convertedData.captainHasReadTermAndConditions,
+        ...convertedData,
         players: convertedData.players.map((player) => ({
           accountId: player.accountId,
           steamId: player.steamId,

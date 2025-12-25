@@ -103,14 +103,8 @@ export const TabOrganization = ({
                   watchOrgId === -1
                     ? [{ value: -1, label: "Other" }]
                     : selectableOrganizations.filter(
-                          (org) => org.value === watchOrgId
-                        ).length > 0
-                      ? selectableOrganizations.filter(
-                          (org) => org.value === watchOrgId
-                        )
-                      : watchOrgId > 0
-                        ? [{ value: watchOrgId, label: "Loading..." }]
-                        : []
+                        (org) => org.value === watchOrgId
+                      )
                 }
                 onSelectChange={(selectedItem) => {
                   if (!selectedItem) {
