@@ -1,12 +1,17 @@
 import {
   validatePlayersInTeams,
-  getSeasonTeamPlayersBySteamIds
+  getSeasonTeamPlayersBySteamIds,
+  discardSeasonTeamPlayer
 } from "./season-team-players.models";
 import { getSeasonLeagueTeamByExternalId } from "./season-league-team.models";
 import { getHubMatchesByExternalMatchRoomId } from "./match.models";
 import { redisClient } from "../utils/redisClient";
 import type { FaceitMatchTeams, SeasonTeamPlayer } from "@eggosystem/types";
-import { createMockSeasonLeagueTeam } from "@eggosystem/types";
+import {
+  createMockSeasonLeagueTeam,
+  createMockSeasonTeamPlayer
+} from "@eggosystem/types";
+import type { PoolConnection } from "mysql2/promise";
 
 // Mock dependencies
 jest.mock("./season-league-team.models");
@@ -92,24 +97,16 @@ describe("season-team-players.models", () => {
     });
 
     const mockSeasonTeamPlayers: SeasonTeamPlayer[] = [
-      {
+      createMockSeasonTeamPlayer({
         season_id: 1,
         team_id: 101,
-        steam_id: "steam123",
-        role: "primary",
-        is_captain: false,
-        is_co_captain: false,
-        match_id: null
-      },
-      {
+        steam_id: "steam123"
+      }),
+      createMockSeasonTeamPlayer({
         season_id: 1,
         team_id: 101,
-        steam_id: "steam456",
-        role: "primary",
-        is_captain: false,
-        is_co_captain: false,
-        match_id: null
-      }
+        steam_id: "steam456"
+      })
     ];
 
     const mockMatchIds = [{ id: 1001 }, { id: 1002 }];
@@ -132,15 +129,11 @@ describe("season-team-players.models", () => {
         mockRunQuery
           .mockResolvedValueOnce(mockSeasonTeamPlayers) // Team 1 players (all have null match_id)
           .mockResolvedValueOnce([
-            {
+            createMockSeasonTeamPlayer({
               season_id: 1,
               team_id: 102,
-              steam_id: "steam789",
-              role: "primary",
-              is_captain: false,
-              is_co_captain: false,
-              match_id: null
-            }
+              steam_id: "steam789"
+            })
           ]); // Team 2 players (all have null match_id)
 
         // Act
@@ -160,11 +153,11 @@ describe("season-team-players.models", () => {
 
         expect(mockRunQuery).toHaveBeenCalledTimes(2);
         expect(mockRunQuery).toHaveBeenCalledWith(
-          "SELECT * FROM SeasonTeamPlayers WHERE season_id = ? AND team_id = ? AND steam_id IN (?,?)",
+          "SELECT * FROM SeasonTeamPlayers WHERE season_id = ? AND team_id = ? AND steam_id IN (?,?) AND discarded_at IS NULL",
           [1, 101, "steam123", "steam456"]
         );
         expect(mockRunQuery).toHaveBeenCalledWith(
-          "SELECT * FROM SeasonTeamPlayers WHERE season_id = ? AND team_id = ? AND steam_id IN (?)",
+          "SELECT * FROM SeasonTeamPlayers WHERE season_id = ? AND team_id = ? AND steam_id IN (?) AND discarded_at IS NULL",
           [1, 102, "steam789"]
         );
 
@@ -252,26 +245,18 @@ describe("season-team-players.models", () => {
         const mockRunQuery = jest.requireMock("../db/mysqlRunQuery").runQuery;
         mockRunQuery
           .mockResolvedValueOnce([
-            {
+            createMockSeasonTeamPlayer({
               season_id: 1,
               team_id: 101,
-              steam_id: "steam123",
-              role: "primary",
-              is_captain: false,
-              is_co_captain: false,
-              match_id: null
-            }
+              steam_id: "steam123"
+            })
           ]) // Only one player found
           .mockResolvedValueOnce([
-            {
+            createMockSeasonTeamPlayer({
               season_id: 1,
               team_id: 102,
-              steam_id: "steam789",
-              role: "primary",
-              is_captain: false,
-              is_co_captain: false,
-              match_id: null
-            }
+              steam_id: "steam789"
+            })
           ]); // All team 2 players found
 
         // Act
@@ -356,15 +341,11 @@ describe("season-team-players.models", () => {
         mockRunQuery
           .mockResolvedValueOnce(mockSeasonTeamPlayers) // All team 1 players found (null match_id)
           .mockResolvedValueOnce([
-            {
+            createMockSeasonTeamPlayer({
               season_id: 1,
               team_id: 102,
-              steam_id: "steam789",
-              role: "primary",
-              is_captain: false,
-              is_co_captain: false,
-              match_id: null
-            }
+              steam_id: "steam789"
+            })
           ]); // All team 2 players found (null match_id)
 
         // Act
@@ -388,35 +369,28 @@ describe("season-team-players.models", () => {
         const mockRunQuery = jest.requireMock("../db/mysqlRunQuery").runQuery;
         mockRunQuery
           .mockResolvedValueOnce([
-            {
+            createMockSeasonTeamPlayer({
               season_id: 1,
               team_id: 101,
               steam_id: "steam123",
               role: "substitute",
-              is_captain: false,
-              is_co_captain: false,
               match_id: 1001 // Valid match id
-            },
-            {
+            }),
+            createMockSeasonTeamPlayer({
               season_id: 1,
               team_id: 101,
               steam_id: "steam456",
-              role: "primary",
-              is_captain: false,
-              is_co_captain: false,
               match_id: null
-            }
+            })
           ])
           .mockResolvedValueOnce([
-            {
+            createMockSeasonTeamPlayer({
               season_id: 1,
               team_id: 102,
               steam_id: "steam789",
               role: "substitute",
-              is_captain: false,
-              is_co_captain: false,
               match_id: 1002 // Valid match id
-            }
+            })
           ]);
 
         // Act
@@ -438,35 +412,27 @@ describe("season-team-players.models", () => {
         const mockRunQuery = jest.requireMock("../db/mysqlRunQuery").runQuery;
         mockRunQuery
           .mockResolvedValueOnce([
-            {
+            createMockSeasonTeamPlayer({
               season_id: 1,
               team_id: 101,
               steam_id: "steam123",
               role: "substitute",
-              is_captain: false,
-              is_co_captain: false,
               match_id: 9999 // Invalid match id (not in mockMatchIds)
-            },
-            {
+            }),
+            createMockSeasonTeamPlayer({
               season_id: 1,
               team_id: 101,
               steam_id: "steam456",
-              role: "primary",
-              is_captain: false,
-              is_co_captain: false,
               match_id: null
-            }
+            })
           ])
           .mockResolvedValueOnce([
-            {
+            createMockSeasonTeamPlayer({
               season_id: 1,
               team_id: 102,
               steam_id: "steam789",
-              role: "primary",
-              is_captain: false,
-              is_co_captain: false,
               match_id: null
-            }
+            })
           ]);
 
         // Act
@@ -498,27 +464,22 @@ describe("season-team-players.models", () => {
         const mockRunQuery = jest.requireMock("../db/mysqlRunQuery").runQuery;
         mockRunQuery
           .mockResolvedValueOnce([
-            {
+            createMockSeasonTeamPlayer({
               season_id: 1,
               team_id: 101,
               steam_id: "steam123",
               role: "substitute",
-              is_captain: false,
-              is_co_captain: false,
               match_id: 1001 // Valid match id
-            }
+            })
             // Missing steam456 - only 1 player found when 2 expected
           ])
           .mockResolvedValueOnce([
-            {
+            createMockSeasonTeamPlayer({
               season_id: 1,
               team_id: 102,
               steam_id: "steam789",
-              role: "primary",
-              is_captain: false,
-              is_co_captain: false,
               match_id: null
-            }
+            })
           ]);
 
         // Act
@@ -549,35 +510,27 @@ describe("season-team-players.models", () => {
         const mockRunQuery = jest.requireMock("../db/mysqlRunQuery").runQuery;
         mockRunQuery
           .mockResolvedValueOnce([
-            {
+            createMockSeasonTeamPlayer({
               season_id: 1,
               team_id: 101,
               steam_id: "steam123",
               role: "substitute", // Correct role for player with match_id
-              is_captain: false,
-              is_co_captain: false,
               match_id: 1001
-            },
-            {
+            }),
+            createMockSeasonTeamPlayer({
               season_id: 1,
               team_id: 101,
               steam_id: "steam456",
-              role: "primary", // Correct role for player without match_id
-              is_captain: false,
-              is_co_captain: false,
               match_id: null
-            }
+            })
           ])
           .mockResolvedValueOnce([
-            {
+            createMockSeasonTeamPlayer({
               season_id: 1,
               team_id: 102,
               steam_id: "steam789",
-              role: "primary",
-              is_captain: false,
-              is_co_captain: false,
               match_id: null
-            }
+            })
           ]);
 
         // Act
@@ -596,35 +549,28 @@ describe("season-team-players.models", () => {
         const mockRunQuery = jest.requireMock("../db/mysqlRunQuery").runQuery;
         mockRunQuery
           .mockResolvedValueOnce([
-            {
+            createMockSeasonTeamPlayer({
               season_id: 1,
               team_id: 101,
               steam_id: "steam123",
-              role: "primary", // Should have null match_id for primary
-              is_captain: false,
-              is_co_captain: false,
               match_id: null
-            },
-            {
+            }),
+            createMockSeasonTeamPlayer({
               season_id: 1,
               team_id: 101,
               steam_id: "steam456",
               role: "substitute", // Should have match_id for substitute
-              is_captain: false,
-              is_co_captain: false,
               match_id: 1001
-            }
+            })
           ])
           .mockResolvedValueOnce([
-            {
+            createMockSeasonTeamPlayer({
               season_id: 1,
               team_id: 102,
               steam_id: "steam789",
               role: "substitute",
-              is_captain: false,
-              is_co_captain: false,
               match_id: 1002
-            }
+            })
           ]);
 
         // Act
@@ -715,26 +661,28 @@ describe("season-team-players.models", () => {
         const mockRunQuery = jest.requireMock("../db/mysqlRunQuery").runQuery;
         mockRunQuery
           .mockResolvedValueOnce(
-            Array.from({ length: 10 }, (_, i) => ({
-              season_id: 1,
-              team_id: 101,
-              steam_id: `steam${100 + i}`,
-              role: "primary",
-              is_captain: i === 0,
-              is_co_captain: i === 1,
-              match_id: null
-            }))
+            Array.from({ length: 10 }, (_, i) =>
+              createMockSeasonTeamPlayer({
+                season_id: 1,
+                team_id: 101,
+                steam_id: `steam${100 + i}`,
+                is_captain: i === 0,
+                is_co_captain: i === 1,
+                match_id: null
+              })
+            )
           )
           .mockResolvedValueOnce(
-            Array.from({ length: 10 }, (_, i) => ({
-              season_id: 1,
-              team_id: 102,
-              steam_id: `steam${200 + i}`,
-              role: "primary",
-              is_captain: i === 0,
-              is_co_captain: i === 1,
-              match_id: null
-            }))
+            Array.from({ length: 10 }, (_, i) =>
+              createMockSeasonTeamPlayer({
+                season_id: 1,
+                team_id: 102,
+                steam_id: `steam${200 + i}`,
+                is_captain: i === 0,
+                is_co_captain: i === 1,
+                match_id: null
+              })
+            )
           );
 
         // Act
@@ -793,7 +741,7 @@ describe("season-team-players.models", () => {
           "match123"
         );
         expect(mockRunQuery).toHaveBeenCalledWith(
-          "SELECT * FROM SeasonTeamPlayers WHERE season_id = ? AND team_id = ? AND steam_id IN ()",
+          "SELECT * FROM SeasonTeamPlayers WHERE season_id = ? AND team_id = ? AND steam_id IN () AND discarded_at IS NULL",
           [1, 101]
         );
         expect(mockRedisClient.set).not.toHaveBeenCalled(); // No invalid players to flag
@@ -819,26 +767,18 @@ describe("season-team-players.models", () => {
         const mockRunQuery = jest.requireMock("../db/mysqlRunQuery").runQuery;
         mockRunQuery
           .mockResolvedValueOnce([
-            {
+            createMockSeasonTeamPlayer({
               season_id: 1,
               team_id: 101,
-              steam_id: "steam123",
-              role: "primary",
-              is_captain: false,
-              is_co_captain: false,
-              match_id: null
-            }
+              steam_id: "steam123"
+            })
           ])
           .mockResolvedValueOnce([
-            {
+            createMockSeasonTeamPlayer({
               season_id: 1,
               team_id: 102,
-              steam_id: "steam789",
-              role: "primary",
-              is_captain: false,
-              is_co_captain: false,
-              match_id: null
-            }
+              steam_id: "steam789"
+            })
           ]);
 
         // Act
@@ -849,7 +789,7 @@ describe("season-team-players.models", () => {
           "match123"
         );
         expect(mockRunQuery).toHaveBeenCalledWith(
-          "SELECT * FROM SeasonTeamPlayers WHERE season_id = ? AND team_id = ? AND steam_id IN (?)",
+          "SELECT * FROM SeasonTeamPlayers WHERE season_id = ? AND team_id = ? AND steam_id IN (?) AND discarded_at IS NULL",
           [1, 101, "steam123"]
         );
         expect(mockRedisClient.set).not.toHaveBeenCalled();
@@ -863,24 +803,16 @@ describe("season-team-players.models", () => {
       const seasonId = 1;
       const steamIds = ["steam123", "steam456", "steam789"];
       const mockSeasonTeamPlayers: SeasonTeamPlayer[] = [
-        {
+        createMockSeasonTeamPlayer({
           season_id: 1,
           team_id: 101,
-          steam_id: "steam123",
-          role: "primary",
-          is_captain: false,
-          is_co_captain: false,
-          match_id: null
-        },
-        {
+          steam_id: "steam123"
+        }),
+        createMockSeasonTeamPlayer({
           season_id: 1,
           team_id: 101,
-          steam_id: "steam456",
-          role: "primary",
-          is_captain: false,
-          is_co_captain: false,
-          match_id: null
-        }
+          steam_id: "steam456"
+        })
       ];
 
       const mockRunQuery = jest.requireMock("../db/mysqlRunQuery").runQuery;
@@ -895,7 +827,7 @@ describe("season-team-players.models", () => {
 
       // Assert
       expect(mockRunQuery).toHaveBeenCalledWith(
-        "SELECT * FROM SeasonTeamPlayers WHERE season_id = ? AND team_id = ? AND steam_id IN (?,?,?)",
+        "SELECT * FROM SeasonTeamPlayers WHERE season_id = ? AND team_id = ? AND steam_id IN (?,?,?) AND discarded_at IS NULL",
         [seasonId, 101, ...steamIds]
       );
       expect(result).toEqual(mockSeasonTeamPlayers);
@@ -917,6 +849,148 @@ describe("season-team-players.models", () => {
 
       // Assert
       expect(result).toEqual([]);
+    });
+  });
+
+  describe("discardSeasonTeamPlayer", () => {
+    beforeEach(() => {
+      jest.clearAllMocks();
+      const mockRunQuery = jest.requireMock("../db/mysqlRunQuery").runQuery;
+      mockRunQuery.mockReset();
+    });
+
+    it("should discard a player successfully", async () => {
+      // Arrange
+      const seasonId = 1;
+      const teamId = 101;
+      const steamId = "steam123";
+      const accountId = 42;
+      const mockConnection = {} as unknown as PoolConnection;
+
+      const mockRunQuery = jest.requireMock("../db/mysqlRunQuery").runQuery;
+      mockRunQuery
+        .mockResolvedValueOnce([
+          createMockSeasonTeamPlayer({
+            season_id: seasonId,
+            team_id: teamId,
+            steam_id: steamId
+          })
+        ]) // First call: check if player exists
+        .mockResolvedValueOnce({ affectedRows: 1 }); // Second call: update
+
+      // Act
+      await discardSeasonTeamPlayer(
+        seasonId,
+        teamId,
+        steamId,
+        accountId,
+        mockConnection
+      );
+
+      // Assert
+      expect(mockRunQuery).toHaveBeenCalledTimes(2);
+      expect(mockRunQuery).toHaveBeenNthCalledWith(
+        1,
+        "SELECT * FROM SeasonTeamPlayers WHERE season_id = ? AND team_id = ? AND steam_id = ?",
+        [seasonId, teamId, steamId],
+        mockConnection
+      );
+      expect(mockRunQuery).toHaveBeenNthCalledWith(
+        2,
+        "UPDATE SeasonTeamPlayers SET discarded_at = NOW(), discarded_by = ? WHERE season_id = ? AND team_id = ? AND steam_id = ?",
+        [accountId, seasonId, teamId, steamId],
+        mockConnection
+      );
+    });
+
+    it("should throw error if player not found", async () => {
+      // Arrange
+      const seasonId = 1;
+      const teamId = 101;
+      const steamId = "steam123";
+      const accountId = 42;
+      const mockConnection = {} as unknown as PoolConnection;
+
+      const mockRunQuery = jest.requireMock("../db/mysqlRunQuery").runQuery;
+      mockRunQuery.mockResolvedValueOnce([]); // Player not found
+
+      // Act & Assert
+      await expect(
+        discardSeasonTeamPlayer(
+          seasonId,
+          teamId,
+          steamId,
+          accountId,
+          mockConnection
+        )
+      ).rejects.toThrow(
+        `Player with steam_id ${steamId} not found in team ${teamId} for season ${seasonId}`
+      );
+    });
+
+    it("should throw error if player already discarded", async () => {
+      // Arrange
+      const seasonId = 1;
+      const teamId = 101;
+      const steamId = "steam123";
+      const accountId = 42;
+      const mockConnection = {} as unknown as PoolConnection;
+
+      const mockRunQuery = jest.requireMock("../db/mysqlRunQuery").runQuery;
+      mockRunQuery.mockResolvedValueOnce([
+        createMockSeasonTeamPlayer({
+          season_id: seasonId,
+          team_id: teamId,
+          steam_id: steamId,
+          discarded_at: new Date(),
+          discarded_by: 1
+        })
+      ]); // Player already discarded
+
+      // Act & Assert
+      await expect(
+        discardSeasonTeamPlayer(
+          seasonId,
+          teamId,
+          steamId,
+          accountId,
+          mockConnection
+        )
+      ).rejects.toThrow(
+        `Player with steam_id ${steamId} is already discarded from team ${teamId} for season ${seasonId}`
+      );
+    });
+
+    it("should throw error if player is a captain", async () => {
+      // Arrange
+      const seasonId = 1;
+      const teamId = 101;
+      const steamId = "steam123";
+      const accountId = 42;
+      const mockConnection = {} as unknown as PoolConnection;
+
+      const mockRunQuery = jest.requireMock("../db/mysqlRunQuery").runQuery;
+      mockRunQuery.mockResolvedValueOnce([
+        createMockSeasonTeamPlayer({
+          season_id: seasonId,
+          team_id: teamId,
+          steam_id: steamId,
+          is_captain: true
+        })
+      ]); // Player is a captain
+
+      // Act & Assert
+      await expect(
+        discardSeasonTeamPlayer(
+          seasonId,
+          teamId,
+          steamId,
+          accountId,
+          mockConnection
+        )
+      ).rejects.toThrow(
+        "Please assign a new captain in role management for the team before removing the current captain"
+      );
     });
   });
 });

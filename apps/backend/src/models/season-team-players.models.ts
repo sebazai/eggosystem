@@ -11,6 +11,7 @@ import { buildInsertQueryParts } from "../db/utils";
 import { getSeasonLeagueTeamByExternalId } from "./season-league-team.models";
 import { redisClient } from "../utils/redisClient";
 import { getHubMatchesByExternalMatchRoomId } from "./match.models";
+import { BadRequestError } from "../utils/errors";
 
 export const insertSeasonTeamPlayer = async (
   seasonId: number,
@@ -57,10 +58,51 @@ export const getSeasonTeamPlayersBySteamIds = async (
 ) => {
   const questionMarks = steamIds.map(() => "?").join(",");
   const result = await runQuery<Array<SeasonTeamPlayer>>(
-    `SELECT * FROM SeasonTeamPlayers WHERE season_id = ? AND team_id = ? AND steam_id IN (${questionMarks})`,
+    `SELECT * FROM SeasonTeamPlayers WHERE season_id = ? AND team_id = ? AND steam_id IN (${questionMarks}) AND discarded_at IS NULL`,
     [seasonId, teamId, ...steamIds]
   );
   return result;
+};
+
+export const discardSeasonTeamPlayer = async (
+  seasonId: number,
+  teamId: number,
+  steamId: string,
+  discardedByAccountId: number,
+  connection?: PoolConnection
+) => {
+  // First verify the player exists and is not already discarded
+  const [existingPlayer] = await runQuery<Array<SeasonTeamPlayer>>(
+    `SELECT * FROM SeasonTeamPlayers WHERE season_id = ? AND team_id = ? AND steam_id = ?`,
+    [seasonId, teamId, steamId],
+    connection
+  );
+
+  if (!existingPlayer) {
+    throw new BadRequestError(
+      `Player with steam_id ${steamId} not found in team ${teamId} for season ${seasonId}`
+    );
+  }
+
+  if (existingPlayer.discarded_at !== null) {
+    throw new BadRequestError(
+      `Player with steam_id ${steamId} is already discarded from team ${teamId} for season ${seasonId}`
+    );
+  }
+
+  // Check if player is a captain - cannot discard captain without assigning a new one first
+  if (existingPlayer.is_captain) {
+    throw new BadRequestError(
+      "Please assign a new captain in role management for the team before removing the current captain"
+    );
+  }
+
+  // Update the player to mark as discarded
+  await runQuery(
+    `UPDATE SeasonTeamPlayers SET discarded_at = NOW(), discarded_by = ? WHERE season_id = ? AND team_id = ? AND steam_id = ?`,
+    [discardedByAccountId, seasonId, teamId, steamId],
+    connection
+  );
 };
 
 export const validatePlayersInTeams = async (

@@ -629,6 +629,7 @@ export const getTeamPlayers = async (
     JOIN SeasonTeamPlayers stp ON sp.steam_id = stp.steam_id
     WHERE stp.team_id = ? 
       AND stp.season_id = ?
+      AND stp.discarded_at IS NULL
     ORDER BY stp.is_captain DESC, stp.is_co_captain DESC, sp.nickname ASC
   `;
 

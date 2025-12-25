@@ -191,7 +191,7 @@ export const checkPlayerAdditionEligibility = async (
           t.name AS team_name,
           spr.kana_elo
         FROM Teams t
-        JOIN SeasonTeamPlayers strp ON strp.team_id = t.id AND strp.season_id = ? AND strp.role = 'primary'
+        JOIN SeasonTeamPlayers strp ON strp.team_id = t.id AND strp.season_id = ? AND strp.role = 'primary' AND strp.discarded_at IS NULL
         JOIN SeasonLeagueTeams str ON str.team_id = t.id AND str.season_id = strp.season_id
         JOIN SeasonPlayerRanks spr ON spr.steam_id = strp.steam_id AND spr.season_id = ?
         WHERE t.id = ?
@@ -253,7 +253,7 @@ export const checkPlayerAdditionEligibility = async (
           ROW_NUMBER() OVER (PARTITION BY t.id ORDER BY spr.kana_elo DESC) AS player_rank
         FROM Teams t
         JOIN SeasonLeagueTeams slt ON slt.team_id = t.id AND slt.season_id = ?
-        JOIN SeasonTeamPlayers strp ON strp.team_id = t.id AND strp.season_id = slt.season_id AND strp.role = 'primary'
+        JOIN SeasonTeamPlayers strp ON strp.team_id = t.id AND strp.season_id = slt.season_id AND strp.role = 'primary' AND strp.discarded_at IS NULL
         JOIN SeasonPlayerRanks spr ON spr.steam_id = strp.steam_id AND spr.season_id = slt.season_id
         WHERE slt.league_id = ? AND slt.team_id != ?
           AND spr.kana_elo IS NOT NULL

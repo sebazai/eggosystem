@@ -14,4 +14,6 @@ export interface SeasonTeamPlayer {
   is_captain: boolean;
   is_co_captain: boolean;
   match_id: Nullable<Match["id"]>;
+  discarded_at: Nullable<Date>;
+  discarded_by: Nullable<number>;
 }

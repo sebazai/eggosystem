@@ -3,7 +3,8 @@ import {
   addPlayerToTeamController,
   addSubstitutePlayerController,
   validatePlayerController,
-  preparePlayerForSignupController
+  preparePlayerForSignupController,
+  discardPlayerController
 } from "../../../controllers/dashboard/player.controllers";
 import { validateNumericParams } from "../../../middlewares/validate-numeric-params";
 import { getPlayerBySteamIdController } from "../../../controllers/players.controllers";
@@ -33,6 +34,16 @@ router.get("/:steam_id", getPlayerBySteamIdController);
 
 // POST /api/v1/dashboard/players/:steam_id/prepare-for-signup
 router.post("/:steam_id/prepare-for-signup", preparePlayerForSignupController);
+
+// POST /api/v1/dashboard/players/:steam_id/team/:team_id/season/:season_id/discard
+router.post(
+  "/:steam_id/team/:team_id/season/:season_id/discard",
+  validateNumericParams(["season_id", "team_id"]),
+  checkPermissions({
+    fallbackRoles: ["admin"]
+  }),
+  discardPlayerController
+);
 
 // POST /api/v1/dashboard/players/kanaelo/bulk
 router.post(

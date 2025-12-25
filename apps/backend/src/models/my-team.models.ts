@@ -43,7 +43,7 @@ export const getMyTeams = async (
     JOIN Leagues l ON slt.league_id = l.id
     JOIN SeasonTeamPlayers stp_all ON stp_all.team_id = t.id AND stp_all.season_id = s.id
     JOIN SteamPlayers sp ON stp_all.steam_id = sp.steam_id
-    WHERE stp.steam_id = ?
+    WHERE stp.steam_id = ? AND stp.discarded_at IS NULL
     GROUP BY t.id, t.name, t.team_logo, s.id, s.name, l.id, l.name, slt.external_team_id, s.platform
     ORDER BY l.id ASC
   `;
