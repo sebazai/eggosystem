@@ -1237,4 +1237,64 @@ describe("getPlayerMapStatsWithFilters", () => {
       expect(typeof mapStat.map_name).toBe("string");
     }
   });
+
+  it("should have death analysis numbers that sum correctly for player 76561198049745649 on de_anubis season 14", async () => {
+    const result = await getPlayerMapStatsWithFilters("76561198049745649", {
+      season_ids: [14],
+      league_ids: null,
+      team_ids: null,
+      stages: null,
+      map_ids: null
+    });
+
+    expect(result).toBeDefined();
+    expect(Array.isArray(result)).toBe(true);
+
+    const anubisStat = result.find((stat) => stat.map_name === "de_anubis");
+    expect(anubisStat).toBeDefined();
+
+    if (anubisStat) {
+      // Summary totals
+      const summaryTraded = anubisStat.first_death_traded || 0;
+      const summaryTradeable = anubisStat.first_deaths_tradeable || 0;
+      const summaryTotal = anubisStat.first_deaths || 0;
+      const summaryNotTraded = Math.max(0, summaryTradeable - summaryTraded);
+      const summaryIsolated = Math.max(0, summaryTotal - summaryTradeable);
+
+      // T-side totals
+      const tTraded = anubisStat.first_death_traded_t || 0;
+      const tTradeable = anubisStat.first_deaths_tradeable_t || 0;
+      const tTotal = anubisStat.first_deaths_t || 0;
+      const tNotTraded = Math.max(0, tTradeable - tTraded);
+      const tIsolated = Math.max(0, tTotal - tTradeable);
+
+      // CT-side totals
+      const ctTraded = anubisStat.first_death_traded_ct || 0;
+      const ctTradeable = anubisStat.first_deaths_tradeable_ct || 0;
+      const ctTotal = anubisStat.first_deaths_ct || 0;
+      const ctNotTraded = Math.max(0, ctTradeable - ctTraded);
+      const ctIsolated = Math.max(0, ctTotal - ctTradeable);
+
+      // Verify that T-side + CT-side = Summary
+      // PlayerTrades is source of truth for tradeable counts
+      // PlayerStats is source of truth for totals (but bumped up if tradeable > totals)
+      // Isolated = Total - Tradeable (where Total may be bumped up)
+
+      // Totals may be bumped up if tradeable > PlayerStats totals
+      // So totals should be >= PlayerStats original totals
+      expect(tTotal + ctTotal).toBeGreaterThanOrEqual(summaryTotal);
+
+      // Tradeable numbers from PlayerTrades should sum correctly
+      expect(tTradeable + ctTradeable).toBe(summaryTradeable);
+
+      // Traded/NotTraded should sum correctly
+      expect(tTraded + ctTraded).toBe(summaryTraded);
+      expect(tNotTraded + ctNotTraded).toBe(summaryNotTraded);
+
+      // Isolated should sum correctly (calculated as Total - Tradeable)
+      // If tradeable > original totals, isolated = 0
+      // If tradeable <= original totals, isolated = totals - tradeable
+      expect(tIsolated + ctIsolated).toBe(summaryIsolated);
+    }
+  });
 });

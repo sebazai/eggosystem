@@ -5,6 +5,7 @@ import {
   type TopTeamsByFiltersRaw,
   type ParsedParams,
   type TeamMapStats,
+  type TeamTradeMapStats,
   type TeamHeaderDetails,
   type TeamKeyPlayers,
   type TeamPlayers,
@@ -414,6 +415,53 @@ export const getTeamMapStats = async (
   const params = [teamId, ...queryParams];
 
   return runQuery<TeamMapStats[]>(baseQuery, params);
+};
+
+/**
+ * Gets aggregated trade statistics for a team, grouped by map
+ */
+export const getTeamTradeMapStats = async (
+  teamId: number,
+  { season_ids, league_ids, map_ids, stages }: ParsedParams
+) => {
+  const { query, queryParams } = generateQueryWithFilters([
+    {
+      column: "m.season_id",
+      value: season_ids
+    },
+    {
+      column: "m.league_id",
+      value: league_ids
+    },
+    {
+      column: "mg.map_id",
+      value: map_ids
+    },
+    { column: "m.stage", value: stages }
+  ]);
+
+  const baseQuery = `
+    SELECT 
+      mg.map_id,
+      maps.name as map_name,
+      SUM(ps.trades) as trades,
+      SUM(ps.trade_attempts) as trade_attempts,
+      SUM(ps.trade_opportunities) as trade_opportunities
+    FROM MatchGames mg
+    JOIN Maps maps ON mg.map_id = maps.id
+    JOIN Matches m ON mg.match_id = m.id
+    JOIN MatchTeams mt ON m.id = mt.match_id AND mt.team_id = ?
+    JOIN PlayerStats ps ON ps.match_game_id = mg.id
+    JOIN SeasonTeamPlayers stp ON stp.steam_id = ps.steam_id 
+      AND stp.team_id = mt.team_id 
+      AND stp.season_id = m.season_id
+    WHERE ${query}
+    GROUP BY mg.map_id, maps.name
+  `;
+
+  const params = [teamId, ...queryParams];
+
+  return runQuery<TeamTradeMapStats[]>(baseQuery, params);
 };
 
 export const getFilteredTopTeams = async ({

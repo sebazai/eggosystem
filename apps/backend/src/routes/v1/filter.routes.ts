@@ -28,7 +28,10 @@ import { getFilteredMatchesController } from "../../controllers/matches.controll
 import { getTeamPistolWinsController } from "../../controllers/pistol-wins.controllers";
 import { getTeamPlantStatsController } from "../../controllers/plant-stats.controllers";
 import { getTeamRetakeStatsController } from "../../controllers/retake-stats.controllers";
-import { getTeamEnhancedMapStatsController } from "../../controllers/team-map-stats.controllers";
+import {
+  getTeamEnhancedMapStatsController,
+  getTeamTradeMapStatsController
+} from "../../controllers/team-map-stats.controllers";
 import { getTeamMapVetoStatsController } from "../../controllers/team-map-veto-stats.controllers";
 
 const router = Router();
@@ -367,6 +370,11 @@ router.get(
   "/stats/teams/:teamId/retake-stats",
   validateNumericParams(),
   getTeamRetakeStatsController
+);
+router.get(
+  "/stats/teams/:team_id/trade-map-stats",
+  validateNumericParams(["team_id"]),
+  getTeamTradeMapStatsController
 );
 
 export default router;

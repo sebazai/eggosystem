@@ -43,6 +43,28 @@ export const getTeamPistolWins = async (
                OR (mrs.t_team_id = t.id AND mrs.round_end_reason_info IN ('target_bombed', 't_win')))
             THEN mrs.id 
         END) AS pistol_rounds_won,
+        -- T-side pistol rounds (round 1 = always T-side start)
+        COUNT(DISTINCT CASE 
+            WHEN mrs.round_number = 1 AND mrs.t_team_id = t.id
+            THEN mrs.id 
+        END) AS t_pistol_rounds_played,
+        COUNT(DISTINCT CASE 
+            WHEN mrs.round_number = 1 AND mrs.t_team_id = t.id
+            AND mrs.round_end_reason_info IN ('target_bombed', 't_win')
+            THEN mrs.id 
+        END) AS t_pistol_rounds_won,
+        -- CT-side pistol rounds (round 13 or 16 = CT-side after swap)
+        COUNT(DISTINCT CASE 
+            WHEN mrs.round_number = CASE WHEN mg.regulation_rounds = 30 THEN 16 ELSE 13 END
+            AND mrs.ct_team_id = t.id
+            THEN mrs.id 
+        END) AS ct_pistol_rounds_played,
+        COUNT(DISTINCT CASE 
+            WHEN mrs.round_number = CASE WHEN mg.regulation_rounds = 30 THEN 16 ELSE 13 END
+            AND mrs.ct_team_id = t.id
+            AND mrs.round_end_reason_info IN ('bomb_defused', 'target_saved', 'ct_win')
+            THEN mrs.id 
+        END) AS ct_pistol_rounds_won,
         ROUND(
             100 * COUNT(DISTINCT CASE 
                 WHEN (mrs.round_number = 1 OR mrs.round_number = CASE 

@@ -55,4 +55,11 @@ export interface PlayerMapStats {
   // Aim statistics
   crosshair_placement: number;
   time_to_damage: number;
+  // First death trade statistics
+  first_death_traded: number;
+  first_death_traded_t: number;
+  first_death_traded_ct: number;
+  first_deaths_tradeable: number;
+  first_deaths_tradeable_t: number;
+  first_deaths_tradeable_ct: number;
 }

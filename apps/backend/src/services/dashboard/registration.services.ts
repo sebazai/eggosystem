@@ -76,7 +76,7 @@ const addExistingOrgPreApprovalRegistration = async (
     VALUES (?, ?, ?, ?, ?, ?)
   `;
   const approvedByOrganizerSteamIdQueries = data.acceptedPlayerSteamIds.map(
-    (steamId) =>
+    (steamId: string) =>
       runQuery(
         query,
         [
@@ -105,7 +105,7 @@ const addExistingTeamPreApprovalRegistration = async (
     VALUES (?, ?, ?, ?, ?, ?)
   `;
   const approvedByOrganizerSteamIdQueries = data.acceptedPlayerSteamIds.map(
-    (steamId) =>
+    (steamId: string) =>
       runQuery(
         query,
         [

@@ -27,9 +27,9 @@ export const getTeamEnhancedMapStats = async (
 };
 
 /**
- * Raw database query result type for map statistics
+ * Raw database query result types for separate queries
  */
-interface MapStatsRaw {
+interface BaseMapStats {
   map_id: number;
   map_name: string;
   maps_played: number;
@@ -38,21 +38,45 @@ interface MapStatsRaw {
   win_percentage: number;
   avg_score: string;
   avg_opponent_score: string;
+}
+
+interface SideStats {
+  map_id: number;
   kills_ct: number;
   deaths_ct: number;
   kills_t: number;
   deaths_t: number;
+  first_kills: number;
+  first_deaths: number;
+  first_kills_t: number;
+  first_deaths_t: number;
+  first_kills_ct: number;
+  first_deaths_ct: number;
 }
 
-/**
- * Get map statistics including CT/T side performance data
- */
+interface AdvantageStats {
+  map_id: number;
+  fk_5v4_won: number;
+  fk_5v4_total: number;
+  fk_4v5_won: number;
+  fk_4v5_total: number;
+  fk_5v4_won_ct: number;
+  fk_5v4_total_ct: number;
+  fk_5v4_won_t: number;
+  fk_5v4_total_t: number;
+  fk_4v5_won_ct: number;
+  fk_4v5_total_ct: number;
+  fk_4v5_won_t: number;
+  fk_4v5_total_t: number;
+}
+
 const getMapStatsWithSides = async (
   teamId: number,
   filterQuery: string,
   filterParams: (string | number)[]
 ): Promise<TeamMapStats[]> => {
-  const baseQuery = `
+  // Query 1: Base map statistics (wins, losses, maps played, scores)
+  const baseStatsQuery = `
     SELECT 
       mg.map_id,
       maps.name as map_name,
@@ -64,85 +88,219 @@ const getMapStatsWithSides = async (
       ROUND(
         100.0 * COUNT(CASE WHEN tgs.score > opponent_score.score THEN 1 END) /
         NULLIF(COUNT(CASE WHEN tgs.score > opponent_score.score OR tgs.score < opponent_score.score THEN 1 END), 0), 1
-      ) AS win_percentage,
-      -- Sum per-game side stats
-      SUM(side.game_kills_ct) as kills_ct,
-      SUM(side.game_deaths_ct) as deaths_ct,
-      SUM(side.game_kills_t) as kills_t,
-      SUM(side.game_deaths_t) as deaths_t
+      ) AS win_percentage
     FROM MatchGames mg
     JOIN Maps maps ON mg.map_id = maps.id
     JOIN TeamGameScores tgs ON mg.id = tgs.match_game_id AND tgs.team_id = ?
     JOIN Matches m ON mg.match_id = m.id
-    JOIN MatchTeams mt ON m.id = mt.match_id AND mt.team_id = tgs.team_id
-    JOIN MatchTeams opponent_mt ON m.id = opponent_mt.match_id AND opponent_mt.team_id != tgs.team_id
+    JOIN MatchTeams mt ON m.id = mt.match_id AND mt.team_id = ?
+    JOIN MatchTeams opponent_mt ON m.id = opponent_mt.match_id AND opponent_mt.team_id != ?
     JOIN TeamGameScores opponent_score ON mg.id = opponent_score.match_game_id AND opponent_score.team_id = opponent_mt.team_id
-    -- Subquery for per-game side stats
-    LEFT JOIN (
-      SELECT 
-        ps.match_game_id,
-        SUM(ps.kills_ct) as game_kills_ct,
-        SUM(ps.deaths_ct) as game_deaths_ct,
-        SUM(ps.kills_t) as game_kills_t,
-        SUM(ps.deaths_t) as game_deaths_t
-      FROM PlayerStats ps
-      JOIN SeasonTeamPlayers stp ON stp.steam_id = ps.steam_id AND stp.team_id = ? AND stp.season_id = (
-        SELECT season_id FROM Matches mm WHERE mm.id = (SELECT match_id FROM MatchGames mgg WHERE mgg.id = ps.match_game_id)
-      )
-      GROUP BY ps.match_game_id
-    ) side ON side.match_game_id = mg.id
     WHERE ${filterQuery}
     GROUP BY mg.map_id, maps.name
     ORDER BY maps.name ASC
   `;
 
-  const params = [
-    teamId, // TeamGameScores join
-    teamId, // SeasonTeamPlayers join
-    ...filterParams
-  ];
+  // Query 2: Side-specific stats (kills/deaths by side, first kills/deaths)
+  const sideStatsQuery = `
+    SELECT 
+      mg.map_id,
+      COALESCE(SUM(ps.kills_ct), 0) as kills_ct,
+      COALESCE(SUM(ps.deaths_ct), 0) as deaths_ct,
+      COALESCE(SUM(ps.kills_t), 0) as kills_t,
+      COALESCE(SUM(ps.deaths_t), 0) as deaths_t,
+      COALESCE(SUM(ps.first_kills), 0) as first_kills,
+      COALESCE(SUM(ps.first_deaths), 0) as first_deaths,
+      COALESCE(SUM(ps.first_kills_t), 0) as first_kills_t,
+      COALESCE(SUM(ps.first_deaths_t), 0) as first_deaths_t,
+      COALESCE(SUM(ps.first_kills_ct), 0) as first_kills_ct,
+      COALESCE(SUM(ps.first_deaths_ct), 0) as first_deaths_ct
+    FROM MatchGames mg
+    JOIN Matches m ON mg.match_id = m.id
+    JOIN PlayerStats ps ON ps.match_game_id = mg.id
+    JOIN SeasonTeamPlayers stp ON stp.steam_id = ps.steam_id AND stp.season_id = m.season_id
+    WHERE stp.team_id = ? AND ${filterQuery}
+    GROUP BY mg.map_id
+  `;
 
-  const stats = await runQuery<MapStatsRaw[]>(baseQuery, params);
+  // Query 3: Advantage stats (5v4/4v5 from MapRoundStats)
+  // Use derived table to pass teamId once and reference it throughout
+  const advantageStatsQuery = `
+    SELECT 
+      mg.map_id,
+      -- Overall 5v4/4v5 stats
+      COALESCE(SUM(CASE WHEN adv.ct_team_id = p.tid THEN adv.fk_5v4_won_ct_raw ELSE adv.fk_5v4_won_t_raw END), 0) as fk_5v4_won,
+      COALESCE(SUM(CASE WHEN adv.ct_team_id = p.tid THEN adv.fk_5v4_total_ct_raw ELSE adv.fk_5v4_total_t_raw END), 0) as fk_5v4_total,
+      COALESCE(SUM(CASE WHEN adv.ct_team_id = p.tid THEN adv.fk_4v5_won_ct_raw ELSE adv.fk_4v5_won_t_raw END), 0) as fk_4v5_won,
+      COALESCE(SUM(CASE WHEN adv.ct_team_id = p.tid THEN adv.fk_4v5_total_ct_raw ELSE adv.fk_4v5_total_t_raw END), 0) as fk_4v5_total,
+      -- Split by side
+      COALESCE(SUM(CASE WHEN adv.ct_team_id = p.tid THEN adv.fk_5v4_won_ct_raw ELSE 0 END), 0) as fk_5v4_won_ct,
+      COALESCE(SUM(CASE WHEN adv.ct_team_id = p.tid THEN adv.fk_5v4_total_ct_raw ELSE 0 END), 0) as fk_5v4_total_ct,
+      COALESCE(SUM(CASE WHEN adv.t_team_id = p.tid THEN adv.fk_5v4_won_t_raw ELSE 0 END), 0) as fk_5v4_won_t,
+      COALESCE(SUM(CASE WHEN adv.t_team_id = p.tid THEN adv.fk_5v4_total_t_raw ELSE 0 END), 0) as fk_5v4_total_t,
+      COALESCE(SUM(CASE WHEN adv.ct_team_id = p.tid THEN adv.fk_4v5_won_ct_raw ELSE 0 END), 0) as fk_4v5_won_ct,
+      COALESCE(SUM(CASE WHEN adv.ct_team_id = p.tid THEN adv.fk_4v5_total_ct_raw ELSE 0 END), 0) as fk_4v5_total_ct,
+      COALESCE(SUM(CASE WHEN adv.t_team_id = p.tid THEN adv.fk_4v5_won_t_raw ELSE 0 END), 0) as fk_4v5_won_t,
+      COALESCE(SUM(CASE WHEN adv.t_team_id = p.tid THEN adv.fk_4v5_total_t_raw ELSE 0 END), 0) as fk_4v5_total_t
+    FROM (SELECT ? as tid) p
+    CROSS JOIN MatchGames mg
+    JOIN Matches m ON mg.match_id = m.id
+    LEFT JOIN (
+      SELECT 
+        mrs.match_game_id,
+        mrs.ct_team_id,
+        mrs.t_team_id,
+        SUM(CASE 
+          WHEN mrs.first_kill = 'CT' AND mrs.round_end_reason_info IN ('bomb_defused', 'target_saved', 'ct_win')
+          THEN 1 ELSE 0 
+        END) as fk_5v4_won_ct_raw,
+        SUM(CASE 
+          WHEN mrs.first_kill = 'T' AND mrs.round_end_reason_info IN ('target_bombed', 't_win')
+          THEN 1 ELSE 0 
+        END) as fk_5v4_won_t_raw,
+        SUM(CASE WHEN mrs.first_kill = 'CT' THEN 1 ELSE 0 END) as fk_5v4_total_ct_raw,
+        SUM(CASE WHEN mrs.first_kill = 'T' THEN 1 ELSE 0 END) as fk_5v4_total_t_raw,
+        SUM(CASE 
+          WHEN mrs.first_kill = 'T' AND mrs.round_end_reason_info IN ('bomb_defused', 'target_saved', 'ct_win')
+          THEN 1 ELSE 0 
+        END) as fk_4v5_won_ct_raw,
+        SUM(CASE 
+          WHEN mrs.first_kill = 'CT' AND mrs.round_end_reason_info IN ('target_bombed', 't_win')
+          THEN 1 ELSE 0 
+        END) as fk_4v5_won_t_raw,
+        SUM(CASE WHEN mrs.first_kill = 'T' THEN 1 ELSE 0 END) as fk_4v5_total_ct_raw,
+        SUM(CASE WHEN mrs.first_kill = 'CT' THEN 1 ELSE 0 END) as fk_4v5_total_t_raw
+      FROM MapRoundStats mrs
+      WHERE mrs.first_kill IS NOT NULL
+      GROUP BY mrs.match_game_id, mrs.ct_team_id, mrs.t_team_id
+    ) adv ON adv.match_game_id = mg.id AND (adv.ct_team_id = p.tid OR adv.t_team_id = p.tid)
+    WHERE ${filterQuery}
+    GROUP BY mg.map_id
+  `;
 
-  // Calculate CT/T win percentages and KD ratios from the actual data
-  return stats.map((stat) => {
-    // CT side win percentage - Calculate based on kills/deaths ratio for now
+  // Execute all queries in parallel
+  const [baseStatsResult, sideStatsResult, advantageStatsResult] =
+    await Promise.allSettled([
+      runQuery<BaseMapStats[]>(baseStatsQuery, [
+        teamId,
+        teamId,
+        teamId,
+        ...filterParams
+      ]),
+      runQuery<SideStats[]>(sideStatsQuery, [teamId, ...filterParams]),
+      runQuery<AdvantageStats[]>(advantageStatsQuery, [teamId, ...filterParams])
+    ]);
+
+  // Extract results, using empty arrays as fallback if a query failed
+  const baseStats =
+    baseStatsResult.status === "fulfilled"
+      ? baseStatsResult.value
+      : (console.error("Base stats query failed:", baseStatsResult.reason),
+        [] as BaseMapStats[]);
+  const sideStats =
+    sideStatsResult.status === "fulfilled"
+      ? sideStatsResult.value
+      : (console.error("Side stats query failed:", sideStatsResult.reason),
+        [] as SideStats[]);
+  const advantageStats =
+    advantageStatsResult.status === "fulfilled"
+      ? advantageStatsResult.value
+      : (console.error(
+          "Advantage stats query failed:",
+          advantageStatsResult.reason
+        ),
+        [] as AdvantageStats[]);
+
+  // Create maps for quick lookup
+  const sideStatsMap = new Map(sideStats.map((s) => [s.map_id, s]));
+  const advantageStatsMap = new Map(advantageStats.map((a) => [a.map_id, a]));
+
+  // Combine the results
+  const stats = baseStats.map((base) => {
+    const side = sideStatsMap.get(base.map_id) ?? {
+      map_id: base.map_id,
+      kills_ct: 0,
+      deaths_ct: 0,
+      kills_t: 0,
+      deaths_t: 0,
+      first_kills: 0,
+      first_deaths: 0,
+      first_kills_t: 0,
+      first_deaths_t: 0,
+      first_kills_ct: 0,
+      first_deaths_ct: 0
+    };
+
+    const adv = advantageStatsMap.get(base.map_id) ?? {
+      map_id: base.map_id,
+      fk_5v4_won: 0,
+      fk_5v4_total: 0,
+      fk_4v5_won: 0,
+      fk_4v5_total: 0,
+      fk_5v4_won_ct: 0,
+      fk_5v4_total_ct: 0,
+      fk_5v4_won_t: 0,
+      fk_5v4_total_t: 0,
+      fk_4v5_won_ct: 0,
+      fk_4v5_total_ct: 0,
+      fk_4v5_won_t: 0,
+      fk_4v5_total_t: 0
+    };
+
+    // Calculate CT/T win percentages and KD ratios from the actual data
     const ctWinPercentage =
-      stat.kills_ct > 0 && stat.deaths_ct > 0
-        ? Math.min(100, Math.max(0, (stat.kills_ct / stat.deaths_ct) * 50))
+      side.kills_ct > 0 && side.deaths_ct > 0
+        ? Math.min(100, Math.max(0, (side.kills_ct / side.deaths_ct) * 50))
         : 50;
 
-    // T side win percentage - Calculate based on kills/deaths ratio for now
     const tWinPercentage =
-      stat.kills_t > 0 && stat.deaths_t > 0
-        ? Math.min(100, Math.max(0, (stat.kills_t / stat.deaths_t) * 50))
+      side.kills_t > 0 && side.deaths_t > 0
+        ? Math.min(100, Math.max(0, (side.kills_t / side.deaths_t) * 50))
         : 50;
 
-    // CT side KD ratio
     const ctKd =
-      stat.deaths_ct > 0 ? (stat.kills_ct / stat.deaths_ct).toFixed(2) : "1.00";
+      side.deaths_ct > 0 ? (side.kills_ct / side.deaths_ct).toFixed(2) : "1.00";
 
-    // T side KD ratio
     const tKd =
-      stat.deaths_t > 0 ? (stat.kills_t / stat.deaths_t).toFixed(2) : "1.00";
+      side.deaths_t > 0 ? (side.kills_t / side.deaths_t).toFixed(2) : "1.00";
 
     return {
-      map_id: stat.map_id,
-      map_name: stat.map_name,
-      maps_played: stat.maps_played,
-      wins: stat.wins,
-      losses: stat.losses,
-      win_percentage: stat.win_percentage,
-      avg_score: stat.avg_score,
-      avg_opponent_score: stat.avg_opponent_score,
+      map_id: base.map_id,
+      map_name: base.map_name,
+      maps_played: base.maps_played,
+      wins: base.wins,
+      losses: base.losses,
+      win_percentage: base.win_percentage,
+      avg_score: base.avg_score,
+      avg_opponent_score: base.avg_opponent_score,
       ct_win_percentage: parseFloat(ctWinPercentage.toFixed(1)),
       t_win_percentage: parseFloat(tWinPercentage.toFixed(1)),
       ct_kd: ctKd,
       t_kd: tKd,
-      kills_ct: stat.kills_ct,
-      deaths_ct: stat.deaths_ct,
-      kills_t: stat.kills_t,
-      deaths_t: stat.deaths_t
+      kills_ct: side.kills_ct,
+      deaths_ct: side.deaths_ct,
+      kills_t: side.kills_t,
+      deaths_t: side.deaths_t,
+      first_kills: side.first_kills,
+      first_deaths: side.first_deaths,
+      first_kills_t: side.first_kills_t,
+      first_deaths_t: side.first_deaths_t,
+      first_kills_ct: side.first_kills_ct,
+      first_deaths_ct: side.first_deaths_ct,
+      fk_5v4_won: adv.fk_5v4_won,
+      fk_5v4_total: adv.fk_5v4_total,
+      fk_4v5_won: adv.fk_4v5_won,
+      fk_4v5_total: adv.fk_4v5_total,
+      fk_5v4_won_ct: adv.fk_5v4_won_ct,
+      fk_5v4_total_ct: adv.fk_5v4_total_ct,
+      fk_5v4_won_t: adv.fk_5v4_won_t,
+      fk_5v4_total_t: adv.fk_5v4_total_t,
+      fk_4v5_won_ct: adv.fk_4v5_won_ct,
+      fk_4v5_total_ct: adv.fk_4v5_total_ct,
+      fk_4v5_won_t: adv.fk_4v5_won_t,
+      fk_4v5_total_t: adv.fk_4v5_total_t
     };
   });
+
+  return stats;
 };
