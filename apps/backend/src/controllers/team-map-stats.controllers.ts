@@ -1,6 +1,7 @@
 import { type Response, type NextFunction } from "express";
 import { type RequestWithParams } from "@eggosystem/types";
 import { getTeamEnhancedMapStats } from "../models/team-map-stats.models";
+import { getTeamTradeMapStats } from "../models/team.models";
 import { NotFoundError } from "../utils/errors";
 
 /**
@@ -27,4 +28,23 @@ export const getTeamEnhancedMapStatsController = async (
   }
 
   res.json(mapStats);
+};
+
+/**
+ * Controller to get trade statistics for a team, grouped by map
+ * Aggregates trades, trade_attempts, and trade_opportunities from PlayerStats
+ */
+export const getTeamTradeMapStatsController = async (
+  req: RequestWithParams<{ team_id: string }>,
+  res: Response
+): Promise<void> => {
+  const teamId = Number(req.params.team_id);
+  const filters = req.parsedParams;
+
+  const tradeStats = await getTeamTradeMapStats(teamId, filters);
+
+  res.status(200).json({
+    success: true,
+    data: tradeStats
+  });
 };

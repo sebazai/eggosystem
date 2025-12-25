@@ -10,7 +10,7 @@ export const useSelectableOrgs = (teamId?: string) => {
   >(
     teamId && teamId !== CREATE_NEW_VALUE
       ? `/api/v1/dashboard/teams/${teamId}/organization`
-      : "/api/v1/dashboard/organizations",
+      : "/api/v1/dashboard/organizations?includePending=true",
     clientApiFetch,
     {
       revalidateOnFocus: false

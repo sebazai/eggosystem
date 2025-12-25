@@ -175,6 +175,16 @@ export const bulkApproveTeamRegistrations = async (
     `;
     await runQuery(updateOrgApproved, [...teamIds], connection);
 
+    // Activate pending organizations for approved teams
+    const activateOrgsQuery = `
+      UPDATE Organizations o
+      INNER JOIN Teams t ON t.organization_id = o.id
+      SET o.status = 'active'
+      WHERE t.id IN (${teamIds.map(() => "?").join(",")})
+        AND o.status = 'pending'
+    `;
+    await runQuery(activateOrgsQuery, [...teamIds], connection);
+
     // Get the updated teams using the existing function
     const updatedTeams = await getRegisteredTeams(seasonId);
 

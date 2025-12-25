@@ -68,6 +68,8 @@ interface TabPlayersProps {
   validCaptainSelection: boolean;
   prefilledPlayerSteamIds: string[];
   teamId?: number;
+  isEditMode: boolean;
+  submitInitiated: boolean;
 }
 
 export const TabPlayers = ({
@@ -82,7 +84,9 @@ export const TabPlayers = ({
   seasonId,
   validCaptainSelection,
   prefilledPlayerSteamIds,
-  teamId
+  teamId,
+  isEditMode,
+  submitInitiated
 }: TabPlayersProps) => {
   const [promiseErrors, setPromiseErrors] = useState<Record<string, string[]>>(
     {}
@@ -733,7 +737,7 @@ export const TabPlayers = ({
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold">Players</h3>
-          {teamId && teamId !== -1 && (
+          {teamId && teamId !== -1 && !isEditMode && (
             <Button
               type="button"
               variant="outline"
@@ -1196,6 +1200,7 @@ export const TabPlayers = ({
             className="w-full my-2 sm:my-4"
             variant={"default"}
             data-testid="add-player-button"
+            disabled={submitInitiated}
           >
             Add Player
           </Button>

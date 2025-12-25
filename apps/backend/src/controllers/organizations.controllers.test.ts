@@ -113,7 +113,7 @@ describe("Organizations Controllers", () => {
 
       await getOrgs(mockRequest, mockResponse as Response);
 
-      expect(mockGetOrganizations).toHaveBeenCalledWith(undefined);
+      expect(mockGetOrganizations).toHaveBeenCalledWith(undefined, false);
       expect(mockJson).toHaveBeenCalledWith(mockOrganizations);
     });
 
@@ -123,7 +123,7 @@ describe("Organizations Controllers", () => {
 
       await getOrgs(mockRequest, mockResponse as Response);
 
-      expect(mockGetOrganizations).toHaveBeenCalledWith(undefined);
+      expect(mockGetOrganizations).toHaveBeenCalledWith(undefined, false);
       expect(mockJson).toHaveBeenCalledWith([]);
     });
 
@@ -133,7 +133,7 @@ describe("Organizations Controllers", () => {
 
       await getOrgs(mockRequest, mockResponse as Response);
 
-      expect(mockGetOrganizations).toHaveBeenCalledWith("test");
+      expect(mockGetOrganizations).toHaveBeenCalledWith("test", false);
       expect(mockJson).toHaveBeenCalledWith(mockOrganizations);
     });
   });

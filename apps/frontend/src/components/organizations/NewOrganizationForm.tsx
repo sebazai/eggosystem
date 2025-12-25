@@ -11,7 +11,8 @@ import type {
   Control,
   Path,
   FieldValues,
-  UseFormSetValue
+  UseFormSetValue,
+  UseFormWatch
 } from "react-hook-form";
 import { useCallback } from "react";
 
@@ -24,6 +25,8 @@ interface NewOrganizationFormProps<T extends FieldValues> {
   imageDataKey?: Path<T>;
   /** Optional: Key for image filename */
   imageFilenameKey?: Path<T>;
+  /** Required for watching form values if image fields are used */
+  watch?: UseFormWatch<T>;
   /** Optional: setValue function for form (required if image keys are provided) */
   setValue?: UseFormSetValue<T>;
 }
@@ -35,8 +38,12 @@ export const NewOrganizationForm = <T extends FieldValues>({
   websiteKey,
   imageDataKey,
   imageFilenameKey,
+  watch,
   setValue
 }: NewOrganizationFormProps<T>) => {
+  const currentImageData =
+    watch && imageDataKey ? watch(imageDataKey) : undefined;
+
   const handleImageSelect = useCallback(
     (imageData: string | undefined, filename: string | undefined) => {
       if (setValue && imageDataKey && imageFilenameKey) {
@@ -107,6 +114,7 @@ export const NewOrganizationForm = <T extends FieldValues>({
           id="organization-logo"
           label="Organization Logo (Optional)"
           onImageSelect={handleImageSelect}
+          currentImageUrl={currentImageData as string | undefined}
           helpText="Upload a logo for your organization. Supported formats: PNG, JPG, GIF, WEBP. Max size: 10MB"
         />
       )}

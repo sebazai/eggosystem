@@ -3,7 +3,10 @@ import {
   csrankkerValidSteamId,
   csrankkerNotFoundSteamId,
   csrankkerNetworkErrorSteamId,
-  csrankkerInvalidJsonSteamId
+  csrankkerInvalidJsonSteamId,
+  csrankkerHighKanaEloSteamId,
+  csrankkerMediumKanaEloSteamId,
+  csrankkerLowKanaEloSteamId
 } from "./test-ids.js";
 
 export const csrankkerHandlers = [
@@ -47,6 +50,81 @@ export const csrankkerHandlers = [
 
       if (steamId === csrankkerInvalidJsonSteamId) {
         return HttpResponse.text("Invalid JSON");
+      }
+
+      if (steamId === csrankkerHighKanaEloSteamId) {
+        return HttpResponse.json({
+          status: "success",
+          result: {
+            steamId: steamId,
+            seasonId: 14,
+            originalKanaelo: 2000,
+            stabilizedKanaelo: 2000,
+            stabilizationInfo: {
+              confidence: 0.8,
+              adjustmentFactor: 0.1,
+              method: "bayesian"
+            },
+            components: {
+              trueLevel: 1200,
+              mm: 100,
+              hour: 200,
+              kana: 100
+            },
+            calculus: "formula",
+            timestamp: "2023-01-01T00:00:00Z"
+          }
+        });
+      }
+
+      if (steamId === csrankkerMediumKanaEloSteamId) {
+        return HttpResponse.json({
+          status: "success",
+          result: {
+            steamId: steamId,
+            seasonId: 14,
+            originalKanaelo: 1500,
+            stabilizedKanaelo: 1600,
+            stabilizationInfo: {
+              confidence: 0.8,
+              adjustmentFactor: 0.1,
+              method: "bayesian"
+            },
+            components: {
+              trueLevel: 1200,
+              mm: 100,
+              hour: 200,
+              kana: 100
+            },
+            calculus: "formula",
+            timestamp: "2023-01-01T00:00:00Z"
+          }
+        });
+      }
+
+      if (steamId === csrankkerLowKanaEloSteamId) {
+        return HttpResponse.json({
+          status: "success",
+          result: {
+            steamId: steamId,
+            seasonId: 15,
+            originalKanaelo: 250,
+            stabilizedKanaelo: 240,
+            stabilizationInfo: {
+              confidence: 0.8,
+              adjustmentFactor: 0.96,
+              method: "kanarating-stabilization"
+            },
+            components: {
+              trueLevel: 100,
+              mm: 80,
+              hour: 20,
+              kana: 40
+            },
+            calculus: "100 + 80 + 20 + 40",
+            timestamp: "2025-07-15T22:11:17.792Z"
+          }
+        });
       }
 
       // Default case - return a valid response for any other steam ID

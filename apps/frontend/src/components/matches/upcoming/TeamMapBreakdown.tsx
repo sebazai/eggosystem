@@ -153,7 +153,25 @@ export const TeamMapBreakdown = ({
                   kills_ct: 0,
                   deaths_ct: 0,
                   kills_t: 0,
-                  deaths_t: 0
+                  deaths_t: 0,
+                  first_kills: 0,
+                  first_deaths: 0,
+                  first_kills_t: 0,
+                  first_deaths_t: 0,
+                  first_kills_ct: 0,
+                  first_deaths_ct: 0,
+                  fk_5v4_won: 0,
+                  fk_5v4_total: 0,
+                  fk_4v5_won: 0,
+                  fk_4v5_total: 0,
+                  fk_5v4_won_ct: 0,
+                  fk_5v4_total_ct: 0,
+                  fk_5v4_won_t: 0,
+                  fk_5v4_total_t: 0,
+                  fk_4v5_won_ct: 0,
+                  fk_4v5_total_ct: 0,
+                  fk_4v5_won_t: 0,
+                  fk_4v5_total_t: 0
                 };
 
                 return (

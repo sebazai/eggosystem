@@ -14,7 +14,8 @@ describe("Team Map Stats Models", () => {
 
   describe("getTeamEnhancedMapStats", () => {
     it("should return enhanced map stats with CT and T side data from database", async () => {
-      // Mock the database response with CT/T side data
+      // Mock the three parallel queries:
+      // 1. Base stats query
       mockRunQuery.mockResolvedValueOnce([
         {
           map_id: 1,
@@ -24,11 +25,7 @@ describe("Team Map Stats Models", () => {
           losses: 5,
           win_percentage: 50,
           avg_score: "13.5",
-          avg_opponent_score: "8.5",
-          kills_ct: 130,
-          deaths_ct: 121,
-          kills_t: 142,
-          deaths_t: 130
+          avg_opponent_score: "8.5"
         },
         {
           map_id: 3,
@@ -38,11 +35,71 @@ describe("Team Map Stats Models", () => {
           losses: 0,
           win_percentage: 100,
           avg_score: "13.0",
-          avg_opponent_score: "9.0",
+          avg_opponent_score: "9.0"
+        }
+      ]);
+
+      // 2. Side stats query
+      mockRunQuery.mockResolvedValueOnce([
+        {
+          map_id: 1,
+          kills_ct: 130,
+          deaths_ct: 121,
+          kills_t: 142,
+          deaths_t: 130,
+          first_kills: 0,
+          first_deaths: 0,
+          first_kills_t: 0,
+          first_deaths_t: 0,
+          first_kills_ct: 0,
+          first_deaths_ct: 0
+        },
+        {
+          map_id: 3,
           kills_ct: 145,
           deaths_ct: 100,
           kills_t: 82,
-          deaths_t: 100
+          deaths_t: 100,
+          first_kills: 0,
+          first_deaths: 0,
+          first_kills_t: 0,
+          first_deaths_t: 0,
+          first_kills_ct: 0,
+          first_deaths_ct: 0
+        }
+      ]);
+
+      // 3. Advantage stats query
+      mockRunQuery.mockResolvedValueOnce([
+        {
+          map_id: 1,
+          fk_5v4_won: 0,
+          fk_5v4_total: 0,
+          fk_4v5_won: 0,
+          fk_4v5_total: 0,
+          fk_5v4_won_ct: 0,
+          fk_5v4_total_ct: 0,
+          fk_5v4_won_t: 0,
+          fk_5v4_total_t: 0,
+          fk_4v5_won_ct: 0,
+          fk_4v5_total_ct: 0,
+          fk_4v5_won_t: 0,
+          fk_4v5_total_t: 0
+        },
+        {
+          map_id: 3,
+          fk_5v4_won: 0,
+          fk_5v4_total: 0,
+          fk_4v5_won: 0,
+          fk_4v5_total: 0,
+          fk_5v4_won_ct: 0,
+          fk_5v4_total_ct: 0,
+          fk_5v4_won_t: 0,
+          fk_5v4_total_t: 0,
+          fk_4v5_won_ct: 0,
+          fk_4v5_total_ct: 0,
+          fk_4v5_won_t: 0,
+          fk_4v5_total_t: 0
         }
       ]);
 
@@ -58,30 +115,58 @@ describe("Team Map Stats Models", () => {
       // Call the function
       const result = await getTeamEnhancedMapStats(1650, parsedParams);
 
-      // Verify the SQL query includes joins to get CT/T side data
-      expect(mockRunQuery).toHaveBeenCalledTimes(1);
-      const sqlQuery = mockRunQuery.mock.calls[0][0] as string;
-      const sqlParams = mockRunQuery.mock.calls[0][1] as (string | number)[];
+      // Verify all three queries were called
+      expect(mockRunQuery).toHaveBeenCalledTimes(3);
 
-      // Check that it's using a subquery for side stats
-      expect(sqlQuery).toContain("LEFT JOIN (");
-      expect(sqlQuery).toContain("FROM PlayerStats ps");
-      expect(sqlQuery).toContain(
-        "JOIN SeasonTeamPlayers stp ON stp.steam_id = ps.steam_id AND stp.team_id = ? AND stp.season_id = ("
-      );
-      expect(sqlQuery).toContain("GROUP BY ps.match_game_id");
-      expect(sqlQuery).toContain(") side ON side.match_game_id = mg.id");
+      // Check the base stats query
+      const baseStatsQuery = mockRunQuery.mock.calls[0][0] as string;
+      const baseStatsParams = mockRunQuery.mock.calls[0][1] as (
+        | string
+        | number
+      )[];
 
-      // Check that we're selecting summed side stats
-      expect(sqlQuery).toContain("SUM(side.game_kills_ct) as kills_ct");
-      expect(sqlQuery).toContain("SUM(side.game_deaths_ct) as deaths_ct");
-      expect(sqlQuery).toContain("SUM(side.game_kills_t) as kills_t");
-      expect(sqlQuery).toContain("SUM(side.game_deaths_t) as deaths_t");
+      // Check the side stats query
+      const sideStatsQuery = mockRunQuery.mock.calls[1][0] as string;
+      const sideStatsParams = mockRunQuery.mock.calls[1][1] as (
+        | string
+        | number
+      )[];
 
-      // Check parameters
-      expect(sqlParams[0]).toBe(1650); // team_id for TeamGameScores join
-      expect(sqlParams[1]).toBe(1650); // team_id for SeasonTeamPlayers join
-      expect(sqlParams[2]).toBe(14); // season_id from parsedParams
+      // Check the advantage stats query
+      const advantageStatsQuery = mockRunQuery.mock.calls[2][0] as string;
+      const advantageStatsParams = mockRunQuery.mock.calls[2][1] as (
+        | string
+        | number
+      )[];
+
+      // Check base stats query
+      expect(baseStatsQuery).toContain("FROM MatchGames mg");
+      expect(baseStatsQuery).toContain("JOIN Maps maps ON mg.map_id = maps.id");
+      expect(baseStatsQuery).toContain("JOIN TeamGameScores tgs");
+      expect(baseStatsParams).toHaveLength(4); // teamId, teamId, teamId, season_id
+      expect(baseStatsParams[0]).toBe(1650);
+      expect(baseStatsParams[3]).toBe(14);
+
+      // Check side stats query
+      expect(sideStatsQuery).toContain("FROM MatchGames mg");
+      expect(sideStatsQuery).toContain("JOIN PlayerStats ps");
+      expect(sideStatsQuery).toContain("JOIN SeasonTeamPlayers stp");
+      expect(sideStatsQuery).toContain("SUM(ps.kills_ct)");
+      expect(sideStatsQuery).toContain("SUM(ps.deaths_ct)");
+      expect(sideStatsQuery).toContain("SUM(ps.kills_t)");
+      expect(sideStatsQuery).toContain("SUM(ps.deaths_t)");
+      expect(sideStatsParams).toHaveLength(2); // teamId, season_id
+      expect(sideStatsParams[0]).toBe(1650);
+      expect(sideStatsParams[1]).toBe(14);
+
+      // Check advantage stats query - uses derived table
+      expect(advantageStatsQuery).toContain("FROM (SELECT ? as tid) p");
+      expect(advantageStatsQuery).toContain("CROSS JOIN MatchGames mg");
+      expect(advantageStatsQuery).toContain("LEFT JOIN (");
+      expect(advantageStatsQuery).toContain("FROM MapRoundStats mrs");
+      expect(advantageStatsParams).toHaveLength(2); // teamId, season_id
+      expect(advantageStatsParams[0]).toBe(1650);
+      expect(advantageStatsParams[1]).toBe(14);
 
       // Check that result contains expected data
       expect(result).toHaveLength(2);
@@ -103,7 +188,27 @@ describe("Team Map Stats Models", () => {
         kills_ct: 130,
         deaths_ct: 121,
         kills_t: 142,
-        deaths_t: 130
+        deaths_t: 130,
+        // Openings stats
+        first_kills: 0,
+        first_deaths: 0,
+        first_kills_t: 0,
+        first_deaths_t: 0,
+        first_kills_ct: 0,
+        first_deaths_ct: 0,
+        // Advantage stats
+        fk_5v4_won: 0,
+        fk_5v4_total: 0,
+        fk_4v5_won: 0,
+        fk_4v5_total: 0,
+        fk_5v4_won_ct: 0,
+        fk_5v4_total_ct: 0,
+        fk_5v4_won_t: 0,
+        fk_5v4_total_t: 0,
+        fk_4v5_won_ct: 0,
+        fk_4v5_total_ct: 0,
+        fk_4v5_won_t: 0,
+        fk_4v5_total_t: 0
       });
 
       // Check second map
@@ -123,7 +228,27 @@ describe("Team Map Stats Models", () => {
         kills_ct: 145,
         deaths_ct: 100,
         kills_t: 82,
-        deaths_t: 100
+        deaths_t: 100,
+        // Openings stats
+        first_kills: 0,
+        first_deaths: 0,
+        first_kills_t: 0,
+        first_deaths_t: 0,
+        first_kills_ct: 0,
+        first_deaths_ct: 0,
+        // Advantage stats
+        fk_5v4_won: 0,
+        fk_5v4_total: 0,
+        fk_4v5_won: 0,
+        fk_4v5_total: 0,
+        fk_5v4_won_ct: 0,
+        fk_5v4_total_ct: 0,
+        fk_5v4_won_t: 0,
+        fk_5v4_total_t: 0,
+        fk_4v5_won_ct: 0,
+        fk_4v5_total_ct: 0,
+        fk_4v5_won_t: 0,
+        fk_4v5_total_t: 0
       });
     });
   });

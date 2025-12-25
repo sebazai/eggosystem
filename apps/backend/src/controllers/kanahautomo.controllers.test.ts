@@ -5,7 +5,7 @@ import * as organizationModels from "../models/organization.models";
 import * as dbConnection from "../db/mysqlConnection";
 import * as mysqlRunQuery from "../db/mysqlRunQuery";
 import type { JwtPayload } from "jsonwebtoken";
-import type { Organizations } from "@eggosystem/types";
+import { createMockOrganization } from "@eggosystem/types";
 import { ZodError } from "zod";
 
 // Mock the models
@@ -49,16 +49,12 @@ const mockOrganizationModels = organizationModels as jest.Mocked<
 const mockGetConnection = dbConnection.getConnection as jest.Mock;
 const mockRunQuery = mysqlRunQuery.runQuery as jest.Mock;
 
-const mockOrg: Organizations = {
+const mockOrg = createMockOrganization({
   id: 1,
   name: "Test Org",
-  logo: "",
   organization_code: "TEST",
-  website: "",
-  country: "",
-  sort_order: null,
   discord_invite_link: "https://discord.com/invite/test"
-};
+});
 
 const mockGameTypes = {
   cs: true,

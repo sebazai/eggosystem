@@ -32,6 +32,8 @@ export const createMockSeasonTeamPlayer = (
     is_captain: false,
     is_co_captain: false,
     match_id: null,
+    discarded_at: null,
+    discarded_by: null,
     ...overrides
   };
 };

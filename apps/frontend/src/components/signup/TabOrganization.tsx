@@ -15,7 +15,8 @@ import { useState } from "react";
 import type {
   Control,
   UseFormResetField,
-  UseFormSetValue
+  UseFormSetValue,
+  UseFormWatch
 } from "react-hook-form";
 import { RequiredFormLabel } from "../ui/RequiredFormLabel";
 import { NewOrganizationForm } from "../organizations/NewOrganizationForm";
@@ -25,9 +26,12 @@ interface TabOrganizationProps {
   control: Control<SignupFormValues>;
   resetField: UseFormResetField<SignupFormValues>;
   setValue: UseFormSetValue<SignupFormValues>;
+  watch: UseFormWatch<SignupFormValues>;
   validOrganizationSelection: boolean;
   onNext: (value: string) => void;
   isEditMode: boolean;
+  submitInitiated: boolean;
+  isCreatingOrg: boolean;
 }
 
 export const TabOrganization = ({
@@ -35,9 +39,12 @@ export const TabOrganization = ({
   control,
   resetField,
   setValue,
+  watch,
   validOrganizationSelection,
   onNext,
-  isEditMode
+  isEditMode,
+  submitInitiated,
+  isCreatingOrg
 }: TabOrganizationProps) => {
   const {
     organizations,
@@ -69,6 +76,11 @@ export const TabOrganization = ({
     }
     setOpenFilter((prev: string | null) => (prev === filter ? null : filter));
   };
+
+  const handleTeamSelectionClick = () => {
+    // Just proceed to next tab - organization creation is handled in onNext
+    onNext("team");
+  };
   return (
     <TabsContent value="organization">
       <FormField
@@ -79,7 +91,7 @@ export const TabOrganization = ({
             <RequiredFormLabel required>Organization</RequiredFormLabel>
             <FormControl>
               <FancySelect<number>
-                disabled={isEditMode}
+                disabled={isEditMode || submitInitiated}
                 isMulti={false}
                 allowOther={true}
                 allowOtherText="Add new..."
@@ -122,16 +134,21 @@ export const TabOrganization = ({
           websiteKey={"newOrganization.website"}
           imageDataKey={"newOrganization.image_data"}
           imageFilenameKey={"newOrganization.image_filename"}
+          watch={watch}
           setValue={setValue}
         />
       )}
       <Button
         className="mt-5 w-full"
-        disabled={!validOrganizationSelection}
-        onClick={() => onNext("team")}
+        disabled={!validOrganizationSelection || isCreatingOrg}
+        onClick={handleTeamSelectionClick}
         data-testid="team-selection-button"
       >
-        Team selection
+        {isCreatingOrg
+          ? "Creating organization..."
+          : watchOrgId === -1
+            ? "Create organization & continue to team"
+            : "Continue to team selection"}
       </Button>
     </TabsContent>
   );

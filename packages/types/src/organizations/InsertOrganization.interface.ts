@@ -6,4 +6,5 @@ export interface InsertOrganization {
   website: Organizations["website"];
   logo?: Nullable<Organizations["logo"]>;
   country?: Nullable<Organizations["country"]>;
+  status?: Organizations["status"];
 }

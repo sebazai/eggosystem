@@ -1116,6 +1116,88 @@ export const getPlayerMapStatsWithFilters = async (
 
       if (!details) return null;
 
+      // Query PlayerTrades to get count of first deaths that were tradeable
+      // (i.e., the player was the victim and first_death = 1)
+      // Also get side-specific counts by checking which side the player was on for that round
+      // The side is determined by checking if the player's team matches ct_team_id or t_team_id for that round
+      // IMPORTANT: PlayerTrades only contains trade opportunities, not isolated deaths
+      // Isolated deaths = PlayerStats.first_deaths - tradeable deaths
+      const tradeableFirstDeathsQuery = `
+        SELECT 
+          COUNT(DISTINCT pt.id) as total_count,
+          COUNT(DISTINCT CASE 
+            WHEN EXISTS (
+              SELECT 1 FROM MatchTeams mt2
+              INNER JOIN SeasonTeamPlayers stp2 ON stp2.team_id = mt2.team_id
+              WHERE mt2.match_id = mg.match_id
+                AND stp2.steam_id = pt.victim_steam_id
+                AND stp2.season_id = m.season_id
+                AND mt2.team_id = mrs.ct_team_id
+            ) THEN pt.id 
+          END) as ct_count,
+          COUNT(DISTINCT CASE 
+            WHEN EXISTS (
+              SELECT 1 FROM MatchTeams mt2
+              INNER JOIN SeasonTeamPlayers stp2 ON stp2.team_id = mt2.team_id
+              WHERE mt2.match_id = mg.match_id
+                AND stp2.steam_id = pt.victim_steam_id
+                AND stp2.season_id = m.season_id
+                AND mt2.team_id = mrs.t_team_id
+            ) THEN pt.id 
+          END) as t_count
+        FROM PlayerTrades pt
+        INNER JOIN MatchGames mg ON mg.id = pt.match_game_id
+        INNER JOIN Matches m ON m.id = mg.match_id
+        INNER JOIN MapRoundStats mrs ON mrs.match_game_id = pt.match_game_id AND mrs.round_number = pt.round_number
+        WHERE pt.victim_steam_id = ?
+          AND pt.first_death = 1
+          AND mg.map_id = ?
+          ${season_ids && season_ids.length > 0 ? `AND m.season_id IN (${season_ids.map(() => "?").join(",")})` : ""}
+          ${league_ids && league_ids.length > 0 ? `AND m.league_id IN (${league_ids.map(() => "?").join(",")})` : ""}
+          ${
+            team_ids && team_ids.length > 0
+              ? `AND EXISTS (
+            SELECT 1 FROM MatchTeams mt3
+            INNER JOIN SeasonTeamPlayers stp3 ON stp3.team_id = mt3.team_id
+            WHERE mt3.match_id = mg.match_id
+              AND stp3.steam_id = pt.victim_steam_id
+              AND stp3.season_id = m.season_id
+              AND mt3.team_id IN (${team_ids.map(() => "?").join(",")})
+          )`
+              : ""
+          }
+          ${stages && stages.length > 0 ? `AND m.stage IN (${stages.map(() => "?").join(",")})` : ""}
+      `;
+
+      const tradeableParams: (string | number)[] = [steam_id, mapId];
+      if (season_ids && season_ids.length > 0)
+        tradeableParams.push(...season_ids);
+      if (league_ids && league_ids.length > 0)
+        tradeableParams.push(...league_ids);
+      if (team_ids && team_ids.length > 0) tradeableParams.push(...team_ids);
+      if (stages && stages.length > 0) tradeableParams.push(...stages);
+
+      const [tradeableResult] = await runQuery<
+        Array<{ total_count: number; ct_count: number; t_count: number }>
+      >(tradeableFirstDeathsQuery, tradeableParams);
+
+      // PlayerTrades is the source of truth for tradeable counts
+      // PlayerStats is the source of truth for totals
+      // If tradeable > totals: bump totals up to match tradeable (isolated = 0)
+      // If tradeable <= totals: isolated = totals - tradeable
+      const tradeableTotal = tradeableResult?.total_count || 0;
+      const tradeableT = tradeableResult?.t_count || 0;
+      const tradeableCT = tradeableResult?.ct_count || 0;
+
+      const statsTotalT = playerStats?.first_deaths_t || 0;
+      const statsTotalCT = playerStats?.first_deaths_ct || 0;
+
+      // Bump totals up if tradeable is higher
+      const finalTotalT = Math.max(statsTotalT, tradeableT);
+      const finalTotalCT = Math.max(statsTotalCT, tradeableCT);
+      // Summary total is the sum of bumped side totals (may differ from PlayerStats due to side classification)
+      const finalTotal = finalTotalT + finalTotalCT;
+
       const mapStats: PlayerMapStats = {
         ...playerStats,
         map_id: mapId,
@@ -1134,9 +1216,10 @@ export const getPlayerMapStatsWithFilters = async (
         counter_strafing_percentage:
           playerStats?.counter_strafing_percentage || 0,
         first_kills_ct: playerStats?.first_kills_ct || 0,
-        first_deaths_ct: playerStats?.first_deaths_ct || 0,
+        first_deaths_ct: finalTotalCT, // Use bumped total if needed
         first_kills_t: playerStats?.first_kills_t || 0,
-        first_deaths_t: playerStats?.first_deaths_t || 0,
+        first_deaths_t: finalTotalT, // Use bumped total if needed
+        first_deaths: finalTotal, // Use bumped total if needed (T + CT may not equal this due to side classification differences)
         avg_enemy_flash_duration: playerStats?.avg_enemy_flash_duration || 0,
         avg_teammate_flash_duration:
           playerStats?.avg_teammate_flash_duration || 0,
@@ -1151,7 +1234,15 @@ export const getPlayerMapStatsWithFilters = async (
         multikill_2k: playerStats?.kills_2 || 0,
         multikill_3k: playerStats?.kills_3 || 0,
         multikill_4k: playerStats?.kills_4 || 0,
-        multikill_5k: playerStats?.kills_5 || 0
+        multikill_5k: playerStats?.kills_5 || 0,
+        // First death trade stats
+        // PlayerTrades is source of truth for tradeable counts
+        first_death_traded: playerStats?.first_death_traded || 0,
+        first_death_traded_t: playerStats?.first_death_traded_t || 0,
+        first_death_traded_ct: playerStats?.first_death_traded_ct || 0,
+        first_deaths_tradeable: tradeableTotal,
+        first_deaths_tradeable_t: tradeableT,
+        first_deaths_tradeable_ct: tradeableCT
       };
 
       return mapStats;
