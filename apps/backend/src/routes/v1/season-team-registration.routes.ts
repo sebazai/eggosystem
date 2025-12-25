@@ -5,7 +5,8 @@ import {
   addSignupForSeasonController,
   getPlayerApprovedByOrganizer,
   getTeamSignupDetails,
-  updateTeamSignupDetails
+  updateTeamSignupDetails,
+  createOrganizationForSignupController
 } from "../../controllers/season-team-registration.controllers";
 import {
   authenticateJWT,
@@ -41,6 +42,12 @@ router.get(
   getTeamSignupDetails
 );
 router.post(
+  "/season/:season_id/organization",
+  validateNumericParams(),
+  authenticateJWT,
+  createOrganizationForSignupController
+);
+router.post(
   "/season/:season_id/signup",
   validateNumericParams(),
   authenticateJWT,
@@ -54,7 +61,9 @@ router.post(
     const steamId = req.auth?.provider_id;
     const redisKey = `signup-${steamId}`;
     if (!isRegistrationDraftRaw(req.body)) {
-      return next(new BadRequestError("Invalid draft structure"));
+      return next(
+        new BadRequestError("Failed to save draft. Invalid draft structure.")
+      );
     }
     await redisClient.set(
       redisKey,

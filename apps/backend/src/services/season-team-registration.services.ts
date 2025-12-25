@@ -41,6 +41,58 @@ import { logger } from "../utils/app-logger";
 import { sendSeasonCaptainWelcomeEmail } from "./email.services";
 import { uploadSignupImage } from "./signup-image-upload.services";
 
+/**
+ * Create an organization during signup with pending status
+ * This allows admins to pre-approve players before signup completion
+ */
+export const createOrganizationForSignup = async (
+  organizationData: {
+    name: string;
+    organization_code: string;
+    website: string;
+    image_data?: string;
+    image_filename?: string;
+  },
+  connection?: PoolConnection
+) => {
+  const newOrg = await insertOrganization(
+    {
+      name: organizationData.name,
+      organization_code: organizationData.organization_code,
+      website: organizationData.website,
+      status: "pending"
+    },
+    connection
+  );
+
+  // Upload organization logo if provided
+  if (organizationData.image_data) {
+    try {
+      const imageResult = await uploadSignupImage(
+        organizationData.image_data,
+        organizationData.image_filename,
+        "organization",
+        newOrg.insertId
+      );
+      await updateOrganizationLogo(
+        newOrg.insertId,
+        imageResult.phash,
+        connection
+      );
+      logger.info(
+        `Uploaded organization logo during early signup: orgId=${newOrg.insertId}, phash=${imageResult.phash}`
+      );
+    } catch (imageError) {
+      // Log error but don't fail organization creation for image upload issues
+      logger.warn(
+        `Failed to upload organization logo during early signup: ${imageError}`
+      );
+    }
+  }
+
+  return newOrg;
+};
+
 export const ensurePlayerSteamProfilesPublic = async (
   playerSteamIds: string[]
 ) => {
@@ -459,26 +511,35 @@ export const handleSignupFormForSeason = async (
   // If someone selected a team that is not tied to organization
   const [rogueTeam] = await getTeamWithIdWithoutOrg(formData.teamId);
 
-  // Handle new org and new team.
-  if (formData.organizationId === -1) {
-    if (formData.teamId !== -1 && !rogueTeam) {
+  // Handle new organization creation
+  // If newOrganization is present, organization was already created when user moved from Organization tab to Team tab
+  if (formData.newOrganization) {
+    if (formData.organizationId <= 0) {
       throw new BadRequestError(
-        "Cannot create a new organization with an existing team"
+        "Organization must be created before signup submission"
       );
     }
 
-    if (formData.newOrganization) {
-      const newOrg = await insertOrganization(
-        {
-          name: formData.newOrganization.name,
-          organization_code: formData.newOrganization.organization_code,
-          website: formData.newOrganization.website
-        },
+    // Organization was already created, use it
+    const newOrg = { insertId: formData.organizationId };
+    logger.info(
+      `Using pre-created pending organization: orgId=${formData.organizationId}`
+    );
+
+    // Upload organization logo if provided and not already uploaded
+    if (formData.newOrganization.image_data) {
+      // Check if logo already exists
+      const orgLogoCheck = await runQuery<Array<{ logo: string }>>(
+        "SELECT logo FROM Organizations WHERE id = ?",
+        [newOrg.insertId],
         connection
       );
+      const hasLogo =
+        orgLogoCheck.length > 0 &&
+        orgLogoCheck[0].logo &&
+        orgLogoCheck[0].logo !== "nologo.png";
 
-      // Upload organization logo if provided
-      if (formData.newOrganization.image_data) {
+      if (!hasLogo) {
         try {
           const imageResult = await uploadSignupImage(
             formData.newOrganization.image_data,
@@ -501,92 +562,92 @@ export const handleSignupFormForSeason = async (
           );
         }
       }
+    }
 
-      // If new organization, and an existing team from older seasons that does not have an org.
-      if (rogueTeam) {
-        await runQuery(
-          "UPDATE Teams SET organization_id = ? WHERE id = ?",
-          [newOrg.insertId, formData.teamId],
-          connection
-        );
+    // If new organization, and an existing team from older seasons that does not have an org.
+    if (rogueTeam) {
+      await runQuery(
+        "UPDATE Teams SET organization_id = ? WHERE id = ?",
+        [newOrg.insertId, formData.teamId],
+        connection
+      );
 
-        await handleSeasonTeamRegistration(
-          season.id,
-          season.platform,
-          season.app_id,
-          formData.teamId,
-          newOrg.insertId,
-          {
-            external_platform_id: formData.teamExternalId,
-            terms_and_conditions_approved:
-              formData.captainHasReadTermAndConditions
-          },
-          playerInsertData,
-          connection
-        );
+      await handleSeasonTeamRegistration(
+        season.id,
+        season.platform,
+        season.app_id,
+        formData.teamId,
+        newOrg.insertId,
+        {
+          external_platform_id: formData.teamExternalId,
+          terms_and_conditions_approved:
+            formData.captainHasReadTermAndConditions
+        },
+        playerInsertData,
+        connection
+      );
 
-        return {
-          team_id: formData.teamId,
-          organization_id: newOrg.insertId
-        };
-      }
+      return {
+        team_id: formData.teamId,
+        organization_id: newOrg.insertId
+      };
+    }
 
-      // New org and new team.
-      if (formData.newTeam) {
-        // Determine team logo if image was uploaded
-        let teamLogo: string | undefined;
-        if (formData.newTeam.image_data) {
-          try {
-            const imageResult = await uploadSignupImage(
-              formData.newTeam.image_data,
-              formData.newTeam.image_filename,
-              "team",
-              0 // Temporary ID, will be updated after insert
-            );
-            teamLogo = imageResult.phash;
-          } catch (imageError) {
-            logger.warn(
-              `Failed to upload team logo during signup: ${imageError}`
-            );
-          }
-        }
-
-        const newTeam = await insertTeam(
-          {
-            name: formData.newTeam.name,
-            organization_id: newOrg.insertId,
-            org_approved: true,
-            team_logo: teamLogo
-          },
-          connection
-        );
-
-        if (teamLogo) {
-          logger.info(
-            `Uploaded team logo during signup: teamId=${newTeam.insertId}, phash=${teamLogo}`
+    // New org and new team.
+    if (formData.newTeam) {
+      // Determine team logo if image was uploaded
+      let teamLogo: string | undefined;
+      if (formData.newTeam.image_data) {
+        try {
+          const imageResult = await uploadSignupImage(
+            formData.newTeam.image_data,
+            formData.newTeam.image_filename,
+            "team",
+            0 // Temporary ID, will be updated after insert
+          );
+          teamLogo = imageResult.phash;
+        } catch (imageError) {
+          logger.warn(
+            `Failed to upload team logo during signup: ${imageError}`
           );
         }
-
-        await handleSeasonTeamRegistration(
-          season.id,
-          season.platform,
-          season.app_id,
-          newTeam.insertId,
-          newOrg.insertId,
-          {
-            external_platform_id: formData.teamExternalId,
-            terms_and_conditions_approved:
-              formData.captainHasReadTermAndConditions
-          },
-          playerInsertData,
-          connection
-        );
-
-        return {
-          team_id: newTeam.insertId,
-          organization_id: newOrg.insertId
-        };
       }
+
+      const newTeam = await insertTeam(
+        {
+          name: formData.newTeam.name,
+          organization_id: newOrg.insertId,
+          org_approved: true,
+          team_logo: teamLogo
+        },
+        connection
+      );
+
+      if (teamLogo) {
+        logger.info(
+          `Uploaded team logo during signup: teamId=${newTeam.insertId}, phash=${teamLogo}`
+        );
+      }
+
+      await handleSeasonTeamRegistration(
+        season.id,
+        season.platform,
+        season.app_id,
+        newTeam.insertId,
+        newOrg.insertId,
+        {
+          external_platform_id: formData.teamExternalId,
+          terms_and_conditions_approved:
+            formData.captainHasReadTermAndConditions
+        },
+        playerInsertData,
+        connection
+      );
+
+      return {
+        team_id: newTeam.insertId,
+        organization_id: newOrg.insertId
+      };
     }
   }
 
@@ -650,11 +711,13 @@ export const handleSignupFormForSeason = async (
   }
 
   // Handle existing organization and existing team
+  // This includes pending organizations created early
   if (
     formData.organizationId !== -1 &&
     formData.organizationId > 0 &&
     formData.teamId !== -1 &&
-    formData.teamId > 0
+    formData.teamId > 0 &&
+    !formData.newOrganization // Not creating new org
   ) {
     // Ensure the team belongs to the organization
     const isTeamPartOfOrg = await isTeamPartOfOrganization(

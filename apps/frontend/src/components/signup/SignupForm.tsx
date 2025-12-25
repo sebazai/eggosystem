@@ -27,16 +27,17 @@ import {
   SeasonPlatform,
   type FaceITTeamDetails,
   type SignupFormValues,
-  type SignupPlayerType
+  type SignupPlayerType,
+  signupFormSchema,
+  baseSignupFormSchema
 } from "@eggosystem/types";
-import { signupFormSchema, baseSignupFormSchema } from "@eggosystem/types";
 import { CopyInput } from "@/components/inputs/CopyInput";
 import { envConfig } from "@/configs/env";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RequiredFormLabel } from "@/components/ui/RequiredFormLabel";
 import { toast } from "sonner";
 import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
-
+import { useCreateOrganizationForSignup } from "@/hooks/data/useCreateOrganizationForSignup";
 interface SignupFormProps {
   seasonId: string;
   platform: SeasonPlatform;
@@ -362,31 +363,53 @@ export const SignupForm = ({
   };
 
   const saveAsDraft = async (formData: SignupFormValues) => {
-    // Convert all Steam IDs to SteamID64 format before saving
-    const convertedData = await convertSteamIdsToSteamId64(formData);
+    try {
+      const convertedData = await convertSteamIdsToSteamId64(formData);
 
-    const formDataStripped = {
-      ...convertedData,
-      players: convertedData.players.map((player) => ({
-        accountId: player.accountId,
-        steamId: player.steamId,
-        nickname: player.nickname,
-        captain: player.captain,
-        coCaptain: player.coCaptain
-      }))
-    } satisfies SignupFormValues;
-    await clientApiFetch(`/api/v1/registrations/season/${seasonId}/draft`, {
-      method: "POST",
-      body: JSON.stringify(formDataStripped)
-    });
-    setSuccessMessage("Saved draft for 30 days.");
-    toast.success("Draft saved successfully", {
-      description: "You can continue editing your draft later on this page."
-    });
+      const formDataStripped = {
+        organizationId: convertedData.organizationId ?? -1,
+        teamId: convertedData.teamId ?? -1,
+        ...(convertedData.newOrganization && {
+          newOrganization: convertedData.newOrganization
+        }),
+        ...(convertedData.newTeam && { newTeam: convertedData.newTeam }),
+        teamExternalId: convertedData.teamExternalId || "",
+        captainHasReadTermAndConditions:
+          convertedData.captainHasReadTermAndConditions,
+        players: convertedData.players.map((player) => ({
+          accountId: player.accountId,
+          steamId: player.steamId,
+          nickname: player.nickname,
+          captain: player.captain,
+          coCaptain: player.coCaptain
+        }))
+      };
+      await clientApiFetch(`/api/v1/registrations/season/${seasonId}/draft`, {
+        method: "POST",
+        body: JSON.stringify(formDataStripped)
+      });
+      setSuccessMessage("Saved draft for 30 days.");
+      toast.success("Draft saved successfully", {
+        description: "You can continue editing your draft later on this page."
+      });
 
-    // Invalidate the edit form data cache to ensure fresh data is loaded
-    onDraftSaved?.();
+      // Invalidate the edit form data cache to ensure fresh data is loaded
+      onDraftSaved?.();
+    } catch (error) {
+      if (error instanceof ApiError) {
+        toast.error(error.message || "Failed to save draft");
+      } else {
+        toast.error("Failed to save draft. Please try again.");
+      }
+      console.error("Error saving draft:", error);
+    }
   };
+
+  const { createOrganization, isCreating: isCreatingOrg } =
+    useCreateOrganizationForSignup({
+      seasonId,
+      setValue
+    });
 
   if (!user) {
     return <RequiresSteamLogin />;
@@ -404,7 +427,18 @@ export const SignupForm = ({
     );
   }
 
-  const onNext = (value: string) => {
+  const onNext = async (value: string) => {
+    if (
+      value === "team" &&
+      watchOrgId === -1 &&
+      watchNewOrg &&
+      !isCreatingOrg
+    ) {
+      const organizationId = await createOrganization(watchNewOrg);
+      if (!organizationId) {
+        return;
+      }
+    }
     setActiveTab(value);
   };
 
@@ -425,7 +459,7 @@ export const SignupForm = ({
 
             <Tabs
               value={activeTab}
-              onValueChange={setActiveTab}
+              onValueChange={onNext}
               className="space-y-2 md:space-y-6"
             >
               <TabsList className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 h-full w-full">
@@ -476,10 +510,12 @@ export const SignupForm = ({
                 control={control}
                 resetField={resetField}
                 setValue={setValue}
+                watch={watch}
                 onNext={onNext}
                 validOrganizationSelection={validOrganizationSelection}
                 watchOrgId={watchOrgId}
                 isEditMode={isEditMode}
+                seasonId={seasonId}
               />
 
               <TabTeam
@@ -487,6 +523,7 @@ export const SignupForm = ({
                 control={control}
                 resetField={resetField}
                 setValue={setValue}
+                watch={watch}
                 onNext={onNext}
                 validTeamSelection={validTeamSelection}
                 watchTeamId={watchTeamId}

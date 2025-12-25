@@ -15,7 +15,8 @@ import { useCallback, useEffect, useState } from "react";
 import type {
   Control,
   UseFormResetField,
-  UseFormSetValue
+  UseFormSetValue,
+  UseFormWatch
 } from "react-hook-form";
 import { useOrganizationTeams } from "@/hooks/data/useOrganizationTeams";
 import { SeasonPlatform, type SignupFormValues } from "@eggosystem/types";
@@ -32,6 +33,7 @@ interface TabTeamProps {
   control: Control<SignupFormValues>;
   resetField: UseFormResetField<SignupFormValues>;
   setValue: UseFormSetValue<SignupFormValues>;
+  watch: UseFormWatch<SignupFormValues>;
   validTeamSelection: boolean;
   onNext: (value: string) => void;
   platform: string;
@@ -55,12 +57,15 @@ export const TabTeam = ({
   control,
   resetField,
   setValue,
+  watch,
   validTeamSelection,
   onNext,
   platform,
   fetchingExternalData,
   isEditMode
 }: TabTeamProps) => {
+  const currentTeamImage = watch("newTeam.image_data");
+
   const handleTeamImageSelect = useCallback(
     (imageData: string | undefined, filename: string | undefined) => {
       setValue("newTeam.image_data" as "newTeam.name", imageData as string);
@@ -217,6 +222,7 @@ export const TabTeam = ({
             id="team-logo"
             label="Team Logo (Optional)"
             onImageSelect={handleTeamImageSelect}
+            currentImageUrl={currentTeamImage}
             helpText="Upload a logo for your team. Supported formats: PNG, JPG, GIF, WEBP. Max size: 10MB"
           />
         </div>

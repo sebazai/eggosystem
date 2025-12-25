@@ -4,9 +4,13 @@ import { expressFetcher } from "@/lib/utils";
 import useSWR from "swr";
 import type { Organizations } from "@eggosystem/types";
 
-export const useOrganizations = (organizationId?: string) => {
+export const useOrganizations = (
+  organizationId?: string,
+  includePending: boolean = true
+) => {
+  const queryParams = organizationId ? "" : `?includePending=${includePending}`;
   const { data, error, isValidating } = useSWR<Organizations[], Error>(
-    `/api/v1/organizations${organizationId ? `/${organizationId}` : ""}`,
+    `/api/v1/organizations${organizationId ? `/${organizationId}` : queryParams}`,
     expressFetcher,
     { revalidateOnFocus: false }
   );

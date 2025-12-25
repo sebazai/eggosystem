@@ -15,19 +15,23 @@ import { useState } from "react";
 import type {
   Control,
   UseFormResetField,
-  UseFormSetValue
+  UseFormSetValue,
+  UseFormWatch
 } from "react-hook-form";
 import { RequiredFormLabel } from "../ui/RequiredFormLabel";
 import { NewOrganizationForm } from "../organizations/NewOrganizationForm";
+import { useCreateOrganizationForSignup } from "@/hooks/data/useCreateOrganizationForSignup";
 
 interface TabOrganizationProps {
   watchOrgId: number;
   control: Control<SignupFormValues>;
   resetField: UseFormResetField<SignupFormValues>;
   setValue: UseFormSetValue<SignupFormValues>;
+  watch: UseFormWatch<SignupFormValues>;
   validOrganizationSelection: boolean;
   onNext: (value: string) => void;
   isEditMode: boolean;
+  seasonId: string;
 }
 
 export const TabOrganization = ({
@@ -35,9 +39,11 @@ export const TabOrganization = ({
   control,
   resetField,
   setValue,
+  watch,
   validOrganizationSelection,
   onNext,
-  isEditMode
+  isEditMode,
+  seasonId
 }: TabOrganizationProps) => {
   const {
     organizations,
@@ -46,6 +52,11 @@ export const TabOrganization = ({
     isValidating: isValidatingOrgs
   } = useOrganizations();
   const [openFilter, setOpenFilter] = useState<string | null>(null);
+
+  const { isCreating: isCreatingOrg } = useCreateOrganizationForSignup({
+    seasonId,
+    setValue
+  });
   if (loadingOrgs || isValidatingOrgs) {
     return <Spinner />;
   }
@@ -69,6 +80,11 @@ export const TabOrganization = ({
     }
     setOpenFilter((prev: string | null) => (prev === filter ? null : filter));
   };
+
+  const handleTeamSelectionClick = () => {
+    // Just proceed to next tab - organization creation is handled in onNext
+    onNext("team");
+  };
   return (
     <TabsContent value="organization">
       <FormField
@@ -91,8 +107,14 @@ export const TabOrganization = ({
                   watchOrgId === -1
                     ? [{ value: -1, label: "Other" }]
                     : selectableOrganizations.filter(
-                        (org) => org.value === watchOrgId
-                      )
+                          (org) => org.value === watchOrgId
+                        ).length > 0
+                      ? selectableOrganizations.filter(
+                          (org) => org.value === watchOrgId
+                        )
+                      : watchOrgId > 0
+                        ? [{ value: watchOrgId, label: "Loading..." }]
+                        : []
                 }
                 onSelectChange={(selectedItem) => {
                   if (!selectedItem) {
@@ -122,16 +144,17 @@ export const TabOrganization = ({
           websiteKey={"newOrganization.website"}
           imageDataKey={"newOrganization.image_data"}
           imageFilenameKey={"newOrganization.image_filename"}
+          watch={watch}
           setValue={setValue}
         />
       )}
       <Button
         className="mt-5 w-full"
-        disabled={!validOrganizationSelection}
-        onClick={() => onNext("team")}
+        disabled={!validOrganizationSelection || isCreatingOrg}
+        onClick={handleTeamSelectionClick}
         data-testid="team-selection-button"
       >
-        Team selection
+        {isCreatingOrg ? "Creating organization..." : "Team selection"}
       </Button>
     </TabsContent>
   );

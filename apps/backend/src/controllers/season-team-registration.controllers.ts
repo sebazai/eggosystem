@@ -3,7 +3,8 @@ import {
   signupFormSchema,
   type SignupFormValues,
   type RequestWithParams,
-  type RequestWithParamsAndQuery
+  type RequestWithParamsAndQuery,
+  newOrganizationSchema
 } from "@eggosystem/types";
 import type { Response } from "express";
 import {
@@ -13,12 +14,17 @@ import {
 } from "../models/season-team-registration.models";
 import {
   getValidSeason,
-  checkExternalId
+  checkExternalId,
+  createOrganizationForSignup
 } from "../services/season-team-registration.services";
 import { isPlayerApprovedForSeasonManually } from "../models/season-team-players.models";
 import { BadRequestError } from "../utils/errors";
 import { redisClient } from "../utils/redisClient";
 import { logger } from "../utils/app-logger";
+import type { z } from "zod";
+
+// Unwrap the optional wrapper from newOrganizationSchema to make it required for this endpoint
+const createOrganizationForSignupSchema = newOrganizationSchema.unwrap();
 
 export const getTeamSignupDetails = async (
   req: RequestWithParams<{ season_id: string; team_id: string }>,
@@ -108,4 +114,21 @@ export const addSignupForSeasonController = async (
     logger.error("Error deleting Redis cache", error);
   }
   res.json(result);
+};
+
+export const createOrganizationForSignupController = async (
+  req: RequestWithParamsAndBody<
+    { season_id: string },
+    z.infer<typeof createOrganizationForSignupSchema>
+  >,
+  res: Response
+) => {
+  const seasonId = Number(req.params.season_id);
+  await getValidSeason(seasonId);
+
+  const validatedData = createOrganizationForSignupSchema.parse(req.body);
+
+  const result = await createOrganizationForSignup(validatedData);
+
+  res.json({ organizationId: result.insertId });
 };
