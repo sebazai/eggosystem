@@ -12,8 +12,7 @@ export const getSteamHoursForAppId = async (
   app_id: number
 ) => {
   const { controller, clearAbortTimeout } = createAbortController(
-    "getSteamHoursForAppId",
-    20000
+    "getSteamHoursForAppId"
   );
 
   try {
