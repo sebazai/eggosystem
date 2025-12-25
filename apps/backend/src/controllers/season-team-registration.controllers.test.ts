@@ -194,7 +194,8 @@ describe("addSignupForSeason - database transaction testing", () => {
   });
 
   it("should handle new organization and new team successfully", async () => {
-    req.body.organizationId = -1;
+    // Simulate early organization creation - organization is created before submission
+    req.body.organizationId = 999; // Pre-created organization ID
     req.body.teamId = -1;
     req.body.newTeam = {
       name: "New Team"
@@ -219,9 +220,12 @@ describe("addSignupForSeason - database transaction testing", () => {
     jest.spyOn(teamModels, "insertTeam").mockResolvedValue({
       insertId: 666
     });
-    jest.spyOn(organizationModels, "insertOrganization").mockResolvedValue({
-      insertId: 1
-    });
+    // Organization is already created, so insertOrganization should not be called
+    const orgInsertSpy = jest
+      .spyOn(organizationModels, "insertOrganization")
+      .mockResolvedValue({
+        insertId: 999
+      });
 
     await addSignupForSeasonController(req, res);
     expect(mockConnection.beginTransaction).toHaveBeenCalled();
@@ -249,9 +253,15 @@ describe("addSignupForSeason - database transaction testing", () => {
       mockConnection
     );
 
+    // Organization should not be inserted during submission (already created)
+    expect(orgInsertSpy).not.toHaveBeenCalled();
+
     expect(mockConnection.commit).toHaveBeenCalled();
     expect(mockConnection.rollback).not.toHaveBeenCalled();
-    expect(res.json).toHaveBeenCalledWith({ team_id: 666, organization_id: 1 });
+    expect(res.json).toHaveBeenCalledWith({
+      team_id: 666,
+      organization_id: 999
+    });
   });
 
   it("should handle existing organization and new team successfully", async () => {

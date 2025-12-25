@@ -140,6 +140,11 @@ describe("Season team registration services", () => {
         const formData = _.cloneDeep(validSignupData);
         formData.organizationId = -1;
         formData.teamId = 2;
+        formData.newOrganization = {
+          name: "Test Org",
+          organization_code: "12345678-9",
+          website: "http://kanaliiga.org"
+        } satisfies SignupNewOrganizationType;
         try {
           await registrationServices.handleSignupFormForSeason(
             seasonDetails,
@@ -148,14 +153,13 @@ describe("Season team registration services", () => {
         } catch (err) {
           const asBadReq = err as BadRequestError;
           expect(asBadReq.message).toEqual(
-            "Cannot create a new organization with an existing team"
+            "Organization must be created before signup submission"
           );
           expect(asBadReq.status).toEqual(400);
         }
       });
       it("Should add new organization and new team as org_approved true", async () => {
         const formData = _.cloneDeep(validSignupData);
-        formData.organizationId = -1;
         formData.teamId = -1;
         formData.newOrganization = {
           name: "Test Org",
@@ -165,10 +169,18 @@ describe("Season team registration services", () => {
         formData.newTeam = {
           name: "TestiBoyz"
         } satisfies SignupNewTeamType;
-        const orgInsertSpy = jest.spyOn(
-          organizationModels,
-          "insertOrganization"
-        );
+
+        // Create the organization first (simulating early creation)
+        const orgResult = await organizationModels.insertOrganization({
+          name: formData.newOrganization.name,
+          organization_code: formData.newOrganization.organization_code,
+          website: formData.newOrganization.website,
+          country: "FI",
+          logo: "nologo.png",
+          status: "pending"
+        });
+        formData.organizationId = orgResult.insertId;
+
         const teamInsertSpy = jest.spyOn(teamModels, "insertTeam");
 
         let data: any;
@@ -181,10 +193,10 @@ describe("Season team registration services", () => {
 
           expect(data).toHaveProperty("organization_id");
           expect(data).toHaveProperty("team_id");
-          expect(orgInsertSpy).toHaveBeenCalledTimes(1);
           expect(teamInsertSpy).toHaveBeenCalledTimes(1);
           expect(typeof data.organization_id).toBe("number");
           expect(typeof data.team_id).toBe("number");
+          expect(data.organization_id).toEqual(orgResult.insertId);
           const [fromDb] = await runQuery<[Team]>(
             "SELECT * FROM Teams WHERE id = ?",
             [data.team_id]
@@ -284,13 +296,25 @@ describe("Season team registration services", () => {
       });
       it("Should add the rogue team to new org with org_approved false", async () => {
         const formData = _.cloneDeep(validSignupData);
-        formData.organizationId = -1;
         formData.newOrganization = {
           name: "Heppa",
           organization_code: "1234567-9",
           website: "https://kanaliiga.org"
         };
         formData.teamId = team.insertId;
+
+        // Create the organization first (simulating early creation)
+        const orgResult = await organizationModels.insertOrganization({
+          name: formData.newOrganization.name,
+          organization_code: formData.newOrganization.organization_code,
+          website: formData.newOrganization.website,
+          country: "FI",
+          logo: "nologo.png",
+          status: "pending"
+        });
+        formData.organizationId = orgResult.insertId;
+        orgToClear = orgResult.insertId;
+
         await registrationServices.handleSignupFormForSeason(
           seasonDetails,
           formData
@@ -299,10 +323,6 @@ describe("Season team registration services", () => {
           "SELECT * FROM Teams WHERE id = ?",
           [team.insertId]
         );
-        const [lastInsertId] = await runQuery<
-          Array<{ "LAST_INSERT_ID()": number }>
-        >("SELECT LAST_INSERT_ID();");
-        orgToClear = lastInsertId["LAST_INSERT_ID()"];
 
         expect(updatedTeam.organization_id).toEqual(orgToClear);
         expect(updatedTeam.org_approved).toEqual(false);
