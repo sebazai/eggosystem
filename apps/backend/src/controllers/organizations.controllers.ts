@@ -11,7 +11,8 @@ import { type RequestWithParams } from "@eggosystem/types";
 
 export const getOrgs = async (req: Request, res: Response) => {
   const searchParams = req.query.q?.toString();
-  const allOrgs = await getOrganizations(searchParams);
+  const includePending = req.query.includePending === "true";
+  const allOrgs = await getOrganizations(searchParams, includePending);
   res.json(allOrgs);
 };
 
