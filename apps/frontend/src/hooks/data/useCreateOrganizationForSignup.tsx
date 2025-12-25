@@ -83,6 +83,11 @@ export const useCreateOrganizationForSignup = ({
       const orgsCacheKey = `/api/v1/organizations?includePending=true`;
       await mutate(orgsCacheKey, expressFetcher<Organizations[]>(orgsCacheKey));
 
+      // Show success toast
+      toast.success("Organization created successfully", {
+        description: "You can now proceed to select or create a team."
+      });
+
       return response.organizationId;
     } catch (error) {
       if (error instanceof ApiError) {

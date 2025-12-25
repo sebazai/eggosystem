@@ -39,6 +39,7 @@ interface TabTeamProps {
   platform: string;
   fetchingExternalData: boolean;
   isEditMode: boolean;
+  submitInitiated: boolean;
 }
 
 const parseFaceITTeamId = (val: string) => {
@@ -62,7 +63,8 @@ export const TabTeam = ({
   onNext,
   platform,
   fetchingExternalData,
-  isEditMode
+  isEditMode,
+  submitInitiated
 }: TabTeamProps) => {
   const currentTeamImage = watch("newTeam.image_data");
 
@@ -145,7 +147,7 @@ export const TabTeam = ({
             <RequiredFormLabel required>Team</RequiredFormLabel>
             <FormControl>
               <FancySelect<number>
-                disabled={isEditMode}
+                disabled={isEditMode || submitInitiated}
                 isMulti={false}
                 allowOther={true}
                 allowOtherText="Add new..."

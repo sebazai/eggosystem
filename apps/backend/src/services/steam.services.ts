@@ -12,7 +12,8 @@ export const getSteamHoursForAppId = async (
   app_id: number
 ) => {
   const { controller, clearAbortTimeout } = createAbortController(
-    "getSteamHoursForAppId"
+    "getSteamHoursForAppId",
+    20000
   );
 
   try {
@@ -28,13 +29,10 @@ export const getSteamHoursForAppId = async (
       const duration = clearAbortTimeout();
       try {
         const text = await fromSteam.text();
-        const json = await fromSteam.json();
         logger.warn(
           `[Steam] API returned ${fromSteam.status} ${fromSteam.statusText} for steam_id: ${steam_id} (${duration}ms):`,
-          text,
-          json
+          text
         );
-        logger.warn("Steam response:", fromSteam);
       } catch (error) {
         logger.warn("Failed to parse steam response", error);
       }

@@ -295,10 +295,17 @@ export const SignupForm = ({
           body: JSON.stringify(convertedData)
         }
       );
-      setSuccessMessage(`Team registered succesfully, please remember to`);
-      toast.success(
-        "Team registered successfully, please remember to pay participation fee."
-      );
+      if (editValues) {
+        setSuccessMessage("Team updated successfully");
+        toast.success("Team updated successfully", {
+          description: "Your team information has been saved."
+        });
+      } else {
+        setSuccessMessage(`Team registered succesfully, please remember to`);
+        toast.success(
+          "Team registered successfully, please remember to pay participation fee."
+        );
+      }
       setEditUrl(
         `${createBaseUrl()}/seasons/${seasonId}/signup/team/${returnValue.team_id}/edit`
       );
@@ -448,6 +455,9 @@ export const SignupForm = ({
     validPlayerSelectionWithCaptains &&
     hasAcceptedTermsAndConditions;
 
+  const isSubmittingOrHasSubmitted =
+    form.formState.isSubmitting || form.formState.isSubmitSuccessful;
+
   return (
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)}>
@@ -459,13 +469,14 @@ export const SignupForm = ({
 
             <Tabs
               value={activeTab}
-              onValueChange={onNext}
+              onValueChange={form.formState.isSubmitting ? undefined : onNext}
               className="space-y-2 md:space-y-6"
             >
               <TabsList className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 h-full w-full">
                 <TabsTrigger
                   value="organization"
                   className="w-full sm:w-auto border border-transparent hover:bg-gray-200 rounded-md transition"
+                  disabled={isSubmittingOrHasSubmitted}
                 >
                   Organization{" "}
                   {validOrganizationSelection && (
@@ -479,7 +490,9 @@ export const SignupForm = ({
                 <TabsTrigger
                   value="team"
                   className="w-full sm:w-auto border border-transparent hover:bg-gray-200 rounded-md transition"
-                  disabled={!validOrganizationSelection}
+                  disabled={
+                    !validOrganizationSelection || isSubmittingOrHasSubmitted
+                  }
                 >
                   Team{" "}
                   {validTeamSelection && (
@@ -493,7 +506,7 @@ export const SignupForm = ({
                 <TabsTrigger
                   value="players"
                   className="w-full sm:w-auto border border-transparent hover:bg-gray-200 rounded-md transition"
-                  disabled={!validTeamSelection}
+                  disabled={!validTeamSelection || isSubmittingOrHasSubmitted}
                 >
                   Players{" "}
                   {validPlayerSelectionWithCaptains && (
@@ -515,7 +528,8 @@ export const SignupForm = ({
                 validOrganizationSelection={validOrganizationSelection}
                 watchOrgId={watchOrgId}
                 isEditMode={isEditMode}
-                seasonId={seasonId}
+                submitInitiated={isSubmittingOrHasSubmitted}
+                isCreatingOrg={isCreatingOrg}
               />
 
               <TabTeam
@@ -530,6 +544,7 @@ export const SignupForm = ({
                 platform={seasonDetails.platform}
                 fetchingExternalData={fetchingExternalData}
                 isEditMode={isEditMode}
+                submitInitiated={isSubmittingOrHasSubmitted}
               />
 
               <TabPlayers
@@ -549,6 +564,8 @@ export const SignupForm = ({
                 validCaptainSelection={validCaptainSelection}
                 prefilledPlayerSteamIds={prefilledPlayerSteamIds}
                 teamId={watchTeamId}
+                isEditMode={isEditMode}
+                submitInitiated={isSubmittingOrHasSubmitted}
               />
             </Tabs>
 
@@ -589,13 +606,11 @@ export const SignupForm = ({
               type="submit"
               variant="outline"
               className="w-full"
-              disabled={
-                form.formState.isSubmitting ||
-                form.formState.isSubmitSuccessful ||
-                !canSubmit
-              }
+              disabled={isSubmittingOrHasSubmitted || !canSubmit}
             >
-              Submit
+              {form.formState.isSubmitting
+                ? "Processing submission..."
+                : "Submit"}
             </Button>
 
             <FormField
@@ -612,6 +627,7 @@ export const SignupForm = ({
                           Boolean(checked)
                         )
                       }
+                      disabled={form.formState.isSubmitting}
                       data-testid="terms-conditions-checkbox"
                     />
                   </FormControl>

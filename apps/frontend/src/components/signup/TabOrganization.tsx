@@ -20,7 +20,6 @@ import type {
 } from "react-hook-form";
 import { RequiredFormLabel } from "../ui/RequiredFormLabel";
 import { NewOrganizationForm } from "../organizations/NewOrganizationForm";
-import { useCreateOrganizationForSignup } from "@/hooks/data/useCreateOrganizationForSignup";
 
 interface TabOrganizationProps {
   watchOrgId: number;
@@ -31,7 +30,8 @@ interface TabOrganizationProps {
   validOrganizationSelection: boolean;
   onNext: (value: string) => void;
   isEditMode: boolean;
-  seasonId: string;
+  submitInitiated: boolean;
+  isCreatingOrg: boolean;
 }
 
 export const TabOrganization = ({
@@ -43,7 +43,8 @@ export const TabOrganization = ({
   validOrganizationSelection,
   onNext,
   isEditMode,
-  seasonId
+  submitInitiated,
+  isCreatingOrg
 }: TabOrganizationProps) => {
   const {
     organizations,
@@ -52,11 +53,6 @@ export const TabOrganization = ({
     isValidating: isValidatingOrgs
   } = useOrganizations();
   const [openFilter, setOpenFilter] = useState<string | null>(null);
-
-  const { isCreating: isCreatingOrg } = useCreateOrganizationForSignup({
-    seasonId,
-    setValue
-  });
   if (loadingOrgs || isValidatingOrgs) {
     return <Spinner />;
   }
@@ -95,7 +91,7 @@ export const TabOrganization = ({
             <RequiredFormLabel required>Organization</RequiredFormLabel>
             <FormControl>
               <FancySelect<number>
-                disabled={isEditMode}
+                disabled={isEditMode || submitInitiated}
                 isMulti={false}
                 allowOther={true}
                 allowOtherText="Add new..."
@@ -154,7 +150,11 @@ export const TabOrganization = ({
         onClick={handleTeamSelectionClick}
         data-testid="team-selection-button"
       >
-        {isCreatingOrg ? "Creating organization..." : "Team selection"}
+        {isCreatingOrg
+          ? "Creating organization..."
+          : watchOrgId === -1
+            ? "Create organization & continue to team"
+            : "Continue to team selection"}
       </Button>
     </TabsContent>
   );
