@@ -14,6 +14,170 @@ export default function NewFeaturesPage() {
       <h1 className="text-4xl font-heading font-bold mb-6">New Features</h1>
 
       <div className="space-y-8">
+        {/* December 22, 2025 Features */}
+        <section className="bg-card p-6 rounded-lg shadow-md">
+          <div className="flex items-center gap-2 mb-6 text-kanaliiga-orange border-b pb-2">
+            <CalendarDays className="h-5 w-5" />
+            <h2 className="text-xl font-bold">December 22, 2025</h2>
+          </div>
+
+          <div className="space-y-8">
+            <div className="flex flex-col md:flex-row gap-6">
+              <div className="md:flex-1">
+                <h3 className="text-xl font-bold mb-2">
+                  Enhanced Map Statistics Rework 🗺️
+                </h3>
+                <p className="mb-2">
+                  We&apos;ve completely reworked the map statistics interface
+                  for both teams and players, providing better organization and
+                  deeper insights into map-specific performance.
+                </p>
+
+                <h4 className="font-bold text-lg mb-2">Key Features</h4>
+                <ul className="list-disc pl-5 mb-3">
+                  <li>
+                    <span className="font-medium">Tabbed Interface</span> - New
+                    organized categories for easier navigation
+                  </li>
+                  <li>
+                    <span className="font-medium">Player Map Stats</span> -
+                    Organized into Combat, Trading, Utility, Positioning, and
+                    Openings tabs
+                  </li>
+                  <li>
+                    <span className="font-medium">Team Map Stats</span> -
+                    Organized into General, Plant & Retake, Trading, and
+                    Openings & Advantage tabs
+                  </li>
+                  <li>
+                    <span className="font-medium">Enhanced Visualization</span>{" "}
+                    - Better visual representation of statistics with improved
+                    cards and progress bars
+                  </li>
+                  <li>
+                    <span className="font-medium">Better Organization</span> -
+                    Related statistics grouped together for easier analysis
+                  </li>
+                </ul>
+
+                <div className="mt-3 p-2 bg-muted/50 rounded-md text-sm">
+                  <strong>Where to find it:</strong> Visit any player or team
+                  page and click on the &quot;Map Statistics&quot; tab to see
+                  the new organized interface.
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-col md:flex-row gap-6">
+              <div className="md:flex-1">
+                <h3 className="text-xl font-bold mb-2">
+                  First Death Trade Analysis 📊
+                </h3>
+                <p className="mb-2">
+                  We&apos;ve added detailed first death trade analysis for
+                  players, helping you understand how well players are
+                  positioned and how often their deaths result in successful
+                  trades.
+                </p>
+
+                <h4 className="font-bold text-lg mb-2">Key Features</h4>
+                <ul className="list-disc pl-5 mb-3">
+                  <li>
+                    <span className="font-medium">Trade Breakdown</span> - See
+                    traded, not traded, and isolated first deaths
+                  </li>
+                  <li>
+                    <span className="font-medium">Side-Specific Analysis</span>{" "}
+                    - Separate breakdowns for T-side and CT-side performance
+                  </li>
+                  <li>
+                    <span className="font-medium">Tradeable Deaths</span> -
+                    Track how many first deaths had potential for trades (where
+                    teammates could see the death)
+                  </li>
+                  <li>
+                    <span className="font-medium">Isolated Deaths</span> -
+                    Identify deaths where no trade was possible (no teammates
+                    nearby)
+                  </li>
+                  <li>
+                    <span className="font-medium">Summary View</span> - Overall
+                    statistics with side-specific breakdowns that sum correctly
+                  </li>
+                </ul>
+
+                <p className="mb-2">
+                  This analysis helps identify players who position themselves
+                  well for trades, as well as those who may be taking isolated
+                  fights that don&apos;t benefit the team.
+                </p>
+
+                <div className="mt-3 p-2 bg-muted/50 rounded-md text-sm">
+                  <strong>Where to find it:</strong> Go to any player&apos;s
+                  profile page, click on &quot;Map Statistics&quot;, select a
+                  map, and then navigate to the &quot;Openings&quot; tab. The
+                  First Death Analysis section shows the detailed breakdown.
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-col md:flex-row gap-6">
+              <div className="md:flex-1">
+                <h3 className="text-xl font-bold mb-2">
+                  5v4 and 4v5 Advantage Round Statistics ⚔️
+                </h3>
+                <p className="mb-2">
+                  We&apos;ve added win percentage statistics for advantage
+                  rounds, showing how well teams capitalize on man-advantage
+                  situations (5v4) and how they perform when at a disadvantage
+                  (4v5).
+                </p>
+
+                <h4 className="font-bold text-lg mb-2">Key Features</h4>
+                <ul className="list-disc pl-5 mb-3">
+                  <li>
+                    <span className="font-medium">5v4 Win Rate</span> - See how
+                    often teams win rounds when they have a man advantage
+                  </li>
+                  <li>
+                    <span className="font-medium">4v5 Win Rate</span> - Track
+                    how well teams perform when playing at a disadvantage
+                  </li>
+                  <li>
+                    <span className="font-medium">Side-Specific Breakdown</span>{" "}
+                    - Separate statistics for T-side and CT-side advantage
+                    situations
+                  </li>
+                  <li>
+                    <span className="font-medium">Visual Progress Bars</span> -
+                    Easy-to-read visual representation of win rates
+                  </li>
+                  <li>
+                    <span className="font-medium">Overall & Side Stats</span> -
+                    Both overall and side-specific statistics for comprehensive
+                    analysis
+                  </li>
+                </ul>
+
+                <p className="mb-2">
+                  These statistics are critical for understanding tactical
+                  execution and round conversion. Teams with high 5v4 win rates
+                  capitalize well on advantages, while high 4v5 win rates show
+                  strong clutch potential.
+                </p>
+
+                <div className="mt-3 p-2 bg-muted/50 rounded-md text-sm">
+                  <strong>Where to find it:</strong> Go to any
+                  team&apos;s/players page, click on &quot;Map Statistics&quot;,
+                  select a map, and navigate to the &quot;Openings &
+                  Advantage&quot; tab. The Advantage Rounds section shows 5v4
+                  and 4v5 win rates with side-specific breakdowns.
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* December 6, 2025 Features */}
         <section className="bg-card p-6 rounded-lg shadow-md">
           <div className="flex items-center gap-2 mb-6 text-kanaliiga-orange border-b pb-2">
