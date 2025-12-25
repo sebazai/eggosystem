@@ -8,15 +8,21 @@ import { runQuery } from "../db/mysqlRunQuery";
 import { cleanWWWUrl } from "../utils/urlSanitize";
 import type { PoolConnection } from "mysql2/promise";
 import { buildInsertQueryParts } from "../db/utils";
+import { BadRequestError } from "../utils/errors";
 
-export const getOrganizations = async (searchParams?: string) => {
+export const getOrganizations = async (
+  searchParams?: string,
+  includePending: boolean = false
+) => {
+  const statusFilter = includePending ? "" : "AND status = 'active'";
+
   if (!searchParams) {
     return runQuery<Organizations[]>(
-      "SELECT * FROM Organizations ORDER BY sort_order DESC, name ASC"
+      `SELECT * FROM Organizations WHERE 1=1 ${statusFilter} ORDER BY sort_order DESC, name ASC`
     );
   }
   return runQuery<Organizations[]>(
-    "SELECT * FROM Organizations WHERE name LIKE ? ORDER BY sort_order DESC, name ASC",
+    `SELECT * FROM Organizations WHERE name LIKE ? ${statusFilter} ORDER BY sort_order DESC, name ASC`,
     [`%${searchParams}%`]
   );
 };
