@@ -4,7 +4,8 @@ import type {
   ManageableRolesResponse,
   RoleActionResponse,
   RoleResponse,
-  RoleUser
+  RoleUser,
+  CaptainCheckResponse
 } from "@eggosystem/types";
 import { runQuery } from "../../db/mysqlRunQuery";
 import {
@@ -26,6 +27,8 @@ interface RoleManagementRequest extends Request {
   body: {
     steam_id: string;
     role: string;
+    season_id?: number;
+    team_id?: number;
   };
   auth?: JwtPayload;
 }
@@ -270,6 +273,50 @@ export const getManageableRoles = async (
     res.json({
       success: true,
       data: uniqueRoles
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Check if a captain or co-captain exists for a specific team/season
+ */
+export const checkExistingCaptain = async (
+  req: Request,
+  res: Response<CaptainCheckResponse>,
+  next: NextFunction
+) => {
+  const { season_id, team_id, role } = req.query;
+
+  if (!season_id || !team_id || !role) {
+    return next(
+      new BadRequestError("season_id, team_id, and role are required")
+    );
+  }
+
+  if (role !== "captain" && role !== "co-captain") {
+    return next(
+      new BadRequestError("role must be either 'captain' or 'co-captain'")
+    );
+  }
+
+  try {
+    const field = role === "captain" ? "is_captain" : "is_co_captain";
+
+    const result = await runQuery<
+      Array<{ steam_id: string; nickname: string }>
+    >(
+      `SELECT strp.steam_id, sp.nickname 
+       FROM SeasonTeamRegistrationPlayers strp
+       JOIN SteamPlayers sp ON strp.steam_id = sp.steam_id
+       WHERE strp.season_id = ? AND strp.team_id = ? AND strp.${field} = 1`,
+      [season_id, team_id]
+    );
+
+    res.json({
+      success: true,
+      data: result.length > 0 ? result[0] : null
     });
   } catch (error) {
     next(error);

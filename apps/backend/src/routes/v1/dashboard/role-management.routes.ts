@@ -3,7 +3,8 @@ import {
   addRole,
   removeRole,
   listUsersWithRole,
-  getManageableRoles
+  getManageableRoles,
+  checkExistingCaptain
 } from "../../../controllers/dashboard/role-management.controllers";
 
 const router = Router();
@@ -14,6 +15,13 @@ const router = Router();
  * @access Private (helpdesk, admin)
  */
 router.get("/manageable-roles", getManageableRoles);
+
+/**
+ * @route GET /api/v1/dashboard/role-management/check-captain
+ * @desc Check if a captain or co-captain exists for a team/season
+ * @access Private (helpdesk, admin)
+ */
+router.get("/check-captain", checkExistingCaptain);
 
 /**
  * @route GET /api/v1/dashboard/role-management/:role
