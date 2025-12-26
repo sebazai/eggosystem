@@ -321,7 +321,7 @@ export default function RoleManagementPage() {
                   !selectedRole ||
                   !steamId ||
                   isActionLoading ||
-                  (selectedSeasonId && !selectedTeamId)
+                  Boolean(selectedSeasonId && !selectedTeamId)
                 }
                 className="w-full"
               >
