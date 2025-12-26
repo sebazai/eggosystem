@@ -13,6 +13,26 @@ import { redisClient } from "../utils/redisClient";
 import { getHubMatchesByExternalMatchRoomId } from "./match.models";
 import { BadRequestError } from "../utils/errors";
 
+/**
+ * Check if player exists in SeasonTeamPlayers
+ * Used for validating captain/co-captain assignments
+ */
+export const playerExistsInSeasonTeam = async (
+  steamId: string,
+  seasonId: number,
+  teamId: number,
+  connection?: PoolConnection
+): Promise<boolean> => {
+  const players = await runQuery<Array<{ steam_id: string }>>(
+    `SELECT steam_id FROM SeasonTeamPlayers 
+     WHERE season_id = ? AND team_id = ? AND steam_id = ?`,
+    [seasonId, teamId, steamId],
+    connection
+  );
+
+  return players && players.length > 0;
+};
+
 export const insertSeasonTeamPlayer = async (
   seasonId: number,
   teamId: number,

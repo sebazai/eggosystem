@@ -13,8 +13,11 @@ import { runQuery } from "../../db/mysqlRunQuery";
 import { getConnection } from "../../db/mysqlConnection";
 import {
   setRoleForAccount,
-  removeRoleForAccount
+  removeRoleForAccount,
+  userHasRole
 } from "../../models/account-roles.models";
+import { getUserInfoBySteamId } from "../../models/account.models";
+import { playerExistsInSeasonTeam } from "../../models/season-team-players.models";
 import {
   BadRequestError,
   NotFoundError,
@@ -25,12 +28,6 @@ import {
   isValidRole,
   getManageableRoles as getManageableRolesUtil
 } from "../../utils/role-permissions";
-
-interface UserInfo {
-  account_id: number;
-  nickname: string;
-  steam_id: string;
-}
 
 /**
  * Add a role to a user by Steam ID
@@ -79,19 +76,13 @@ export const addRole = async (
   }
 
   // Get account_id and nickname from steam_id (outside transaction)
-  const users = await runQuery<UserInfo[]>(
-    `SELECT la.account_id, sp.nickname 
-     FROM LinkedAccounts la 
-     JOIN SteamPlayers sp ON la.account_id = sp.account_id 
-     WHERE la.provider = 'steam' AND la.provider_id = ?`,
-    [steam_id]
-  );
+  const userInfo = await getUserInfoBySteamId(steam_id);
 
-  if (!users || users.length === 0) {
+  if (!userInfo) {
     return next(new NotFoundError("User not found for the provided Steam ID"));
   }
 
-  const { account_id, nickname } = users[0];
+  const { account_id, nickname } = userInfo;
 
   // Use transaction for captain/co-captain with season/team context
   if ((role === "captain" || role === "co-captain") && season_id && team_id) {
@@ -101,19 +92,14 @@ export const addRole = async (
       await connection.beginTransaction();
 
       // VALIDATION: Player MUST exist in SeasonTeamPlayers
-      const existingPlayerInFinalized = await runQuery<
-        Array<{ steam_id: string }>
-      >(
-        `SELECT steam_id FROM SeasonTeamPlayers 
-         WHERE season_id = ? AND team_id = ? AND steam_id = ?`,
-        [season_id, team_id, steam_id],
+      const playerExists = await playerExistsInSeasonTeam(
+        steam_id,
+        season_id,
+        team_id,
         connection
       );
 
-      if (
-        !existingPlayerInFinalized ||
-        existingPlayerInFinalized.length === 0
-      ) {
+      if (!playerExists) {
         await connection.rollback();
         return next(
           new BadRequestError(
@@ -142,17 +128,10 @@ export const addRole = async (
       );
 
       // Check if user already has the global role
-      const existingRoles = await runQuery<{ role_id: number }[]>(
-        `SELECT ar.role_id 
-         FROM AccountRoles ar 
-         JOIN Roles r ON ar.role_id = r.id 
-         WHERE ar.account_id = ? AND r.role_name = ?`,
-        [account_id, role],
-        connection
-      );
+      const hasRole = await userHasRole(account_id, role, connection);
 
       // Add global role if they don't have it
-      if (!existingRoles || existingRoles.length === 0) {
+      if (!hasRole) {
         await setRoleForAccount(role, account_id, connection);
       }
 
@@ -160,10 +139,9 @@ export const addRole = async (
 
       res.json({
         success: true,
-        message:
-          existingRoles && existingRoles.length > 0
-            ? `${role} role assigned to team successfully`
-            : `${role} role added and assigned to team successfully`,
+        message: hasRole
+          ? `${role} role assigned to team successfully`
+          : `${role} role added and assigned to team successfully`,
         data: { account_id, nickname, steam_id, role }
       });
     } catch (error) {
@@ -178,15 +156,9 @@ export const addRole = async (
   // Non-transaction path for roles without season/team context
   try {
     // Check if user already has the global role
-    const existingRoles = await runQuery<{ role_id: number }[]>(
-      `SELECT ar.role_id 
-       FROM AccountRoles ar 
-       JOIN Roles r ON ar.role_id = r.id 
-       WHERE ar.account_id = ? AND r.role_name = ?`,
-      [account_id, role]
-    );
+    const hasRole = await userHasRole(account_id, role);
 
-    if (existingRoles && existingRoles.length > 0) {
+    if (hasRole) {
       return next(new BadRequestError(`User already has ${role} role`));
     }
 
@@ -242,32 +214,20 @@ export const removeRole = async (
 
   try {
     // Get account_id and nickname from steam_id
-    const users = await runQuery<UserInfo[]>(
-      `SELECT la.account_id, sp.nickname 
-       FROM LinkedAccounts la 
-       JOIN SteamPlayers sp ON la.account_id = sp.account_id 
-       WHERE la.provider = 'steam' AND la.provider_id = ?`,
-      [steam_id]
-    );
+    const userInfo = await getUserInfoBySteamId(steam_id);
 
-    if (!users || users.length === 0) {
+    if (!userInfo) {
       return next(
         new NotFoundError("User not found for the provided Steam ID")
       );
     }
 
-    const { account_id, nickname } = users[0];
+    const { account_id, nickname } = userInfo;
 
     // Check if user has this role
-    const existingRoles = await runQuery<{ role_id: number }[]>(
-      `SELECT ar.role_id 
-       FROM AccountRoles ar 
-       JOIN Roles r ON ar.role_id = r.id 
-       WHERE ar.account_id = ? AND r.role_name = ?`,
-      [account_id, role]
-    );
+    const hasRole = await userHasRole(account_id, role);
 
-    if (!existingRoles || existingRoles.length === 0) {
+    if (!hasRole) {
       return next(new BadRequestError(`User does not have ${role} role`));
     }
 

@@ -300,3 +300,23 @@ export const getAccountMatchReservations = async (
   );
   return result;
 };
+
+/**
+ * Get account_id and nickname from Steam ID
+ * Queries LinkedAccounts and SteamPlayers tables
+ */
+export const getUserInfoBySteamId = async (
+  steamId: string,
+  connection?: PoolConnection
+): Promise<{ account_id: number; nickname: string } | null> => {
+  const users = await runQuery<Array<{ account_id: number; nickname: string }>>(
+    `SELECT la.account_id, sp.nickname 
+     FROM LinkedAccounts la 
+     JOIN SteamPlayers sp ON la.account_id = sp.account_id 
+     WHERE la.provider = 'steam' AND la.provider_id = ?`,
+    [steamId],
+    connection
+  );
+
+  return users && users.length > 0 ? users[0] : null;
+};

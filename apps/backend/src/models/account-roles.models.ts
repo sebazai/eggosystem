@@ -92,3 +92,24 @@ export const removeScopedPermissionForAccount = async (
     connection
   );
 };
+
+/**
+ * Check if user has a specific role
+ * Queries AccountRoles and Roles tables
+ */
+export const userHasRole = async (
+  accountId: number,
+  role: string,
+  connection?: PoolConnection
+): Promise<boolean> => {
+  const existingRoles = await runQuery<{ role_id: number }[]>(
+    `SELECT ar.role_id 
+     FROM AccountRoles ar 
+     JOIN Roles r ON ar.role_id = r.id 
+     WHERE ar.account_id = ? AND r.role_name = ?`,
+    [accountId, role],
+    connection
+  );
+
+  return existingRoles && existingRoles.length > 0;
+};
