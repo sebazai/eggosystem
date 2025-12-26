@@ -10,6 +10,7 @@ import type {
   RoleActionRequest
 } from "@eggosystem/types";
 import { runQuery } from "../../db/mysqlRunQuery";
+import { getConnection } from "../../db/mysqlConnection";
 import {
   setRoleForAccount,
   removeRoleForAccount
@@ -77,58 +78,105 @@ export const addRole = async (
     );
   }
 
-  try {
-    // Get account_id and nickname from steam_id
-    const users = await runQuery<UserInfo[]>(
-      `SELECT la.account_id, sp.nickname 
-       FROM LinkedAccounts la 
-       JOIN SteamPlayers sp ON la.account_id = sp.account_id 
-       WHERE la.provider = 'steam' AND la.provider_id = ?`,
-      [steam_id]
-    );
+  // Get account_id and nickname from steam_id (outside transaction)
+  const users = await runQuery<UserInfo[]>(
+    `SELECT la.account_id, sp.nickname 
+     FROM LinkedAccounts la 
+     JOIN SteamPlayers sp ON la.account_id = sp.account_id 
+     WHERE la.provider = 'steam' AND la.provider_id = ?`,
+    [steam_id]
+  );
 
-    if (!users || users.length === 0) {
-      return next(
-        new NotFoundError("User not found for the provided Steam ID")
-      );
-    }
+  if (!users || users.length === 0) {
+    return next(new NotFoundError("User not found for the provided Steam ID"));
+  }
 
-    const { account_id, nickname } = users[0];
+  const { account_id, nickname } = users[0];
 
-    // Handle captain/co-captain roles with season/team context
-    if ((role === "captain" || role === "co-captain") && season_id && team_id) {
-      // VALIDATION: Player MUST exist in SeasonTeamRegistrationPlayers
-      const existingPlayer = await runQuery<Array<{ steam_id: string }>>(
-        `SELECT steam_id FROM SeasonTeamRegistrationPlayers 
+  // Use transaction for captain/co-captain with season/team context
+  if ((role === "captain" || role === "co-captain") && season_id && team_id) {
+    const connection = await getConnection();
+
+    try {
+      await connection.beginTransaction();
+
+      // VALIDATION: Player MUST exist in SeasonTeamPlayers
+      const existingPlayerInFinalized = await runQuery<
+        Array<{ steam_id: string }>
+      >(
+        `SELECT steam_id FROM SeasonTeamPlayers 
          WHERE season_id = ? AND team_id = ? AND steam_id = ?`,
-        [season_id, team_id, steam_id]
+        [season_id, team_id, steam_id],
+        connection
       );
 
-      if (!existingPlayer || existingPlayer.length === 0) {
+      if (
+        !existingPlayerInFinalized ||
+        existingPlayerInFinalized.length === 0
+      ) {
+        await connection.rollback();
         return next(
           new BadRequestError(
-            `Player with Steam ID ${steam_id} is not registered on this team for this season. ` +
-              `Players must be added to the team roster before assigning captain/co-captain roles.`
+            `Player with Steam ID ${steam_id} is not on this team for this season. ` +
+              `Players must be added to the finalized team roster before assigning captain/co-captain roles.`
           )
         );
       }
 
-      // Remove captain flag from old captain (if exists)
       const field = role === "captain" ? "is_captain" : "is_co_captain";
+
+      // Remove captain flag from old captain (if exists)
       await runQuery(
-        `UPDATE SeasonTeamRegistrationPlayers SET ${field} = 0 
+        `UPDATE SeasonTeamPlayers SET ${field} = 0 
          WHERE season_id = ? AND team_id = ? AND ${field} = 1`,
-        [season_id, team_id]
+        [season_id, team_id],
+        connection
       );
 
       // Set new captain
       await runQuery(
-        `UPDATE SeasonTeamRegistrationPlayers SET ${field} = 1 
+        `UPDATE SeasonTeamPlayers SET ${field} = 1 
          WHERE season_id = ? AND team_id = ? AND steam_id = ?`,
-        [season_id, team_id, steam_id]
+        [season_id, team_id, steam_id],
+        connection
       );
-    }
 
+      // Check if user already has the global role
+      const existingRoles = await runQuery<{ role_id: number }[]>(
+        `SELECT ar.role_id 
+         FROM AccountRoles ar 
+         JOIN Roles r ON ar.role_id = r.id 
+         WHERE ar.account_id = ? AND r.role_name = ?`,
+        [account_id, role],
+        connection
+      );
+
+      // Add global role if they don't have it
+      if (!existingRoles || existingRoles.length === 0) {
+        await setRoleForAccount(role, account_id, connection);
+      }
+
+      await connection.commit();
+
+      res.json({
+        success: true,
+        message:
+          existingRoles && existingRoles.length > 0
+            ? `${role} role assigned to team successfully`
+            : `${role} role added and assigned to team successfully`,
+        data: { account_id, nickname, steam_id, role }
+      });
+    } catch (error) {
+      await connection.rollback();
+      throw error;
+    } finally {
+      connection.release();
+    }
+    return;
+  }
+
+  // Non-transaction path for roles without season/team context
+  try {
     // Check if user already has the global role
     const existingRoles = await runQuery<{ role_id: number }[]>(
       `SELECT ar.role_id 
@@ -139,15 +187,6 @@ export const addRole = async (
     );
 
     if (existingRoles && existingRoles.length > 0) {
-      // If we're just updating team/season context, this is fine
-      if (season_id && team_id) {
-        res.json({
-          success: true,
-          message: `${role} role assigned to team successfully`,
-          data: { account_id, nickname, steam_id, role }
-        });
-        return;
-      }
       return next(new BadRequestError(`User already has ${role} role`));
     }
 
@@ -156,10 +195,7 @@ export const addRole = async (
 
     res.json({
       success: true,
-      message:
-        season_id && team_id
-          ? `${role} role added and assigned to team successfully`
-          : `${role} role added successfully`,
+      message: `${role} role added successfully`,
       data: { account_id, nickname, steam_id, role }
     });
   } catch (error) {
