@@ -21,12 +21,14 @@ const mockGetConnection = getConnection as jest.MockedFunction<
 // Mock the account-roles models
 jest.mock("../../models/account-roles.models", () => ({
   setRoleForAccount: jest.fn(),
-  removeRoleForAccount: jest.fn()
+  removeRoleForAccount: jest.fn(),
+  userHasRole: jest.fn()
 }));
 
 import {
   setRoleForAccount,
-  removeRoleForAccount
+  removeRoleForAccount,
+  userHasRole
 } from "../../models/account-roles.models";
 const mockSetRoleForAccount = setRoleForAccount as jest.MockedFunction<
   typeof setRoleForAccount
@@ -34,6 +36,29 @@ const mockSetRoleForAccount = setRoleForAccount as jest.MockedFunction<
 const mockRemoveRoleForAccount = removeRoleForAccount as jest.MockedFunction<
   typeof removeRoleForAccount
 >;
+const mockUserHasRole = userHasRole as jest.MockedFunction<typeof userHasRole>;
+
+// Mock the account models
+jest.mock("../../models/account.models", () => ({
+  getUserInfoBySteamId: jest.fn()
+}));
+
+import { getUserInfoBySteamId } from "../../models/account.models";
+const mockGetUserInfoBySteamId = getUserInfoBySteamId as jest.MockedFunction<
+  typeof getUserInfoBySteamId
+>;
+
+// Mock the season-team-players models
+jest.mock("../../models/season-team-players.models", () => ({
+  playerExistsInSeasonTeam: jest.fn()
+}));
+
+import { playerExistsInSeasonTeam } from "../../models/season-team-players.models";
+import { type PoolConnection } from "mysql2/promise";
+const mockPlayerExistsInSeasonTeam =
+  playerExistsInSeasonTeam as jest.MockedFunction<
+    typeof playerExistsInSeasonTeam
+  >;
 
 // Create mock connection object
 const mockConnection = {
@@ -41,6 +66,94 @@ const mockConnection = {
   commit: jest.fn(),
   rollback: jest.fn(),
   release: jest.fn()
+};
+
+// Mock creator functions for common test scenarios
+const mockHelpers = {
+  /**
+   * Mock successful user info lookup
+   */
+  mockUserInfoExists: (accountId: number, nickname: string) => {
+    mockGetUserInfoBySteamId.mockResolvedValueOnce({
+      account_id: accountId,
+      nickname
+    });
+  },
+
+  /**
+   * Mock user not found
+   */
+  mockUserInfoNotFound: () => {
+    mockGetUserInfoBySteamId.mockResolvedValueOnce(null);
+  },
+
+  /**
+   * Mock user has a specific role
+   */
+  mockUserHasRoleTrue: () => {
+    mockUserHasRole.mockResolvedValueOnce(true);
+  },
+
+  /**
+   * Mock user doesn't have a specific role
+   */
+  mockUserHasRoleFalse: () => {
+    mockUserHasRole.mockResolvedValueOnce(false);
+  },
+
+  /**
+   * Mock player exists in SeasonTeamPlayers
+   */
+  mockPlayerInTeam: () => {
+    mockPlayerExistsInSeasonTeam.mockResolvedValueOnce(true);
+  },
+
+  /**
+   * Mock player doesn't exist in SeasonTeamPlayers
+   */
+  mockPlayerNotInTeam: () => {
+    mockPlayerExistsInSeasonTeam.mockResolvedValueOnce(false);
+  },
+
+  /**
+   * Mock successful captain/co-captain updates (remove old, set new)
+   */
+  mockCaptainUpdates: () => {
+    mockRunQuery
+      .mockResolvedValueOnce(undefined) // UPDATE remove old captain/co-captain
+      .mockResolvedValueOnce(undefined); // UPDATE set new captain/co-captain
+  },
+
+  /**
+   * Mock complete successful role assignment flow
+   */
+  mockSuccessfulRoleAssignment: (accountId: number, nickname: string) => {
+    mockHelpers.mockUserInfoExists(accountId, nickname);
+    mockHelpers.mockUserHasRoleFalse();
+  },
+
+  /**
+   * Mock complete successful captain assignment flow
+   */
+  mockSuccessfulCaptainAssignment: (accountId: number, nickname: string) => {
+    mockHelpers.mockUserInfoExists(accountId, nickname);
+    mockHelpers.mockPlayerInTeam();
+    mockHelpers.mockCaptainUpdates();
+    mockHelpers.mockUserHasRoleFalse();
+  },
+
+  /**
+   * Mock user already has role for team context
+   */
+  mockUserAlreadyHasRoleWithTeamContext: (
+    accountId: number,
+    nickname: string
+  ) => {
+    mockHelpers.mockUserInfoExists(accountId, nickname);
+    mockHelpers.mockPlayerInTeam();
+    mockHelpers.mockCaptainUpdates();
+    mockHelpers.mockUserHasRoleTrue();
+  }
 };
 
 describe("Role Management Controllers", () => {
@@ -73,7 +186,9 @@ describe("Role Management Controllers", () => {
     mockConnection.commit.mockClear();
     mockConnection.rollback.mockClear();
     mockConnection.release.mockClear();
-    mockGetConnection.mockResolvedValue(mockConnection as any);
+    mockGetConnection.mockResolvedValue(
+      mockConnection as unknown as PoolConnection
+    );
   });
 
   describe("addRole", () => {
@@ -84,9 +199,7 @@ describe("Role Management Controllers", () => {
       const role = "caster";
 
       mockReq.body = { steam_id: steamId, role };
-      mockRunQuery
-        .mockResolvedValueOnce([{ account_id: accountId, nickname }]) // getAccountIdFromSteamId
-        .mockResolvedValueOnce([]); // checkExistingRole
+      mockHelpers.mockSuccessfulRoleAssignment(accountId, nickname);
 
       await addRole(mockReq as Request, mockRes as Response, mockNext);
 
@@ -106,9 +219,7 @@ describe("Role Management Controllers", () => {
 
       mockReq.auth = createAuthPayload(["helpdesk"]);
       mockReq.body = { steam_id: steamId, role };
-      mockRunQuery
-        .mockResolvedValueOnce([{ account_id: accountId, nickname }]) // getAccountIdFromSteamId
-        .mockResolvedValueOnce([]); // checkExistingRole
+      mockHelpers.mockSuccessfulRoleAssignment(accountId, nickname);
 
       await addRole(mockReq as Request, mockRes as Response, mockNext);
 
@@ -158,7 +269,7 @@ describe("Role Management Controllers", () => {
       const role = "caster";
 
       mockReq.body = { steam_id: steamId, role };
-      mockRunQuery.mockResolvedValueOnce([]); // getAccountIdFromSteamId returns empty
+      mockHelpers.mockUserInfoNotFound();
 
       await addRole(mockReq as Request, mockRes as Response, mockNext);
 
@@ -177,9 +288,8 @@ describe("Role Management Controllers", () => {
       const role = "caster";
 
       mockReq.body = { steam_id: steamId, role };
-      mockRunQuery
-        .mockResolvedValueOnce([{ account_id: accountId, nickname }]) // getAccountIdFromSteamId
-        .mockResolvedValueOnce([{ role_id: 1 }]); // checkExistingRole
+      mockHelpers.mockUserInfoExists(accountId, nickname);
+      mockHelpers.mockUserHasRoleTrue();
 
       await addRole(mockReq as Request, mockRes as Response, mockNext);
 
@@ -207,12 +317,7 @@ describe("Role Management Controllers", () => {
           team_id: teamId
         };
 
-        mockRunQuery
-          .mockResolvedValueOnce([{ account_id: accountId, nickname }]) // Get account from steam_id
-          .mockResolvedValueOnce([{ steam_id: steamId }]) // Check player exists in SeasonTeamPlayers
-          .mockResolvedValueOnce(undefined) // UPDATE remove old captain
-          .mockResolvedValueOnce(undefined) // UPDATE set new captain
-          .mockResolvedValueOnce([]); // Check if user already has global role
+        mockHelpers.mockSuccessfulCaptainAssignment(accountId, nickname);
 
         await addRole(mockReq as Request, mockRes as Response, mockNext);
 
@@ -222,17 +327,17 @@ describe("Role Management Controllers", () => {
         expect(mockConnection.commit).toHaveBeenCalled();
         expect(mockConnection.release).toHaveBeenCalled();
 
-        // Verify player existence was checked in SeasonTeamPlayers (with connection)
-        expect(mockRunQuery).toHaveBeenNthCalledWith(
-          2,
-          expect.stringContaining("SeasonTeamPlayers"),
-          [seasonId, teamId, steamId],
+        // Verify player existence was checked
+        expect(mockPlayerExistsInSeasonTeam).toHaveBeenCalledWith(
+          steamId,
+          seasonId,
+          teamId,
           mockConnection
         );
 
         // Verify old captain flag was removed (with connection)
         expect(mockRunQuery).toHaveBeenNthCalledWith(
-          3,
+          1,
           expect.stringContaining(
             "UPDATE SeasonTeamPlayers SET is_captain = 0"
           ),
@@ -242,11 +347,18 @@ describe("Role Management Controllers", () => {
 
         // Verify new captain flag was set (with connection)
         expect(mockRunQuery).toHaveBeenNthCalledWith(
-          4,
+          2,
           expect.stringContaining(
             "UPDATE SeasonTeamPlayers SET is_captain = 1"
           ),
           [seasonId, teamId, steamId],
+          mockConnection
+        );
+
+        // Verify role check was called
+        expect(mockUserHasRole).toHaveBeenCalledWith(
+          accountId,
+          role,
           mockConnection
         );
 
@@ -279,18 +391,13 @@ describe("Role Management Controllers", () => {
           team_id: teamId
         };
 
-        mockRunQuery
-          .mockResolvedValueOnce([{ account_id: accountId, nickname }]) // Get account from steam_id
-          .mockResolvedValueOnce([{ steam_id: steamId }]) // Check player exists in SeasonTeamPlayers
-          .mockResolvedValueOnce(undefined) // UPDATE remove old co-captain
-          .mockResolvedValueOnce(undefined) // UPDATE set new co-captain
-          .mockResolvedValueOnce([]); // Check if user already has global role
+        mockHelpers.mockSuccessfulCaptainAssignment(accountId, nickname);
 
         await addRole(mockReq as Request, mockRes as Response, mockNext);
 
         // Verify old co-captain flag was removed (with connection)
         expect(mockRunQuery).toHaveBeenNthCalledWith(
-          3,
+          1,
           expect.stringContaining(
             "UPDATE SeasonTeamPlayers SET is_co_captain = 0"
           ),
@@ -300,7 +407,7 @@ describe("Role Management Controllers", () => {
 
         // Verify new co-captain flag was set (with connection)
         expect(mockRunQuery).toHaveBeenNthCalledWith(
-          4,
+          2,
           expect.stringContaining(
             "UPDATE SeasonTeamPlayers SET is_co_captain = 1"
           ),
@@ -330,9 +437,8 @@ describe("Role Management Controllers", () => {
           team_id: teamId
         };
 
-        mockRunQuery
-          .mockResolvedValueOnce([{ account_id: accountId, nickname }]) // Get account from steam_id
-          .mockResolvedValueOnce([]); // Player NOT found in SeasonTeamPlayers
+        mockHelpers.mockUserInfoExists(accountId, nickname);
+        mockHelpers.mockPlayerNotInTeam();
 
         await addRole(mockReq as Request, mockRes as Response, mockNext);
 
@@ -350,7 +456,7 @@ describe("Role Management Controllers", () => {
         expect(mockConnection.release).toHaveBeenCalled();
 
         // Should not attempt to update any tables
-        expect(mockRunQuery).toHaveBeenCalledTimes(2);
+        expect(mockRunQuery).not.toHaveBeenCalled();
         expect(mockSetRoleForAccount).not.toHaveBeenCalled();
       });
 
@@ -415,22 +521,26 @@ describe("Role Management Controllers", () => {
           team_id: teamId
         };
 
-        mockRunQuery
-          .mockResolvedValueOnce([{ account_id: accountId, nickname }]) // Get account from steam_id
-          .mockResolvedValueOnce([{ steam_id: steamId }]) // Check player exists in SeasonTeamPlayers
-          .mockResolvedValueOnce(undefined) // UPDATE remove old captain
-          .mockResolvedValueOnce(undefined) // UPDATE set new captain
-          .mockResolvedValueOnce([{ role_id: 1 }]); // User already has global role
+        mockHelpers.mockUserAlreadyHasRoleWithTeamContext(accountId, nickname);
 
         await addRole(mockReq as Request, mockRes as Response, mockNext);
 
         // Should still update SeasonTeamPlayers (with connection)
         expect(mockRunQuery).toHaveBeenNthCalledWith(
-          3,
+          1,
           expect.stringContaining(
             "UPDATE SeasonTeamPlayers SET is_captain = 0"
           ),
           [seasonId, teamId],
+          mockConnection
+        );
+
+        expect(mockRunQuery).toHaveBeenNthCalledWith(
+          2,
+          expect.stringContaining(
+            "UPDATE SeasonTeamPlayers SET is_captain = 1"
+          ),
+          [seasonId, teamId, steamId],
           mockConnection
         );
 
@@ -463,12 +573,7 @@ describe("Role Management Controllers", () => {
           team_id: teamId
         };
 
-        mockRunQuery
-          .mockResolvedValueOnce([{ account_id: accountId, nickname }])
-          .mockResolvedValueOnce([{ steam_id: steamId }])
-          .mockResolvedValueOnce(undefined)
-          .mockResolvedValueOnce(undefined)
-          .mockResolvedValueOnce([]);
+        mockHelpers.mockSuccessfulCaptainAssignment(accountId, nickname);
 
         await addRole(mockReq as Request, mockRes as Response, mockNext);
 
@@ -490,9 +595,8 @@ describe("Role Management Controllers", () => {
       const role = "caster";
 
       mockReq.body = { steam_id: steamId, role };
-      mockRunQuery
-        .mockResolvedValueOnce([{ account_id: accountId, nickname }]) // getAccountIdFromSteamId
-        .mockResolvedValueOnce([{ role_id: 1 }]); // checkExistingRole
+      mockHelpers.mockUserInfoExists(accountId, nickname);
+      mockHelpers.mockUserHasRoleTrue();
 
       await removeRole(mockReq as Request, mockRes as Response, mockNext);
 
@@ -512,9 +616,8 @@ describe("Role Management Controllers", () => {
 
       mockReq.auth = createAuthPayload(["helpdesk"]);
       mockReq.body = { steam_id: steamId, role };
-      mockRunQuery
-        .mockResolvedValueOnce([{ account_id: accountId, nickname }]) // getAccountIdFromSteamId
-        .mockResolvedValueOnce([{ role_id: 1 }]); // checkExistingRole
+      mockHelpers.mockUserInfoExists(accountId, nickname);
+      mockHelpers.mockUserHasRoleTrue();
 
       await removeRole(mockReq as Request, mockRes as Response, mockNext);
 
@@ -550,9 +653,8 @@ describe("Role Management Controllers", () => {
       const role = "caster";
 
       mockReq.body = { steam_id: steamId, role };
-      mockRunQuery
-        .mockResolvedValueOnce([{ account_id: accountId, nickname }]) // getAccountIdFromSteamId
-        .mockResolvedValueOnce([]); // checkExistingRole returns empty
+      mockHelpers.mockUserInfoExists(accountId, nickname);
+      mockHelpers.mockUserHasRoleFalse();
 
       await removeRole(mockReq as Request, mockRes as Response, mockNext);
 
