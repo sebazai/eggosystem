@@ -9,7 +9,8 @@ export const ROLE_HIERARCHY = {
   admin: 100,
   helpdesk: 50,
   caster: 10,
-  captain: 10
+  captain: 10,
+  "co-captain": 10
 } as const;
 
 export type RoleName = keyof typeof ROLE_HIERARCHY;

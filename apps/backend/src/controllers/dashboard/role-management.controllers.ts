@@ -1,11 +1,13 @@
 import { type Request, type Response, type NextFunction } from "express";
-import type { JwtPayload } from "jsonwebtoken";
 import type {
   ManageableRolesResponse,
   RoleActionResponse,
   RoleResponse,
   RoleUser,
-  CaptainCheckResponse
+  CaptainCheckResponse,
+  RequestWithQuery,
+  RequestWithBody,
+  RoleActionRequest
 } from "@eggosystem/types";
 import { runQuery } from "../../db/mysqlRunQuery";
 import {
@@ -23,16 +25,6 @@ import {
   getManageableRoles as getManageableRolesUtil
 } from "../../utils/role-permissions";
 
-interface RoleManagementRequest extends Request {
-  body: {
-    steam_id: string;
-    role: string;
-    season_id?: number;
-    team_id?: number;
-  };
-  auth?: JwtPayload;
-}
-
 interface UserInfo {
   account_id: number;
   nickname: string;
@@ -43,7 +35,7 @@ interface UserInfo {
  * Add a role to a user by Steam ID
  */
 export const addRole = async (
-  req: RoleManagementRequest,
+  req: RequestWithBody<RoleActionRequest>,
   res: Response<RoleActionResponse>,
   next: NextFunction
 ) => {
@@ -149,11 +141,12 @@ export const addRole = async (
     if (existingRoles && existingRoles.length > 0) {
       // If we're just updating team/season context, this is fine
       if (season_id && team_id) {
-        return res.json({
+        res.json({
           success: true,
           message: `${role} role assigned to team successfully`,
           data: { account_id, nickname, steam_id, role }
         });
+        return;
       }
       return next(new BadRequestError(`User already has ${role} role`));
     }
@@ -178,7 +171,7 @@ export const addRole = async (
  * Remove a role from a user by Steam ID
  */
 export const removeRole = async (
-  req: RoleManagementRequest,
+  req: RequestWithBody<RoleActionRequest>,
   res: Response<RoleActionResponse>,
   next: NextFunction
 ) => {
@@ -337,7 +330,7 @@ export const getManageableRoles = async (
  * Check if a captain or co-captain exists for a specific team/season
  */
 export const checkExistingCaptain = async (
-  req: Request,
+  req: RequestWithQuery<{ season_id: string; team_id: string; role: string }>,
   res: Response<CaptainCheckResponse>,
   next: NextFunction
 ) => {
@@ -346,6 +339,15 @@ export const checkExistingCaptain = async (
   if (!season_id || !team_id || !role) {
     return next(
       new BadRequestError("season_id, team_id, and role are required")
+    );
+  }
+
+  const seasonAsNum = parseInt(season_id, 10);
+  const teamAsNum = parseInt(team_id, 10);
+
+  if (isNaN(seasonAsNum) || isNaN(teamAsNum)) {
+    return next(
+      new BadRequestError("season_id and team_id must be valid numbers")
     );
   }
 
@@ -365,7 +367,7 @@ export const checkExistingCaptain = async (
        FROM SeasonTeamRegistrationPlayers strp
        JOIN SteamPlayers sp ON strp.steam_id = sp.steam_id
        WHERE strp.season_id = ? AND strp.team_id = ? AND strp.${field} = 1`,
-      [season_id, team_id]
+      [seasonAsNum, teamAsNum]
     );
 
     res.json({
