@@ -12,9 +12,7 @@ interface TeamForSeason {
 
 export function useTeamsForSeason(seasonId: string | null) {
   const { data, error, isLoading, isValidating } = useSWR<TeamForSeason[]>(
-    seasonId
-      ? `/api/v1/dashboard/seasons/${seasonId}/teams?context=registration`
-      : null,
+    seasonId ? `/api/v1/dashboard/seasons/${seasonId}/teams` : null,
     clientApiFetch,
     {
       revalidateOnFocus: false
