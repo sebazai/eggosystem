@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { clientApiFetch } from "@/lib/apiClient";
-import type { RoleActionResponse } from "@eggosystem/types";
+import type { RoleActionResponse, RoleActionRequest } from "@eggosystem/types";
 
 export function useRoleActions() {
   const [isLoading, setIsLoading] = useState(false);
@@ -10,12 +10,24 @@ export function useRoleActions() {
 
   const addRole = async (
     steamId: string,
-    role: string
+    role: string,
+    seasonId?: string,
+    teamId?: string
   ): Promise<RoleActionResponse> => {
     setIsLoading(true);
     setError(null);
 
     try {
+      const body: RoleActionRequest = {
+        steam_id: steamId,
+        role
+      };
+
+      if (seasonId && teamId) {
+        body.season_id = parseInt(seasonId, 10);
+        body.team_id = parseInt(teamId, 10);
+      }
+
       const data = await clientApiFetch<RoleActionResponse>(
         "/api/v1/dashboard/role-management",
         {
@@ -23,7 +35,7 @@ export function useRoleActions() {
           headers: {
             "Content-Type": "application/json"
           },
-          body: JSON.stringify({ steam_id: steamId, role })
+          body: JSON.stringify(body)
         }
       );
 

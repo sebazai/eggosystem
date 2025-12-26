@@ -21,14 +21,26 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, CheckCircle, XCircle, Plus, Trash2 } from "lucide-react";
+import {
+  Loader2,
+  CheckCircle,
+  XCircle,
+  Plus,
+  Trash2,
+  AlertTriangle
+} from "lucide-react";
 import { useUsersWithRole } from "@/hooks/data/dashboard/useRoleUsers";
 import { useRoleActions } from "@/hooks/data/dashboard/useRoleActions";
 import { useManageableRoles } from "@/hooks/data/dashboard/useManageableRoles";
+import { useAllSeasons } from "@/hooks/data/useAllSeasons";
+import { useTeamsForSeason } from "@/hooks/data/dashboard/useTeamsForSeason";
+import { useCheckCaptain } from "@/hooks/data/dashboard/useCheckCaptain";
 
 export default function RoleManagementPage() {
   const [selectedRole, setSelectedRole] = useState<string>("");
   const [steamId, setSteamId] = useState<string>("");
+  const [selectedSeasonId, setSelectedSeasonId] = useState<string>("");
+  const [selectedTeamId, setSelectedTeamId] = useState<string>("");
   const [success, setSuccess] = useState<string | null>(null);
 
   // Get manageable roles for the current user
@@ -51,16 +63,51 @@ export default function RoleManagementPage() {
     clearError
   } = useRoleActions();
 
+  // Seasons for captain/co-captain roles
+  const { seasons, isLoading: isLoadingSeasons } = useAllSeasons();
+
+  // Teams for selected season
+  const { teams, isLoading: isLoadingTeams } = useTeamsForSeason(
+    selectedSeasonId || null
+  );
+
+  // Check for existing captain when season and team are selected
+  const { existingCaptain, isLoading: isCheckingCaptain } = useCheckCaptain(
+    selectedSeasonId || null,
+    selectedTeamId || null,
+    selectedRole
+  );
+
+  // Helper to determine if role is captain or co-captain
+  const isCaptainRole =
+    selectedRole === "captain" || selectedRole === "co-captain";
+
   const handleAddRole = async () => {
     if (!steamId || !selectedRole) return;
+
+    // Validate season/team pairing
+    if (selectedSeasonId && !selectedTeamId) {
+      return;
+    }
 
     setSuccess(null);
     clearError();
 
     try {
-      await addRole(steamId, selectedRole);
-      setSuccess(`${selectedRole} role added successfully`);
+      await addRole(
+        steamId,
+        selectedRole,
+        selectedSeasonId || undefined,
+        selectedTeamId || undefined
+      );
+      setSuccess(
+        selectedSeasonId && selectedTeamId
+          ? `${selectedRole} role assigned to team successfully`
+          : `${selectedRole} role added successfully`
+      );
       setSteamId(""); // Clear the input
+      setSelectedSeasonId(""); // Clear season
+      setSelectedTeamId(""); // Clear team
       refetchUsers(); // Refresh the user list
     } catch (err) {
       // Error is handled by the hook
@@ -86,6 +133,21 @@ export default function RoleManagementPage() {
 
   const handleRoleChange = (value: string) => {
     setSelectedRole(value);
+    setSelectedSeasonId(""); // Clear season when role changes
+    setSelectedTeamId(""); // Clear team when role changes
+    setSuccess(null);
+    clearError();
+  };
+
+  const handleSeasonChange = (value: string) => {
+    setSelectedSeasonId(value);
+    setSelectedTeamId(""); // Clear team when season changes
+    setSuccess(null);
+    clearError();
+  };
+
+  const handleTeamChange = (value: string) => {
+    setSelectedTeamId(value);
     setSuccess(null);
     clearError();
   };
@@ -147,6 +209,101 @@ export default function RoleManagementPage() {
                 </Select>
               </div>
 
+              {/* Season Selection (only for captain/co-captain) */}
+              {isCaptainRole && (
+                <div className="space-y-2">
+                  <Label htmlFor="season">Season (Optional)</Label>
+                  <Select
+                    value={selectedSeasonId}
+                    onValueChange={handleSeasonChange}
+                    disabled={isLoadingSeasons}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a season (optional)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {isLoadingSeasons ? (
+                        <SelectItem value="loading" disabled>
+                          Loading seasons...
+                        </SelectItem>
+                      ) : seasons && seasons.length > 0 ? (
+                        seasons.map((season) => (
+                          <SelectItem
+                            key={season.id}
+                            value={season.id.toString()}
+                          >
+                            {season.full_name || `Season ${season.id}`}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem value="no-seasons" disabled>
+                          No seasons available
+                        </SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-sm text-muted-foreground">
+                    Select season to assign {selectedRole} to a specific team
+                  </p>
+                </div>
+              )}
+
+              {/* Team Selection (only when season is selected) */}
+              {isCaptainRole && selectedSeasonId && (
+                <div className="space-y-2">
+                  <Label htmlFor="team">Team</Label>
+                  <Select
+                    value={selectedTeamId}
+                    onValueChange={handleTeamChange}
+                    disabled={isLoadingTeams}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a team" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {isLoadingTeams ? (
+                        <SelectItem value="loading" disabled>
+                          Loading teams...
+                        </SelectItem>
+                      ) : teams && teams.length > 0 ? (
+                        teams.map((team) => (
+                          <SelectItem
+                            key={team.team_id}
+                            value={team.team_id.toString()}
+                          >
+                            {team.team_name} ({team.league_name})
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem value="no-teams" disabled>
+                          No teams available for this season
+                        </SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-sm text-muted-foreground">
+                    Required when season is selected
+                  </p>
+                </div>
+              )}
+
+              {/* Warning Alert for Existing Captain */}
+              {isCaptainRole &&
+                selectedSeasonId &&
+                selectedTeamId &&
+                existingCaptain &&
+                !isCheckingCaptain && (
+                  <Alert className="border-amber-500 bg-amber-50 dark:bg-amber-900/20">
+                    <AlertTriangle className="h-4 w-4 text-amber-500" />
+                    <AlertDescription className="text-amber-700 dark:text-amber-300">
+                      <strong>{existingCaptain.nickname}</strong> (Steam ID:{" "}
+                      {existingCaptain.steam_id}) is currently the{" "}
+                      {selectedRole} of this team. Adding this role will replace
+                      them.
+                    </AlertDescription>
+                  </Alert>
+                )}
+
               {/* Steam ID Input */}
               <SteamIdInput
                 id="steamId"
@@ -160,7 +317,12 @@ export default function RoleManagementPage() {
               {/* Add Role Button */}
               <Button
                 onClick={handleAddRole}
-                disabled={!selectedRole || !steamId || isActionLoading}
+                disabled={
+                  !selectedRole ||
+                  !steamId ||
+                  isActionLoading ||
+                  (selectedSeasonId && !selectedTeamId)
+                }
                 className="w-full"
               >
                 {isActionLoading ? (
