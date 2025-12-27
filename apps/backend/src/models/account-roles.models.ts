@@ -113,3 +113,60 @@ export const userHasRole = async (
 
   return existingRoles && existingRoles.length > 0;
 };
+
+/**
+ * Remove captain/co-captain status from a specific team
+ * Returns whether the global captain role was retained for other teams
+ */
+export const removeCaptainFromTeam = async (
+  steamId: string,
+  accountId: number,
+  role: "captain" | "co-captain",
+  seasonId: number,
+  teamId: number,
+  connection?: PoolConnection
+): Promise<{ roleRetained: boolean }> => {
+  const field = role === "captain" ? "is_captain" : "is_co_captain";
+
+  // Validate captain exists in SeasonTeamPlayers
+  const existingCaptain = await runQuery<
+    Array<{ steam_id: string; [key: string]: unknown }>
+  >(
+    `SELECT steam_id FROM SeasonTeamPlayers 
+     WHERE season_id = ? AND team_id = ? AND steam_id = ? AND ${field} = 1`,
+    [seasonId, teamId, steamId],
+    connection
+  );
+
+  if (existingCaptain.length === 0) {
+    throw new Error(
+      `Player with Steam ID ${steamId} is not a ${role} for this team/season`
+    );
+  }
+
+  // Remove captain flag from SeasonTeamPlayers
+  await runQuery(
+    `UPDATE SeasonTeamPlayers SET ${field} = 0 
+     WHERE season_id = ? AND team_id = ? AND steam_id = ?`,
+    [seasonId, teamId, steamId],
+    connection
+  );
+
+  // Check if user still has captain status for other teams/seasons
+  const otherCaptainAssignments = await runQuery<Array<{ count: number }>>(
+    `SELECT COUNT(*) as count FROM SeasonTeamPlayers
+     WHERE steam_id = ? AND (is_captain = 1 OR is_co_captain = 1)`,
+    [steamId],
+    connection
+  );
+
+  const hasOtherCaptainAssignments =
+    otherCaptainAssignments.length > 0 && otherCaptainAssignments[0].count > 0;
+
+  // Note: Both captain and co-captain use the 'captain' role in AccountRoles
+  if (!hasOtherCaptainAssignments) {
+    await removeRoleForAccount("captain", accountId, connection);
+  }
+
+  return { roleRetained: hasOtherCaptainAssignments };
+};

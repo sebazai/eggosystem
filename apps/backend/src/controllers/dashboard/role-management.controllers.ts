@@ -14,7 +14,8 @@ import { getConnection } from "../../db/mysqlConnection";
 import {
   setRoleForAccount,
   removeRoleForAccount,
-  userHasRole
+  userHasRole,
+  removeCaptainFromTeam
 } from "../../models/account-roles.models";
 import { getUserInfoBySteamId } from "../../models/account.models";
 import { playerExistsInSeasonTeam } from "../../models/season-team-players.models";
@@ -127,12 +128,13 @@ export const addRole = async (
         connection
       );
 
-      // Check if user already has the global role
-      const hasRole = await userHasRole(account_id, role, connection);
+      // Check if user already has the global captain role
+      // Note: Both captain and co-captain use the 'captain' role in AccountRoles
+      const hasRole = await userHasRole(account_id, "captain", connection);
 
-      // Add global role if they don't have it
+      // Add global captain role if they don't have it
       if (!hasRole) {
-        await setRoleForAccount(role, account_id, connection);
+        await setRoleForAccount("captain", account_id, connection);
       }
 
       await connection.commit();
@@ -187,7 +189,7 @@ export const removeRole = async (
     return next(new BadRequestError("Request body is required"));
   }
 
-  const { steam_id, role } = req.body;
+  const { steam_id, role, season_id, team_id } = req.body;
   const userRoles = req.auth?.roles || [];
 
   if (!steam_id) {
@@ -202,6 +204,17 @@ export const removeRole = async (
     return next(new BadRequestError(`Invalid role: ${role}`));
   }
 
+  // Validate season_id and team_id pairing for captain/co-captain roles
+  if (role === "captain" || role === "co-captain") {
+    if ((season_id && !team_id) || (!season_id && team_id)) {
+      return next(
+        new BadRequestError(
+          "Both season_id and team_id must be provided together for captain/co-captain removal, or neither"
+        )
+      );
+    }
+  }
+
   // Check if user has permission to manage this role
   const hasPermission = userRoles.some((userRole) =>
     canManageRole(userRole, role)
@@ -212,18 +225,58 @@ export const removeRole = async (
     );
   }
 
-  try {
-    // Get account_id and nickname from steam_id
-    const userInfo = await getUserInfoBySteamId(steam_id);
+  // Get account_id and nickname from steam_id (outside transaction)
+  const userInfo = await getUserInfoBySteamId(steam_id);
 
-    if (!userInfo) {
-      return next(
-        new NotFoundError("User not found for the provided Steam ID")
+  if (!userInfo) {
+    return next(new NotFoundError("User not found for the provided Steam ID"));
+  }
+
+  const { account_id, nickname } = userInfo;
+
+  // Use transaction for captain/co-captain with season/team context
+  if ((role === "captain" || role === "co-captain") && season_id && team_id) {
+    const connection = await getConnection();
+
+    try {
+      await connection.beginTransaction();
+
+      // Use helper function to remove captain status
+      const { roleRetained } = await removeCaptainFromTeam(
+        steam_id,
+        account_id,
+        role,
+        season_id,
+        team_id,
+        connection
       );
+
+      await connection.commit();
+
+      res.json({
+        success: true,
+        message: roleRetained
+          ? `${role} role removed from team successfully (role retained for other teams)`
+          : `${role} role removed successfully`,
+        data: { account_id, nickname, steam_id, role }
+      });
+    } catch (error) {
+      await connection.rollback();
+
+      // If it's a validation error from the helper, return a proper error response
+      if (error instanceof Error && error.message.includes("is not a")) {
+        return next(new BadRequestError(error.message));
+      }
+
+      throw error;
+    } finally {
+      connection.release();
     }
+    return;
+  }
 
-    const { account_id, nickname } = userInfo;
-
+  // Non-transaction path for roles without season/team context
+  try {
     // Check if user has this role
     const hasRole = await userHasRole(account_id, role);
 

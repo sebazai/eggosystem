@@ -415,8 +415,9 @@ describe("Role Management Controllers", () => {
           mockConnection
         );
 
+        // Both captain and co-captain use the 'captain' role in AccountRoles
         expect(mockSetRoleForAccount).toHaveBeenCalledWith(
-          role,
+          "captain",
           accountId,
           mockConnection
         );
