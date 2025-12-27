@@ -81,6 +81,18 @@ Critical business rules are enforced via database triggers for:
 - **Reliability**: Works regardless of how data is modified
 - **Low Risk**: Captain permissions don't have high security implications
 
+## Data Validation Constraints
+
+The database enforces data quality through CHECK constraints:
+
+- **Email Format**: Work emails must be valid RFC-compliant format
+- **Date Ordering**: Season and match dates must be logically ordered
+- **Budget Limits**: Fantasy team budgets cannot be negative
+- **Stats Validity**: Player statistics must be within reasonable ranges (non-negative kills/deaths/assists, ADR 0-500)
+- **Points Consistency**: Aggregated fantasy points must match their breakdown components
+
+These constraints provide defense-in-depth validation at the database level, catching data quality issues even if application validation is bypassed. See [`docs/database-operations.md`](docs/database-operations.md) for troubleshooting constraint violations.
+
 ## Key Database Features
 
 ### Functions

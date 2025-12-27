@@ -211,7 +211,52 @@ JOIN LinkedAccounts la ON la.account_id = ar.account_id
 WHERE la.provider = 'steam' AND la.provider_id = CAST(? AS CHAR);
 ```
 
-#### 2. Foreign Key Violations
+#### 2. CHECK Constraint Violations
+
+**Symptom**: INSERT/UPDATE fails with constraint error message.
+
+**Common constraint violations**:
+
+```sql
+-- Email format violation
+ERROR: Check constraint 'check_work_email_format' is violated
+
+-- Season date violation
+ERROR: Check constraint 'check_season_date_order' is violated
+ERROR: Check constraint 'check_signup_dates' is violated
+
+-- Fantasy budget violation
+ERROR: Check constraint 'check_budget_non_negative' is violated
+
+-- Player stats violation
+ERROR: Check constraint 'check_kills_non_negative' is violated
+ERROR: Check constraint 'check_adr_reasonable' is violated
+
+-- Points consistency violation
+ERROR: Check constraint 'check_points_breakdown' is violated
+```
+
+**Debug**:
+
+```sql
+-- Check current values
+SELECT work_email FROM Accounts WHERE id = ?;
+SELECT start_date, end_date FROM Seasons WHERE id = ?;
+SELECT match_date FROM Matches WHERE id = ?;
+SELECT budget_remaining FROM FantasyTeams WHERE id = ?;
+SELECT points_earned, individual_points, team_points, role_points
+FROM FantasyTeamPlayers WHERE id = ?;
+```
+
+**Common causes**:
+
+- Invalid email format (missing @ or domain)
+- Dates in wrong order (end before start)
+- Match date typo (year 2250 instead of 2025)
+- Fantasy calculation bug resulting in negative budget
+- Points aggregation mismatch
+
+#### 3. Foreign Key Violations
 
 **Symptom**: INSERT fails with foreign key constraint error.
 
