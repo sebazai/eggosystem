@@ -289,6 +289,9 @@ erDiagram
   bigint_20_ killer_steam_id FK
   bigint_20_ victim_steam_id FK
 }
+"PublicEmailDomains" {
+  int_10__unsigned id PK
+}
 "Reservations" {
   int_10__unsigned id PK
   int_10__unsigned match_id FK
@@ -343,6 +346,7 @@ erDiagram
   int_10__unsigned team_id FK
   bigint_20_ steam_id FK
   int_10__unsigned match_id FK
+  int_10__unsigned id PK
   bigint_20_ replaces_steam_id FK
 }
 "SeasonTeamRegistrationPlayers" {
