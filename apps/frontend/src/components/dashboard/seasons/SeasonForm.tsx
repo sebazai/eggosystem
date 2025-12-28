@@ -94,7 +94,9 @@ export function SeasonForm({
       early_bird_price_discount_end_date: formatDateTimeForInput(
         season.early_bird_price_discount_end_date
       ),
-      active_map_pool: season.active_map_pool || []
+      active_map_pool: season.active_map_pool || [],
+      rulebook_url: season.rulebook_url || null,
+      discord_link: season.discord_link || null
     };
   };
 
@@ -117,7 +119,9 @@ export function SeasonForm({
       has_vat: true,
       early_bird_price_discount: null,
       early_bird_price_discount_end_date: null,
-      active_map_pool: []
+      active_map_pool: [],
+      rulebook_url: null,
+      discord_link: null
     },
     mode: "onTouched"
   });
@@ -172,7 +176,9 @@ export function SeasonForm({
         early_bird_price_discount_end_date: convertLocalDateTimeToISO(
           data.early_bird_price_discount_end_date ?? null
         ),
-        active_map_pool: data.active_map_pool
+        active_map_pool: data.active_map_pool,
+        rulebook_url: data.rulebook_url || null,
+        discord_link: data.discord_link || null
       };
 
       await onSubmit(rawData);
@@ -478,6 +484,54 @@ export function SeasonForm({
                     </FormControl>
                     <p className="text-sm text-muted-foreground">
                       Link to payment page for participation fee
+                    </p>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Rulebook URL */}
+              <FormField
+                control={form.control}
+                name="rulebook_url"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Rulebook URL (Optional)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="url"
+                        placeholder="https://wiki.kanaliiga.fi/CS2/rulebook"
+                        {...field}
+                        value={field.value || ""}
+                        disabled={isFormDisabled}
+                      />
+                    </FormControl>
+                    <p className="text-sm text-muted-foreground">
+                      Link to the season rulebook
+                    </p>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Discord Link */}
+              <FormField
+                control={form.control}
+                name="discord_link"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Discord Link (Optional)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="url"
+                        placeholder="https://discord.gg/UFetjhv"
+                        {...field}
+                        value={field.value || ""}
+                        disabled={isFormDisabled}
+                      />
+                    </FormControl>
+                    <p className="text-sm text-muted-foreground">
+                      Discord invite link for the season
                     </p>
                     <FormMessage />
                   </FormItem>
