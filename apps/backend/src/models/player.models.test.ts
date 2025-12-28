@@ -42,7 +42,7 @@ describe("getMultiplePlayerStatsByFilters", () => {
       {
         steam_id: "76561198049745649",
         nickname: "sububobi",
-        avatar: "e1239a9669cdce26",
+        avatar: null,
         maps_played: 13,
         kills: 243,
         assists: 63,
@@ -99,7 +99,7 @@ describe("getMultiplePlayerStatsByFilters", () => {
       {
         steam_id: "76561197967885016",
         nickname: "enzoj",
-        avatar: null,
+        avatar: "e1239a9669cdce26",
         maps_played: 17,
         kills: 232,
         assists: 100,

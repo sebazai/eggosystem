@@ -43,9 +43,11 @@ describe("CHECK Constraints", () => {
     it("should accept valid email format", async () => {
       const connection = await getConnection();
       try {
+        // Use unique email to avoid conflicts with other tests
+        const uniqueEmail = `test-${Date.now()}-${Math.random().toString(36).substring(7)}@example.com`;
         const result = await runQuery<{ insertId: number }>(
           `INSERT INTO Accounts (work_email) VALUES (?)`,
-          ["test@example.com"],
+          [uniqueEmail],
           connection
         );
         expect(result.insertId).toBeGreaterThan(0);
