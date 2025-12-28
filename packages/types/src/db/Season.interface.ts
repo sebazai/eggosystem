@@ -48,6 +48,14 @@ export interface Season {
    * Must contain at least one map ID
    */
   active_map_pool: number[];
+  /**
+   * Rulebook URL for the season (nullable)
+   */
+  rulebook_url: string | null;
+  /**
+   * Discord link for the season (nullable)
+   */
+  discord_link: string | null;
 }
 
 export interface InsertSeason {
@@ -68,4 +76,6 @@ export interface InsertSeason {
   has_vat?: boolean;
   early_bird_price_discount?: Nullable<number>;
   early_bird_price_discount_end_date?: Nullable<Date>;
+  rulebook_url?: Nullable<string>;
+  discord_link?: Nullable<string>;
 }
