@@ -1,7 +1,29 @@
 import { runQuery } from "./mysqlRunQuery";
 import { getConnection } from "./mysqlConnection";
+import { insertTestSeason, removeTestSeason } from "../__utils__/seed-database";
+import { createMockInsertSeason } from "@eggosystem/types";
+import { SeasonPlatform } from "@eggosystem/types";
 
 describe("CHECK Constraints", () => {
+  // Create a test season for Fantasy tests
+  const testSeasonId = 9999;
+  beforeAll(async () => {
+    const testSeason = createMockInsertSeason({
+      id: testSeasonId,
+      name: "Test Season for Constraints",
+      full_name: "Test Season for Constraints",
+      platform: SeasonPlatform.FACEIT,
+      start_date: new Date("2025-01-01"),
+      end_date: new Date("2025-12-31"),
+      signup_start_date: new Date("2024-12-01"),
+      signup_end_date: new Date("2024-12-31")
+    });
+    await insertTestSeason(testSeason);
+  });
+
+  afterAll(async () => {
+    await removeTestSeason(testSeasonId);
+  });
   describe("Email Format", () => {
     it("should reject invalid email format", async () => {
       const connection = await getConnection();
@@ -124,8 +146,8 @@ describe("CHECK Constraints", () => {
         // First create a fantasy team
         const teamResult = await runQuery<{ insertId: number }>(
           `INSERT INTO FantasyTeams (steam_id, season_id, league_id, budget_remaining) 
-           VALUES (?, 1, 1, 1000)`,
-          ["76561198000000000"],
+           VALUES (?, ?, 1, 1000)`,
+          ["76561198000000000", testSeasonId],
           connection
         );
 
@@ -169,8 +191,8 @@ describe("CHECK Constraints", () => {
         // First create a fantasy team
         const teamResult = await runQuery<{ insertId: number }>(
           `INSERT INTO FantasyTeams (steam_id, season_id, league_id, budget_remaining) 
-           VALUES (?, 1, 1, 1000)`,
-          ["76561198000000002"],
+           VALUES (?, ?, 1, 1000)`,
+          ["76561198000000002", testSeasonId],
           connection
         );
 
@@ -214,8 +236,8 @@ describe("CHECK Constraints", () => {
         await expect(
           runQuery(
             `INSERT INTO FantasyTeams (steam_id, season_id, league_id, budget_remaining) 
-             VALUES (?, 1, 1, -100)`,
-            ["76561198000000004"],
+             VALUES (?, ?, 1, -100)`,
+            ["76561198000000004", testSeasonId],
             connection
           )
         ).rejects.toThrow();
@@ -229,8 +251,8 @@ describe("CHECK Constraints", () => {
       try {
         const result = await runQuery<{ insertId: number }>(
           `INSERT INTO FantasyTeams (steam_id, season_id, league_id, budget_remaining) 
-           VALUES (?, 1, 1, 1000)`,
-          ["76561198000000005"],
+           VALUES (?, ?, 1, 1000)`,
+          ["76561198000000005", testSeasonId],
           connection
         );
         expect(result.insertId).toBeGreaterThan(0);
