@@ -9,7 +9,8 @@ jest.mock("../../../controllers/dashboard/role-management.controllers", () => ({
   addRole: jest.fn(),
   removeRole: jest.fn(),
   listUsersWithRole: jest.fn(),
-  getManageableRoles: jest.fn()
+  getManageableRoles: jest.fn(),
+  checkExistingCaptain: jest.fn()
 }));
 
 // Mock the auth middleware

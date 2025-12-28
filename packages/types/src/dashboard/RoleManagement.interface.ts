@@ -24,3 +24,18 @@ export interface RoleResponse {
   success: boolean;
   data: RoleUser[];
 }
+
+export interface CaptainCheckResponse {
+  success: boolean;
+  data: {
+    steam_id: string;
+    nickname: string;
+  } | null;
+}
+
+export interface RoleActionRequest {
+  steam_id: string;
+  role: string;
+  season_id?: number;
+  team_id?: number;
+}

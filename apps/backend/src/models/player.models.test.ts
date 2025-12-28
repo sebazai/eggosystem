@@ -99,7 +99,7 @@ describe("getMultiplePlayerStatsByFilters", () => {
       {
         steam_id: "76561197967885016",
         nickname: "enzoj",
-        avatar: null,
+        avatar: "e1239a9669cdce26",
         maps_played: 17,
         kills: 232,
         assists: 100,
@@ -136,7 +136,7 @@ describe("getMultiplePlayerStatsByFilters", () => {
       },
       {
         steam_id: "76561198043033465",
-        nickname: "toro",
+        nickname: "toroDoggo",
         avatar: null,
         maps_played: 4,
         kills: 15,
@@ -320,7 +320,7 @@ describe("getMultiplePlayerStatsByFilters", () => {
       },
       {
         steam_id: "76561198996818419",
-        nickname: "Manetski",
+        nickname: "Brofeetta",
         avatar: null,
         maps_played: 12,
         kills: 195,
@@ -499,7 +499,7 @@ describe("getMultiplePlayerStatsByFilters", () => {
         {
           steam_id: "76561197967885016",
           nickname: "enzoj",
-          avatar: null,
+          avatar: "e1239a9669cdce26",
           maps_played: 4,
           kills: 98,
           assists: 30,
@@ -530,7 +530,7 @@ describe("getMultiplePlayerStatsByFilters", () => {
         {
           steam_id: "76561197967885016",
           nickname: "enzoj",
-          avatar: null,
+          avatar: "e1239a9669cdce26",
           maps_played: 4,
           kills: 98,
           assists: 30,
@@ -581,7 +581,7 @@ describe("getPlayerTeamDetailsWithFilters", () => {
         nickname: "enzoj",
         team_name: "7dos",
         team_id: 1650,
-        team_logo: "cf9838e7641c3333"
+        team_logo: "faa0c585f21c2d76"
       },
       {
         steam_id: "76561197967885016",
@@ -606,7 +606,7 @@ describe("getPlayerTeamDetailsWithFilters", () => {
         nickname: "enzoj",
         team_name: "7dos",
         team_id: 1650,
-        team_logo: "cf9838e7641c3333"
+        team_logo: "faa0c585f21c2d76"
       }
     ]);
   });
@@ -624,7 +624,7 @@ describe("getPlayerTeamDetailsWithFilters", () => {
         nickname: "enzoj",
         team_name: "7dos",
         team_id: 1650,
-        team_logo: "cf9838e7641c3333"
+        team_logo: "faa0c585f21c2d76"
       }
     ]);
   });
@@ -1014,7 +1014,7 @@ describe("getPlayerMatchHistoryByFilters", () => {
         match_date: "2024-10-14",
         team_id: 1650,
         team_name: "7dos",
-        team_logo: "cf9838e7641c3333",
+        team_logo: "faa0c585f21c2d76",
         opponent_id: 2071,
         opponent_name: "Vincit Faija & Sons",
         opponent_logo: "ef66f0989b0d0d43",
@@ -1048,7 +1048,7 @@ describe("getPlayerMatchHistoryByFilters", () => {
         match_date: "2024-10-23",
         team_id: 1650,
         team_name: "7dos",
-        team_logo: "cf9838e7641c3333",
+        team_logo: "faa0c585f21c2d76",
         opponent_id: 2030,
         opponent_name: "Caverion Stadist",
         opponent_logo: "afcaf09297258f24",
@@ -1082,7 +1082,7 @@ describe("getPlayerMatchHistoryByFilters", () => {
         match_date: "2024-10-30",
         team_id: 1650,
         team_name: "7dos",
-        team_logo: "cf9838e7641c3333",
+        team_logo: "faa0c585f21c2d76",
         opponent_id: 1019,
         opponent_name: "ALM Partners Riskiryhmä",
         opponent_logo: "fae79470839a489b",

@@ -45,6 +45,7 @@ export interface UserProfilePayload {
 }
 
 export type RequestWithParams<P> = Request<P>;
+export type RequestWithQuery<Q> = Request<unknown, unknown, unknown, Q>;
 export type RequestWithBody<B> = Request<unknown, unknown, B>;
 export type RequestWithQueryAndBody<Q, B> = Request<unknown, unknown, B, Q>;
 export type RequestWithParamsAndBody<P, B> = Request<P, unknown, B>;

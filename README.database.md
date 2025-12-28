@@ -43,6 +43,35 @@ Steam ID is the primary player identifier throughout the system because:
 - Eliminates complexity of maintaining separate internal IDs
 - Database function `get_account_id_from_steam_id` bridges to internal account system
 
+### Intentional Denormalization for Data Integrity
+
+The database uses **controlled denormalization** in specific cases where database-level constraints provide significant integrity benefits:
+
+#### MatchTeams Table
+
+**Structure:**
+
+```sql
+CREATE TABLE MatchTeams (
+  match_id INT UNSIGNED,
+  team_id INT UNSIGNED,
+  season_id INT UNSIGNED,  -- Redundant with Matches.season_id
+  league_id INT UNSIGNED,  -- Redundant with Matches.league_id
+  PRIMARY KEY (match_id, team_id),
+  FOREIGN KEY (season_id, team_id, league_id)
+    REFERENCES SeasonLeagueTeams(season_id, team_id, league_id)
+);
+```
+
+**Why Denormalize:**
+
+The `season_id` and `league_id` columns duplicate data from the `Matches` table, but they enable a **critical composite foreign key constraint** to `SeasonLeagueTeams` that ensures:
+
+- Teams can only participate in matches for seasons/leagues they're registered in
+- Database-level validation prevents invalid match assignments
+- Protection works even if application code has bugs
+- Fail-fast behavior at the database layer
+
 ### Business Logic in Database
 
 Critical business rules are enforced via database triggers for:
@@ -51,6 +80,18 @@ Critical business rules are enforced via database triggers for:
 - **Simplicity**: Reduces application code complexity
 - **Reliability**: Works regardless of how data is modified
 - **Low Risk**: Captain permissions don't have high security implications
+
+## Data Validation Constraints
+
+The database enforces data quality through CHECK constraints:
+
+- **Email Format**: Work emails must be valid RFC-compliant format
+- **Date Ordering**: Season and match dates must be logically ordered
+- **Budget Limits**: Fantasy team budgets cannot be negative
+- **Stats Validity**: Player statistics must be within reasonable ranges (non-negative kills/deaths/assists, ADR 0-500)
+- **Points Consistency**: Aggregated fantasy points must match their breakdown components
+
+These constraints provide defense-in-depth validation at the database level, catching data quality issues even if application validation is bypassed. See [`docs/database-operations.md`](docs/database-operations.md) for troubleshooting constraint violations.
 
 ## Key Database Features
 
@@ -240,6 +281,28 @@ All foreign key constraints are defined in the schema with appropriate CASCADE b
 
 **Safety**: Daily backups with 7-day retention provide protection against accidental cascade deletions.
 
+#### Composite Foreign Keys for Data Integrity
+
+Several tables use composite foreign keys that span multiple columns to enforce complex business rules:
+
+**MatchTeams → SeasonLeagueTeams:**
+
+```sql
+FOREIGN KEY (season_id, team_id, league_id)
+REFERENCES SeasonLeagueTeams(season_id, team_id, league_id)
+```
+
+**Purpose**: Ensures teams can only participate in matches for seasons/leagues they are registered in.
+
+**Why Important**: Prevents invalid scenarios like:
+
+- Team A registered for Season 1, League 1
+- Match created in Season 2, League 2 with Team A
+- Without this FK, database would accept invalid assignment
+- With this FK, database rejects at INSERT time
+
+**Note**: While `season_id` and `league_id` in `MatchTeams` are redundant with the `Matches` table, this denormalization is intentional to enable this critical validation constraint. See "Intentional Denormalization" section above.
+
 ### Unique Constraints
 
 - Steam IDs are unique across the system (primary identity)
@@ -262,154 +325,28 @@ All foreign key constraints are defined in the schema with appropriate CASCADE b
 
 Database constraint violations are propagated to the frontend via RFC 7807 Problem Details format through Express error handling middleware, ensuring user-friendly error messages.
 
-## Database Operations
+## Schema Evolution & Future Considerations
 
-### Common Queries
+### Planned Improvements
 
-#### Get Player Account Information
+- **Flexible Match System**: Support nullable season_id/league_id for standalone/exhibition matches
+- **TeamRosters**: Persistent roster management across seasons (currently unused table)
+- **Multi-Platform Support**: Ongoing work to support multiple external platforms beyond FaceIT
+- **Performance Optimization**: Continuous monitoring with Grafana Alloy and OpenTelemetry
 
-```sql
-SELECT a.*, sp.steam_id, sp.nickname, sp.faceit_id
-FROM Accounts a
-JOIN LinkedAccounts la ON a.id = la.account_id
-JOIN SteamPlayers sp ON la.provider_id = CAST(sp.steam_id AS CHAR)
-WHERE la.provider = 'steam' AND sp.steam_id = ?;
-```
-
-**Usage**: Core query for player authentication and profile data.
-
-#### Get Team Captain Information
-
-```sql
-SELECT sp.steam_id, sp.nickname, strp.is_captain, strp.is_co_captain
-FROM SeasonTeamRegistrationPlayers strp
-JOIN SteamPlayers sp ON strp.steam_id = sp.steam_id
-WHERE strp.season_id = ? AND strp.team_id = ?
-AND (strp.is_captain = 1 OR strp.is_co_captain = 1);
-```
-
-**Usage**: Used for permission validation and team management.
-
-#### Get Player Permissions
-
-```sql
-SELECT p.permission_name, aps.season_id, aps.team_id
-FROM AccountPermissionScopes aps
-JOIN Permissions p ON aps.permission_id = p.id
-WHERE aps.account_id = ?;
-```
-
-**Usage**: Authorization checks for API endpoints and UI features.
-
-#### Get Active Team Roster
-
-```sql
-SELECT sp.steam_id, sp.nickname, stp.role, stp.is_captain, stp.is_co_captain
-FROM SeasonTeamPlayers stp
-JOIN SteamPlayers sp ON stp.steam_id = sp.steam_id
-WHERE stp.season_id = ? AND stp.team_id = ?;
-```
-
-**Usage**: Display current team roster for matches (not registration roster).
-
-### Migration Considerations
-
-When writing migrations or queries:
-
-1. **Always check triggers**: Many business rules are enforced by triggers
-2. **Respect foreign key constraints**: Use proper CASCADE behaviors
-3. **Consider unique constraints**: Especially for Steam IDs and external platform IDs
-4. **Account linking**: Use the `get_account_id_from_steam_id` function for Steam ID lookups
-5. **Permission management**: Captain permissions are automatically managed by triggers
-6. **Dual-roster system**: Understand the difference between registration and active rosters
-7. **Steam ID handling**: Steam ID is primary identity throughout the system
-
-### Performance Considerations
-
-#### Indexes
-
-The schema includes comprehensive indexing:
-
-- Primary keys on all tables
-- Foreign key indexes for join performance
-- Unique indexes for business constraints
-- Composite indexes for common query patterns
-- Specialized indexes for trigger performance (e.g., `idx_account_permission_scopes_captain_validation`)
-
-#### Query Optimization
-
-- Use proper JOIN conditions with indexed columns
-- Leverage the `get_account_id_from_steam_id` function for Steam ID lookups
-- Consider the impact of triggers on INSERT/UPDATE operations
-- Use appropriate WHERE clauses to leverage indexes
-- Monitor performance with Grafana Alloy and OpenTelemetry
-
-#### Data Volume Considerations
-
-- **MapRoundStats**: ~24 rounds per game, indexed by match_game_id for fast queries
-- **PlayerStats**: One row per player per game, comprehensive CS2 statistics
-- **PlayerTrades**: Detailed trade data for advanced analytics
-- **AuditLog**: Minimal logging for GDPR compliance only
-
-## Schema Evolution
-
-### Migration Strategy
-
-- Use Knex.js migrations for schema changes
-- Test migrations against the full schema including triggers
-- Update triggers when business rules change
-- Maintain backward compatibility where possible
-- Consider impact on dual-roster system when modifying player tables
-
-### Schema Validation
+### Schema Governance
 
 - The `kanaliiga.sql` file serves as the source of truth
-- All migrations should be tested against this schema
-- Triggers and functions should be version controlled
-- Business rule changes require trigger updates
+- All migrations must be tested against the full schema including triggers
+- Triggers and functions are version controlled
+- Business rule changes require corresponding trigger updates
+- Use Knex.js for all schema migrations
 
-### Future Considerations
+## Operational Documentation
 
-- **Flexible Match System**: Plans to support nullable season_id/league_id for standalone matches
-- **TeamRosters**: Future feature for persistent roster management across seasons
-- **Multi-Platform Support**: Ongoing work to support multiple external platforms beyond FaceIT
+For practical information on working with the database, see:
 
-## Troubleshooting
-
-### Common Issues
-
-1. **Captain Permission Errors**: Check if the player is actually a captain in `SeasonTeamRegistrationPlayers`
-2. **Foreign Key Violations**: Ensure referenced records exist before inserting
-3. **Unique Constraint Violations**: Check for duplicate Steam IDs or external platform IDs
-4. **Trigger Errors**: Review trigger logic for business rule violations
-5. **Dual-Roster Confusion**: Ensure you're querying the correct roster table (registration vs active)
-
-### Debugging Queries
-
-```sql
--- Check captain status
-SELECT * FROM SeasonTeamRegistrationPlayers
-WHERE season_id = ? AND team_id = ? AND steam_id = ?;
-
--- Check account linking
-SELECT * FROM LinkedAccounts
-WHERE provider = 'steam' AND provider_id = CAST(? AS CHAR);
-
--- Check permissions
-SELECT p.permission_name, aps.*
-FROM AccountPermissionScopes aps
-JOIN Permissions p ON aps.permission_id = p.id
-WHERE aps.account_id = ?;
-
--- Check Steam ID to Account ID mapping
-SELECT get_account_id_from_steam_id(?);
-
--- Compare registration vs active rosters
-SELECT 'Registration' as type, steam_id, is_captain, is_co_captain
-FROM SeasonTeamRegistrationPlayers
-WHERE season_id = ? AND team_id = ?
-UNION ALL
-SELECT 'Active' as type, steam_id, is_captain, is_co_captain
-FROM SeasonTeamPlayers
-WHERE season_id = ? AND team_id = ?;
-```
+- **[Database Operations Guide](docs/database-operations.md)**: Common queries, troubleshooting, performance optimization
+- **[Migration Files](apps/backend/migrations/)**: Historical schema changes
+- **[Type Definitions](packages/types/src/db/)**: TypeScript interfaces for database tables
+- **[Visual ERD](https://csdb.kanaliiga.fi/)**: Interactive entity-relationship diagram
