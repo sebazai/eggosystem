@@ -144,12 +144,17 @@ SET work_email = CONCAT(
 WHERE full_name IS NOT NULL
     AND full_name LIKE '% %';
 UPDATE Accounts
-SET discord = CONCAT(
-        SUBSTRING_INDEX(full_name, ' ', 1),
-        '#',
-        FLOOR(RAND() * 9999) + 1
-    )
-WHERE full_name IS NOT NULL
-    AND full_name LIKE '% %';
--- UPDATE Accounts
--- SET discord = name;
+SET work_email_verified = 0,
+    work_email_token = NULL,
+    work_email_token_expires_at = NULL,
+    is_work_email_personal_email = 0;
+UPDATE LinkedAccounts
+SET provider_username = NULL;
+DELETE FROM LinkedAccounts
+WHERE provider = 'discord';
+DELETE FROM AccountCasterUrls;
+DELETE FROM AuditLog;
+DELETE FROM FaceitWebhooks;
+DELETE FROM KanahautomoRegistrations;
+DELETE FROM KanahautomoRegistrationGameTypes;
+DELETE FROM UserPolicyAcceptances;

@@ -16,7 +16,7 @@ describe("getLeaderboard", () => {
           steam_id: "76561198049745649",
           nickname: "sububobi",
           team_name: "7dos",
-          team_logo: "cf9838e7641c3333",
+          team_logo: "faa0c585f21c2d76",
           matches_played: 13,
           kana_rating: 1.03
         },
@@ -24,7 +24,7 @@ describe("getLeaderboard", () => {
           steam_id: "76561197963921578",
           nickname: "van9",
           team_name: "7dos",
-          team_logo: "cf9838e7641c3333",
+          team_logo: "faa0c585f21c2d76",
           matches_played: 17,
           kana_rating: 0.897059
         },
@@ -32,7 +32,7 @@ describe("getLeaderboard", () => {
           steam_id: "76561198001857963",
           nickname: "meppi",
           team_name: "7dos",
-          team_logo: "cf9838e7641c3333",
+          team_logo: "faa0c585f21c2d76",
           matches_played: 17,
           kana_rating: 0.847647
         },
@@ -40,7 +40,7 @@ describe("getLeaderboard", () => {
           steam_id: "76561197967885016",
           nickname: "enzoj",
           team_name: "7dos",
-          team_logo: "cf9838e7641c3333",
+          team_logo: "faa0c585f21c2d76",
           matches_played: 17,
           kana_rating: 0.823529
         },
@@ -48,7 +48,7 @@ describe("getLeaderboard", () => {
           steam_id: "76561198030886203",
           nickname: "defektro",
           team_name: "7dos",
-          team_logo: "cf9838e7641c3333",
+          team_logo: "faa0c585f21c2d76",
           matches_played: 17,
           kana_rating: 0.608235
         }
@@ -138,7 +138,7 @@ describe("getLeaderboard", () => {
         },
         {
           steam_id: "76561198119062598",
-          nickname: "paBlo=D",
+          nickname: "joreuotinen",
           team_name: "Elisa Hosujat",
           team_logo: "bbb1c44e3ab1b10e",
           matches_played: 3,

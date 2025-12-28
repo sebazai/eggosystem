@@ -1,3 +1,4 @@
+import { runQuery } from "../db/mysqlRunQuery";
 import {
   getMatchesByFilters,
   getMatchTopPlayers,
@@ -118,6 +119,24 @@ describe("getMatchTopPlayers", () => {
 });
 
 describe("getMatchMapVetoes", () => {
+  beforeAll(async () => {
+    await runQuery(`
+      INSERT INTO MatchTeamMapVetoes (id, match_id, team_id, map_id, action, veto_order) VALUES
+      (1, 10154, 2060, 9, 'drop', 1),
+      (2, 10154, 2035, 1, 'drop', 2),
+      (3, 10154, 2060, 5, 'pick', 3),
+      (4, 10154, 2035, 8, 'pick', 4),
+      (5, 10154, 2060, 2, 'drop', 5),
+      (6, 10154, 2035, 4, 'drop', 6),
+      (7, 10154, 2060, 3, 'decider', 7);
+    `);
+  });
+
+  afterAll(async () => {
+    await runQuery(`
+      DELETE FROM MatchTeamMapVetoes WHERE match_id = 10154;
+    `);
+  });
   it("returns map vetoes in correct order for match 10154", async () => {
     const result = await getMatchMapVetoes(10154);
 
