@@ -42,7 +42,7 @@ describe("getMultiplePlayerStatsByFilters", () => {
       {
         steam_id: "76561198049745649",
         nickname: "sububobi",
-        avatar: null,
+        avatar: "e1239a9669cdce26",
         maps_played: 13,
         kills: 243,
         assists: 63,
@@ -136,7 +136,7 @@ describe("getMultiplePlayerStatsByFilters", () => {
       },
       {
         steam_id: "76561198043033465",
-        nickname: "toro",
+        nickname: "toroDoggo",
         avatar: null,
         maps_played: 4,
         kills: 15,
@@ -320,7 +320,7 @@ describe("getMultiplePlayerStatsByFilters", () => {
       },
       {
         steam_id: "76561198996818419",
-        nickname: "Manetski",
+        nickname: "Brofeetta",
         avatar: null,
         maps_played: 12,
         kills: 195,
@@ -499,7 +499,7 @@ describe("getMultiplePlayerStatsByFilters", () => {
         {
           steam_id: "76561197967885016",
           nickname: "enzoj",
-          avatar: null,
+          avatar: "e1239a9669cdce26",
           maps_played: 4,
           kills: 98,
           assists: 30,
@@ -530,7 +530,7 @@ describe("getMultiplePlayerStatsByFilters", () => {
         {
           steam_id: "76561197967885016",
           nickname: "enzoj",
-          avatar: null,
+          avatar: "e1239a9669cdce26",
           maps_played: 4,
           kills: 98,
           assists: 30,

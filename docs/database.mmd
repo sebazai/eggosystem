@@ -106,6 +106,7 @@ erDiagram
 "Seasons" }o--|| "Organizers" : ""
 "SeasonTeamPlayers" }o--o| "Matches" : ""
 "SeasonTeamPlayers" }o--o| "SteamPlayers" : ""
+"SeasonTeamPlayers" }o--|| "Seasons" : ""
 "SeasonTeamPlayers" }o--|| "SteamPlayers" : ""
 "SeasonTeamPlayers" }o--|| "Teams" : ""
 "SeasonTeamRegistrationPlayers" }o--|| "SeasonTeamRegistrations" : ""
@@ -343,6 +344,7 @@ erDiagram
   int_10__unsigned organizer_id FK
 }
 "SeasonTeamPlayers" {
+  int_10__unsigned season_id FK
   int_10__unsigned team_id FK
   bigint_20_ steam_id FK
   int_10__unsigned match_id FK

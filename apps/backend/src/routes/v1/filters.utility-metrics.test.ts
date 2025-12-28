@@ -31,7 +31,7 @@ describe("Utility Metrics Tests", () => {
 
     // Test overall utility score
     expect(body.steam_id).toBe("76561198100952924");
-    expect(body.nickname).toBe("ville1");
+    expect(body.nickname).toBe("vilksu");
     expect(body.utility).toBeGreaterThan(60);
     expect(body.utility).toBeLessThan(70);
 

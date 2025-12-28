@@ -138,7 +138,7 @@ describe("getLeaderboard", () => {
         },
         {
           steam_id: "76561198119062598",
-          nickname: "paBlo=D",
+          nickname: "joreuotinen",
           team_name: "Elisa Hosujat",
           team_logo: "bbb1c44e3ab1b10e",
           matches_played: 3,
