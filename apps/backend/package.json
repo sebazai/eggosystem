@@ -64,6 +64,7 @@
     "nodemailer": "7.0.12",
     "passport": "0.7.0",
     "passport-steam": "1.0.18",
+    "semver": "7.6.3",
     "uuid": "11.1.0",
     "winston": "3.19.0",
     "winston-transport": "4.9.0",
