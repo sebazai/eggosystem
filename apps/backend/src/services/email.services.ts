@@ -356,7 +356,8 @@ export const sendSeasonCaptainWelcomeEmail = async (
 
 export const sendSeasonWelcomeEmail = async (
   to: string,
-  seasonId: number,
+  seasonDisplayName: string,
+  seasonStartDate: string | null,
   teamName: string,
   leagueName: string,
   platform: string,
@@ -364,29 +365,6 @@ export const sendSeasonWelcomeEmail = async (
   discordLink: string | null,
   mapNames: string[]
 ) => {
-  // Fetch season details to get the season name
-  const season = await getSeasonById(seasonId);
-
-  if (!season) {
-    throw new Error(`Season with id ${seasonId} not found`);
-  }
-
-  // Fetch game abbreviation
-  const game = await getGameById(season.game_id);
-  const gameAbbreviation = game?.abbreviation || "";
-
-  const seasonName = season.name;
-  const seasonDisplayName = gameAbbreviation
-    ? `${seasonName} - ${gameAbbreviation}`
-    : seasonName;
-  const seasonStartDate = season.start_date
-    ? new Date(season.start_date).toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "long",
-        day: "numeric"
-      })
-    : null;
-
   const transporter = createTransporter();
   const mailOptions = {
     from: "Kanahub by Kanaliiga <cs@kanaliiga.fi>",

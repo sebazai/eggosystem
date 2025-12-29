@@ -31,6 +31,7 @@ import {
 import { getConnection } from "../../db/mysqlConnection";
 import _ from "lodash";
 import { getSeasonById } from "../../models/season.models";
+import { getGameById } from "../../models/game.models";
 
 /**
  * Controller to get preliminary team placements
@@ -549,6 +550,21 @@ export const finalizeTeamPlacementsController = async (
           return;
         }
 
+        const game = await getGameById(season.game_id);
+        const gameAbbreviation = game?.abbreviation || "";
+        const seasonDisplayName = gameAbbreviation
+          ? `${season.name} - ${gameAbbreviation}`
+          : season.name;
+
+        // Format season start date
+        const seasonStartDate = season.start_date
+          ? new Date(season.start_date).toLocaleDateString("en-US", {
+              year: "numeric",
+              month: "long",
+              day: "numeric"
+            })
+          : null;
+
         // Get map names from active map pool
         const mapNames = await getMapNamesByIds(season.active_map_pool || []);
 
@@ -562,7 +578,8 @@ export const finalizeTeamPlacementsController = async (
           }) =>
             sendSeasonWelcomeEmail(
               player.email,
-              seasonId,
+              seasonDisplayName,
+              seasonStartDate,
               player.team_name,
               player.league_name,
               season.platform,
