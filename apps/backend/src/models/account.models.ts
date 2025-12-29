@@ -8,6 +8,7 @@ import type {
 } from "@eggosystem/types";
 import * as uuid from "uuid";
 import { type PoolConnection } from "mysql2/promise";
+import semver from "semver";
 import { runQuery } from "../db/mysqlRunQuery";
 import { NotFoundError } from "../utils/errors";
 import { getConnection } from "../db/mysqlConnection";
@@ -245,6 +246,48 @@ export const getLatestUserProfileNewsletterConsent = async (
     [accountId]
   );
   return result?.[0]?.accepted_tournament_newsletter ?? true;
+};
+
+/**
+ * Get the latest newsletter consent by semver version comparison.
+ * Finds the UserPolicyAcceptance with the highest semver privacy_policy_version
+ * and returns its accepted_tournament_newsletter value.
+ * @param accountId - Account ID to check
+ * @returns true if latest semver version has accepted_tournament_newsletter = true, false otherwise
+ */
+export const getLatestNewsletterConsentBySemver = async (
+  accountId: Account["id"]
+): Promise<boolean> => {
+  const result = await runQuery<UserPolicyAcceptance[] | undefined>(
+    "SELECT * FROM UserPolicyAcceptances WHERE account_id = ?",
+    [accountId]
+  );
+
+  if (!result || result.length === 0) {
+    return false;
+  }
+
+  // Find the policy acceptance with the highest semver version
+  let latestPolicy: UserPolicyAcceptance | null = null;
+  let latestVersion: string | null = null;
+
+  for (const policy of result) {
+    const version = policy.privacy_policy_version;
+    // Validate semver format
+    if (semver.valid(version)) {
+      if (!latestVersion || semver.gt(version, latestVersion)) {
+        latestVersion = version;
+        latestPolicy = policy;
+      }
+    }
+  }
+
+  // If no valid semver versions found, return false
+  if (!latestPolicy) {
+    return false;
+  }
+
+  return latestPolicy.accepted_tournament_newsletter ?? false;
 };
 
 export const hasAcceptedAnyPrivacyPolicy = async (accountId: Account["id"]) => {
