@@ -16,8 +16,11 @@ import {
   type TeamPlacement,
   setPlacementsFinalized,
   isPlacementsFinalized,
-  hasSeasonLeagueTeamsForSeason
+  hasSeasonLeagueTeamsForSeason,
+  getFinalizedPlayersWithEmailsAndConsent
 } from "../../services/sortter-placements.services";
+import { sendSeasonWelcomeEmail } from "../../services/email.services";
+import { getMapNamesByIds } from "../../services/maps.services";
 import { runQuery } from "../../db/mysqlRunQuery";
 import {
   BadRequestError,
@@ -528,6 +531,74 @@ export const finalizeTeamPlacementsController = async (
 
     // Delete the preliminary placements from Redis - we keep the finalized flag
     await deletePreliminaryPlacements(seasonId);
+
+    // Send welcome emails to all finalized players (async, don't block response)
+    void (async () => {
+      try {
+        logger.info(
+          `Starting welcome email sending for season ${seasonId} finalization`
+        );
+
+        // Get players with emails and newsletter consent
+        const players = await getFinalizedPlayersWithEmailsAndConsent(seasonId);
+
+        if (players.length === 0) {
+          logger.info(
+            `No players eligible for welcome email in season ${seasonId}`
+          );
+          return;
+        }
+
+        // Get map names from active map pool
+        const mapNames = await getMapNamesByIds(season.active_map_pool || []);
+
+        // Send emails in parallel
+        const emailPromises = players.map(
+          (player: {
+            email: string;
+            nickname: string;
+            team_name: string;
+            league_name: string;
+          }) =>
+            sendSeasonWelcomeEmail(
+              player.email,
+              seasonId,
+              player.team_name,
+              player.league_name,
+              season.platform,
+              season.rulebook_url,
+              season.discord_link,
+              mapNames
+            ).catch((error: unknown) => {
+              logger.error(
+                `Failed to send welcome email to ${player.nickname} (${player.email})`,
+                error
+              );
+              return null;
+            })
+        );
+
+        const results = await Promise.allSettled(emailPromises);
+        const successful = results.filter(
+          (r: PromiseSettledResult<unknown>) =>
+            r.status === "fulfilled" && r.value !== null
+        ).length;
+        const failed = results.filter(
+          (r: PromiseSettledResult<unknown>) =>
+            r.status === "rejected" ||
+            (r.status === "fulfilled" && r.value === null)
+        ).length;
+
+        logger.info(
+          `Welcome emails sent for season ${seasonId}: ${successful} successful, ${failed} failed out of ${players.length} eligible players`
+        );
+      } catch (error) {
+        logger.error(
+          `Error sending welcome emails for season ${seasonId}`,
+          error
+        );
+      }
+    })();
 
     res.json({
       message: "Team placements and players finalized successfully",
