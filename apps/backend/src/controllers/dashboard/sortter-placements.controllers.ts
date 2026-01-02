@@ -31,7 +31,7 @@ import {
 import { getConnection } from "../../db/mysqlConnection";
 import _ from "lodash";
 import { getSeasonById } from "../../models/season.models";
-import { getGameById } from "../../models/game.models";
+import { getGameByIdOrFail } from "../../models/game.models";
 
 /**
  * Controller to get preliminary team placements
@@ -550,8 +550,8 @@ export const finalizeTeamPlacementsController = async (
           return;
         }
 
-        const game = await getGameById(season.game_id);
-        const gameAbbreviation = game?.abbreviation || "";
+        const game = await getGameByIdOrFail(season.game_id);
+        const gameAbbreviation = game.abbreviation;
         const seasonDisplayName = gameAbbreviation
           ? `${season.name} - ${gameAbbreviation}`
           : season.name;
@@ -569,30 +569,24 @@ export const finalizeTeamPlacementsController = async (
         const mapNames = await getMapNamesByIds(season.active_map_pool || []);
 
         // Send emails in parallel
-        const emailPromises = players.map(
-          (player: {
-            email: string;
-            nickname: string;
-            team_name: string;
-            league_name: string;
-          }) =>
-            sendSeasonWelcomeEmail(
-              player.email,
-              seasonDisplayName,
-              seasonStartDate,
-              player.team_name,
-              player.league_name,
-              season.platform,
-              season.rulebook_url,
-              season.discord_link,
-              mapNames
-            ).catch((error: unknown) => {
-              logger.error(
-                `Failed to send welcome email to ${player.nickname} (${player.email})`,
-                error
-              );
-              return null;
-            })
+        const emailPromises = players.map((player) =>
+          sendSeasonWelcomeEmail(
+            player.email,
+            seasonDisplayName,
+            seasonStartDate,
+            player.team_name,
+            player.league_name,
+            season.platform,
+            season.rulebook_url,
+            season.discord_link,
+            mapNames
+          ).catch((error: unknown) => {
+            logger.error(
+              `Failed to send welcome email to ${player.nickname} (${player.email})`,
+              error
+            );
+            return null;
+          })
         );
 
         const results = await Promise.allSettled(emailPromises);
