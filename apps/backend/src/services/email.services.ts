@@ -1,6 +1,11 @@
 import nodemailer from "nodemailer";
 import { getSeasonById } from "../models/season.models";
-import { getGameById } from "../models/game.models";
+import { getGameById, getGameByIdOrFail } from "../models/game.models";
+import { getFinalizedPlayersWithEmailsAndConsent } from "./sortter-placements.services";
+import { getMapNamesByIds } from "./maps.services";
+import { logger } from "../utils/app-logger";
+import type { Season } from "@eggosystem/types";
+import { redisClient, expireIn30Days } from "../utils/redisClient";
 
 function createTransporter() {
   if (process.env.NODE_ENV === "test" || process.env.NODE_ENV === "e2e") {
@@ -581,4 +586,137 @@ export const sendMatchScheduleChangeEmail = async (
   };
 
   await transporter?.sendMail(mailOptions);
+};
+
+/**
+ * Send welcome emails to all finalized players for a season
+ * This function runs asynchronously and does not block the caller
+ * @param seasonId - Season ID
+ * @param season - Season object with all necessary data
+ */
+export const sendSeasonFinalizationWelcomeEmails = async (
+  seasonId: number,
+  season: Season
+): Promise<void> => {
+  try {
+    logger.info(
+      `Starting welcome email sending for season ${seasonId} finalization`
+    );
+
+    // Get players with emails and newsletter consent
+    const players = await getFinalizedPlayersWithEmailsAndConsent(seasonId);
+
+    if (players.length === 0) {
+      logger.info(
+        `No players eligible for welcome email in season ${seasonId}`
+      );
+      return;
+    }
+
+    const game = await getGameByIdOrFail(season.game_id);
+    const gameAbbreviation = game.abbreviation;
+    const seasonDisplayName = gameAbbreviation
+      ? `${season.name} - ${gameAbbreviation}`
+      : season.name;
+
+    // Format season start date
+    const seasonStartDate = season.start_date
+      ? new Date(season.start_date).toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "long",
+          day: "numeric"
+        })
+      : null;
+
+    // Get map names from active map pool
+    const mapNames = await getMapNamesByIds(season.active_map_pool || []);
+
+    // Send emails in parallel and collect errors with account_id
+    const emailPromises = players.map((player) =>
+      sendSeasonWelcomeEmail(
+        player.email,
+        seasonDisplayName,
+        seasonStartDate,
+        player.team_name,
+        player.league_name,
+        season.platform,
+        season.rulebook_url,
+        season.discord_link,
+        mapNames
+      )
+        .then(() => ({ success: true as const, account_id: player.account_id }))
+        .catch((error: unknown) => {
+          const errorMessage =
+            error instanceof Error ? error.message : String(error);
+          logger.error(
+            `Failed to send welcome email to ${player.nickname} (${player.email})`,
+            error
+          );
+          return {
+            success: false as const,
+            account_id: player.account_id,
+            error: errorMessage
+          };
+        })
+    );
+
+    const results = await Promise.allSettled(emailPromises);
+
+    // Collect successful and failed results
+    const successfulResults: Array<{ success: true; account_id: number }> = [];
+    const failedErrors: Array<{ account_id: number; error: string }> = [];
+
+    results.forEach((result) => {
+      if (result.status === "fulfilled") {
+        if (result.value.success) {
+          successfulResults.push(result.value);
+        } else {
+          failedErrors.push({
+            account_id: result.value.account_id,
+            error: result.value.error
+          });
+        }
+      } else {
+        // If the promise itself was rejected (shouldn't happen with our catch, but handle it)
+        logger.error(
+          `Unexpected promise rejection in email sending: ${result.reason}`
+        );
+      }
+    });
+
+    const successful = successfulResults.length;
+    const failed = failedErrors.length;
+
+    // Store failed errors in Redis if any
+    if (failedErrors.length > 0) {
+      try {
+        // Create Redis key: season name with spaces replaced by dashes, plus season ID
+        // Format: {season-name-with-dashes}-{season-id}-failed-welcome-messages
+        const seasonNameKey = season.name.toLowerCase().replace(/\s+/g, "-");
+        const redisKey = `${seasonNameKey}-${seasonId}-failed-welcome-messages`;
+
+        await redisClient.set(
+          redisKey,
+          JSON.stringify(failedErrors),
+          "EX",
+          expireIn30Days
+        );
+
+        logger.info(
+          `Stored ${failedErrors.length} failed welcome email errors in Redis with key: ${redisKey}`
+        );
+      } catch (redisError) {
+        logger.error(
+          `Failed to store email errors in Redis for season ${seasonId}`,
+          redisError
+        );
+      }
+    }
+
+    logger.info(
+      `Welcome emails sent for season ${seasonId}: ${successful} successful, ${failed} failed out of ${players.length} eligible players`
+    );
+  } catch (error) {
+    logger.error(`Error sending welcome emails for season ${seasonId}`, error);
+  }
 };
