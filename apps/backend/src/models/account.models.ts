@@ -269,14 +269,16 @@ export const getLatestNewsletterConsentBySemver = async (
 
   // Find the policy acceptance with the highest semver version
   let latestPolicy: UserPolicyAcceptance | null = null;
-  let latestVersion: string | null = null;
+  let latestVersion: semver.SemVer | null = null;
 
   for (const policy of result) {
     const version = policy.privacy_policy_version;
+    // Coerce version to semver format (e.g., "1" -> "1.0.0", "1.1" -> "1.1.0")
+    const coercedVersion = semver.coerce(version);
     // Validate semver format
-    if (semver.valid(version)) {
-      if (!latestVersion || semver.gt(version, latestVersion)) {
-        latestVersion = version;
+    if (coercedVersion && semver.valid(coercedVersion)) {
+      if (!latestVersion || semver.gt(coercedVersion, latestVersion)) {
+        latestVersion = coercedVersion;
         latestPolicy = policy;
       }
     }
@@ -335,14 +337,16 @@ export const getLatestNewsletterConsentBySemverBatch = async (
 
     // Find the policy acceptance with the highest semver version
     let latestPolicy: UserPolicyAcceptance | null = null;
-    let latestVersion: string | null = null;
+    let latestVersion: semver.SemVer | null = null;
 
     for (const policy of policies) {
       const version = policy.privacy_policy_version;
+      // Coerce version to semver format (e.g., "1" -> "1.0.0", "1.1" -> "1.1.0")
+      const coercedVersion = semver.coerce(version);
       // Validate semver format
-      if (semver.valid(version)) {
-        if (!latestVersion || semver.gt(version, latestVersion)) {
-          latestVersion = version;
+      if (coercedVersion && semver.valid(coercedVersion)) {
+        if (!latestVersion || semver.gt(coercedVersion, latestVersion)) {
+          latestVersion = coercedVersion;
           latestPolicy = policy;
         }
       }

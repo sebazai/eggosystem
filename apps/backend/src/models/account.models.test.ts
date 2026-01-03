@@ -544,5 +544,97 @@ describe("Account Models", () => {
       expect(result.get(1)).toBe(true); // Latest is 3.0.0 with true
       expect(result.get(2)).toBe(false); // Latest is 3.0.0 with false
     });
+
+    it("should handle minor version correctly for multiple accounts (e.g., 1.1.0 > 1.0.0)", async () => {
+      const mockPolicies: UserPolicyAcceptance[] = [
+        // Account 1: 1.0.0 (false) and 1.1.0 (true) - should use 1.1.0
+        createMockUserPolicyAcceptance({
+          id: 1,
+          account_id: 1,
+          accepted_tournament_newsletter: false,
+          privacy_policy_version: "1.0.0"
+        }),
+        createMockUserPolicyAcceptance({
+          id: 2,
+          account_id: 1,
+          accepted_tournament_newsletter: true,
+          privacy_policy_version: "1.1.0"
+        }),
+        // Account 2: 1.0.0 (true) and 1.1.0 (false) - should use 1.1.0
+        createMockUserPolicyAcceptance({
+          id: 3,
+          account_id: 2,
+          accepted_tournament_newsletter: true,
+          privacy_policy_version: "1.0.0"
+        }),
+        createMockUserPolicyAcceptance({
+          id: 4,
+          account_id: 2,
+          accepted_tournament_newsletter: false,
+          privacy_policy_version: "1.1.0"
+        })
+      ];
+
+      mockRunQuery.mockResolvedValue(mockPolicies);
+
+      const result = await getLatestNewsletterConsentBySemverBatch([1, 2]);
+
+      expect(result.size).toBe(2);
+      expect(result.get(1)).toBe(true); // Latest is 1.1.0 with true
+      expect(result.get(2)).toBe(false); // Latest is 1.1.0 with false
+    });
+
+    it("should handle database format versions (e.g., '1' and '1.1' instead of '1.0.0' and '1.1.0')", async () => {
+      const mockPolicies: UserPolicyAcceptance[] = [
+        // Account 1: "1" (false) and "1.1" (true) - should use "1.1"
+        createMockUserPolicyAcceptance({
+          id: 1,
+          account_id: 1,
+          accepted_tournament_newsletter: false,
+          privacy_policy_version: "1"
+        }),
+        createMockUserPolicyAcceptance({
+          id: 2,
+          account_id: 1,
+          accepted_tournament_newsletter: true,
+          privacy_policy_version: "1.1"
+        }),
+        // Account 2: "1" (true) and "1.1" (false) - should use "1.1"
+        createMockUserPolicyAcceptance({
+          id: 3,
+          account_id: 2,
+          accepted_tournament_newsletter: true,
+          privacy_policy_version: "1"
+        }),
+        createMockUserPolicyAcceptance({
+          id: 4,
+          account_id: 2,
+          accepted_tournament_newsletter: false,
+          privacy_policy_version: "1.1"
+        }),
+        // Account 3: "1.1" (true) and "2" (false) - should use "2"
+        createMockUserPolicyAcceptance({
+          id: 5,
+          account_id: 3,
+          accepted_tournament_newsletter: true,
+          privacy_policy_version: "1.1"
+        }),
+        createMockUserPolicyAcceptance({
+          id: 6,
+          account_id: 3,
+          accepted_tournament_newsletter: false,
+          privacy_policy_version: "2"
+        })
+      ];
+
+      mockRunQuery.mockResolvedValue(mockPolicies);
+
+      const result = await getLatestNewsletterConsentBySemverBatch([1, 2, 3]);
+
+      expect(result.size).toBe(3);
+      expect(result.get(1)).toBe(true); // Latest is "1.1" (coerced to 1.1.0) with true
+      expect(result.get(2)).toBe(false); // Latest is "1.1" (coerced to 1.1.0) with false
+      expect(result.get(3)).toBe(false); // Latest is "2" (coerced to 2.0.0) with false
+    });
   });
 });
