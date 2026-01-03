@@ -359,7 +359,7 @@ export const sendSeasonCaptainWelcomeEmail = async (
   await transporter?.sendMail(mailOptions);
 };
 
-export const sendSeasonWelcomeEmail = async (
+const sendSeasonWelcomeEmail = async (
   to: string,
   seasonDisplayName: string,
   seasonStartDate: string | null,
@@ -486,6 +486,11 @@ export const sendSeasonWelcomeEmail = async (
   
           <p style="font-size: 14px; color: #777;">
             &copy; ${new Date().getFullYear()} Kanaliiga – All rights reserved.
+          </p>
+  
+          <p style="font-size: 14px; color: #777; margin-top: 20px;">
+            <a href="https://hub.kanaliiga.fi" style="color: hsl(35, 93%, 49%); text-decoration: none;">hub.kanaliiga.fi</a> | 
+            <a href="https://kanaliiga.fi" style="color: hsl(35, 93%, 49%); text-decoration: none;">kanaliiga.fi</a>
           </p>
         </div>
       `,
