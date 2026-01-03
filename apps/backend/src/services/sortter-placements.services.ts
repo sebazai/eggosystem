@@ -2,7 +2,7 @@ import { redisClient, expireIn30Days } from "../utils/redisClient";
 import { logger } from "../utils/app-logger";
 import type { TeamSortterValues } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
-import { getLatestNewsletterConsentBySemver } from "../models/account.models";
+import { getLatestNewsletterConsentBySemverBatch } from "../models/account.models";
 
 /**
  * Interface for team placement data stored in Redis
@@ -230,6 +230,15 @@ export const isPlacementsFinalized = async (
   return false;
 };
 
+interface FinalizedPlayer {
+  steam_id: string;
+  email: string;
+  team_name: string;
+  league_name: string;
+  nickname: string;
+  account_id: number;
+}
+
 /**
  * Get finalized players with emails and newsletter consent for a season
  * @param seasonId - Season ID
@@ -237,16 +246,7 @@ export const isPlacementsFinalized = async (
  */
 export const getFinalizedPlayersWithEmailsAndConsent = async (
   seasonId: number
-): Promise<
-  Array<{
-    steam_id: string;
-    email: string;
-    team_name: string;
-    league_name: string;
-    nickname: string;
-    account_id: number;
-  }>
-> => {
+): Promise<Array<FinalizedPlayer>> => {
   // Get all players from finalized season with their account info and league
   const query = `
     SELECT 
@@ -262,47 +262,23 @@ export const getFinalizedPlayersWithEmailsAndConsent = async (
     INNER JOIN Teams t ON t.id = stp.team_id
     INNER JOIN SeasonLeagueTeams slt ON slt.team_id = t.id AND slt.season_id = stp.season_id
     INNER JOIN Leagues l ON l.id = slt.league_id
-    WHERE stp.season_id = ? AND stp.discarded_at IS NULL
+    WHERE stp.season_id = ? AND stp.discarded_at IS NULL AND a.work_email_verified = 1
   `;
 
-  const players = await runQuery<
-    Array<{
-      steam_id: string;
-      email: string | null;
-      account_id: number;
-      team_name: string;
-      league_name: string;
-      nickname: string;
-    }>
-  >(query, [seasonId]);
+  const players = await runQuery<Array<FinalizedPlayer>>(query, [seasonId]);
 
-  // Filter players with emails and newsletter consent
-  const playersWithConsent: Array<{
-    steam_id: string;
-    email: string;
-    team_name: string;
-    league_name: string;
-    nickname: string;
-    account_id: number;
-  }> = [];
+  // Get all account IDs for batch consent check
+  const accountIds = players.map((player) => player.account_id);
+  const consentMap = await getLatestNewsletterConsentBySemverBatch(accountIds);
 
-  let skippedNoEmail = 0;
+  // Filter players with newsletter consent
+  const playersWithConsent: Array<FinalizedPlayer> = [];
+
   let skippedNoConsent = 0;
 
   for (const player of players) {
-    // Skip if no email
-    if (!player.email) {
-      skippedNoEmail++;
-      logger.warn(
-        `Player ${player.nickname} (${player.steam_id}) has no work_email, skipping welcome email`
-      );
-      continue;
-    }
-
-    // Check newsletter consent
-    const hasConsent = await getLatestNewsletterConsentBySemver(
-      player.account_id
-    );
+    // Check newsletter consent from map
+    const hasConsent = consentMap.get(player.account_id) ?? false;
 
     if (!hasConsent) {
       skippedNoConsent++;
@@ -323,7 +299,7 @@ export const getFinalizedPlayersWithEmailsAndConsent = async (
   }
 
   logger.info(
-    `Finalized players for season ${seasonId}: ${playersWithConsent.length} eligible for email, ${skippedNoEmail} without email, ${skippedNoConsent} without newsletter consent`
+    `Finalized players for season ${seasonId}: ${playersWithConsent.length} eligible for welcome email, ${skippedNoConsent} without consent`
   );
 
   return playersWithConsent;

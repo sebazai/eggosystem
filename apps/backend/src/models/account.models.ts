@@ -290,6 +290,79 @@ export const getLatestNewsletterConsentBySemver = async (
   return latestPolicy.accepted_tournament_newsletter ?? false;
 };
 
+/**
+ * Batch version: Get the latest newsletter consent by semver version comparison for multiple accounts.
+ * Finds the UserPolicyAcceptance with the highest semver privacy_policy_version for each account
+ * and returns a map of account_id -> hasConsent.
+ * @param accountIds - Array of Account IDs to check
+ * @returns Map of account_id to boolean indicating if they have consent
+ */
+export const getLatestNewsletterConsentBySemverBatch = async (
+  accountIds: Account["id"][]
+): Promise<Map<Account["id"], boolean>> => {
+  if (accountIds.length === 0) {
+    return new Map();
+  }
+
+  const placeholders = accountIds.map(() => "?").join(",");
+  const result = await runQuery<UserPolicyAcceptance[] | undefined>(
+    `SELECT * FROM UserPolicyAcceptances WHERE account_id IN (${placeholders})`,
+    accountIds
+  );
+
+  if (!result || result.length === 0) {
+    // Return map with all false values
+    return new Map(accountIds.map((id) => [id, false]));
+  }
+
+  // Group policies by account_id
+  const policiesByAccount = new Map<Account["id"], UserPolicyAcceptance[]>();
+  for (const policy of result) {
+    const existing = policiesByAccount.get(policy.account_id) || [];
+    existing.push(policy);
+    policiesByAccount.set(policy.account_id, existing);
+  }
+
+  // For each account, find the latest semver version and check consent
+  const consentMap = new Map<Account["id"], boolean>();
+  for (const accountId of accountIds) {
+    const policies = policiesByAccount.get(accountId) || [];
+
+    if (policies.length === 0) {
+      consentMap.set(accountId, false);
+      continue;
+    }
+
+    // Find the policy acceptance with the highest semver version
+    let latestPolicy: UserPolicyAcceptance | null = null;
+    let latestVersion: string | null = null;
+
+    for (const policy of policies) {
+      const version = policy.privacy_policy_version;
+      // Validate semver format
+      if (semver.valid(version)) {
+        if (!latestVersion || semver.gt(version, latestVersion)) {
+          latestVersion = version;
+          latestPolicy = policy;
+        }
+      }
+    }
+
+    // If no valid semver versions found, return false
+    if (!latestPolicy) {
+      consentMap.set(accountId, false);
+      continue;
+    }
+
+    consentMap.set(
+      accountId,
+      latestPolicy.accepted_tournament_newsletter ?? false
+    );
+  }
+
+  return consentMap;
+};
+
 export const hasAcceptedAnyPrivacyPolicy = async (accountId: Account["id"]) => {
   const result = await runQuery<Array<{ count: number }> | undefined>(
     "SELECT COUNT(*) as count FROM UserPolicyAcceptances WHERE account_id = ? AND accepted_privacy_policy = 1",
