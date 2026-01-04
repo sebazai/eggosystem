@@ -9,13 +9,17 @@ import * as crypto from "crypto";
 import { type PoolConnection } from "mysql2/promise";
 import { NotFoundError } from "../utils/errors";
 
-export const getLatestUserProfileNewsletterConsent = async (
-  accountId: Account["id"]
-) => {
-  const result = await runQuery<UserPolicyAcceptance[] | undefined>(
+const getUserPolicyAcceptances = async (accountId: Account["id"]) => {
+  return await runQuery<UserPolicyAcceptance[] | undefined>(
     "SELECT * FROM UserPolicyAcceptances WHERE account_id = ?",
     [accountId]
   );
+};
+
+export const getLatestUserProfileNewsletterConsent = async (
+  accountId: Account["id"]
+) => {
+  const result = await getUserPolicyAcceptances(accountId);
 
   if (!result || result.length === 0) {
     return true; // Default to true if no policies exist
@@ -105,10 +109,7 @@ export const getUserProfileAcceptanceForVersion = async (
 export const getLatestUserProfileMarketingConsent = async (
   accountId: Account["id"]
 ) => {
-  const result = await runQuery<UserPolicyAcceptance[] | undefined>(
-    "SELECT * FROM UserPolicyAcceptances WHERE account_id = ?",
-    [accountId]
-  );
+  const result = await getUserPolicyAcceptances(accountId);
 
   if (!result || result.length === 0) {
     return false;
@@ -159,10 +160,7 @@ export const getLatestPolicyBySemver = (
 export const getLatestNewsletterConsentBySemver = async (
   accountId: Account["id"]
 ): Promise<boolean> => {
-  const result = await runQuery<UserPolicyAcceptance[] | undefined>(
-    "SELECT * FROM UserPolicyAcceptances WHERE account_id = ?",
-    [accountId]
-  );
+  const result = await getUserPolicyAcceptances(accountId);
 
   if (!result || result.length === 0) {
     return false;
@@ -257,11 +255,7 @@ export const getOrCreateUnsubscribeToken = async (
   connection?: PoolConnection
 ): Promise<string> => {
   // Get all policy acceptance records for the account
-  const policies = await runQuery<UserPolicyAcceptance[] | undefined>(
-    `SELECT * FROM UserPolicyAcceptances WHERE account_id = ?`,
-    [accountId],
-    connection
-  );
+  const policies = await getUserPolicyAcceptances(accountId);
 
   if (!policies || policies.length === 0) {
     throw new NotFoundError("No policy acceptance found for account");
