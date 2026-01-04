@@ -136,7 +136,9 @@ export const createSeasonController = async (
         validatedData.early_bird_price_discount_end_date
           ? formatDateForDB(validatedData.early_bird_price_discount_end_date)
           : null,
-      active_map_pool: validatedData.active_map_pool
+      active_map_pool: validatedData.active_map_pool,
+      rulebook_url: validatedData.rulebook_url || null,
+      discord_link: validatedData.discord_link || null
     };
 
     // Create the season in the database
@@ -206,7 +208,9 @@ export const updateSeasonController = async (
         validatedData.early_bird_price_discount_end_date
           ? formatDateForDB(validatedData.early_bird_price_discount_end_date)
           : null,
-      active_map_pool: validatedData.active_map_pool
+      active_map_pool: validatedData.active_map_pool,
+      rulebook_url: validatedData.rulebook_url || null,
+      discord_link: validatedData.discord_link || null
     };
 
     // Update the season in the database

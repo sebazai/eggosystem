@@ -237,8 +237,10 @@ const createSeasonWithMapPool = async (
       registration_price,
       has_vat,
       early_bird_price_discount,
-      early_bird_price_discount_end_date
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      early_bird_price_discount_end_date,
+      rulebook_url,
+      discord_link
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   const result = await runQuery<{ insertId: number }>(
@@ -259,7 +261,9 @@ const createSeasonWithMapPool = async (
       seasonData.registration_price,
       seasonData.has_vat,
       seasonData.early_bird_price_discount,
-      seasonData.early_bird_price_discount_end_date
+      seasonData.early_bird_price_discount_end_date,
+      seasonData.rulebook_url,
+      seasonData.discord_link
     ],
     connection
   );
@@ -333,7 +337,9 @@ const updateSeasonWithMapPool = async (
       registration_price = ?,
       has_vat = ?,
       early_bird_price_discount = ?,
-      early_bird_price_discount_end_date = ?
+      early_bird_price_discount_end_date = ?,
+      rulebook_url = ?,
+      discord_link = ?
     WHERE id = ?
   `;
 
@@ -356,6 +362,8 @@ const updateSeasonWithMapPool = async (
       seasonData.has_vat,
       seasonData.early_bird_price_discount,
       seasonData.early_bird_price_discount_end_date,
+      seasonData.rulebook_url,
+      seasonData.discord_link,
       seasonId
     ],
     connection

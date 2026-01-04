@@ -2,6 +2,7 @@ import { redisClient, expireIn30Days } from "../utils/redisClient";
 import { logger } from "../utils/app-logger";
 import type { TeamSortterValues } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
+import { getLatestNewsletterConsentBySemverBatch } from "../models/account.models";
 
 /**
  * Interface for team placement data stored in Redis
@@ -227,4 +228,79 @@ export const isPlacementsFinalized = async (
   }
 
   return false;
+};
+
+interface FinalizedPlayer {
+  steam_id: string;
+  email: string;
+  team_name: string;
+  league_name: string;
+  nickname: string;
+  account_id: number;
+}
+
+/**
+ * Get finalized players with emails and newsletter consent for a season
+ * @param seasonId - Season ID
+ * @returns Array of players with email, team info, league, and newsletter consent
+ */
+export const getFinalizedPlayersWithEmailsAndConsent = async (
+  seasonId: number
+): Promise<Array<FinalizedPlayer>> => {
+  // Get all players from finalized season with their account info and league
+  const query = `
+    SELECT 
+      stp.steam_id,
+      a.work_email as email,
+      a.id as account_id,
+      t.name as team_name,
+      l.name as league_name,
+      sp.nickname
+    FROM SeasonTeamPlayers stp
+    INNER JOIN SteamPlayers sp ON sp.steam_id = stp.steam_id
+    INNER JOIN Accounts a ON a.id = sp.account_id
+    INNER JOIN Teams t ON t.id = stp.team_id
+    INNER JOIN SeasonLeagueTeams slt ON slt.team_id = t.id AND slt.season_id = stp.season_id
+    INNER JOIN Leagues l ON l.id = slt.league_id
+    WHERE stp.season_id = ? AND stp.discarded_at IS NULL AND a.work_email_verified = 1
+  `;
+
+  const players = await runQuery<Array<FinalizedPlayer>>(query, [seasonId]);
+
+  // Get all account IDs for batch consent check
+  const accountIds = players.map((player) => player.account_id);
+  const consentMap = await getLatestNewsletterConsentBySemverBatch(accountIds);
+
+  // Filter players with newsletter consent
+  const playersWithConsent: Array<FinalizedPlayer> = [];
+
+  let skippedNoConsent = 0;
+
+  for (const player of players) {
+    // Check newsletter consent from map
+    const hasConsent = consentMap.get(player.account_id) ?? false;
+
+    if (!hasConsent) {
+      skippedNoConsent++;
+      logger.warn(
+        `Player ${player.nickname} (${player.steam_id}) has not accepted tournament newsletter, skipping welcome email`
+      );
+      continue;
+    }
+
+    playersWithConsent.push({
+      steam_id: player.steam_id,
+      email: player.email,
+      team_name: player.team_name,
+      league_name: player.league_name,
+      nickname: player.nickname,
+      account_id: player.account_id
+    });
+  }
+
+  logger.info(
+    `Finalized players for season ${seasonId}: ${playersWithConsent.length} eligible for welcome email, ${skippedNoConsent} without consent`
+  );
+
+  return playersWithConsent;
 };

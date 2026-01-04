@@ -277,11 +277,14 @@ export const validatePlayersFromDBForSignup = async (
   seasonId: number,
   teamId: number,
   organizationId: number,
-  playerSteamIds: string[]
+  playerSteamIds: string[],
+  connection?: PoolConnection
 ) => {
   // await ensurePlayerSteamProfilesPublic(playerSteamIds);
   const data = await Promise.all(
-    playerSteamIds.map((steamId) => getPlayerDetailsBySteamId(steamId))
+    playerSteamIds.map((steamId) =>
+      getPlayerDetailsBySteamId(steamId, connection)
+    )
   );
   const filteredData = data.filter(
     (player): player is PlayerDetailsBySteamId => !!player
@@ -308,7 +311,8 @@ export const validatePlayersFromDBForSignup = async (
         seasonId,
         playerData.steam_id,
         teamId,
-        organizationId
+        organizationId,
+        connection
       );
       if (!manuallyApprovedPlayer.approved_by_organizer) {
         throw new BadRequestError(
@@ -337,7 +341,8 @@ export const handleUpdateSeasonTeamRegistration = async (
       seasonId,
       teamId,
       organizationId,
-      playerSteamIds
+      playerSteamIds,
+      connection
     ),
     updateSeasonTeamRegistration(seasonId, teamId, teamData, connection),
     updatePlayersForSeasonTeamRegistration(
@@ -371,7 +376,8 @@ export const handleSeasonTeamRegistration = async (
       seasonId,
       teamId,
       organizationId,
-      playerSteamIds
+      playerSteamIds,
+      connection
     ),
     insertSeasonTeamRegistration(seasonId, teamId, teamData, connection),
     addPlayersForTeamInSeason(
