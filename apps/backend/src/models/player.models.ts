@@ -63,7 +63,10 @@ export const getPlayerSteamIdByNickname = async (
   return null;
 };
 
-export const getPlayerDetailsBySteamId = async (steam_id: string) => {
+export const getPlayerDetailsBySteamId = async (
+  steam_id: string,
+  connection?: PoolConnection
+) => {
   const results = await runQuery<PlayerDetailsBySteamId[]>(
     `SELECT
       p.steam_id, 
@@ -88,7 +91,8 @@ export const getPlayerDetailsBySteamId = async (steam_id: string) => {
       la_discord.provider_id IS NOT NULL AND
       la_discord.provider_id NOT LIKE 'fake_%'
     WHERE p.steam_id = ?`,
-    [steam_id]
+    [steam_id],
+    connection
   );
 
   return results.length > 0 ? results[0] : undefined;

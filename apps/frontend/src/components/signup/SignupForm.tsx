@@ -10,6 +10,7 @@ import { useSeasonDetails } from "@/hooks/data/useSeasonDetails";
 import { useEffect, useMemo, useState } from "react";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TabOrganization } from "./TabOrganization";
 import { TabPlayers } from "./TabPlayers";
@@ -143,7 +144,8 @@ export const SignupForm = ({
 
   const validOrgId = useMemo(
     () =>
-      baseSchema
+      z
+        .object(baseSchema.shape)
         .pick({
           organizationId: true
         })
@@ -153,7 +155,8 @@ export const SignupForm = ({
   );
   const validOrg = useMemo(
     () =>
-      baseSchema
+      z
+        .object(baseSchema.shape)
         .pick({
           newOrganization: true
         })
@@ -162,7 +165,8 @@ export const SignupForm = ({
   );
   const validTeamId = useMemo(
     () =>
-      baseSchema
+      z
+        .object(baseSchema.shape)
         .pick({
           teamId: true
         })
@@ -171,7 +175,8 @@ export const SignupForm = ({
   );
   const validTeam = useMemo(
     () =>
-      baseSchema
+      z
+        .object(baseSchema.shape)
         .pick({
           newTeam: true
         })
@@ -180,14 +185,16 @@ export const SignupForm = ({
   );
   const validTeamExternalIdInForm = useMemo(
     () =>
-      baseSchema
+      z
+        .object(baseSchema.shape)
         .pick({ teamExternalId: true })
         .safeParse({ teamExternalId: watchExternalTeamId }),
     [watchExternalTeamId, baseSchema]
   );
   const validPlayers = useMemo(
     () =>
-      baseSchema
+      z
+        .object(baseSchema.shape)
         .pick({
           players: true
         })

@@ -18,6 +18,7 @@ import {
   isPlacementsFinalized,
   hasSeasonLeagueTeamsForSeason
 } from "../../services/sortter-placements.services";
+import { sendSeasonFinalizationWelcomeEmails } from "../../services/email.services";
 import { runQuery } from "../../db/mysqlRunQuery";
 import {
   BadRequestError,
@@ -528,6 +529,9 @@ export const finalizeTeamPlacementsController = async (
 
     // Delete the preliminary placements from Redis - we keep the finalized flag
     await deletePreliminaryPlacements(seasonId);
+
+    // Send welcome emails to all finalized players (async, don't block response)
+    void sendSeasonFinalizationWelcomeEmails(seasonId, season);
 
     res.json({
       message: "Team placements and players finalized successfully",

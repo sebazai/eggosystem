@@ -66,7 +66,9 @@ describe("Season Models", () => {
           seasonData.registration_price,
           seasonData.has_vat,
           seasonData.early_bird_price_discount,
-          seasonData.early_bird_price_discount_end_date
+          seasonData.early_bird_price_discount_end_date,
+          seasonData.rulebook_url,
+          seasonData.discord_link
         ],
         mockConnection
       );
@@ -143,6 +145,8 @@ describe("Season Models", () => {
           seasonData.has_vat,
           seasonData.early_bird_price_discount,
           seasonData.early_bird_price_discount_end_date,
+          seasonData.rulebook_url,
+          seasonData.discord_link,
           seasonId
         ],
         mockConnection

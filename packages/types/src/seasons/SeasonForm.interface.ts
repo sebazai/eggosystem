@@ -74,7 +74,17 @@ export const seasonFormSchema = z
     timezone: z.string().optional(),
     active_map_pool: z
       .array(z.number().int().positive())
-      .min(1, "At least one map must be selected")
+      .min(1, "At least one map must be selected"),
+    rulebook_url: z
+      .string()
+      .url("Rulebook URL must be a valid URL")
+      .optional()
+      .nullable(),
+    discord_link: z
+      .string()
+      .url("Discord link must be a valid URL")
+      .optional()
+      .nullable()
   })
   .refine(
     (data) => {
@@ -165,4 +175,12 @@ export interface SeasonFormRaw {
    * Must contain at least one map ID
    */
   active_map_pool: number[];
+  /**
+   * Rulebook URL for the season (nullable)
+   */
+  rulebook_url: string | null;
+  /**
+   * Discord link for the season (nullable)
+   */
+  discord_link: string | null;
 }

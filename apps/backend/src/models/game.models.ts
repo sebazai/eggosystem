@@ -1,5 +1,6 @@
 import { runQuery } from "../db/mysqlRunQuery";
 import type { Game, GameType } from "@eggosystem/types";
+import { NotFoundError } from "../utils/errors";
 
 export const getGames = async (): Promise<Game[]> => {
   return runQuery<Game[]>("SELECT * FROM Games ORDER BY name");
@@ -10,6 +11,14 @@ export const getGameById = async (id: number): Promise<Game | undefined> => {
     "SELECT * FROM Games WHERE id = ?",
     [id]
   );
+  return game;
+};
+
+export const getGameByIdOrFail = async (id: number): Promise<Game> => {
+  const game = await getGameById(id);
+  if (!game) {
+    throw new NotFoundError(`Video game with id ${id} not found`);
+  }
   return game;
 };
 

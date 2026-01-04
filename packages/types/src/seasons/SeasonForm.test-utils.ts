@@ -86,6 +86,8 @@ export const createMockSeasonFormRaw = (
     early_bird_price_discount: null,
     early_bird_price_discount_end_date: null,
     active_map_pool: [1, 2, 3],
+    rulebook_url: null,
+    discord_link: null,
     ...overrides
   };
 };

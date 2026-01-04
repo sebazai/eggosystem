@@ -52,7 +52,8 @@ export const isPlayerApprovedForSeasonManually = async (
   season_id: number,
   steam_id: string,
   team_id?: number,
-  organization_id?: number
+  organization_id?: number,
+  connection?: PoolConnection
 ) => {
   if (!team_id && !organization_id) {
     throw new Error("Either team_id or organization_id must be provided");
@@ -61,7 +62,8 @@ export const isPlayerApprovedForSeasonManually = async (
     `SELECT spa.* 
      FROM SeasonPlayerApprovals spa 
       WHERE spa.season_id = ? AND spa.steam_id = ? AND (spa.team_id = ? OR spa.organization_id = ?)`,
-    [season_id, steam_id, team_id ?? null, organization_id ?? null]
+    [season_id, steam_id, team_id ?? null, organization_id ?? null],
+    connection
   );
   if (!result) {
     return { approved_by_organizer: false };
