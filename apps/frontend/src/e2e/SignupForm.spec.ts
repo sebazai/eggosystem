@@ -2,7 +2,9 @@ import { expect, test, type Page } from "@playwright/test";
 import {
   generateTestJWTForUser,
   generateUniqueOrgCode,
-  generateUniqueFaceitTeamId
+  generateUniqueFaceitTeamId,
+  generateUniqueOrgName,
+  generateUniqueTeamName
 } from "./utils";
 import {
   AabeSteamId,
@@ -94,7 +96,7 @@ async function setupFormToFaceitIdInput(page: Page) {
   // Fill in required organization fields
   await page
     .locator('[data-testid="organization-name-input"]')
-    .fill("Test Organization");
+    .fill(generateUniqueOrgName("Test Organization"));
   await page
     .locator('[data-testid="organization-business-id-input"]')
     .fill(generateUniqueOrgCode());
@@ -117,7 +119,9 @@ async function setupFormToFaceitIdInput(page: Page) {
   await page.locator('[data-testid="teams-add-new"]').click();
 
   // Fill in the new team name
-  await page.locator('[data-testid="team-name-input"]').fill("Test Team");
+  await page
+    .locator('[data-testid="team-name-input"]')
+    .fill(generateUniqueTeamName("Test Team"));
 }
 
 // Helper function to set up the form to the players section using existing team_id 999
@@ -315,7 +319,7 @@ test.describe("Signup Form", () => {
       await page.locator('[data-testid="organizations-add-new"]').click();
       await page
         .locator('[data-testid="organization-name-input"]')
-        .fill("Test Organization");
+        .fill(generateUniqueOrgName("Test Organization"));
       await page
         .locator('[data-testid="organization-business-id-input"]')
         .fill(generateUniqueOrgCode());
@@ -558,8 +562,8 @@ test.describe("Signup Form", () => {
       // Set up complete registration form
       await setupCompleteRegistrationForm(
         page,
-        "Complete Flow Test Org",
-        "Complete Flow Test Team"
+        generateUniqueOrgName("Complete Flow Test Org"),
+        generateUniqueTeamName("Complete Flow Test Team")
       );
 
       // Fill in 5 players with valid Steam IDs (include authenticated user)
@@ -662,8 +666,8 @@ test.describe("Signup Form", () => {
       // Set up complete registration form
       await setupCompleteRegistrationForm(
         page,
-        "Captain Test Org",
-        "Captain Test Team"
+        generateUniqueOrgName("Captain Test Org"),
+        generateUniqueTeamName("Captain Test Team")
       );
 
       // Fill in 5 players with valid Steam IDs (include authenticated user)
@@ -812,8 +816,8 @@ test.describe("Signup Form", () => {
       // Set up complete registration form
       await setupCompleteRegistrationForm(
         page,
-        "External Rank Test Org",
-        "External Rank Test Team"
+        generateUniqueOrgName("External Rank Test Org"),
+        generateUniqueTeamName("External Rank Test Team")
       );
 
       // Fill in 5 players - one without FaceIT rank, others with valid data

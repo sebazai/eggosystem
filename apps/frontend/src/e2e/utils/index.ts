@@ -76,3 +76,23 @@ export function generateUniqueOrgCode(): string {
 export function generateUniqueFaceitTeamId(): string {
   return uuidv4();
 }
+
+/**
+ * Generate a unique organization name for testing
+ * Uses timestamp and random string to ensure uniqueness across parallel test runs
+ */
+export function generateUniqueOrgName(prefix: string = "Test Org"): string {
+  const timestamp = Date.now();
+  const random = Math.random().toString(36).substring(2, 8);
+  return `${prefix} ${timestamp}-${random}`;
+}
+
+/**
+ * Generate a unique team name for testing
+ * Uses timestamp and random string to ensure uniqueness across parallel test runs
+ */
+export function generateUniqueTeamName(prefix: string = "Test Team"): string {
+  const timestamp = Date.now();
+  const random = Math.random().toString(36).substring(2, 8);
+  return `${prefix} ${timestamp}-${random}`;
+}
