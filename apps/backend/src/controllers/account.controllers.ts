@@ -17,10 +17,12 @@ import {
 import {
   getAccountById,
   getAccountMatchReservations,
-  updateAccount,
+  updateAccount
+} from "../models/account.models";
+import {
   getAccountByUnsubscribeToken,
   unsubscribeFromNewsletter
-} from "../models/account.models";
+} from "../models/user-policy-acceptance.models";
 import { redisClient } from "../utils/redisClient";
 import { runQuery } from "../db/mysqlRunQuery";
 import { handleEmailVerification } from "../services/account.services";

@@ -1,15 +1,12 @@
 import type {
   UserPolicyAcceptancesPayload,
   UpdateUserProfile,
-  UserPolicyAcceptance,
   Account,
   AccountUpdateValues,
   Reservation
 } from "@eggosystem/types";
 import * as uuid from "uuid";
-import * as crypto from "crypto";
 import { type PoolConnection } from "mysql2/promise";
-import semver from "semver";
 import { runQuery } from "../db/mysqlRunQuery";
 import { NotFoundError } from "../utils/errors";
 import { getConnection } from "../db/mysqlConnection";
@@ -17,6 +14,11 @@ import { handleEmailVerification } from "../services/account.services";
 import { getSevenDaysLaterInMillis } from "../utils/date-utils";
 import { logger } from "../utils/app-logger";
 import { redisClient } from "../utils/redisClient";
+import {
+  insertUserPolicyAcceptance,
+  updateUserPolicyAcceptance,
+  userPolicyAcceptance
+} from "./user-policy-acceptance.models";
 
 export const updateAccount = async (
   accountId: number,
@@ -155,227 +157,6 @@ export const updateAccountData = async (
   );
 };
 
-export const userPolicyAcceptance = async (
-  accountId: Account["id"],
-  privacy_policy_version: string,
-  connection: PoolConnection
-) => {
-  // Check if UserPolicyAcceptances already exists for privacy policy version
-  const existingPolicyAcceptance = await runQuery<
-    UserPolicyAcceptance[] | undefined
-  >(
-    `SELECT * FROM UserPolicyAcceptances WHERE account_id = ? AND privacy_policy_version = ?`,
-    [accountId, privacy_policy_version],
-    connection
-  );
-  if (!existingPolicyAcceptance) {
-    return null;
-  }
-  return existingPolicyAcceptance[0];
-};
-
-export const updateUserPolicyAcceptance = async (
-  accountId: Account["id"],
-  updatedData: UserPolicyAcceptancesPayload,
-  connection: PoolConnection
-) => {
-  await runQuery(
-    `UPDATE UserPolicyAcceptances SET accepted_privacy_policy = ?, accepted_marketing = ?, accepted_tournament_newsletter = ? WHERE account_id = ? AND privacy_policy_version = ?`,
-    [
-      updatedData.accepted_privacy_policy,
-      updatedData.accepted_marketing,
-      updatedData.accepted_tournament_newsletter,
-      accountId,
-      updatedData.privacy_policy_version
-    ],
-    connection
-  );
-};
-
-export const insertUserPolicyAcceptance = async (
-  accountId: Account["id"],
-  newUserPolicy: UserPolicyAcceptancesPayload,
-  connection: PoolConnection
-) => {
-  // Update or insert UserPolicyAcceptance
-  await runQuery(
-    `INSERT INTO UserPolicyAcceptances (account_id, accepted_privacy_policy, accepted_marketing, accepted_tournament_newsletter, privacy_policy_version) VALUES (?, ?, ?, ?, ?)`,
-    [
-      accountId,
-      newUserPolicy.accepted_privacy_policy,
-      newUserPolicy.accepted_marketing,
-      newUserPolicy.accepted_tournament_newsletter,
-      newUserPolicy.privacy_policy_version
-    ],
-    connection
-  );
-};
-
-export const getUserProfileAcceptanceForVersion = async (
-  accountId: Account["id"],
-  privacyPolicyVersion?: string
-) => {
-  if (!privacyPolicyVersion) {
-    throw new Error("Missing PRIVACY_POLICY_VERSION in env");
-  }
-  const result = await runQuery<UserPolicyAcceptance[] | undefined>(
-    "SELECT * FROM UserPolicyAcceptances WHERE account_id = ? AND privacy_policy_version = ?",
-    [accountId, privacyPolicyVersion]
-  );
-
-  if (!result) {
-    return null;
-  }
-  return result[0];
-};
-
-export const getLatestUserProfileMarketingConsent = async (
-  accountId: Account["id"]
-) => {
-  const result = await runQuery<UserPolicyAcceptance[] | undefined>(
-    "SELECT * FROM UserPolicyAcceptances WHERE account_id = ? ORDER BY created_at DESC",
-    [accountId]
-  );
-  return !!result?.[0]?.accepted_marketing;
-};
-
-export const getLatestUserProfileNewsletterConsent = async (
-  accountId: Account["id"]
-) => {
-  const result = await runQuery<UserPolicyAcceptance[] | undefined>(
-    "SELECT * FROM UserPolicyAcceptances WHERE account_id = ? ORDER BY created_at DESC",
-    [accountId]
-  );
-  return result?.[0]?.accepted_tournament_newsletter ?? true;
-};
-
-/**
- * Get the latest newsletter consent by semver version comparison.
- * Finds the UserPolicyAcceptance with the highest semver privacy_policy_version
- * and returns its accepted_tournament_newsletter value.
- * @param accountId - Account ID to check
- * @returns true if latest semver version has accepted_tournament_newsletter = true, false otherwise
- */
-export const getLatestNewsletterConsentBySemver = async (
-  accountId: Account["id"]
-): Promise<boolean> => {
-  const result = await runQuery<UserPolicyAcceptance[] | undefined>(
-    "SELECT * FROM UserPolicyAcceptances WHERE account_id = ?",
-    [accountId]
-  );
-
-  if (!result || result.length === 0) {
-    return false;
-  }
-
-  // Find the policy acceptance with the highest semver version
-  let latestPolicy: UserPolicyAcceptance | null = null;
-  let latestVersion: semver.SemVer | null = null;
-
-  for (const policy of result) {
-    const version = policy.privacy_policy_version;
-    // Coerce version to semver format (e.g., "1" -> "1.0.0", "1.1" -> "1.1.0")
-    const coercedVersion = semver.coerce(version);
-    // Validate semver format
-    if (coercedVersion && semver.valid(coercedVersion)) {
-      if (!latestVersion || semver.gt(coercedVersion, latestVersion)) {
-        latestVersion = coercedVersion;
-        latestPolicy = policy;
-      }
-    }
-  }
-
-  // If no valid semver versions found, return false
-  if (!latestPolicy) {
-    return false;
-  }
-
-  return latestPolicy.accepted_tournament_newsletter ?? false;
-};
-
-/**
- * Batch version: Get the latest newsletter consent by semver version comparison for multiple accounts.
- * Finds the UserPolicyAcceptance with the highest semver privacy_policy_version for each account
- * and returns a map of account_id -> hasConsent.
- * @param accountIds - Array of Account IDs to check
- * @returns Map of account_id to boolean indicating if they have consent
- */
-export const getLatestNewsletterConsentBySemverBatch = async (
-  accountIds: Account["id"][]
-): Promise<Map<Account["id"], boolean>> => {
-  if (accountIds.length === 0) {
-    return new Map();
-  }
-
-  const placeholders = accountIds.map(() => "?").join(",");
-  const result = await runQuery<UserPolicyAcceptance[] | undefined>(
-    `SELECT * FROM UserPolicyAcceptances WHERE account_id IN (${placeholders})`,
-    accountIds
-  );
-
-  if (!result || result.length === 0) {
-    // Return map with all false values
-    return new Map(accountIds.map((id) => [id, false]));
-  }
-
-  // Group policies by account_id
-  const policiesByAccount = new Map<Account["id"], UserPolicyAcceptance[]>();
-  for (const policy of result) {
-    const existing = policiesByAccount.get(policy.account_id) || [];
-    existing.push(policy);
-    policiesByAccount.set(policy.account_id, existing);
-  }
-
-  // For each account, find the latest semver version and check consent
-  const consentMap = new Map<Account["id"], boolean>();
-  for (const accountId of accountIds) {
-    const policies = policiesByAccount.get(accountId) || [];
-
-    if (policies.length === 0) {
-      consentMap.set(accountId, false);
-      continue;
-    }
-
-    // Find the policy acceptance with the highest semver version
-    let latestPolicy: UserPolicyAcceptance | null = null;
-    let latestVersion: semver.SemVer | null = null;
-
-    for (const policy of policies) {
-      const version = policy.privacy_policy_version;
-      // Coerce version to semver format (e.g., "1" -> "1.0.0", "1.1" -> "1.1.0")
-      const coercedVersion = semver.coerce(version);
-      // Validate semver format
-      if (coercedVersion && semver.valid(coercedVersion)) {
-        if (!latestVersion || semver.gt(coercedVersion, latestVersion)) {
-          latestVersion = coercedVersion;
-          latestPolicy = policy;
-        }
-      }
-    }
-
-    // If no valid semver versions found, return false
-    if (!latestPolicy) {
-      consentMap.set(accountId, false);
-      continue;
-    }
-
-    consentMap.set(
-      accountId,
-      latestPolicy.accepted_tournament_newsletter ?? false
-    );
-  }
-
-  return consentMap;
-};
-
-export const hasAcceptedAnyPrivacyPolicy = async (accountId: Account["id"]) => {
-  const result = await runQuery<Array<{ count: number }> | undefined>(
-    "SELECT COUNT(*) as count FROM UserPolicyAcceptances WHERE account_id = ? AND accepted_privacy_policy = 1",
-    [accountId]
-  );
-  return (result?.[0]?.count ?? 0) > 0;
-};
-
 export const getAccountIdBySteamId = async (
   steamId: string,
   connection?: PoolConnection
@@ -440,87 +221,4 @@ export const getUserInfoBySteamId = async (
   );
 
   return users && users.length > 0 ? users[0] : null;
-};
-
-/**
- * Generate or retrieve an unsubscribe token for a user's policy acceptance record.
- * If a token already exists, returns the existing token.
- * Otherwise, generates a new secure random token and stores it.
- *
- * @param accountId - The account ID to generate/retrieve a token for
- * @param connection - Optional database connection for transaction support
- * @returns The unsubscribe token (existing or newly generated)
- */
-export const getOrCreateUnsubscribeToken = async (
-  accountId: Account["id"],
-  connection?: PoolConnection
-): Promise<string> => {
-  // Get the latest policy acceptance record
-  const policies = await runQuery<UserPolicyAcceptance[] | undefined>(
-    `SELECT * FROM UserPolicyAcceptances WHERE account_id = ? ORDER BY created_at DESC LIMIT 1`,
-    [accountId],
-    connection
-  );
-
-  if (!policies || policies.length === 0) {
-    throw new NotFoundError("No policy acceptance found for account");
-  }
-
-  const policy = policies[0];
-
-  if (policy.newsletter_unsubscribe_token) {
-    return policy.newsletter_unsubscribe_token;
-  }
-
-  const token = crypto.randomBytes(32).toString("hex");
-
-  await runQuery(
-    `UPDATE UserPolicyAcceptances SET newsletter_unsubscribe_token = ? WHERE id = ?`,
-    [token, policy.id],
-    connection
-  );
-
-  return token;
-};
-
-/**
- * Find account by unsubscribe token and verify the token is valid.
- *
- * @param token - The unsubscribe token to look up
- * @param connection - Optional database connection
- * @returns The account ID if token is valid, null otherwise
- */
-export const getAccountByUnsubscribeToken = async (
-  token: string,
-  connection?: PoolConnection
-): Promise<Account["id"] | null> => {
-  const policies = await runQuery<UserPolicyAcceptance[] | undefined>(
-    `SELECT account_id FROM UserPolicyAcceptances WHERE newsletter_unsubscribe_token = ? LIMIT 1`,
-    [token],
-    connection
-  );
-
-  if (!policies || policies.length === 0) {
-    return null;
-  }
-
-  return policies[0].account_id;
-};
-
-/**
- * Unsubscribe a user from newsletters by setting accepted_tournament_newsletter to false
- * for all their policy acceptance records.
- *
- * @param accountId - The account ID to unsubscribe
- * @param connection - Optional database connection for transaction support
- */
-export const unsubscribeFromNewsletter = async (
-  accountId: Account["id"],
-  connection?: PoolConnection
-): Promise<void> => {
-  await runQuery(
-    `UPDATE UserPolicyAcceptances SET accepted_tournament_newsletter = 0 WHERE account_id = ?`,
-    [accountId],
-    connection
-  );
 };

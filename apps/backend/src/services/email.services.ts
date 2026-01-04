@@ -6,7 +6,7 @@ import { getMapNamesByIds } from "./maps.services";
 import { logger } from "../utils/app-logger";
 import type { Season } from "@eggosystem/types";
 import { redisClient, expireIn30Days } from "../utils/redisClient";
-import { getOrCreateUnsubscribeToken } from "../models/account.models";
+import { getOrCreateUnsubscribeToken } from "../models/user-policy-acceptance.models";
 
 function createTransporter() {
   if (process.env.NODE_ENV === "test" || process.env.NODE_ENV === "e2e") {
