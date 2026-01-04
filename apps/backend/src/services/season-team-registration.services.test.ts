@@ -370,7 +370,8 @@ describe("Season team registration services", () => {
         seasonDetails.id,
         formData.teamId,
         formData.organizationId,
-        formData.players.map((player) => player.steamId)
+        formData.players.map((player) => player.steamId),
+        undefined
       );
       expect(registrationInsert).toHaveBeenCalledWith(
         seasonDetails.id,
@@ -1154,7 +1155,8 @@ describe("Season team registration services", () => {
         seasonDetails.id,
         formData.teamId,
         formData.organizationId,
-        formData.players.map((player) => player.steamId)
+        formData.players.map((player) => player.steamId),
+        undefined
       );
       expect(registrationUpdate).toHaveBeenCalledWith(
         seasonDetails.id,
