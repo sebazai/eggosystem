@@ -7,6 +7,7 @@ import type {
   Reservation
 } from "@eggosystem/types";
 import * as uuid from "uuid";
+import * as crypto from "crypto";
 import { type PoolConnection } from "mysql2/promise";
 import semver from "semver";
 import { runQuery } from "../db/mysqlRunQuery";
@@ -439,4 +440,87 @@ export const getUserInfoBySteamId = async (
   );
 
   return users && users.length > 0 ? users[0] : null;
+};
+
+/**
+ * Generate or retrieve an unsubscribe token for a user's policy acceptance record.
+ * If a token already exists, returns the existing token.
+ * Otherwise, generates a new secure random token and stores it.
+ *
+ * @param accountId - The account ID to generate/retrieve a token for
+ * @param connection - Optional database connection for transaction support
+ * @returns The unsubscribe token (existing or newly generated)
+ */
+export const getOrCreateUnsubscribeToken = async (
+  accountId: Account["id"],
+  connection?: PoolConnection
+): Promise<string> => {
+  // Get the latest policy acceptance record
+  const policies = await runQuery<UserPolicyAcceptance[] | undefined>(
+    `SELECT * FROM UserPolicyAcceptances WHERE account_id = ? ORDER BY created_at DESC LIMIT 1`,
+    [accountId],
+    connection
+  );
+
+  if (!policies || policies.length === 0) {
+    throw new NotFoundError("No policy acceptance found for account");
+  }
+
+  const policy = policies[0];
+
+  if (policy.newsletter_unsubscribe_token) {
+    return policy.newsletter_unsubscribe_token;
+  }
+
+  const token = crypto.randomBytes(32).toString("hex");
+
+  await runQuery(
+    `UPDATE UserPolicyAcceptances SET newsletter_unsubscribe_token = ? WHERE id = ?`,
+    [token, policy.id],
+    connection
+  );
+
+  return token;
+};
+
+/**
+ * Find account by unsubscribe token and verify the token is valid.
+ *
+ * @param token - The unsubscribe token to look up
+ * @param connection - Optional database connection
+ * @returns The account ID if token is valid, null otherwise
+ */
+export const getAccountByUnsubscribeToken = async (
+  token: string,
+  connection?: PoolConnection
+): Promise<Account["id"] | null> => {
+  const policies = await runQuery<UserPolicyAcceptance[] | undefined>(
+    `SELECT account_id FROM UserPolicyAcceptances WHERE newsletter_unsubscribe_token = ? LIMIT 1`,
+    [token],
+    connection
+  );
+
+  if (!policies || policies.length === 0) {
+    return null;
+  }
+
+  return policies[0].account_id;
+};
+
+/**
+ * Unsubscribe a user from newsletters by setting accepted_tournament_newsletter to false
+ * for all their policy acceptance records.
+ *
+ * @param accountId - The account ID to unsubscribe
+ * @param connection - Optional database connection for transaction support
+ */
+export const unsubscribeFromNewsletter = async (
+  accountId: Account["id"],
+  connection?: PoolConnection
+): Promise<void> => {
+  await runQuery(
+    `UPDATE UserPolicyAcceptances SET accepted_tournament_newsletter = 0 WHERE account_id = ?`,
+    [accountId],
+    connection
+  );
 };
