@@ -9,4 +9,5 @@ export interface UserPolicyAcceptance {
   created_at: Date;
   updated_at: Date;
   privacy_policy_version: string;
+  newsletter_unsubscribe_token: string | null;
 }
