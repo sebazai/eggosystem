@@ -209,29 +209,29 @@ export const preparePlayerForSignup = async (
       // Generate fake data if missing or invalid
       const fakeNickname =
         existingPlayer.nickname || `Player_${steamId.slice(-8)}`;
-      const fakeFullName =
+      const fullName =
         account.full_name && account.full_name.includes(" ")
           ? account.full_name
           : `Fake Name ${steamId.slice(-4)}`;
 
-      // Check if work_email is valid (not null, contains @, and is_work_email_personal_email != 1)
       const isWorkEmailValid =
         account.work_email !== null &&
         account.work_email.includes("@") &&
-        account.is_work_email_personal_email !== 1;
+        account.is_work_email_personal_email !== 1 &&
+        account.work_email_verified;
 
-      const fakeWorkEmail: string =
+      const workEmail =
         isWorkEmailValid && account.work_email !== null
           ? account.work_email
           : `fake_${steamId.slice(-8)}@example.com`;
 
       // Check if any changes are needed
       const nicknameChanged = existingPlayer.nickname !== fakeNickname;
-      const fullNameChanged = account.full_name !== fakeFullName;
+      const fullNameChanged = account.full_name !== fullName;
       // Normalize email comparison: trim whitespace and handle null/empty string cases
       // fakeWorkEmail is never null because if account.work_email is null, we use the fake email
       const normalizedWorkEmail = account.work_email?.trim() || null;
-      const normalizedFakeWorkEmail = (fakeWorkEmail ?? "").trim();
+      const normalizedFakeWorkEmail = (workEmail ?? "").trim();
       const workEmailChanged = normalizedWorkEmail !== normalizedFakeWorkEmail;
       const workEmailVerifiedChanged = account.work_email_verified !== true;
       // is_work_email_personal_email: null or 0 means "not personal", 1 means "personal"
@@ -261,12 +261,14 @@ export const preparePlayerForSignup = async (
       if (changesMade) {
         await runQuery(
           `UPDATE Accounts 
-         SET full_name = ?, 
-             work_email = ?, 
-             work_email_verified = ?, 
-             is_work_email_personal_email = ?
-         WHERE id = ?`,
-          [fakeFullName, fakeWorkEmail, true, false, account.id],
+            SET full_name = ?, 
+                work_email = ?, 
+                work_email_verified = ?, 
+                is_work_email_personal_email = ?,
+                work_email_token = ?,
+                work_email_token_expires_at = ?
+            WHERE id = ?`,
+          [fullName, workEmail, true, false, null, null, account.id],
           connection
         );
       }
