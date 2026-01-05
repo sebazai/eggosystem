@@ -536,7 +536,7 @@ function SortterPageContent() {
               Error
             </h5>
             <div className="text-sm text-red-700 dark:text-red-400">
-              {error}
+              {error.toString()}
             </div>
           </div>
         )}
