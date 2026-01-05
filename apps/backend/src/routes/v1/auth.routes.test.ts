@@ -4,11 +4,14 @@ import cookieParser from "cookie-parser";
 import authRouter from "./auth.routes";
 import * as authServices from "../../services/auth.services";
 import * as authModels from "../../models/auth.models";
-import * as accountModels from "../../models/account.models";
+import * as userPolicyAcceptanceModels from "../../models/user-policy-acceptance.models";
 import jwt from "jsonwebtoken";
 import { UnauthorizedError } from "../../utils/errors";
 import { expressErrorHandler } from "../../middlewares/express-error-handler";
-import { createMockUserPayload } from "@eggosystem/types";
+import {
+  createMockUserPayload,
+  createMockUserPolicyAcceptance
+} from "@eggosystem/types";
 
 jest.mock("jsonwebtoken", () => ({
   sign: jest.fn((payload, secret, _options) => {
@@ -77,25 +80,30 @@ describe("GET /me", () => {
 
     // Mock account models
     jest
-      .spyOn(accountModels, "getUserProfileAcceptanceForVersion")
-      .mockResolvedValue({
-        id: 1,
-        account_id: 1,
-        accepted_privacy_policy: true,
-        accepted_marketing: false,
-        accepted_tournament_newsletter: true,
-        privacy_policy_version: "1",
-        created_at: new Date(),
-        updated_at: new Date()
-      });
+      .spyOn(userPolicyAcceptanceModels, "getUserProfileAcceptanceForVersion")
+      .mockResolvedValue(
+        createMockUserPolicyAcceptance({
+          id: 1,
+          account_id: 1,
+          accepted_privacy_policy: true,
+          accepted_marketing: false,
+          accepted_tournament_newsletter: true,
+          privacy_policy_version: "1",
+          created_at: new Date(),
+          updated_at: new Date()
+        })
+      );
     jest
-      .spyOn(accountModels, "getLatestUserProfileMarketingConsent")
+      .spyOn(userPolicyAcceptanceModels, "getLatestUserProfileMarketingConsent")
       .mockResolvedValue(false);
     jest
-      .spyOn(accountModels, "getLatestUserProfileNewsletterConsent")
+      .spyOn(
+        userPolicyAcceptanceModels,
+        "getLatestUserProfileNewsletterConsent"
+      )
       .mockResolvedValue(true);
     jest
-      .spyOn(accountModels, "hasAcceptedAnyPrivacyPolicy")
+      .spyOn(userPolicyAcceptanceModels, "hasAcceptedAnyPrivacyPolicy")
       .mockResolvedValue(false);
   });
 

@@ -6,6 +6,7 @@ import { getMapNamesByIds } from "./maps.services";
 import { logger } from "../utils/app-logger";
 import type { Season } from "@eggosystem/types";
 import { redisClient, expireIn30Days } from "../utils/redisClient";
+import { getOrCreateUnsubscribeToken } from "../models/user-policy-acceptance.models";
 
 function createTransporter() {
   if (process.env.NODE_ENV === "test" || process.env.NODE_ENV === "e2e") {
@@ -23,6 +24,35 @@ function createTransporter() {
         .trim()
     }
   });
+}
+
+/**
+ * Generate unsubscribe headers and HTML footer for emails.
+ * Includes both List-Unsubscribe headers for email client support
+ * and an HTML link for manual unsubscription.
+ *
+ * @param accountId - The account ID to generate unsubscribe link for
+ * @returns Object containing headers and HTML footer with unsubscribe link
+ */
+async function getUnsubscribeHeadersAndFooter(accountId: number): Promise<{
+  headers: { "List-Unsubscribe": string; "List-Unsubscribe-Post": string };
+  footerHtml: string;
+}> {
+  const token = await getOrCreateUnsubscribeToken(accountId);
+  const unsubscribeUrl = `${process.env.BACKEND_URL}/v1/account/unsubscribe/${token}`;
+
+  return {
+    headers: {
+      "List-Unsubscribe": `<${unsubscribeUrl}>`,
+      "List-Unsubscribe-Post": "List-Unsubscribe=One-Click"
+    },
+    footerHtml: `
+      <p style="font-size: 12px; color: #999; margin-top: 30px; text-align: center;">
+        Don't want to receive these emails? 
+        <a href="${unsubscribeUrl}" style="color: #999; text-decoration: underline;">Unsubscribe</a>
+      </p>
+    `
+  };
 }
 
 export const sendVerificationEmail = async (to: string, token: string) => {
@@ -361,6 +391,7 @@ export const sendSeasonCaptainWelcomeEmail = async (
 
 const sendSeasonWelcomeEmail = async (
   to: string,
+  accountId: number,
   seasonDisplayName: string,
   seasonStartDate: string | null,
   teamName: string,
@@ -371,6 +402,11 @@ const sendSeasonWelcomeEmail = async (
   mapNames: string[]
 ) => {
   const transporter = createTransporter();
+
+  // Get unsubscribe headers and footer
+  const { headers: unsubscribeHeaders, footerHtml: unsubscribeFooter } =
+    await getUnsubscribeHeadersAndFooter(accountId);
+
   const mailOptions = {
     from: "Kanahub by Kanaliiga <cs@kanaliiga.fi>",
     to,
@@ -492,12 +528,15 @@ const sendSeasonWelcomeEmail = async (
             <a href="https://hub.kanaliiga.fi" style="color: hsl(35, 93%, 49%); text-decoration: none;">hub.kanaliiga.fi</a> | 
             <a href="https://kanaliiga.fi" style="color: hsl(35, 93%, 49%); text-decoration: none;">kanaliiga.fi</a>
           </p>
+          
+          ${unsubscribeFooter}
         </div>
       `,
     headers: {
       Date: new Date().toUTCString(),
       "Message-ID": `<${Date.now()}.${Math.random().toString(36).substring(2)}@kanaliiga.fi>`,
-      "Content-Type": "text/html; charset=UTF-8"
+      "Content-Type": "text/html; charset=UTF-8",
+      ...unsubscribeHeaders
     }
   };
 
@@ -640,6 +679,7 @@ export const sendSeasonFinalizationWelcomeEmails = async (
     const emailPromises = players.map((player) =>
       sendSeasonWelcomeEmail(
         player.email,
+        player.account_id,
         seasonDisplayName,
         seasonStartDate,
         player.team_name,

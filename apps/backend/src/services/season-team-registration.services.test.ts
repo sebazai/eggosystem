@@ -249,6 +249,102 @@ describe("Season team registration services", () => {
           }
         }
       });
+
+      it("Should default team logo to organization logo when no team image provided", async () => {
+        const formData = _.cloneDeep(validSignupData);
+        formData.organizationId = 1;
+        formData.teamId = -1;
+        formData.newTeam = {
+          name: "TestiBoyzWithOrgLogo"
+        } satisfies SignupNewTeamType;
+
+        const teamInsertSpy = jest.spyOn(teamModels, "insertTeam");
+
+        let data: any;
+        try {
+          data = await registrationServices.handleSignupFormForSeason(
+            seasonDetails,
+            formData
+          );
+
+          expect(data).toHaveProperty("organization_id");
+          expect(data).toHaveProperty("team_id");
+          expect(data.organization_id).toEqual(1);
+          expect(typeof data.team_id).toBe("number");
+          expect(teamInsertSpy).toHaveBeenCalledTimes(1);
+
+          // Check that insertTeam was called with the organization's logo
+          const insertTeamCall = teamInsertSpy.mock.calls[0][0];
+          expect(insertTeamCall).toHaveProperty("team_logo");
+
+          // Get the organization to verify the logo was copied
+          const [org] = await runQuery<any[]>(
+            "SELECT logo FROM Organizations WHERE id = ?",
+            [1]
+          );
+
+          // Verify the team was created with the org's logo
+          const [team] = await runQuery<[Team]>(
+            "SELECT * FROM Teams WHERE id = ?",
+            [data.team_id]
+          );
+
+          if (org?.logo) {
+            expect(team.team_logo).toEqual(org.logo);
+          }
+        } finally {
+          if (data?.team_id) {
+            await removeTestTeam(data.team_id);
+          }
+        }
+      });
+
+      it("Should use uploaded team image instead of org logo when provided", async () => {
+        const formData = _.cloneDeep(validSignupData);
+        formData.organizationId = 1;
+        formData.teamId = -1;
+        formData.newTeam = {
+          name: "TestiBoyzCustomLogo",
+          image_data:
+            "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+          image_filename: "custom-logo.png"
+        } satisfies SignupNewTeamType;
+
+        // Mock the uploadSignupImage to avoid actual upload
+        jest
+          // eslint-disable-next-line @typescript-eslint/no-require-imports
+          .spyOn(require("./signup-image-upload.services"), "uploadSignupImage")
+          .mockResolvedValue({ phash: "custom-team-phash-123" });
+
+        const teamInsertSpy = jest.spyOn(teamModels, "insertTeam");
+
+        let data: any;
+        try {
+          data = await registrationServices.handleSignupFormForSeason(
+            seasonDetails,
+            formData
+          );
+
+          expect(data).toHaveProperty("team_id");
+          expect(teamInsertSpy).toHaveBeenCalledTimes(1);
+
+          // Check that insertTeam was called with the custom uploaded logo, not org logo
+          const insertTeamCall = teamInsertSpy.mock.calls[0][0];
+          expect(insertTeamCall.team_logo).toEqual("custom-team-phash-123");
+
+          // Verify it's different from org logo
+          const [org] = await runQuery<any[]>(
+            "SELECT logo FROM Organizations WHERE id = ?",
+            [1]
+          );
+
+          expect(insertTeamCall.team_logo).not.toEqual(org?.logo);
+        } finally {
+          if (data?.team_id) {
+            await removeTestTeam(data.team_id);
+          }
+        }
+      });
     });
     describe("existing org and existing team", () => {
       it("Should throw error if team not part of organization", async () => {

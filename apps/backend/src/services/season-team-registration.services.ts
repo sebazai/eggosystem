@@ -18,7 +18,8 @@ import {
 
 import {
   insertOrganization,
-  updateOrganizationLogo
+  updateOrganizationLogo,
+  getOrganizationById
 } from "../models/organization.models";
 import { getTeamWithIdWithoutOrg, insertTeam } from "../models/team.models";
 import { isTeamPartOfOrganization } from "./team.services";
@@ -676,6 +677,15 @@ export const handleSignupFormForSeason = async (
             `Failed to upload team logo during signup: ${imageError}`
           );
         }
+      } else {
+        // If no team image provided, default to organization logo
+        const [org] = await getOrganizationById(formData.organizationId);
+        if (org?.logo) {
+          teamLogo = org.logo;
+          logger.info(
+            `Defaulting team logo to organization logo: orgId=${formData.organizationId}, phash=${teamLogo}`
+          );
+        }
       }
 
       const newTeam = await insertTeam(
@@ -690,7 +700,7 @@ export const handleSignupFormForSeason = async (
 
       if (teamLogo) {
         logger.info(
-          `Uploaded team logo during signup: teamId=${newTeam.insertId}, phash=${teamLogo}`
+          `Team logo set during signup: teamId=${newTeam.insertId}, phash=${teamLogo}`
         );
       }
 

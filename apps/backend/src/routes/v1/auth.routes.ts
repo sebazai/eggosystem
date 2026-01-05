@@ -16,7 +16,7 @@ import {
   getLatestUserProfileNewsletterConsent,
   getUserProfileAcceptanceForVersion,
   hasAcceptedAnyPrivacyPolicy
-} from "../../models/account.models";
+} from "../../models/user-policy-acceptance.models";
 import { getRolesForAccountId } from "../../services/auth.services";
 import { logger } from "../../utils/app-logger";
 import {

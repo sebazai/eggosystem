@@ -15,6 +15,7 @@
     "test:e2e": "pnpm --filter=backend reseed:e2e && pnpm build && pnpm --filter=frontend test:e2e --",
     "test:all": "pnpm test && pnpm test:e2e",
     "test:e2e:ui": "pnpm --filter=frontend test:e2e:ui",
+    "playwright-trace": "pnpm --filter=frontend playwright-trace --",
     "test:backend": "pnpm --filter=backend test",
     "lint": "turbo lint --continue",
     "lint:fix": "turbo lint --continue -- --fix",

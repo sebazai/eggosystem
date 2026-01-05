@@ -3,7 +3,8 @@ import {
   emailsVerifiedController,
   getAccountMatchReservationsController,
   sendVerificationEmails,
-  updateAccountProfileController
+  updateAccountProfileController,
+  unsubscribeNewsletterController
 } from "../../controllers/account.controllers";
 import {
   getCasterDefaultUrlController,
@@ -110,5 +111,7 @@ router.post("/my-teams/upload-logo", authenticateJWT, uploadTeamLogoController);
 
 // Avatar upload route
 router.post("/upload-avatar", authenticateJWT, uploadPlayerAvatarController);
+
+router.get("/unsubscribe/:token", unsubscribeNewsletterController);
 
 export default router;

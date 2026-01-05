@@ -5,6 +5,7 @@ import {
 import { updateAccountProfileController } from "./account.controllers";
 import { getConnection } from "../db/mysqlConnection";
 import * as accountModels from "../models/account.models";
+import * as userPolicyAcceptanceModels from "../models/user-policy-acceptance.models";
 import type { Request, Response } from "express";
 import _ from "lodash";
 
@@ -74,7 +75,7 @@ describe("updateProfile Controller", () => {
       .mockResolvedValue(mockedAccount);
     jest.spyOn(accountModels, "updateAccountData").mockResolvedValue(undefined);
     jest
-      .spyOn(accountModels, "updateUserPolicyAcceptance")
+      .spyOn(userPolicyAcceptanceModels, "updateUserPolicyAcceptance")
       .mockResolvedValue(undefined);
   });
 
@@ -111,16 +112,18 @@ describe("updateProfile Controller", () => {
   });
 
   it("should update profile and policy acceptance if user exists", async () => {
-    jest.spyOn(accountModels, "userPolicyAcceptance").mockResolvedValue(
-      createMockUserPolicyAcceptance({
-        accepted_tournament_newsletter: true
-      })
-    );
+    jest
+      .spyOn(userPolicyAcceptanceModels, "userPolicyAcceptance")
+      .mockResolvedValue(
+        createMockUserPolicyAcceptance({
+          accepted_tournament_newsletter: true
+        })
+      );
     const updatedAccountSpy = jest
       .spyOn(accountModels, "updateAccountData")
       .mockResolvedValue(undefined);
     const updatedPolicySpy = jest
-      .spyOn(accountModels, "updateUserPolicyAcceptance")
+      .spyOn(userPolicyAcceptanceModels, "updateUserPolicyAcceptance")
       .mockResolvedValue(undefined);
 
     const mockNext = jest.fn();
@@ -155,9 +158,11 @@ describe("updateProfile Controller", () => {
     });
 
     jest.spyOn(accountModels, "getAccountById").mockResolvedValue(newMock);
-    jest.spyOn(accountModels, "userPolicyAcceptance").mockResolvedValue(null);
+    jest
+      .spyOn(userPolicyAcceptanceModels, "userPolicyAcceptance")
+      .mockResolvedValue(null);
     const insertSpy = jest
-      .spyOn(accountModels, "insertUserPolicyAcceptance")
+      .spyOn(userPolicyAcceptanceModels, "insertUserPolicyAcceptance")
       .mockResolvedValue();
 
     const mockNext = jest.fn();
@@ -199,8 +204,12 @@ describe("updateProfile Controller", () => {
     jest
       .spyOn(accountModels, "getAccountById")
       .mockResolvedValue(accountWithExistingToken);
-    jest.spyOn(accountModels, "userPolicyAcceptance").mockResolvedValue(null);
-    jest.spyOn(accountModels, "insertUserPolicyAcceptance").mockResolvedValue();
+    jest
+      .spyOn(userPolicyAcceptanceModels, "userPolicyAcceptance")
+      .mockResolvedValue(null);
+    jest
+      .spyOn(userPolicyAcceptanceModels, "insertUserPolicyAcceptance")
+      .mockResolvedValue();
 
     // Update profile with same work email (no change)
     req.body = {
