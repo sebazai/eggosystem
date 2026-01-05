@@ -2,7 +2,7 @@ import { redisClient, expireIn30Days } from "../utils/redisClient";
 import { logger } from "../utils/app-logger";
 import type { TeamSortterValues } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
-import { getLatestNewsletterConsentBySemverBatch } from "../models/account.models";
+import { getLatestNewsletterConsentBySemverBatch } from "../models/user-policy-acceptance.models";
 
 /**
  * Interface for team placement data stored in Redis

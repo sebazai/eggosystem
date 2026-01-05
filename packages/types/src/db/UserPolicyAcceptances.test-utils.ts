@@ -33,6 +33,7 @@ export const createMockUserPolicyAcceptance = (
     created_at: now,
     updated_at: now,
     privacy_policy_version: "1.0",
+    newsletter_unsubscribe_token: null,
     ...overrides
   };
 };

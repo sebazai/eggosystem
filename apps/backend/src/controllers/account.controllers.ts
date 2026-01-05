@@ -19,6 +19,10 @@ import {
   getAccountMatchReservations,
   updateAccount
 } from "../models/account.models";
+import {
+  getAccountByUnsubscribeToken,
+  unsubscribeFromNewsletter
+} from "../models/user-policy-acceptance.models";
 import { redisClient } from "../utils/redisClient";
 import { runQuery } from "../db/mysqlRunQuery";
 import { handleEmailVerification } from "../services/account.services";
@@ -228,4 +232,39 @@ export const getAccountMatchReservationsController = async (
   const matchId = Number(req.params.match_id);
   const reservation = await getAccountMatchReservations(accountId, matchId);
   res.json(reservation ?? null);
+};
+
+/**
+ * Unsubscribe from newsletters using a token.
+ * This is a public endpoint that doesn't require authentication.
+ */
+export const unsubscribeNewsletterController = async (
+  req: RequestWithParams<{ token: string }>,
+  res: Response,
+  next: NextFunction
+) => {
+  const token = req.params.token;
+
+  if (!token) {
+    return next(new BadRequestError("Missing unsubscribe token"));
+  }
+
+  try {
+    const accountId = await getAccountByUnsubscribeToken(token);
+
+    if (!accountId) {
+      return next(new NotFoundError("Invalid or expired unsubscribe token"));
+    }
+
+    await unsubscribeFromNewsletter(accountId);
+
+    res.status(200).json({
+      message: "You have been successfully unsubscribed from newsletters"
+    });
+  } catch (error) {
+    logger.error("Error unsubscribing from newsletter:", error);
+    return next(
+      new InternalServerError("Failed to process unsubscribe request")
+    );
+  }
 };
