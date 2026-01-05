@@ -362,40 +362,23 @@ describe("UserList Integration", () => {
 
 ### E2E Testing (Playwright)
 
-**Location**: `apps/frontend/src/__tests__/e2e/`
+**Location**: `apps/frontend/src/e2e/`
 
-**Setup**:
+**Quick Start**:
 
 ```bash
-# Install Playwright
-pnpm exec playwright install
-pnpm exec playwright install-deps
-
-# Start E2E backend
-pnpm --filter=backend dev:e2e
-
-# Run E2E tests
+# Run E2E tests (from workspace root)
 pnpm test:e2e
 ```
 
-**Patterns**:
+**For comprehensive Playwright documentation**, including:
 
-```typescript
-import { test, expect } from "@playwright/test";
+- Running tests in different modes (UI, headed, specific tests)
+- Viewing traces and debugging failed tests
+- Downloading and viewing CI artifacts
+- Configuration options and troubleshooting
 
-test.describe("User Management", () => {
-  test("should create new user", async ({ page }) => {
-    await page.goto("/users");
-
-    await page.click("text=Add User");
-    await page.fill('input[name="name"]', "John Doe");
-    await page.fill('input[name="email"]', "john@example.com");
-    await page.click("text=Save");
-
-    await expect(page.locator("text=John Doe")).toBeVisible();
-  });
-});
-```
+See **[README.playwright.md](./README.playwright.md)** for detailed guidance.
 
 ## Test Utilities
 

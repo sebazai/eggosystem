@@ -18,6 +18,7 @@
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:container": "PLAYWRIGHT_BROWSERS_PATH=/ms-playwright playwright test",
+    "playwright-trace": "playwright show-trace --host 0.0.0.0 --port 9323",
     "clean": "rm -rf cache .next"
   },
   "dependencies": {
