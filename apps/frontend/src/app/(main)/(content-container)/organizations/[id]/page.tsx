@@ -4,7 +4,7 @@ import OrganizationHeader from "@/components/organizations/OrganizationHeader";
 import { createOrgLogoUrl } from "@/lib/utils";
 import OrganizationTrophies from "@/components/organizations/OrganizationTrophies";
 import OrganizationTeams from "@/components/organizations/OrganizationTeams";
-import type { Metadata } from "next";
+import type { Metadata, ResolvedMetadata } from "next";
 import { createPageMetadata } from "@/lib/metadata";
 import { OrganizationDiscordInviteLink } from "@/components/organizations/OrganizationDiscordInviteLink";
 
@@ -14,17 +14,28 @@ interface OrganizationProps {
   }>;
 }
 
-export async function generateMetadata({
-  params
-}: OrganizationProps): Promise<Metadata> {
+export async function generateMetadata(
+  { params }: OrganizationProps,
+  parent: Promise<ResolvedMetadata>
+): Promise<Metadata> {
   const { id } = await params;
   const url = `${envConfig.API_URL}/api/v1/organizations/${id}`;
   const org = await fetch(url);
   const organization: Organizations = await org.json();
 
+  const previousImages = (await parent).openGraph?.images || [];
+  const orgLogoUrl = createOrgLogoUrl(organization.logo);
+  const logoResponse = await fetch(orgLogoUrl, {
+    method: "HEAD"
+  });
+  const logoExists = logoResponse.ok;
+
   if (org.ok) {
     return createPageMetadata({
-      title: organization.name
+      title: organization.name,
+      openGraph: {
+        images: logoExists ? [orgLogoUrl] : previousImages
+      }
     });
   }
   return createPageMetadata({
