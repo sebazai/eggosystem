@@ -249,6 +249,7 @@ describe("preparePlayerForSignup", () => {
           id: 456,
           full_name: null,
           work_email: "valid@example.com",
+          work_email_verified: 1, // Email is verified, so it should be kept
           is_work_email_personal_email: 0
         };
 
@@ -387,6 +388,7 @@ describe("preparePlayerForSignup", () => {
           id: 456,
           full_name: "Valid Full Name",
           work_email: "valid@example.com",
+          work_email_verified: 1, // Email is verified
           is_work_email_personal_email: 0
         };
 
@@ -422,6 +424,68 @@ describe("preparePlayerForSignup", () => {
         const nicknameCall = nicknameUpdateCalls[0];
         expect(nicknameCall[1]).toContain(`Player_${testSteamId.slice(-8)}`);
         expect(nicknameCall[1]).toContain(testSteamId);
+      });
+
+      it("should replace unverified email with fake email and clear token/expiry even if email format is valid", async () => {
+        const existingPlayer = {
+          steam_id: testSteamId,
+          nickname: "ExistingPlayer",
+          account_id: 456
+        };
+
+        const existingAccount = {
+          id: 456,
+          full_name: "Valid Full Name",
+          work_email: "unverified@example.com",
+          work_email_verified: 0, // NOT verified
+          is_work_email_personal_email: 0
+          // Assume work_email_token and work_email_token_expires_at are set in DB
+        };
+
+        // Mock: Player exists
+        mockRunQuery.mockResolvedValueOnce([existingPlayer]);
+
+        // Mock: Get account
+        mockRunQuery.mockResolvedValueOnce([existingAccount]);
+
+        // Mock: Update Account
+        mockRunQuery.mockResolvedValueOnce({
+          affectedRows: 1
+        } as unknown as Awaited<ReturnType<typeof runQuery>>);
+
+        const result = await preparePlayerForSignup(testSteamId);
+
+        expect(result).toEqual({
+          account_id: 456,
+          steam_id: testSteamId,
+          changes_made: true
+        });
+
+        expect(mockConnection.commit).toHaveBeenCalled();
+
+        // Verify the UPDATE Accounts call sets:
+        // 1. fake email (because email is not verified)
+        // 2. work_email_verified to true
+        // 3. work_email_token to null
+        // 4. work_email_token_expires_at to null
+        const updateCalls = mockRunQuery.mock.calls.filter(
+          (call) =>
+            typeof call[0] === "string" && call[0].includes("UPDATE Accounts")
+        );
+        expect(updateCalls.length).toBeGreaterThan(0);
+        const updateCall = updateCalls[0];
+        expect(Array.isArray(updateCall[1])).toBe(true);
+
+        // Check parameters: [fullName, workEmail, work_email_verified, is_work_email_personal_email, work_email_token, work_email_token_expires_at, accountId]
+        expect(updateCall[1]).toEqual([
+          "Valid Full Name",
+          `fake_${testSteamId.slice(-8)}@example.com`, // Fake email because unverified
+          true, // work_email_verified set to true
+          false, // is_work_email_personal_email
+          null, // work_email_token cleared
+          null, // work_email_token_expires_at cleared
+          456 // account ID
+        ]);
       });
     });
 
