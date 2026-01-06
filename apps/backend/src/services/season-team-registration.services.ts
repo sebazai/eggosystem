@@ -21,7 +21,11 @@ import {
   updateOrganizationLogo,
   getOrganizationById
 } from "../models/organization.models";
-import { getTeamWithIdWithoutOrg, insertTeam } from "../models/team.models";
+import {
+  getTeamWithIdWithoutOrg,
+  insertTeam,
+  getTeamById
+} from "../models/team.models";
 import { isTeamPartOfOrganization } from "./team.services";
 import { areSteamProfilesPublic } from "./steam.services";
 import { getPlayerDetailsBySteamId } from "../models/player.models";
@@ -401,11 +405,13 @@ export const handleSeasonTeamRegistration = async (
       connection
     );
     if (captainEmail) {
+      const team = await getTeamById(teamId);
+      const teamName = team[0]?.name || "Your Team";
       sendSeasonCaptainWelcomeEmail(
         captainEmail,
         seasonId,
-        "https://discord.gg/UFetjhv",
-        players
+        players,
+        teamName
       ).catch((error) => {
         logger.error("Failed to send captain welcome email", error);
       });

@@ -7,6 +7,7 @@ import { logger } from "../utils/app-logger";
 import type { Season } from "@eggosystem/types";
 import { redisClient, expireIn30Days } from "../utils/redisClient";
 import { getOrCreateUnsubscribeToken } from "../models/user-policy-acceptance.models";
+import { getOrganizerByIdOrFail } from "../models/organizer.models";
 
 function createTransporter() {
   if (process.env.NODE_ENV === "test" || process.env.NODE_ENV === "e2e") {
@@ -196,8 +197,8 @@ interface PlayerInfo {
 export const sendSeasonCaptainWelcomeEmail = async (
   to: string,
   seasonId: number,
-  discordLink: string,
-  players: PlayerInfo[]
+  players: PlayerInfo[],
+  teamName: string
 ) => {
   // Fetch season details to get the season name
   const season = await getSeasonById(seasonId);
@@ -205,6 +206,9 @@ export const sendSeasonCaptainWelcomeEmail = async (
   if (!season) {
     throw new Error(`Season with id ${seasonId} not found`);
   }
+
+  const organizer = await getOrganizerByIdOrFail(season.organizer_id);
+  const discordLink = organizer.discord_link;
 
   // Fetch game abbreviation
   const game = await getGameById(season.game_id);
@@ -236,8 +240,8 @@ export const sendSeasonCaptainWelcomeEmail = async (
   const mailOptions = {
     from: "Kanahub by Kanaliiga <cs@kanaliiga.fi>",
     to,
-    subject: `Welcome to ${seasonDisplayName} - Kanaliiga`,
     cc: "cs@kanaliiga.fi",
+    subject: `Welcome to ${seasonDisplayName} - ${teamName} - Kanaliiga`,
     html: `
         <div style="font-family: Arial, sans-serif; color: #333; font-size: 16px; line-height: 1.5; max-width: 600px; margin: 0 auto;">
           <h1 style="color: hsl(35, 93%, 49%); font-size: 24px; text-align: left;">Welcome to ${seasonDisplayName}!</h1>

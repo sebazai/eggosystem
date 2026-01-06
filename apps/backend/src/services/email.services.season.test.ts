@@ -64,7 +64,8 @@ describe("Season Captain Welcome Email Services", () => {
         "captain@example.com",
         1,
         "https://discord.gg/test",
-        mockPlayers
+        mockPlayers,
+        "Test Team"
       );
 
       expect(mockGetSeasonById).toHaveBeenCalledWith(1);
@@ -99,7 +100,8 @@ describe("Season Captain Welcome Email Services", () => {
         "captain@example.com",
         1,
         "https://discord.gg/test",
-        mockPlayers
+        mockPlayers,
+        "Test Team"
       );
 
       expect(mockGetSeasonById).toHaveBeenCalledWith(1);
@@ -139,7 +141,8 @@ describe("Season Captain Welcome Email Services", () => {
         "captain@example.com",
         123,
         "https://discord.gg/test",
-        mockPlayers
+        mockPlayers,
+        "Test Team"
       );
 
       // Verify that getSeasonById was called with the correct season ID
@@ -160,7 +163,8 @@ describe("Season Captain Welcome Email Services", () => {
           "captain@example.com",
           999,
           "https://discord.gg/test",
-          mockPlayers
+          mockPlayers,
+          "Test Team"
         )
       ).rejects.toThrow("Season with id 999 not found");
 

@@ -27,6 +27,7 @@ export const createMockOrganizer = (
     id: 1,
     name: "Test Organizer",
     faceit_id: "test-faceit-id",
+    discord_link: null,
     ...overrides
   };
 };
