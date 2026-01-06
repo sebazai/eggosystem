@@ -181,11 +181,20 @@ export const SignupWelcome = ({ seasonId }: SignupWelcomeProps) => {
         <div className="text-center text-xl pb-6">📏 Rules</div>
         <p>
           Please familiarize yourself with our rules and instructions in the{" "}
-          <Link target="_blank" href={"https://wiki.kanaliiga.fi"}>
+          <Link
+            target="_blank"
+            href={
+              seasonDetails.rulebook_url ||
+              "https://wiki.kanaliiga.fi/CS2/rulebook"
+            }
+          >
             Wiki
           </Link>{" "}
           and in the{" "}
-          <Link target="_blank" href={"https://discord.gg/UFetjhv"}>
+          <Link
+            target="_blank"
+            href={seasonDetails.discord_link || "https://discord.gg/UFetjhv"}
+          >
             Discord
           </Link>{" "}
           to make the tournament an awesome experience for everyone! If you need
