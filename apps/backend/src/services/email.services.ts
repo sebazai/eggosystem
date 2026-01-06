@@ -127,6 +127,7 @@ export const sendDiscordInviteEmail = async (
   const mailOptions = {
     from: "Kanahub by Kanaliiga <cs@kanaliiga.fi>",
     to,
+    cc: "cs@kanaliiga.fi",
     subject: `Welcome to Kanahautomo Discord - ${organizationName}`,
     html: `
         <div style="font-family: Arial, sans-serif; color: #333; font-size: 16px; line-height: 1.5; max-width: 600px; margin: 0 auto;">
@@ -236,6 +237,7 @@ export const sendSeasonCaptainWelcomeEmail = async (
     from: "Kanahub by Kanaliiga <cs@kanaliiga.fi>",
     to,
     subject: `Welcome to ${seasonDisplayName} - Kanaliiga`,
+    cc: "cs@kanaliiga.fi",
     html: `
         <div style="font-family: Arial, sans-serif; color: #333; font-size: 16px; line-height: 1.5; max-width: 600px; margin: 0 auto;">
           <h1 style="color: hsl(35, 93%, 49%); font-size: 24px; text-align: left;">Welcome to ${seasonDisplayName}!</h1>
@@ -410,6 +412,7 @@ const sendSeasonWelcomeEmail = async (
   const mailOptions = {
     from: "Kanahub by Kanaliiga <cs@kanaliiga.fi>",
     to,
+    cc: "cs@kanaliiga.fi",
     subject: `Welcome to ${seasonDisplayName} - Kanaliiga`,
     html: `
         <div style="font-family: Arial, sans-serif; color: #333; font-size: 16px; line-height: 1.5; max-width: 600px; margin: 0 auto;">
@@ -560,6 +563,7 @@ export const sendMatchScheduleChangeEmail = async (
   const mailOptions = {
     from: "Kanahub by Kanaliiga <cs@kanaliiga.fi>",
     to,
+    cc: "cs@kanaliiga.fi",
     subject: `Match Schedule Changed - ${matchDetails.teamNames}`,
     html: `
         <div style="font-family: Arial, sans-serif; color: #333; font-size: 16px; line-height: 1.5; max-width: 600px; margin: 0 auto;">
