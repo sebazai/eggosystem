@@ -1,3 +1,5 @@
+"use client";
+
 import { NextImageFallback } from "@/components/layout/NextImageFallback";
 import { useGameRoundInfo } from "@/hooks/data/useGameRoundInfo";
 import { Button } from "@/components/ui/button";
@@ -27,7 +29,6 @@ import { Spinner } from "@/components/ui/spinner";
 interface RoundInfoProps {
   matchGameId: number;
   setIs2DViewerOpen: (is2DViewerOpen: boolean) => void;
-  isLoadingViewerData: boolean;
 }
 
 const getEndReasonText = (
@@ -236,8 +237,7 @@ const RoundIcon = ({
 
 export const RoundInfo = ({
   matchGameId,
-  setIs2DViewerOpen,
-  isLoadingViewerData
+  setIs2DViewerOpen
 }: RoundInfoProps) => {
   const { roundInfo, isLoading, isError } = useGameRoundInfo(matchGameId);
   const {
@@ -280,16 +280,14 @@ export const RoundInfo = ({
       <div className="relative overflow-x-auto">
         <div className="flex flex-row gap-2 mb-5 sm:mb-3 items-center">
           <h2>ROUND HISTORY</h2>
-          {(isProcessing ||
-            isLoadingViewerData ||
-            isLoadingViewerDataUntilReady) && (
+          {(isProcessing || isLoadingViewerDataUntilReady) && (
             <Spinner
               thickness="thick"
               color="kanaliigaOrange"
               className="ml-2"
             />
           )}
-          {!(isProcessing || isLoadingViewerData) && hasViewerData && (
+          {!isProcessing && hasViewerData && (
             <Button
               variant="kanaliigaOrange"
               size="xs"

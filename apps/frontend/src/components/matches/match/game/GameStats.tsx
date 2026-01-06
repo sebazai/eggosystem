@@ -8,7 +8,6 @@ import { useGamePlayerStats } from "@/hooks/data/useGamePlayerStats";
 import { MatchMapPicks } from "../stats/MapPicks";
 import { TeamStatistics } from "../stats/TeamStatistics";
 import { useGameTeamStats } from "@/hooks/data/useGameTeamStats";
-import { use2DViewerData } from "@/hooks/data/use2DViewerData";
 import { RoundInfo } from "../stats/RoundRows";
 import { TwoDViewer } from "../stats/TwoDViewer";
 import { PlayerStatisticsForTeam } from "../stats/PlayerStatisticsForTeam";
@@ -59,8 +58,6 @@ export const GameStats = ({
   const { playerStats } = useGamePlayerStats(matchGameId, selectedStat);
   const { topPlayers } = useGameTopPlayers(matchGameId);
   const { clip } = useGameClip(matchGameId);
-  const { twoDViewerData, isLoading: isLoadingViewerData } =
-    use2DViewerData(matchGameId);
 
   const baseFilter = {
     seasons: matchInfo.season_id.toString(),
@@ -95,17 +92,13 @@ export const GameStats = ({
       <RoundInfo
         matchGameId={matchGameId}
         setIs2DViewerOpen={setIs2DViewerOpen}
-        isLoadingViewerData={isLoadingViewerData}
       />
 
-      {twoDViewerData?.status === "ready" && (
-        <TwoDViewer
-          isModalOpen={is2DViewerOpen}
-          setIsModalOpen={setIs2DViewerOpen}
-          mapName={twoDViewerData.map}
-          twoDViewerData={twoDViewerData.data}
-        />
-      )}
+      <TwoDViewer
+        matchGameId={matchGameId}
+        isModalOpen={is2DViewerOpen}
+        setIsModalOpen={setIs2DViewerOpen}
+      />
 
       {playerStats && playerStats.length > 0 && (
         <PlayerStatisticsForTeam
