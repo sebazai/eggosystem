@@ -23,10 +23,10 @@ export interface DetailsDemoReadyBase {
   voting?: FaceitVoting;
   calculate_elo: boolean;
   scheduled_at?: number;
-  configured_at: number;
-  started_at: number;
+  configured_at?: number;
+  started_at?: number;
   finished_at?: number;
-  demo_url: string[];
+  demo_url?: string[];
   chat_room_id: string;
   best_of: number;
   results: FaceitMatchResultsDemoReady;
@@ -47,10 +47,10 @@ const DetailsDemoReadBaseSchema = z.object({
   voting: FaceitVotingSchema.optional(),
   calculate_elo: z.boolean(),
   scheduled_at: z.number().optional(),
-  configured_at: z.number(),
-  started_at: z.number(),
+  configured_at: z.number().optional(),
+  started_at: z.number().optional(),
   finished_at: z.number().optional(),
-  demo_url: z.array(z.string().url()),
+  demo_url: z.array(z.string().url()).optional(),
   chat_room_id: z.string(),
   best_of: z.number(),
   results: FaceitMatchResultsDemoReadySchema,
