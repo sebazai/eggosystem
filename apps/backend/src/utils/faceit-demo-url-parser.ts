@@ -23,7 +23,7 @@ interface DemoUrlInfo {
  * @param demoUrl - The demo URL to parse
  * @returns Object containing parsed information or null if parsing fails
  */
-export const parseDemoUrl = (demoUrl: string): DemoUrlInfo | null => {
+export const parseFaceitDemoUrl = (demoUrl: string): DemoUrlInfo | null => {
   try {
     // Extract the filename from the URL
     const url = new URL(demoUrl);

@@ -16,6 +16,8 @@ jest.mock("../../models/game.models");
 jest.mock("../../models/season-team-players.models");
 jest.mock("../../models/season-league.models");
 jest.mock("../../models/season-league-external-id.models");
+jest.mock("../../services/allstar.services");
+jest.mock("../../services/match-game.services");
 
 // Import mocked functions
 import {
@@ -30,17 +32,21 @@ import {
 } from "../../models/match.models";
 import { saveWebhookData } from "../../models/faceit.models";
 import { addMatchTeamMapVetoes } from "../../models/match-team-map-veto.models";
-import { addMatchGameToDatabaseAndProcessDemo } from "../../models/match-game.models";
 import { validatePlayersInTeams } from "../../models/season-team-players.models";
 import { expressErrorHandler } from "../../middlewares/express-error-handler";
 import * as seasonLeagueExternalIdServices from "../../services/season-league-external-id.services";
 import * as faceitServices from "../../services/faceit.services";
+import { sendDemoForAllStarPOTGClip } from "../../services/allstar.services";
+import { publishDemoProcessingRequest } from "../../services/match-game.services";
 import {
   validMatchDetailsMatchDemoReady,
   validMatchDetailsMatchCreated
 } from "@eggosystem/shared-msw";
 import { getSeasonLeagueBySeasonAndFaceitName } from "../../models/season-league.models";
-import { insertSeasonLeagueExternalId } from "../../models/season-league-external-id.models";
+import {
+  insertSeasonLeagueExternalId,
+  getSeasonLeagueExternalIdByExternalIdWithSeasonSettings
+} from "../../models/season-league-external-id.models";
 import {
   type MatchObjectCreatedWebhook,
   type MatchDemoReadyWebhook,
@@ -50,7 +56,8 @@ import {
   type MatchStatusFinishedWebhook,
   SeasonPlatform,
   createMockSeason,
-  createMockOrganizer
+  createMockOrganizer,
+  createMockSeasonLeagueExternalId
 } from "@eggosystem/types";
 
 const mockGetOrganizerByFaceitIdAndGameAppId =
@@ -79,10 +86,6 @@ const mockSaveWebhookData = saveWebhookData as jest.MockedFunction<
 const mockAddMatchTeamMapVetoes = addMatchTeamMapVetoes as jest.MockedFunction<
   typeof addMatchTeamMapVetoes
 >;
-const mockAddMatchGamesForMatch =
-  addMatchGameToDatabaseAndProcessDemo as jest.MockedFunction<
-    typeof addMatchGameToDatabaseAndProcessDemo
-  >;
 const mockValidatePlayersInTeams =
   validatePlayersInTeams as jest.MockedFunction<typeof validatePlayersInTeams>;
 const mockGetSeasonLeagueBySeasonAndFaceitName =
@@ -92,6 +95,18 @@ const mockGetSeasonLeagueBySeasonAndFaceitName =
 const mockInsertSeasonLeagueExternalId =
   insertSeasonLeagueExternalId as jest.MockedFunction<
     typeof insertSeasonLeagueExternalId
+  >;
+const mockGetSeasonLeagueExternalIdByExternalIdWithSeasonSettings =
+  getSeasonLeagueExternalIdByExternalIdWithSeasonSettings as jest.MockedFunction<
+    typeof getSeasonLeagueExternalIdByExternalIdWithSeasonSettings
+  >;
+const mockSendDemoForAllStarPOTGClip =
+  sendDemoForAllStarPOTGClip as jest.MockedFunction<
+    typeof sendDemoForAllStarPOTGClip
+  >;
+const mockPublishDemoProcessingRequest =
+  publishDemoProcessingRequest as jest.MockedFunction<
+    typeof publishDemoProcessingRequest
   >;
 
 // Create test app
@@ -1854,12 +1869,36 @@ describe("FaceIT Routes - Webhook", () => {
 
   describe("POST /webhook - match_demo_ready", () => {
     describe("Success Cases", () => {
+      let mockAddFaceitMatchGameToDatabase: jest.SpyInstance;
+
       beforeEach(() => {
         jest.clearAllMocks();
         mockGetOrganizerByFaceitIdAndGameAppId.mockResolvedValue(mockOrganizer);
         mockSaveWebhookData.mockResolvedValue({ insertId: 1 });
-        mockAddMatchGamesForMatch.mockResolvedValue(undefined);
         mockValidatePlayersInTeams.mockResolvedValue(undefined);
+        const seasonLeagueExternalId = createMockSeasonLeagueExternalId({
+          external_id: "ec39d65c-4069-4c0c-b2e1-5f957e7787f1",
+          external_league_name: "Test League",
+          type: "doubleElimination"
+        });
+        mockGetSeasonLeagueExternalIdByExternalIdWithSeasonSettings.mockResolvedValue(
+          {
+            ...seasonLeagueExternalId,
+            is_round_robin_bo2_as_2xbo1: false
+          }
+        );
+        mockAddFaceitMatchGameToDatabase = jest
+          .spyOn(faceitServices, "addFaceitMatchGameToDatabase")
+          .mockResolvedValue(123);
+        mockSendDemoForAllStarPOTGClip.mockResolvedValue({
+          success: true,
+          message: "Demo sent for AllStar"
+        });
+        mockPublishDemoProcessingRequest.mockResolvedValue(undefined);
+      });
+
+      afterEach(() => {
+        mockAddFaceitMatchGameToDatabase.mockRestore();
       });
 
       it("should successfully process championship match_demo_ready webhook", async () => {
@@ -1888,12 +1927,69 @@ describe("FaceIT Routes - Webhook", () => {
         );
 
         // Verify match games were added for championship
-        expect(mockAddMatchGamesForMatch).toHaveBeenCalledWith(
+        expect(mockAddFaceitMatchGameToDatabase).toHaveBeenCalledWith(
           validWebhookMatchDemoReady,
           validMatchDetailsMatchDemoReady,
-          validWebhookMatchDemoReady.payload.entity.id,
           false
         );
+
+        // Verify demo processing functions were called with correct params
+        expect(mockSendDemoForAllStarPOTGClip).toHaveBeenCalledWith(
+          123,
+          validWebhookMatchDemoReady.payload.demo_url
+        );
+        expect(mockPublishDemoProcessingRequest).toHaveBeenCalledWith(
+          123,
+          validWebhookMatchDemoReady.payload.demo_url,
+          "faceit",
+          false
+        );
+      });
+    });
+
+    describe("Error Cases", () => {
+      let mockAddFaceitMatchGameToDatabase: jest.SpyInstance;
+
+      beforeEach(() => {
+        jest.clearAllMocks();
+        mockGetOrganizerByFaceitIdAndGameAppId.mockResolvedValue(mockOrganizer);
+        mockSaveWebhookData.mockResolvedValue({ insertId: 1 });
+        mockValidatePlayersInTeams.mockResolvedValue(undefined);
+        mockAddFaceitMatchGameToDatabase = jest
+          .spyOn(faceitServices, "addFaceitMatchGameToDatabase")
+          .mockResolvedValue(123);
+      });
+
+      afterEach(() => {
+        mockAddFaceitMatchGameToDatabase.mockRestore();
+      });
+
+      it("should throw error when no season league external id found", async () => {
+        mockGetSeasonLeagueExternalIdByExternalIdWithSeasonSettings.mockResolvedValue(
+          undefined
+        );
+
+        const response = await request(app)
+          .post("/api/v1/faceit/webhook")
+          .set("X-API-KEY", TEST_WEBHOOK_API_KEY)
+          .send(validWebhookMatchDemoReady);
+
+        expect(response.status).toBe(400);
+        expect(response.body).toMatchObject({
+          type: "about:blank",
+          title: "Bad Request",
+          status: 400,
+          detail: `No SeasonLeagueExternalId entry found when adding match games for external_id: ${validWebhookMatchDemoReady.payload.entity.id}`
+        });
+
+        // Verify webhook data was saved
+        expect(mockSaveWebhookData).toHaveBeenCalled();
+
+        // Verify players were validated
+        expect(mockValidatePlayersInTeams).toHaveBeenCalled();
+
+        // Verify match games were NOT added
+        expect(mockAddFaceitMatchGameToDatabase).not.toHaveBeenCalled();
       });
     });
   });

@@ -68,15 +68,20 @@ import {
 } from "../../models/organizer.models";
 import { NotFoundError } from "../../utils/errors";
 import { addMatchTeamMapVetoes } from "../../models/match-team-map-veto.models";
-import { addMatchGameToDatabaseAndProcessDemo } from "../../models/match-game.models";
+import { addFaceitMatchGameToDatabase } from "../../services/faceit.services";
 import { validatePlayersInTeams } from "../../models/season-team-players.models";
 import { addChampionshipToDatabase } from "../../services/season-league-external-id.services";
-import { removeSeasonLeagueExternalId } from "../../models/season-league-external-id.models";
+import {
+  getSeasonLeagueExternalIdByExternalIdWithSeasonSettings,
+  removeSeasonLeagueExternalId
+} from "../../models/season-league-external-id.models";
 import {
   triggerFaceitMatchSync,
   validateChampionshipTeamsController,
   getFaceitPlayerController
 } from "../../controllers/faceit.controllers";
+import { sendDemoForAllStarPOTGClip } from "../../services/allstar.services";
+import { publishDemoProcessingRequest } from "../../services/match-game.services";
 
 const router = Router();
 
@@ -480,12 +485,32 @@ router.post(
           validatedMatchDetails.teams,
           validatedMatchDetails.match_id
         );
-        await addMatchGameToDatabaseAndProcessDemo(
+
+        const externalLeagueId = webhookData.payload.entity.id;
+        const seasonLeague =
+          await getSeasonLeagueExternalIdByExternalIdWithSeasonSettings(
+            externalLeagueId
+          );
+        if (!seasonLeague) {
+          throw new Error(
+            `No SeasonLeagueExternalId entry found when adding match games for external_id: ${externalLeagueId}`
+          );
+        }
+
+        const matchGameId = await addFaceitMatchGameToDatabase(
           validatedWebhook,
           validatedMatchDetails,
-          webhookData.payload.entity.id,
-          manualReprocess
+          seasonLeague.is_round_robin_bo2_as_2xbo1
         );
+        await Promise.all([
+          sendDemoForAllStarPOTGClip(matchGameId, webhookData.payload.demo_url),
+          publishDemoProcessingRequest(
+            matchGameId,
+            webhookData.payload.demo_url,
+            "faceit",
+            manualReprocess
+          )
+        ]);
 
         res.status(200).send("Webhook received");
         return;
