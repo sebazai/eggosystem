@@ -1,10 +1,7 @@
-import type {
-  GameTeamStats,
-  GameClip,
-  MatchTeamStats
-} from "@eggosystem/types";
+import type { GameClip } from "@eggosystem/types";
 import { TeamStatBox } from "./TeamStatBox";
 import { useGameTeamRoundBreakdowns } from "@/hooks/data/useGameTeamRoundBreakdowns";
+import { useTeamStats } from "@/hooks/data/useTeamStats";
 import { cn } from "@/lib/utils";
 import { ProcessingSpinner } from "@/components/ui/icons";
 import { useAuth } from "@/context/AuthContext";
@@ -16,23 +13,32 @@ export interface TeamStatsFilters {
 }
 
 interface TeamStatisticsProps {
-  teamStats: (MatchTeamStats | GameTeamStats)[];
   teamStatsFilters: TeamStatsFilters;
   clip?: GameClip;
+  matchId?: number;
   matchGameId?: number;
 }
 
 export const TeamStatistics = ({
-  teamStats,
   teamStatsFilters,
   clip,
+  matchId,
   matchGameId
 }: TeamStatisticsProps) => {
   const auth = useAuth();
+
+  // Fetch team stats based on whether we have matchId or matchGameId
+  const { teamStats } = useTeamStats({ matchId, matchGameId });
+  const { teamsRoundBreakdown } = useGameTeamRoundBreakdowns(matchGameId);
+
+  // Early return if no stats available yet
+  if (!teamStats || teamStats.length === 0) {
+    return null;
+  }
+
   const [teamOneStats, teamTwoStats] = teamStats;
   const teamOneId = teamOneStats?.team_id;
   const teamTwoId = teamTwoStats?.team_id;
-  const { teamsRoundBreakdown } = useGameTeamRoundBreakdowns(matchGameId);
   const clipAndClipStatusNotError = clip && clip.clip_status !== "Error";
   return (
     <div

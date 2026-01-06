@@ -2,7 +2,6 @@ import { type Request, type Response, type NextFunction } from "express";
 import {
   getMatches,
   getMatchPlayerStats,
-  getMatchTeamStats,
   getMatchTopPlayers,
   getMatchesByFilters,
   getMatchGames,
@@ -13,7 +12,8 @@ import {
   getMatchWithBreadcrumbInfo,
   getMatchesWithTeamDataBySeasonId,
   getMatchIs2xBO1,
-  getMatchTeamLineups
+  getMatchTeamLineups,
+  getTeamStats
 } from "../models/match.models";
 import type {
   MatchGame,
@@ -177,7 +177,7 @@ export const getMatchTeamStatsController = async (
   res: Response
 ) => {
   const match_id = parseInt(req.params.match_id, 10);
-  const teamstats = await getMatchTeamStats(match_id);
+  const teamstats = await getTeamStats({ match_id });
   res.json(teamstats);
 };
 

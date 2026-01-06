@@ -35,7 +35,7 @@ import {
   type MatchInfoQuery,
   type MatchOrGameTopPlayerAwards,
   type MatchPlayerStats,
-  type MatchTeamStats,
+  type TeamStatsResponse,
   type MatchMapVetoes,
   type MatchesWithTeamDataQuery,
   type MatchGame,
@@ -794,7 +794,7 @@ describe("Matches Controllers", () => {
   describe("getMatchTeamStatsController", () => {
     it("should return team stats for valid match ID", async () => {
       mockRequest.params = { match_id: "123" };
-      const mockTeamStats: MatchTeamStats[] = [
+      const mockTeamStats: TeamStatsResponse[] = [
         {
           team_id: 1,
           name: "Team A",
