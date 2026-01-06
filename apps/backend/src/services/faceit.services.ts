@@ -7,7 +7,9 @@ import {
   type FaceitMatch,
   type ChampionshipSubscriptionItem,
   type FaceitMatchStatsResponse,
-  type FaceitPlayerDetails
+  type FaceitPlayerDetails,
+  type MatchDemoReadyWebhook,
+  type ChampionshipDetailsDemoReady
 } from "@eggosystem/types";
 import {
   redisClient,
@@ -25,6 +27,7 @@ import {
 } from "../utils/faceit-utils";
 import { getMatchDateTime, adjustMatchDateTime } from "../utils/date-utils";
 import {
+  getHubMatchesByExternalMatchRoomId,
   getMatchesByExternalId,
   updateMatchDateAndStartTime
 } from "../models/match.models";
@@ -37,6 +40,13 @@ import {
   getRateLimitForService,
   setRateLimitForService
 } from "../utils/rate-limit-utils";
+import {
+  getMatchGameByDemoUrl,
+  upsertMatchGameForMatch
+} from "../models/match-game.models";
+import { parseFaceitDemoUrl } from "../utils/faceit-demo-url-parser";
+import { getConnection } from "../db/mysqlConnection";
+import { getMatchPickedMapsOrderedByVetoOrder } from "../models/match-team-map-veto.models";
 
 export const convertFaceitGameToAppId = (game: string) => {
   switch (game) {
@@ -1025,4 +1035,100 @@ export const getFaceitMatchStats = async (match_id: string) => {
     await redisClient.set(redisKey, JSON.stringify(data), "EX", expireIn30Days);
   }
   return data;
+};
+
+export const addFaceitMatchGameToDatabase = async (
+  webhookData: MatchDemoReadyWebhook,
+  matchDetails: ChampionshipDetailsDemoReady,
+  isRoundRobinBo2As2xBo1: boolean = false
+) => {
+  const { demo_url } = webhookData.payload;
+
+  const gameWithDemo = await getMatchGameByDemoUrl(demo_url);
+
+  if (gameWithDemo) {
+    return gameWithDemo.id;
+  }
+
+  const parsedDemoUrl = parseFaceitDemoUrl(demo_url);
+  if (!parsedDemoUrl) {
+    throw new Error(`Invalid faceit demo url: ${demo_url}`);
+  }
+
+  const { match_id: faceit_match_id } = matchDetails;
+
+  // We can have multiple matches for the same faceit external match room id, so we need to get all of them
+  const matches = await getHubMatchesByExternalMatchRoomId(faceit_match_id);
+
+  if (!matches || matches.length === 0) {
+    throw new Error(
+      `No matches found when adding match games with match_id: ${faceit_match_id}`
+    );
+  }
+
+  const match = matches[0];
+
+  const connection = await getConnection();
+  try {
+    await connection.beginTransaction();
+    const mapPlayedNumber = parsedDemoUrl.mapNumber;
+    // We have the same map picks/bans for all matches in a 2xBO1, so we can get the vetoes from the first match
+    const matchMapVetoes = await getMatchPickedMapsOrderedByVetoOrder(
+      match.id,
+      connection
+    );
+    const mapPlayedVoteObject = matchMapVetoes[mapPlayedNumber - 1];
+
+    if (
+      isRoundRobinBo2As2xBo1 &&
+      matchDetails.best_of === 2 &&
+      matches.length === 2
+    ) {
+      // We should receive 2 picks, as both 2xBO1 matches have the same picks.
+      if (matchMapVetoes.length !== 2) {
+        throw new Error("Something is very wrong with this 2xBO1");
+      }
+
+      const matchObject = matches[mapPlayedNumber - 1];
+      if (!matchObject) {
+        throw new Error("Could not find match object for 2xBO1 matches");
+      }
+
+      const insertedRow = await upsertMatchGameForMatch({
+        match_id: matchObject.id,
+        map_id: mapPlayedVoteObject.map_id,
+        map_order: mapPlayedNumber,
+        demo_file: demo_url,
+        connection
+      });
+      await connection.commit();
+
+      return insertedRow.insertId;
+    }
+
+    if (!mapPlayedVoteObject) {
+      logger.error(
+        `Could not find map played vote object for match ${faceit_match_id}, map played in: ${mapPlayedNumber - 1}, matchMapVetoes: ${JSON.stringify(matchMapVetoes)}`
+      );
+      throw new Error(
+        `Could not find map played vote object for match_id: ${faceit_match_id}`
+      );
+    }
+
+    const insertedRow = await upsertMatchGameForMatch({
+      match_id: match.id,
+      map_id: mapPlayedVoteObject.map_id,
+      map_order: mapPlayedNumber,
+      demo_file: demo_url,
+      connection
+    });
+
+    await connection.commit();
+    return insertedRow.insertId;
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
 };

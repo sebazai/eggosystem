@@ -1,20 +1,32 @@
-import { addMatchGameToDatabaseAndProcessDemo } from "./match-game.models";
 import { validWebhookMatchDemoReady } from "../utils/test-data";
 import { validMatchDetailsMatchDemoReady } from "@eggosystem/shared-msw";
 
 // Mock dependencies for addMatchGamesForMatch tests only
 jest.mock("../models/match.models");
-jest.mock("../models/season-league-external-id.models");
 jest.mock("../models/match-team-map-veto.models");
+jest.mock("../models/match-game.models", () => {
+  const actual = jest.requireActual("../models/match-game.models");
+  return {
+    ...actual,
+    getMatchGameByDemoUrl: jest.fn()
+  };
+});
 jest.mock("../db/mysqlConnection");
 jest.mock("../db/mysqlRunQuery");
-jest.mock("../services/faceit.services");
+jest.mock("../services/faceit.services", () => {
+  const actual = jest.requireActual("../services/faceit.services");
+  return {
+    ...actual,
+    getDemoDownloadUrl: jest.fn()
+  };
+});
 import { getHubMatchesByExternalMatchRoomId } from "./match.models";
-import { getMatchTeamMapVetoPicksAndDeciders } from "./match-team-map-veto.models";
-import { getSeasonLeagueExternalIdByExternalIdWithSeasonSettings } from "./season-league-external-id.models";
+import { getMatchPickedMapsOrderedByVetoOrder } from "./match-team-map-veto.models";
 import { getConnection } from "../db/mysqlConnection";
 import { runQuery } from "../db/mysqlRunQuery";
 import { getDemoDownloadUrl } from "../services/faceit.services";
+import { addFaceitMatchGameToDatabase } from "../services/faceit.services";
+import { getMatchGameByDemoUrl } from "./match-game.models";
 
 const mockGetHubMatchesByExternalMatchRoomId =
   getHubMatchesByExternalMatchRoomId as jest.MockedFunction<
@@ -22,20 +34,19 @@ const mockGetHubMatchesByExternalMatchRoomId =
   >;
 
 const mockGetMatchTeamMapVetoPicksAndDeciders =
-  getMatchTeamMapVetoPicksAndDeciders as jest.MockedFunction<
-    typeof getMatchTeamMapVetoPicksAndDeciders
+  getMatchPickedMapsOrderedByVetoOrder as jest.MockedFunction<
+    typeof getMatchPickedMapsOrderedByVetoOrder
   >;
 
 const mockRunQuery = runQuery as jest.MockedFunction<typeof runQuery>;
-const mockGetSeasonLeagueExternalIdByExternalId =
-  getSeasonLeagueExternalIdByExternalIdWithSeasonSettings as jest.MockedFunction<
-    typeof getSeasonLeagueExternalIdByExternalIdWithSeasonSettings
-  >;
 const mockGetConnection = getConnection as jest.MockedFunction<
   typeof getConnection
 >;
 const mockGetDemoDownloadUrl = getDemoDownloadUrl as jest.MockedFunction<
   typeof getDemoDownloadUrl
+>;
+const mockGetMatchGameByDemoUrl = getMatchGameByDemoUrl as jest.MockedFunction<
+  typeof getMatchGameByDemoUrl
 >;
 
 describe("addMatchGamesForMatch", () => {
@@ -45,22 +56,14 @@ describe("addMatchGamesForMatch", () => {
 
   describe("Success Cases", () => {
     beforeEach(() => {
+      // Mock getMatchGameByDemoUrl to return undefined so short circuit doesn't fire
+      mockGetMatchGameByDemoUrl.mockResolvedValue(undefined);
+
       // Mock successful database operations
       mockGetHubMatchesByExternalMatchRoomId.mockResolvedValue([
         { id: 1 },
         { id: 2 }
       ]);
-
-      mockGetSeasonLeagueExternalIdByExternalId.mockResolvedValue({
-        id: 1,
-        external_id: "2a40fbe5-f71b-471e-b25d-7837c1b441bc",
-        stage_id: 1,
-        season_id: 1,
-        league_id: 1,
-        type: "doubleElimination",
-        is_round_robin_bo2_as_2xbo1: false,
-        external_league_name: "Test League"
-      });
 
       const mockConnection = {
         beginTransaction: jest.fn().mockResolvedValue(undefined),
@@ -110,20 +113,14 @@ describe("addMatchGamesForMatch", () => {
     });
 
     it("should successfully add match games for BO3 championship match", async () => {
-      await addMatchGameToDatabaseAndProcessDemo(
+      await addFaceitMatchGameToDatabase(
         validWebhookMatchDemoReady,
-        validMatchDetailsMatchDemoReady,
-        "2a40fbe5-f71b-471e-b25d-7837c1b441bc"
+        validMatchDetailsMatchDemoReady
       );
 
       // Verify matches were fetched
       expect(mockGetHubMatchesByExternalMatchRoomId).toHaveBeenCalledWith(
         "1-ffb4225f-ff51-42ed-acb5-af6714175934"
-      );
-
-      // Verify season league was fetched
-      expect(mockGetSeasonLeagueExternalIdByExternalId).toHaveBeenCalledWith(
-        "2a40fbe5-f71b-471e-b25d-7837c1b441bc"
       );
 
       // Verify database transaction was started and committed
@@ -135,18 +132,6 @@ describe("addMatchGamesForMatch", () => {
     });
 
     it("should handle BO2 played as 2xBO1 matches", async () => {
-      // Mock BO2 configuration
-      mockGetSeasonLeagueExternalIdByExternalId.mockResolvedValue({
-        id: 1,
-        external_id: "2a40fbe5-f71b-471e-b25d-7837c1b441bc",
-        stage_id: 1,
-        season_id: 1,
-        league_id: 1,
-        type: "doubleElimination",
-        is_round_robin_bo2_as_2xbo1: true,
-        external_league_name: "Test League"
-      });
-
       // Create BO2 webhook with demo URL for map 1
       const bo2Webhook = {
         ...validWebhookMatchDemoReady,
@@ -183,11 +168,7 @@ describe("addMatchGamesForMatch", () => {
         }
       ]);
 
-      await addMatchGameToDatabaseAndProcessDemo(
-        bo2Webhook,
-        bo2MatchDetails,
-        "2a40fbe5-f71b-471e-b25d-7837c1b441bc"
-      );
+      await addFaceitMatchGameToDatabase(bo2Webhook, bo2MatchDetails, true);
 
       // Verify BO2 specific logic was used
       expect(mockGetMatchTeamMapVetoPicksAndDeciders).toHaveBeenCalledWith(
@@ -200,6 +181,10 @@ describe("addMatchGamesForMatch", () => {
   describe("Error Cases", () => {
     beforeEach(() => {
       jest.clearAllMocks();
+
+      // Mock getMatchGameByDemoUrl to return undefined so short circuit doesn't fire
+      mockGetMatchGameByDemoUrl.mockResolvedValue(undefined);
+
       const mockConnection = {
         beginTransaction: jest.fn().mockResolvedValue(undefined),
         commit: jest.fn().mockResolvedValue(undefined),
@@ -220,28 +205,13 @@ describe("addMatchGamesForMatch", () => {
       mockGetHubMatchesByExternalMatchRoomId.mockResolvedValue([]);
 
       await expect(
-        addMatchGameToDatabaseAndProcessDemo(
+        addFaceitMatchGameToDatabase(
           validWebhookMatchDemoReady,
           validMatchDetailsMatchDemoReady,
-          "2a40fbe5-f71b-471e-b25d-7837c1b441bc"
+          false
         )
       ).rejects.toThrow(
-        "No matches found when adding match games for external_id: 2a40fbe5-f71b-471e-b25d-7837c1b441bc"
-      );
-    });
-
-    it("should throw error when no season league found", async () => {
-      mockGetHubMatchesByExternalMatchRoomId.mockResolvedValue([{ id: 1 }]);
-      mockGetSeasonLeagueExternalIdByExternalId.mockResolvedValue(undefined);
-
-      await expect(
-        addMatchGameToDatabaseAndProcessDemo(
-          validWebhookMatchDemoReady,
-          validMatchDetailsMatchDemoReady,
-          "2a40fbe5-f71b-471e-b25d-7837c1b441bc"
-        )
-      ).rejects.toThrow(
-        "No SeasonLeagueExternalId entry found when adding match games for external_id: 2a40fbe5-f71b-471e-b25d-7837c1b441bc"
+        "No matches found when adding match games with match_id: 1-ffb4225f-ff51-42ed-acb5-af6714175934"
       );
     });
 
@@ -250,17 +220,6 @@ describe("addMatchGamesForMatch", () => {
         { id: 1 },
         { id: 2 }
       ]);
-
-      mockGetSeasonLeagueExternalIdByExternalId.mockResolvedValue({
-        id: 1,
-        external_id: "2a40fbe5-f71b-471e-b25d-7837c1b441bc",
-        stage_id: 1,
-        season_id: 1,
-        league_id: 1,
-        type: "doubleElimination",
-        is_round_robin_bo2_as_2xbo1: true,
-        external_league_name: "Test League"
-      });
 
       const bo2MatchDetails = {
         ...validMatchDetailsMatchDemoReady,
@@ -291,11 +250,7 @@ describe("addMatchGamesForMatch", () => {
       };
 
       await expect(
-        addMatchGameToDatabaseAndProcessDemo(
-          bo2Webhook,
-          bo2MatchDetails,
-          "2a40fbe5-f71b-471e-b25d-7837c1b441bc"
-        )
+        addFaceitMatchGameToDatabase(bo2Webhook, bo2MatchDetails, true)
       ).rejects.toThrow("Something is very wrong with this 2xBO1");
     });
 
@@ -305,17 +260,6 @@ describe("addMatchGamesForMatch", () => {
         { id: 2 }
         // 2 matches for BO2, but map 2 won't find a match object
       ]);
-
-      mockGetSeasonLeagueExternalIdByExternalId.mockResolvedValue({
-        id: 1,
-        external_id: "2a40fbe5-f71b-471e-b25d-7837c1b441bc",
-        stage_id: 1,
-        season_id: 1,
-        league_id: 1,
-        type: "doubleElimination",
-        is_round_robin_bo2_as_2xbo1: true,
-        external_league_name: "Test League"
-      });
 
       // Create webhook with demo URL for map 3 (which is out of range for BO2 with 2 matches)
       const bo2Webhook = {
@@ -352,27 +296,12 @@ describe("addMatchGamesForMatch", () => {
       ]);
 
       await expect(
-        addMatchGameToDatabaseAndProcessDemo(
-          bo2Webhook,
-          bo2MatchDetails,
-          "2a40fbe5-f71b-471e-b25d-7837c1b441bc"
-        )
+        addFaceitMatchGameToDatabase(bo2Webhook, bo2MatchDetails, true)
       ).rejects.toThrow("Could not find match object for 2xBO1 matches");
     });
 
     it("should handle database errors and rollback transaction", async () => {
       mockGetHubMatchesByExternalMatchRoomId.mockResolvedValue([{ id: 1 }]);
-
-      mockGetSeasonLeagueExternalIdByExternalId.mockResolvedValue({
-        id: 1,
-        external_id: "2a40fbe5-f71b-471e-b25d-7837c1b441bc",
-        stage_id: 1,
-        season_id: 1,
-        league_id: 1,
-        type: "doubleElimination",
-        is_round_robin_bo2_as_2xbo1: false,
-        external_league_name: "Test League"
-      });
 
       const mockConnection = {
         beginTransaction: jest.fn().mockResolvedValue(undefined),
@@ -423,10 +352,10 @@ describe("addMatchGamesForMatch", () => {
       };
 
       await expect(
-        addMatchGameToDatabaseAndProcessDemo(
+        addFaceitMatchGameToDatabase(
           bo3Webhook,
           validMatchDetailsMatchDemoReady,
-          "2a40fbe5-f71b-471e-b25d-7837c1b441bc"
+          false
         )
       ).rejects.toThrow("Database error");
 
