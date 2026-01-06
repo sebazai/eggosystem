@@ -128,7 +128,6 @@ export const sendDiscordInviteEmail = async (
   const mailOptions = {
     from: "Kanahub by Kanaliiga <cs@kanaliiga.fi>",
     to,
-    cc: "cs@kanaliiga.fi",
     subject: `Welcome to Kanahautomo Discord - ${organizationName}`,
     html: `
         <div style="font-family: Arial, sans-serif; color: #333; font-size: 16px; line-height: 1.5; max-width: 600px; margin: 0 auto;">
