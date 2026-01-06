@@ -63,7 +63,6 @@ describe("Season Captain Welcome Email Services", () => {
       await sendSeasonCaptainWelcomeEmail(
         "captain@example.com",
         1,
-        "https://discord.gg/test",
         mockPlayers,
         "Test Team"
       );
@@ -99,7 +98,6 @@ describe("Season Captain Welcome Email Services", () => {
       await sendSeasonCaptainWelcomeEmail(
         "captain@example.com",
         1,
-        "https://discord.gg/test",
         mockPlayers,
         "Test Team"
       );
@@ -140,7 +138,6 @@ describe("Season Captain Welcome Email Services", () => {
       await sendSeasonCaptainWelcomeEmail(
         "captain@example.com",
         123,
-        "https://discord.gg/test",
         mockPlayers,
         "Test Team"
       );
@@ -162,7 +159,6 @@ describe("Season Captain Welcome Email Services", () => {
         sendSeasonCaptainWelcomeEmail(
           "captain@example.com",
           999,
-          "https://discord.gg/test",
           mockPlayers,
           "Test Team"
         )

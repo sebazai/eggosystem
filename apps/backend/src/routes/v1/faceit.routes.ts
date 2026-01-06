@@ -266,6 +266,13 @@ router.post(
         );
 
         if (validatedMatchDetails.group === 3) {
+          if (!organizer.faceit_id) {
+            logger.error(
+              `Organizer ${organizer.name} has no faceit_id, skipping match ${validatedMatchDetails.match_id}`
+            );
+            res.status(400).send("Organizer has no faceit_id");
+            return;
+          }
           const organizerActiveSeason =
             await getOrganizerFaceitActiveSeasonForApp(
               organizer.faceit_id,
