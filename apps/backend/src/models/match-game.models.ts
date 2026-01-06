@@ -5,8 +5,6 @@ import {
   type GamePlayerStats,
   type MatchOrGameTopPlayerAwards,
   type GameClip,
-  type MatchDemoReadyWebhook,
-  type ChampionshipDetailsDemoReady,
   type MatchGame
 } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
@@ -14,24 +12,14 @@ import {
   fetchPlayerStatsForMatchOrGame,
   matchTopStats
 } from "../shared/fetch-stat";
-import { getHubMatchesByExternalMatchRoomId } from "./match.models";
-import { getSeasonLeagueExternalIdByExternalIdWithSeasonSettings } from "./season-league-external-id.models";
 import { getConnection } from "../db/mysqlConnection";
 import { type PoolConnection } from "mysql2/promise";
-import { parseDemoUrl } from "../utils/demo-url-parser";
-import { sendDemoForAllStarPOTGClip } from "../services/allstar.services";
-import {
-  publishToParseQueue,
-  createDemoProcessingRequest
-} from "../services/parse-queue.services";
-import { logger } from "../utils/app-logger";
 import { type ParsedPayload } from "../types/parse-queue.types";
 import { generateQueryWithFilters } from "../utils/queryFilter";
 import { upsertTeamGameScore } from "./team-game-score.models";
 import { upsertPlayerStatsForGame } from "./player-stats.models";
 import { upsertPlayerTradesForGame } from "./player-trades.models";
 import { upsertMapRoundStats } from "./map-round-stat.models";
-import { getMatchTeamMapVetoPicksAndDeciders } from "./match-team-map-veto.models";
 import { upsertKillLogsForGame } from "./kill-log.models";
 
 export const getGameTeamRoundBreakdown = async (match_game_id: number) => {
@@ -216,181 +204,10 @@ export const getGameClip = async (match_game_id: number) => {
   return runQuery<GameClip[]>(query, [match_game_id]);
 };
 
-/**
- * Publish demo processing request to parse_queue
- */
-const publishDemoProcessingRequest = async (
-  matchGameId: number,
-  demoUrl: string,
-  reparse: boolean = false
-): Promise<void> => {
-  try {
-    const demoProcessingRequest = createDemoProcessingRequest(
-      matchGameId,
-      demoUrl,
-      5, // Medium priority for demo processing
-      "faceit",
-      reparse
-    );
-
-    await publishToParseQueue(demoProcessingRequest);
-
-    logger.info("Demo processing request published to parse_queue", {
-      matchGameId,
-      demoUrl,
-      queue: "parse_queue",
-      request: demoProcessingRequest
-    });
-  } catch (error) {
-    logger.error("Failed to publish demo processing request to parse_queue", {
-      matchGameId,
-      demoUrl,
-      queue: "parse_queue",
-      error
-    });
-    // Don't throw - this is a non-critical operation
-  }
-};
-
-const getMatchGameByDemoUrl = async (demoUrl: string) => {
+export const getMatchGameByDemoUrl = async (demoUrl: string) => {
   const query = `SELECT * FROM MatchGames WHERE demofile = ?`;
   const [game] = await runQuery<Array<MatchGame | undefined>>(query, [demoUrl]);
   return game;
-};
-
-export const addMatchGameToDatabaseAndProcessDemo = async (
-  webhookData: MatchDemoReadyWebhook,
-  matchDetails: ChampionshipDetailsDemoReady,
-  externalLeagueId: string,
-  manualReprocess: boolean = false
-) => {
-  const { demo_url } = webhookData.payload;
-
-  const gameWithDemo = await getMatchGameByDemoUrl(demo_url);
-
-  const parsedDemoUrl = parseDemoUrl(demo_url);
-  if (!parsedDemoUrl) {
-    throw new Error(`Invalid demo url: ${demo_url}`);
-  }
-
-  const demoDownloadUrl = demo_url;
-
-  const { match_id } = matchDetails;
-
-  // We can have multiple matches for the same external match room id, so we need to get all of them
-  const matches = await getHubMatchesByExternalMatchRoomId(match_id);
-
-  if (!matches || matches.length === 0) {
-    throw new Error(
-      `No matches found when adding match games for external_id: ${externalLeagueId}`
-    );
-  }
-
-  const seasonLeague =
-    await getSeasonLeagueExternalIdByExternalIdWithSeasonSettings(
-      externalLeagueId
-    );
-
-  if (!seasonLeague) {
-    throw new Error(
-      `No SeasonLeagueExternalId entry found when adding match games for external_id: ${externalLeagueId}`
-    );
-  }
-
-  const { is_round_robin_bo2_as_2xbo1 } = seasonLeague;
-
-  const connection = await getConnection();
-  try {
-    await connection.beginTransaction();
-    const mapPlayedIn = parsedDemoUrl.mapNumber;
-    const matchMapVetoes = await getMatchTeamMapVetoPicksAndDeciders(
-      matches[0].id,
-      connection
-    );
-    const mapPlayedVoteObject = matchMapVetoes[mapPlayedIn - 1];
-
-    if (
-      is_round_robin_bo2_as_2xbo1 &&
-      matchDetails.best_of === 2 &&
-      matches.length === 2
-    ) {
-      // We should receive 2 picks, as both 2xBO1 matches have the same picks.
-      if (matchMapVetoes.length !== 2) {
-        throw new Error("Something is very wrong with this 2xBO1");
-      }
-
-      const matchObject = matches[mapPlayedIn - 1];
-
-      if (!matchObject) {
-        throw new Error("Could not find match object for 2xBO1 matches");
-      }
-
-      const insertedRow = await upsertMatchGameForMatch({
-        match_id: matchObject.id,
-        map_id: mapPlayedVoteObject.map_id,
-        map_order: mapPlayedIn,
-        demo_file: demo_url,
-        connection
-      });
-      await connection.commit();
-
-      await Promise.all([
-        sendDemoForAllStarPOTGClip(
-          gameWithDemo?.id ?? insertedRow.insertId,
-          demo_url
-        ),
-        publishDemoProcessingRequest(
-          gameWithDemo?.id ?? insertedRow.insertId,
-          demoDownloadUrl,
-          manualReprocess || !gameWithDemo
-        )
-      ]);
-    } else {
-      const match = matches[0];
-
-      if (!match) {
-        throw new Error(
-          `Could not find match object for external match room id: ${match_id}`
-        );
-      }
-
-      if (!mapPlayedVoteObject) {
-        logger.error(
-          `Could not find map played vote object for match ${match_id}, map played in: ${mapPlayedIn - 1}, matchMapVetoes: ${JSON.stringify(matchMapVetoes)}`
-        );
-        throw new Error(
-          `Could not find map played vote object for match_id: ${match_id}`
-        );
-      }
-
-      const insertedRow = await upsertMatchGameForMatch({
-        match_id: match.id,
-        map_id: mapPlayedVoteObject.map_id,
-        map_order: mapPlayedIn,
-        demo_file: demo_url,
-        connection
-      });
-
-      await connection.commit();
-
-      await Promise.all([
-        sendDemoForAllStarPOTGClip(
-          gameWithDemo?.id ?? insertedRow.insertId,
-          demo_url
-        ),
-        publishDemoProcessingRequest(
-          gameWithDemo?.id ?? insertedRow.insertId,
-          demoDownloadUrl,
-          manualReprocess || !gameWithDemo
-        )
-      ]);
-    }
-  } catch (error) {
-    await connection.rollback();
-    throw error;
-  } finally {
-    connection.release();
-  }
 };
 
 export const getMatchGamesByExternalMatchRoomId = async (

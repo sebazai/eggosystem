@@ -212,7 +212,7 @@ export const addMatchTeamMapVetoes = async (
   }
 };
 
-export const getMatchTeamMapVetoPicksAndDeciders = async (
+export const getMatchPickedMapsOrderedByVetoOrder = async (
   matchId: number,
   connection?: PoolConnection
 ) => {
