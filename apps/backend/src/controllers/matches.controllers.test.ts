@@ -22,7 +22,7 @@ import {
   getMatchesByFilters,
   getMatchTopPlayers,
   getMatchPlayerStats,
-  getMatchTeamStats,
+  getTeamStats,
   getMatchGames,
   getMatchMapVetoes,
   getMatchesWithTeamDataBySeasonId
@@ -70,8 +70,8 @@ const mockGetMatchTopPlayers = getMatchTopPlayers as jest.MockedFunction<
 const mockGetMatchPlayerStats = getMatchPlayerStats as jest.MockedFunction<
   typeof getMatchPlayerStats
 >;
-const mockGetMatchTeamStats = getMatchTeamStats as jest.MockedFunction<
-  typeof getMatchTeamStats
+const mockGetMatchTeamStats = getTeamStats as jest.MockedFunction<
+  typeof getTeamStats
 >;
 const mockGetMatchGames = getMatchGames as jest.MockedFunction<
   typeof getMatchGames
@@ -811,19 +811,21 @@ describe("Matches Controllers", () => {
         mockResponse as Response
       );
 
-      expect(mockGetMatchTeamStats).toHaveBeenCalledWith(123);
+      expect(mockGetMatchTeamStats).toHaveBeenCalledWith({ match_id: 123 });
       expect(mockJson).toHaveBeenCalledWith(mockTeamStats);
     });
 
     it("should handle invalid match team stats ID", async () => {
       mockRequest.params = { match_id: "invalid" };
 
-      await getMatchTeamStatsController(
-        mockRequest as TestRequestWithParams<{ match_id: string }>,
-        mockResponse as Response
-      );
+      await expect(
+        getMatchTeamStatsController(
+          mockRequest as TestRequestWithParams<{ match_id: string }>,
+          mockResponse as Response
+        )
+      ).rejects.toThrow("Invalid match ID");
 
-      expect(mockGetMatchTeamStats).toHaveBeenCalledWith(NaN);
+      expect(mockGetMatchTeamStats).not.toHaveBeenCalledWith({ match_id: NaN });
     });
   });
 
