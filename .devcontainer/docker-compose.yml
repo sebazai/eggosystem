@@ -38,6 +38,15 @@ services:
     networks:
       - eggo-dev
 
+  eggo-bull-monitor:
+    extends:
+      file: ../docker-compose.yml
+      service: eggo-bull-monitor
+    networks:
+      - eggo-dev
+    ports:
+      - 3010:3010
+
   eggo-rabbitmq:
     extends:
       file: ../docker-compose.yml

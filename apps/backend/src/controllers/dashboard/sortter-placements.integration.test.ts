@@ -6,6 +6,11 @@ import express from "express";
 import { expressErrorHandler } from "../../middlewares/express-error-handler";
 import sortterRouter from "../../routes/v1/dashboard/sortter.routes";
 
+jest.mock("../../services/email.services", () => ({
+  ...jest.requireActual("../../services/email.services"),
+  enqueueSeasonFinalizationWelcomeEmails: jest.fn().mockResolvedValue(undefined)
+}));
+
 describe("Enhanced Finalize Team Placements", () => {
   let app: express.Application;
 
