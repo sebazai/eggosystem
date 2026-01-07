@@ -7,8 +7,7 @@ import { createExpressTestApp } from "../../test-utils";
 import gameRouter from "./match-game.routes";
 import {
   type MatchOrGameTopPlayerAwards,
-  type GameTeamStats,
-  type MatchTeamStats
+  type TeamStatsResponse
 } from "@eggosystem/types";
 
 describe("Game Routes", () => {
@@ -49,7 +48,7 @@ describe("Game Routes", () => {
           plants: 9,
           trades: 13
         }
-      ] satisfies MatchTeamStats[];
+      ] satisfies TeamStatsResponse[];
 
       const response = await request(app)
         .get("/104729/teamstats")
@@ -77,7 +76,7 @@ describe("Game Routes", () => {
           plants: 5,
           trades: 17
         }
-      ] satisfies GameTeamStats[];
+      ] satisfies TeamStatsResponse[];
 
       const response = await request(app)
         .get("/10340/teamstats")

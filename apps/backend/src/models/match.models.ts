@@ -10,7 +10,7 @@ import {
   type MatchOrGameTopPlayerAwards,
   type MatchGame,
   type MatchPlayerStats,
-  type MatchTeamStats,
+  type TeamStatsResponse,
   type MatchMapVetoes,
   type Stage,
   type MatchTeamLineup,
@@ -184,27 +184,44 @@ export const getMatchPlayerStats = async (
   return runQuery<MatchPlayerStats[]>(query, [match_id]);
 };
 
-export const getMatchTeamStats = async (match_id: number) => {
-  // For all maps in a match, handle both BO1 and BO3
+/**
+ * Fetches team statistics for a match or specific game
+ * @param params - Object with either match_id or match_game_id (one must be provided)
+ * @returns Array of team statistics with aggregated player stats
+ */
+export const getTeamStats = async (params: {
+  match_id?: number;
+  match_game_id?: number;
+}): Promise<TeamStatsResponse[]> => {
+  const { match_id, match_game_id } = params;
+
+  if (!match_id && !match_game_id) {
+    throw new Error("Either match_id or match_game_id must be provided");
+  }
+
+  // Determine WHERE clause and parameter based on what's provided
+  const whereClause = match_game_id ? "WHERE mg.id = ?" : "WHERE m.id = ?";
+  const queryParam = match_game_id ?? match_id;
+
   const query = `
       SELECT 
-        stp.team_id,
-        t.name,
-        SUM(ps.first_kills) as first_kills,
-        SUM(ps.clutches_won) as clutches_won,
-        SUM(ps.plants) as plants,
-        SUM(ps.trades) as trades
-      FROM PlayerStats ps
-      INNER JOIN SteamPlayers p ON p.steam_id = ps.steam_id
-      INNER JOIN MatchGames mg ON mg.id = ps.match_game_id
+          mt.team_id,
+          t.name,
+          COALESCE(SUM(ps.first_kills), 0) as first_kills,
+          COALESCE(SUM(ps.clutches_won), 0) as clutches_won,
+          COALESCE(SUM(ps.plants), 0) as plants,
+          COALESCE(SUM(ps.trades), 0) as trades
+      FROM MatchGames mg
       INNER JOIN Matches m ON m.id = mg.match_id
-      INNER JOIN SeasonTeamPlayers stp ON stp.season_id = m.season_id AND stp.steam_id = p.steam_id
-      INNER JOIN MatchTeams mt ON mt.match_id = m.id AND mt.team_id = stp.team_id
-      INNER JOIN Teams t ON t.id = stp.team_id
-      WHERE m.id = ?
-      GROUP BY stp.team_id`;
+      INNER JOIN MatchTeams mt ON mt.match_id = m.id
+      INNER JOIN Teams t ON t.id = mt.team_id
+      LEFT JOIN SeasonTeamPlayers stp ON stp.season_id = m.season_id AND stp.team_id = mt.team_id
+      LEFT JOIN PlayerStats ps ON ps.match_game_id = mg.id AND ps.steam_id = stp.steam_id
+      ${whereClause}
+      GROUP BY mt.team_id, t.name
+      ORDER BY mt.team_id`;
 
-  return runQuery<MatchTeamStats[]>(query, [match_id]);
+  return runQuery<TeamStatsResponse[]>(query, [queryParam!]);
 };
 
 export const getRoundInfo = async (id: number): Promise<Match | undefined> => {

@@ -8,7 +8,6 @@ import { MatchMapPicks } from "./stats/MapPicks";
 import { TeamStatistics } from "./stats/TeamStatistics";
 import { PlayerStatisticsForTeam } from "./stats/PlayerStatisticsForTeam";
 import { TopPlayers } from "./stats/TopPlayers";
-import { useMatchTeamStats } from "@/hooks/data/useMatchTeamStats";
 import { useMatchPlayerStats } from "@/hooks/data/useMatchPlayerStats";
 import { useMatchTopPlayers } from "@/hooks/data/useMatchTopPlayers";
 import _ from "lodash";
@@ -44,7 +43,6 @@ export const MatchStats = ({
     router.push(newUrl, { scroll: false });
   };
 
-  const { teamStats } = useMatchTeamStats(matchId);
   const { playerStats } = useMatchPlayerStats(matchId, selectedStat);
   const { topPlayers } = useMatchTopPlayers(matchId);
 
@@ -67,9 +65,7 @@ export const MatchStats = ({
         handleMapSelect={handleMapSelect}
       />
 
-      {teamStats && teamStats.length > 0 && (
-        <TeamStatistics teamStats={teamStats} teamStatsFilters={baseFilters} />
-      )}
+      <TeamStatistics matchId={matchId} teamStatsFilters={baseFilters} />
 
       {/* Player Stats Grid */}
       {playerStats && playerStats.length > 0 && (

@@ -1,5 +1,4 @@
 import {
-  type GameTeamStats,
   type MapRoundInfo,
   type GameTeamRoundBreakdown,
   type GamePlayerStats,
@@ -79,27 +78,6 @@ export const getGameRoundInfo = async (match_game_id: number) => {
       ORDER BY round_number ASC
     `;
   return runQuery<MapRoundInfo[]>(query, [match_game_id]);
-};
-
-export const getGameTeamStats = async (match_game_id: number) => {
-  const query = `
-      SELECT 
-          stp.team_id,
-          t.name,
-          SUM(ps.first_kills) as first_kills,
-          SUM(ps.clutches_won) as clutches_won,
-          SUM(ps.plants) as plants,
-          SUM(ps.trades) as trades
-      FROM PlayerStats ps
-      INNER JOIN SteamPlayers p ON p.steam_id = ps.steam_id
-      INNER JOIN MatchGames mg ON mg.id = ps.match_game_id
-      INNER JOIN Matches m ON m.id = mg.match_id
-      INNER JOIN SeasonTeamPlayers stp ON stp.season_id = m.season_id AND stp.steam_id = p.steam_id
-      INNER JOIN MatchTeams mt ON mt.match_id = m.id AND mt.team_id = stp.team_id
-      INNER JOIN Teams t ON t.id = stp.team_id
-      WHERE ps.match_game_id = ?
-      GROUP BY stp.team_id`;
-  return runQuery<GameTeamStats[]>(query, [match_game_id]);
 };
 
 export const getGamePlayerStats = async (

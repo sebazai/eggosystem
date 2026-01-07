@@ -1,5 +1,17 @@
 import { type Season, type Organizer, SeasonPlatform } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
+import { NotFoundError } from "../utils/errors";
+
+export const getOrganizerByIdOrFail = async (id: number) => {
+  const [organizer] = await runQuery<[Organizer | undefined]>(
+    "SELECT * FROM Organizers WHERE id = ?",
+    [id]
+  );
+  if (!organizer) {
+    throw new NotFoundError("Organizer not found");
+  }
+  return organizer;
+};
 
 export const getOrganizerByFaceitIdAndGameAppId = async (
   faceitId: string,

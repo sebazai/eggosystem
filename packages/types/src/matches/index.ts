@@ -1,6 +1,6 @@
 export * from "./MatchesByFilters.interface";
 export * from "./MatchInfo.interface";
-export * from "./MatchTeamStats.interface";
+export * from "./TeamStatsResponse";
 export * from "./MatchTopPlayerAwards.interface";
 export * from "./MatchMapsPlayed.interface";
 export * from "./MatchPlayerStats.interface";

@@ -48,9 +48,11 @@ export function use2DViewerDataUntilReady(gameId: string) {
   const isReady = hasViewerData?.status === "ready";
   const isProcessing = hasViewerData && hasViewerData.status !== "ready";
 
+  const isLoadingState = isLoading && !data && !error;
+
   return {
     hasViewerData,
-    isLoading,
+    isLoading: isLoadingState,
     isError: error,
     isValidating,
     isReady,

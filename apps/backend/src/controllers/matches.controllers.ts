@@ -2,7 +2,6 @@ import { type Request, type Response, type NextFunction } from "express";
 import {
   getMatches,
   getMatchPlayerStats,
-  getMatchTeamStats,
   getMatchTopPlayers,
   getMatchesByFilters,
   getMatchGames,
@@ -13,7 +12,8 @@ import {
   getMatchWithBreadcrumbInfo,
   getMatchesWithTeamDataBySeasonId,
   getMatchIs2xBO1,
-  getMatchTeamLineups
+  getMatchTeamLineups,
+  getTeamStats
 } from "../models/match.models";
 import type {
   MatchGame,
@@ -23,7 +23,7 @@ import type {
   RequestWithParams,
   RequestWithParamsAndQuery
 } from "@eggosystem/types";
-import { NotFoundError } from "../utils/errors";
+import { BadRequestError, NotFoundError } from "../utils/errors";
 import { getActiveOrPassedSeasonId } from "../services/season.services";
 
 export const getMatchesController = async (req: Request, res: Response) => {
@@ -177,7 +177,10 @@ export const getMatchTeamStatsController = async (
   res: Response
 ) => {
   const match_id = parseInt(req.params.match_id, 10);
-  const teamstats = await getMatchTeamStats(match_id);
+  if (isNaN(match_id)) {
+    throw new BadRequestError("Invalid match ID");
+  }
+  const teamstats = await getTeamStats({ match_id });
   res.json(teamstats);
 };
 
