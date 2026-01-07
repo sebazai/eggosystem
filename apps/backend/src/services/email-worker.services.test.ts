@@ -9,8 +9,20 @@ import {
 import { redisClient } from "../utils/redisClient";
 import * as emailSenderServices from "./email-sender.services";
 
-// Mock BullMQ
-jest.mock("bullmq");
+// Mock BullMQ - set up a default mock worker with close() that always resolves
+const createMockWorker = (): jest.Mocked<Worker> =>
+  ({
+    on: jest.fn(),
+    close: jest.fn().mockResolvedValue(undefined)
+  }) as unknown as jest.Mocked<Worker>;
+
+jest.mock("bullmq", () => {
+  const actual = jest.requireActual("bullmq");
+  return {
+    ...actual,
+    Worker: jest.fn().mockImplementation(() => createMockWorker())
+  };
+});
 
 // Mock Redis client
 jest.mock("../utils/redisClient", () => ({
@@ -26,27 +38,48 @@ jest.mock("./email-sender.services", () => ({
   sendSeasonWelcomeEmail: jest.fn()
 }));
 
+// Mock logger to avoid console output during tests
+jest.mock("../utils/app-logger", () => ({
+  logger: {
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn()
+  }
+}));
+
 describe("Email Worker Services", () => {
   let mockWorker: jest.Mocked<Worker>;
 
   beforeEach(async () => {
-    jest.clearAllMocks();
-
-    // Stop any running worker from previous tests
+    // Stop any running worker from previous tests first
+    // All Worker instances will have close() that resolves, so this should work
     try {
       await stopEmailWorker();
     } catch {
       // Ignore errors if worker wasn't running
+      // If stopEmailWorker() failed, the worker might still be set
+      // Try one more time with a fresh mock setup
+      const tempWorker = createMockWorker();
+      (Worker as jest.MockedClass<typeof Worker>).mockImplementationOnce(
+        () => tempWorker
+      );
+      try {
+        await stopEmailWorker();
+      } catch {
+        // Ignore - give up
+      }
     }
 
-    mockWorker = {
-      on: jest.fn(),
-      close: jest.fn().mockResolvedValue(undefined)
-    } as unknown as jest.Mocked<Worker>;
+    // Clear call history but keep mock implementations
+    // This ensures close() is still set up on any existing workers
+    (Worker as jest.MockedClass<typeof Worker>).mockClear();
+    jest.clearAllMocks();
 
-    (Worker as jest.MockedClass<typeof Worker>).mockImplementation(
-      () => mockWorker
-    );
+    // Re-setup the Worker mock implementation
+    (Worker as jest.MockedClass<typeof Worker>).mockImplementation(() => {
+      mockWorker = createMockWorker();
+      return mockWorker;
+    });
   });
 
   afterEach(async () => {
@@ -56,6 +89,8 @@ describe("Email Worker Services", () => {
     } catch {
       // Ignore errors
     }
+    // Ensure worker state is cleared
+    jest.clearAllMocks();
   });
 
   describe("startEmailWorker", () => {
@@ -119,14 +154,32 @@ describe("Email Worker Services", () => {
 
     it("should throw error if closing fails", async () => {
       startEmailWorker();
-      mockWorker.close = jest.fn().mockRejectedValue(new Error("Close error"));
+      const workerInstance = (Worker as jest.MockedClass<typeof Worker>).mock
+        .results[
+        (Worker as jest.MockedClass<typeof Worker>).mock.results.length - 1
+      ].value;
+      workerInstance.close = jest
+        .fn()
+        .mockRejectedValue(new Error("Close error"));
 
       await expect(stopEmailWorker()).rejects.toThrow("Close error");
+
+      // Clean up: The error prevents emailWorker from being set to null,
+      // so reset close() to resolve and call stopEmailWorker again to clean up
+      workerInstance.close = jest.fn().mockResolvedValue(undefined);
+      await stopEmailWorker();
+      expect(isEmailWorkerRunning()).toBe(false);
     });
   });
 
   describe("isEmailWorkerRunning", () => {
-    it("should return false when worker is not running", () => {
+    it("should return false when worker is not running", async () => {
+      // Ensure worker is stopped
+      try {
+        await stopEmailWorker();
+      } catch {
+        // Ignore errors
+      }
       expect(isEmailWorkerRunning()).toBe(false);
     });
 
@@ -181,12 +234,44 @@ describe("Email Worker Services", () => {
   describe("job processing", () => {
     let jobProcessor: (job: Job) => Promise<void>;
 
-    beforeEach(() => {
+    beforeEach(async () => {
+      // Ensure worker is stopped before starting
+      // The outer beforeEach should have already stopped it, but be explicit
+      try {
+        await stopEmailWorker();
+      } catch {
+        // Ignore errors
+      }
+
+      // Verify worker is stopped before starting
+      expect(isEmailWorkerRunning()).toBe(false);
+
+      // Start the worker - this should create a new Worker instance
       startEmailWorker();
+
+      // Verify worker is now running
+      expect(isEmailWorkerRunning()).toBe(true);
+
       // Get the job processor function passed to Worker constructor
-      const workerCall = (Worker as jest.MockedClass<typeof Worker>).mock
-        .calls[0];
-      jobProcessor = workerCall[1] as (job: Job) => Promise<void>;
+      // After clearAllMocks in outer beforeEach, this should be the first (and only) call
+      const workerCalls = (Worker as jest.MockedClass<typeof Worker>).mock
+        .calls;
+
+      if (workerCalls.length === 0) {
+        throw new Error(
+          "Worker constructor was not called - startEmailWorker may have returned early"
+        );
+      }
+
+      const lastCall = workerCalls[workerCalls.length - 1];
+
+      if (!lastCall || !lastCall[1]) {
+        throw new Error(
+          "Worker constructor was called but processor function is missing"
+        );
+      }
+
+      jobProcessor = lastCall[1] as (job: Job) => Promise<void>;
     });
 
     it("should process a job successfully", async () => {
