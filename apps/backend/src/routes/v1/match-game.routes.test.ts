@@ -7,7 +7,6 @@ import { createExpressTestApp } from "../../test-utils";
 import gameRouter from "./match-game.routes";
 import {
   type MatchOrGameTopPlayerAwards,
-  type GameTeamStats,
   type TeamStatsResponse
 } from "@eggosystem/types";
 
@@ -77,7 +76,7 @@ describe("Game Routes", () => {
           plants: 5,
           trades: 17
         }
-      ] satisfies GameTeamStats[];
+      ] satisfies TeamStatsResponse[];
 
       const response = await request(app)
         .get("/10340/teamstats")
