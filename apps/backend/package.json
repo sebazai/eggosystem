@@ -48,10 +48,10 @@
     "dotenv": "17.2.3",
     "express": "5.2.1",
     "express-jwt": "8.5.1",
-    "file-type": "21.2.0",
+    "file-type": "21.3.0",
     "form-data": "4.0.5",
     "helmet": "8.1.0",
-    "ioredis": "5.8.2",
+    "ioredis": "5.9.0",
     "json-bigint": "1.0.0",
     "jsonwebtoken": "9.0.3",
     "knex": "3.1.0",
@@ -68,7 +68,7 @@
     "uuid": "11.1.0",
     "winston": "3.19.0",
     "winston-transport": "4.9.0",
-    "zod": "4.3.2"
+    "zod": "4.3.5"
   },
   "devDependencies": {
     "@babel/core": "7.28.5",
@@ -95,8 +95,8 @@
     "@types/passport-steam": "1.0.6",
     "@types/semver": "7.7.1",
     "@types/supertest": "6.0.3",
-    "@typescript-eslint/eslint-plugin": "8.51.0",
-    "@typescript-eslint/parser": "8.51.0",
+    "@typescript-eslint/eslint-plugin": "8.52.0",
+    "@typescript-eslint/parser": "8.52.0",
     "babel-jest": "30.2.0",
     "eslint": "9.39.2",
     "fastify": "5.6.2",
@@ -105,7 +105,7 @@
     "jest-junit": "16.0.0",
     "nodemon": "3.1.11",
     "nyc": "17.1.0",
-    "supertest": "7.1.4",
+    "supertest": "7.2.2",
     "ts-jest": "29.4.6",
     "ts-node": "10.9.2",
     "typescript": "5.9.3"
