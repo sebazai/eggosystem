@@ -29,23 +29,19 @@ type TwoDViewerReadyStatus = {
 
 type TwoDViewerReturnData = TwoDViewerProcessingStatus | TwoDViewerReadyStatus;
 
-export function use2DViewerData(matchGameId: number) {
+export function use2DViewerData(matchGameId: number | null) {
+  const apiUrl = matchGameId
+    ? `${envConfig.VIEWER_API_URL}/api/v1/demos/game/${matchGameId}`
+    : null;
+
   const { data, error, isValidating, isLoading } = useSWR<
     TwoDViewerReturnData | undefined
-  >(
-    `${envConfig.VIEWER_API_URL}/api/v1/demos/game/${matchGameId}`,
-    expressFetcher,
-    {
-      refreshInterval: (data) => {
-        if (data?.status !== "ready") {
-          return 30000;
-        }
-        return 0;
-      },
-      revalidateOnFocus: true,
-      shouldRetryOnError: false
-    }
-  );
+  >(apiUrl, expressFetcher, {
+    revalidateOnMount: true,
+    revalidateOnFocus: false,
+    dedupingInterval: 0, // Disable deduplication
+    shouldRetryOnError: false
+  });
 
   return {
     twoDViewerData: data,

@@ -1,6 +1,6 @@
 import { PlayerStats, Team, TeamGameScore } from "@eggosystem/types";
 
-export interface MatchTeamStats {
+export interface TeamStatsResponse {
   team_id: TeamGameScore["team_id"];
   name: Team["name"];
   first_kills: PlayerStats["first_kills"];

@@ -8,7 +8,7 @@ import matchRouter from "./match.routes";
 import type {
   MatchMapsPlayed,
   MatchTeamLineup,
-  MatchTeamStats
+  TeamStatsResponse
 } from "@eggosystem/types";
 
 describe("Match Routes", () => {
@@ -49,7 +49,7 @@ describe("Match Routes", () => {
           plants: 22,
           trades: 46
         }
-      ] satisfies MatchTeamStats[];
+      ] satisfies TeamStatsResponse[];
 
       const response = await request(app)
         .get("/api/v1/matches/10154/teamstats")

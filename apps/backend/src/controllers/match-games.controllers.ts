@@ -4,11 +4,11 @@ import {
   getGameRoundInfo,
   getGamePlayerStats,
   getGameTeamRoundBreakdown,
-  getGameTeamStats,
   getGameTopPlayers,
   getGameClip
 } from "../models/match-game.models";
-import { NotFoundError } from "../utils/errors";
+import { BadRequestError, NotFoundError } from "../utils/errors";
+import { getTeamStats } from "../models/match.models";
 
 export const getGameTeamRoundBreakdownController = async (
   req: RequestWithParams<{ match_game_id: string }>,
@@ -36,7 +36,10 @@ export const getGameTeamStatsController = async (
   res: Response
 ) => {
   const match_game_id = parseInt(req.params.match_game_id, 10);
-  const teamstats = await getGameTeamStats(match_game_id);
+  if (isNaN(match_game_id)) {
+    throw new BadRequestError("Invalid match game ID");
+  }
+  const teamstats = await getTeamStats({ match_game_id });
   res.json(teamstats);
 };
 
