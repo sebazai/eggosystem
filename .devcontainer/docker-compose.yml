@@ -37,6 +37,11 @@ services:
       service: eggo-redis
     networks:
       - eggo-dev
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
   eggo-bull-monitor:
     extends:
@@ -46,6 +51,9 @@ services:
       - eggo-dev
     ports:
       - 3010:3010
+    depends_on:
+      eggo-redis:
+        condition: service_healthy
 
   eggo-rabbitmq:
     extends:
