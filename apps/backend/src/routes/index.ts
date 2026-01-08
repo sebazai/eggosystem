@@ -45,6 +45,7 @@ v1Router.use("/casters", casterRouter);
 
 // Apply CORS
 v1Router.use("/auth", corsMiddleware, authRouter);
+
 // Public unsubscribe route - must be before authenticated /accounts router
 v1Router.get(
   "/accounts/unsubscribe/:token",
@@ -56,6 +57,7 @@ v1Router.post(
   corsMiddleware,
   unsubscribeNewsletterController
 );
+
 v1Router.use("/accounts", corsMiddleware, authenticateJWT, accountRouter);
 v1Router.use("/dashboard", corsMiddleware, authenticateJWT, dashboardRouter);
 v1Router.use("/kanahautomo", corsMiddleware, kanahautomoRouter);
