@@ -40,6 +40,10 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useScrolled } from "@/hooks/useScrolled";
 import { useActiveSignupOrActiveSeasonForApp } from "@/hooks/data/useActiveSignupOrActiveSeasonForApp";
 import type { ActiveSignupOrSeasonForAppId } from "@eggosystem/types";
+import { Separator } from "../ui/separator";
+import { MobileLogOut } from "../profile/MobileLogOut";
+import { useAuth } from "@/context/AuthContext";
+import { ModeToggle } from "./ThemeToggle";
 
 interface MenuItemLink {
   title: string;
@@ -214,13 +218,14 @@ const getDefaultMenuItems = (
       },
       ...seasonMenuItems
     ],
-    mobileExtraLinks: [{ name: "Kanaliiga", url: "https://kanaliiga.fi" }]
+    mobileExtraLinks: [{ name: "kanaliiga.fi", url: "https://kanaliiga.fi" }]
   };
   return defaultProps;
 };
 
 export const Navigation = (props: NavbarProps) => {
   const pathname = usePathname();
+  const { user, logout } = useAuth();
   const { signupOrActiveSeason } = useActiveSignupOrActiveSeasonForApp(730);
   const { options, ...otherProps } = props;
   const navigationProps =
@@ -353,7 +358,7 @@ export const Navigation = (props: NavbarProps) => {
                   <Menu className="size-6" />
                 </Button>
               </SheetTrigger>
-              <SheetContent className="overflow-y-auto">
+              <SheetContent className="flex flex-col overflow-y-auto">
                 <SheetHeader>
                   <SheetTitle>
                     {logo && (
@@ -373,23 +378,30 @@ export const Navigation = (props: NavbarProps) => {
                     )}
                   </SheetTitle>
                 </SheetHeader>
-                <div id="mobile-menu" className="my-6 mx-2 flex flex-col gap-6">
-                  <Accordion
-                    type="single"
-                    collapsible
-                    className="flex w-full flex-col gap-4"
-                  >
-                    {menu?.map((item) =>
-                      renderMobileMenuItem(
-                        item,
-                        () => setIsSheetOpen(false),
-                        params
-                      )
-                    )}
-                  </Accordion>
+                <div
+                  id="mobile-menu"
+                  className="my-6 mx-2 flex flex-col flex-1"
+                >
+                  <div className="pb-4">
+                    <Accordion
+                      type="single"
+                      collapsible
+                      className="flex w-full flex-col gap-4"
+                    >
+                      {menu?.map((item) =>
+                        renderMobileMenuItem(
+                          item,
+                          () => setIsSheetOpen(false),
+                          params
+                        )
+                      )}
+                    </Accordion>
+                  </div>
+                  <MobileUserMenu setIsSheetOpen={setIsSheetOpen} />
                   {mobileExtraLinks && (
-                    <div className="border-t py-4">
-                      <div className="grid grid-cols-2 gap-4 justify-start">
+                    <div>
+                      <Separator className="bg-kanaliiga-orange" />
+                      <div className="grid grid-cols-2 gap-4 justify-start my-4">
                         {mobileExtraLinks.map((link, idx) => (
                           <Link
                             key={idx}
@@ -402,7 +414,10 @@ export const Navigation = (props: NavbarProps) => {
                       </div>
                     </div>
                   )}
-                  <MobileUserMenu setIsSheetOpen={setIsSheetOpen} />
+                  <div className="flex flex-wrap items-center gap-4 justify-between m-4 mt-auto">
+                    <ModeToggle />
+                    {user && <MobileLogOut logOutUser={() => logout()} />}
+                  </div>
                 </div>
               </SheetContent>
             </Sheet>

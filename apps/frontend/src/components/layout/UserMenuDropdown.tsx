@@ -53,9 +53,6 @@ export default function UserDropdown() {
               )}
             </>
           )}
-          {/* <DropdownMenuItem>
-            <Settings2Icon /> Settings
-          </DropdownMenuItem> */}
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
