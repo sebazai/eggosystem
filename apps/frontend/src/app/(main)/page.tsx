@@ -11,6 +11,7 @@ import HeroSection from "@/components/layout/HeroSection";
 import { SeasonStatusSection } from "@/components/landing/SeasonStatusSection";
 import { Navigation } from "@/components/layout/Navigation";
 import { createNextUrl } from "@/lib/utils";
+import { CsMainSponsors } from "@/components/sponsors/CsMainSponsors";
 
 interface LandingPageStats {
   unique_players: number;
@@ -130,13 +131,13 @@ export default async function Home() {
             <SeasonStatusSection />
 
             <Separator className="bg-kanaliiga-orange my-3 md:my-6" />
-            {/*             
+
             <SponsorContainer
               header="CS2 Season 4 Main Sponsors"
-              classNames="mt-10 sm:mt-20"
+              classNames="mt-10 sm:mt-20 hidden"
             >
               <CsMainSponsors />
-            </SponsorContainer> */}
+            </SponsorContainer>
 
             <SponsorContainer
               classNames="mt-10 sm:mt-20"
