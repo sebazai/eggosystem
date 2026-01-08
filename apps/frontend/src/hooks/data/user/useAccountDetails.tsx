@@ -5,7 +5,13 @@ import type { UserProfilePayload } from "@eggosystem/types";
 import { clientApiFetch } from "@/lib/apiClient";
 import { useEffect } from "react";
 
-export const useAccountDetails = () => {
+export const useAccountDetails = (): {
+  account: { details: UserProfilePayload } | undefined;
+  isLoading: boolean;
+  isError: Error | undefined;
+  isValidating: boolean;
+  mutate: () => Promise<{ details: UserProfilePayload } | undefined>;
+} => {
   const { data, error, isLoading, isValidating, mutate } = useSWR<
     { details: UserProfilePayload },
     Error
@@ -24,6 +30,7 @@ export const useAccountDetails = () => {
     account: data,
     isLoading,
     isError: error,
-    isValidating
+    isValidating,
+    mutate
   };
 };

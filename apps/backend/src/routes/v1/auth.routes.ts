@@ -13,7 +13,6 @@ import { getAuthUserBySteamId } from "../../models/auth.models";
 import type { UserFullPayload } from "@eggosystem/types";
 import {
   getLatestUserProfileMarketingConsent,
-  getLatestUserProfileNewsletterConsent,
   getUserProfileAcceptanceForVersion,
   hasAcceptedAnyPrivacyPolicy
 } from "../../models/user-policy-acceptance.models";
@@ -119,11 +118,6 @@ router.get("/me", authenticateJWT, async (req, res, next) => {
       : // Tick the marketing box if privacy_policy version changes and user had it ticked.
         await getLatestUserProfileMarketingConsent(req.auth.account_id);
 
-    const hasNewsletterConsent = userPolicy
-      ? userPolicy.accepted_tournament_newsletter
-      : // Default to true (opt-out) if privacy_policy version changes
-        await getLatestUserProfileNewsletterConsent(req.auth.account_id);
-
     // Check if user has accepted any previous privacy policy version
     const hasAcceptedPreviousPolicy = await hasAcceptedAnyPrivacyPolicy(
       req.auth.account_id
@@ -142,7 +136,6 @@ router.get("/me", authenticateJWT, async (req, res, next) => {
         ? userPolicy.accepted_privacy_policy
         : false,
       acceptedMarketing: hasMarketingConsent,
-      acceptedNewsletter: hasNewsletterConsent,
       hasAcceptedPreviousPolicy,
       isPersonalEmail: userInDb.is_work_email_personal_email,
       discordLinked,

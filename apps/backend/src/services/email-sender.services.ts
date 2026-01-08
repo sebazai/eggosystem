@@ -20,25 +20,20 @@ function createTransporter() {
 }
 
 /**
- * Generate unsubscribe headers and HTML footer for emails.
- * Includes both List-Unsubscribe headers for email client support
- * and an HTML link for manual unsubscription.
+ * Generate unsubscribe URL and HTML footer for emails.
  *
  * @param accountId - The account ID to generate unsubscribe link for
- * @returns Object containing headers and HTML footer with unsubscribe link
+ * @returns Object containing unsubscribe URL and HTML footer with unsubscribe link
  */
-async function getUnsubscribeHeadersAndFooter(accountId: number): Promise<{
-  headers: { "List-Unsubscribe": string; "List-Unsubscribe-Post": string };
+async function getUnsubscribeUrlAndFooter(accountId: number): Promise<{
+  unsubscribeUrl: string;
   footerHtml: string;
 }> {
   const token = await getOrCreateUnsubscribeToken(accountId);
-  const unsubscribeUrl = `${process.env.BACKEND_URL}/v1/account/unsubscribe/${token}`;
+  const unsubscribeUrl = `${process.env.FRONTEND_URL}/unsubscribe/${token}`;
 
   return {
-    headers: {
-      "List-Unsubscribe": `<${unsubscribeUrl}>`,
-      "List-Unsubscribe-Post": "List-Unsubscribe=One-Click"
-    },
+    unsubscribeUrl,
     footerHtml: `
       <p style="font-size: 12px; color: #999; margin-top: 30px; text-align: center;">
         Don't want to receive these emails? 
@@ -65,14 +60,15 @@ export const sendSeasonWelcomeEmail = async (
 ) => {
   const transporter = createTransporter();
 
-  // Get unsubscribe headers and footer
-  const { headers: unsubscribeHeaders, footerHtml: unsubscribeFooter } =
-    await getUnsubscribeHeadersAndFooter(accountId);
+  // Get unsubscribe URL and footer
+  const { unsubscribeUrl, footerHtml: unsubscribeFooter } =
+    await getUnsubscribeUrlAndFooter(accountId);
 
   const mailOptions = {
     from: "Kanahub by Kanaliiga <cs@kanaliiga.fi>",
     to,
     cc: "cs@kanaliiga.fi",
+    replyTo: "cs@kanaliiga.fi",
     subject: `Welcome to ${seasonDisplayName} - Kanaliiga`,
     html: `
         <div style="font-family: Arial, sans-serif; color: #333; font-size: 16px; line-height: 1.5; max-width: 600px; margin: 0 auto;">
@@ -198,8 +194,14 @@ export const sendSeasonWelcomeEmail = async (
     headers: {
       Date: new Date().toUTCString(),
       "Message-ID": `<${Date.now()}.${Math.random().toString(36).substring(2)}@kanaliiga.fi>`,
-      "Content-Type": "text/html; charset=UTF-8",
-      ...unsubscribeHeaders
+      "List-Unsubscribe": `<${unsubscribeUrl}>`,
+      "List-Unsubscribe-Post": "List-Unsubscribe=One-Click"
+    },
+    list: {
+      unsubscribe: {
+        url: unsubscribeUrl,
+        comment: "Unsubscribe from tournament newsletters"
+      }
     }
   };
 

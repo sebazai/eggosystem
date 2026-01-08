@@ -76,7 +76,7 @@ describe("Email Sender Services", () => {
       expect(mailOptions.subject).toBe("Welcome to Season 1 - CS2 - Kanaliiga");
     });
 
-    it("should include unsubscribe headers", async () => {
+    it("should include unsubscribe list option", async () => {
       await sendSeasonWelcomeEmail(
         baseEmailParams.to,
         baseEmailParams.accountId,
@@ -95,11 +95,11 @@ describe("Email Sender Services", () => {
       );
 
       const mailOptions = mockSendMail.mock.calls[0][0];
-      expect(mailOptions.headers["List-Unsubscribe"]).toContain(
-        "test-token-123"
-      );
-      expect(mailOptions.headers["List-Unsubscribe-Post"]).toBe(
-        "List-Unsubscribe=One-Click"
+      expect(mailOptions.list).toBeDefined();
+      expect(mailOptions.list?.unsubscribe).toBeDefined();
+      expect(mailOptions.list?.unsubscribe?.url).toContain("test-token-123");
+      expect(mailOptions.list?.unsubscribe?.comment).toBe(
+        "Unsubscribe from tournament newsletters"
       );
     });
 

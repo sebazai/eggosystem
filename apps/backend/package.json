@@ -23,7 +23,8 @@
     "reseed:e2e": "knex seed:run --specific=reset_seed.ts && pnpm seed && pnpm migrate && pnpm seed:e2e",
     "seed:e2e": "knex seed:run --specific=e2e_test_seed.ts",
     "typecheck": "tsc --noEmit",
-    "clean": "rm -rf cache dist"
+    "clean": "rm -rf cache dist",
+    "test:email-queue": "ts-node scripts/test-email-queue.ts"
   },
   "keywords": [
     "node.js",
