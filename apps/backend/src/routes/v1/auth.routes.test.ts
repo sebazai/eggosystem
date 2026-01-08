@@ -124,7 +124,6 @@ describe("GET /me", () => {
     expect(response.body.user).not.toHaveProperty("discord");
     expect(response.body.user).toHaveProperty("acceptedPrivacyPolicy");
     expect(response.body.user).toHaveProperty("acceptedMarketing");
-    expect(response.body.user).toHaveProperty("acceptedNewsletter");
     expect(response.body.user).toHaveProperty("hasAcceptedPreviousPolicy");
   });
 

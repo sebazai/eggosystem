@@ -5,9 +5,8 @@ import { getFinalizedPlayersWithEmailsAndConsent } from "./sortter-placements.se
 import { getMapNamesByIds } from "./maps.services";
 import { logger } from "../utils/app-logger";
 import type { Season } from "@eggosystem/types";
-import { redisClient, expireIn30Days } from "../utils/redisClient";
-import { getOrCreateUnsubscribeToken } from "../models/user-policy-acceptance.models";
 import { getOrganizerByIdOrFail } from "../models/organizer.models";
+import { enqueueBulkSeasonWelcomeEmails } from "./email-queue.services";
 
 function createTransporter() {
   if (process.env.NODE_ENV === "test" || process.env.NODE_ENV === "e2e") {
@@ -25,35 +24,6 @@ function createTransporter() {
         .trim()
     }
   });
-}
-
-/**
- * Generate unsubscribe headers and HTML footer for emails.
- * Includes both List-Unsubscribe headers for email client support
- * and an HTML link for manual unsubscription.
- *
- * @param accountId - The account ID to generate unsubscribe link for
- * @returns Object containing headers and HTML footer with unsubscribe link
- */
-async function getUnsubscribeHeadersAndFooter(accountId: number): Promise<{
-  headers: { "List-Unsubscribe": string; "List-Unsubscribe-Post": string };
-  footerHtml: string;
-}> {
-  const token = await getOrCreateUnsubscribeToken(accountId);
-  const unsubscribeUrl = `${process.env.BACKEND_URL}/v1/account/unsubscribe/${token}`;
-
-  return {
-    headers: {
-      "List-Unsubscribe": `<${unsubscribeUrl}>`,
-      "List-Unsubscribe-Post": "List-Unsubscribe=One-Click"
-    },
-    footerHtml: `
-      <p style="font-size: 12px; color: #999; margin-top: 30px; text-align: center;">
-        Don't want to receive these emails? 
-        <a href="${unsubscribeUrl}" style="color: #999; text-decoration: underline;">Unsubscribe</a>
-      </p>
-    `
-  };
 }
 
 export const sendVerificationEmail = async (to: string, token: string) => {
@@ -394,161 +364,6 @@ export const sendSeasonCaptainWelcomeEmail = async (
   await transporter?.sendMail(mailOptions);
 };
 
-const sendSeasonWelcomeEmail = async (
-  to: string,
-  accountId: number,
-  seasonDisplayName: string,
-  seasonStartDate: string | null,
-  teamName: string,
-  leagueName: string,
-  platform: string,
-  rulebookUrl: string | null,
-  discordLink: string | null,
-  mapNames: string[]
-) => {
-  const transporter = createTransporter();
-
-  // Get unsubscribe headers and footer
-  const { headers: unsubscribeHeaders, footerHtml: unsubscribeFooter } =
-    await getUnsubscribeHeadersAndFooter(accountId);
-
-  const mailOptions = {
-    from: "Kanahub by Kanaliiga <cs@kanaliiga.fi>",
-    to,
-    cc: "cs@kanaliiga.fi",
-    subject: `Welcome to ${seasonDisplayName} - Kanaliiga`,
-    html: `
-        <div style="font-family: Arial, sans-serif; color: #333; font-size: 16px; line-height: 1.5; max-width: 600px; margin: 0 auto;">
-          <h1 style="color: hsl(35, 93%, 49%); font-size: 24px; text-align: left;">Welcome to ${seasonDisplayName}!</h1>
-          
-          <p>Hello,</p>
-  
-          <p>Your team <strong style="color: hsl(35, 93%, 49%)">${teamName}</strong> has been placed in <strong>${seasonDisplayName}</strong>!</p>
-          
-          ${
-            seasonStartDate
-              ? `<p>The season starts on <strong>${seasonStartDate}</strong>.</p>`
-              : ""
-          }
-
-          <h2 style="color: hsl(35, 93%, 49%); font-size: 20px; margin-top: 30px; margin-bottom: 15px;">Season Details</h2>
-          
-          <table width="100%" cellpadding="8" cellspacing="0" style="border-collapse: collapse; margin: 20px 0; background-color: #f9f9f9; border-radius: 6px;">
-            <tr>
-              <td style="padding: 12px; border-bottom: 1px solid #eee;"><strong>Team:</strong></td>
-              <td style="padding: 12px; border-bottom: 1px solid #eee;">${teamName}</td>
-            </tr>
-            <tr>
-              <td style="padding: 12px; border-bottom: 1px solid #eee;"><strong>League:</strong></td>
-              <td style="padding: 12px; border-bottom: 1px solid #eee;">${leagueName}</td>
-            </tr>
-            <tr>
-              <td style="padding: 12px; border-bottom: 1px solid #eee;"><strong>Platform:</strong></td>
-              <td style="padding: 12px; border-bottom: 1px solid #eee;">${platform}</td>
-            </tr>
-            ${
-              mapNames.length > 0
-                ? `
-            <tr>
-              <td style="padding: 12px;"><strong>Active Map Pool:</strong></td>
-              <td style="padding: 12px;">${mapNames.join(", ")}</td>
-            </tr>
-            `
-                : ""
-            }
-          </table>
-
-          ${
-            discordLink
-              ? `
-          <h2 style="color: hsl(35, 93%, 49%); font-size: 20px; margin-top: 30px; margin-bottom: 15px;">Join the Community</h2>
-          
-          <p>Connect with other players and get important updates by joining our Discord server:</p>
-
-          <table width="100%" cellpadding="0" cellspacing="0" style="margin: 30px 0;">
-            <tr>
-              <td align="center" style="text-align: center; padding: 0;">
-                <table cellpadding="0" cellspacing="0" style="margin: 0 auto;">
-                  <tr>
-                    <td align="center" style="background-color: #5865F2; border-radius: 6px;">
-                      <a href="${discordLink}" 
-                         style="background-color: #5865F2; color: #fff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; display: inline-block; text-align: center; font-family: Arial, sans-serif;">
-                        Join Discord Server
-                      </a>
-                    </td>
-                  </tr>
-                </table>
-              </td>
-            </tr>
-          </table>
-
-          <p style="word-break: break-all;">
-            <a href="${discordLink}">${discordLink}</a>
-          </p>
-          `
-              : ""
-          }
-
-          ${
-            rulebookUrl
-              ? `
-          <h2 style="color: hsl(35, 93%, 49%); font-size: 20px; margin-top: 30px; margin-bottom: 15px;">Important Information</h2>
-          
-          <p>Please review the season rulebook to familiarize yourself with the rules and regulations:</p>
-
-          <table width="100%" cellpadding="0" cellspacing="0" style="margin: 30px 0;">
-            <tr>
-              <td align="center" style="text-align: center; padding: 0;">
-                <table cellpadding="0" cellspacing="0" style="margin: 0 auto;">
-                  <tr>
-                    <td align="center" style="background-color: hsl(35, 93%, 49%); border-radius: 6px;">
-                      <a href="${rulebookUrl}" 
-                         style="background-color: hsl(35, 93%, 49%); color: #fff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; display: inline-block; text-align: center; font-family: Arial, sans-serif;">
-                        View Rulebook
-                      </a>
-                    </td>
-                  </tr>
-                </table>
-              </td>
-            </tr>
-          </table>
-
-          <p style="word-break: break-all;">
-            <a href="${rulebookUrl}">${rulebookUrl}</a>
-          </p>
-          `
-              : ""
-          }
-  
-          <hr style="border: none; border-top: 1px solid #eee; margin: 40px 0;" />
-  
-          <p style="font-size: 14px; color: #777;">
-            Good luck in the season! If you have any questions, please reach out to your team captain or contact us on Discord.
-          </p>
-  
-          <p style="font-size: 14px; color: #777;">
-            &copy; ${new Date().getFullYear()} Kanaliiga – All rights reserved.
-          </p>
-  
-          <p style="font-size: 14px; color: #777; margin-top: 20px;">
-            <a href="https://hub.kanaliiga.fi" style="color: hsl(35, 93%, 49%); text-decoration: none;">hub.kanaliiga.fi</a> | 
-            <a href="https://kanaliiga.fi" style="color: hsl(35, 93%, 49%); text-decoration: none;">kanaliiga.fi</a>
-          </p>
-          
-          ${unsubscribeFooter}
-        </div>
-      `,
-    headers: {
-      Date: new Date().toUTCString(),
-      "Message-ID": `<${Date.now()}.${Math.random().toString(36).substring(2)}@kanaliiga.fi>`,
-      "Content-Type": "text/html; charset=UTF-8",
-      ...unsubscribeHeaders
-    }
-  };
-
-  await transporter?.sendMail(mailOptions);
-};
-
 export const sendMatchScheduleChangeEmail = async (
   to: string,
   matchDetails: {
@@ -640,18 +455,16 @@ export const sendMatchScheduleChangeEmail = async (
 };
 
 /**
- * Send welcome emails to all finalized players for a season
- * This function runs asynchronously and does not block the caller
- * @param seasonId - Season ID
- * @param season - Season object with all necessary data
+ * Enqueue welcome emails for all finalized players in a season
+ * Uses BullMQ to send emails with rate limiting to avoid spam filters
  */
-export const sendSeasonFinalizationWelcomeEmails = async (
+export const enqueueSeasonFinalizationWelcomeEmails = async (
   seasonId: number,
   season: Season
 ): Promise<void> => {
   try {
     logger.info(
-      `Starting welcome email sending for season ${seasonId} finalization`
+      `Starting welcome email enqueueing for season ${seasonId} finalization`
     );
 
     // Get players with emails and newsletter consent
@@ -682,93 +495,25 @@ export const sendSeasonFinalizationWelcomeEmails = async (
     // Get map names from active map pool
     const mapNames = await getMapNamesByIds(season.active_map_pool || []);
 
-    // Send emails in parallel and collect errors with account_id
-    const emailPromises = players.map((player) =>
-      sendSeasonWelcomeEmail(
-        player.email,
-        player.account_id,
-        seasonDisplayName,
-        seasonStartDate,
-        player.team_name,
-        player.league_name,
-        season.platform,
-        season.rulebook_url,
-        season.discord_link,
-        mapNames
-      )
-        .then(() => ({ success: true as const, account_id: player.account_id }))
-        .catch((error: unknown) => {
-          const errorMessage =
-            error instanceof Error ? error.message : String(error);
-          logger.error(
-            `Failed to send welcome email to ${player.nickname} (${player.email})`,
-            error
-          );
-          return {
-            success: false as const,
-            account_id: player.account_id,
-            error: errorMessage
-          };
-        })
+    // Enqueue all emails
+    const result = await enqueueBulkSeasonWelcomeEmails(
+      seasonId,
+      players,
+      seasonDisplayName,
+      seasonStartDate,
+      season.platform,
+      season.rulebook_url,
+      season.discord_link,
+      mapNames
     );
-
-    const results = await Promise.allSettled(emailPromises);
-
-    // Collect successful and failed results
-    const successfulResults: Array<{ success: true; account_id: number }> = [];
-    const failedErrors: Array<{ account_id: number; error: string }> = [];
-
-    results.forEach((result) => {
-      if (result.status === "fulfilled") {
-        if (result.value.success) {
-          successfulResults.push(result.value);
-        } else {
-          failedErrors.push({
-            account_id: result.value.account_id,
-            error: result.value.error
-          });
-        }
-      } else {
-        // If the promise itself was rejected (shouldn't happen with our catch, but handle it)
-        logger.error(
-          `Unexpected promise rejection in email sending: ${result.reason}`
-        );
-      }
-    });
-
-    const successful = successfulResults.length;
-    const failed = failedErrors.length;
-
-    // Store failed errors in Redis if any
-    if (failedErrors.length > 0) {
-      try {
-        // Create Redis key: season name with spaces replaced by dashes, plus season ID
-        // Format: {season-name-with-dashes}-{season-id}-failed-welcome-messages
-        const seasonNameKey = season.name.toLowerCase().replace(/\s+/g, "-");
-        const redisKey = `${seasonNameKey}-${seasonId}-failed-welcome-messages`;
-
-        await redisClient.set(
-          redisKey,
-          JSON.stringify(failedErrors),
-          "EX",
-          expireIn30Days
-        );
-
-        logger.info(
-          `Stored ${failedErrors.length} failed welcome email errors in Redis with key: ${redisKey}`
-        );
-      } catch (redisError) {
-        logger.error(
-          `Failed to store email errors in Redis for season ${seasonId}`,
-          redisError
-        );
-      }
-    }
 
     logger.info(
-      `Welcome emails sent for season ${seasonId}: ${successful} successful, ${failed} failed out of ${players.length} eligible players`
+      `Welcome email enqueueing completed for season ${seasonId}: ${result.enqueued} enqueued, ${result.failed} failed out of ${players.length} eligible players`
     );
   } catch (error) {
-    logger.error(`Error sending welcome emails for season ${seasonId}`, error);
+    logger.error(
+      `Error enqueueing welcome emails for season ${seasonId}`,
+      error
+    );
   }
 };

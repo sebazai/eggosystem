@@ -19,7 +19,10 @@ import registrationsRouter from "./v1/season-team-registration.routes";
 import matchGameRouter from "./v1/match-game.routes";
 import discordRouter from "./v1/discord.routes";
 import eloRouter from "./v1/elo.routes";
-import { verifyEmailController } from "../controllers/account.controllers";
+import {
+  verifyEmailController,
+  unsubscribeNewsletterController
+} from "../controllers/account.controllers";
 import { removeReservationByHashController } from "../controllers/match-streams.controllers";
 import { landingPageStatistics } from "../services/landing-page.services";
 import parseQueryFilterParams from "../middlewares/parse-query-filter-params.middleware";
@@ -42,6 +45,19 @@ v1Router.use("/casters", casterRouter);
 
 // Apply CORS
 v1Router.use("/auth", corsMiddleware, authRouter);
+
+// Public unsubscribe route - must be before authenticated /accounts router
+v1Router.get(
+  "/accounts/unsubscribe/:token",
+  corsMiddleware,
+  unsubscribeNewsletterController
+);
+v1Router.post(
+  "/accounts/unsubscribe/:token",
+  corsMiddleware,
+  unsubscribeNewsletterController
+);
+
 v1Router.use("/accounts", corsMiddleware, authenticateJWT, accountRouter);
 v1Router.use("/dashboard", corsMiddleware, authenticateJWT, dashboardRouter);
 v1Router.use("/kanahautomo", corsMiddleware, kanahautomoRouter);

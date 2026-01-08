@@ -56,7 +56,8 @@
         "CSRANKKER_BACKEND_API",
         "IMAGE_SERVICE_URL",
         "IMAGE_SERVICE_API_KEY",
-        "IMAGE_SERVICE_BASE_URL"
+        "IMAGE_SERVICE_BASE_URL",
+        "EMAIL_SEND_DELAY_MS"
       ],
       "dependsOn": ["^build"],
       "inputs": [

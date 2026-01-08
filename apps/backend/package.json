@@ -23,7 +23,8 @@
     "reseed:e2e": "knex seed:run --specific=reset_seed.ts && pnpm seed && pnpm migrate && pnpm seed:e2e",
     "seed:e2e": "knex seed:run --specific=e2e_test_seed.ts",
     "typecheck": "tsc --noEmit",
-    "clean": "rm -rf cache dist"
+    "clean": "rm -rf cache dist",
+    "test:email-queue": "ts-node scripts/test-email-queue.ts"
   },
   "keywords": [
     "node.js",
@@ -42,6 +43,7 @@
     "@opentelemetry/semantic-conventions": "1.38.0",
     "@pyroscope/nodejs": "0.4.8",
     "amqplib": "0.10.9",
+    "bullmq": "5.66.4",
     "cookie-parser": "1.4.7",
     "cors": "2.8.5",
     "discord.js": "14.25.1",

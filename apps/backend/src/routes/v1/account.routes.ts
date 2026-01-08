@@ -3,8 +3,7 @@ import {
   emailsVerifiedController,
   getAccountMatchReservationsController,
   sendVerificationEmails,
-  updateAccountProfileController,
-  unsubscribeNewsletterController
+  updateAccountProfileController
 } from "../../controllers/account.controllers";
 import {
   getCasterDefaultUrlController,
@@ -21,6 +20,10 @@ import { uploadPlayerAvatarController } from "../../controllers/player-avatar.co
 import { validateNumericParams } from "../../middlewares/validate-numeric-params";
 import { getAuthUserBySteamId } from "../../models/auth.models";
 import { type UserProfilePayload } from "@eggosystem/types";
+import {
+  getUserProfileAcceptanceForVersion,
+  getLatestUserProfileNewsletterConsent
+} from "../../models/user-policy-acceptance.models";
 import {
   auditReadEntity,
   auditUpdateEntity
@@ -45,9 +48,20 @@ router.get("/profile", auditReadEntity("Accounts"), async (req, res, next) => {
       return next(new ForbiddenError("Bad request"));
     }
 
+    const userPolicy = await getUserProfileAcceptanceForVersion(
+      req.auth.account_id,
+      process.env.PRIVACY_POLICY_VERSION
+    );
+
+    const hasNewsletterConsent = userPolicy
+      ? userPolicy.accepted_tournament_newsletter
+      : // Default to true (opt-out) if privacy_policy version changes
+        await getLatestUserProfileNewsletterConsent(req.auth.account_id);
+
     const userPayload = {
       fullName: userInDb.full_name,
-      workEmail: userInDb.work_email
+      workEmail: userInDb.work_email,
+      acceptedNewsletter: hasNewsletterConsent
     } satisfies UserProfilePayload;
     res.json({ details: userPayload });
     return;
@@ -111,7 +125,5 @@ router.post("/my-teams/upload-logo", authenticateJWT, uploadTeamLogoController);
 
 // Avatar upload route
 router.post("/upload-avatar", authenticateJWT, uploadPlayerAvatarController);
-
-router.get("/unsubscribe/:token", unsubscribeNewsletterController);
 
 export default router;
