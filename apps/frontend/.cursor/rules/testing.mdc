@@ -1,0 +1,263 @@
+---
+applies:
+  - "**/*.test.ts"
+  - "**/*.test.tsx"
+  - "**/*.spec.ts"
+  - "**/*.spec.tsx"
+---
+
+# Frontend Testing Patterns
+
+## Auth Mocking for Tests
+
+### Required Setup for Components Using useAuth
+
+For any test file that tests components using the `useAuth` hook, you **MUST** add the following mock at the top of your test file (after imports, before any test code):
+
+```typescript
+import {
+  renderWithAuthAndSWR,
+  resetMockAuthState,
+  createMockUser,
+  getMockAuthState
+} from "@/test-utils/test-utils";
+
+// Mock useAuth hook - REQUIRED for components that use useAuth
+jest.mock("@/context/AuthContext", () => ({
+  useAuth: jest.fn(() => {
+    const { getMockAuthState } = jest.requireActual("@/test-utils/test-utils");
+    return getMockAuthState();
+  })
+}));
+```
+
+### Reset Mock State in beforeEach
+
+Always reset the mock auth state before each test to ensure clean state:
+
+```typescript
+describe("MyComponent", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    resetMockAuthState(); // Clean auth state for each test
+  });
+
+  // ... your tests
+});
+```
+
+### Rendering Components with Auth
+
+Use `renderWithAuthAndSWR` to render components that need auth:
+
+```typescript
+it("should render for authenticated user", () => {
+  renderWithAuthAndSWR(<MyComponent />);
+  // Default: authenticated user with basic permissions
+  expect(screen.getByText("Welcome")).toBeInTheDocument();
+});
+```
+
+## Common Testing Patterns
+
+### Default Authenticated User
+
+```typescript
+it("renders for authenticated user", () => {
+  renderWithAuthAndSWR(<MyComponent />);
+  // Uses default mock user (account_id: 1, roles: ["user"])
+  expect(screen.getByText("Welcome")).toBeInTheDocument();
+});
+```
+
+### Custom User Roles/Data
+
+```typescript
+it("renders admin features for admin users", () => {
+  renderWithAuthAndSWR(<MyComponent />, {
+    user: createMockUser({
+      roles: ["admin"],
+      nickname: "AdminUser"
+    })
+  });
+
+  expect(screen.getByText("Admin Panel")).toBeInTheDocument();
+});
+```
+
+### Unauthenticated State
+
+```typescript
+it("shows login prompt when not authenticated", () => {
+  renderWithAuthAndSWR(<MyComponent />, {
+    user: null
+  });
+
+  expect(screen.getByText("Please log in")).toBeInTheDocument();
+});
+```
+
+### Loading State
+
+```typescript
+it("shows loading state", () => {
+  renderWithAuthAndSWR(<MyComponent />, {
+    isAuthLoading: true
+  });
+
+  expect(screen.getByTestId("loading-spinner")).toBeInTheDocument();
+});
+```
+
+### With SWR Data Mocking
+
+```typescript
+import { createSWRConfig } from "@/test-utils/test-utils";
+
+it("renders with auth and API data", () => {
+  const swrConfig = createSWRConfig({
+    "/api/v1/organizations": [
+      { id: 1, name: "Test Org" }
+    ]
+  });
+
+  renderWithAuthAndSWR(<MyComponent />, {
+    user: createMockUser({ roles: ["admin"] }),
+    swrConfig
+  });
+
+  expect(screen.getByText("Test Org")).toBeInTheDocument();
+});
+```
+
+## Complete Test File Template
+
+```typescript
+import { screen } from "@testing-library/react";
+import { MyComponent } from "./MyComponent";
+import {
+  renderWithAuthAndSWR,
+  resetMockAuthState,
+  createMockUser,
+  getMockAuthState,
+  createSWRConfig
+} from "@/test-utils/test-utils";
+
+// Mock useAuth hook - REQUIRED
+jest.mock("@/context/AuthContext", () => ({
+  useAuth: jest.fn(() => {
+    const { getMockAuthState } = jest.requireActual("@/test-utils/test-utils");
+    return getMockAuthState();
+  })
+}));
+
+// Mock any other dependencies
+jest.mock("next/navigation", () => ({
+  usePathname: () => "/",
+}));
+
+describe("MyComponent", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    resetMockAuthState();
+  });
+
+  it("renders for authenticated user", () => {
+    renderWithAuthAndSWR(<MyComponent />);
+    expect(screen.getByText("Welcome")).toBeInTheDocument();
+  });
+
+  it("renders for admin user", () => {
+    renderWithAuthAndSWR(<MyComponent />, {
+      user: createMockUser({ roles: ["admin"] })
+    });
+    expect(screen.getByText("Admin Panel")).toBeInTheDocument();
+  });
+
+  it("handles unauthenticated state", () => {
+    renderWithAuthAndSWR(<MyComponent />, { user: null });
+    expect(screen.getByText("Please log in")).toBeInTheDocument();
+  });
+});
+```
+
+## Test Utilities API Reference
+
+### `renderWithAuthAndSWR(component, options)`
+
+Renders a component with both auth and SWR mocking.
+
+**Options:**
+
+- `user?: UserFullPayload | null` - Mock user data (default: basic authenticated user)
+- `isAuthLoading?: boolean` - Mock loading state (default: false)
+- `swrConfig?: SWRConfiguration` - Custom SWR config for API mocking
+
+### `renderWithAuth(component, options)`
+
+Renders a component with only auth mocking (no SWR).
+
+**Options:**
+
+- `user?: UserFullPayload | null` - Mock user data
+- `isAuthLoading?: boolean` - Mock loading state
+
+### `createMockUser(overrides)`
+
+Creates a mock user with default values.
+
+**Default values:**
+
+```typescript
+{
+  account_id: 1,
+  provider_id: "76561198012345678",
+  roles: ["user"],
+  nickname: "testuser",
+  provider: "steam",
+  acceptedPrivacyPolicy: true,
+  acceptedMarketing: false,
+  isPersonalEmail: true,
+  discordLinked: false
+}
+```
+
+### `resetMockAuthState()`
+
+Resets auth mock to default unauthenticated state. **Always call in `beforeEach`**.
+
+### `setMockAuthState(state)`
+
+Manually set mock auth state (rarely needed - prefer passing options to render functions).
+
+### `createSWRConfig(fallbackData)`
+
+Creates SWR configuration with custom fallback data for mocking API responses.
+
+```typescript
+const swrConfig = createSWRConfig({
+  "/api/v1/users": [{ id: 1, name: "Test User" }]
+});
+```
+
+## Troubleshooting
+
+### Error: "useAuth must be used within an AuthProvider"
+
+**Solution**: Make sure you've added the `jest.mock("@/context/AuthContext")` at the top of your test file.
+
+### Tests Have Stale Auth State
+
+**Solution**: Ensure you're calling `resetMockAuthState()` in your `beforeEach` block.
+
+### TypeScript Errors
+
+**Solution**: Make sure you're importing `getMockAuthState` in your test file even if you don't use it directly (it's needed for the mock to work).
+
+## Key Principles
+
+- **Always mock useAuth** for components that use the hook
+- **Reset state in beforeEach** to prevent test pollution
+- **Use renderWithAuthAndSWR** instead of plain render
+- **Test different auth states** (authenticated, unauthenticated, loading, different roles)
+- **Combine with SWR mocking** for components that fetch data
