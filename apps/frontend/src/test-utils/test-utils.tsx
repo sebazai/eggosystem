@@ -12,18 +12,47 @@ import {
 import { SWRConfig } from "swr";
 import type { UserFullPayload } from "@eggosystem/types";
 
-// Create a mock AuthContext for testing
-const MockAuthContext = React.createContext<{
-  user: UserFullPayload | null;
-  loading: boolean;
-  checkAuth: () => Promise<void>;
-  logout: () => Promise<void>;
-}>({
-  user: null,
+// =============================================================================
+// AUTH CONTEXT MOCKING
+// =============================================================================
+
+/**
+ * Global mock auth state that can be controlled in tests
+ * This is used by the mocked useAuth hook
+ */
+let mockAuthState = {
+  user: null as UserFullPayload | null,
   loading: false,
   checkAuth: jest.fn(),
   logout: jest.fn()
-});
+};
+
+/**
+ * Sets the mock auth state for tests
+ * Call this in your tests to control what useAuth returns
+ */
+export const setMockAuthState = (state: Partial<typeof mockAuthState>) => {
+  mockAuthState = { ...mockAuthState, ...state };
+};
+
+/**
+ * Resets the mock auth state to defaults
+ * Call this in beforeEach to ensure clean state
+ */
+export const resetMockAuthState = () => {
+  mockAuthState = {
+    user: null,
+    loading: false,
+    checkAuth: jest.fn(),
+    logout: jest.fn()
+  };
+};
+
+/**
+ * Gets the current mock auth state
+ * This is used internally by the mocked useAuth hook
+ */
+export const getMockAuthState = () => mockAuthState;
 
 // Mock fetch API globally
 if (!global.fetch) {
@@ -169,29 +198,6 @@ export const createMockUser = (overrides = {}): UserFullPayload => ({
 });
 
 /**
- * Mock AuthContext provider for testing
- * Provides a consistent auth context without requiring actual auth setup
- */
-export const MockAuthProvider: React.FC<{
-  children: React.ReactNode;
-  user?: UserFullPayload | null;
-  isLoading?: boolean;
-}> = ({ children, user = createMockUser(), isLoading = false }) => {
-  const mockAuthValue = {
-    user,
-    loading: isLoading,
-    checkAuth: jest.fn(),
-    logout: jest.fn()
-  };
-
-  return (
-    <MockAuthContext.Provider value={mockAuthValue}>
-      {children}
-    </MockAuthContext.Provider>
-  );
-};
-
-/**
  * Mock WithRoleProtection component for testing
  * Bypasses role checking for easier testing of protected components
  */
@@ -204,8 +210,26 @@ export const MockWithRoleProtection: React.FC<{
 };
 
 /**
- * Comprehensive test wrapper that includes SWR, Auth, and other providers
- * Use this for testing dashboard/admin components that require auth
+ * Comprehensive test wrapper that includes SWR and sets up auth mocking
+ * Use this for testing components that use useAuth and SWR
+ *
+ * Before calling this, you must set up the useAuth mock in your test file:
+ *
+ * @example
+ * ```typescript
+ * import { setupAuthMock } from '@/test-utils/test-utils';
+ *
+ * // At the top level of your test file (outside describe blocks)
+ * setupAuthMock();
+ *
+ * describe('MyComponent', () => {
+ *   it('renders with auth', () => {
+ *     renderWithAuthAndSWR(<MyComponent />, {
+ *       user: createMockUser({ roles: ['admin'] })
+ *     });
+ *   });
+ * });
+ * ```
  */
 interface TestWrapperOptions extends RenderOptions {
   swrConfig?: typeof DEFAULT_SWR_CONFIG;
@@ -222,17 +246,41 @@ export function renderWithAuthAndSWR(
     ...renderOptions
   }: TestWrapperOptions = {}
 ): RenderResult {
+  // Set the mock auth state before rendering
+  setMockAuthState({
+    user,
+    loading: isAuthLoading,
+    checkAuth: jest.fn(),
+    logout: jest.fn()
+  });
+
   const Wrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-    <MockAuthProvider user={user} isLoading={isAuthLoading}>
-      <SWRConfig value={swrConfig}>{children}</SWRConfig>
-    </MockAuthProvider>
+    <SWRConfig value={swrConfig}>{children}</SWRConfig>
   );
 
   return render(ui, { wrapper: Wrapper, ...renderOptions });
 }
 
 /**
- * Simple wrapper for components that need auth context but not SWR
+ * Simple wrapper for components that need auth but not SWR
+ *
+ * Before calling this, you must set up the useAuth mock in your test file:
+ *
+ * @example
+ * ```typescript
+ * import { setupAuthMock } from '@/test-utils/test-utils';
+ *
+ * // At the top level of your test file (outside describe blocks)
+ * setupAuthMock();
+ *
+ * describe('MyComponent', () => {
+ *   it('renders with auth', () => {
+ *     renderWithAuth(<MyComponent />, {
+ *       user: createMockUser({ roles: ['admin'] })
+ *     });
+ *   });
+ * });
+ * ```
  */
 export function renderWithAuth(
   ui: React.ReactElement,
@@ -245,11 +293,55 @@ export function renderWithAuth(
     isAuthLoading?: boolean;
   } & RenderOptions = {}
 ): RenderResult {
-  const Wrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-    <MockAuthProvider user={user} isLoading={isAuthLoading}>
-      {children}
-    </MockAuthProvider>
-  );
+  // Set the mock auth state before rendering
+  setMockAuthState({
+    user,
+    loading: isAuthLoading,
+    checkAuth: jest.fn(),
+    logout: jest.fn()
+  });
 
-  return render(ui, { wrapper: Wrapper, ...renderOptions });
+  return render(ui, renderOptions);
 }
+
+/**
+ * Instructions for setting up useAuth mock in your test files
+ * =============================================================
+ *
+ * To use renderWithAuthAndSWR or renderWithAuth, you MUST set up the useAuth mock
+ * at the top of your test file (before imports, due to Jest hoisting):
+ *
+ * Add this to the TOP of your test file (after imports):
+ *
+ * ```typescript
+ * import { getMockAuthState, resetMockAuthState, renderWithAuthAndSWR, createMockUser } from '@/test-utils/test-utils';
+ *
+ * // Mock useAuth - must be at top level
+ * jest.mock("@/context/AuthContext", () => ({
+ *   useAuth: jest.fn(() => {
+ *     const { getMockAuthState } = jest.requireActual('@/test-utils/test-utils');
+ *     return getMockAuthState();
+ *   })
+ * }));
+ *
+ * describe('MyComponent', () => {
+ *   beforeEach(() => {
+ *     resetMockAuthState();
+ *   });
+ *
+ *   it('renders for authenticated user', () => {
+ *     renderWithAuthAndSWR(<MyComponent />, {
+ *       user: createMockUser()
+ *     });
+ *     expect(screen.getByText('Welcome')).toBeInTheDocument();
+ *   });
+ *
+ *   it('renders for admin', () => {
+ *     renderWithAuthAndSWR(<MyComponent />, {
+ *       user: createMockUser({ roles: ['admin'] })
+ *     });
+ *     expect(screen.getByText('Admin Panel')).toBeInTheDocument();
+ *   });
+ * });
+ * ```
+ */
