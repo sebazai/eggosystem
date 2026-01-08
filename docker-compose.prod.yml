@@ -139,6 +139,19 @@ services:
     volumes:
       - redis-prod-data:/data
 
+  eggo-prod-bull-monitor:
+    image: ejhayes/nodejs-bull-monitor:latest
+    restart: always
+    depends_on:
+      - eggo-prod-redis
+    environment:
+      - REDIS_HOST=eggo-prod-redis
+      - REDIS_PORT=6379
+      - PORT=3010
+      - UI=bull-board
+    networks:
+      - web
+
   migrations:
     image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-migrations:${MIGRATIONS_VERSION}
     depends_on:

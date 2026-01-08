@@ -180,6 +180,144 @@ This separation ensures data integrity for original registration decisions while
 - Discord server access management
 - Integration with organization Discord invite links
 
+## Email Queue System
+
+### Overview
+
+The email queue system uses **BullMQ** (Redis-backed job queue) to send welcome emails to players when sortter placements are finalized.
+
+### Architecture
+
+```
+┌─────────────────┐      ┌──────────────────┐      ┌─────────────────┐
+│ Sortter         │      │  Redis Queue     │      │  Email Worker   │
+│ Finalization    │─────▶│   (BullMQ)       │◀─────│  (Backend)      │
+│ Controller      │      │  welcome-emails  │      │                 │
+└─────────────────┘      └──────────────────┘      └─────────────────┘
+                                  │                          │
+                                  │                          │ Send Email
+                                  ▼                          ▼
+                         ┌──────────────────┐      ┌─────────────────┐
+                         │  bull-monitor    │      │  SMTP Server    │
+                         │  (Monitoring)    │      │                 │
+                         └──────────────────┘      └─────────────────┘
+                                  │
+                                  │ Metrics
+                                  ▼
+                         ┌──────────────────┐
+                         │  Grafana Cloud   │
+                         │  (via Alloy)     │
+                         └──────────────────┘
+```
+
+### Components
+
+#### 1. Email Queue Service (`email-queue.services.ts`)
+
+**Responsibilities**:
+
+- Initialize BullMQ queue connected to Redis
+- Enqueue individual or bulk welcome email jobs
+- Configure rate limiting and retry policies
+
+**Configuration**:
+
+- **Queue Name**: `welcome-emails`
+- **Rate Limit**: 1 email per 500ms (configurable via `EMAIL_SEND_DELAY_MS`)
+- **Retry Strategy**: 3 attempts with exponential backoff (1s, 2s, 4s)
+- **Job Cleanup**: Completed jobs removed after 7 days, failed after 30 days
+
+#### 2. Email Worker (`email-worker.services.ts`)
+
+**Responsibilities**:
+
+- Process jobs from the queue sequentially
+- Call existing `sendSeasonWelcomeEmail` function
+- Track success/failure statistics in Redis
+- Handle graceful shutdown
+
+**Configuration**:
+
+- **Concurrency**: 1 (sequential processing to respect rate limit)
+- **Lifecycle**: Starts with backend server, stops on SIGTERM/SIGINT
+
+#### 3. bull-monitor (Docker Service)
+
+**Responsibilities**:
+
+- Provide web UI for queue management (bull-board)
+- Expose Prometheus metrics at `/metrics` endpoint
+- Monitor queue health and job status
+
+**Access**:
+
+- **Development**: `http://localhost:3010`
+- **Production**: Internal network only (SSH tunnel recommended)
+
+### Why BullMQ?
+
+**Advantages over direct sending**:
+
+- **Spam Filter Prevention**: Rate limiting prevents bulk email detection
+- **Reliability**: Automatic retries with exponential backoff
+- **Monitoring**: Built-in metrics and UI for queue visibility
+- **Scalability**: Can handle large volumes (800+ emails) without blocking
+- **Redis Integration**: Leverages existing Redis infrastructure
+
+**Why BullMQ over RabbitMQ**:
+
+- Simpler integration with existing Redis (no new infrastructure)
+- Built-in rate limiting and retry mechanisms
+- Better TypeScript support
+- Native Prometheus metrics via bull-monitor
+
+### Email Sending Flow
+
+1. **Sortter Finalization**: Admin finalizes team placements
+2. **Enqueue Jobs**: `enqueueSeasonFinalizationWelcomeEmails` adds all jobs to queue
+3. **Rate-Limited Processing**: Worker processes one job every 500ms
+4. **Email Sending**: Each job calls `sendSeasonWelcomeEmail` via nodemailer
+5. **Statistics Tracking**: Success/failure counts stored in Redis (`email-stats:season:{id}`)
+6. **Monitoring**: bull-monitor exposes metrics to Grafana via Alloy
+
+### Configuration
+
+**Environment Variables**:
+
+- `EMAIL_SEND_DELAY_MS` - Delay between emails in milliseconds (default: 750)
+- `REDIS_HOST` - Redis host for BullMQ (default: eggo-redis)
+- `REDIS_PORT` - Redis port (default: 6379)
+
+### Monitoring
+
+See [BullMQ Grafana Monitoring](docs/monitoring/bullmq-grafana.md) for detailed monitoring setup.
+
+**Key Metrics**:
+
+- `jobs_completed_total` - Total completed jobs
+- `jobs_failed_total` - Total failed jobs
+- `job_duration` - Processing time per job
+- `job_wait_duration` - Time waiting in queue
+
+**Grafana Dashboards**:
+
+- **Queue Overview**: Dashboard [#14538](https://grafana.com/grafana/dashboards/14538)
+- **Queue Specific**: Dashboard [#14537](https://grafana.com/grafana/dashboards/14537)
+
+### Error Handling
+
+**Job Failures**:
+
+- Automatic retry with exponential backoff (3 attempts)
+- Failed jobs tracked in Redis for admin review
+- Errors logged with player details for debugging
+
+**Worker Failures**:
+
+- Graceful shutdown on SIGTERM/SIGINT
+- Jobs remain in queue and resume on restart
+- No email duplication (job IDs prevent re-processing)
+
 ## Development Workflow
 
 ### Local Development

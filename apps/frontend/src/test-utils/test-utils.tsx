@@ -163,7 +163,6 @@ export const createMockUser = (overrides = {}): UserFullPayload => ({
   provider: "steam",
   acceptedPrivacyPolicy: true,
   acceptedMarketing: false,
-  acceptedNewsletter: true,
   isPersonalEmail: true,
   discordLinked: false,
   ...overrides

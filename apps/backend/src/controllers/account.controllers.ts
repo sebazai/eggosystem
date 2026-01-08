@@ -237,6 +237,10 @@ export const getAccountMatchReservationsController = async (
 /**
  * Unsubscribe from newsletters using a token.
  * This is a public endpoint that doesn't require authentication.
+ *
+ * Supports both:
+ * - GET: From frontend unsubscribe page (shows confirmation UI)
+ * - POST: One-click unsubscribe from email clients (RFC 8058) - no confirmation needed
  */
 export const unsubscribeNewsletterController = async (
   req: RequestWithParams<{ token: string }>,
@@ -261,6 +265,7 @@ export const unsubscribeNewsletterController = async (
     res.status(200).json({
       message: "You have been successfully unsubscribed from newsletters"
     });
+    return;
   } catch (error) {
     logger.error("Error unsubscribing from newsletter:", error);
     return next(

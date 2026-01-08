@@ -190,7 +190,7 @@ export default function ProfileForm() {
         workEmail={account.details.workEmail}
         acceptedPrivacyPolicy={user.acceptedPrivacyPolicy}
         acceptedMarketing={user.acceptedMarketing}
-        acceptedNewsletter={user.acceptedNewsletter}
+        acceptedNewsletter={account.details.acceptedNewsletter}
         isPersonalEmail={user.isPersonalEmail}
         onSubmit={onSubmit}
         emailsVerified={emailsVerified}
@@ -227,6 +227,7 @@ const ProfileFormInputs = ({
 }: Partial<UserFullPayload> & {
   fullName: UserProfilePayload["fullName"];
   workEmail: UserProfilePayload["workEmail"];
+  acceptedNewsletter: UserProfilePayload["acceptedNewsletter"];
   onSubmit: (data: AccountUpdateValues) => void;
   emailsVerified?: Pick<
     Account,
@@ -406,8 +407,7 @@ const ProfileFormInputs = ({
                 />
               </FormControl>
               <FormLabel>
-                Receive tournament participation emails (you can opt out
-                anytime)
+                Receive tournament newsletter emails (you can opt out anytime)
               </FormLabel>
             </FormItem>
           )}

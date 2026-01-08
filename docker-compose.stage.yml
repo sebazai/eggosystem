@@ -132,6 +132,19 @@ services:
     volumes:
       - redis-stage-data:/data
 
+  eggo-stage-bull-monitor:
+    image: ejhayes/nodejs-bull-monitor:latest
+    restart: always
+    depends_on:
+      - eggo-stage-redis
+    environment:
+      - REDIS_HOST=eggo-stage-redis
+      - REDIS_PORT=6379
+      - PORT=3010
+      - UI=bull-board
+    networks:
+      - web
+
   phpmyadmin-hubstage:
     depends_on:
       - eggo-stage-db

@@ -12,6 +12,10 @@ Database pooling, API for CS stats.
 - `DB_PASSWORD` - Database password
 - `DB_NAME` - Database name
 
+### Email Queue
+
+- `EMAIL_SEND_DELAY_MS` - Delay between sending welcome emails in milliseconds (default: 500ms).
+
 ### Grafana Cloud Profiles
 
 To enable profiling with Grafana Cloud via Alloy, the following environment variables are configured:

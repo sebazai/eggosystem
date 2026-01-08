@@ -58,6 +58,10 @@
     "3000": {
       "label": "Hello Remote World",
       "onAutoForward": "notify"
+    },
+    "3010": {
+      "label": "BullMQ Monitor",
+      "onAutoForward": "notify"
     }
   },
   "runArgs": ["--env=DISPLAY=host.docker.internal:0", "--ipc=host"],
@@ -70,6 +74,7 @@
     "eggo-devdb",
     "eggo-phpmyadmin",
     "eggo-redis",
+    "eggo-bull-monitor",
     "eggo-rabbitmq"
   ],
   "overrideCommand": false
