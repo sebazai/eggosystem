@@ -2,7 +2,7 @@
 
 import { ExternalLink, Menu } from "lucide-react";
 import Image from "next/image";
-import { useEffect, useRef, useState, type JSX } from "react";
+import { useEffect, useReducer, useRef, useState, type JSX } from "react";
 import Link from "next/link";
 
 import {
@@ -236,20 +236,24 @@ export const Navigation = (props: NavbarProps) => {
 
   const { isMobile } = useIsMobile();
   const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const [hasScrolled, setHasScrolled] = useState(false);
   const params = useSearchParams();
 
-  useEffect(() => {
-    if (!isMobile) {
-      setIsSheetOpen(false);
+  const sheetOpen = isMobile ? isSheetOpen : false;
+  const handleSheetOpenChange = (open: boolean) => {
+    if (isMobile) {
+      setIsSheetOpen(open);
     }
-  }, [isMobile]);
+  };
+
+  const [hasScrolled, markAsScrolled] = useReducer(() => true, false);
 
   useEffect(() => {
     if (isScrolled && !hasScrolled) {
-      setHasScrolled(true);
+      markAsScrolled();
     }
   }, [isScrolled, hasScrolled]);
+
+  const hasScrolledValue = isScrolled || hasScrolled;
 
   useEffect(() => {
     const logoEl = logoRef.current;
@@ -308,7 +312,9 @@ export const Navigation = (props: NavbarProps) => {
                 ref={logoRef}
                 className={cn(
                   "logo transition-all duration-500",
-                  hasScrolled || pathname === "/" ? "logo-small" : "logo-large"
+                  hasScrolledValue || pathname === "/"
+                    ? "logo-small"
+                    : "logo-large"
                 )}
                 src={logo.src}
                 alt={logo.alt}
@@ -336,7 +342,7 @@ export const Navigation = (props: NavbarProps) => {
                 <Image src={logo.src} alt={logo.alt} width={75} height={75} />
               </Link>
             )}
-            <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+            <Sheet open={sheetOpen} onOpenChange={handleSheetOpenChange}>
               <SheetTrigger asChild>
                 <Button
                   variant="outline"
