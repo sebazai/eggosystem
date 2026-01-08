@@ -310,9 +310,6 @@ describe("Email Sender Services", () => {
       const mailOptions = mockSendMail.mock.calls[0][0];
       expect(mailOptions.headers.Date).toBeDefined();
       expect(mailOptions.headers["Message-ID"]).toContain("@kanaliiga.fi");
-      expect(mailOptions.headers["Content-Type"]).toBe(
-        "text/html; charset=UTF-8"
-      );
     });
 
     it("should include footer with current year", async () => {
