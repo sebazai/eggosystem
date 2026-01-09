@@ -74,19 +74,25 @@ The email queue system uses BullMQ to rate-limit welcome emails sent when sortte
    - Individual job details
    - Retry/pause/resume controls
 
-### Production/Staging Environment
+### Production/Staging/Dev Environments
 
-bull-monitor is accessible internally within the Docker network. To access it:
+bull-monitor is accessible in multiple ways:
 
-1. **Via SSH tunnel** (recommended):
+1. **Via Web (Recommended)**:
+   - Development: **https://hubdev.kanaliiga.fi/bull-monitor**
+   - Staging: **https://hubstage.kanaliiga.fi/bull-monitor**
+   - Production: **https://hub.kanaliiga.fi/bull-monitor**
+   - Requires basic authentication (credentials in `BULL_MONITOR_AUTH` environment variable)
+
+2. **Via SSH tunnel**:
 
    ```bash
-   ssh -L 3010:localhost:3010 user@production-server
+   ssh -L 3010:localhost:3010 user@server
    ```
 
    Then access: **http://localhost:3010**
 
-2. **Via internal network** (if you have VPN access):
+3. **Via internal network** (if you have VPN access):
    - Dev: `http://eggo-dev-bull-monitor:3010`
    - Stage: `http://eggo-stage-bull-monitor:3010`
    - Prod: `http://eggo-prod-bull-monitor:3010`
@@ -307,6 +313,9 @@ redis-cli HGETALL email-stats:season:1
 - `REDIS_PORT` - Redis port (default: 6379)
 - `PORT` - bull-monitor HTTP port (default: 3010)
 - `UI` - UI framework to use (default: bull-board)
+- `BULL_MONITOR_AUTH` - Basic auth credentials for web access (htpasswd format: `username:$apr1$...`)
+  - Generate with: `htpasswd -nb username password`
+  - Example: `admin:$apr1$n0kAnnPt$40/2lJX3jzZ3oD1Y6HFpL/` (password: kanaliiga)
 
 ## Troubleshooting
 
