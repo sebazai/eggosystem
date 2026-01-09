@@ -9,23 +9,12 @@
       "next": false
     },
     "apps/backend": {
-      "entry": [
-        "server.ts",
-        "knexfile.ts",
-        "migrations/**/*.ts",
-        "seeds/**/*.ts",
-        "jest.setup.ts"
-      ],
-      "project": ["src/**/*.ts", "jest.config.js", "babel.config.js"]
+      "entry": ["server.ts", "migrations/**/*.ts", "seeds/**/*.ts"],
+      "project": ["src/**/*.ts"]
     },
     "apps/frontend": {
-      "entry": [
-        "src/app/**/*.{ts,tsx}",
-        "next.config.ts",
-        "jest.setup.ts",
-        "playwright.config.ts"
-      ],
-      "project": ["src/**/*.{ts,tsx}", "jest.config.js", "postcss.config.mjs"],
+      "entry": ["src/app/**/*.{ts,tsx}"],
+      "project": ["src/**/*.{ts,tsx}", "jest.config.js"],
       "jest": false,
       "ignoreDependencies": ["tailwindcss", "tailwindcss-animate"]
     },
@@ -34,7 +23,7 @@
       "project": ["*.js"]
     },
     "packages/shared-msw": {
-      "entry": ["src/index.ts"],
+      "entry": [],
       "project": ["src/**/*.ts"]
     },
     "packages/tsconfig": {
@@ -42,11 +31,11 @@
       "project": ["!**"]
     },
     "packages/types": {
-      "entry": ["src/index.ts"],
+      "entry": [],
       "project": ["src/**/*.ts"]
     },
     "packages/viewer": {
-      "entry": ["src/index.ts", "dev/main.tsx", "vite.config.ts"],
+      "entry": ["dev/main.tsx"],
       "project": ["src/**/*.{ts,tsx}"]
     }
   },

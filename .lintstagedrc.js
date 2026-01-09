@@ -40,6 +40,10 @@ const buildTypecheck = (filenames) => {
 
 export default {
   "**/*.{json,md,yml,js,ts,tsx,jsx}": "pnpm format",
-  "**/*.{js,ts,tsx,jsx}": ["pnpm --filter=!frontend lint:fix", buildTypecheck],
+  "**/*.{js,ts,tsx,jsx}": [
+    "pnpm --filter=!frontend lint:fix",
+    buildTypecheck,
+    () => "pnpm knip"
+  ],
   "apps/frontend/**/*.{js,jsx,ts,tsx}": [buildNextLint]
 };
