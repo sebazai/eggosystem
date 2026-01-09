@@ -16,7 +16,11 @@
       "entry": ["src/app/**/*.{ts,tsx}"],
       "project": ["src/**/*.{ts,tsx}", "jest.config.js"],
       "jest": false,
-      "ignoreDependencies": ["tailwindcss", "tailwindcss-animate"]
+      "ignoreDependencies": [
+        "tailwindcss",
+        "tailwindcss-animate",
+        "jest-environment-jsdom"
+      ]
     },
     "packages/eslint": {
       "entry": ["*.js"],
