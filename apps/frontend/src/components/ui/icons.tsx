@@ -72,4 +72,6 @@ const TooltipIcon = ({ text, icon }: TooltipIconProps) => {
   );
 };
 
+export default TooltipIcon;
+
 export { SelectSpinner, ProcessingSpinner, TooltipIcon };

@@ -21,7 +21,6 @@
     "apps/frontend": {
       "entry": [
         "src/app/**/*.{ts,tsx}",
-        "src/middleware.ts",
         "next.config.ts",
         "jest.setup.ts",
         "playwright.config.ts"
@@ -46,7 +45,7 @@
       "project": ["src/**/*.ts"]
     },
     "packages/viewer": {
-      "entry": ["src/main.tsx", "dev/main.tsx", "vite.config.ts"],
+      "entry": ["src/index.ts", "dev/main.tsx", "vite.config.ts"],
       "project": ["src/**/*.{ts,tsx}"]
     }
   },
@@ -60,13 +59,8 @@
     "**/__mocks__/**",
     "**/dist/**",
     "**/coverage/**",
-    "**/node_modules/**"
-  ],
-  "ignoreDependencies": [
-    "@playwright/test",
-    "husky",
-    "lint-staged",
-    "prettier",
-    "turbo"
+    "**/node_modules/**",
+    "**/apps/frontend/src/components/ui/**",
+    "**/apps/frontend/jest.config.js"
   ]
 }

@@ -3,7 +3,6 @@ import useSWR, { mutate } from "swr";
 import { clientApiFetch } from "@/lib/apiClient";
 import type {
   SeasonLeagueWithMappings,
-  SeasonLeagueExternalId,
   CreateSeasonLeagueExternalIdRequest,
   UpdateSeasonLeagueExternalIdRequest,
   UpdateLeagueNameRequest
@@ -18,23 +17,6 @@ export const useSeasonLeaguesWithMappings = (seasonId: number | null) => {
     seasonId
       ? `/api/v1/dashboard/season-league-mapper/season/${seasonId}/season-leagues`
       : null,
-    clientApiFetch,
-    { revalidateOnFocus: false }
-  );
-
-  return {
-    data,
-    error,
-    isLoading
-  };
-};
-
-/**
- * Hook to fetch a single mapping by ID
- */
-const useSeasonLeagueExternalId = (id: number | null) => {
-  const { data, error, isLoading } = useSWR<SeasonLeagueExternalId>(
-    id ? `/api/v1/dashboard/season-league-mapper/${id}` : null,
     clientApiFetch,
     { revalidateOnFocus: false }
   );

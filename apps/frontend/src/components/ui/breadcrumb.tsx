@@ -103,5 +103,7 @@ export {
   BreadcrumbList,
   BreadcrumbItem,
   BreadcrumbLink,
-  BreadcrumbSeparator
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+  BreadcrumbEllipsis
 };
