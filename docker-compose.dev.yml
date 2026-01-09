@@ -130,7 +130,6 @@ services:
     environment:
       - REDIS_HOST=eggo-dev-redis
       - REDIS_PORT=6379
-      - PORT=3010
       - UI=bull-board
     networks:
       - web
@@ -149,7 +148,7 @@ services:
       - "traefik.http.routers.bull-monitor-hubdev-secure.tls.certresolver=http"
       - "traefik.http.routers.bull-monitor-hubdev-secure.service=bull-monitor-hubdev"
       - "traefik.http.routers.bull-monitor-hubdev-secure.middlewares=bull-monitor-hubdev-stripprefix,bull-monitor-hubdev-auth"
-      - "traefik.http.services.bull-monitor-hubdev.loadbalancer.server.port=3010"
+      - "traefik.http.services.bull-monitor-hubdev.loadbalancer.server.port=3000"
       - "traefik.docker.network=web"
 
   phpmyadmin-hubdev:
