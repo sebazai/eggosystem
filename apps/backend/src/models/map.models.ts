@@ -5,7 +5,7 @@ export const getMaps = async () => {
   return runQuery<Map[]>("SELECT * FROM Maps");
 };
 
-export const getMapIdByName = async (name: string) => {
+const getMapIdByName = async (name: string) => {
   const query = `SELECT id FROM Maps WHERE name = ?`;
   const [map] = await runQuery<Array<{ id: number }>>(query, [
     name.toLowerCase()

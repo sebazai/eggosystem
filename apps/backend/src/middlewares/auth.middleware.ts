@@ -156,7 +156,7 @@ export const authenticateJWT = expressjwt({
   }
 });
 
-export const checkApiKeyOrJWT = (
+const checkApiKeyOrJWT = (
   req: Request,
   res: Response,
   next: NextFunction

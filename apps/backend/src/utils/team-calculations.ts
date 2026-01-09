@@ -11,13 +11,7 @@ import {
   calculateAverageFromValues
 } from "@eggosystem/types";
 
-export {
-  TOP_N_FOR_CURRENT_AVG,
-  TOTAL_PLAYERS_IN_NEW_AVG,
-  TOP_N_FOR_COMPARISON,
-  TOP_N_FOR_DISPLAY,
-  calculateAverageFromValues
-};
+export { TOP_N_FOR_DISPLAY };
 
 export const buildCurrentAvgSQL = (): string => {
   return `ROUND(AVG(CASE WHEN player_rank <= ${TOP_N_FOR_CURRENT_AVG} THEN kana_elo ELSE NULL END), 3)`;

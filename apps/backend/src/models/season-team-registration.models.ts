@@ -22,7 +22,7 @@ import {
 } from "../services/season-team-registration.services";
 import { upsertSeasonTeamRegistrationPlayer } from "./season-team-registration-player.models";
 
-export const getSeasonTeamRegistrationBySeasonAndTeamId = async (
+const getSeasonTeamRegistrationBySeasonAndTeamId = async (
   seasonId: number,
   teamId: number,
   connection?: PoolConnection

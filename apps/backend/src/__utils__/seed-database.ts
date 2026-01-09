@@ -11,7 +11,7 @@ export const insertTestSeason = (data: InsertSeason) => {
   );
 };
 
-export const insertAccountWithSteamId = async (
+const insertAccountWithSteamId = async (
   accountId: number,
   steamId: string,
   nickname: string,
@@ -42,7 +42,7 @@ export const insertAccountWithSteamId = async (
   );
 };
 
-export const insertAccountPrivacyPolicyAccepted = async (accountId: number) => {
+const insertAccountPrivacyPolicyAccepted = async (accountId: number) => {
   await runQuery<{ insertId: number }>(
     "INSERT INTO UserPolicyAcceptances (account_id, accepted_privacy_policy) VALUES (?, ?)",
     [accountId, true]
@@ -84,7 +84,7 @@ export const cleanupTestUsers = async () => {
   }
 };
 
-export const cleanupTestUserApprovals = async (steamId: string) => {
+const cleanupTestUserApprovals = async (steamId: string) => {
   await runQuery("DELETE FROM SeasonPlayerApprovals WHERE steam_id = ?", [
     steamId
   ]);
@@ -170,10 +170,7 @@ export const clearSeasonPlayerRanks = async (seasonId?: number) => {
   }
 };
 
-export const clearTestUserBySteamId = async (
-  steamId: string,
-  seasonId?: number
-) => {
+const clearTestUserBySteamId = async (steamId: string, seasonId?: number) => {
   // Clean up SeasonPlayerRanks for this steam_id and season
   if (seasonId !== undefined) {
     await runQuery(
@@ -270,7 +267,7 @@ export const clearTestUserAndRanks = async (
   }
 };
 
-export const setCaptainEditRegistrationForAccountId = async (
+const setCaptainEditRegistrationForAccountId = async (
   accountId: number,
   seasonId?: number
 ) => {
@@ -321,7 +318,7 @@ export const insertTestKanahautomoRegistration = async (
   );
 };
 
-export const removeTestKanahautomoRegistration = async (
+const removeTestKanahautomoRegistration = async (
   steamId: string,
   organizationId: number
 ) => {

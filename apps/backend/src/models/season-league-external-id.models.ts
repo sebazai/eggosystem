@@ -74,7 +74,7 @@ export const getActiveSeasonChampionshipIds = async (): Promise<
   return results;
 };
 
-export const getSeasonLeagueExternalIdsBySeasonId = async (
+const getSeasonLeagueExternalIdsBySeasonId = async (
   seasonId: number,
   connection?: PoolConnection
 ) => {

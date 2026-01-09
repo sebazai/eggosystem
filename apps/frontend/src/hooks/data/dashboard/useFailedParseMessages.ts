@@ -55,7 +55,7 @@ export const useFailedParseMessages = (
   };
 };
 
-export const useFailedParseStats = (): {
+const useFailedParseStats = (): {
   stats: FailedParseStatsResponse["stats"];
   isLoading: boolean;
   error: unknown;

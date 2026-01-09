@@ -297,7 +297,7 @@ export interface ParsedPayload {
 /**
  * Parse queue configuration
  */
-export interface ParseQueueConfig {
+interface ParseQueueConfig {
   host: string;
   port: number;
   username: string;
@@ -313,7 +313,7 @@ export interface ParseQueueConfig {
 /**
  * Default parse queue configuration
  */
-export const DEFAULT_PARSE_QUEUE_CONFIG: ParseQueueConfig = {
+const DEFAULT_PARSE_QUEUE_CONFIG: ParseQueueConfig = {
   host: "eggo-rabbitmq",
   port: 5672,
   username: "test",

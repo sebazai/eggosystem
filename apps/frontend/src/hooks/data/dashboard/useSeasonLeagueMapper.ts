@@ -32,7 +32,7 @@ export const useSeasonLeaguesWithMappings = (seasonId: number | null) => {
 /**
  * Hook to fetch a single mapping by ID
  */
-export const useSeasonLeagueExternalId = (id: number | null) => {
+const useSeasonLeagueExternalId = (id: number | null) => {
   const { data, error, isLoading } = useSWR<SeasonLeagueExternalId>(
     id ? `/api/v1/dashboard/season-league-mapper/${id}` : null,
     clientApiFetch,

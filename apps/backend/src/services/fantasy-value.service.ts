@@ -6,12 +6,12 @@ import {
   calculateInitialPlayerValue
 } from "@eggosystem/types";
 
-export interface PlayerValueData {
+interface PlayerValueData {
   value: number;
   tier: PlayerTier;
 }
 
-export interface WeeklyPerformanceStats {
+interface WeeklyPerformanceStats {
   kana_rating: number;
   kd: number;
   kills: number;
@@ -49,7 +49,7 @@ export const calculatePlayerValueData = (
  * @param weekNumber - Week number (1-indexed)
  * @param connection - Optional database connection
  */
-export const getWeeklyPerformanceStats = async (
+const getWeeklyPerformanceStats = async (
   steamId: string,
   seasonId: number,
   leagueId: number,
@@ -116,7 +116,7 @@ export const getWeeklyPerformanceStats = async (
  * @param weekNumber - Week number to calculate for
  * @param connection - Optional database connection
  */
-export const calculateWeeklyPriceUpdate = async (
+const calculateWeeklyPriceUpdate = async (
   steamId: string,
   seasonId: number,
   leagueId: number,

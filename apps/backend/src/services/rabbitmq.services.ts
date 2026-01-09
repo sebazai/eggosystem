@@ -56,7 +56,7 @@ const createChannel = async () => {
  * @param request The calculation request to publish
  * @returns A Promise resolving when the message is published
  */
-export const publishKanaeloCalculationRequest = async (
+const publishKanaeloCalculationRequest = async (
   request: KanaeloCalculationRequest
 ) => {
   let connection;
@@ -166,9 +166,4 @@ export const bulkPublishKanaeloCalculationRequests = async (
     if (channel) await channel.close();
     if (connection) await connection.close();
   }
-};
-
-export default {
-  publishKanaeloCalculationRequest,
-  bulkPublishKanaeloCalculationRequests
 };

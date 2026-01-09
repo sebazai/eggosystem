@@ -98,9 +98,7 @@ export const createOrganizationForSignup = async (
   return newOrg;
 };
 
-export const ensurePlayerSteamProfilesPublic = async (
-  playerSteamIds: string[]
-) => {
+const ensurePlayerSteamProfilesPublic = async (playerSteamIds: string[]) => {
   const areProfilePublic = await areSteamProfilesPublic(playerSteamIds);
   if (!areProfilePublic.is_all_public) {
     const notPublicIds =
@@ -264,10 +262,7 @@ export const addPlayersForTeamInSeason = async (
   }
 };
 
-export const isValidExternalId = async (
-  platform: SeasonPlatform,
-  id?: string
-) => {
+const isValidExternalId = async (platform: SeasonPlatform, id?: string) => {
   if (platform === SeasonPlatform.Kanaliiga) {
     return true;
   }
@@ -328,7 +323,7 @@ export const validatePlayersFromDBForSignup = async (
   }
 };
 
-export const handleUpdateSeasonTeamRegistration = async (
+const handleUpdateSeasonTeamRegistration = async (
   seasonId: number,
   teamId: number,
   organizationId: number,

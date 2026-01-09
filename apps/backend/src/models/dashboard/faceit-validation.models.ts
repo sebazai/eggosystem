@@ -21,7 +21,7 @@ interface SeasonTeamWithExternalId {
 /**
  * Gets all players for a team in a season from HUB database
  */
-export const getHubTeamRoster = async (
+const getHubTeamRoster = async (
   season_id: number,
   team_id: number
 ): Promise<HubTeamPlayer[]> => {
@@ -43,7 +43,7 @@ export const getHubTeamRoster = async (
 /**
  * Gets all championship external IDs for a season
  */
-export const getSeasonChampionshipIds = async (
+const getSeasonChampionshipIds = async (
   season_id: number
 ): Promise<string[]> => {
   const query = `

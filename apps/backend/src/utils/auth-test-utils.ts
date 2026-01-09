@@ -6,7 +6,7 @@ export function generateTestJWT(): string {
   return generateTestJWTForUser(15004, heppajpgSteamId, "heppajpg");
 }
 
-export function generateTestJWTForUser(
+function generateTestJWTForUser(
   accountId: number,
   steamId: string,
   nickname: string

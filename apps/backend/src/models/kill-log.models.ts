@@ -103,9 +103,7 @@ interface KillLog {
   is_flash_assist: boolean;
 }
 
-export const getKillLogsForGame = async (
-  matchGameId: number
-): Promise<KillLog[]> => {
+const getKillLogsForGame = async (matchGameId: number): Promise<KillLog[]> => {
   const query = `
     SELECT 
       id,
@@ -136,7 +134,7 @@ export const getKillLogsForGame = async (
 /**
  * Get kill logs for a specific round
  */
-export const getKillLogsForRound = async (
+const getKillLogsForRound = async (
   matchGameId: number,
   roundNumber: number
 ): Promise<KillLog[]> => {

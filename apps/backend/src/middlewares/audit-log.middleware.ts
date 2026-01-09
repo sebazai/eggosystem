@@ -13,7 +13,7 @@ interface AuditConfig {
   actionType?: string;
 }
 
-export function auditAfterResponse(config: AuditConfig) {
+function auditAfterResponse(config: AuditConfig) {
   return function (req: Request, res: Response, next: NextFunction) {
     const startTime = Date.now();
     let responseBody: unknown;
@@ -95,7 +95,7 @@ export const auditUpdateEntity = (entity: string, idFromParams = "id") =>
     })
   });
 
-export const auditDeleteEntity = (entity: string, idFromParams = "id") =>
+const auditDeleteEntity = (entity: string, idFromParams = "id") =>
   auditAfterResponse({
     actionType: `Delete ${entity}`,
     getEntityInfo: (req) => ({

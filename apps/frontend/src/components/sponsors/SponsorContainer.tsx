@@ -45,7 +45,7 @@ interface MotionSponsorContinerProps {
   classNames?: string;
   children: React.ReactNode;
 }
-export const MotionSponsorContainer = ({
+const MotionSponsorContainer = ({
   children,
   classNames
 }: MotionSponsorContinerProps) => {

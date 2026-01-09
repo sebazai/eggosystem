@@ -32,5 +32,5 @@ export const getCorsOptions = () => {
   } satisfies cors.CorsOptions;
 };
 
-export const corsOptions = getCorsOptions();
+const corsOptions = getCorsOptions();
 export const corsMiddleware = cors(corsOptions);

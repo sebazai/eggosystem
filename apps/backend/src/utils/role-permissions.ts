@@ -4,7 +4,7 @@
  * Add these to database later to the roles table so we dont need to hardcode them
  */
 
-export const ROLE_HIERARCHY = {
+const ROLE_HIERARCHY = {
   superadmin: 200, // For future implementation - highest role that can manage admin roles
   admin: 100,
   helpdesk: 50,

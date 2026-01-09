@@ -43,7 +43,7 @@ export const removeRoleForAccount = async (
   );
 };
 
-export const setScopedPermissionForAccount = async (
+const setScopedPermissionForAccount = async (
   permissionName: string,
   accountId: number,
   seasonId: number,
@@ -68,7 +68,7 @@ export const setScopedPermissionForAccount = async (
   );
 };
 
-export const removeScopedPermissionForAccount = async (
+const removeScopedPermissionForAccount = async (
   permissionName: string,
   accountId: number,
   seasonId: number,
