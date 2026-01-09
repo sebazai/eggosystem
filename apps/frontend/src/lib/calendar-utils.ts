@@ -52,7 +52,7 @@ export const sortMatchesByDateAndTier = (
 /**
  * Filters matches to show only upcoming matches within a specified number of days
  */
-export const filterUpcomingMatches = (
+const filterUpcomingMatches = (
   matches: MatchWithStreamUrls[],
   daysAhead: number = 10
 ): MatchWithStreamUrls[] => {

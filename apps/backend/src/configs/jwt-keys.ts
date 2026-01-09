@@ -12,7 +12,7 @@ const JWT_PRIVATE_KEY = fs.readFileSync(
   "utf8"
 );
 
-export const JWT_REFRESH_PUBLIC_KEY = fs.readFileSync(
+const JWT_REFRESH_PUBLIC_KEY = fs.readFileSync(
   path.resolve(process.cwd(), "public_refresh_token.pem"),
   "utf8"
 );

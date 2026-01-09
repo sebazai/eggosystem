@@ -11,7 +11,7 @@ export const insertTestSeason = (data: InsertSeason) => {
   );
 };
 
-export const insertAccountWithSteamId = async (
+const insertAccountWithSteamId = async (
   accountId: number,
   steamId: string,
   nickname: string,
@@ -42,7 +42,7 @@ export const insertAccountWithSteamId = async (
   );
 };
 
-export const insertAccountPrivacyPolicyAccepted = async (accountId: number) => {
+const insertAccountPrivacyPolicyAccepted = async (accountId: number) => {
   await runQuery<{ insertId: number }>(
     "INSERT INTO UserPolicyAcceptances (account_id, accepted_privacy_policy) VALUES (?, ?)",
     [accountId, true]
@@ -84,7 +84,7 @@ export const cleanupTestUsers = async () => {
   }
 };
 
-export const cleanupTestUserApprovals = async (steamId: string) => {
+const cleanupTestUserApprovals = async (steamId: string) => {
   await runQuery("DELETE FROM SeasonPlayerApprovals WHERE steam_id = ?", [
     steamId
   ]);
@@ -170,28 +170,6 @@ export const clearSeasonPlayerRanks = async (seasonId?: number) => {
   }
 };
 
-export const clearTestUserBySteamId = async (
-  steamId: string,
-  seasonId?: number
-) => {
-  // Clean up SeasonPlayerRanks for this steam_id and season
-  if (seasonId !== undefined) {
-    await runQuery(
-      "DELETE FROM SeasonPlayerRanks WHERE steam_id = ? AND season_id = ?",
-      [steamId, seasonId]
-    );
-  }
-
-  // Clean up LinkedAccounts
-  await runQuery(
-    "DELETE FROM LinkedAccounts WHERE provider_id = ? AND provider = ?",
-    [`steam-${steamId}`, "steam"]
-  );
-
-  // Clean up SteamPlayers (this will cascade to related data)
-  await runQuery("DELETE FROM SteamPlayers WHERE steam_id = ?", [steamId]);
-};
-
 export const clearTestUserAndRanks = async (
   accountId: number,
   steamId: string,
@@ -270,28 +248,6 @@ export const clearTestUserAndRanks = async (
   }
 };
 
-export const setCaptainEditRegistrationForAccountId = async (
-  accountId: number,
-  seasonId?: number
-) => {
-  const [permission] = await runQuery<[{ id: number }]>(
-    "SELECT id FROM Permissions WHERE permission_name = ?",
-    ["edit-registration"]
-  );
-  const [role] = await runQuery<[{ id: number }]>(
-    "SELECT id from Roles WHERE role_name = ?",
-    ["captain"]
-  );
-  await runQuery(
-    "INSERT INTO AccountPermissionScopes (season_id, team_id, account_id, permission_id) VALUES (?, ?, ?, ?)",
-    [seasonId ?? 1, validSignupData.teamId, accountId, permission.id]
-  );
-  await runQuery(
-    "INSERT IGNORE INTO AccountRoles (account_id, role_id, game_id) VALUES (?, ?, ?)",
-    [accountId, role.id, 1]
-  );
-};
-
 export const insertRogueTeam = (teamName?: string) => {
   return runQuery<{ insertId: number }>("INSERT INTO Teams (name) VALUES (?)", [
     teamName ?? "Testing team"
@@ -318,16 +274,6 @@ export const insertTestKanahautomoRegistration = async (
   return runQuery<{ insertId: number }>(
     "INSERT INTO KanahautomoRegistrations (steam_id, organization_id, accepted_terms) VALUES (?, ?, ?)",
     [steamId, organizationId, acceptedTerms]
-  );
-};
-
-export const removeTestKanahautomoRegistration = async (
-  steamId: string,
-  organizationId: number
-) => {
-  return runQuery(
-    "DELETE FROM KanahautomoRegistrations WHERE steam_id = ? AND organization_id = ?",
-    [steamId, organizationId]
   );
 };
 

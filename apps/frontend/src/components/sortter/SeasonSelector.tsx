@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
 
-export interface Season {
+interface Season {
   id: number;
   name: string;
 }

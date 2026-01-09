@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { authenticateJWT } from "../middlewares/auth.middleware";
 import { corsMiddleware } from "../middlewares/cors.middleware";
+import appRouter from "./v1/app.routes";
 import dashboardRouter from "./v1/dashboard/index";
 import authRouter from "./v1/auth.routes";
 import playerRouter from "./v1/player.routes";
@@ -58,6 +59,7 @@ v1Router.post(
   unsubscribeNewsletterController
 );
 
+v1Router.use("/app", appRouter);
 v1Router.use("/accounts", corsMiddleware, authenticateJWT, accountRouter);
 v1Router.use("/dashboard", corsMiddleware, authenticateJWT, dashboardRouter);
 v1Router.use("/kanahautomo", corsMiddleware, kanahautomoRouter);

@@ -321,67 +321,65 @@ describe("AuthControllers", () => {
     });
     // Should have refresh_token and access_token secure: true if NODE_ENV === production
     it("should have refresh_token and access_token secure: true if NODE_ENV === production", async () => {
-      process.env.NODE_ENV = "production";
-      jest
-        .spyOn(authServices, "getDBPermissionsForAccountId")
-        .mockResolvedValue([
-          {
-            permission_name: "edit",
-            role_name: "captain",
-            season_id: 1,
-            team_id: 2
-          }
-        ]);
-      (jest.spyOn(jwt, "verify") as jest.Mock).mockImplementation(() => {
-        return { steamId: "12345", jti: "123123" };
-      });
+      const originalNodeEnv = process.env.NODE_ENV;
+      try {
+        process.env.NODE_ENV = "production";
+        jest
+          .spyOn(authServices, "getPermissionsForAccountId")
+          .mockResolvedValue(["captain:edit:season-1:team-2"]);
+        (jest.spyOn(jwt, "verify") as jest.Mock).mockImplementation(() => {
+          return { steamId: "12345", jti: "123123" };
+        });
 
-      const mockNext = jest.fn();
-      await authControllers.refreshToken(req, res, mockNext);
-      expect(authServices.generateTokens).toHaveBeenCalledWith({
-        steamId: "12345",
-        jti: "123123",
-        permissions: ["captain:edit:season-1:team-2"]
-      });
+        const mockNext = jest.fn();
+        await authControllers.refreshToken(req, res, mockNext);
+        expect(authServices.generateTokens).toHaveBeenCalledWith({
+          steamId: "12345",
+          jti: "123123",
+          permissions: ["captain:edit:season-1:team-2"]
+        });
 
-      expect(redisClient.set as jest.Mock).toHaveBeenCalledWith(
-        "123123",
-        "newRefreshToken",
-        "EX",
-        604800
-      );
-      expect(res.cookie).toHaveBeenNthCalledWith(
-        1,
-        "access_token",
-        "newAccessToken",
-        expect.objectContaining({
-          httpOnly: true,
-          sameSite: "strict",
-          secure: true
-        })
-      );
-      expect(res.cookie).toHaveBeenNthCalledWith(
-        2,
-        "refresh_token",
-        "newRefreshToken",
-        expect.objectContaining({
-          httpOnly: true,
-          secure: true,
-          path: "/api/v1/auth/refresh",
-          sameSite: "strict"
-        })
-      );
-      expect(res.cookie).toHaveBeenNthCalledWith(
-        3,
-        "refresh_token",
-        "newRefreshToken",
-        expect.objectContaining({
-          httpOnly: true,
-          secure: true,
-          path: "/api/v1/auth/logout",
-          sameSite: "strict"
-        })
-      );
+        expect(redisClient.set as jest.Mock).toHaveBeenCalledWith(
+          "123123",
+          "newRefreshToken",
+          "EX",
+          604800
+        );
+        expect(res.cookie).toHaveBeenNthCalledWith(
+          1,
+          "access_token",
+          "newAccessToken",
+          expect.objectContaining({
+            httpOnly: true,
+            sameSite: "strict",
+            secure: true
+          })
+        );
+        expect(res.cookie).toHaveBeenNthCalledWith(
+          2,
+          "refresh_token",
+          "newRefreshToken",
+          expect.objectContaining({
+            httpOnly: true,
+            secure: true,
+            path: "/api/v1/auth/refresh",
+            sameSite: "strict"
+          })
+        );
+        expect(res.cookie).toHaveBeenNthCalledWith(
+          3,
+          "refresh_token",
+          "newRefreshToken",
+          expect.objectContaining({
+            httpOnly: true,
+            secure: true,
+            path: "/api/v1/auth/logout",
+            sameSite: "strict"
+          })
+        );
+      } finally {
+        process.env.NODE_ENV = originalNodeEnv;
+      }
     });
   });
 });

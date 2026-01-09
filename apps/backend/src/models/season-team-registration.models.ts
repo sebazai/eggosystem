@@ -22,39 +22,6 @@ import {
 } from "../services/season-team-registration.services";
 import { upsertSeasonTeamRegistrationPlayer } from "./season-team-registration-player.models";
 
-export const getSeasonTeamRegistrationBySeasonAndTeamId = async (
-  seasonId: number,
-  teamId: number,
-  connection?: PoolConnection
-) => {
-  const result = await runQuery<
-    Array<
-      SeasonTeamRegistration & {
-        captain_steam_id: SteamPlayer["steam_id"];
-        co_captain_steam_id: SteamPlayer["steam_id"];
-      }
-    >
-  >(
-    `SELECT str.*, 
-            MAX(CASE WHEN stp.is_captain = 1 THEN stp.steam_id END) as captain_steam_id,
-            MAX(CASE WHEN stp.is_co_captain = 1 THEN stp.steam_id END) as co_captain_steam_id
-     FROM SeasonTeamRegistrations str 
-       INNER JOIN SeasonTeamRegistrationPlayers stp 
-         ON stp.season_id = str.season_id AND stp.team_id = str.team_id 
-     WHERE str.season_id = ? AND str.team_id = ? 
-     GROUP BY str.season_id, str.team_id`,
-    [seasonId, teamId],
-    connection
-  );
-  if (result.length === 0) {
-    throw new Error(
-      `Could not find registration with season ${seasonId} and team ${teamId}`
-    );
-  }
-
-  return result[0];
-};
-
 export const insertSeasonTeamRegistration = async (
   seasonId: number,
   teamId: number,

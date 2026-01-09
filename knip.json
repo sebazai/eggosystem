@@ -1,0 +1,66 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "workspaces": {
+    ".": {
+      "entry": ["!**"],
+      "project": ["!**"],
+      "jest": false,
+      "playwright": false,
+      "next": false
+    },
+    "apps/backend": {
+      "entry": [
+        "server.ts",
+        "knexfile.ts",
+        "migrations/**/*.ts",
+        "seeds/**/*.ts",
+        "jest.setup.ts"
+      ],
+      "project": ["src/**/*.ts", "jest.config.js", "babel.config.js"]
+    },
+    "apps/frontend": {
+      "entry": [
+        "src/app/**/*.{ts,tsx}",
+        "next.config.ts",
+        "jest.setup.ts",
+        "playwright.config.ts"
+      ],
+      "project": ["src/**/*.{ts,tsx}", "jest.config.js", "postcss.config.mjs"],
+      "jest": false
+    },
+    "packages/eslint": {
+      "entry": ["*.js"],
+      "project": ["*.js"]
+    },
+    "packages/shared-msw": {
+      "entry": ["src/index.ts"],
+      "project": ["src/**/*.ts"]
+    },
+    "packages/tsconfig": {
+      "entry": ["!**"],
+      "project": ["!**"]
+    },
+    "packages/types": {
+      "entry": ["src/index.ts"],
+      "project": ["src/**/*.ts"]
+    },
+    "packages/viewer": {
+      "entry": ["src/index.ts", "dev/main.tsx", "vite.config.ts"],
+      "project": ["src/**/*.{ts,tsx}"]
+    }
+  },
+  "ignore": [
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx",
+    "**/test-utils/**",
+    "**/__tests__/**",
+    "**/__mocks__/**",
+    "**/dist/**",
+    "**/coverage/**",
+    "**/node_modules/**",
+    "**/apps/frontend/src/components/ui/**",
+    "**/apps/frontend/jest.config.js"
+  ]
+}

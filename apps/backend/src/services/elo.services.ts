@@ -360,7 +360,7 @@ export const stabilizePlayerElo = async (
   };
 };
 
-export const storeEloAdjustment = async (
+const storeEloAdjustment = async (
   data: Omit<EloAdjustmentData, "timestamp">
 ): Promise<void> => {
   const adjustmentData: EloAdjustmentData = {
@@ -382,7 +382,7 @@ export const storeEloAdjustment = async (
   );
 };
 
-export const storeTeamFlag = async (
+const storeTeamFlag = async (
   data: Omit<TeamFlagData, "timestamp">
 ): Promise<void> => {
   const flagData: TeamFlagData = {
@@ -402,27 +402,7 @@ export const storeTeamFlag = async (
   logger.info(`Stored team flag for team ${data.team_id}: ${data.reason}`);
 };
 
-export const getTeamFlag = async (
-  season_id: number,
-  league_id: number,
-  team_id: number
-): Promise<TeamFlagData | null> => {
-  const redisKey = `team-flag:s${season_id}:l${league_id}:${team_id}`;
-
-  try {
-    const flagData = await redisClient.get(redisKey);
-    if (!flagData) {
-      return null;
-    }
-
-    return JSON.parse(flagData) as TeamFlagData;
-  } catch (error) {
-    logger.warn(`Failed to parse team flag data: ${error}`);
-    return null;
-  }
-};
-
-export const getTeamEloAdjustments = async (
+const getTeamEloAdjustments = async (
   season_id: number,
   league_id: number,
   team_id: number
@@ -454,7 +434,7 @@ export const getTeamEloAdjustments = async (
   return adjustments;
 };
 
-export const validateTeamEloAdjustments = async (
+const validateTeamEloAdjustments = async (
   steam_id: string,
   team_id: number,
   season_id: number,

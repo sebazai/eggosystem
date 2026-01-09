@@ -13,7 +13,7 @@ import { getConnection } from "../db/mysqlConnection";
 import { logger } from "../utils/app-logger";
 
 // FACEIT Match History API Response Interfaces
-export interface FaceitMatchHistoryEntity {
+interface FaceitMatchHistoryEntity {
   guid: string;
   status: "drop" | "pick";
   random: boolean;
@@ -21,18 +21,18 @@ export interface FaceitMatchHistoryEntity {
   selected_by: "faction1" | "faction2";
 }
 
-export interface FaceitMatchHistoryTicket {
+interface FaceitMatchHistoryTicket {
   entities: FaceitMatchHistoryEntity[];
   entity_type: "location" | "map";
   vote_type: "drop_pick";
 }
 
-export interface FaceitMatchHistoryPayload {
+interface FaceitMatchHistoryPayload {
   match_id: string;
   tickets: FaceitMatchHistoryTicket[];
 }
 
-export interface FaceitMatchHistoryResponse {
+interface FaceitMatchHistoryResponse {
   payload: FaceitMatchHistoryPayload;
 }
 

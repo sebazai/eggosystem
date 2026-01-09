@@ -19,47 +19,6 @@ interface SeasonTeamWithExternalId {
 }
 
 /**
- * Gets all players for a team in a season from HUB database
- */
-export const getHubTeamRoster = async (
-  season_id: number,
-  team_id: number
-): Promise<HubTeamPlayer[]> => {
-  const query = `
-    SELECT 
-      stp.steam_id,
-      sp.nickname,
-      stp.is_captain,
-      stp.is_co_captain,
-      stp.role
-    FROM SeasonTeamPlayers stp
-    JOIN SteamPlayers sp ON stp.steam_id = sp.steam_id
-    WHERE stp.season_id = ? AND stp.team_id = ? AND stp.discarded_at IS NULL
-  `;
-
-  return runQuery<HubTeamPlayer[]>(query, [season_id, team_id]);
-};
-
-/**
- * Gets all championship external IDs for a season
- */
-export const getSeasonChampionshipIds = async (
-  season_id: number
-): Promise<string[]> => {
-  const query = `
-    SELECT DISTINCT slei.external_id
-    FROM SeasonLeagueExternalIds slei
-    WHERE slei.season_id = ?
-  `;
-
-  const results = await runQuery<Array<{ external_id: string }>>(query, [
-    season_id
-  ]);
-
-  return results.map((r) => r.external_id);
-};
-
-/**
  * Gets all teams in a season with their external platform IDs and roster
  */
 export const getSeasonTeamsWithRoster = async (

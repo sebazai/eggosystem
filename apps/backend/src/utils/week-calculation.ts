@@ -8,7 +8,7 @@ import type { PoolConnection } from "mysql2/promise";
  *
  * The week number increments every Monday at 00:00 (Helsinki time)
  */
-export const calculateCurrentWeekNumber = (seasonStartDate: Date): number => {
+const calculateCurrentWeekNumber = (seasonStartDate: Date): number => {
   const now = new Date();
   const start = new Date(seasonStartDate);
 

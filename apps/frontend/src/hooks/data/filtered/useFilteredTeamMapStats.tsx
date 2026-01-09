@@ -14,7 +14,7 @@ interface UseFilteredTeamMapStatsProps {
   filterQueryParams: FilterParamsQuery;
 }
 
-export interface UseFilteredTeamMapStatsReturn {
+interface UseFilteredTeamMapStatsReturn {
   teamMapStats?: TeamMapStats[];
   isLoading: boolean;
   error?: Error;

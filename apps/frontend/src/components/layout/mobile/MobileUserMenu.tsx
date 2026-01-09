@@ -1,59 +1,55 @@
-import { MobileLogOut } from "@/components/profile/MobileLogOut";
 import { SteamLoginButton } from "@/components/profile/SteamLoginButton";
 import { useAuth } from "@/context/AuthContext";
 import { SettingsIcon, Users, BarChart3 } from "lucide-react";
 import Link from "next/link";
-import { ModeToggle } from "../ThemeToggle";
 import { createNextUrl } from "@/lib/utils";
+import { Separator } from "@/components/ui/separator";
 
 interface MobileUserMenuProps {
   setIsSheetOpen: (isOpen: boolean) => void;
 }
 
 export const MobileUserMenu = ({ setIsSheetOpen }: MobileUserMenuProps) => {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   return (
-    <div className="flex flex-wrap items-center gap-4 justify-between p-4">
-      {user ? (
-        <MobileLogOut logOutUser={() => logout()} />
-      ) : (
-        <SteamLoginButton />
-      )}
-      {user && (
-        <>
-          <div className="flex items-center gap-2">
-            <SettingsIcon className="min-w-4 min-h-4 w-4 h-4 xxs:w-6 xxs:h-6" />
-            <Link
-              href={createNextUrl("/profile")}
-              onClick={() => setIsSheetOpen(false)}
-            >
-              Profile
-            </Link>
-          </div>
-          <div className="flex items-center gap-2">
-            <Users className="min-w-4 min-h-4 w-4 h-4 xxs:w-6 xxs:h-6" />
-            <Link
-              href={createNextUrl("/my-team")}
-              onClick={() => setIsSheetOpen(false)}
-            >
-              My Team
-            </Link>
-          </div>
-          {user.provider_id && (
+    <div>
+      <Separator />
+      <div className="flex flex-wrap items-center gap-4 justify-between m-4">
+        {user ? (
+          <>
             <div className="flex items-center gap-2">
-              <BarChart3 className="min-w-4 min-h-4 w-4 h-4 xxs:w-6 xxs:h-6" />
+              <SettingsIcon className="min-w-4 min-h-4 w-4 h-4 xxs:w-6 xxs:h-6" />
               <Link
-                href={createNextUrl(`/players/${user.provider_id}`)}
+                href={createNextUrl("/profile")}
                 onClick={() => setIsSheetOpen(false)}
               >
-                My Page
+                Profile
               </Link>
             </div>
-          )}
-        </>
-      )}
-      <div>
-        <ModeToggle />
+            <div className="flex items-center gap-2">
+              <Users className="min-w-4 min-h-4 w-4 h-4 xxs:w-6 xxs:h-6" />
+              <Link
+                href={createNextUrl("/my-team")}
+                onClick={() => setIsSheetOpen(false)}
+              >
+                My Team
+              </Link>
+            </div>
+            {user.provider_id && (
+              <div className="flex items-center gap-2">
+                <BarChart3 className="min-w-4 min-h-4 w-4 h-4 xxs:w-6 xxs:h-6" />
+                <Link
+                  href={createNextUrl(`/players/${user.provider_id}`)}
+                  onClick={() => setIsSheetOpen(false)}
+                >
+                  My Page
+                </Link>
+              </div>
+            )}
+          </>
+        ) : (
+          <SteamLoginButton />
+        )}
       </div>
     </div>
   );

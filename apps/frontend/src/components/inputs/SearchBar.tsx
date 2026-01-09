@@ -84,7 +84,7 @@ export function SearchBar({ placeholder }: { placeholder: string }) {
 
   return (
     <div
-      className="relative flex items-center w-full max-w-md gap-2"
+      className="relative flex items-center w-full max-w-md gap-2 pt-4"
       ref={searchRef}
     >
       {/* Search Icon (Only visible on mobile) */}

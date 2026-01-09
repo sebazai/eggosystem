@@ -1,8 +1,8 @@
 import {
-  calculatePlayerTier,
-  calculatePlayerValue,
-  calculatePlayerValueData
-} from "./fantasy-value.service";
+  calculateInitialPlayerValue,
+  calculatePlayerTier
+} from "@eggosystem/types";
+import { calculatePlayerValueData } from "./fantasy-value.service";
 
 describe("Fantasy Value Service", () => {
   describe("calculatePlayerTier", () => {
@@ -27,9 +27,9 @@ describe("Fantasy Value Service", () => {
 
   describe("calculatePlayerValue", () => {
     it("should return values within range 150K-250K", () => {
-      const value1 = calculatePlayerValue(0.4, 1.0, 100);
-      const value2 = calculatePlayerValue(1.1, 1.5, 500);
-      const value3 = calculatePlayerValue(0.75, 1.0, 250);
+      const value1 = calculateInitialPlayerValue(0.4, 1.0, 100);
+      const value2 = calculateInitialPlayerValue(1.1, 1.5, 500);
+      const value3 = calculateInitialPlayerValue(0.75, 1.0, 250);
 
       expect(value1).toBeGreaterThanOrEqual(150000);
       expect(value1).toBeLessThanOrEqual(250000);
@@ -42,28 +42,28 @@ describe("Fantasy Value Service", () => {
     });
 
     it("should give higher value for better rating", () => {
-      const lowRating = calculatePlayerValue(0.5, 1.0, 100);
-      const highRating = calculatePlayerValue(1.0, 1.0, 100);
+      const lowRating = calculateInitialPlayerValue(0.5, 1.0, 100);
+      const highRating = calculateInitialPlayerValue(1.0, 1.0, 100);
 
       expect(highRating).toBeGreaterThan(lowRating);
     });
 
     it("should apply K/D bonus correctly", () => {
-      const lowKD = calculatePlayerValue(0.8, 0.8, 100);
-      const highKD = calculatePlayerValue(0.8, 1.5, 100);
+      const lowKD = calculateInitialPlayerValue(0.8, 0.8, 100);
+      const highKD = calculateInitialPlayerValue(0.8, 1.5, 100);
 
       expect(highKD).toBeGreaterThan(lowKD);
     });
 
     it("should apply kill bonus correctly", () => {
-      const lowKills = calculatePlayerValue(0.8, 1.0, 100);
-      const highKills = calculatePlayerValue(0.8, 1.0, 500);
+      const lowKills = calculateInitialPlayerValue(0.8, 1.0, 100);
+      const highKills = calculateInitialPlayerValue(0.8, 1.0, 500);
 
       expect(highKills).toBeGreaterThan(lowKills);
     });
 
     it("should cluster values around 190K for average players", () => {
-      const avgValue = calculatePlayerValue(0.75, 1.0, 200);
+      const avgValue = calculateInitialPlayerValue(0.75, 1.0, 200);
 
       // Average players should be within 170K-210K range (Silver tier center)
       expect(avgValue).toBeGreaterThan(170000);
