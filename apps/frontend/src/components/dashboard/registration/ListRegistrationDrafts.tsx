@@ -15,10 +15,20 @@ import useSWR from "swr";
 import { expressFetcher } from "@/lib/utils";
 import {
   type RegistrationDraftRaw,
-  type CustomColumnMeta
+  type CustomColumnMeta,
+  type PlayerValidationResult
 } from "@eggosystem/types";
 import { BaseTable } from "../../tables/BaseTable";
 import { ExpandableRow } from "../../tables/ExpandableRow";
+import { useActiveSignupOrActiveSeasonForApp } from "@/hooks/data/useActiveSignupOrActiveSeasonForApp";
+import { clientApiFetch } from "@/lib/apiClient";
+import { getPlayerValidationErrors } from "@/utils/playerValidation";
+import { AlertTriangle } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger
+} from "@/components/ui/tooltip";
 
 export const ListRegistrationDrafts = () => {
   const { registrationDrafts, isLoading, error } = useRegistrationDrafts();
@@ -158,27 +168,7 @@ export const ListRegistrationDrafts = () => {
       <div className="font-semibold mb-2 text-kanaliiga-orange">Players</div>
       <div className="flex flex-wrap gap-3 md:gap-4">
         {draft.players?.map((player) => (
-          <div
-            key={player.accountId}
-            className="flex flex-col gap-1 p-3 bg-background rounded border border-border min-w-[180px] max-w-full md:max-w-xs shadow-sm"
-          >
-            <span className="font-semibold text-foreground break-words">
-              {player.nickname}
-            </span>
-            <span className="text-[0.65rem] text-muted-foreground flex items-center gap-2 flex-wrap">
-              <a
-                href={`https://steamcommunity.com/profiles/${player.steamId}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:underline flex items-center gap-1"
-              >
-                Steam
-              </a>
-              <span className="font-mono text-xs select-all break-all">
-                {player.steamId}
-              </span>
-            </span>
-          </div>
+          <PlayerCard key={player.accountId} player={player} />
         ))}
       </div>
     </div>
@@ -233,4 +223,70 @@ const TeamNameCell = ({ draft }: { draft: RegistrationDraftRaw }) => {
     return <span className="text-muted-foreground">-</span>;
   }
   return <span className="text-muted-foreground">-</span>;
+};
+
+// Subcomponent for player card with validation warnings
+const PlayerCard = ({
+  player
+}: {
+  player: { accountId: number; steamId: string; nickname: string };
+}) => {
+  // Get active season (CS2 app ID is 730)
+  const { signupOrActiveSeason } = useActiveSignupOrActiveSeasonForApp(730);
+  const seasonId = signupOrActiveSeason?.season_id;
+
+  // Fetch validation for this player
+  const { data: validationResult } = useSWR<PlayerValidationResult>(
+    seasonId && player.steamId
+      ? `/api/v1/dashboard/players/${player.steamId}/validate?season_id=${seasonId}`
+      : null,
+    clientApiFetch,
+    { revalidateOnFocus: false }
+  );
+
+  const validationErrors = getPlayerValidationErrors(validationResult);
+  const hasErrors = validationErrors.length > 0;
+
+  return (
+    <div className="flex flex-col gap-1 p-3 bg-background rounded border border-border min-w-[180px] max-w-full md:max-w-xs shadow-sm">
+      <span className="font-semibold text-foreground break-words">
+        {player.nickname}
+      </span>
+      <span className="text-[0.65rem] text-muted-foreground flex items-center gap-2 flex-wrap">
+        <a
+          href={`https://steamcommunity.com/profiles/${player.steamId}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hover:underline flex items-center gap-1"
+        >
+          Steam
+        </a>
+        <span className="font-mono text-xs select-all break-all">
+          {player.steamId}
+        </span>
+      </span>
+      {hasErrors && (
+        <div className="mt-1">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex items-center gap-1 text-yellow-600 dark:text-yellow-500 cursor-help">
+                <AlertTriangle className="h-4 w-4" />
+                <span className="text-[0.65rem]">Warning</span>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="right" className="max-w-xs">
+              <div className="space-y-1">
+                <div className="font-semibold mb-1">Validation Errors:</div>
+                <ul className="list-disc list-inside space-y-0.5 text-xs">
+                  {validationErrors.map((error, index) => (
+                    <li key={index}>{error}</li>
+                  ))}
+                </ul>
+              </div>
+            </TooltipContent>
+          </Tooltip>
+        </div>
+      )}
+    </div>
+  );
 };
