@@ -26,7 +26,8 @@
         "playwright.config.ts"
       ],
       "project": ["src/**/*.{ts,tsx}", "jest.config.js", "postcss.config.mjs"],
-      "jest": false
+      "jest": false,
+      "ignoreDependencies": ["tailwindcss", "tailwindcss-animate"]
     },
     "packages/eslint": {
       "entry": ["*.js"],
