@@ -47,7 +47,7 @@ export interface CreateFantasyTeamData {
   players: FantasyTeamPlayer[];
 }
 
-export interface FantasyTeam {
+interface FantasyTeam {
   id: number;
   steam_id: string;
   season_id: number;
@@ -93,7 +93,7 @@ const getRemainingSubstitutions = async (
   return Math.max(0, 2 - (subsCount?.count || 0));
 };
 
-export interface FantasyTeamWithPlayers extends FantasyTeam {
+interface FantasyTeamWithPlayers extends FantasyTeam {
   remaining_role_swaps?: number;
   remaining_substitutions?: number;
   current_week_number?: number;
@@ -136,7 +136,7 @@ export interface SubstitutionData {
   role?: PlayerRole | null; // Optional role for the new player
 }
 
-export interface LeaderboardEntry {
+interface LeaderboardEntry {
   rank: number;
   fantasy_team_id: number;
   team_name: string | null;
@@ -145,7 +145,7 @@ export interface LeaderboardEntry {
   is_current_user: boolean;
 }
 
-export interface PriceHistoryEntry {
+interface PriceHistoryEntry {
   steam_id: string;
   nickname: string;
   team_name: string;

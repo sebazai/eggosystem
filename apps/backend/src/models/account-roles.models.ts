@@ -43,56 +43,6 @@ export const removeRoleForAccount = async (
   );
 };
 
-export const setScopedPermissionForAccount = async (
-  permissionName: string,
-  accountId: number,
-  seasonId: number,
-  teamId: number,
-  connection?: PoolConnection
-) => {
-  const [permission] = await runQuery<
-    Array<{ permission_id: number } | undefined>
-  >(
-    `SELECT id as permission_id FROM Permissions WHERE permission_name = ?`,
-    [permissionName],
-    connection
-  );
-  if (!permission) {
-    throw new Error(`Unknown permission ${permissionName}`);
-  }
-  const permissionId = permission.permission_id;
-  await runQuery(
-    `INSERT IGNORE INTO AccountPermissionScopes (account_id, permission_id, season_id, team_id) VALUES (?, ?, ?, ?)`,
-    [accountId, permissionId, seasonId, teamId],
-    connection
-  );
-};
-
-export const removeScopedPermissionForAccount = async (
-  permissionName: string,
-  accountId: number,
-  seasonId: number,
-  teamId: number,
-  connection?: PoolConnection
-) => {
-  const [permission] = await runQuery<
-    Array<{ permission_id: number } | undefined>
-  >(
-    `SELECT id as permission_id FROM Permissions WHERE permission_name = ?`,
-    [permissionName],
-    connection
-  );
-  if (!permission) {
-    throw new Error(`Unknown permission ${permissionName}`);
-  }
-  const permissionId = permission.permission_id;
-  await runQuery(
-    `DELETE FROM AccountPermissionScopes WHERE account_id = ? AND permission_id = ? AND season_id = ? AND team_id = ?`,
-    [accountId, permissionId, seasonId, teamId],
-    connection
-  );
-};
-
 /**
  * Check if user has a specific role
  * Queries AccountRoles and Roles tables

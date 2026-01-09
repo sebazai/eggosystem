@@ -79,7 +79,7 @@ const TrophyGroupDisplay = ({ trophies }: { trophies: TrophyGroup[] }) => {
   if (!trophies || trophies.length === 0) return null;
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-3 flex-wrap">
       {trophies.map((trophy, index) => (
         <TrophyGroupBadge
           key={`${trophy.image_phash}-${index}`}
@@ -116,6 +116,56 @@ const RankBadge = ({ rank }: { rank: number }) => {
   );
 };
 
+// Generic row component for Hall of Fame entries
+const HallOfFameRow = ({
+  rank,
+  href,
+  imageElement,
+  nameElement,
+  trophies,
+  totalPoints
+}: {
+  rank: number;
+  href: string;
+  imageElement: React.ReactNode;
+  nameElement: React.ReactNode;
+  trophies: TrophyGroup[];
+  totalPoints: number;
+}) => {
+  return (
+    <Link
+      href={href}
+      className="p-3 sm:p-4 hover:bg-muted/50 transition-colors rounded-lg"
+    >
+      {/* Mobile layout: stacked */}
+      <div className="block sm:hidden">
+        <div className="flex items-center gap-2">
+          <RankBadge rank={rank} />
+          {imageElement}
+          <div className="flex-1 min-w-0">{nameElement}</div>
+          <div className="font-bold text-base shrink-0">{totalPoints}p</div>
+        </div>
+        <div className="mt-2 ml-9">
+          <TrophyGroupDisplay trophies={trophies} />
+        </div>
+      </div>
+
+      {/* Desktop layout: horizontal */}
+      <div className="hidden sm:flex items-center gap-4">
+        <RankBadge rank={rank} />
+        {imageElement}
+        <div className="flex-1 min-w-0">{nameElement}</div>
+        <div className="flex items-center gap-4">
+          <TrophyGroupDisplay trophies={trophies} />
+          <div className="w-16 text-right font-bold text-lg">
+            {totalPoints}p
+          </div>
+        </div>
+      </div>
+    </Link>
+  );
+};
+
 const OrganizationRow = ({
   org,
   rank
@@ -128,31 +178,29 @@ const OrganizationRow = ({
     : null;
 
   return (
-    <Link
+    <HallOfFameRow
+      rank={rank}
       href={`/organizations/${org.organization_id}`}
-      className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors rounded-lg"
-    >
-      <RankBadge rank={rank} />
-      {logoUrl && (
-        <Image
-          src={logoUrl}
-          alt={org.organization_name}
-          width={40}
-          height={40}
-          className="rounded"
-          unoptimized
-        />
-      )}
-      <div className="flex-1 min-w-0">
-        <p className="font-semibold truncate">{org.organization_name}</p>
-      </div>
-      <div className="flex items-center gap-4">
-        <TrophyGroupDisplay trophies={org.trophies} />
-        <div className="w-16 text-right font-bold text-lg">
-          {org.total_points}p
-        </div>
-      </div>
-    </Link>
+      imageElement={
+        logoUrl ? (
+          <Image
+            src={logoUrl}
+            alt={org.organization_name}
+            width={32}
+            height={32}
+            className="rounded sm:w-10 sm:h-10"
+            unoptimized
+          />
+        ) : null
+      }
+      nameElement={
+        <span className="font-semibold truncate text-sm sm:text-base">
+          {org.organization_name}
+        </span>
+      }
+      trophies={org.trophies}
+      totalPoints={org.total_points}
+    />
   );
 };
 
@@ -160,36 +208,36 @@ const TeamRow = ({ team, rank }: { team: HallOfFameTeam; rank: number }) => {
   const logoUrl = team.team_logo ? createTeamLogoUrl(team.team_logo) : null;
 
   return (
-    <Link
+    <HallOfFameRow
+      rank={rank}
       href={`/teams/${team.team_id}`}
-      className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors rounded-lg"
-    >
-      <RankBadge rank={rank} />
-      {logoUrl && (
-        <Image
-          src={logoUrl}
-          alt={team.team_name}
-          width={40}
-          height={40}
-          className="rounded"
-          unoptimized
-        />
-      )}
-      <div className="flex-1 min-w-0">
-        <p className="font-semibold truncate">{team.team_name}</p>
-        {team.organization_name && (
-          <p className="text-xs text-muted-foreground truncate">
-            {team.organization_name}
-          </p>
-        )}
-      </div>
-      <div className="flex items-center gap-4">
-        <TrophyGroupDisplay trophies={team.trophies} />
-        <div className="w-16 text-right font-bold text-lg">
-          {team.total_points}p
+      imageElement={
+        logoUrl ? (
+          <Image
+            src={logoUrl}
+            alt={team.team_name}
+            width={32}
+            height={32}
+            className="rounded sm:w-10 sm:h-10"
+            unoptimized
+          />
+        ) : null
+      }
+      nameElement={
+        <div>
+          <span className="font-semibold truncate text-sm sm:text-base block">
+            {team.team_name}
+          </span>
+          {team.organization_name && (
+            <span className="text-xs text-muted-foreground truncate block">
+              {team.organization_name}
+            </span>
+          )}
         </div>
-      </div>
-    </Link>
+      }
+      trophies={team.trophies}
+      totalPoints={team.total_points}
+    />
   );
 };
 
@@ -203,35 +251,33 @@ const PlayerRow = ({
   const avatarUrl = player.avatar ? createAvatarUrl(player.avatar) : null;
 
   return (
-    <Link
+    <HallOfFameRow
+      rank={rank}
       href={`/players/${player.steam_id}`}
-      className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors rounded-lg"
-    >
-      <RankBadge rank={rank} />
-      {avatarUrl ? (
-        <Image
-          src={avatarUrl}
-          alt={player.player_name}
-          width={40}
-          height={40}
-          className="rounded-full"
-          unoptimized
-        />
-      ) : (
-        <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-          <User className="h-5 w-5 text-muted-foreground" />
-        </div>
-      )}
-      <div className="flex-1 min-w-0">
-        <p className="font-semibold truncate">{player.player_name}</p>
-      </div>
-      <div className="flex items-center gap-4">
-        <TrophyGroupDisplay trophies={player.trophies} />
-        <div className="w-16 text-right font-bold text-lg">
-          {player.total_points}p
-        </div>
-      </div>
-    </Link>
+      imageElement={
+        avatarUrl ? (
+          <Image
+            src={avatarUrl}
+            alt={player.player_name}
+            width={32}
+            height={32}
+            className="rounded-full sm:w-10 sm:h-10"
+            unoptimized
+          />
+        ) : (
+          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-muted flex items-center justify-center">
+            <User className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
+          </div>
+        )
+      }
+      nameElement={
+        <span className="font-semibold truncate text-sm sm:text-base">
+          {player.player_name}
+        </span>
+      }
+      trophies={player.trophies}
+      totalPoints={player.total_points}
+    />
   );
 };
 

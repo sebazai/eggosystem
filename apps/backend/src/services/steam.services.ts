@@ -98,54 +98,6 @@ export const isSteamProfilePublic = async (steam_id: string) => {
   return isPublic;
 };
 
-export const areSteamProfilesPublic = async (steam_ids: string[]) => {
-  const { controller, clearAbortTimeout } = createAbortController(
-    "areSteamProfilesPublic"
-  );
-
-  const ids = steam_ids.join(",");
-  const steamUrl = `http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=${process.env.STEAM_API_KEY}&steamids=${ids}`;
-  const result = await fetch(steamUrl, {
-    signal: controller.signal,
-    headers: {
-      "User-Agent": "Kanaliiga-Eggosystem/1.0"
-    }
-  });
-
-  const duration = clearAbortTimeout();
-  if (!result.ok) {
-    const text = await result.text();
-    logger.error(
-      `[Steam] Failed to fetch steam profiles for ${steam_ids.length} players - ${result.status} (${duration}ms):`,
-      text
-    );
-    throw new Error("Failed to fetch steam profiles public status");
-  }
-
-  const data: ISteamUserResponse = await result.json();
-
-  const fetchedSteamIds = data.response.players.map((p) => p.steamid);
-  const diff = _.xor(steam_ids, fetchedSteamIds);
-  if (diff.length > 0) {
-    throw new Error(`Failed to fetch steam ids ${diff.join(",")}`);
-  }
-
-  const isPublic: Record<string, boolean> = Object.fromEntries(
-    data.response.players.map((p) => [
-      p.steamid,
-      p.communityvisibilitystate === 3
-    ])
-  );
-
-  const allPublic = Object.values(isPublic).every((v) => v === true);
-  if (allPublic) {
-    return { is_all_public: allPublic };
-  }
-
-  const hiddenProfiles = Object.keys(isPublic).filter((key) => !isPublic[key]);
-  return { is_all_public: allPublic, not_public: hiddenProfiles };
-};
-
 /**
  * Resolves a Steam custom URL (vanity URL) to SteamID64 using Steam Web API.
  * Handles full Steam profile URLs (e.g., https://steamcommunity.com/id/sububobi)

@@ -13,7 +13,7 @@ interface SignupImageUploadResult {
  * @param defaultFilename - Default filename if not determinable from data
  * @returns Parsed image buffer and metadata
  */
-export function parseBase64ImageData(
+function parseBase64ImageData(
   imageData: string,
   defaultFilename: string
 ): { buffer: Buffer; filename: string; contentType: string } {
@@ -53,7 +53,7 @@ export function parseBase64ImageData(
 /**
  * Validate that the buffer contains valid image data
  */
-export async function validateImageData(imageBuffer: Buffer): Promise<void> {
+async function validateImageData(imageBuffer: Buffer): Promise<void> {
   if (imageBuffer.length === 0) {
     throw new BadRequestError("Invalid image data: empty buffer");
   }

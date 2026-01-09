@@ -103,14 +103,14 @@ export interface PlayerGameStats {
   team_won: boolean; // Whether the player's team won this match
 }
 
-export interface FantasyTeamPlayerInfo {
+interface FantasyTeamPlayerInfo {
   fantasy_team_player_id: number;
   fantasy_team_id: number;
   steam_id: string;
   role: PlayerRole | null;
 }
 
-export interface PointsBreakdown {
+interface PointsBreakdown {
   kills: number;
   deaths: number;
   assists: number;

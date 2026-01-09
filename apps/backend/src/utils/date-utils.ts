@@ -71,7 +71,7 @@ export const generateYMD = (timestamp: number): string => {
   return `${year}-${month}-${day}`;
 };
 
-export const getNextWednesdayMatchTime = () => {
+const getNextWednesdayMatchTime = () => {
   const now = moment();
 
   // Find next Wednesday

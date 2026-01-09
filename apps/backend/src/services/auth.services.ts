@@ -11,7 +11,7 @@ import { runQuery } from "../db/mysqlRunQuery";
 import { type PoolConnection } from "mysql2/promise";
 import { getJWTValues } from "../configs/jwt-keys";
 
-export const getDBPermissionsForAccountId = async (
+const getDBPermissionsForAccountId = async (
   accountId: number,
   connection?: PoolConnection
 ) => {

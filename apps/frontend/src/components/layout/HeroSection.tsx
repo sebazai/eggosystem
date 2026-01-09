@@ -30,7 +30,7 @@ type HeroSectionProps = {
 };
 
 // Component for displaying a single match card (non-streamed)
-export const MatchCard = ({ match }: { match: MatchWithStreamUrls }) => {
+const MatchCard = ({ match }: { match: MatchWithStreamUrls }) => {
   return (
     <Link href={createNextUrl(`/matches/${match.match_id}`)} className="block">
       <Card className="bg-white/5 border-white/10 hover:bg-white/10 transition-all duration-300 cursor-pointer group relative">
@@ -126,11 +126,7 @@ const StreamButtons = ({ match }: { match: MatchWithStreamUrls }) => {
   );
 };
 
-export const AllMatchesTab = ({
-  matches
-}: {
-  matches: MatchWithStreamUrls[];
-}) => {
+const AllMatchesTab = ({ matches }: { matches: MatchWithStreamUrls[] }) => {
   if (matches.length === 0) {
     return (
       <Card className="bg-white/5 border-white/10">
@@ -156,7 +152,7 @@ export const AllMatchesTab = ({
   );
 };
 
-export const StreamedMatchesTab = ({
+const StreamedMatchesTab = ({
   matches
 }: {
   matches: MatchWithStreamUrls[];

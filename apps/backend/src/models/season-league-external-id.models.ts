@@ -74,25 +74,6 @@ export const getActiveSeasonChampionshipIds = async (): Promise<
   return results;
 };
 
-export const getSeasonLeagueExternalIdsBySeasonId = async (
-  seasonId: number,
-  connection?: PoolConnection
-) => {
-  const query = `
-    SELECT 
-      slei.*,
-      st.name as stage_name
-    FROM SeasonLeagueExternalIds slei
-    JOIN Stages st ON slei.stage_id = st.id
-    WHERE slei.season_id = ?
-    ORDER BY slei.league_id, slei.stage_id
-  `;
-  const results = await runQuery<
-    Array<SeasonLeagueExternalId & { stage_name: string }>
-  >(query, [seasonId], connection);
-  return results;
-};
-
 export const getSeasonLeagueExternalIdById = async (
   id: number,
   connection?: PoolConnection

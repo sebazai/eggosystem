@@ -14,7 +14,7 @@ interface UseFilteredTeamMapVetoStatsProps {
   filterQueryParams: FilterParamsQuery;
 }
 
-export interface UseFilteredTeamMapVetoStatsReturn {
+interface UseFilteredTeamMapVetoStatsReturn {
   vetoStats?: TeamMapVetoStats[];
   isLoading: boolean;
   error?: Error;

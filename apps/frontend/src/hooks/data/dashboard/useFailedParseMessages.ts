@@ -4,7 +4,6 @@ import { useState, useCallback, useMemo } from "react";
 import useSWR from "swr";
 import type {
   FailedParseMessagesResponse,
-  FailedParseStatsResponse,
   ReparseRequest,
   ReparseResponse
 } from "@eggosystem/types";
@@ -49,29 +48,6 @@ export const useFailedParseMessages = (
     failedMessages: data?.messages || [],
     pagination: data?.pagination,
     filters: data?.filters,
-    isLoading,
-    error,
-    mutate
-  };
-};
-
-export const useFailedParseStats = (): {
-  stats: FailedParseStatsResponse["stats"];
-  isLoading: boolean;
-  error: unknown;
-  mutate: () => void;
-} => {
-  const { data, error, isLoading, mutate } = useSWR<FailedParseStatsResponse>(
-    "/api/v1/dashboard/demos/failed/parse/stats",
-    clientApiFetch,
-    {
-      revalidateOnFocus: false,
-      revalidateOnReconnect: true
-    }
-  );
-
-  return {
-    stats: data?.stats || [],
     isLoading,
     error,
     mutate

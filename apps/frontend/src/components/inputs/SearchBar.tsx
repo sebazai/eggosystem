@@ -84,12 +84,12 @@ export function SearchBar({ placeholder }: { placeholder: string }) {
 
   return (
     <div
-      className="relative flex items-center w-full max-w-md gap-2"
+      className="relative flex items-center w-full max-w-md gap-2 pt-4"
       ref={searchRef}
     >
       {/* Search Icon (Only visible on mobile) */}
       <button
-        className="p-2 mt-4 rounded-full bg-secondary hover:bg-kanaliiga-orange/40 transition-all cursor-pointer border border-ring"
+        className="p-2 rounded-full bg-secondary hover:bg-kanaliiga-orange/40 transition-all cursor-pointer border border-ring"
         onClick={toggleSearch}
         aria-label="Toggle Search"
       >

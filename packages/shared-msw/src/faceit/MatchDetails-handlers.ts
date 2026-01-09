@@ -464,7 +464,7 @@ export const validMatchDetailsMatchStatusFinished = {
   group: 1
 } satisfies ChampionshipDetailsFinished;
 
-export const validMatchDetailsMatchStatusFinishedAFKAbort = {
+const validMatchDetailsMatchStatusFinishedAFKAbort = {
   match_id: "1-afk-abort-match-id",
   version: 126,
   game: "cs2",
@@ -1023,7 +1023,7 @@ export const validMatchDetailsMatchCreated = {
   group: 2
 } satisfies ChampionshipDetailsObjectCreated;
 
-export const validMatchDetailsMatchStatusReadyChampionship = {
+const validMatchDetailsMatchStatusReadyChampionship = {
   match_id: "1-32a13dfb-e5e7-4b0e-89ef-ab952e6d8191",
   version: 71,
   game: "cs2",

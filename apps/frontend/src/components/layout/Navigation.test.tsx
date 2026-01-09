@@ -1,7 +1,21 @@
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import { Navigation } from "./Navigation";
 import { useActiveSignupOrActiveSeasonForApp } from "@/hooks/data/useActiveSignupOrActiveSeasonForApp";
 import { SeasonPlatform } from "@eggosystem/types";
+import {
+  renderWithAuthAndSWR,
+  resetMockAuthState,
+  createMockUser,
+  getMockAuthState
+} from "@/test-utils/test-utils";
+
+// Mock useAuth hook - MUST be before other mocks
+jest.mock("@/context/AuthContext", () => ({
+  useAuth: jest.fn(() => {
+    const { getMockAuthState } = jest.requireActual("@/test-utils/test-utils");
+    return getMockAuthState();
+  })
+}));
 
 // Mock the hook
 jest.mock("@/hooks/data/useActiveSignupOrActiveSeasonForApp");
@@ -44,6 +58,7 @@ jest.mock("./mobile/MobileUserMenu", () => ({
 describe("Navigation", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    resetMockAuthState();
   });
 
   it("should render season dropdown menu when season is active", () => {
@@ -63,7 +78,7 @@ describe("Navigation", () => {
       isValidating: false
     });
 
-    render(<Navigation />);
+    renderWithAuthAndSWR(<Navigation />);
 
     // Check that the season dropdown trigger is rendered (S14)
     expect(screen.getByText("S14")).toBeInTheDocument();
@@ -89,7 +104,7 @@ describe("Navigation", () => {
       isValidating: false
     });
 
-    render(<Navigation />);
+    renderWithAuthAndSWR(<Navigation />);
 
     // Check that the season dropdown trigger is rendered
     expect(screen.getByText("S14")).toBeInTheDocument();
@@ -107,7 +122,7 @@ describe("Navigation", () => {
       isValidating: false
     });
 
-    render(<Navigation />);
+    renderWithAuthAndSWR(<Navigation />);
 
     // Season menu should not be rendered
     expect(screen.queryByText("S14")).not.toBeInTheDocument();
@@ -121,7 +136,7 @@ describe("Navigation", () => {
       isValidating: false
     });
 
-    render(<Navigation />);
+    renderWithAuthAndSWR(<Navigation />);
 
     // Check that basic navigation items are rendered
     expect(screen.getByText("Organizations")).toBeInTheDocument();
@@ -152,7 +167,7 @@ describe("Navigation", () => {
       isValidating: false
     });
 
-    render(<Navigation />);
+    renderWithAuthAndSWR(<Navigation />);
 
     // Check that the season dropdown is rendered
     expect(screen.getByText("S14")).toBeInTheDocument();
