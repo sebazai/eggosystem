@@ -11,7 +11,7 @@
     "start": "turbo start",
     "test": "turbo test",
     "install:playwright": "pnpm exec playwright install && pnpm exec playwright install-deps",
-    "test:watch": "pnpm --filter=frontend test:watch & pnpm --filter=backend test:watch & wait",
+    "test:watch": "pnpm --filter=frontend test:watch & pnpm --filter=backend test:watch",
     "test:e2e": "pnpm --filter=backend reseed:e2e && pnpm build && pnpm --filter=frontend test:e2e --",
     "test:all": "pnpm test && pnpm test:e2e",
     "test:e2e:ui": "pnpm --filter=frontend test:e2e:ui",

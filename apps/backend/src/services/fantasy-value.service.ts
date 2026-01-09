@@ -6,13 +6,6 @@ import {
   calculateInitialPlayerValue
 } from "@eggosystem/types";
 
-// Re-export for backward compatibility
-export {
-  type PlayerTier,
-  calculatePlayerTier,
-  calculateInitialPlayerValue as calculatePlayerValue
-};
-
 export interface PlayerValueData {
   value: number;
   tier: PlayerTier;

@@ -83,7 +83,7 @@ export const upsertKillLogsForGame = async ({
 /**
  * Get kill logs for a match game
  */
-export interface KillLog {
+interface KillLog {
   id: number;
   match_game_id: number;
   round_number: number;
