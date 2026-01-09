@@ -130,10 +130,28 @@ services:
     environment:
       - REDIS_HOST=eggo-dev-redis
       - REDIS_PORT=6379
-      - PORT=3010
       - UI=bull-board
     networks:
       - web
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.bull-monitor-hubdev.entrypoints=http"
+      - "traefik.http.routers.bull-monitor-hubdev.rule=Host(`${HUBDEV_PUBLIC_URL}`) && PathPrefix(`/bull-monitor/`)"
+      - "traefik.http.routers.bull-monitor-hubdev.priority=100"
+      - "traefik.http.middlewares.bull-monitor-hubdev-stripprefix.stripprefix.prefixes=/bull-monitor"
+      - "traefik.http.middlewares.bull-monitor-hubdev-auth.basicauth.users=${PHPMYADMIN_AUTH}"
+      - "traefik.http.middlewares.bull-monitor-hubdev-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.bull-monitor-hubdev.middlewares=bull-monitor-hubdev-https-redirect"
+      - "traefik.http.routers.bull-monitor-hubdev-secure.entrypoints=https"
+      - "traefik.http.routers.bull-monitor-hubdev-secure.rule=Host(`${HUBDEV_PUBLIC_URL}`) && PathPrefix(`/bull-monitor/`)"
+      - "traefik.http.routers.bull-monitor-hubdev-secure.priority=100"
+      - "traefik.http.routers.bull-monitor-hubdev-secure.tls=true"
+      - "traefik.http.routers.bull-monitor-hubdev-secure.tls.domains[0].main=${HUBDEV_PUBLIC_URL}"
+      - "traefik.http.routers.bull-monitor-hubdev-secure.tls.certresolver=http"
+      - "traefik.http.routers.bull-monitor-hubdev-secure.service=bull-monitor-hubdev"
+      - "traefik.http.routers.bull-monitor-hubdev-secure.middlewares=bull-monitor-hubdev-stripprefix,bull-monitor-hubdev-auth"
+      - "traefik.http.services.bull-monitor-hubdev.loadbalancer.server.port=3000"
+      - "traefik.docker.network=web"
 
   phpmyadmin-hubdev:
     depends_on:

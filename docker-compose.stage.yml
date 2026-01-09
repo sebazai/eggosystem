@@ -144,6 +144,23 @@ services:
       - UI=bull-board
     networks:
       - web
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.bull-monitor-hubstage.entrypoints=http"
+      - "traefik.http.routers.bull-monitor-hubstage.rule=Host(`${HUBSTAGE_PUBLIC_URL}`) && PathPrefix(`/bull-monitor/`)"
+      - "traefik.http.middlewares.bull-monitor-hubstage-stripprefix.stripprefix.prefixes=/bull-monitor"
+      - "traefik.http.middlewares.bull-monitor-hubstage-auth.basicauth.users=${BULL_MONITOR_AUTH}"
+      - "traefik.http.middlewares.bull-monitor-hubstage-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.bull-monitor-hubstage.middlewares=bull-monitor-hubstage-https-redirect"
+      - "traefik.http.routers.bull-monitor-hubstage-secure.entrypoints=https"
+      - "traefik.http.routers.bull-monitor-hubstage-secure.rule=Host(`${HUBSTAGE_PUBLIC_URL}`) && PathPrefix(`/bull-monitor/`)"
+      - "traefik.http.routers.bull-monitor-hubstage-secure.tls=true"
+      - "traefik.http.routers.bull-monitor-hubstage-secure.tls.domains[0].main=${HUBSTAGE_PUBLIC_URL}"
+      - "traefik.http.routers.bull-monitor-hubstage-secure.tls.certresolver=http"
+      - "traefik.http.routers.bull-monitor-hubstage-secure.service=bull-monitor-hubstage"
+      - "traefik.http.routers.bull-monitor-hubstage-secure.middlewares=bull-monitor-hubstage-stripprefix,bull-monitor-hubstage-auth"
+      - "traefik.http.services.bull-monitor-hubstage.loadbalancer.server.port=3010"
+      - "traefik.docker.network=web"
 
   phpmyadmin-hubstage:
     depends_on:
