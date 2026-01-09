@@ -94,14 +94,3 @@ export const auditUpdateEntity = (entity: string, idFromParams = "id") =>
         : (req.auth?.account_id ?? null)
     })
   });
-
-const auditDeleteEntity = (entity: string, idFromParams = "id") =>
-  auditAfterResponse({
-    actionType: `Delete ${entity}`,
-    getEntityInfo: (req) => ({
-      entityType: entity,
-      entityId: req.params[idFromParams]
-        ? Number(req.params[idFromParams])
-        : (req.auth?.account_id ?? null)
-    })
-  });

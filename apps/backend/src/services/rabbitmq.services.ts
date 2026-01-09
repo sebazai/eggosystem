@@ -52,49 +52,6 @@ const createChannel = async () => {
 };
 
 /**
- * Publish a kanaelo calculation request to the queue
- * @param request The calculation request to publish
- * @returns A Promise resolving when the message is published
- */
-const publishKanaeloCalculationRequest = async (
-  request: KanaeloCalculationRequest
-) => {
-  let connection;
-  let channel;
-
-  try {
-    // Create connection and channel
-    const resources = await createChannel();
-    connection = resources.connection;
-    channel = resources.channel;
-
-    // Publish message to queue
-    const message = Buffer.from(JSON.stringify(request));
-    const published = channel.publish("", KANAELO_CALC_QUEUE, message, {
-      persistent: true,
-      contentType: "application/json"
-    });
-
-    if (!published) {
-      throw new Error("Failed to publish message to queue");
-    }
-
-    logger.info(
-      `[RabbitMQ] Published kanaelo calculation request for steam_id: ${request.steam_id}`
-    );
-
-    return { success: true, request_id: request.request_id };
-  } catch (error) {
-    logger.error("Error publishing kanaelo calculation request", error);
-    throw error;
-  } finally {
-    // Close channel and connection
-    if (channel) await channel.close();
-    if (connection) await connection.close();
-  }
-};
-
-/**
  * Publish multiple kanaelo calculation requests to the queue
  * @param steamIds Array of steam IDs to process
  * @param seasonId The season ID for the calculations

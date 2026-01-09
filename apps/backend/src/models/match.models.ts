@@ -224,14 +224,6 @@ export const getTeamStats = async (params: {
   return runQuery<TeamStatsResponse[]>(query, [queryParam!]);
 };
 
-const getRoundInfo = async (id: number): Promise<Match | undefined> => {
-  const result = await runQuery<Match[]>(
-    `SELECT round_info from MatchStats WHERE match_id=? ORDER BY round_number;`,
-    [id]
-  );
-  return result.length > 0 ? result[0] : undefined;
-};
-
 export const getMatchTopPlayers = async (
   match_id: number
 ): Promise<MatchOrGameTopPlayerAwards | null> => {

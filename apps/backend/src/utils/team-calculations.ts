@@ -7,8 +7,7 @@ import {
   TOP_N_FOR_CURRENT_AVG,
   TOTAL_PLAYERS_IN_NEW_AVG,
   TOP_N_FOR_COMPARISON,
-  TOP_N_FOR_DISPLAY,
-  calculateAverageFromValues
+  TOP_N_FOR_DISPLAY
 } from "@eggosystem/types";
 
 export { TOP_N_FOR_DISPLAY };

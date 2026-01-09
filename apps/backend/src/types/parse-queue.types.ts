@@ -293,35 +293,3 @@ export interface ParsedPayload {
   RoundImpacts: DemoRoundImpacts[];
   KillLog?: KillEvent[]; // Optional - new field from parser
 }
-
-/**
- * Parse queue configuration
- */
-interface ParseQueueConfig {
-  host: string;
-  port: number;
-  username: string;
-  password: string;
-  parseQueueName: string;
-  resultQueueName: string;
-  errorQueueName: string;
-  prefetchCount: number;
-  retryAttempts: number;
-  retryDelay: number;
-}
-
-/**
- * Default parse queue configuration
- */
-const DEFAULT_PARSE_QUEUE_CONFIG: ParseQueueConfig = {
-  host: "eggo-rabbitmq",
-  port: 5672,
-  username: "test",
-  password: "test",
-  parseQueueName: "parse_queue",
-  resultQueueName: "parse_result_queue",
-  errorQueueName: "parse_error_queue",
-  prefetchCount: 10,
-  retryAttempts: 3,
-  retryDelay: 5000
-};

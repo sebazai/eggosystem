@@ -27,7 +27,6 @@ import {
   getTeamById
 } from "../models/team.models";
 import { isTeamPartOfOrganization } from "./team.services";
-import { areSteamProfilesPublic } from "./steam.services";
 import { getPlayerDetailsBySteamId } from "../models/player.models";
 import { insertPlayerRankForSeason } from "../models/season-player-ranks.models";
 import { isPlayerApprovedForSeasonManually } from "../models/season-team-players.models";
@@ -96,15 +95,6 @@ export const createOrganizationForSignup = async (
   }
 
   return newOrg;
-};
-
-const ensurePlayerSteamProfilesPublic = async (playerSteamIds: string[]) => {
-  const areProfilePublic = await areSteamProfilesPublic(playerSteamIds);
-  if (!areProfilePublic.is_all_public) {
-    const notPublicIds =
-      areProfilePublic.not_public?.join(", ") || "some Steam IDs";
-    throw new Error(`Steam IDs ${notPublicIds} are not public.`);
-  }
 };
 
 export const checkExternalId = async (

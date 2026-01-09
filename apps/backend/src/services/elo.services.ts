@@ -402,26 +402,6 @@ const storeTeamFlag = async (
   logger.info(`Stored team flag for team ${data.team_id}: ${data.reason}`);
 };
 
-const getTeamFlag = async (
-  season_id: number,
-  league_id: number,
-  team_id: number
-): Promise<TeamFlagData | null> => {
-  const redisKey = `team-flag:s${season_id}:l${league_id}:${team_id}`;
-
-  try {
-    const flagData = await redisClient.get(redisKey);
-    if (!flagData) {
-      return null;
-    }
-
-    return JSON.parse(flagData) as TeamFlagData;
-  } catch (error) {
-    logger.warn(`Failed to parse team flag data: ${error}`);
-    return null;
-  }
-};
-
 const getTeamEloAdjustments = async (
   season_id: number,
   league_id: number,
