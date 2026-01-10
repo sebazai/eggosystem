@@ -18,12 +18,13 @@ const getDBPermissionsForAccountId = async (
   const permissionsResult = await runQuery<
     Array<{
       permission_name: Permission["permission_name"];
-      role_name: Role["role_name"];
+      role_name: Role["role_name"] | null;
       season_id: Season["id"];
       team_id: Team["id"];
     }>
   >(
     `
+    -- Get permissions from roles with their scopes
     SELECT DISTINCT r.role_name, p.permission_name, aps.season_id, aps.team_id
       FROM Accounts a
       JOIN AccountRoles ar ON ar.account_id = a.id
@@ -32,8 +33,24 @@ const getDBPermissionsForAccountId = async (
       JOIN Permissions p ON p.id = rp.permission_id
       LEFT JOIN AccountPermissionScopes aps ON aps.account_id = a.id AND aps.permission_id = p.id
       WHERE a.id = ?
+    
+    UNION
+    
+    -- Get permissions directly from AccountPermissionScopes (without requiring role)
+    -- These use a synthetic role name matching the permission for compatibility
+    SELECT DISTINCT 
+      CASE 
+        WHEN p.permission_name = 'edit-registration' THEN 'captain'
+        ELSE p.permission_name
+      END as role_name,
+      p.permission_name,
+      aps.season_id,
+      aps.team_id
+      FROM AccountPermissionScopes aps
+      JOIN Permissions p ON p.id = aps.permission_id
+      WHERE aps.account_id = ?
     `,
-    [accountId],
+    [accountId, accountId],
     connection
   );
   return permissionsResult;
