@@ -6,11 +6,16 @@
       "project": ["!**"],
       "jest": false,
       "playwright": false,
-      "next": false
+      "next": false,
+      "ignoreDependencies": [
+        "@opentelemetry/auto-instrumentations-node",
+        "@opentelemetry/api"
+      ]
     },
     "apps/backend": {
       "entry": ["server.ts", "migrations/**/*.ts", "seeds/**/*.ts"],
-      "project": ["src/**/*.ts"]
+      "project": ["src/**/*.ts"],
+      "ignoreDependencies": ["@opentelemetry/auto-instrumentations-node"]
     },
     "apps/frontend": {
       "entry": ["src/app/**/*.{ts,tsx}"],

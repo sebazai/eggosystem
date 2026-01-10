@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import { createHash } from "crypto";
-import { expireIn30Days, redisClient } from "../utils/redisClient";
+import { expireIn7Days, redisClient } from "../utils/redisClient";
 import { getActiveSeasonForAppId } from "../models/season.models";
 import { logger } from "../utils/app-logger";
 import { normalizeParsedParams } from "../utils/normalize-parsed-params";
@@ -13,7 +13,7 @@ interface CacheResponseOptions {
 
 export function cacheResponseMiddleware({
   cachePrefix,
-  ttlSeconds = expireIn30Days
+  ttlSeconds = expireIn7Days
 }: CacheResponseOptions) {
   return async (req: Request, res: Response, next: NextFunction) => {
     const searchParams = req.parsedParams;
