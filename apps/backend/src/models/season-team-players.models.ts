@@ -58,6 +58,7 @@ export const isPlayerApprovedForSeasonManually = async (
   if (!team_id && !organization_id) {
     throw new Error("Either team_id or organization_id must be provided");
   }
+
   const [result] = await runQuery<Array<SeasonPlayerApprovals>>(
     `SELECT spa.* 
      FROM SeasonPlayerApprovals spa 
