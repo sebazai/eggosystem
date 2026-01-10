@@ -62,7 +62,8 @@ export const isPlayerApprovedForSeasonManually = async (
     `SELECT spa.* 
      FROM SeasonPlayerApprovals spa 
       WHERE spa.season_id = ? AND spa.steam_id = ? AND (spa.team_id = ? OR spa.organization_id = ?)`,
-    [season_id, steam_id, team_id ?? null, organization_id ?? null],
+    // Keep steam_id as string, if it is big int it might fail, e.g. 76561198159301980
+    [season_id, String(steam_id), team_id ?? null, organization_id ?? null],
     connection
   );
   if (!result) {
