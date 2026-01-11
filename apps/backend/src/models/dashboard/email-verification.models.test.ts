@@ -7,6 +7,7 @@ import { runQuery } from "../../db/mysqlRunQuery";
 import { redisClient } from "../../utils/redisClient";
 import { getSevenDaysLaterInMillis } from "../../utils/date-utils";
 import { v4 as uuidv4 } from "uuid";
+import { type PoolConnection } from "mysql2/promise";
 
 jest.mock("../../db/mysqlRunQuery");
 jest.mock("../../utils/redisClient");
@@ -16,7 +17,7 @@ jest.mock("uuid", () => ({
 }));
 
 describe("Email Verification Models", () => {
-  const mockConnection = {} as any;
+  const mockConnection = {} as unknown as PoolConnection;
   const futureDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
   const pastDate = new Date(Date.now() - 1 * 24 * 60 * 60 * 1000);
   const sevenDaysLater = Date.now() + 7 * 24 * 60 * 60 * 1000;
@@ -121,6 +122,7 @@ describe("Email Verification Models", () => {
 
     it("should throw error for invalid lookup type", async () => {
       await expect(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         getAccountByLookup("test", "invalid" as any, mockConnection)
       ).rejects.toThrow("Invalid lookup type: invalid");
     });
