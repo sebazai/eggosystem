@@ -5,10 +5,14 @@ import {
   getTeamsForSeasonController,
   checkPlayerAdditionEligibilityController,
   createSeasonController,
-  updateSeasonController
+  updateSeasonController,
+  getAllSeasonsController
 } from "../../../controllers/dashboard/season.controllers";
 
 const router = Router();
+
+// GET /api/v1/dashboard/seasons
+router.get("/", getAllSeasonsController);
 
 // POST /api/v1/dashboard/seasons
 router.post("/", createSeasonController);

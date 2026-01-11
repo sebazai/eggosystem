@@ -17,7 +17,7 @@ import {
 /**
  * Formats date fields in a Season object to ISO 8601 with UTC indicator
  */
-const formatSeasonDates = (season: Season): Season => {
+const formatSeasonDates = <T extends Season | SeasonDetails>(season: T): T => {
   return {
     ...season,
     signup_start_date: formatDateFromDatabase(season.signup_start_date),
@@ -71,8 +71,7 @@ export const getSeasonDetailsById = async (id: number) => {
     [id]
   );
   if (data) {
-    // SeasonDetails extends Season, so we can format it the same way
-    return formatSeasonDates(data as unknown as Season) as SeasonDetails;
+    return formatSeasonDates(data);
   }
   return undefined;
 };
