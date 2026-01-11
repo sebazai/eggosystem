@@ -106,6 +106,9 @@ describe("updateProfile Controller", () => {
     jest
       .spyOn(userPolicyAcceptanceModels, "updateUserPolicyAcceptance")
       .mockResolvedValue(undefined);
+    (accountServices.handleEmailVerification as jest.Mock).mockResolvedValue(
+      undefined
+    );
   });
 
   it("should return 401 if user is not authenticated", async () => {
