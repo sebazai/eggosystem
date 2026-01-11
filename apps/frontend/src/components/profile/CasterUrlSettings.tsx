@@ -16,8 +16,6 @@ import {
 } from "@/components/ui/form";
 import { clientApiFetch } from "@/lib/apiClient";
 import { toast } from "sonner";
-import { useAuth } from "@/context/AuthContext";
-import { hasCasterAccess } from "@/lib/roleUtils";
 import { Tv, Trash2 } from "lucide-react";
 
 const casterUrlSchema = z.object({
@@ -30,13 +28,14 @@ interface CasterDefaultUrl {
   stream_url: string | null;
 }
 
-export function CasterUrlSettings() {
-  const { user } = useAuth();
+export function CasterUrlSettings({
+  canManageUrls
+}: {
+  canManageUrls: boolean;
+}) {
   const [isLoading, setIsLoading] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [currentUrl, setCurrentUrl] = useState<string | null>(null);
-
-  const canManageUrls = hasCasterAccess(user);
 
   const form = useForm<CasterUrlForm>({
     resolver: zodResolver(casterUrlSchema),

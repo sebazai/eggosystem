@@ -103,7 +103,7 @@ export const AvatarUploadSection = ({
   const displayImage = preview || avatarUrl;
 
   return (
-    <div className="bg-card rounded-lg p-6 border border-border">
+    <div className="pb-4">
       <h3 className="text-lg font-semibold mb-4">Profile Avatar</h3>
       <p className="text-sm text-muted-foreground mb-4">
         Upload a custom avatar to display on your player profile, team pages,

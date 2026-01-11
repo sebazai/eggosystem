@@ -2,14 +2,11 @@
 
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/context/AuthContext";
 import { envConfig } from "@/configs/env";
 import { MessageSquare } from "lucide-react";
 
-export function DiscordSettings() {
+export function DiscordSettings({ discordLinked }: { discordLinked: boolean }) {
   const router = useRouter();
-  const { user } = useAuth();
-  const discordLinked = user?.discordLinked;
 
   return (
     <div className="space-y-4 pt-6 border-t">

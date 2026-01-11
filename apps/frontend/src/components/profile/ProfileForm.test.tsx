@@ -1,9 +1,9 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import ProfileForm from "@/components/profile/ProfileForm";
-import { useAuth } from "@/context/AuthContext";
 import { useAccountDetails } from "@/hooks/data/user/useAccountDetails";
 import { useEmailsVerified } from "@/hooks/data/useEmailsVerified";
 import { clientApiFetch } from "@/lib/apiClient";
+import { createMockUser } from "@/test-utils/test-utils";
 
 // Mock Next.js navigation hooks
 jest.mock("next/navigation", () => ({
@@ -20,9 +20,6 @@ jest.mock("next/navigation", () => ({
 }));
 
 // Mocks
-jest.mock("@/context/AuthContext", () => ({
-  useAuth: jest.fn()
-}));
 jest.mock("@/hooks/data/user/useAccountDetails", () => ({
   useAccountDetails: jest.fn()
 }));
@@ -103,6 +100,8 @@ beforeAll(() => {
 });
 
 describe("ProfileForm", () => {
+  const mockCheckAuth = jest.fn().mockResolvedValue(undefined);
+
   beforeEach(() => {
     jest.clearAllMocks();
     // Default mock for useEmailsVerified to avoid destructure error
@@ -110,10 +109,15 @@ describe("ProfileForm", () => {
   });
 
   it("renders loading state", async () => {
-    (useAuth as jest.Mock).mockReturnValue({ loading: true });
     (useAccountDetails as jest.Mock).mockReturnValue({ isLoading: true });
 
-    render(<ProfileForm />);
+    const mockUser = createMockUser({
+      account_id: 1,
+      nickname: "TestUser",
+      acceptedPrivacyPolicy: true
+    });
+
+    render(<ProfileForm user={mockUser} checkAuth={mockCheckAuth} />);
 
     await waitFor(() => {
       expect(screen.getByText(/loading/i)).toBeInTheDocument();
@@ -121,13 +125,18 @@ describe("ProfileForm", () => {
   });
 
   it("renders login prompt and button if unauthenticated", async () => {
-    (useAuth as jest.Mock).mockReturnValue({ loading: false, user: null });
     (useAccountDetails as jest.Mock).mockReturnValue({
       isLoading: false,
       account: null
     });
 
-    render(<ProfileForm />);
+    const mockUser = createMockUser({
+      account_id: 1,
+      nickname: "TestUser",
+      acceptedPrivacyPolicy: true
+    });
+
+    render(<ProfileForm user={mockUser} checkAuth={mockCheckAuth} />);
 
     await waitFor(() => {
       expect(screen.getByText(/please log in/i)).toBeInTheDocument();
@@ -136,10 +145,6 @@ describe("ProfileForm", () => {
   });
 
   it("renders the form for authenticated user", async () => {
-    (useAuth as jest.Mock).mockReturnValue({
-      loading: false,
-      user: { account_id: 1, nickname: "TestUser", acceptedPrivacyPolicy: true }
-    });
     (useAccountDetails as jest.Mock).mockReturnValue({
       isLoading: false,
       account: {
@@ -150,7 +155,13 @@ describe("ProfileForm", () => {
       }
     });
 
-    render(<ProfileForm />);
+    const mockUser = createMockUser({
+      account_id: 1,
+      nickname: "TestUser",
+      acceptedPrivacyPolicy: true
+    });
+
+    render(<ProfileForm user={mockUser} checkAuth={mockCheckAuth} />);
 
     await waitFor(() => {
       expect(screen.getByDisplayValue("TestUser")).toBeInTheDocument();
@@ -163,15 +174,6 @@ describe("ProfileForm", () => {
   });
 
   it("submits the form and shows success message", async () => {
-    (useAuth as jest.Mock).mockReturnValue({
-      loading: false,
-      user: {
-        account_id: 1,
-        nickname: "TestUser",
-        acceptedPrivacyPolicy: true,
-        checkAuth: jest.fn()
-      }
-    });
     (useAccountDetails as jest.Mock).mockReturnValue({
       isLoading: false,
       account: {
@@ -185,7 +187,13 @@ describe("ProfileForm", () => {
       message: "Profile updated!"
     });
 
-    render(<ProfileForm />);
+    const mockUser = createMockUser({
+      account_id: 1,
+      nickname: "TestUser",
+      acceptedPrivacyPolicy: true
+    });
+
+    render(<ProfileForm user={mockUser} checkAuth={mockCheckAuth} />);
 
     await waitFor(() => {
       expect(screen.getByDisplayValue("TestUser")).toBeInTheDocument();
@@ -218,16 +226,18 @@ describe("ProfileForm", () => {
   });
 
   it("shows validation errors", async () => {
-    (useAuth as jest.Mock).mockReturnValue({
-      loading: false,
-      user: { account_id: 1, nickname: "", acceptedPrivacyPolicy: false }
-    });
     (useAccountDetails as jest.Mock).mockReturnValue({
       isLoading: false,
       account: { details: { fullName: "", workEmail: "" } }
     });
 
-    render(<ProfileForm />);
+    const mockUser = createMockUser({
+      account_id: 1,
+      nickname: "",
+      acceptedPrivacyPolicy: false
+    });
+
+    render(<ProfileForm user={mockUser} checkAuth={mockCheckAuth} />);
 
     await waitFor(() => {
       expect(
@@ -250,14 +260,6 @@ describe("ProfileForm", () => {
   });
 
   it("shows privacy policy error if not accepted", async () => {
-    (useAuth as jest.Mock).mockReturnValue({
-      loading: false,
-      user: {
-        account_id: 1,
-        nickname: "TestUser",
-        acceptedPrivacyPolicy: false
-      }
-    });
     (useAccountDetails as jest.Mock).mockReturnValue({
       isLoading: false,
       account: {
@@ -268,7 +270,13 @@ describe("ProfileForm", () => {
       }
     });
 
-    render(<ProfileForm />);
+    const mockUser = createMockUser({
+      account_id: 1,
+      nickname: "TestUser",
+      acceptedPrivacyPolicy: false
+    });
+
+    render(<ProfileForm user={mockUser} checkAuth={mockCheckAuth} />);
 
     await waitFor(() => {
       expect(
