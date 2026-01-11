@@ -197,6 +197,7 @@ knip:
   stage: lint
   extends: [.prepare-pnpm, .mr-all-app]
   script:
+    - pnpm --filter=@eggosystem/types build
     - pnpm knip
 
 format:check:
