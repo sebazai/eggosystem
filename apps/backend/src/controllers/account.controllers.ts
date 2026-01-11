@@ -54,19 +54,38 @@ export const sendVerificationEmails = async (
       throw new BadRequestError("Work email not found");
     }
 
-    await redisClient.del(`verify:work-email:${account.work_email_token}`);
-    const token = uuid.v4();
-    await runQuery(
-      "UPDATE Accounts SET work_email_token = ?, work_email_token_expires_at = ? WHERE id = ?",
-      [token, new Date(sevenDaysInMillis), account.id],
-      connection
-    );
+    // Check if existing token is still valid
+    const hasValidToken =
+      account.work_email_token &&
+      account.work_email_token_expires_at &&
+      new Date(account.work_email_token_expires_at) > new Date();
+
+    let token: string;
+    let expirationTime: number;
+
+    if (hasValidToken) {
+      // Reuse existing token
+      token = account.work_email_token!;
+      expirationTime = new Date(account.work_email_token_expires_at!).getTime();
+    } else {
+      // Generate new token only if expired or missing
+      if (account.work_email_token) {
+        await redisClient.del(`verify:work-email:${account.work_email_token}`);
+      }
+      token = uuid.v4();
+      expirationTime = sevenDaysInMillis;
+      await runQuery(
+        "UPDATE Accounts SET work_email_token = ?, work_email_token_expires_at = ? WHERE id = ?",
+        [token, new Date(sevenDaysInMillis), account.id],
+        connection
+      );
+    }
 
     await handleEmailVerification(
       accountId,
       account.work_email,
       token,
-      sevenDaysInMillis
+      expirationTime
     );
     await connection.commit();
   } catch (error) {

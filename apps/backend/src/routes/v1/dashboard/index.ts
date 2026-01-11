@@ -13,6 +13,7 @@ import redisRouter from "./redis.routes";
 import demoRouter from "./demo.routes";
 import seasonLeagueMapperRouter from "./season-league-mapper.routes";
 import faceitValidationRouter from "./faceit-validation.routes";
+import emailVerificationRouter from "./email-verification.routes";
 
 const router = Router();
 
@@ -99,6 +100,13 @@ router.use(
     fallbackRoles: ["admin", "helpdesk"]
   }),
   faceitValidationRouter
+);
+router.use(
+  "/email-verification",
+  checkPermissions({
+    fallbackRoles: ["admin", "helpdesk"]
+  }),
+  emailVerificationRouter
 );
 router.get(
   "/",
