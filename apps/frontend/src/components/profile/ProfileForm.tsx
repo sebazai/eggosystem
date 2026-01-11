@@ -15,7 +15,6 @@ import {
   FormLabel
 } from "@/components/ui/form";
 import Link from "next/link";
-import { useAuth } from "@/context/AuthContext";
 import { ContentContainer } from "../layout/ContentContainer";
 import { SteamLoginButton } from "@/components/profile/SteamLoginButton";
 import {
@@ -44,16 +43,20 @@ const requestNewEmailVerificationLinks = async (accountId?: number) => {
   }
 };
 
-export default function ProfileForm() {
+export default function ProfileForm({
+  user,
+  checkAuth
+}: {
+  user: UserFullPayload;
+  checkAuth: () => Promise<void>;
+}) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname(); // Get current pathname
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const auth = useAuth();
   const { account, isLoading: isLoadingProfile } = useAccountDetails();
-  const user = auth.user;
-  const { emailsVerified } = useEmailsVerified(auth.user?.account_id);
+  const { emailsVerified } = useEmailsVerified(user.account_id);
   const { mutate } = useSWRConfig();
   const discordCallbackProcessed = useRef(false);
 
@@ -102,7 +105,7 @@ export default function ProfileForm() {
       newUrl.searchParams.delete("discordUserId");
       router.replace(newUrl.pathname, { scroll: false });
 
-      auth.checkAuth();
+      checkAuth();
     }
 
     if (discordError) {
@@ -128,13 +131,13 @@ export default function ProfileForm() {
       newUrl.searchParams.delete("discordError");
       router.replace(newUrl.pathname, { scroll: false });
     }
-  }, [searchParams, router, auth]);
+  }, [searchParams, router, checkAuth]);
 
-  if (auth.loading || isLoadingProfile) {
+  if (isLoadingProfile) {
     return <ContentContainer>Loading...</ContentContainer>;
   }
 
-  if (!user || !account) {
+  if (!account) {
     return (
       <ContentContainer classNames="flex-col space-y-4">
         <div>Please log in to view your profile.</div> <SteamLoginButton />
@@ -166,7 +169,7 @@ export default function ProfileForm() {
       );
       setSuccessMessage(`${returnValue.message}`);
       toast.success("Profile updated!");
-      await auth.checkAuth();
+      await checkAuth();
       mutate(
         "/api/v1/accounts/profile",
         {
@@ -316,12 +319,6 @@ const ProfileFormInputs = ({
             <FormItem className="flex items-center space-x-2">
               <FormControl>
                 <Checkbox
-                  disabled={
-                    emailsVerified?.work_email_verified &&
-                    !workEmailDirty &&
-                    field.value &&
-                    isPersonalEmail
-                  }
                   checked={field.value}
                   onCheckedChange={field.onChange}
                 />

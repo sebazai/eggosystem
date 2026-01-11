@@ -4,12 +4,12 @@ import { expressFetcher } from "@/lib/utils";
 import type { SteamPlayer } from "@eggosystem/types";
 import useSWR from "swr";
 
-export const useSteamPlayer = (steamId: string) => {
-  const apiUrl = `/api/v1/players/${steamId}`;
+export const useSteamPlayer = (steamId: string | undefined) => {
+  const apiUrl = steamId ? `/api/v1/players/${steamId}` : null;
 
   const { data, error, isValidating, isLoading } = useSWR<SteamPlayer>(
     apiUrl,
-    expressFetcher,
+    apiUrl ? expressFetcher : null,
     {
       revalidateOnFocus: false
     }

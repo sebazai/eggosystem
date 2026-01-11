@@ -1,61 +1,28 @@
 import React from "react";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { useAuth } from "@/context/AuthContext";
 import { CasterUrlSettings } from "./CasterUrlSettings";
 import { clientApiFetch } from "@/lib/apiClient";
 import { toast } from "sonner";
 
 // Mock dependencies
-jest.mock("@/context/AuthContext");
 jest.mock("@/lib/apiClient");
 jest.mock("sonner");
-jest.mock("@/lib/roleUtils", () => ({
-  hasCasterAccess: jest.fn()
-}));
 
-// Import the mocked modules
-import { hasCasterAccess } from "@/lib/roleUtils";
-
-const mockUseAuth = useAuth as jest.MockedFunction<typeof useAuth>;
 const mockClientApiFetch = clientApiFetch as jest.MockedFunction<
   typeof clientApiFetch
 >;
 const mockToast = toast as jest.Mocked<typeof toast>;
-const mockHasCasterAccess = hasCasterAccess as jest.MockedFunction<
-  typeof hasCasterAccess
->;
-
-// Mock user with caster role
-const mockCasterUser = {
-  account_id: 1,
-  provider_id: "12345",
-  roles: ["caster"],
-  nickname: "testcaster",
-  provider: "steam" as const,
-  acceptedPrivacyPolicy: true,
-  acceptedMarketing: false,
-  acceptedNewsletter: true,
-  isPersonalEmail: false,
-  discordLinked: false
-};
 
 describe("CasterUrlSettings", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockUseAuth.mockReturnValue({
-      user: mockCasterUser,
-      loading: false,
-      checkAuth: jest.fn(),
-      logout: jest.fn()
-    });
-    mockHasCasterAccess.mockReturnValue(true);
   });
 
   it("should render caster URL settings for caster users", async () => {
     mockClientApiFetch.mockResolvedValue({ stream_url: null });
 
-    render(<CasterUrlSettings />);
+    render(<CasterUrlSettings canManageUrls={true} />);
 
     expect(screen.getByText("Caster Settings")).toBeInTheDocument();
     expect(
@@ -67,9 +34,7 @@ describe("CasterUrlSettings", () => {
   });
 
   it("should not render for non-caster users", () => {
-    mockHasCasterAccess.mockReturnValue(false);
-
-    render(<CasterUrlSettings />);
+    render(<CasterUrlSettings canManageUrls={false} />);
 
     expect(screen.queryByText("Caster Settings")).not.toBeInTheDocument();
   });
@@ -78,7 +43,7 @@ describe("CasterUrlSettings", () => {
     const existingUrl = "https://twitch.tv/existingcaster";
     mockClientApiFetch.mockResolvedValue({ stream_url: existingUrl });
 
-    render(<CasterUrlSettings />);
+    render(<CasterUrlSettings canManageUrls={true} />);
 
     await waitFor(() => {
       const input = screen.getByLabelText(
@@ -99,7 +64,7 @@ describe("CasterUrlSettings", () => {
       .mockResolvedValueOnce({ stream_url: null }) // Initial load
       .mockResolvedValueOnce({}); // Save request
 
-    render(<CasterUrlSettings />);
+    render(<CasterUrlSettings canManageUrls={true} />);
 
     // Wait for initial load
     await waitFor(() => {
@@ -140,7 +105,7 @@ describe("CasterUrlSettings", () => {
       .mockResolvedValueOnce({ stream_url: existingUrl }) // Initial load
       .mockResolvedValueOnce({}); // Delete request
 
-    render(<CasterUrlSettings />);
+    render(<CasterUrlSettings canManageUrls={true} />);
 
     // Wait for URL to load
     await waitFor(() => {
@@ -170,7 +135,7 @@ describe("CasterUrlSettings", () => {
     const user = userEvent.setup();
     mockClientApiFetch.mockResolvedValue({ stream_url: null });
 
-    render(<CasterUrlSettings />);
+    render(<CasterUrlSettings canManageUrls={true} />);
 
     // Wait for component to load
     await waitFor(() => {
@@ -212,7 +177,7 @@ describe("CasterUrlSettings", () => {
       .mockResolvedValueOnce({ stream_url: null })
       .mockRejectedValueOnce(new Error(errorMessage));
 
-    render(<CasterUrlSettings />);
+    render(<CasterUrlSettings canManageUrls={true} />);
 
     // Wait for component to load
     await waitFor(() => {
@@ -238,7 +203,7 @@ describe("CasterUrlSettings", () => {
       stream_url: "https://twitch.tv/existing"
     });
 
-    render(<CasterUrlSettings />);
+    render(<CasterUrlSettings canManageUrls={true} />);
 
     // Wait for form to load with existing data
     await waitFor(() => {
@@ -255,7 +220,7 @@ describe("CasterUrlSettings", () => {
       stream_url: "https://twitch.tv/existing"
     });
 
-    render(<CasterUrlSettings />);
+    render(<CasterUrlSettings canManageUrls={true} />);
 
     // Wait for form to load
     await waitFor(() => {

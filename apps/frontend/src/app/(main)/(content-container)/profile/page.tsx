@@ -1,23 +1,56 @@
+"use client";
+
 import ProfileForm from "@/components/profile/ProfileForm";
 import { CasterUrlSettings } from "@/components/profile/CasterUrlSettings";
 import { DiscordSettings } from "@/components/profile/DiscordSettings";
 import { AvatarSettings } from "@/components/profile/AvatarSettings";
-import { createPageMetadata } from "@/lib/metadata";
-import type { Metadata } from "next";
+import { useAuth } from "@/context/AuthContext";
+import { ContentContainer } from "@/components/layout/ContentContainer";
+import { SteamLoginButton } from "@/components/profile/SteamLoginButton";
+import { useEffect } from "react";
+import { hasCasterAccess } from "@/lib/roleUtils";
+import { Spinner } from "@/components/ui/spinner";
 
-export const metadata: Metadata = createPageMetadata({
-  title: "User profile",
-  description: "Kanahub profile page"
-});
+export default function ProfilePage() {
+  useEffect(() => {
+    document.title = "User profile | Kanahub";
+  }, []);
+  const { user, loading, checkAuth } = useAuth();
 
-export default async function ProfilePage() {
+  if (loading) {
+    return (
+      <ContentContainer>
+        <div className="flex flex-col items-center justify-center gap-4 py-12">
+          <Spinner size="lg" />
+          <p className="text-muted-foreground">Loading profile page...</p>
+        </div>
+      </ContentContainer>
+    );
+  }
+
+  if (!user) {
+    return (
+      <ContentContainer>
+        <div className="flex flex-col items-center gap-6 py-12 max-w-md mx-auto">
+          <div className="text-center space-y-2">
+            <h2 className="text-2xl font-semibold">Authentication Required</h2>
+            <p className="text-muted-foreground">
+              Please log in to view and manage your profile.
+            </p>
+          </div>
+          <SteamLoginButton />
+        </div>
+      </ContentContainer>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <h1 className="pb-4">User profile</h1>
-      <AvatarSettings />
-      <ProfileForm />
-      <DiscordSettings />
-      <CasterUrlSettings />
+      <AvatarSettings steamId={user.provider_id} />
+      <ProfileForm user={user} checkAuth={checkAuth} />
+      <DiscordSettings discordLinked={user.discordLinked} />
+      <CasterUrlSettings canManageUrls={hasCasterAccess(user)} />
     </div>
   );
 }

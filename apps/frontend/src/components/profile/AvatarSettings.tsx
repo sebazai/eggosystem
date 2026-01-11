@@ -1,21 +1,14 @@
 "use client";
 
-import { useAuth } from "@/context/AuthContext";
 import { useSteamPlayer } from "@/hooks/data/useSteamPlayer";
 import { AvatarUploadSection } from "./AvatarUploadSection";
 import { ContentContainer } from "../layout/ContentContainer";
 import { SteamLoginButton } from "./SteamLoginButton";
 
-export const AvatarSettings = () => {
-  const { user, loading: authLoading } = useAuth();
-  const steamId = user?.provider_id;
-  const { steamPlayer, isLoading, isError } = useSteamPlayer(steamId || "");
+export const AvatarSettings = ({ steamId }: { steamId: string }) => {
+  const { steamPlayer, isLoading, isError } = useSteamPlayer(steamId);
 
-  if (authLoading) {
-    return <ContentContainer>Loading...</ContentContainer>;
-  }
-
-  if (!user || !steamId) {
+  if (!steamId) {
     return (
       <ContentContainer classNames="flex-col space-y-4">
         <div>Please log in to manage your avatar.</div>

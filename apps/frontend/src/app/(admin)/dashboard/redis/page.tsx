@@ -314,7 +314,7 @@ export default function RedisManagementPage() {
                 </div>
                 <div className="space-y-1">
                   <div className="font-mono bg-background px-2 py-1 rounded">
-                    flagged-matches:*
+                    match:invalid_players:*
                   </div>
                   <div className="text-muted-foreground">
                     Flagged match data
