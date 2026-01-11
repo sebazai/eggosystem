@@ -1,7 +1,11 @@
 import {
   isNonNullable,
   postTeamManualPlayerApprovalSchema,
-  seasonPlayerRankFormSchema
+  seasonPlayerRankFormSchema,
+  type RequestWithParams,
+  type RequestWithParamsAndBody,
+  type SignupFormValues,
+  signupFormSchema
 } from "@eggosystem/types";
 import { type NextFunction, type Request, type Response } from "express";
 import {
@@ -14,10 +18,14 @@ import {
 } from "../../models/dashboard/registration.models";
 import { getActiveSignupOrActiveSeasonForAppId } from "../../models/season.models";
 import { BadRequestError, NotFoundError } from "../../utils/errors";
-import { type RequestWithParams } from "@eggosystem/types";
 import { redisClient } from "../../utils/redisClient";
 import { isRegistrationDraftRaw } from "@eggosystem/types";
 import { getTeamsSignupApprovalState } from "../../services/dashboard/registration.services";
+import {
+  getValidSeasonBypassDates,
+  checkExternalId
+} from "../../services/season-team-registration.services";
+import { addSignupForSeason } from "../../models/season-team-registration.models";
 
 export const addManuallyApprovedPlayersController = async (
   req: Request,
@@ -184,4 +192,30 @@ export const manualValidityCheckController = async (
     authedUser.account_id
   );
   res.status(200).json(result);
+};
+
+/**
+ * Admin controller to add team signup for any season, bypassing date restrictions.
+ * Used to manually register teams after signup has closed.
+ */
+export const addSignupForSeasonAdminController = async (
+  req: RequestWithParamsAndBody<{ season_id: string }, SignupFormValues>,
+  res: Response
+) => {
+  const seasonId = Number(req.params.season_id);
+
+  // Use admin version that bypasses date checks
+  const season = await getValidSeasonBypassDates(seasonId);
+  const formData = req.body;
+
+  // Validate form data
+  signupFormSchema({ platform: season.platform }).parse(formData);
+
+  // Check external ID validity
+  await checkExternalId(season.platform, formData.teamExternalId);
+
+  // Use the same signup logic as regular signups
+  const result = await addSignupForSeason(season, formData);
+
+  res.json(result);
 };

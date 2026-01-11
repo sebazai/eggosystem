@@ -2,13 +2,14 @@ import {
   type RequestWithParams,
   type RequestWithBody
 } from "@eggosystem/types";
-import { type Response, type NextFunction } from "express";
+import { type Response, type NextFunction, type Request } from "express";
 import { getTeamsForSeason } from "../../models/team.models";
 import { checkPlayerAdditionEligibility } from "../../models/dashboard/season.models";
 import {
   createSeason,
   updateSeason,
-  getSeasonById
+  getSeasonById,
+  getSeasons
 } from "../../models/season.models";
 import {
   seasonFormSchema,
@@ -24,6 +25,22 @@ const formatDateForDB = (dateString: string): string => {
   // Date string is already in UTC ISO format (e.g., "2025-01-15T16:30:00.000Z")
   // Just format it for MySQL datetime format
   return formatDateForDatabase(dateString);
+};
+
+/**
+ * Controller to get all seasons
+ * Returns all seasons sorted by most recent first
+ */
+export const getAllSeasonsController = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const seasons = await getSeasons();
+
+  // Sort by id descending (most recent first)
+  const sortedSeasons = seasons.sort((a, b) => b.id - a.id);
+
+  res.json(sortedSeasons);
 };
 
 /**

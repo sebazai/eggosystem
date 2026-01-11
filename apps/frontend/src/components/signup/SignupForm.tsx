@@ -45,6 +45,8 @@ interface SignupFormProps {
   draft?: SignupFormValues;
   editValues?: SignupFormValues;
   onDraftSaved?: () => void;
+  isAdminMode?: boolean;
+  selectedSeasonId?: string;
 }
 
 const validateExternalPlaformId = async (
@@ -95,7 +97,9 @@ export const SignupForm = ({
   platform,
   draft,
   editValues,
-  onDraftSaved
+  onDraftSaved,
+  isAdminMode = false,
+  selectedSeasonId
 }: SignupFormProps) => {
   const [activeTab, setActiveTab] = useState(
     editValues ? "players" : "organization"
@@ -113,6 +117,10 @@ export const SignupForm = ({
   const [showResetConfirmation, setShowResetConfirmation] = useState(false);
 
   const isEditMode = !!editValues;
+
+  // Use selectedSeasonId for admin mode, otherwise use seasonId from props
+  const effectiveSeasonId =
+    isAdminMode && selectedSeasonId ? selectedSeasonId : seasonId;
 
   const form = useForm({
     resolver: zodResolver(schema),
@@ -140,7 +148,7 @@ export const SignupForm = ({
   const watchPlayers = useWatch({ control, name: "players" });
 
   const { seasonDetails, isLoading, isError, isValidating } =
-    useSeasonDetails(seasonId);
+    useSeasonDetails(effectiveSeasonId);
 
   const validOrgId = useMemo(
     () =>
@@ -290,22 +298,33 @@ export const SignupForm = ({
       // Convert all Steam IDs to SteamID64 format before submitting
       const convertedData = await convertSteamIdsToSteamId64(data);
 
+      // Determine API endpoint based on admin mode
+      let apiEndpoint: string;
+      if (isAdminMode) {
+        apiEndpoint = `/api/v1/dashboard/registration/season/${effectiveSeasonId}/signup`;
+      } else if (editValues) {
+        apiEndpoint = `/api/v1/registrations/season/${effectiveSeasonId}/signup/team/${editValues.teamId}`;
+      } else {
+        apiEndpoint = `/api/v1/registrations/season/${effectiveSeasonId}/signup`;
+      }
+
       const returnValue = await clientApiFetch<{
         team_id: number;
         organization_id: number;
-      }>(
-        editValues
-          ? `/api/v1/registrations/season/${seasonId}/signup/team/${editValues.teamId}`
-          : `/api/v1/registrations/season/${seasonId}/signup`,
-        {
-          method: editValues ? "PUT" : "POST",
-          body: JSON.stringify(convertedData)
-        }
-      );
-      if (editValues) {
+      }>(apiEndpoint, {
+        method: editValues && !isAdminMode ? "PUT" : "POST",
+        body: JSON.stringify(convertedData)
+      });
+
+      if (editValues && !isAdminMode) {
         setSuccessMessage("Team updated successfully");
         toast.success("Team updated successfully", {
           description: "Your team information has been saved."
+        });
+      } else if (isAdminMode) {
+        setSuccessMessage("Team registered successfully by admin");
+        toast.success("Team registered successfully", {
+          description: "The team has been added to the season."
         });
       } else {
         setSuccessMessage(`Team registered succesfully, please remember to`);
@@ -314,7 +333,7 @@ export const SignupForm = ({
         );
       }
       setEditUrl(
-        `${createBaseUrl()}/seasons/${seasonId}/signup/team/${returnValue.team_id}/edit`
+        `${createBaseUrl()}/seasons/${effectiveSeasonId}/signup/team/${returnValue.team_id}/edit`
       );
 
       // Refresh auth to get necessary permissions for edit link
@@ -390,10 +409,13 @@ export const SignupForm = ({
           coCaptain: player.coCaptain
         }))
       };
-      await clientApiFetch(`/api/v1/registrations/season/${seasonId}/draft`, {
-        method: "POST",
-        body: JSON.stringify(formDataStripped)
-      });
+      await clientApiFetch(
+        `/api/v1/registrations/season/${effectiveSeasonId}/draft`,
+        {
+          method: "POST",
+          body: JSON.stringify(formDataStripped)
+        }
+      );
       setSuccessMessage("Saved draft for 30 days.");
       toast.success("Draft saved successfully", {
         description: "You can continue editing your draft later on this page."
@@ -413,11 +435,11 @@ export const SignupForm = ({
 
   const { createOrganization, isCreating: isCreatingOrg } =
     useCreateOrganizationForSignup({
-      seasonId,
+      seasonId: effectiveSeasonId,
       setValue
     });
 
-  if (!user) {
+  if (!user && !isAdminMode) {
     return <RequiresSteamLogin />;
   }
 
@@ -559,7 +581,7 @@ export const SignupForm = ({
                 }
                 seasonSteamAppId={seasonDetails.app_id}
                 platform={seasonDetails.platform}
-                seasonId={seasonId}
+                seasonId={effectiveSeasonId}
                 validCaptainSelection={validCaptainSelection}
                 prefilledPlayerSteamIds={prefilledPlayerSteamIds}
                 teamId={watchTeamId}
@@ -644,7 +666,7 @@ export const SignupForm = ({
               )}
             />
 
-            {!isEditMode && (
+            {!isEditMode && !isAdminMode && (
               <div className="flex gap-2 w-full pt-5">
                 <Button
                   type="button"

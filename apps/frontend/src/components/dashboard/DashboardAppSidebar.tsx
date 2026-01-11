@@ -76,6 +76,11 @@ const data: { navMain: Array<MenuItem> } = {
         {
           title: "Add manual approval",
           url: createDashboardNextUrl("registration/approval")
+        },
+        {
+          title: "Add team signup",
+          url: createDashboardNextUrl("registration/add-team"),
+          requiredRoles: ["helpdesk", "admin"]
         }
       ] satisfies Array<SubMenuItem>
     },
