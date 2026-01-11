@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { FooterPartners } from "../sponsors/FooterPartners";
 
 const Footer = () => {
@@ -64,7 +65,7 @@ const Footer = () => {
           <div>
             <h2>Credits</h2>
             <div className="mt-4">
-              <p>Created by:</p>
+              <b>Created by:</b>
               <div>
                 <Link href="https://www.linkedin.com/in/jari-haikonen/">
                   enzoj
@@ -84,12 +85,43 @@ const Footer = () => {
                   </Link>
                 </div>
               </div>
-
-              <div className="mt-4">
-                <p>Data mining by:</p>
+              <div className="my-3">
+                <b>Data mining by:</b>{" "}
                 <Link href="https://www.linkedin.com/in/jari-haikonen/">
                   enzoj
                 </Link>
+              </div>
+              <div className="mt-2">
+                <b>
+                  <i>Special thanks to:</i>
+                </b>
+                <Link
+                  href="https://www.wunderdog.io"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block mt-2"
+                >
+                  <Image
+                    src="https://media.licdn.com/dms/image/v2/C4E0BAQGlotwQM3QRXA/company-logo_200_200/company-logo_200_200/0/1630641680966/wunderdog_oy_logo?e=1769644800&v=beta&t=xwb6k1xapT2aRXFd5kpZoKBXFXLV7sXUbT6Vx1fNoZ0"
+                    alt="Wunderdog"
+                    width={100}
+                    height={100}
+                    className="dark:invert-0 invert"
+                    unoptimized
+                  />
+                </Link>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Developed with support from{" "}
+                  <Link
+                    href="https://www.wunderdog.io/blog/open-source-benefit"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline"
+                  >
+                    Wunderdog&apos;s open-source program
+                  </Link>
+                  .
+                </p>
               </div>
             </div>
           </div>
