@@ -133,6 +133,19 @@ export const getValidSeason = async (seasonId: number) => {
 };
 
 /**
+ * Get valid season for admin operations, bypassing signup date checks.
+ * Used by admin endpoints to allow team registration outside normal signup periods.
+ */
+export const getValidSeasonBypassDates = async (seasonId: number) => {
+  const season = await getSeasonDetailsById(seasonId);
+  if (!season) {
+    throw new NotFoundError("Season not found");
+  }
+  // Admin operations don't require signup dates to be set or checked
+  return season;
+};
+
+/**
  * Update FaceIT nickname and ID for players when platform is FaceIT
  */
 const updatePlayersFaceitData = async (
