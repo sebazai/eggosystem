@@ -2,7 +2,7 @@ import { runQuery } from "../../db/mysqlRunQuery";
 import type { PoolConnection } from "mysql2/promise";
 import { NotFoundError, BadRequestError } from "../../utils/errors";
 import type { Nullable } from "@eggosystem/types";
-import uuid from "uuid";
+import { v4 as uuidv4 } from "uuid";
 import { redisClient } from "../../utils/redisClient";
 import { getSevenDaysLaterInMillis } from "../../utils/date-utils";
 
@@ -183,7 +183,7 @@ export const regenerateVerificationToken = async (
   }
 
   // Generate new token
-  const newToken = uuid.v4();
+  const newToken = uuidv4();
   const sevenDaysLaterInMillis = getSevenDaysLaterInMillis();
   const expiresAt = new Date(sevenDaysLaterInMillis);
 
