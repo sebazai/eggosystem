@@ -10,6 +10,7 @@ import {
   UnauthorizedError,
   BadRequestError
 } from "../utils/errors";
+import { buildPermissionString } from "../utils/permission-scope-builder";
 
 interface CheckPermissionOptions {
   staticPermissions?: string[];
@@ -52,24 +53,49 @@ export function checkPermissions({
     }
 
     // Build dynamic permission
-    if (role && action && paramKeys.length > 0) {
-      const scopeParts: string[] = [];
-
-      for (const key of paramKeys) {
-        const value = req.params[key];
-        if (!value) {
-          return next(new BadRequestError(`Missing route param: ${key}`));
+    if (action && paramKeys.length > 0) {
+      // Check for role-based permission: role:action:scope (e.g., "captain:edit-registration:season-1:team-2")
+      if (role) {
+        try {
+          const dynamicPermission = buildPermissionString(
+            action,
+            req.params,
+            paramKeys,
+            role
+          );
+          if (permissions.includes(dynamicPermission)) {
+            return next();
+          }
+        } catch (error) {
+          if (
+            error instanceof Error &&
+            error.message.startsWith("Missing route param")
+          ) {
+            return next(new BadRequestError(error.message));
+          }
+          throw error;
         }
-
-        // key = "season_id" -> scope part = "season-<id>"
-        const scopePart = key.replace("_id", "") + "-" + value;
-        scopeParts.push(scopePart);
       }
 
-      const dynamicPermission = `${role}:${action}:${scopeParts.join(":")}`;
-
-      if (permissions.includes(dynamicPermission)) {
-        return next();
+      // Also check for direct permission scope: action:scope (e.g., "edit-registration:season-1:team-2")
+      // This format is used when users have AccountPermissionScopes without the corresponding role
+      try {
+        const directPermission = buildPermissionString(
+          action,
+          req.params,
+          paramKeys
+        );
+        if (permissions.includes(directPermission)) {
+          return next();
+        }
+      } catch (error) {
+        if (
+          error instanceof Error &&
+          error.message.startsWith("Missing route param")
+        ) {
+          return next(new BadRequestError(error.message));
+        }
+        throw error;
       }
     }
 
@@ -111,24 +137,49 @@ export function checkJWTPermissions({
     }
 
     // Build dynamic permission
-    if (role && action && paramKeys.length > 0) {
-      const scopeParts: string[] = [];
-
-      for (const key of paramKeys) {
-        const value = req.params[key];
-        if (!value) {
-          return next(new BadRequestError(`Missing route param: ${key}`));
+    if (action && paramKeys.length > 0) {
+      // Check for role-based permission: role:action:scope (e.g., "captain:edit-registration:season-1:team-2")
+      if (role) {
+        try {
+          const dynamicPermission = buildPermissionString(
+            action,
+            req.params,
+            paramKeys,
+            role
+          );
+          if (permissions.includes(dynamicPermission)) {
+            return next();
+          }
+        } catch (error) {
+          if (
+            error instanceof Error &&
+            error.message.startsWith("Missing route param")
+          ) {
+            return next(new BadRequestError(error.message));
+          }
+          throw error;
         }
-
-        // key = "season_id" -> scope part = "season-<id>"
-        const scopePart = key.replace("_id", "") + "-" + value;
-        scopeParts.push(scopePart);
       }
 
-      const dynamicPermission = `${role}:${action}:${scopeParts.join(":")}`;
-
-      if (permissions.includes(dynamicPermission)) {
-        return next();
+      // Also check for direct permission scope: action:scope (e.g., "edit-registration:season-1:team-2")
+      // This format is used when users have AccountPermissionScopes without the corresponding role
+      try {
+        const directPermission = buildPermissionString(
+          action,
+          req.params,
+          paramKeys
+        );
+        if (permissions.includes(directPermission)) {
+          return next();
+        }
+      } catch (error) {
+        if (
+          error instanceof Error &&
+          error.message.startsWith("Missing route param")
+        ) {
+          return next(new BadRequestError(error.message));
+        }
+        throw error;
       }
     }
 

@@ -18,12 +18,13 @@ const getDBPermissionsForAccountId = async (
   const permissionsResult = await runQuery<
     Array<{
       permission_name: Permission["permission_name"];
-      role_name: Role["role_name"];
+      role_name: Role["role_name"] | null;
       season_id: Season["id"];
       team_id: Team["id"];
     }>
   >(
     `
+    -- Get permissions from roles with their scopes
     SELECT DISTINCT r.role_name, p.permission_name, aps.season_id, aps.team_id
       FROM Accounts a
       JOIN AccountRoles ar ON ar.account_id = a.id
@@ -32,8 +33,21 @@ const getDBPermissionsForAccountId = async (
       JOIN Permissions p ON p.id = rp.permission_id
       LEFT JOIN AccountPermissionScopes aps ON aps.account_id = a.id AND aps.permission_id = p.id
       WHERE a.id = ?
+    
+    UNION
+    
+    -- Get permissions directly from AccountPermissionScopes (without requiring role)
+    -- Returns NULL for role_name to indicate this is a direct permission scope
+    SELECT DISTINCT 
+      NULL as role_name,
+      p.permission_name,
+      aps.season_id,
+      aps.team_id
+      FROM AccountPermissionScopes aps
+      JOIN Permissions p ON p.id = aps.permission_id
+      WHERE aps.account_id = ?
     `,
-    [accountId],
+    [accountId, accountId],
     connection
   );
   return permissionsResult;
@@ -49,10 +63,13 @@ export const getPermissionsForAccountId = async (
   );
 
   if (permissionsResult.length > 0) {
-    const permissions = permissionsResult.map(
-      (row) =>
-        `${row.role_name}:${row.permission_name}:season-${row.season_id}:team-${row.team_id}`
-    );
+    const permissions = permissionsResult.map((row) => {
+      // If role_name is null, it's a direct permission scope (no role required)
+      if (row.role_name === null) {
+        return `${row.permission_name}:season-${row.season_id}:team-${row.team_id}`;
+      }
+      return `${row.role_name}:${row.permission_name}:season-${row.season_id}:team-${row.team_id}`;
+    });
     return permissions;
   }
   return [];
