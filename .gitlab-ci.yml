@@ -193,6 +193,12 @@ lint-all:
   script:
     - npx turbo run lint --continue
 
+knip:
+  stage: lint
+  extends: [.prepare-pnpm, .mr-all-app]
+  script:
+    - pnpm knip
+
 format:check:
   stage: lint
   extends: [.prepare-pnpm, .mr-all-app]
