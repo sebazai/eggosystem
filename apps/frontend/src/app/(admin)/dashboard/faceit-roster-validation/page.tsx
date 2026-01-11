@@ -285,7 +285,7 @@ function FaceitRosterValidationContent() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {filteredValidation.summary.total_teams}
+                {filteredValidation.summary?.total_teams ?? 0}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
                 Across {filteredValidation.championships.length} championship
@@ -303,7 +303,7 @@ function FaceitRosterValidationContent() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-red-600">
-                {filteredValidation.summary.teams_with_issues}
+                {filteredValidation.summary?.teams_with_issues ?? 0}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
                 Teams with unregistered players
@@ -320,7 +320,7 @@ function FaceitRosterValidationContent() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-red-600">
-                {filteredValidation.summary.total_rule_violations}
+                {filteredValidation.summary?.total_rule_violations ?? 0}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
                 Players in FaceIt but NOT in HUB
@@ -337,7 +337,7 @@ function FaceitRosterValidationContent() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-blue-600">
-                {filteredValidation.summary.total_unplayable_players}
+                {filteredValidation.summary?.total_unplayable_players ?? 0}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
                 Players in HUB but NOT in FaceIt (informational)

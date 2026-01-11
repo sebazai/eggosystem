@@ -3,23 +3,9 @@
 import { useSteamPlayer } from "@/hooks/data/useSteamPlayer";
 import { AvatarUploadSection } from "./AvatarUploadSection";
 import { ContentContainer } from "../layout/ContentContainer";
-import { SteamLoginButton } from "./SteamLoginButton";
 
 export const AvatarSettings = ({ steamId }: { steamId: string }) => {
-  const { steamPlayer, isLoading, isError } = useSteamPlayer(steamId);
-
-  if (!steamId) {
-    return (
-      <ContentContainer classNames="flex-col space-y-4">
-        <div>Please log in to manage your avatar.</div>
-        <SteamLoginButton />
-      </ContentContainer>
-    );
-  }
-
-  if (isLoading) {
-    return <ContentContainer>Loading avatar...</ContentContainer>;
-  }
+  const { steamPlayer, isError } = useSteamPlayer(steamId);
 
   if (isError) {
     return (
