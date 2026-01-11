@@ -47,7 +47,7 @@ export interface SeasonFaceitRosterValidation {
   season_id: number;
   season_name: string;
   championships: ChampionshipValidationResult[];
-  summary: {
+  summary?: {
     total_teams: number;
     teams_with_issues: number;
     total_rule_violations: number;
