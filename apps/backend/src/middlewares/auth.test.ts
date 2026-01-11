@@ -91,6 +91,65 @@ describe("checkPermission middleware", () => {
     expect(res.status).not.toHaveBeenCalled();
   });
 
+  it("should allow if direct permission scope matches (no role prefix)", async () => {
+    req.params = { season_id: "1", team_id: "2" };
+    mockedGetPermissions.mockResolvedValue([
+      "edit-registration:season-1:team-2" // No role prefix
+    ]);
+    mockedGetRoles.mockResolvedValue([]);
+
+    const middleware = checkPermissions({
+      role: "captain",
+      action: "edit-registration",
+      paramKeys: ["season_id", "team_id"]
+    });
+
+    await middleware(req as Request, res as Response, next);
+
+    expect(next).toHaveBeenCalled();
+    expect(res.status).not.toHaveBeenCalled();
+  });
+
+  it("should allow direct permission scope when role param is not provided", async () => {
+    req.params = { season_id: "1", team_id: "2" };
+    mockedGetPermissions.mockResolvedValue([
+      "edit-registration:season-1:team-2" // Direct permission without role
+    ]);
+    mockedGetRoles.mockResolvedValue([]);
+
+    const middleware = checkPermissions({
+      // role is undefined/not provided
+      action: "edit-registration",
+      paramKeys: ["season_id", "team_id"]
+    });
+
+    await middleware(req as Request, res as Response, next);
+
+    expect(next).toHaveBeenCalled();
+    expect(res.status).not.toHaveBeenCalled();
+  });
+
+  it("should allow even if paramKeys are in different order (auto-sorts to canonical order)", async () => {
+    req.params = { season_id: "1", team_id: "2" };
+    mockedGetPermissions.mockResolvedValue([
+      "edit-registration:season-1:team-2" // Permission stored with season first
+    ]);
+    mockedGetRoles.mockResolvedValue([]);
+
+    const middleware = checkPermissions({
+      action: "edit-registration",
+      paramKeys: ["team_id", "season_id"] // Different order: team first!
+    });
+
+    await middleware(req as Request, res as Response, next);
+
+    // Should be ALLOWED because buildPermissionScope auto-sorts to canonical order
+    // ["team_id", "season_id"] gets sorted to ["season_id", "team_id"]
+    // which builds "edit-registration:season-1:team-2" (matches!)
+    expect(next).toHaveBeenCalled();
+    expect(res.status).not.toHaveBeenCalled();
+  });
+
   it("should return 400 if a required paramKey is missing", async () => {
     req.params = { season_id: "1" }; // team_id missing
     mockedGetPermissions.mockResolvedValue([]);
@@ -231,6 +290,77 @@ describe("checkJWTPermission middleware", () => {
 
     await middleware(req as Request, res as Response, next);
 
+    expect(next).toHaveBeenCalled();
+    expect(res.status).not.toHaveBeenCalled();
+  });
+
+  it("should allow if direct permission scope matches (no role prefix)", async () => {
+    req.params = { season_id: "1", team_id: "2" };
+    req.auth = {
+      account_id: 123,
+      provider_id: "",
+      permissions: ["edit-registration:season-1:team-2"], // No role prefix
+      roles: [],
+      nickname: "",
+      provider: "steam"
+    };
+
+    const middleware = checkJWTPermissions({
+      role: "captain",
+      action: "edit-registration",
+      paramKeys: ["season_id", "team_id"]
+    });
+
+    await middleware(req as Request, res as Response, next);
+
+    expect(next).toHaveBeenCalled();
+    expect(res.status).not.toHaveBeenCalled();
+  });
+
+  it("should allow direct permission scope when role param is not provided", async () => {
+    req.params = { season_id: "1", team_id: "2" };
+    req.auth = {
+      account_id: 123,
+      provider_id: "",
+      permissions: ["edit-registration:season-1:team-2"], // Direct permission without role
+      roles: [],
+      nickname: "",
+      provider: "steam"
+    };
+
+    const middleware = checkJWTPermissions({
+      // role is undefined/not provided
+      action: "edit-registration",
+      paramKeys: ["season_id", "team_id"]
+    });
+
+    await middleware(req as Request, res as Response, next);
+
+    expect(next).toHaveBeenCalled();
+    expect(res.status).not.toHaveBeenCalled();
+  });
+
+  it("should allow even if paramKeys are in different order (auto-sorts to canonical order)", async () => {
+    req.params = { season_id: "1", team_id: "2" };
+    req.auth = {
+      account_id: 123,
+      provider_id: "",
+      permissions: ["edit-registration:season-1:team-2"], // Permission stored with season first
+      roles: [],
+      nickname: "",
+      provider: "steam"
+    };
+
+    const middleware = checkJWTPermissions({
+      action: "edit-registration",
+      paramKeys: ["team_id", "season_id"] // Different order: team first!
+    });
+
+    await middleware(req as Request, res as Response, next);
+
+    // Should be ALLOWED because buildPermissionScope auto-sorts to canonical order
+    // ["team_id", "season_id"] gets sorted to ["season_id", "team_id"]
+    // which builds "edit-registration:season-1:team-2" (matches!)
     expect(next).toHaveBeenCalled();
     expect(res.status).not.toHaveBeenCalled();
   });

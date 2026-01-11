@@ -37,12 +37,9 @@ const getDBPermissionsForAccountId = async (
     UNION
     
     -- Get permissions directly from AccountPermissionScopes (without requiring role)
-    -- These use a synthetic role name matching the permission for compatibility
+    -- Returns NULL for role_name to indicate this is a direct permission scope
     SELECT DISTINCT 
-      CASE 
-        WHEN p.permission_name = 'edit-registration' THEN 'captain'
-        ELSE p.permission_name
-      END as role_name,
+      NULL as role_name,
       p.permission_name,
       aps.season_id,
       aps.team_id
@@ -66,10 +63,13 @@ export const getPermissionsForAccountId = async (
   );
 
   if (permissionsResult.length > 0) {
-    const permissions = permissionsResult.map(
-      (row) =>
-        `${row.role_name}:${row.permission_name}:season-${row.season_id}:team-${row.team_id}`
-    );
+    const permissions = permissionsResult.map((row) => {
+      // If role_name is null, it's a direct permission scope (no role required)
+      if (row.role_name === null) {
+        return `${row.permission_name}:season-${row.season_id}:team-${row.team_id}`;
+      }
+      return `${row.role_name}:${row.permission_name}:season-${row.season_id}:team-${row.team_id}`;
+    });
     return permissions;
   }
   return [];

@@ -108,9 +108,9 @@ describe("Auth Services - Permission System", () => {
       // Get permissions
       const permissions = await getPermissionsForAccountId(TEST_ACCOUNT_ID);
 
-      // Should have the permission in the format: captain:edit-registration:season-X:team-Y
+      // Should have the permission in the format: edit-registration:season-X:team-Y (no role prefix)
       expect(permissions).toContain(
-        `captain:edit-registration:season-${TEST_SEASON_ID}:team-${TEST_TEAM_ID}`
+        `edit-registration:season-${TEST_SEASON_ID}:team-${TEST_TEAM_ID}`
       );
     });
 
@@ -143,7 +143,7 @@ describe("Auth Services - Permission System", () => {
 
       // Should have the permission
       expect(permissions).toContain(
-        `captain:edit-registration:season-${TEST_SEASON_ID}:team-${TEST_TEAM_ID}`
+        `edit-registration:season-${TEST_SEASON_ID}:team-${TEST_TEAM_ID}`
       );
     });
 
@@ -192,10 +192,10 @@ describe("Auth Services - Permission System", () => {
 
       // Should have permissions for both teams
       expect(permissions).toContain(
-        `captain:edit-registration:season-${TEST_SEASON_ID}:team-${TEST_TEAM_ID}`
+        `edit-registration:season-${TEST_SEASON_ID}:team-${TEST_TEAM_ID}`
       );
       expect(permissions).toContain(
-        `captain:edit-registration:season-${TEST_SEASON_ID}:team-${TEST_TEAM_ID_2}`
+        `edit-registration:season-${TEST_SEASON_ID}:team-${TEST_TEAM_ID_2}`
       );
     });
   });
