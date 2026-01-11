@@ -1,16 +1,45 @@
 import {
   createMockAccount,
-  createMockUserPolicyAcceptance
+  createMockUserPolicyAcceptance,
+  type RequestWithParams
 } from "@eggosystem/types";
-import { updateAccountProfileController } from "./account.controllers";
+import {
+  updateAccountProfileController,
+  sendVerificationEmails
+} from "./account.controllers";
 import { getConnection } from "../db/mysqlConnection";
 import * as accountModels from "../models/account.models";
 import * as userPolicyAcceptanceModels from "../models/user-policy-acceptance.models";
+import * as accountServices from "../services/account.services";
+import { runQuery } from "../db/mysqlRunQuery";
+import { redisClient } from "../utils/redisClient";
+import { getSevenDaysLaterInMillis } from "../utils/date-utils";
 import type { Request, Response } from "express";
 import _ from "lodash";
+import * as uuid from "uuid";
 
 jest.mock("../db/mysqlConnection", () => ({
   getConnection: jest.fn()
+}));
+
+jest.mock("../db/mysqlRunQuery", () => ({
+  runQuery: jest.fn()
+}));
+
+jest.mock("../utils/redisClient", () => ({
+  redisClient: {
+    del: jest.fn()
+  }
+}));
+
+jest.mock("../services/account.services", () => ({
+  handleEmailVerification: jest.fn()
+}));
+
+jest.mock("uuid");
+
+jest.mock("../utils/date-utils", () => ({
+  getSevenDaysLaterInMillis: jest.fn()
 }));
 
 const mockedAccount = createMockAccount({
@@ -77,6 +106,9 @@ describe("updateProfile Controller", () => {
     jest
       .spyOn(userPolicyAcceptanceModels, "updateUserPolicyAcceptance")
       .mockResolvedValue(undefined);
+    (accountServices.handleEmailVerification as jest.Mock).mockResolvedValue(
+      undefined
+    );
   });
 
   it("should return 401 if user is not authenticated", async () => {
@@ -248,5 +280,306 @@ describe("updateProfile Controller", () => {
     expect(jsonMock).toHaveBeenCalledWith({
       message: "Profile updated successfully."
     });
+  });
+});
+
+describe("sendVerificationEmails Controller", () => {
+  let req: Partial<RequestWithParams<{ id: string }>>;
+  let res: Partial<Response>;
+  let jsonMock: jest.Mock;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let connection: any;
+  const futureDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const pastDate = new Date(Date.now() - 1 * 24 * 60 * 60 * 1000);
+  const sevenDaysLater = Date.now() + 7 * 24 * 60 * 60 * 1000;
+
+  beforeEach(() => {
+    jsonMock = jest.fn();
+
+    req = {
+      auth: {
+        account_id: 1,
+        provider_id: "12345",
+        permissions: [],
+        roles: [],
+        nickname: "testuser",
+        provider: "steam"
+      },
+      params: {
+        id: "1"
+      }
+    };
+
+    res = {
+      json: jsonMock
+    };
+
+    connection = {
+      beginTransaction: jest.fn(),
+      commit: jest.fn(),
+      rollback: jest.fn(),
+      release: jest.fn()
+    };
+
+    (getConnection as jest.Mock).mockResolvedValue(connection);
+    (getSevenDaysLaterInMillis as jest.Mock).mockReturnValue(sevenDaysLater);
+    (uuid.v4 as jest.Mock).mockReturnValue("new-token-456");
+    (runQuery as jest.Mock).mockResolvedValue(undefined);
+    (redisClient.del as jest.Mock).mockResolvedValue(1);
+    (accountServices.handleEmailVerification as jest.Mock).mockResolvedValue(
+      undefined
+    );
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("should return 401 if user is not authenticated", async () => {
+    req.auth = undefined;
+    const mockNext = jest.fn();
+
+    await sendVerificationEmails(
+      req as RequestWithParams<{ id: string }>,
+      res as Response,
+      mockNext
+    );
+
+    expect(mockNext).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: "Unauthorized",
+        status: 401
+      })
+    );
+  });
+
+  it("should return 401 if user tries to verify another account", async () => {
+    req.params = { id: "2" }; // Different account ID
+    const mockNext = jest.fn();
+
+    await sendVerificationEmails(
+      req as RequestWithParams<{ id: string }>,
+      res as Response,
+      mockNext
+    );
+
+    expect(mockNext).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: "Unauthorized",
+        status: 401
+      })
+    );
+  });
+
+  it("should reuse valid existing token when it has not expired", async () => {
+    const accountWithValidToken = createMockAccount({
+      id: 1,
+      work_email: "test@example.com",
+      work_email_verified: false,
+      work_email_token: "existing-valid-token",
+      work_email_token_expires_at: futureDate.toISOString()
+    });
+
+    jest
+      .spyOn(accountModels, "getAccountById")
+      .mockResolvedValue(accountWithValidToken);
+
+    const mockNext = jest.fn();
+    await sendVerificationEmails(
+      req as RequestWithParams<{ id: string }>,
+      res as Response,
+      mockNext
+    );
+
+    // Should NOT delete old token
+    expect(redisClient.del).not.toHaveBeenCalled();
+
+    // Should NOT generate new token
+    expect(uuid.v4).not.toHaveBeenCalled();
+
+    // Should NOT update database
+    expect(runQuery).not.toHaveBeenCalled();
+
+    // Should still send email with existing token
+    expect(accountServices.handleEmailVerification).toHaveBeenCalledWith(
+      1,
+      "test@example.com",
+      "existing-valid-token",
+      futureDate.getTime()
+    );
+
+    expect(connection.commit).toHaveBeenCalled();
+    expect(jsonMock).toHaveBeenCalledWith({
+      message: "New verification links sent"
+    });
+  });
+
+  it("should generate new token when existing token has expired", async () => {
+    const accountWithExpiredToken = createMockAccount({
+      id: 1,
+      work_email: "test@example.com",
+      work_email_verified: false,
+      work_email_token: "expired-token",
+      work_email_token_expires_at: pastDate.toISOString()
+    });
+
+    jest
+      .spyOn(accountModels, "getAccountById")
+      .mockResolvedValue(accountWithExpiredToken);
+
+    const mockNext = jest.fn();
+    await sendVerificationEmails(
+      req as RequestWithParams<{ id: string }>,
+      res as Response,
+      mockNext
+    );
+
+    // Should delete old token
+    expect(redisClient.del).toHaveBeenCalledWith(
+      "verify:work-email:expired-token"
+    );
+
+    // Should generate new token
+    expect(uuid.v4).toHaveBeenCalled();
+
+    // Should update database with new token
+    expect(runQuery).toHaveBeenCalledWith(
+      "UPDATE Accounts SET work_email_token = ?, work_email_token_expires_at = ? WHERE id = ?",
+      ["new-token-456", new Date(sevenDaysLater), 1],
+      connection
+    );
+
+    // Should send email with new token
+    expect(accountServices.handleEmailVerification).toHaveBeenCalledWith(
+      1,
+      "test@example.com",
+      "new-token-456",
+      sevenDaysLater
+    );
+
+    expect(connection.commit).toHaveBeenCalled();
+    expect(jsonMock).toHaveBeenCalledWith({
+      message: "New verification links sent"
+    });
+  });
+
+  it("should generate new token when no token exists", async () => {
+    const accountWithoutToken = createMockAccount({
+      id: 1,
+      work_email: "test@example.com",
+      work_email_verified: false,
+      work_email_token: null,
+      work_email_token_expires_at: null
+    });
+
+    jest
+      .spyOn(accountModels, "getAccountById")
+      .mockResolvedValue(accountWithoutToken);
+
+    const mockNext = jest.fn();
+    await sendVerificationEmails(
+      req as RequestWithParams<{ id: string }>,
+      res as Response,
+      mockNext
+    );
+
+    // Should NOT try to delete non-existent token
+    expect(redisClient.del).not.toHaveBeenCalled();
+
+    // Should generate new token
+    expect(uuid.v4).toHaveBeenCalled();
+
+    // Should update database with new token
+    expect(runQuery).toHaveBeenCalledWith(
+      "UPDATE Accounts SET work_email_token = ?, work_email_token_expires_at = ? WHERE id = ?",
+      ["new-token-456", new Date(sevenDaysLater), 1],
+      connection
+    );
+
+    // Should send email with new token
+    expect(accountServices.handleEmailVerification).toHaveBeenCalledWith(
+      1,
+      "test@example.com",
+      "new-token-456",
+      sevenDaysLater
+    );
+
+    expect(connection.commit).toHaveBeenCalled();
+    expect(jsonMock).toHaveBeenCalledWith({
+      message: "New verification links sent"
+    });
+  });
+
+  it("should throw error if email is already verified", async () => {
+    const verifiedAccount = createMockAccount({
+      id: 1,
+      work_email: "test@example.com",
+      work_email_verified: true,
+      work_email_token: null,
+      work_email_token_expires_at: null
+    });
+
+    jest
+      .spyOn(accountModels, "getAccountById")
+      .mockResolvedValue(verifiedAccount);
+
+    const mockNext = jest.fn();
+
+    await expect(
+      sendVerificationEmails(
+        req as RequestWithParams<{ id: string }>,
+        res as Response,
+        mockNext
+      )
+    ).rejects.toThrow("Account already verified");
+
+    expect(connection.rollback).toHaveBeenCalled();
+    expect(connection.release).toHaveBeenCalled();
+  });
+
+  it("should throw error if work email is not set", async () => {
+    const accountWithoutEmail = createMockAccount({
+      id: 1,
+      work_email: null,
+      work_email_verified: false,
+      work_email_token: null,
+      work_email_token_expires_at: null
+    });
+
+    jest
+      .spyOn(accountModels, "getAccountById")
+      .mockResolvedValue(accountWithoutEmail);
+
+    const mockNext = jest.fn();
+
+    await expect(
+      sendVerificationEmails(
+        req as RequestWithParams<{ id: string }>,
+        res as Response,
+        mockNext
+      )
+    ).rejects.toThrow("Work email not found");
+
+    expect(connection.rollback).toHaveBeenCalled();
+    expect(connection.release).toHaveBeenCalled();
+  });
+
+  it("should rollback transaction on error", async () => {
+    jest
+      .spyOn(accountModels, "getAccountById")
+      .mockRejectedValue(new Error("Database error"));
+
+    const mockNext = jest.fn();
+
+    await expect(
+      sendVerificationEmails(
+        req as RequestWithParams<{ id: string }>,
+        res as Response,
+        mockNext
+      )
+    ).rejects.toThrow("Database error");
+
+    expect(connection.rollback).toHaveBeenCalled();
+    expect(connection.release).toHaveBeenCalled();
   });
 });

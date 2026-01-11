@@ -161,6 +161,12 @@ const data: { navMain: Array<MenuItem> } = {
       url: createDashboardNextUrl("redis"),
       requiredRoles: ["admin"],
       items: [] satisfies Array<SubMenuItem>
+    },
+    {
+      title: "Email Verification",
+      url: createDashboardNextUrl("email-verification"),
+      requiredRoles: ["admin", "helpdesk"],
+      items: [] satisfies Array<SubMenuItem>
     }
   ]
 };

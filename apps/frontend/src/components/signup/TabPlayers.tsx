@@ -53,7 +53,6 @@ import { TooltipIcon } from "../ui/icons";
 import Link from "next/link";
 import { ConfirmationModal } from "../ui/ConfirmationModal";
 import { RosterImportModal } from "./RosterImportModal";
-import { Upload } from "lucide-react";
 
 interface TabPlayersProps {
   control: Control<SignupFormValues>;
@@ -745,8 +744,7 @@ export const TabPlayers = ({
               onClick={() => setShowRosterImportModal(true)}
               data-testid="roster-import-button"
             >
-              <Upload className="h-4 w-4 mr-2" />
-              Import from previous season
+              Import roster
             </Button>
           )}
         </div>

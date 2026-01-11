@@ -3,7 +3,7 @@ ENV TBLS_VERSION=1.86.1
 WORKDIR /workspace
 
 RUN npm install -g typescript
-RUN npm install -g pnpm@10.25.0
+RUN npm install -g pnpm@10.27.0
 
 # Install tbls (database documentation tool)
 RUN ARCH=$(dpkg --print-architecture) && \
