@@ -684,50 +684,50 @@ export const getChampionshipTeamsWithMembers = async (
   const subscriptions =
     await getAllFaceITChampionshipSubscriptions(championship_id);
 
-  const teams: ChampionshipTeamWithMembers[] = [];
+  const teams = await Promise.all(
+    subscriptions.items.map(async (subscription) => {
+      logger.info(
+        `[FaceIT] Processing team: ${subscription.team.name} with ${subscription.team.members.length} members`
+      );
 
-  for (const subscription of subscriptions.items) {
-    const teamMembers: ChampionshipTeamMember[] = [];
+      // Get player details for each team member concurrently
+      const teamMembers = await Promise.all(
+        subscription.team.members.map(async (member) => {
+          const playerDetails = await getFaceitPlayerDetails(member.user_id);
 
-    logger.info(
-      `[FaceIT] Processing team: ${subscription.team.name} with ${subscription.team.members.length} members`
-    );
+          if (playerDetails?.games?.cs2) {
+            logger.info(
+              `[FaceIT] ✅ Got player details: ${playerDetails.nickname} (Steam ID: ${playerDetails.games.cs2.game_player_id})`
+            );
+            return {
+              faceit_user_id: member.user_id,
+              nickname: playerDetails.nickname,
+              steam_id: playerDetails.games.cs2.game_player_id || null
+            };
+          } else {
+            logger.warn(
+              `[FaceIT] ❌ Failed to get CS2 Steam ID for: ${member.nickname} (${member.user_id})`
+            );
+            return {
+              faceit_user_id: member.user_id,
+              nickname: member.nickname,
+              steam_id: null
+            };
+          }
+        })
+      );
 
-    // Get player details for each team member
-    for (const member of subscription.team.members) {
-      const playerDetails = await getFaceitPlayerDetails(member.user_id);
+      logger.info(
+        `[FaceIT] Team ${subscription.team.name} final member count: ${teamMembers.length}/${subscription.team.members.length}`
+      );
 
-      if (playerDetails?.games?.cs2) {
-        teamMembers.push({
-          faceit_user_id: member.user_id,
-          nickname: playerDetails.nickname,
-          steam_id: playerDetails.games.cs2.game_player_id || null
-        });
-        logger.info(
-          `[FaceIT] ✅ Got player details: ${playerDetails.nickname} (Steam ID: ${playerDetails.games.cs2.game_player_id})`
-        );
-      } else {
-        logger.warn(
-          `[FaceIT] ❌ Failed to get CS2 Steam ID for: ${member.nickname} (${member.user_id})`
-        );
-        teamMembers.push({
-          faceit_user_id: member.user_id,
-          nickname: member.nickname,
-          steam_id: null
-        });
-      }
-    }
-
-    logger.info(
-      `[FaceIT] Team ${subscription.team.name} final member count: ${teamMembers.length}/${subscription.team.members.length}`
-    );
-
-    teams.push({
-      team_id: subscription.team.team_id,
-      team_name: subscription.team.name,
-      members: teamMembers
-    });
-  }
+      return {
+        team_id: subscription.team.team_id,
+        team_name: subscription.team.name,
+        members: teamMembers
+      };
+    })
+  );
 
   return teams;
 };
