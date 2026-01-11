@@ -48,8 +48,7 @@ function EmailVerificationContent() {
     accountData,
     isLoading: isLookingUp,
     error: lookupError,
-    lookupAccount,
-    clearResults
+    lookupAccount
   } = useLookupAccount();
 
   const {
@@ -85,7 +84,7 @@ function EmailVerificationContent() {
         lookupValue.trim(),
         lookupType as "steam_id" | "account_id" | "nickname" | "email"
       );
-    } catch (err) {
+    } catch (_err) {
       toast.error(
         regenerateError || "Failed to regenerate token. Please try again."
       );
