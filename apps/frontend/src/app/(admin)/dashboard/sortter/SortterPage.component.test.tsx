@@ -396,10 +396,10 @@ describe("SortterPage Component Tests", () => {
       team_name: "Test Team 1",
       team_logo: "logo1.png",
       league_name: "Test League",
-      top5_sum: 1000,
+      top5_sum: 1700,
       top5_values: [350, 345, 340, 335, 330],
-      avg4: 342.5,
-      orig4: 342.5,
+      avg5: 340,
+      orig5: 340,
       is_flagged: false,
       comments: "Test comment 1"
     },
@@ -408,10 +408,10 @@ describe("SortterPage Component Tests", () => {
       team_name: "Test Team 2",
       team_logo: "logo2.png",
       league_name: "Test League",
-      top5_sum: 1200,
-      top5_values: [340, 335, 330, 325, 320],
-      avg4: 332.5,
-      orig4: 332.5,
+      top5_sum: 1630,
+      top5_values: [340, 335, 330, 325, 300],
+      avg5: 326,
+      orig5: 326,
       is_flagged: true,
       comments: "Test comment 2"
     },
@@ -420,10 +420,10 @@ describe("SortterPage Component Tests", () => {
       team_name: "Test Team 3",
       team_logo: "logo3.png",
       league_name: "Test League",
-      top5_sum: 800,
+      top5_sum: 1550,
       top5_values: [320, 315, 310, 305, 300],
-      avg4: 312.5,
-      orig4: 312.5,
+      avg5: 310,
+      orig5: 310,
       is_flagged: false,
       comments: ""
     }
@@ -566,7 +566,7 @@ describe("SortterPage Component Tests", () => {
       expect(screen.getByText("ID")).toBeInTheDocument();
       expect(screen.getByText("Team")).toBeInTheDocument();
       expect(
-        screen.getByText("kanaelo (sum 5 / avg4 / orig4)")
+        screen.getByText("kanaelo (sum 5 / avg5 / orig5)")
       ).toBeInTheDocument();
       expect(screen.getByText("Division")).toBeInTheDocument();
       expect(screen.getByText("Graph (0-350)")).toBeInTheDocument();
@@ -962,9 +962,9 @@ describe("SortterPage Component Tests", () => {
     it("should display team kanaelo values correctly", () => {
       render(<SortterPage />);
 
-      // Check that the kanaelo values are displayed (sum, avg4, orig4)
-      expect(screen.getByText("1700 / 342.500 / 342.500")).toBeInTheDocument(); // Team 1
-      expect(screen.getByText("1650 / 332.500 / 332.500")).toBeInTheDocument(); // Team 2
+      // Check that the kanaelo values are displayed (sum, avg5, orig5)
+      expect(screen.getByText("1700 / 340.000 / 340.000")).toBeInTheDocument(); // Team 1
+      expect(screen.getByText("1630 / 326.000 / 326.000")).toBeInTheDocument(); // Team 2
     });
 
     it("should display flagged teams with alert icon", () => {

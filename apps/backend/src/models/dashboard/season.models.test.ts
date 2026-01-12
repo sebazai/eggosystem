@@ -60,8 +60,8 @@ describe("Season Models", () => {
         {
           team_id: 1,
           team_name: "Team 1",
-          current_top3_avg: 1500,
-          current_top4_avg: 1450
+          current_top4_avg: 1450,
+          current_top5_avg: 1500
         }
       ]);
 
@@ -69,7 +69,7 @@ describe("Season Models", () => {
         {
           team_id: 2,
           team_name: "Top Team",
-          avg4: 1800,
+          avg5: 1800,
           rank: 1
         }
       ]);
@@ -155,8 +155,8 @@ describe("Season Models", () => {
         {
           team_id: 2053,
           team_name: "Team X",
-          current_top3_avg: 1500,
-          current_top4_avg: 1450
+          current_top4_avg: 1450,
+          current_top5_avg: 1500
         }
       ]);
 
@@ -164,7 +164,7 @@ describe("Season Models", () => {
         {
           team_id: 1,
           team_name: "Top Team",
-          avg4: 1500,
+          avg5: 1500,
           rank: 1
         }
       ]);
@@ -324,8 +324,8 @@ describe("Season Models", () => {
         {
           team_id: 1,
           team_name: "Team 1",
-          current_top3_avg: 1500,
-          current_top4_avg: 1450
+          current_top4_avg: 1450,
+          current_top5_avg: 1500
         }
       ]);
 
@@ -333,7 +333,7 @@ describe("Season Models", () => {
         {
           team_id: 2,
           team_name: "Top Team",
-          avg4: 1800,
+          avg5: 1800,
           rank: 1
         }
       ]);
@@ -386,8 +386,8 @@ describe("Season Models", () => {
         {
           team_id: 1,
           team_name: "Team 1",
-          current_top3_avg: 1500,
-          current_top4_avg: 1450
+          current_top4_avg: 1450,
+          current_top5_avg: 1500
         }
       ]);
 
@@ -395,7 +395,7 @@ describe("Season Models", () => {
         {
           team_id: 2,
           team_name: "Top Team",
-          avg4: 1800,
+          avg5: 1800,
           rank: 1
         }
       ]);

@@ -68,12 +68,24 @@ export const ListRegistrationDrafts = () => {
         cell: ({ row }) => {
           const draft = row.original;
           const captain = draft.players?.find(
-            (p: { captain?: boolean; nickname?: string }) => p.captain
+            (p: {
+              captain?: boolean;
+              nickname?: string;
+              discord?: string | null;
+            }) => p.captain
           );
+          if (!captain) {
+            return <span className="text-muted-foreground">-</span>;
+          }
           return (
-            captain?.nickname || (
-              <span className="text-muted-foreground">-</span>
-            )
+            <span>
+              {captain.discord || captain.nickname}
+              {captain.discord && (
+                <span className="text-muted-foreground ml-1 text-xs">
+                  ({captain.nickname})
+                </span>
+              )}
+            </span>
           );
         },
         meta: {
@@ -88,12 +100,24 @@ export const ListRegistrationDrafts = () => {
         cell: ({ row }) => {
           const draft = row.original;
           const coCaptain = draft.players?.find(
-            (p: { coCaptain?: boolean; nickname?: string }) => p.coCaptain
+            (p: {
+              coCaptain?: boolean;
+              nickname?: string;
+              discord?: string | null;
+            }) => p.coCaptain
           );
+          if (!coCaptain) {
+            return <span className="text-muted-foreground">-</span>;
+          }
           return (
-            coCaptain?.nickname || (
-              <span className="text-muted-foreground">-</span>
-            )
+            <span>
+              {coCaptain.discord || coCaptain.nickname}
+              {coCaptain.discord && (
+                <span className="text-muted-foreground ml-1 text-xs">
+                  ({coCaptain.nickname})
+                </span>
+              )}
+            </span>
           );
         },
         meta: {
@@ -229,7 +253,12 @@ const TeamNameCell = ({ draft }: { draft: RegistrationDraftRaw }) => {
 const PlayerCard = ({
   player
 }: {
-  player: { accountId: number; steamId: string; nickname: string };
+  player: {
+    accountId: number;
+    steamId: string;
+    nickname: string;
+    discord?: string | null;
+  };
 }) => {
   // Get active season (CS2 app ID is 730)
   const { signupOrActiveSeason } = useActiveSignupOrActiveSeasonForApp(730);
@@ -250,7 +279,12 @@ const PlayerCard = ({
   return (
     <div className="flex flex-col gap-1 p-3 bg-background rounded border border-border min-w-[180px] max-w-full md:max-w-xs shadow-sm">
       <span className="font-semibold text-foreground break-words">
-        {player.nickname}
+        {player.discord || player.nickname}
+        {player.discord && (
+          <span className="text-muted-foreground ml-1 text-xs block">
+            ({player.nickname})
+          </span>
+        )}
       </span>
       <span className="text-[0.65rem] text-muted-foreground flex items-center gap-2 flex-wrap">
         <a

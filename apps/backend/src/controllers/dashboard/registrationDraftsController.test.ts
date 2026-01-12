@@ -1,10 +1,16 @@
 import { getAllRegistrationDraftsController } from "./registration.controllers";
 import { redisClient } from "../../utils/redisClient";
 import type { Request, Response } from "express";
+import { getDiscordUsernameByAccountId } from "../../models/discord.models";
 
 jest.mock("../../utils/redisClient");
+jest.mock("../../models/discord.models");
 
 const mockRedisClient = redisClient as jest.Mocked<typeof redisClient>;
+const mockGetDiscordUsernameByAccountId =
+  getDiscordUsernameByAccountId as jest.MockedFunction<
+    typeof getDiscordUsernameByAccountId
+  >;
 
 describe("getAllRegistrationDraftsController", () => {
   it("returns an empty array if no drafts exist", async () => {
@@ -17,6 +23,7 @@ describe("getAllRegistrationDraftsController", () => {
     await getAllRegistrationDraftsController(req, res);
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith([]);
+    expect(mockGetDiscordUsernameByAccountId).not.toHaveBeenCalled();
   });
 
   it("returns parsed drafts from redis", async () => {
@@ -35,6 +42,13 @@ describe("getAllRegistrationDraftsController", () => {
         players: [{ accountId: 2, steamId: "s2", nickname: "B" }]
       })
     ]);
+    mockGetDiscordUsernameByAccountId.mockImplementation(
+      async (accountId: number) => {
+        if (accountId === 1) return "discord_user_1";
+        if (accountId === 2) return "discord_user_2";
+        return null;
+      }
+    );
     const req = {} as Request;
     const res = {
       status: jest.fn().mockReturnThis(),
@@ -51,7 +65,8 @@ describe("getAllRegistrationDraftsController", () => {
           expect.objectContaining({
             accountId: 1,
             steamId: "s1",
-            nickname: "A"
+            nickname: "A",
+            discord: "discord_user_1"
           })
         ]
       }),
@@ -63,7 +78,8 @@ describe("getAllRegistrationDraftsController", () => {
           expect.objectContaining({
             accountId: 2,
             steamId: "s2",
-            nickname: "B"
+            nickname: "B",
+            discord: "discord_user_2"
           })
         ]
       })
@@ -81,6 +97,7 @@ describe("getAllRegistrationDraftsController", () => {
         extraKey: "should not be here"
       })
     ]);
+    mockGetDiscordUsernameByAccountId.mockResolvedValue(null);
     const req = {} as Request;
     const res = {
       status: jest.fn().mockReturnThis(),

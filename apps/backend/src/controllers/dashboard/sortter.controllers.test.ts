@@ -44,8 +44,8 @@ describe("Sortter Controllers", () => {
             team_logo: "logo1.png",
             league_name: "League 1",
             top5_sum: 100,
-            avg4: 25,
-            orig4: 25,
+            avg5: 20,
+            orig5: 20,
             top5_values: [20, 20, 20, 20, 20],
             top5_offered_values: [20, 20, 20, 20, 20],
             is_flagged: false
@@ -79,8 +79,8 @@ describe("Sortter Controllers", () => {
             team_logo: "logo1.png",
             league_name: "League 1",
             top5_sum: 100,
-            avg4: 25,
-            orig4: 25,
+            avg5: 20,
+            orig5: 20,
             top5_values: [20, 20, 20, 20, 20],
             top5_offered_values: [20, 20, 20, 20, 20],
             is_flagged: false
@@ -118,8 +118,8 @@ describe("Sortter Controllers", () => {
             team_logo: "logo1.png",
             league_name: "League 1",
             top5_sum: 100,
-            avg4: 25,
-            orig4: 25,
+            avg5: 20,
+            orig5: 20,
             top5_values: [20, 20, 20, 20, 20],
             top5_offered_values: [20, 20, 20, 20, 20],
             is_flagged: false

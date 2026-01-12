@@ -95,7 +95,7 @@ export const getPreliminaryPlacementsController = async (
         team_name: team.team_name,
         division: team.tier,
         comments: "",
-        original_avg: teamValues?.avg4 || 0,
+        original_avg: teamValues?.avg5 || 0,
         original_position: 0 // Not relevant for historical data
       };
     });
@@ -144,7 +144,7 @@ export const getPreliminaryPlacementsController = async (
 
   // CRITICAL FIX: Check if teams have valid kana_elo data before generating placements
   const teamsWithValidKanaElo = teams.filter(
-    (team) => team.avg4 !== null && team.avg4 !== undefined && !isNaN(team.avg4)
+    (team) => team.avg5 !== null && team.avg5 !== undefined && !isNaN(team.avg5)
   );
 
   if (teamsWithValidKanaElo.length === 0) {

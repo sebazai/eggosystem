@@ -86,6 +86,8 @@ interface RegisteredTeamQueryResult extends SeasonTeamRegistration {
   season_id: number;
   captain_nickname: string;
   co_captain_nickname: string;
+  captain_discord: string | null;
+  co_captain_discord: string | null;
 }
 
 export const getRegisteredTeams = async (seasonId: number) => {
@@ -98,6 +100,8 @@ export const getRegisteredTeams = async (seasonId: number) => {
       s.id as season_id,
       MAX(CASE WHEN stp.is_captain = 1 THEN sp.nickname END) as captain_nickname,
       MAX(CASE WHEN stp.is_co_captain = 1 THEN sp.nickname END) as co_captain_nickname,
+      MAX(CASE WHEN stp.is_captain = 1 THEN la.provider_username END) as captain_discord,
+      MAX(CASE WHEN stp.is_co_captain = 1 THEN la.provider_username END) as co_captain_discord,
       JSON_ARRAYAGG(
         JSON_OBJECT(
           'steam_id', sp.steam_id,
@@ -113,6 +117,7 @@ export const getRegisteredTeams = async (seasonId: number) => {
       JOIN Seasons s ON str.season_id = s.id
       JOIN SteamPlayers sp ON stp.steam_id = sp.steam_id
       JOIN Accounts a ON sp.account_id = a.id
+      LEFT JOIN LinkedAccounts la ON a.id = la.account_id AND la.provider = 'discord'
     WHERE str.season_id = ?
     GROUP BY str.team_id, t.name, str.season_id
   `;

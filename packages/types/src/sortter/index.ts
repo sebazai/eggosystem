@@ -9,10 +9,10 @@ export interface TeamSortterValues {
   league_name: string;
   /** Sum of kanaelo for top 5 players */
   top5_sum: number;
-  /** Average of kanaelo for top 4 players */
-  avg4: number;
-  /** Average of original/offered kanaelo for top 4 players (before stabilization) */
-  orig4: number | null;
+  /** Average of kanaelo for top N players (configurable via TOP_N_FOR_COMPARISON) */
+  avg5: number;
+  /** Average of original/offered kanaelo for top N players (before stabilization) */
+  orig5: number | null;
   /** Kanaelo values for top 5 players as an array */
   top5_values: number[];
   /** Original/offered kanaelo values for top 5 players as an array (before stabilization) */

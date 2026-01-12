@@ -16,6 +16,8 @@ export interface SeasonRegisteredTeamsWithPlayers extends SeasonTeamRegistration
   team_name: Team["name"];
   captain_nickname: string;
   co_captain_nickname: string;
+  captain_discord: string | null;
+  co_captain_discord: string | null;
   season_platform: Season["platform"];
   players: RegisteredTeamPlayer[];
 }
