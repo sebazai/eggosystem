@@ -34,7 +34,9 @@ describe("ListRegisteredTeams", () => {
       external_platform_id: "team123",
       season_platform: SeasonPlatform.Kanaliiga,
       captain_nickname: "Captain1",
+      captain_discord: "captain_discord#1234",
       co_captain_nickname: "CoCaptain1",
+      co_captain_discord: null,
       approved_by: null,
       manual_validity_check_override: false,
       manual_validity_check_by: null,
@@ -59,7 +61,9 @@ describe("ListRegisteredTeams", () => {
       external_platform_id: null,
       season_platform: SeasonPlatform.FACEIT,
       captain_nickname: "Captain2",
+      captain_discord: null,
       co_captain_nickname: null,
+      co_captain_discord: null,
       approved_by: null,
       manual_validity_check_override: false,
       manual_validity_check_by: null,
@@ -277,7 +281,10 @@ describe("ListRegisteredTeams", () => {
       // Should show team leadership
       expect(screen.getByText("Team Leadership")).toBeInTheDocument();
       expect(screen.getByText("Captain:")).toBeInTheDocument();
-      expect(screen.getByText("Captain1")).toBeInTheDocument();
+      // First team has discord username, so it shows that instead of nickname
+      expect(screen.getByText("captain_discord#1234")).toBeInTheDocument();
+      // Nickname should be shown in parentheses
+      expect(screen.getByText("(Captain1)")).toBeInTheDocument();
     });
 
     it("should expand all rows when 'Expand All' button is clicked", () => {
@@ -293,7 +300,9 @@ describe("ListRegisteredTeams", () => {
       // Should show expanded content for all teams
       expect(screen.getAllByText("Team Leadership")).toHaveLength(2);
       expect(screen.getAllByText("Players")).toHaveLength(2);
-      expect(screen.getByText("Captain1")).toBeInTheDocument();
+      // First team has discord username
+      expect(screen.getByText("captain_discord#1234")).toBeInTheDocument();
+      // Second team has no discord, so shows nickname
       expect(screen.getByText("Captain2")).toBeInTheDocument();
     });
 
