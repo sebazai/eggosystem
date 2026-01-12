@@ -2,6 +2,7 @@ import { type Request, type Response, type NextFunction } from "express";
 import { BaseError } from "../utils/errors";
 import { logger } from "../utils/app-logger";
 import { ZodError } from "zod";
+import { convertDatabaseErrorToConflictError } from "../utils/database-errors";
 
 interface UnauthorizedErrorLike {
   name: string;
@@ -104,10 +105,42 @@ export const expressErrorHandler = (
       return;
     }
 
+    // Check for database duplicate entry or trigger errors
+    const conflictError = convertDatabaseErrorToConflictError(err);
+    if (conflictError) {
+      const problem = buildProblem(
+        conflictError.status,
+        conflictError.message,
+        req.originalUrl,
+        conflictError.title
+      );
+      res
+        .status(conflictError.status)
+        .type("application/problem+json")
+        .json(problem);
+      return;
+    }
+
     // Check if the error has a status property
     const status = (err as Error & { status?: number }).status || 400;
     const problem = buildProblem(status, err.message, req.originalUrl);
     res.status(status).type("application/problem+json").json(problem);
+    return;
+  }
+
+  // Check for database errors even if not an Error instance (unlikely but possible)
+  const conflictError = convertDatabaseErrorToConflictError(err);
+  if (conflictError) {
+    const problem = buildProblem(
+      conflictError.status,
+      conflictError.message,
+      req.originalUrl,
+      conflictError.title
+    );
+    res
+      .status(conflictError.status)
+      .type("application/problem+json")
+      .json(problem);
     return;
   }
 

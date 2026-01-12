@@ -11,25 +11,11 @@ export const registerPlayerForKanahautomo = async (
   acceptedTerms: boolean = false,
   connection?: PoolConnection
 ) => {
-  try {
-    return await runQuery<{ insertId: number }>(
-      "INSERT INTO KanahautomoRegistrations (steam_id, organization_id, accepted_terms) VALUES (?, ?, ?)",
-      [steamId, organizationId, acceptedTerms],
-      connection
-    );
-  } catch (error: unknown) {
-    if (
-      error &&
-      typeof error === "object" &&
-      "code" in error &&
-      (error as { code?: string }).code === "ER_DUP_ENTRY"
-    ) {
-      throw new Error(
-        `Player ${steamId} is already registered for Kanahautomo in organization ${organizationId}`
-      );
-    }
-    throw error;
-  }
+  return await runQuery<{ insertId: number }>(
+    "INSERT INTO KanahautomoRegistrations (steam_id, organization_id, accepted_terms) VALUES (?, ?, ?)",
+    [steamId, organizationId, acceptedTerms],
+    connection
+  );
 };
 
 export const insertKanahautomoGameTypes = async (

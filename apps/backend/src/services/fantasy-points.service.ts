@@ -3,6 +3,7 @@ import { getConnection } from "../db/mysqlConnection";
 import type { PoolConnection } from "mysql2/promise";
 import type { PlayerRole } from "../models/fantasy.models";
 import { logger } from "../utils/app-logger";
+import { isErDupEntry } from "../utils/database-errors";
 import {
   calculateValueChangeFromMatch,
   calculatePlayerTier,
@@ -584,18 +585,14 @@ const storeGlobalPlayerPoints = async (
     );
   } catch (error: unknown) {
     // Handle race condition: if another process already logged points for this match
-    if (
-      error &&
-      typeof error === "object" &&
-      "code" in error &&
-      (error as { code?: string }).code === "ER_DUP_ENTRY"
-    ) {
+    // We check for ER_DUP_ENTRY to detect this race condition and skip gracefully
+    // Other duplicate entry errors will be handled by the Express error handler middleware
+    if (isErDupEntry(error)) {
       logger.info(
-        `Global points already logged for player ${steamId} in match ${matchGameId}`
+        `Global points already logged for player ${steamId} in match ${matchGameId} (race condition handled)`
       );
       return;
     }
-    // Re-throw other errors
     throw error;
   }
 };
@@ -728,19 +725,16 @@ export const calculateFantasyPointsForGame = async (
           );
         } catch (error: unknown) {
           // Handle race condition: if another process already logged points for this match
-          if (
-            error &&
-            typeof error === "object" &&
-            "code" in error &&
-            (error as { code?: string }).code === "ER_DUP_ENTRY"
-          ) {
+          // We check for ER_DUP_ENTRY to detect this race condition and skip gracefully
+          // Other duplicate entry errors will be handled by the Express error handler middleware
+          if (isErDupEntry(error)) {
             logger.info(
-              `Points already logged for player ${fantasyPlayer.fantasy_team_player_id} in match ${matchGameId}`
+              `Points already logged for player ${fantasyPlayer.fantasy_team_player_id} in match ${matchGameId} (race condition handled)`
             );
             // Skip processing - points were already logged by another process
             continue;
           }
-          // Re-throw other errors
+          // Re-throw other errors to be handled by middleware
           throw error;
         }
 
