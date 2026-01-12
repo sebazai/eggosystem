@@ -289,6 +289,10 @@ apps/frontend/src/
 - `pnpm test` - Unit tests
 - `pnpm test:e2e` - E2E tests
 
+**Additional checks to run occasionally:**
+
+- `pnpm knip` - Detect unused exports, dependencies, and dead code
+
 ## 🔗 Related Documentation
 
 - [Database Schema](README.database.md)
