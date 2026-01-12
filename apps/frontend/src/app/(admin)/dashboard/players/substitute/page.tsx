@@ -615,13 +615,13 @@ export default function AddSubstitutePlayerPage() {
                     {eligibilityResult.selectedTeam.team_name}
                   </h3>
                   <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div>Current Top 3 Avg:</div>
-                    <div className="font-mono">
-                      {eligibilityResult.selectedTeam.current_top3_avg}
-                    </div>
                     <div>Current Top 4 Avg:</div>
                     <div className="font-mono">
                       {eligibilityResult.selectedTeam.current_top4_avg}
+                    </div>
+                    <div>Current Top 5 Avg:</div>
+                    <div className="font-mono">
+                      {eligibilityResult.selectedTeam.current_top5_avg}
                     </div>
                     <div>New Player Kana ELO:</div>
                     <div className="font-mono">
@@ -655,7 +655,7 @@ export default function AddSubstitutePlayerPage() {
                           <span>
                             #{idx + 1} {team.team_name}
                           </span>
-                          <span className="font-mono">{team.avg4}</span>
+                          <span className="font-mono">{team.avg5}</span>
                         </div>
                       ))}
                     </div>
@@ -677,7 +677,7 @@ export default function AddSubstitutePlayerPage() {
                         Player cannot be added. New team average (
                         {eligibilityResult.selectedTeam.new_avg_with_player})
                         would exceed the top team&apos;s average (
-                        {eligibilityResult.topTeamsInLeague[0]?.avg4}).
+                        {eligibilityResult.topTeamsInLeague[0]?.avg5}).
                       </AlertDescription>
                     </Alert>
                   )}

@@ -41,8 +41,8 @@ describe("Sortter Models", () => {
           team_logo: "logo.png",
           league_name: "Test League",
           top5_sum: 1000,
-          avg4: 250,
-          orig4: null,
+          avg5: 200,
+          orig5: null,
           top5_values: "[100, 200, 300, 400, 500]",
           top5_offered_values: "[null, null, null, null, null]"
         }
@@ -59,8 +59,8 @@ describe("Sortter Models", () => {
           team_logo: "logo.png",
           league_name: "Test League",
           top5_sum: 1000,
-          avg4: 250,
-          orig4: null,
+          avg5: 200,
+          orig5: null,
           top5_values: [100, 200, 300, 400, 500],
           top5_offered_values: [null, null, null, null, null],
           is_flagged: false
@@ -84,8 +84,8 @@ describe("Sortter Models", () => {
           team_logo: "logo.png",
           league_name: "Test League",
           top5_sum: 1000,
-          avg4: 250,
-          orig4: null,
+          avg5: 200,
+          orig5: null,
           top5_values: "[100, 200, 300, 400, 500]",
           top5_offered_values: "[null, null, null, null, null]"
         }
@@ -107,8 +107,8 @@ describe("Sortter Models", () => {
           team_logo: "logo.png",
           league_name: "Test League",
           top5_sum: 1000,
-          avg4: 250,
-          orig4: null,
+          avg5: 200,
+          orig5: null,
           top5_values: "[100, 200, 300, 400, 500]",
           top5_offered_values: "[null, null, null, null, null]"
         }
@@ -132,8 +132,8 @@ describe("Sortter Models", () => {
           team_logo: "logo1.png",
           league_name: "League 1",
           top5_sum: 500,
-          avg4: 100,
-          orig4: null,
+          avg5: 100,
+          orig5: null,
           top5_values: "[120, 110, 100, 90, 80]",
           top5_offered_values: "[null, null, null, null, null]"
         }
@@ -228,7 +228,7 @@ describe("Sortter Models", () => {
       expect(mockRunQuery.mock.calls[0][0]).toContain(
         "JOIN SeasonTeamRegistrationPlayers strp"
       );
-      expect(mockRunQuery.mock.calls[0][1]).toEqual([1, 1]); // seasonId and teamId parameters
+      expect(mockRunQuery.mock.calls[0][1]).toEqual([1, 1, 1]); // seasonId (for prev stats), seasonId, teamId
 
       // Check the result
       expect(result).toHaveLength(1);

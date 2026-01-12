@@ -25,6 +25,7 @@ import { WithRoleProtection } from "@/components/dashboard/WithRoleProtection";
 import { CommentsProvider, useComments } from "@/contexts/CommentsContext";
 import { toast } from "sonner";
 import { clientApiFetch } from "@/lib/apiClient";
+import { TOP_N_FOR_COMPARISON } from "@eggosystem/types";
 // Removed unused imports
 import MemoizedDivisionDropdown from "@/components/sortter/MemoizedDivisionDropdown";
 import React from "react";
@@ -207,7 +208,7 @@ const isKanaeloMissingError = (error: unknown): boolean => {
 // Wrapper component that provides the CommentsContext
 function SortterPageContent() {
   // Teams per division selector - used when generating initial placements
-  const [teamsPerDivision, setTeamsPerDivision] = useState<number>(12);
+  const [teamsPerDivision, setTeamsPerDivision] = useState<number>(16);
   // Get comments from the context
   const { comments, setCommentForTeam } = useComments();
 
@@ -247,14 +248,15 @@ function SortterPageContent() {
   const calculateAvg = React.useCallback((values: number[]) => {
     // Import from utils which uses constants from @eggosystem/types
     // This constant is defined in: packages/types/src/calculations/team-balance-config.ts
-    if (!values || values.length < 4) {
-      // 4 = TOP_N_FOR_COMPARISON from @eggosystem/types
+    if (!values || values.length < TOP_N_FOR_COMPARISON) {
       const count = values?.length || 0;
       if (count === 0) return "0";
       return (values.reduce((sum, val) => sum + val, 0) / count).toFixed(3);
     }
-    const topValues = values.slice(0, 4); // 4 = TOP_N_FOR_COMPARISON
-    return (topValues.reduce((sum, val) => sum + val, 0) / 4).toFixed(3);
+    const topValues = values.slice(0, TOP_N_FOR_COMPARISON);
+    return (
+      topValues.reduce((sum, val) => sum + val, 0) / TOP_N_FOR_COMPARISON
+    ).toFixed(3);
   }, []);
 
   // Handle double click on team row
@@ -616,7 +618,7 @@ function SortterPageContent() {
                           Team
                         </th>
                         <th className="text-left p-2 font-medium text-sm w-36">
-                          kanaelo (sum 5 / avg4 / orig4)
+                          kanaelo (sum 5 / avg5 / orig5)
                         </th>
                         <th className="text-left p-2 font-medium text-sm w-28">
                           Division
@@ -688,7 +690,7 @@ function SortterPageContent() {
                                   )}
                                   <span>
                                     {totalValue} / {avgValue} /{" "}
-                                    {team.orig4 ? team.orig4.toFixed(3) : "N/A"}
+                                    {team.orig5 ? team.orig5.toFixed(3) : "N/A"}
                                   </span>
                                 </div>
                               </td>

@@ -128,13 +128,19 @@ export default function TeamFlagsPage() {
     return teamFlags.filter((flag) => flag.season_id === selectedSeason);
   }, [teamFlags, selectedSeason]);
 
-  const fetchTeamFlags = async () => {
+  const fetchTeamFlags = async (seasonToFetch?: number | "all") => {
     try {
-      console.log("Fetching team flags...");
+      console.log(
+        "Fetching team flags for season:",
+        seasonToFetch || selectedSeason
+      );
       // Use the test route that doesn't require authentication for now
-      // TODO: Switch back to the authenticated route once authentication is fixed
+      // Pass season_id parameter if a specific season is selected
+      const season =
+        seasonToFetch !== undefined ? seasonToFetch : selectedSeason;
+      const seasonParam = season !== "all" ? `?season_id=${season}` : "";
       const data = await clientApiFetch<TeamFlagWithDetails[]>(
-        "/api/v1/elo/team-flags-test"
+        `/api/v1/elo/team-flags-test${seasonParam}`
       );
       console.log("Team flags data received:", data);
       setTeamFlags(data || []);
@@ -196,7 +202,7 @@ export default function TeamFlagsPage() {
 
   useEffect(() => {
     fetchTeamFlags();
-  }, []);
+  }, [selectedSeason]); // Re-fetch when season changes
 
   // Update selectedSeason when URL changes
   useEffect(() => {

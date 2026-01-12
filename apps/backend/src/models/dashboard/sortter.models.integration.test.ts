@@ -17,7 +17,8 @@ describe("Sortter Model Integration Tests", () => {
     if (csKeisari) {
       expect(csKeisari.team_name).toBe("CSKeisari");
       expect(csKeisari.top5_sum).toBe(1418);
-      expect(csKeisari.avg4).toBe(288.75);
+      // avg5 = 1418 / 5 = 283.6
+      expect(csKeisari.avg5).toBe(283.6);
     }
   }, 10000); // Increase timeout for database query
 });

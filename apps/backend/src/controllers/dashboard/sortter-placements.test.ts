@@ -254,8 +254,8 @@ describe("sortter-placements.controllers", () => {
           team_logo: "test-logo.png",
           league_name: "Masters",
           top5_sum: 500,
-          avg4: 100,
-          orig4: 100,
+          avg5: 100,
+          orig5: 100,
           top5_values: [100, 95, 90, 85, 80],
           top5_offered_values: [100, 95, 90, 85, 80],
           is_flagged: false

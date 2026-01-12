@@ -137,8 +137,8 @@ export const checkPlayerAdditionEligibility = async (
       selectedTeam: {
         team_id: teamResult.team_id,
         team_name: teamResult.team_name,
-        current_top3_avg: 0,
         current_top4_avg: 0,
+        current_top5_avg: 0,
         new_player_kana_elo: stabilizedKanaElo,
         new_avg_with_player: 0,
         csrankker_components: csrankkerComponents
@@ -304,11 +304,11 @@ export const checkPlayerAdditionEligibility = async (
     options?.connection
   );
 
-  // Map results to expected format with backward-compatible column names
+  // Map results to expected format with dynamic column names based on configuration
   const topTeamsFormatted = topTeams.map((team) => ({
     team_id: team.team_id,
     team_name: team.team_name,
-    avg4: team[SQL_COLUMNS.COMPARISON_AVG] as number, // Keep as avg4 for backward compatibility
+    avg5: team[SQL_COLUMNS.COMPARISON_AVG] as number, // Now avg5 based on TOP_N_FOR_COMPARISON=5
     rank: team.rank
   }));
 
@@ -316,8 +316,8 @@ export const checkPlayerAdditionEligibility = async (
     selectedTeam: {
       team_id: selectedTeamResult.team_id,
       team_name: selectedTeamResult.team_name as string,
-      current_top3_avg: currentTopAvg,
-      current_top4_avg: currentComparisonAvg, // Keep name for backward compatibility
+      current_top4_avg: currentTopAvg, // Now top 4 based on TOP_N_FOR_CURRENT_AVG=4
+      current_top5_avg: currentComparisonAvg, // Now top 5 based on TOP_N_FOR_COMPARISON=5
       new_player_kana_elo: stabilizedKanaElo,
       new_avg_with_player: newAvgWithPlayer,
       csrankker_components: csrankkerComponents
