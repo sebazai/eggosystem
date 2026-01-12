@@ -1631,23 +1631,6 @@ describe("Season team registration services", () => {
       try {
         // Test with ONLY the test player to avoid captain validation issues
         // Should throw error because undefined average_rank is invalid
-        await expect(
-          registrationServices.addPlayersForTeamInSeason(
-            seasonDetails.id,
-            seasonDetails.app_id,
-            seasonDetails.platform,
-            validSignupData.teamId,
-            [
-              {
-                steam_id: testSteamId,
-                is_captain: false,
-                is_co_captain: false
-              }
-            ]
-          )
-        ).rejects.toThrow(BadRequestError);
-
-        // Verify error message
         try {
           await registrationServices.addPlayersForTeamInSeason(
             seasonDetails.id,
@@ -1662,7 +1645,10 @@ describe("Season team registration services", () => {
               }
             ]
           );
+          // Should not reach here
+          expect(true).toBe(false);
         } catch (error) {
+          expect(error).toBeInstanceOf(BadRequestError);
           expect((error as BadRequestError).message).toContain(
             "has no app id rank"
           );
@@ -1712,23 +1698,6 @@ describe("Season team registration services", () => {
       try {
         // Test with ONLY the test player to avoid captain validation issues
         // Should throw error because -1 indicates no rank found
-        await expect(
-          registrationServices.addPlayersForTeamInSeason(
-            seasonDetails.id,
-            seasonDetails.app_id,
-            seasonDetails.platform,
-            validSignupData.teamId,
-            [
-              {
-                steam_id: testSteamId,
-                is_captain: false,
-                is_co_captain: false
-              }
-            ]
-          )
-        ).rejects.toThrow(BadRequestError);
-
-        // Verify error message
         try {
           await registrationServices.addPlayersForTeamInSeason(
             seasonDetails.id,
@@ -1743,7 +1712,10 @@ describe("Season team registration services", () => {
               }
             ]
           );
+          // Should not reach here
+          expect(true).toBe(false);
         } catch (error) {
+          expect(error).toBeInstanceOf(BadRequestError);
           expect((error as BadRequestError).message).toContain(
             "has no app id rank"
           );
