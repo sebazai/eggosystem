@@ -165,7 +165,93 @@ export type SignupPlayerType = z.infer<typeof playerSchema>;
 export type SignupNewOrganizationType = z.infer<typeof newOrganizationSchema>;
 export type SignupNewTeamType = z.infer<typeof newTeamSchema>;
 
+const createMockSignupPlayer = (
+  overrides?: Partial<SignupPlayerType>
+): SignupPlayerType => {
+  return {
+    accountId: 1,
+    steamId: "76561198012345678",
+    nickname: "Test Player",
+    captain: false,
+    coCaptain: false,
+    discordLinked: false,
+    ...overrides
+  } satisfies SignupPlayerType;
+};
+
+const createMockSignupFormValues = (
+  overrides?: Partial<SignupFormValues>,
+  playersOverrides?: Partial<SignupPlayerType>[]
+): SignupFormValues => {
+  // Create default valid players: one captain, one co-captain, three regular players
+  const defaultPlayers: SignupPlayerType[] = [
+    createMockSignupPlayer({
+      accountId: 1,
+      steamId: "76561198012345678",
+      nickname: "Captain Player",
+      captain: true,
+      coCaptain: false,
+      discordLinked: true
+    }),
+    createMockSignupPlayer({
+      accountId: 2,
+      steamId: "76561198012345679",
+      nickname: "Co-Captain Player",
+      captain: false,
+      coCaptain: true,
+      discordLinked: true
+    }),
+    createMockSignupPlayer({
+      accountId: 3,
+      steamId: "76561198012345680",
+      nickname: "Player 3",
+      captain: false,
+      coCaptain: false,
+      discordLinked: false
+    }),
+    createMockSignupPlayer({
+      accountId: 4,
+      steamId: "76561198012345681",
+      nickname: "Player 4",
+      captain: false,
+      coCaptain: false,
+      discordLinked: false
+    }),
+    createMockSignupPlayer({
+      accountId: 5,
+      steamId: "76561198012345682",
+      nickname: "Player 5",
+      captain: false,
+      coCaptain: false,
+      discordLinked: false
+    })
+  ];
+
+  // If playersOverrides is provided, merge with defaults (partial replacement)
+  const players =
+    playersOverrides && playersOverrides.length > 0
+      ? defaultPlayers.map((defaultPlayer, index) => {
+          const override = playersOverrides[index];
+          return override
+            ? createMockSignupPlayer({ ...defaultPlayer, ...override })
+            : defaultPlayer;
+        })
+      : defaultPlayers;
+
+  return {
+    organizationId: 1,
+    teamId: 1,
+    teamExternalId: "12345678-1234-1234-1234-123456789abc",
+    newOrganization: undefined,
+    newTeam: undefined,
+    captainHasReadTermAndConditions: true,
+    players,
+    ...overrides
+  } satisfies SignupFormValues;
+};
+
 export {
+  createMockSignupFormValues,
   playerSchema,
   newOrganizationSchema,
   newTeamSchema,

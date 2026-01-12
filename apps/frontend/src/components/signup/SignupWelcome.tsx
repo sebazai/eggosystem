@@ -121,6 +121,7 @@ export const SignupWelcome = ({ seasonId }: SignupWelcomeProps) => {
           Please pay your team&apos;s participation fee by purchasing it from{" "}
           <Link
             target="_blank"
+            className="break-words inline-block max-w-full"
             href={
               seasonDetails.payment_link || "https://www.kanaliiga.fi/kauppa"
             }
