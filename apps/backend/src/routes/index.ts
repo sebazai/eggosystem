@@ -110,11 +110,6 @@ v1Router.get("/stats", async (req, res) => {
   res.status(200).json(stats);
 });
 
-v1Router.get("/health", async (req, res) => {
-  res.status(200).json({ message: "API is running" });
-});
-
-// Health check endpoints for microservices (for KUMA monitoring)
 v1Router.get("/health/discord", async (req, res) => {
   const healthStatus = await checkDiscordHealth();
 
@@ -163,6 +158,11 @@ v1Router.get("/health/rabbitmq", async (req, res) => {
       consumerCount: healthStatus.consumerCount
     });
   }
+});
+
+// General health check endpoint (must be after specific health routes)
+v1Router.get("/health", async (req, res) => {
+  res.status(200).json({ message: "API is running" });
 });
 
 export default v1Router;

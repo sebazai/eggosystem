@@ -2,15 +2,12 @@
 process.env.FRONTEND_URL = "http://localhost:3000";
 
 import request from "supertest";
-import type express from "express";
+import express from "express";
 import { createExpressTestApp, setupEnvironment } from "../../test-utils";
-import accountRouter from "./account.routes";
-import * as accountControllers from "../../controllers/account.controllers";
-import * as authModels from "../../models/auth.models";
-import * as userPolicyAcceptanceModels from "../../models/user-policy-acceptance.models";
 import { createMockUserPayload } from "@eggosystem/types";
+import { authenticateJWT } from "../../middlewares/auth.middleware";
 
-// Mock express-jwt
+// Mock express-jwt BEFORE importing routes
 jest.mock("express-jwt", () => ({
   expressjwt: jest.fn(
     () =>
@@ -36,6 +33,12 @@ jest.mock("express-jwt", () => ({
       }
   )
 }));
+
+// Import routes AFTER mocking
+import accountRouter from "./account.routes";
+import * as accountControllers from "../../controllers/account.controllers";
+import * as authModels from "../../models/auth.models";
+import * as userPolicyAcceptanceModels from "../../models/user-policy-acceptance.models";
 
 // Mock controllers and models
 jest.mock("../../controllers/account.controllers");
@@ -77,8 +80,14 @@ describe("Account Routes Integration Tests", () => {
       PRIVACY_POLICY_VERSION: "1"
     });
 
+    // Create a custom router that includes JWT authentication middleware
+    // This ensures authenticateJWT is applied to all routes
+    const customRouter = express.Router();
+    customRouter.use(authenticateJWT);
+    customRouter.use(accountRouter);
+
     const { app: testApp } = createExpressTestApp(
-      accountRouter,
+      customRouter,
       "/api/v1/accounts"
     );
     app = testApp;
@@ -142,7 +151,7 @@ describe("Account Routes Integration Tests", () => {
         .send({ fullName: "New Name" });
 
       expect(res.status).toBe(401);
-    }, 15000);
+    });
 
     it("should require authentication for profile update", async () => {
       mockUpdateAccountProfileController.mockImplementation(

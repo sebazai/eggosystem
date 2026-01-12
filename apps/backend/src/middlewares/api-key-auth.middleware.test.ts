@@ -153,7 +153,7 @@ describe("createApiKeyValidator", () => {
     middleware(req as Request, res as Response, next);
 
     expect(logger.warn).toHaveBeenCalledWith(
-      expect.stringMatching(/Invalid API key provided: invalid\.\.\./)
+      expect.stringMatching(/Invalid API key provided: inval\.\.\./)
     );
     // Verify it only shows first 5 characters followed by ...
     expect(logger.warn).toHaveBeenCalledWith(

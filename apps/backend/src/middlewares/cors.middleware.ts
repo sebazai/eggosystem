@@ -1,14 +1,14 @@
 import cors from "cors";
 import { logger } from "../utils/app-logger";
 
-const frontendUrlEnv = process.env.FRONTEND_URL;
-
-if (!frontendUrlEnv) {
-  throw new Error("FRONTEND_URL is not defined");
-}
-
 // Create a function that returns CORS options based on current environment
 export const getCorsOptions = () => {
+  const frontendUrlEnv = process.env.FRONTEND_URL;
+
+  if (!frontendUrlEnv) {
+    throw new Error("FRONTEND_URL is not defined");
+  }
+
   const frontendUrl = new URL(frontendUrlEnv);
   const frontendUrlOrigin = `${frontendUrl.protocol}//${frontendUrl.host}`;
   const allowList = [frontendUrlOrigin];
@@ -32,5 +32,12 @@ export const getCorsOptions = () => {
   } satisfies cors.CorsOptions;
 };
 
+// Initialize CORS middleware with current environment
+// Note: This uses FRONTEND_URL at module load time
+// For tests that change FRONTEND_URL, use getCorsOptions() directly
+const frontendUrlEnv = process.env.FRONTEND_URL;
+if (!frontendUrlEnv) {
+  throw new Error("FRONTEND_URL is not defined");
+}
 const corsOptions = getCorsOptions();
 export const corsMiddleware = cors(corsOptions);

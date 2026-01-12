@@ -3,7 +3,8 @@ process.env.FRONTEND_URL = "http://localhost:3000";
 
 import express from "express";
 import request from "supertest";
-import { getCorsOptions, corsMiddleware } from "./cors.middleware";
+import cors from "cors";
+import { getCorsOptions } from "./cors.middleware";
 import { logger } from "../utils/app-logger";
 
 jest.mock("../utils/app-logger", () => ({
@@ -44,12 +45,14 @@ describe("CORS Middleware Integration Tests", () => {
       const callback = jest.fn();
       corsOptions.origin?.("https://malicious.com", callback);
 
-      expect(callback).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message: "Not allowed by CORS"
-        }),
-        false
-      );
+      // The callback is called with an Error object as first arg, false as second
+      expect(callback).toHaveBeenCalled();
+      const callArgs = callback.mock.calls[0];
+      expect(callArgs[0]).toBeInstanceOf(Error);
+      if (callArgs[0] instanceof Error) {
+        expect(callArgs[0].message).toBe("Not allowed by CORS");
+      }
+      expect(callArgs[1]).toBe(false);
       expect(logger.warn).toHaveBeenCalledWith(
         "CORS rejection",
         expect.objectContaining({
@@ -101,7 +104,8 @@ describe("CORS Middleware Integration Tests", () => {
     it("should allow requests from allowed origin", async () => {
       process.env.FRONTEND_URL = "https://example.com";
       const app = express();
-      app.use(corsMiddleware);
+      // Use getCorsOptions() to get fresh CORS options with updated env var
+      app.use(cors(getCorsOptions()));
       app.get("/test", (req, res) => {
         res.json({ success: true });
       });
@@ -117,7 +121,8 @@ describe("CORS Middleware Integration Tests", () => {
     it("should reject requests from disallowed origin", async () => {
       process.env.FRONTEND_URL = "https://example.com";
       const app = express();
-      app.use(corsMiddleware);
+      // Use getCorsOptions() to get fresh CORS options with updated env var
+      app.use(cors(getCorsOptions()));
       app.get("/test", (req, res) => {
         res.json({ success: true });
       });
@@ -139,7 +144,8 @@ describe("CORS Middleware Integration Tests", () => {
     it("should include credentials in CORS headers", async () => {
       process.env.FRONTEND_URL = "https://example.com";
       const app = express();
-      app.use(corsMiddleware);
+      // Use getCorsOptions() to get fresh CORS options with updated env var
+      app.use(cors(getCorsOptions()));
       app.get("/test", (req, res) => {
         res.json({ success: true });
       });
@@ -155,7 +161,8 @@ describe("CORS Middleware Integration Tests", () => {
     it("should handle multiple origin scenarios", async () => {
       process.env.FRONTEND_URL = "https://example.com";
       const app = express();
-      app.use(corsMiddleware);
+      // Use getCorsOptions() to get fresh CORS options with updated env var
+      app.use(cors(getCorsOptions()));
       app.get("/test", (req, res) => {
         res.json({ success: true });
       });
@@ -179,19 +186,48 @@ describe("CORS Middleware Integration Tests", () => {
     });
 
     it("should handle missing FRONTEND_URL environment variable", () => {
+      const originalFrontendUrl = process.env.FRONTEND_URL;
       delete process.env.FRONTEND_URL;
 
-      expect(() => {
-        getCorsOptions();
-      }).toThrow("FRONTEND_URL is not defined");
+      // Need to clear module cache to test this, or mock the module
+      // Since the module checks FRONTEND_URL at load time, we need to handle this differently
+      // The actual implementation throws at module load, so this test may not be testable
+      // without module mocking. For now, we'll skip the check or use a different approach
+      try {
+        // Clear require cache to force re-evaluation
+        delete require.cache[require.resolve("./cors.middleware")];
+        expect(() => {
+          require("./cors.middleware");
+        }).toThrow("FRONTEND_URL is not defined");
+      } finally {
+        // Restore original value
+        if (originalFrontendUrl) {
+          process.env.FRONTEND_URL = originalFrontendUrl;
+        }
+      }
     });
 
     it("should handle invalid FRONTEND_URL format", () => {
+      const originalFrontendUrl = process.env.FRONTEND_URL;
       process.env.FRONTEND_URL = "not-a-valid-url";
 
-      expect(() => {
-        getCorsOptions();
-      }).toThrow();
+      // Need to clear module cache to test this
+      try {
+        delete require.cache[require.resolve("./cors.middleware")];
+        expect(() => {
+          const {
+            getCorsOptions: getCorsOptionsFresh
+          } = require("./cors.middleware");
+          getCorsOptionsFresh();
+        }).toThrow();
+      } finally {
+        // Restore original value
+        if (originalFrontendUrl) {
+          process.env.FRONTEND_URL = originalFrontendUrl;
+        } else {
+          delete process.env.FRONTEND_URL;
+        }
+      }
     });
 
     it("should log rejected origins with correct metadata", () => {
@@ -214,7 +250,8 @@ describe("CORS Middleware Integration Tests", () => {
     it("should handle preflight OPTIONS requests", async () => {
       process.env.FRONTEND_URL = "https://example.com";
       const app = express();
-      app.use(corsMiddleware);
+      // Use getCorsOptions() to get fresh CORS options with updated env var
+      app.use(cors(getCorsOptions()));
       app.get("/test", (req, res) => {
         res.json({ success: true });
       });
@@ -236,12 +273,14 @@ describe("CORS Middleware Integration Tests", () => {
       // HTTP origin should be rejected when FRONTEND_URL is HTTPS
       corsOptions.origin?.("http://example.com", callback);
 
-      expect(callback).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message: "Not allowed by CORS"
-        }),
-        false
-      );
+      // The callback is called with an Error object as first arg, false as second
+      expect(callback).toHaveBeenCalled();
+      const callArgs = callback.mock.calls[0];
+      expect(callArgs[0]).toBeInstanceOf(Error);
+      if (callArgs[0] instanceof Error) {
+        expect(callArgs[0].message).toBe("Not allowed by CORS");
+      }
+      expect(callArgs[1]).toBe(false);
     });
 
     it("should handle subdomain origins correctly", () => {
@@ -252,12 +291,14 @@ describe("CORS Middleware Integration Tests", () => {
       // Different subdomain should be rejected
       corsOptions.origin?.("https://api.example.com", callback);
 
-      expect(callback).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message: "Not allowed by CORS"
-        }),
-        false
-      );
+      // The callback is called with an Error object as first arg, false as second
+      expect(callback).toHaveBeenCalled();
+      const callArgs = callback.mock.calls[0];
+      expect(callArgs[0]).toBeInstanceOf(Error);
+      if (callArgs[0] instanceof Error) {
+        expect(callArgs[0].message).toBe("Not allowed by CORS");
+      }
+      expect(callArgs[1]).toBe(false);
     });
   });
 });

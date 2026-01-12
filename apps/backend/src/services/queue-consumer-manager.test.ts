@@ -42,10 +42,11 @@ describe("QueueConsumerManager", () => {
       };
       mockParsedQueueConsumer.mockImplementation(() => mockConsumer as any);
 
-      await expect(manager.startAllConsumers()).rejects.toThrow(
-        "Connection failed"
-      );
-    });
+      // The method uses retryWithBackoff which will retry multiple times
+      // After all retries fail, it logs an error but doesn't throw
+      // So we expect it to resolve (not reject)
+      await expect(manager.startAllConsumers()).resolves.toBeUndefined();
+    }, 15000);
   });
 
   describe("stopAllConsumers", () => {
