@@ -36,9 +36,10 @@ import * as registrationServices from "./season-team-registration.services";
 import * as organizationModels from "../models/organization.models";
 import * as registrationModels from "../models/season-team-registration.models";
 import * as teamModels from "../models/team.models";
+import * as playerRanksServices from "./player-ranks.services";
 import _ from "lodash";
 import { validSignupData } from "@eggosystem/shared-msw";
-import { type BadRequestError } from "../utils/errors";
+import { BadRequestError } from "../utils/errors";
 import { runQuery } from "../db/mysqlRunQuery";
 import { redisClient } from "../utils/redisClient";
 import { faceitEloToLevel } from "../utils/faceit-utils";
@@ -887,8 +888,8 @@ describe("Season team registration services", () => {
         );
       } catch (error) {
         const errorAsBadReq = error as BadRequestError;
-        expect(errorAsBadReq.message).toEqual(
-          "Player 11111111111111112 has no app id rank"
+        expect(errorAsBadReq.message).toContain(
+          "Player 11111111111111112 has no app id rank. Found -1"
         );
       }
     });
@@ -1493,6 +1494,265 @@ describe("Season team registration services", () => {
       await expect(
         registrationServices.handleSignupFormForSeason(seasonDetails, formData)
       ).rejects.toThrow(/Team does not belong to the selected organization/);
+    });
+  });
+
+  describe("addPlayersForTeamInSeason - rank save failure scenarios", () => {
+    const testSteamId = "99999999999999999";
+
+    beforeEach(async () => {
+      // Clean up any existing players first to avoid duplicate entry and captain validation issues
+      // Delete by steam_id first (most specific)
+      await runQuery(
+        "DELETE FROM SeasonTeamRegistrationPlayers WHERE steam_id = ?",
+        [testSteamId]
+      );
+      // Also clean up by season/team combination
+      await runQuery(
+        "DELETE FROM SeasonTeamRegistrationPlayers WHERE season_id = ? AND team_id = ?",
+        [seasonDetails.id, validSignupData.teamId]
+      );
+      await unsetSeasonTeamRegistration();
+      await setSeasonTeamRegistration();
+      await clearSeasonPlayerRanks();
+      await insertOneTestUser(9999999, testSteamId, "TestPlayer");
+    });
+
+    afterEach(async () => {
+      await cleanUpTestUser(9999999);
+      // Clean up all players to avoid affecting other tests
+      await runQuery(
+        "DELETE FROM SeasonTeamRegistrationPlayers WHERE steam_id = ?",
+        [testSteamId]
+      );
+      await runQuery(
+        "DELETE FROM SeasonTeamRegistrationPlayers WHERE season_id = ? AND team_id = ?",
+        [seasonDetails.id, validSignupData.teamId]
+      );
+      await clearSeasonPlayerRanks();
+    });
+
+    it("Should reject and throw error when getPlayerAppIdRank returns null average_rank", async () => {
+      // Mock getPlayerAppIdRank to return a rank object with null average_rank
+      // This simulates corrupted data that should be rejected
+      const mockGetPlayerAppIdRank = jest
+        .spyOn(playerRanksServices, "getPlayerAppIdRank")
+        .mockResolvedValue({
+          average_rank: null as any, // Invalid: null instead of valid number
+          rank_updated_at: null
+        });
+
+      // Mock hours to return valid value
+      const mockGetPlayerHoursForSteamAppId = jest
+        .spyOn(playerRanksServices, "getPlayerHoursForSteamAppId")
+        .mockResolvedValue({ hours: 500 });
+
+      // Mock external rank
+      const mockGetPlayerRankForPlatform = jest
+        .spyOn(playerRanksServices, "getPlayerRankForPlatform")
+        .mockResolvedValue({
+          faceit_level: 3,
+          faceit_elo: 1000,
+          faceit_kd: 1.0,
+          faceit_date: Date.now(),
+          metadata: {
+            faceit_matches_played: undefined,
+            faceit_last_match: undefined,
+            faceit_decay: false
+          }
+        });
+
+      try {
+        // Test with ONLY the test player to avoid captain validation issues
+        // Should throw error because null average_rank is invalid
+        try {
+          await registrationServices.addPlayersForTeamInSeason(
+            seasonDetails.id,
+            seasonDetails.app_id,
+            seasonDetails.platform,
+            validSignupData.teamId,
+            [
+              {
+                steam_id: testSteamId,
+                is_captain: false,
+                is_co_captain: false
+              }
+            ]
+          );
+          // Should not reach here
+          expect(true).toBe(false);
+        } catch (error) {
+          expect(error).toBeInstanceOf(BadRequestError);
+          expect((error as BadRequestError).message).toContain(
+            "has no app id rank"
+          );
+        }
+
+        // Verify rank was NOT saved to database
+        const [savedRank] = await runQuery<[SeasonPlayerRank] | []>(
+          "SELECT * FROM SeasonPlayerRanks WHERE steam_id = ? AND season_id = ?",
+          [testSteamId, seasonDetails.id]
+        );
+        expect(savedRank).toBeUndefined(); // Should not exist
+      } finally {
+        mockGetPlayerAppIdRank.mockRestore();
+        mockGetPlayerHoursForSteamAppId.mockRestore();
+        mockGetPlayerRankForPlatform.mockRestore();
+      }
+    });
+
+    it("Should reject and throw error when getPlayerAppIdRank returns undefined average_rank", async () => {
+      // Mock getPlayerAppIdRank to return undefined average_rank
+      const mockGetPlayerAppIdRank = jest
+        .spyOn(playerRanksServices, "getPlayerAppIdRank")
+        .mockResolvedValue({
+          average_rank: undefined as any, // Invalid: undefined instead of valid number
+          rank_updated_at: null
+        });
+
+      const mockGetPlayerHoursForSteamAppId = jest
+        .spyOn(playerRanksServices, "getPlayerHoursForSteamAppId")
+        .mockResolvedValue({ hours: 500 });
+
+      const mockGetPlayerRankForPlatform = jest
+        .spyOn(playerRanksServices, "getPlayerRankForPlatform")
+        .mockResolvedValue({
+          faceit_level: 3,
+          faceit_elo: 1000,
+          faceit_kd: 1.0,
+          faceit_date: Date.now(),
+          metadata: {
+            faceit_matches_played: undefined,
+            faceit_last_match: undefined,
+            faceit_decay: false
+          }
+        });
+
+      try {
+        // Test with ONLY the test player to avoid captain validation issues
+        // Should throw error because undefined average_rank is invalid
+        await expect(
+          registrationServices.addPlayersForTeamInSeason(
+            seasonDetails.id,
+            seasonDetails.app_id,
+            seasonDetails.platform,
+            validSignupData.teamId,
+            [
+              {
+                steam_id: testSteamId,
+                is_captain: false,
+                is_co_captain: false
+              }
+            ]
+          )
+        ).rejects.toThrow(BadRequestError);
+
+        // Verify error message
+        try {
+          await registrationServices.addPlayersForTeamInSeason(
+            seasonDetails.id,
+            seasonDetails.app_id,
+            seasonDetails.platform,
+            validSignupData.teamId,
+            [
+              {
+                steam_id: testSteamId,
+                is_captain: false,
+                is_co_captain: false
+              }
+            ]
+          );
+        } catch (error) {
+          expect((error as BadRequestError).message).toContain(
+            "has no app id rank"
+          );
+        }
+
+        // Verify rank was NOT saved to database
+        const [savedRank] = await runQuery<[SeasonPlayerRank] | []>(
+          "SELECT * FROM SeasonPlayerRanks WHERE steam_id = ? AND season_id = ?",
+          [testSteamId, seasonDetails.id]
+        );
+        expect(savedRank).toBeUndefined(); // Should not exist
+      } finally {
+        mockGetPlayerAppIdRank.mockRestore();
+        mockGetPlayerHoursForSteamAppId.mockRestore();
+        mockGetPlayerRankForPlatform.mockRestore();
+      }
+    });
+
+    it("Should throw error when Redis cache expires and getPlayerAppIdRank returns -1", async () => {
+      // Simulate Redis cache being empty (expired) when signup is submitted
+      // even though it was available when form was loaded
+      const mockGetPlayerAppIdRank = jest
+        .spyOn(playerRanksServices, "getPlayerAppIdRank")
+        .mockResolvedValue({
+          average_rank: -1,
+          rank_updated_at: null
+        });
+
+      const mockGetPlayerHoursForSteamAppId = jest
+        .spyOn(playerRanksServices, "getPlayerHoursForSteamAppId")
+        .mockResolvedValue({ hours: 500 });
+
+      const mockGetPlayerRankForPlatform = jest
+        .spyOn(playerRanksServices, "getPlayerRankForPlatform")
+        .mockResolvedValue({
+          faceit_level: 3,
+          faceit_elo: 1000,
+          faceit_kd: 1.0,
+          faceit_date: Date.now(),
+          metadata: {
+            faceit_matches_played: undefined,
+            faceit_last_match: undefined,
+            faceit_decay: false
+          }
+        });
+
+      try {
+        // Test with ONLY the test player to avoid captain validation issues
+        // Should throw error because -1 indicates no rank found
+        await expect(
+          registrationServices.addPlayersForTeamInSeason(
+            seasonDetails.id,
+            seasonDetails.app_id,
+            seasonDetails.platform,
+            validSignupData.teamId,
+            [
+              {
+                steam_id: testSteamId,
+                is_captain: false,
+                is_co_captain: false
+              }
+            ]
+          )
+        ).rejects.toThrow(BadRequestError);
+
+        // Verify error message
+        try {
+          await registrationServices.addPlayersForTeamInSeason(
+            seasonDetails.id,
+            seasonDetails.app_id,
+            seasonDetails.platform,
+            validSignupData.teamId,
+            [
+              {
+                steam_id: testSteamId,
+                is_captain: false,
+                is_co_captain: false
+              }
+            ]
+          );
+        } catch (error) {
+          expect((error as BadRequestError).message).toContain(
+            "has no app id rank"
+          );
+        }
+      } finally {
+        mockGetPlayerAppIdRank.mockRestore();
+        mockGetPlayerHoursForSteamAppId.mockRestore();
+        mockGetPlayerRankForPlatform.mockRestore();
+      }
     });
   });
 });

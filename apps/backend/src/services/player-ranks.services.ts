@@ -19,6 +19,23 @@ import { BadRequestError } from "../utils/errors";
 import { logger } from "../utils/app-logger";
 import { type FaceITCSRank } from "@eggosystem/types";
 
+/**
+ * Validates if a rank value is valid (positive number, not null/undefined/NaN)
+ * @param rank - The rank value to validate (can be number, null, or undefined)
+ * @returns true if rank is a valid positive number, false otherwise
+ */
+export const isValidRank = (
+  rank: number | null | undefined
+): rank is number => {
+  return (
+    rank !== null &&
+    rank !== undefined &&
+    typeof rank === "number" &&
+    !isNaN(rank) &&
+    rank > 0
+  );
+};
+
 const getPlayerHoursForCS = async (steam_id: string, season_id?: number) => {
   const redisKey = `730-${steam_id}-hours`;
   // Return rank for season_id from db, i.e. if admin has added manually
@@ -83,7 +100,7 @@ const getRankFromDatabase = async (
   season_id: number
 ): Promise<CS2LeetifyAvgRank | null> => {
   const rankFromDb = await getPlayerRankForSeason(steam_id, season_id);
-  if (rankFromDb?.average_rank) {
+  if (rankFromDb && isValidRank(rankFromDb.average_rank)) {
     logger.info(
       `[Rank] Found rank in database for steam_id: ${steam_id}, season_id: ${season_id} - rank: ${rankFromDb.average_rank}`
     );
@@ -103,8 +120,26 @@ const getRankFromCache = async (
   const rankInRedis = await redisClient.get(redisKey);
 
   if (rankInRedis) {
-    logger.info(`[Rank] Found cached rank for steam_id: ${steam_id}`);
-    return JSON.parse(rankInRedis) as CS2LeetifyAvgRank;
+    try {
+      const parsedRank = JSON.parse(rankInRedis) as CS2LeetifyAvgRank;
+      if (parsedRank && isValidRank(parsedRank.average_rank)) {
+        logger.info(
+          `[Rank] Found cached rank for steam_id: ${steam_id}, rank ${parsedRank.average_rank}`
+        );
+        return parsedRank;
+      } else {
+        logger.warn(
+          `[Rank] Invalid cached rank data for steam_id: ${steam_id}, average_rank: ${parsedRank?.average_rank}. Ignoring cache.`
+        );
+        return null;
+      }
+    } catch (error) {
+      logger.warn(
+        `[Rank] Failed to parse cached rank data for steam_id: ${steam_id}:`,
+        error
+      );
+      return null;
+    }
   }
 
   return null;
@@ -113,19 +148,35 @@ const getRankFromCache = async (
 /**
  * Cache rank data in Redis
  * Wraps caching in try-catch to ensure it never fails the main operation
+ * Validates data before caching to prevent corrupted data in Redis
  */
 const cacheRankData = async (
   steam_id: string,
   rankData: CS2LeetifyAvgRank
 ): Promise<void> => {
+  if (!rankData || !isValidRank(rankData.average_rank)) {
+    logger.warn(
+      `[Rank] Attempted to cache invalid rank data for steam_id: ${steam_id}, average_rank: ${rankData?.average_rank}. Skipping cache.`
+    );
+    return;
+  }
+
   const redisKey = `730-${steam_id}-rank`;
-  await redisClient.set(
-    redisKey,
-    JSON.stringify(rankData),
-    "EX",
-    expireIn30Days
-  );
-  logger.info(`[Rank] Cached rank data for steam_id: ${steam_id}`);
+  try {
+    await redisClient.set(
+      redisKey,
+      JSON.stringify(rankData),
+      "EX",
+      expireIn30Days
+    );
+    logger.info(`[Rank] Cached rank data for steam_id: ${steam_id}`);
+  } catch (error) {
+    // Don't fail the main operation if caching fails
+    logger.warn(
+      `[Rank] Failed to cache rank data for steam_id: ${steam_id}:`,
+      error
+    );
+  }
 };
 
 /**
@@ -172,7 +223,7 @@ const getRankFromDatabaseFallback = async (
   );
 
   const firstEntry = result[0];
-  if (!firstEntry || !firstEntry.cs2_rank) {
+  if (!firstEntry || !isValidRank(firstEntry.cs2_rank)) {
     return null;
   }
 

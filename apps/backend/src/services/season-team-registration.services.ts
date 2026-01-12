@@ -36,7 +36,8 @@ import { getFaceITTeamDetails, fetchFaceitPlayerData } from "./faceit.services";
 import {
   getPlayerAppIdRank,
   getPlayerHoursForSteamAppId,
-  getPlayerRankForPlatform
+  getPlayerRankForPlatform,
+  isValidRank
 } from "./player-ranks.services";
 import { runQuery } from "../db/mysqlRunQuery";
 import { insertSeasonTeamRegistrationPlayer } from "../models/season-team-registration-player.models";
@@ -208,8 +209,10 @@ export const addPlayersForTeamInSeason = async (
       throw new BadRequestError(`Player ${player.steam_id} hours not found.`);
     }
 
-    if (rank.average_rank === -1) {
-      throw new BadRequestError(`Player ${player.steam_id} has no app id rank`);
+    if (rank.average_rank === -1 || !isValidRank(rank.average_rank)) {
+      throw new BadRequestError(
+        `Player ${player.steam_id} has no app id rank. Found ${rank.average_rank}.`
+      );
     }
 
     if (
