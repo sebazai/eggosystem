@@ -271,24 +271,32 @@ describe("expressErrorHandler - RFC7807 problem+json", () => {
 
     it("handles database errors that are not duplicate entry or trigger errors as generic errors", async () => {
       const app = createApp((_req, _res, next) => {
-        const dbError = {
-          code: "ER_SOME_OTHER_ERROR",
-          sqlState: "42000",
-          sqlMessage: "Some other database error",
-          message: "Some other database error"
-        };
-        next(dbError as unknown as Error);
+        // Create an actual Error instance to match instanceof Error check
+        const dbError = new Error("Some other database error");
+        // Add database error properties
+        (
+          dbError as { code?: string; sqlState?: string; sqlMessage?: string }
+        ).code = "ER_SOME_OTHER_ERROR";
+        (
+          dbError as { code?: string; sqlState?: string; sqlMessage?: string }
+        ).sqlState = "42000";
+        (
+          dbError as { code?: string; sqlState?: string; sqlMessage?: string }
+        ).sqlMessage = "Some other database error";
+        next(dbError);
       });
 
       const res = await request(app).get("/test");
 
-      expect([400]).toContain(res.status);
+      // Database errors that aren't duplicates/triggers are treated as generic Error instances
+      // which default to 400 status
+      expect(res.status).toBe(400);
       expect(res.headers["content-type"]).toMatch(/application\/problem\+json/);
       expect(res.body).toEqual(
         expect.objectContaining({
           type: "about:blank",
           title: expect.any(String),
-          status: res.status,
+          status: 400,
           detail: "Some other database error",
           instance: "/test"
         })
