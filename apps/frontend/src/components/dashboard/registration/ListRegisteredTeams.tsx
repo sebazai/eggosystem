@@ -224,13 +224,27 @@ export const ListRegisteredTeams = () => {
           {team.captain_nickname && (
             <div className="flex items-center gap-2">
               <span className="font-medium">Captain:</span>
-              <span>{team.captain_nickname}</span>
+              <span>
+                {team.captain_discord || team.captain_nickname}
+                {team.captain_discord && (
+                  <span className="text-muted-foreground ml-1 text-xs">
+                    ({team.captain_nickname})
+                  </span>
+                )}
+              </span>
             </div>
           )}
           {team.co_captain_nickname && (
             <div className="flex items-center gap-2">
               <span className="font-medium">Co-Captain:</span>
-              <span>{team.co_captain_nickname}</span>
+              <span>
+                {team.co_captain_discord || team.co_captain_nickname}
+                {team.co_captain_discord && (
+                  <span className="text-muted-foreground ml-1 text-xs">
+                    ({team.co_captain_nickname})
+                  </span>
+                )}
+              </span>
             </div>
           )}
         </div>
@@ -282,6 +296,9 @@ export const ListRegisteredTeams = () => {
                   Kanahub
                   <ExternalLink className="inline w-3 h-3" />
                 </a>
+              </span>
+              <span className="font-mono text-xs select-all break-all text-muted-foreground">
+                {player.steam_id}
               </span>
               {isInvalid && (
                 <span className="text-[0.65rem] text-red-600 font-medium">

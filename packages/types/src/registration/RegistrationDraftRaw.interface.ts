@@ -21,6 +21,7 @@ export interface RegistrationDraftRaw {
     nickname: string;
     captain?: boolean;
     coCaptain?: boolean;
+    discord?: string | null;
   }>;
 }
 
@@ -53,7 +54,8 @@ export function isRegistrationDraftRaw(
       "steamId",
       "nickname",
       "captain",
-      "coCaptain"
+      "coCaptain",
+      "discord"
     ];
     if (Object.keys(player).some((k) => !allowedPlayerKeys.includes(k)))
       return false;
@@ -65,6 +67,12 @@ export function isRegistrationDraftRaw(
     if ("captain" in player && typeof player.captain !== "boolean")
       return false;
     if ("coCaptain" in player && typeof player.coCaptain !== "boolean")
+      return false;
+    if (
+      "discord" in player &&
+      player.discord !== null &&
+      typeof player.discord !== "string"
+    )
       return false;
   }
   if (d.newOrganization !== undefined) {

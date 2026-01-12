@@ -26,6 +26,7 @@ import {
   checkExternalId
 } from "../../services/season-team-registration.services";
 import { addSignupForSeason } from "../../models/season-team-registration.models";
+import { getDiscordUsernameByAccountId } from "../../models/discord.models";
 
 export const addManuallyApprovedPlayersController = async (
   req: Request,
@@ -125,7 +126,29 @@ export const getAllRegistrationDraftsController = async (
       }
     })
     .filter(isNonNullable);
-  res.status(200).json(drafts);
+
+  // Enrich drafts with Discord usernames for all players
+  const enrichedDrafts = await Promise.all(
+    drafts.map(async (draft) => {
+      const enrichedPlayers = await Promise.all(
+        (draft.players || []).map(async (player) => {
+          const discord = await getDiscordUsernameByAccountId(
+            player.accountId
+          ).catch(() => null);
+          return {
+            ...player,
+            discord
+          };
+        })
+      );
+      return {
+        ...draft,
+        players: enrichedPlayers
+      };
+    })
+  );
+
+  res.status(200).json(enrichedDrafts);
 };
 
 export const bulkApproveTeamRegistrationsController = async (
