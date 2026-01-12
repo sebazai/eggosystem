@@ -45,8 +45,8 @@ describe("checkPlayerAdditionEligibility", () => {
       selectedTeam: {
         team_id: teamId,
         team_name: "Test Team",
-        current_top3_avg: 205,
-        current_top4_avg: 200,
+        current_top4_avg: 205,
+        current_top5_avg: 200,
         new_player_kana_elo: 200,
         new_avg_with_player: 204,
         csrankker_components: {
@@ -57,9 +57,9 @@ describe("checkPlayerAdditionEligibility", () => {
         }
       },
       topTeamsInLeague: [
-        { team_id: 1, team_name: "Top Team", avg4: 210, rank: 1 },
-        { team_id: 2, team_name: "Second Team", avg4: 205, rank: 2 },
-        { team_id: 3, team_name: "Third Team", avg4: 200, rank: 3 }
+        { team_id: 1, team_name: "Top Team", avg5: 210, rank: 1 },
+        { team_id: 2, team_name: "Second Team", avg5: 205, rank: 2 },
+        { team_id: 3, team_name: "Third Team", avg5: 200, rank: 3 }
       ],
       canAddPlayer: true,
       league_name: "Test League"
@@ -87,8 +87,8 @@ describe("checkPlayerAdditionEligibility", () => {
       selectedTeam: {
         team_id: teamId,
         team_name: "Test Team",
-        current_top3_avg: 190,
-        current_top4_avg: 180,
+        current_top4_avg: 190,
+        current_top5_avg: 180,
         new_player_kana_elo: 250,
         new_avg_with_player: 205,
         csrankker_components: {
@@ -99,9 +99,9 @@ describe("checkPlayerAdditionEligibility", () => {
         }
       },
       topTeamsInLeague: [
-        { team_id: 1, team_name: "Top Team", avg4: 200, rank: 1 },
-        { team_id: 2, team_name: "Second Team", avg4: 195, rank: 2 },
-        { team_id: 3, team_name: "Third Team", avg4: 190, rank: 3 }
+        { team_id: 1, team_name: "Top Team", avg5: 200, rank: 1 },
+        { team_id: 2, team_name: "Second Team", avg5: 195, rank: 2 },
+        { team_id: 3, team_name: "Third Team", avg5: 190, rank: 3 }
       ],
       canAddPlayer: false,
       league_name: "Test League"
@@ -118,7 +118,7 @@ describe("checkPlayerAdditionEligibility", () => {
     expect(result.canAddPlayer).toBe(false);
     expect(result.selectedTeam.new_player_kana_elo).toBe(250);
     expect(result.selectedTeam.new_avg_with_player).toBeGreaterThan(200);
-    expect(result.topTeamsInLeague[0].avg4).toBe(200);
+    expect(result.topTeamsInLeague[0].avg5).toBe(200);
   });
 
   it("should handle missing team data", async () => {

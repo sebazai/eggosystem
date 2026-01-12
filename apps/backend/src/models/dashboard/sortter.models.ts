@@ -110,8 +110,8 @@ export const getTeamValuesForSortter = async (
       ...team,
       top5_values,
       top5_offered_values,
-      // Ensure orig4 is a number (or null if not available)
-      orig4: team.orig4 !== null ? Number(team.orig4) : null,
+      // Ensure orig5 is a number (or null if not available)
+      orig5: team.orig5 !== null ? Number(team.orig5) : null,
       // Initialize is_flagged to false, will be updated later if needed
       is_flagged: false as boolean
     };
@@ -176,7 +176,7 @@ export const getTeamValuesForSortter = async (
  * - Faceit level
  * - Faceit ELO
  * - CS hours
- * - Kana rating (average from all games player played)
+ * - Kana rating (average from most recent season played before current season)
  * - FKD (Faceit K/D ratio)
  *
  * @param seasonId The season ID to filter by
@@ -196,7 +196,7 @@ export const getTeamPlayerValuesForSortter = async (
       spr.faceit_level,
       spr.faceit_elo,
       spr.cs_hours AS hours,
-      ROUND(AVG(ps.kana_rating), 6) AS kanarating,
+      ROUND(ps_prev.avg_kanarating, 6) AS kanarating,
       spr.faceit_kd AS fkd,
       spr.kana_elo,
       spr.offered_elo,
@@ -206,9 +206,23 @@ export const getTeamPlayerValuesForSortter = async (
     JOIN SeasonTeamRegistrations str ON str.team_id = t.id AND str.season_id = strp.season_id
     JOIN SteamPlayers sp ON sp.steam_id = strp.steam_id
     JOIN SeasonPlayerRanks spr ON spr.steam_id = strp.steam_id AND spr.season_id = strp.season_id
-    LEFT JOIN PlayerStats ps ON ps.steam_id = sp.steam_id
-    LEFT JOIN MatchGames mg ON mg.id = ps.match_game_id
-    LEFT JOIN Matches m ON m.id = mg.match_id AND m.season_id = strp.season_id
+    LEFT JOIN (
+      SELECT 
+        ps.steam_id, 
+        AVG(ps.kana_rating) as avg_kanarating
+      FROM PlayerStats ps
+      JOIN MatchGames mg ON mg.id = ps.match_game_id
+      JOIN Matches m ON m.id = mg.match_id
+      WHERE m.season_id = (
+        SELECT MAX(m2.season_id)
+        FROM PlayerStats ps2
+        JOIN MatchGames mg2 ON mg2.id = ps2.match_game_id
+        JOIN Matches m2 ON m2.id = mg2.match_id
+        WHERE ps2.steam_id = ps.steam_id
+          AND m2.season_id < ?
+      )
+      GROUP BY ps.steam_id
+    ) ps_prev ON ps_prev.steam_id = sp.steam_id
     WHERE strp.season_id = ?
       AND strp.team_id = ?
       AND str.approved = 1
@@ -226,6 +240,7 @@ export const getTeamPlayerValuesForSortter = async (
   `;
 
   const results = await runQuery<PlayerSortterValues[]>(query, [
+    seasonId,
     seasonId,
     teamId
   ]);
@@ -245,7 +260,7 @@ export const getTeamPlayerValuesForSortter = async (
  * - Faceit level
  * - Faceit ELO
  * - CS hours
- * - Kana rating (average from all games player played)
+ * - Kana rating (average from most recent season played before current season)
  * - FKD (Faceit K/D ratio)
  * - Role (primary/substitute)
  * - Captain/Co-captain status
@@ -274,7 +289,7 @@ export const getTeamPlayerValuesLive = async (
       spr.faceit_level,
       spr.faceit_elo,
       spr.cs_hours AS hours,
-      ROUND(AVG(ps.kana_rating), 6) AS kanarating,
+      ROUND(ps_prev.avg_kanarating, 6) AS kanarating,
       spr.faceit_kd AS fkd,
       spr.kana_elo,
       spr.offered_elo,
@@ -299,9 +314,23 @@ export const getTeamPlayerValuesLive = async (
     JOIN SeasonTeamPlayers stp ON stp.team_id = t.id
     JOIN SteamPlayers sp ON sp.steam_id = stp.steam_id
     JOIN SeasonPlayerRanks spr ON spr.steam_id = stp.steam_id AND spr.season_id = stp.season_id
-    LEFT JOIN PlayerStats ps ON ps.steam_id = sp.steam_id
-    LEFT JOIN MatchGames mg ON mg.id = ps.match_game_id
-    LEFT JOIN Matches m_stats ON m_stats.id = mg.match_id AND m_stats.season_id = stp.season_id
+    LEFT JOIN (
+      SELECT 
+        ps.steam_id, 
+        AVG(ps.kana_rating) as avg_kanarating
+      FROM PlayerStats ps
+      JOIN MatchGames mg ON mg.id = ps.match_game_id
+      JOIN Matches m ON m.id = mg.match_id
+      WHERE m.season_id = (
+        SELECT MAX(m2.season_id)
+        FROM PlayerStats ps2
+        JOIN MatchGames mg2 ON mg2.id = ps2.match_game_id
+        JOIN Matches m2 ON m2.id = mg2.match_id
+        WHERE ps2.steam_id = ps.steam_id
+          AND m2.season_id < ?
+      )
+      GROUP BY ps.steam_id
+    ) ps_prev ON ps_prev.steam_id = sp.steam_id
     LEFT JOIN Matches m ON m.id = stp.match_id
     LEFT JOIN (
       SELECT 
@@ -343,7 +372,7 @@ export const getTeamPlayerValuesLive = async (
       match_id: number | null;
       match_info: string | null;
     })[]
-  >(query, [seasonId, teamId]);
+  >(query, [seasonId, seasonId, teamId]);
 
   return results;
 };

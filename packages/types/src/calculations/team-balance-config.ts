@@ -23,28 +23,28 @@
  * Number of top players to use when calculating current team average
  * (before adding a new player)
  *
- * Current: 3 (uses top 3 players)
+ * Current: 4 (uses top 4 players)
  * Example: If team has players [1800, 1700, 1600, 1500, 1400]
- *          → uses [1800, 1700, 1600] for current average
+ *          → uses [1800, 1700, 1600, 1500] for current average
  */
-export const TOP_N_FOR_CURRENT_AVG = 3;
+export const TOP_N_FOR_CURRENT_AVG = 4;
 
 /**
  * Total number of players to use when calculating the new average
  * (after adding a new player)
  *
- * Current: 4 (uses top 3 + new player = 4 total)
- * Formula: (top3_avg * 3 + new_player) / 4
+ * Current: 5 (uses top 4 + new player = 5 total)
+ * Formula: (top4_avg * 4 + new_player) / 5
  */
-export const TOTAL_PLAYERS_IN_NEW_AVG = 4;
+export const TOTAL_PLAYERS_IN_NEW_AVG = 5;
 
 /**
  * Number of top players to use for team comparison and league rankings
  *
- * Current: 4 (compares based on avg of top 4 players)
+ * Current: 5 (compares based on avg of top 5 players)
  * Used for: Sortter rankings, eligibility comparisons
  */
-export const TOP_N_FOR_COMPARISON = 4;
+export const TOP_N_FOR_COMPARISON = 5;
 
 /**
  * Number of top players to display in detailed views

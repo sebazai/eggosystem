@@ -570,15 +570,15 @@ export default function AddPlayerPage() {
                   <h3 className="font-semibold">Selected Team Analysis</h3>
                   <div className="grid gap-2 text-sm">
                     <div className="flex justify-between">
-                      <span>Current Top 3 Average:</span>
-                      <span className="font-mono">
-                        {eligibilityResult.selectedTeam.current_top3_avg}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
                       <span>Current Top 4 Average:</span>
                       <span className="font-mono">
                         {eligibilityResult.selectedTeam.current_top4_avg}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Current Top 5 Average:</span>
+                      <span className="font-mono">
+                        {eligibilityResult.selectedTeam.current_top5_avg}
                       </span>
                     </div>
                     <div className="flex justify-between">
@@ -678,7 +678,7 @@ export default function AddPlayerPage() {
                           <span className="font-medium">{team.team_name}</span>
                         </div>
                         <span className="font-mono text-sm">
-                          Avg4: {team.avg4}
+                          Avg5: {team.avg5}
                         </span>
                       </div>
                     ))}
@@ -694,8 +694,8 @@ export default function AddPlayerPage() {
                 >
                   <AlertDescription>
                     {eligibilityResult.canAddPlayer
-                      ? `The new average (${eligibilityResult.selectedTeam.new_avg_with_player}) is lower than or equal to the top team's average (${eligibilityResult.topTeamsInLeague[0]?.avg4}), so the player can be added.`
-                      : `The new average (${eligibilityResult.selectedTeam.new_avg_with_player}) is higher than the top team's average (${eligibilityResult.topTeamsInLeague[0]?.avg4}), so the player cannot be added.`}
+                      ? `The new average (${eligibilityResult.selectedTeam.new_avg_with_player}) is lower than or equal to the top team's average (${eligibilityResult.topTeamsInLeague[0]?.avg5}), so the player can be added.`
+                      : `The new average (${eligibilityResult.selectedTeam.new_avg_with_player}) is higher than the top team's average (${eligibilityResult.topTeamsInLeague[0]?.avg5}), so the player cannot be added.`}
                   </AlertDescription>
                 </Alert>
 

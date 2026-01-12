@@ -6,6 +6,7 @@ import {
 } from "../utils/redisClient";
 
 import { logger } from "../utils/app-logger";
+import { setPlayerKanaElo } from "../models/player.models";
 
 interface PlayerEloRow {
   kana_elo: number | null;
@@ -254,7 +255,8 @@ export const stabilizePlayerElo = async (
   const confidence = Math.min(0.95, 0.3 + sample_size / 1000); // Higher confidence with more data
 
   // Get player's team for this season/league
-  const teamResults = await runQuery<TeamRow[]>(
+  // Try SeasonTeamPlayers first (finalized teams), then SeasonTeamRegistrationPlayers (registrations)
+  let teamResults = await runQuery<TeamRow[]>(
     `SELECT stp.team_id 
      FROM SeasonTeamPlayers stp
      INNER JOIN SeasonLeagueTeams slt ON stp.team_id = slt.team_id AND stp.season_id = slt.season_id
@@ -262,6 +264,19 @@ export const stabilizePlayerElo = async (
      LIMIT 1`,
     [steam_id, season_id, league_id]
   );
+
+  // If not found in SeasonTeamPlayers, try SeasonTeamRegistrationPlayers
+  if (teamResults.length === 0) {
+    teamResults = await runQuery<TeamRow[]>(
+      `SELECT strp.team_id 
+       FROM SeasonTeamRegistrationPlayers strp
+       INNER JOIN SeasonLeagueTeams slt ON strp.team_id = slt.team_id AND strp.season_id = slt.season_id
+       INNER JOIN SeasonTeamRegistrations str ON str.team_id = strp.team_id AND str.season_id = strp.season_id
+       WHERE strp.steam_id = ? AND strp.season_id = ? AND slt.league_id = ? AND str.approved = 1
+       LIMIT 1`,
+      [steam_id, season_id, league_id]
+    );
+  }
 
   const team_id = teamResults.length > 0 ? teamResults[0].team_id : 0;
 
@@ -281,8 +296,6 @@ export const stabilizePlayerElo = async (
 
   // Also store the offered ELO in the database for future reference
   try {
-    // Use the model function directly
-    const { setPlayerKanaElo } = await import("../models/player.models.js");
     await setPlayerKanaElo(
       steam_id,
       adjusted_elo,
@@ -575,20 +588,29 @@ export const createTeamFlagsFromDatabase = async (
   }
 };
 
-export const getTeamFlags = async (): Promise<TeamFlagWithDetails[]> => {
+export const getTeamFlags = async (
+  seasonId?: number
+): Promise<TeamFlagWithDetails[]> => {
   try {
-    // Get all team flag keys from Redis
-    const flagKeys = await redisClient.keys("team-flag:*");
+    // Get all team flag keys from Redis (filter by season if provided)
+    const pattern = seasonId ? `team-flag:s${seasonId}:*` : "team-flag:*";
+    let flagKeys = await redisClient.keys(pattern);
 
     if (!flagKeys.length) {
       // No flags in Redis, create them from database
-      logger.info("No team flags found in Redis, creating from database...");
-      await createTeamFlagsFromDatabase(16); // Create flags for season 16
+      const targetSeason = seasonId || 17; // Default to season 17 if not provided
+      logger.info(
+        `No team flags found in Redis, creating from database for season ${targetSeason}...`
+      );
+      await createTeamFlagsFromDatabase(targetSeason);
 
       // Try to get flags again
-      const newFlagKeys = await redisClient.keys("team-flag:*");
-      if (newFlagKeys.length > 0) {
-        logger.info(`Created ${newFlagKeys.length} team flags from database`);
+      flagKeys = await redisClient.keys(pattern);
+      if (flagKeys.length > 0) {
+        logger.info(`Created ${flagKeys.length} team flags from database`);
+      } else {
+        logger.warn("No team flags found even after creating from database");
+        return [];
       }
     }
 

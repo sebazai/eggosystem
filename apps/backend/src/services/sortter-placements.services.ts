@@ -168,7 +168,7 @@ export const generateInitialPlacements = (
     team_name: team.team_name,
     division: Math.floor(index / teamsPerDivision) + 1,
     comments: team.comments || "",
-    original_avg: team.avg4,
+    original_avg: team.avg5,
     original_position: index
   }));
 };

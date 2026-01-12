@@ -38,8 +38,8 @@ describe("Integration Tests", () => {
           team_logo: "logo_url_1",
           league_name: "League 1",
           top5_sum: 1418,
-          avg4: 288.75,
-          orig4: 288.75,
+          avg5: 283.6,
+          orig5: 283.6,
           top5_values: [300, 295, 285, 275, 263],
           top5_offered_values: [300, 295, 285, 275, 263],
           is_flagged: false
@@ -83,8 +83,8 @@ describe("Integration Tests", () => {
           team_logo: "logo_url_1",
           league_name: "League 1",
           top5_sum: 1418,
-          avg4: 288.75,
-          orig4: 288.75,
+          avg5: 283.6,
+          orig5: 283.6,
           top5_values: [300, 295, 285, 275, 263],
           top5_offered_values: [300, 295, 285, 275, 263],
           is_flagged: false
@@ -95,8 +95,8 @@ describe("Integration Tests", () => {
           team_logo: "logo_url_2",
           league_name: "League 2",
           top5_sum: 1000,
-          avg4: 200.0,
-          orig4: 200.0,
+          avg5: 200.0,
+          orig5: 200.0,
           top5_values: [250, 250, 250, 250, 0],
           top5_offered_values: [250, 250, 250, 250, 0],
           is_flagged: false

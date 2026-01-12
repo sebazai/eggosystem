@@ -2,8 +2,8 @@ export interface TeamEligibilityResult {
   selectedTeam: {
     team_id: number;
     team_name: string;
-    current_top3_avg: number;
-    current_top4_avg: number; // Added top 4 average
+    current_top4_avg: number; // Now top 4 based on TOP_N_FOR_CURRENT_AVG=4
+    current_top5_avg: number; // Now top 5 based on TOP_N_FOR_COMPARISON=5
     new_avg_with_player: number;
     new_player_kana_elo: number;
     csrankker_components?: {
@@ -16,7 +16,7 @@ export interface TeamEligibilityResult {
   topTeamsInLeague: Array<{
     team_id: number;
     team_name: string;
-    avg4: number;
+    avg5: number; // Now avg5 based on TOP_N_FOR_COMPARISON=5
     rank: number;
   }>;
   canAddPlayer: boolean;

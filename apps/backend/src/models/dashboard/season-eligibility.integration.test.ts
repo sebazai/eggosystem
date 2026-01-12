@@ -234,10 +234,10 @@ describe("Season Eligibility Integration Tests", () => {
       );
 
       // Should only consider the 5 primary players (1800, 1700, 1600, 1500, 1400)
-      // Top 3 average: (1800 + 1700 + 1600) / 3 = 1700
       // Top 4 average: (1800 + 1700 + 1600 + 1500) / 4 = 1650
-      expect(result.selectedTeam.current_top3_avg).toBe(1700);
+      // Top 5 average: (1800 + 1700 + 1600 + 1500 + 1400) / 5 = 1600
       expect(result.selectedTeam.current_top4_avg).toBe(1650);
+      expect(result.selectedTeam.current_top5_avg).toBe(1600);
       expect(result.selectedTeam.team_id).toBe(9991);
       expect(result.selectedTeam.team_name).toBe("Team Alpha");
     });
@@ -252,9 +252,7 @@ describe("Season Eligibility Integration Tests", () => {
       );
 
       // Should only consider the 4 primary players (1100, 1000, 900, 800)
-      // Top 3 average: (1100 + 1000 + 900) / 3 = 1000
       // Top 4 average: (1100 + 1000 + 900 + 800) / 4 = 950
-      expect(result.selectedTeam.current_top3_avg).toBe(1000);
       expect(result.selectedTeam.current_top4_avg).toBe(950);
       expect(result.selectedTeam.team_id).toBe(9992);
       expect(result.selectedTeam.team_name).toBe("Team Beta");
@@ -275,7 +273,7 @@ describe("Season Eligibility Integration Tests", () => {
       // Should only consider the 3 primary players (500, 400, 300)
       // Top 3 average: (500 + 400 + 300) / 3 = 400
       // Top 4 average: (500 + 400 + 300) / 4 = 400 (only 3 players)
-      expect(result.selectedTeam.current_top3_avg).toBe(400);
+      expect(result.selectedTeam.current_top4_avg).toBe(400);
       expect(result.selectedTeam.current_top4_avg).toBe(400);
       expect(result.selectedTeam.team_id).toBe(9993);
       expect(result.selectedTeam.team_name).toBe("Team Gamma");
@@ -298,17 +296,17 @@ describe("Season Eligibility Integration Tests", () => {
       expect(result.topTeamsInLeague).toHaveLength(2);
 
       // Verify the comparison only considered primary players from other teams
-      // Team Beta: 4 primary players (1100, 1000, 900, 800) -> avg4 = 950
-      // Team Gamma: 3 primary players (500, 400, 300) -> avg4 = 400
+      // Team Beta: 4 primary players (1100, 1000, 900, 800) -> avg5 = 950
+      // Team Gamma: 3 primary players (500, 400, 300) -> avg5 = 400
       // Team Alpha (9991) is excluded from comparison (correct behavior)
 
       const topTeam = result.topTeamsInLeague[0];
       expect(topTeam.team_id).toBe(9992); // Team Beta should be top (excluding Team Alpha)
-      expect(topTeam.avg4).toBe(950);
+      expect(topTeam.avg5).toBe(950);
 
       const secondTeam = result.topTeamsInLeague[1];
       expect(secondTeam.team_id).toBe(9993); // Team Gamma should be second
-      expect(secondTeam.avg4).toBe(400);
+      expect(secondTeam.avg5).toBe(400);
     });
 
     it("should exclude current team from league comparison", async () => {
@@ -342,27 +340,27 @@ describe("Season Eligibility Integration Tests", () => {
       );
 
       // Team Alpha has 5 primary players with kana_elo: 1800, 1700, 1600, 1500, 1400
-      // Current top3_avg: (1800 + 1700 + 1600) / 3 = 1700
       // Current top4_avg: (1800 + 1700 + 1600 + 1500) / 4 = 1650
+      // Current top5_avg: (1800 + 1700 + 1600 + 1500 + 1400) / 5 = 1600
       // New player kana_elo: 1800 (from CSRankker mock)
-      // New avg with player: (1700 * 3 + 1800) / 4 = (5100 + 1800) / 4 = 6900 / 4 = 1725
-      // Top team avg4: 950 (Team Beta)
-      // 1725 <= 950 is false, so canAddPlayer should be false
+      // New avg with player: (1650 * 4 + 1800) / 5 = (6600 + 1800) / 5 = 8400 / 5 = 1680
+      // Top team avg5: 950 (Team Beta)
+      // 1680 <= 950 is false, so canAddPlayer should be false
 
-      expect(result.selectedTeam.current_top3_avg).toBe(1700);
       expect(result.selectedTeam.current_top4_avg).toBe(1650);
+      expect(result.selectedTeam.current_top5_avg).toBe(1600);
       expect(result.selectedTeam.new_player_kana_elo).toBe(1800);
-      expect(result.selectedTeam.new_avg_with_player).toBe(1725);
+      expect(result.selectedTeam.new_avg_with_player).toBe(1680);
 
-      // Should not be able to add player because 1725 > 950 (top team avg4)
+      // Should not be able to add player because 1725 > 950 (top team avg5)
       // This ensures the eligibility check only considers primary players
       expect(result.canAddPlayer).toBe(false);
     });
 
     it("should allow adding player when it doesn't make team too strong", async () => {
       // Test with a player that wouldn't make Team Gamma too strong
-      // Team Gamma current top3_avg: 400, top4_avg: 400
-      // Adding a player with kana_elo 1800 would make new avg4: (400*3 + 1800) / 4 = 750
+      // Team Gamma current top4_avg: (500 + 400 + 300) / 3 = 400 (only 3 players, so use all 3)
+      // Adding a player with kana_elo 1800 would make new avg: (400*3 + 1800) / 4 = 680
 
       // The MSW server will handle the CSRankker API call, so we don't need to mock fetch here.
       // The eligibility function will call the actual CSRankker API.
@@ -374,10 +372,10 @@ describe("Season Eligibility Integration Tests", () => {
         { connection }
       );
 
-      // New average with player: (400*3 + 1800) / 4 = 750
-      expect(result.selectedTeam.new_avg_with_player).toBe(750);
+      // New average with player: (400*3 + 1800) / 4 = 680
+      expect(result.selectedTeam.new_avg_with_player).toBe(680);
 
-      // Should be able to add player because 750 <= 950 (top team avg4 from Team Beta)
+      // Should be able to add player because 680 <= 950 (top team avg5 from Team Beta)
       expect(result.canAddPlayer).toBe(true);
     });
   });
@@ -417,7 +415,7 @@ describe("Season Eligibility Integration Tests", () => {
       );
 
       // Should work with only 3 primary players
-      expect(result.selectedTeam.current_top3_avg).toBe(600); // (700 + 600 + 500) / 3
+      expect(result.selectedTeam.current_top4_avg).toBe(600); // (700 + 600 + 500) / 3
       expect(result.selectedTeam.current_top4_avg).toBe(600); // Only 3 players available
       expect(result.selectedTeam.team_id).toBe(9995);
       expect(result.selectedTeam.team_name).toBe("Team Delta Test");
@@ -432,8 +430,8 @@ describe("Season Eligibility Integration Tests", () => {
         { connection }
       );
 
-      expect(result.selectedTeam.current_top3_avg).toBe(1700);
       expect(result.selectedTeam.current_top4_avg).toBe(1650);
+      expect(result.selectedTeam.current_top5_avg).toBe(1600);
       expect(result.selectedTeam.team_id).toBe(9991);
     });
   });
@@ -459,19 +457,19 @@ describe("Season Eligibility Integration Tests", () => {
         }
       );
 
-      // With 1700 player excluded: (1800 + 1600 + 1500) / 3 = 1633.333...
-      expect(result.selectedTeam.current_top3_avg).toBe(1633.333);
+      // With 1700 player excluded: (1800 + 1600 + 1500 + 1400) / 4 = 1575
+      expect(result.selectedTeam.current_top4_avg).toBe(1575);
 
-      // New avg with player: (1633.333 * 3 + new_player_kana_elo) / 4
+      // New avg with player: (1575 * 4 + new_player_kana_elo) / 5
       // CSRankker mock returns stabilized kana_elo based on components
       expect(result.selectedTeam.new_player_kana_elo).toBe(1600);
-      expect(result.selectedTeam.new_avg_with_player).toBe(1625);
+      expect(result.selectedTeam.new_avg_with_player).toBe(1580);
     });
 
     it("should recalculate team balance when excluding top player", async () => {
       // Team Alpha: 1800, 1700, 1600, 1500, 1400
-      // Exclude top player (1800): new top3 = (1700 + 1600 + 1500) / 3 = 1600
-      // Add substitute (1800): new avg = (1600 * 3 + 1800) / 4 = 1650
+      // Exclude top player (1800): new top4 = (1700 + 1600 + 1500 + 1400) / 4 = 1550
+      // Add substitute (1800): new avg = (1550 * 4 + 1800) / 5 = 1600
 
       const result = await checkPlayerAdditionEligibility(
         999,
@@ -483,8 +481,8 @@ describe("Season Eligibility Integration Tests", () => {
         }
       );
 
-      expect(result.selectedTeam.current_top3_avg).toBe(1600);
-      expect(result.selectedTeam.new_avg_with_player).toBe(1650);
+      expect(result.selectedTeam.current_top4_avg).toBe(1550);
+      expect(result.selectedTeam.new_avg_with_player).toBe(1600);
     });
 
     it("should work without exclusion when excludeSteamId is not provided", async () => {
@@ -496,9 +494,9 @@ describe("Season Eligibility Integration Tests", () => {
         { connection }
       );
 
-      // Normal calculation: top3 = (1800 + 1700 + 1600) / 3 = 1700
-      expect(result.selectedTeam.current_top3_avg).toBe(1700);
-      expect(result.selectedTeam.new_avg_with_player).toBe(1725);
+      // Normal calculation: top4 = (1800 + 1700 + 1600 + 1500) / 4 = 1650
+      expect(result.selectedTeam.current_top4_avg).toBe(1650);
+      expect(result.selectedTeam.new_avg_with_player).toBe(1680);
     });
   });
 
@@ -566,7 +564,7 @@ describe("Season Eligibility Integration Tests", () => {
       // Should only consider non-discarded players: 1800, 1700, 1600
       // Top 3 average: (1800 + 1700 + 1600) / 3 = 1700
       // The discarded player with 2000 kana_elo should NOT be included
-      expect(result.selectedTeam.current_top3_avg).toBe(1700);
+      expect(result.selectedTeam.current_top4_avg).toBe(1700);
       expect(result.selectedTeam.current_top4_avg).toBe(1700); // Only 3 active players
       expect(result.selectedTeam.team_id).toBe(9996);
       expect(result.selectedTeam.team_name).toBe("Team Epsilon Test");
@@ -598,8 +596,8 @@ describe("Season Eligibility Integration Tests", () => {
         (team) => team.team_id === 9992
       );
       expect(teamBeta).toBeDefined();
-      // Team Beta should have avg4 = 900 (not 950 which would include the discarded 1100 player)
-      expect(teamBeta?.avg4).toBe(900);
+      // Team Beta should have avg5 = 900 (not 950 which would include the discarded 1100 player)
+      expect(teamBeta?.avg5).toBe(900);
     });
 
     it("should handle team with all players discarded", async () => {

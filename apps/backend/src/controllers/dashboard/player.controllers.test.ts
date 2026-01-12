@@ -207,13 +207,13 @@ describe("addPlayerToTeamController", () => {
       selectedTeam: {
         team_id: 1650,
         team_name: "Test Team",
-        current_top3_avg: currentTop3Avg,
-        current_top4_avg: currentTop4Avg,
+        current_top4_avg: currentTop3Avg,
+        current_top5_avg: currentTop4Avg,
         new_player_kana_elo: newPlayerKanaElo,
         new_avg_with_player: newAvgWithPlayer
       },
       topTeamsInLeague: [
-        { team_id: 1, team_name: "Top Team", avg4: 210, rank: 1 }
+        { team_id: 1, team_name: "Top Team", avg5: 210, rank: 1 }
       ],
       canAddPlayer,
       league_name: leagueName
@@ -522,14 +522,14 @@ describe("addSubstitutePlayerController", () => {
       selectedTeam: {
         team_id: 1650,
         team_name: "Test Team",
-        current_top3_avg: 200,
-        current_top4_avg: 195,
+        current_top4_avg: 200,
+        current_top5_avg: 195,
         new_player_kana_elo: 150,
         new_avg_with_player: 198,
         csrankker_components: { trueLevel: 5, mm: 10, hour: 5, kana: 5 }
       },
       topTeamsInLeague: [
-        { team_id: 1, team_name: "Top Team", avg4: 210, rank: 1 }
+        { team_id: 1, team_name: "Top Team", avg5: 210, rank: 1 }
       ],
       canAddPlayer: true,
       league_name: "Test League"

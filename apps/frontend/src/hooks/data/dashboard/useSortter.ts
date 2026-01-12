@@ -149,7 +149,7 @@ export function useSortter(placeTeamsInDivision: number) {
       {} as Record<number, number>
     );
 
-    // Sort teams by division first, then by avg4 within each division
+    // Sort teams by division first, then by avg5 within each division
     return [...teams]
       .sort((a, b) => {
         const divA = divisionMap[a.team_id] || 999; // Default to a high division if not found
@@ -160,8 +160,8 @@ export function useSortter(placeTeamsInDivision: number) {
           return divA - divB;
         }
 
-        // Then sort by avg4 (descending) within the same division
-        return b.avg4 - a.avg4;
+        // Then sort by avg5 (descending) within the same division
+        return b.avg5 - a.avg5;
       })
       .map((team) => ({
         ...team,
