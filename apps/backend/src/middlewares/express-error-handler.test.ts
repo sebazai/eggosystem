@@ -6,7 +6,7 @@ import express, {
 import request from "supertest";
 import { ZodError } from "zod";
 import { expressErrorHandler } from "./express-error-handler";
-import { BadRequestError, NotFoundError } from "../utils/errors";
+import { BadRequestError, NotFoundError, BaseError } from "../utils/errors";
 
 function createApp(
   routeImpl: (req: Request, res: Response, next: NextFunction) => void
@@ -301,6 +301,306 @@ describe("expressErrorHandler - RFC7807 problem+json", () => {
           instance: "/test"
         })
       );
+    });
+  });
+
+  describe("CORS error handling", () => {
+    it("returns problem+json with 500 status for CORS errors", async () => {
+      const app = createApp((_req, _res, next) => {
+        next(new Error("Not allowed by CORS"));
+      });
+
+      const res = await request(app).get("/test");
+
+      expect(res.status).toBe(500);
+      expect(res.headers["content-type"]).toMatch(/application\/problem\+json/);
+      expect(res.body).toEqual(
+        expect.objectContaining({
+          type: "about:blank",
+          title: expect.stringMatching(/Internal Server Error/i),
+          status: 500,
+          detail: "Not allowed by CORS",
+          instance: "/test"
+        })
+      );
+    });
+
+    it("returns 500 for CORS errors even when error has status property", async () => {
+      const app = createApp((_req, _res, next) => {
+        const corsError = new Error("Not allowed by CORS");
+        (corsError as { status?: number }).status = 400; // Even if status is 400
+        next(corsError);
+      });
+
+      const res = await request(app).get("/test");
+
+      // CORS errors should always return 500, not the error's status
+      expect(res.status).toBe(500);
+      expect(res.body.status).toBe(500);
+    });
+  });
+
+  describe("Unknown error types", () => {
+    it("returns problem+json with 500 for non-Error objects", async () => {
+      const app = createApp((_req, _res, next) => {
+        next({ someProperty: "not an error object" });
+      });
+
+      const res = await request(app).get("/test");
+
+      expect(res.status).toBe(500);
+      expect(res.headers["content-type"]).toMatch(/application\/problem\+json/);
+      expect(res.body).toEqual(
+        expect.objectContaining({
+          type: "about:blank",
+          title: expect.stringMatching(/Internal Server Error/i),
+          status: 500,
+          detail: "Something went wrong",
+          instance: "/test"
+        })
+      );
+    });
+
+    it("returns problem+json with 500 for null errors", async () => {
+      const app = createApp((_req, _res, next) => {
+        // Express doesn't call error handler for null, so we need to explicitly pass an error
+        // In real scenarios, null would result in 404 from Express default handler
+        // But if error handler is called with null, it should handle it
+        const error = null as unknown as Error;
+        next(error);
+      });
+
+      const res = await request(app).get("/test");
+
+      // When null is passed to error handler, it should return 500
+      expect(res.status).toBe(500);
+      expect(res.body).toEqual(
+        expect.objectContaining({
+          type: "about:blank",
+          title: expect.stringMatching(/Internal Server Error/i),
+          status: 500,
+          detail: "Something went wrong",
+          instance: "/test"
+        })
+      );
+    });
+
+    it("returns problem+json with 500 for undefined errors", async () => {
+      const app = createApp((_req, _res, next) => {
+        // Express doesn't call error handler for undefined, so we need to explicitly pass an error
+        // In real scenarios, undefined would result in 404 from Express default handler
+        // But if error handler is called with undefined, it should handle it
+        const error = undefined as unknown as Error;
+        next(error);
+      });
+
+      const res = await request(app).get("/test");
+
+      // When undefined is passed to error handler, it should return 500
+      expect(res.status).toBe(500);
+      expect(res.body).toEqual(
+        expect.objectContaining({
+          type: "about:blank",
+          title: expect.stringMatching(/Internal Server Error/i),
+          status: 500,
+          detail: "Something went wrong",
+          instance: "/test"
+        })
+      );
+    });
+
+    it("returns problem+json with 500 for string errors", async () => {
+      const app = createApp((_req, _res, next) => {
+        next("String error message");
+      });
+
+      const res = await request(app).get("/test");
+
+      expect(res.status).toBe(500);
+      expect(res.body).toEqual(
+        expect.objectContaining({
+          type: "about:blank",
+          title: expect.stringMatching(/Internal Server Error/i),
+          status: 500,
+          detail: "Something went wrong",
+          instance: "/test"
+        })
+      );
+    });
+  });
+
+  describe("Database error conversion edge cases", () => {
+    it("handles database errors that are not Error instances", async () => {
+      const app = createApp((_req, _res, next) => {
+        // Database error that's not an Error instance (unlikely but possible)
+        const dbError = {
+          code: "ER_DUP_ENTRY",
+          sqlState: "23000",
+          sqlMessage: "Duplicate entry '123' for key 'test_key'",
+          message: "Duplicate entry '123' for key 'test_key'"
+        };
+        next(dbError);
+      });
+
+      const res = await request(app).get("/test");
+
+      expect(res.status).toBe(409);
+      expect(res.headers["content-type"]).toMatch(/application\/problem\+json/);
+      expect(res.body).toEqual(
+        expect.objectContaining({
+          type: "about:blank",
+          title: expect.stringMatching(/Conflict/i),
+          status: 409,
+          instance: "/test"
+        })
+      );
+    });
+
+    it("handles database errors with missing sqlMessage", async () => {
+      const app = createApp((_req, _res, next) => {
+        const dbError = {
+          code: "ER_DUP_ENTRY",
+          sqlState: "23000",
+          message: "Duplicate entry"
+        };
+        next(dbError as unknown as Error);
+      });
+
+      const res = await request(app).get("/test");
+
+      expect(res.status).toBe(409);
+      expect(res.body.status).toBe(409);
+    });
+  });
+
+  describe("RFC 7807 format verification", () => {
+    it("ensures all error responses follow RFC 7807 format", async () => {
+      const testCases = [
+        {
+          error: new BadRequestError("Bad request"),
+          expectedStatus: 400,
+          expectedTitle: "Bad Request"
+        },
+        {
+          error: new NotFoundError("Not found"),
+          expectedStatus: 404,
+          expectedTitle: "Not Found"
+        },
+        {
+          error: new Error("Generic error"),
+          expectedStatus: 400,
+          expectedTitle: "Bad Request"
+        }
+      ];
+
+      for (const testCase of testCases) {
+        const app = createApp((_req, _res, next) => {
+          next(testCase.error);
+        });
+
+        const res = await request(app).get("/test");
+
+        // Verify RFC 7807 required fields
+        expect(res.body).toHaveProperty("type");
+        expect(res.body).toHaveProperty("title");
+        expect(res.body).toHaveProperty("status");
+        expect(res.body).toHaveProperty("detail");
+        expect(res.body).toHaveProperty("instance");
+
+        // Verify field types and values
+        expect(res.body.type).toBe("about:blank");
+        expect(res.body.title).toBe(testCase.expectedTitle);
+        expect(res.body.status).toBe(testCase.expectedStatus);
+        expect(typeof res.body.detail).toBe("string");
+        expect(res.body.instance).toBe("/test");
+
+        // Verify content type
+        expect(res.headers["content-type"]).toMatch(
+          /application\/problem\+json/
+        );
+      }
+    });
+
+    it("includes extensions for ZodError (issues array)", async () => {
+      const zodError = new ZodError([
+        {
+          code: "invalid_type",
+          message: "Test error",
+          path: ["test"]
+        } as ZodError["issues"][number]
+      ]);
+
+      const app = createApp((_req, _res, next) => {
+        next(zodError);
+      });
+
+      const res = await request(app).get("/test");
+
+      expect(res.body).toHaveProperty("issues");
+      expect(Array.isArray(res.body.issues)).toBe(true);
+      expect(res.body.issues.length).toBeGreaterThan(0);
+    });
+
+    it("uses custom title from BaseError when provided", async () => {
+      class CustomError extends BaseError {
+        constructor() {
+          super("Custom error message", 400, "Custom Title");
+        }
+      }
+
+      const app = createApp((_req, _res, next) => {
+        next(new CustomError());
+      });
+
+      const res = await request(app).get("/test");
+
+      expect(res.body.title).toBe("Custom Title");
+      expect(res.body.detail).toBe("Custom error message");
+      expect(res.body.status).toBe(400);
+    });
+  });
+
+  describe("Error status code mapping", () => {
+    it("maps all defined status codes to correct titles", async () => {
+      const statusMap: Array<{ status: number; title: string }> = [
+        { status: 400, title: "Bad Request" },
+        { status: 401, title: "Unauthorized" },
+        { status: 403, title: "Forbidden" },
+        { status: 404, title: "Not Found" },
+        { status: 405, title: "Method Not Allowed" },
+        { status: 409, title: "Conflict" },
+        { status: 422, title: "Unprocessable Entity" },
+        { status: 429, title: "Too Many Requests" },
+        { status: 500, title: "Internal Server Error" },
+        { status: 502, title: "Bad Gateway" },
+        { status: 503, title: "Service Unavailable" }
+      ];
+
+      for (const { status, title } of statusMap) {
+        const app = createApp((_req, _res, next) => {
+          const error = new Error("Test error");
+          (error as { status?: number }).status = status;
+          next(error);
+        });
+
+        const res = await request(app).get("/test");
+
+        expect(res.body.title).toBe(title);
+        expect(res.body.status).toBe(status);
+      }
+    });
+
+    it("uses 'Error' as default title for unmapped status codes", async () => {
+      const app = createApp((_req, _res, next) => {
+        const error = new Error("Test error");
+        (error as { status?: number }).status = 418; // I'm a teapot - not in the map
+        next(error);
+      });
+
+      const res = await request(app).get("/test");
+
+      expect(res.body.title).toBe("Error");
+      expect(res.body.status).toBe(418);
     });
   });
 });

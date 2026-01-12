@@ -12,10 +12,56 @@ import {
 } from "discord.js";
 import { logger } from "../utils/app-logger";
 import { runQuery } from "../db/mysqlRunQuery";
+import { retryWithBackoff } from "../utils/retry-utils";
 
 // Discord client instance
 let discordClient: Client | null = null;
 let eventHandlersSetup = false; // Flag to prevent duplicate event handler setup
+
+/**
+ * Check if Discord client is healthy and connected
+ * @returns Promise resolving to object with health status and details
+ */
+export const checkDiscordHealth = async (): Promise<{
+  healthy: boolean;
+  configured: boolean;
+}> => {
+  // If in test/e2e environment, return healthy (mock client)
+  if (process.env.NODE_ENV === "test" || process.env.NODE_ENV === "e2e") {
+    return { healthy: true, configured: true };
+  }
+
+  // Check if Discord is configured
+  const isConfigured = !!(
+    process.env.DISCORD_BOT_TOKEN && process.env.DISCORD_GUILD_ID
+  );
+
+  if (!isConfigured) {
+    return { healthy: true, configured: false }; // Not unhealthy if not configured
+  }
+
+  try {
+    if (!discordClient) {
+      return { healthy: false, configured: true };
+    }
+
+    // Check if client is ready and connected
+    if (!discordClient.isReady()) {
+      return { healthy: false, configured: true };
+    }
+
+    // Try to fetch the guild to verify connection
+    const guildId = process.env.DISCORD_GUILD_ID;
+    if (!guildId) {
+      return { healthy: false, configured: true };
+    }
+    await discordClient.guilds.fetch(guildId);
+    return { healthy: true, configured: true };
+  } catch (error) {
+    logger.error("Discord health check failed", error);
+    return { healthy: false, configured: true };
+  }
+};
 
 // Initialize Discord client
 export const initializeDiscordClient = async (): Promise<Client> => {
@@ -72,7 +118,44 @@ export const initializeDiscordClient = async (): Promise<Client> => {
     ]
   });
 
-  await client.login(process.env.DISCORD_BOT_TOKEN);
+  // Retry login with exponential backoff
+  await retryWithBackoff(
+    async () => {
+      await client.login(process.env.DISCORD_BOT_TOKEN);
+    },
+    {
+      maxAttempts: 5,
+      initialDelayMs: 2000,
+      maxDelayMs: 30000,
+      backoffMultiplier: 2,
+      onRetry: (attempt, error) => {
+        logger.warn(
+          `Discord client login attempt ${attempt} failed, retrying...`,
+          {
+            error: error.message
+          }
+        );
+      }
+    }
+  );
+
+  // Setup reconnection handlers
+  client.on("error", (error) => {
+    logger.error("Discord client error", error);
+  });
+
+  client.on("disconnect", () => {
+    logger.warn("Discord client disconnected");
+  });
+
+  client.on("reconnecting", () => {
+    logger.info("Discord client reconnecting...");
+  });
+
+  client.on("ready", () => {
+    logger.info("Discord client ready and connected");
+  });
+
   discordClient = client;
 
   logger.info("Discord client initialized");

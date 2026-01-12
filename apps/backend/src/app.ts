@@ -81,6 +81,7 @@ app.use("/api/v1", v1Router);
 app.use(expressErrorHandler);
 
 // Initialize Discord client if environment variables are available and not in test mode
+// Note: Server will start even if Discord initialization fails
 if (
   process.env.DISCORD_BOT_TOKEN &&
   process.env.DISCORD_GUILD_ID &&
@@ -93,7 +94,13 @@ if (
       return setupDiscordEventHandlers();
     })
     .catch((error) => {
-      logger.error("Failed to initialize Discord client:", error);
+      logger.error(
+        "Failed to initialize Discord client after retries. Server will continue without Discord integration.",
+        error
+      );
+      logger.warn(
+        "Discord features will be unavailable. Reconnection will be attempted on next request."
+      );
     });
 } else if (process.env.NODE_ENV === "test" || process.env.NODE_ENV === "e2e") {
   logger.info("Test environment detected, skipping Discord initialization");
@@ -104,6 +111,7 @@ if (
 }
 
 // Initialize queue consumers if not in test mode and RabbitMQ environment variables are available
+// Note: Server will start even if RabbitMQ initialization fails - automatic reconnection will be attempted
 if (
   process.env.NODE_ENV !== "test" &&
   process.env.NODE_ENV !== "e2e" &&
@@ -116,8 +124,11 @@ if (
     .then(() => {
       logger.info("Queue consumers initialized successfully");
     })
-    .catch((error) => {
-      logger.error("Failed to initialize queue consumers:", error);
+    .catch(() => {
+      // Error is already logged in startAllConsumers with retry details
+      logger.warn(
+        "Queue consumers initialization completed with errors. Server will continue. Automatic reconnection will be attempted."
+      );
     });
 } else if (process.env.NODE_ENV === "test" || process.env.NODE_ENV === "e2e") {
   logger.info(

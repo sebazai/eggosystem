@@ -4,7 +4,7 @@
   "description": "Backend for CS stats",
   "main": "dist/server.js",
   "scripts": {
-    "pretest": "pnpm --filter=@eggosystem/shared-msw build",
+    "pretest": "pnpm --filter=@eggosystem/shared-msw build && pnpm reseed",
     "build": "tsc -p tsconfig.build.json",
     "start": "node ./dist/server.js",
     "dev": "nodemon",

@@ -1,5 +1,6 @@
 import { logger } from "../utils/app-logger";
 import { ParsedQueueConsumer } from "./parsed-queue-consumer";
+import { retryWithBackoff } from "../utils/retry-utils";
 
 /**
  * Queue Consumer Manager
@@ -16,16 +17,37 @@ export class QueueConsumerManager {
   }
 
   /**
-   * Initialize and start all queue consumers
+   * Initialize and start all queue consumers with retry logic
    */
   async startAllConsumers(): Promise<void> {
     try {
       logger.info("[QueueConsumerManager] Starting queue consumers...");
 
-      // Initialize parsed queue consumer
+      // Initialize parsed queue consumer with retry logic
       const parsedConsumer = new ParsedQueueConsumer();
-      await parsedConsumer.connect();
-      await parsedConsumer.startConsumer();
+
+      // Retry connection with exponential backoff
+      await retryWithBackoff(
+        async () => {
+          await parsedConsumer.connect();
+          await parsedConsumer.startConsumer();
+        },
+        {
+          maxAttempts: 5,
+          initialDelayMs: 2000,
+          maxDelayMs: 30000,
+          backoffMultiplier: 2,
+          onRetry: (attempt, error) => {
+            logger.warn(
+              `[QueueConsumerManager] Connection attempt ${attempt} failed, retrying...`,
+              {
+                error: error.message
+              }
+            );
+          }
+        }
+      );
+
       this.consumers.push(parsedConsumer);
 
       logger.info(
@@ -35,8 +57,15 @@ export class QueueConsumerManager {
         }
       );
     } catch (error) {
-      logger.error("Failed to start queue consumers", error);
-      throw error;
+      logger.error(
+        "[QueueConsumerManager] Failed to start queue consumers after all retry attempts",
+        error
+      );
+      // Don't throw - allow server to start without RabbitMQ
+      // The connection will be retried automatically via handleConnectionLoss
+      logger.warn(
+        "[QueueConsumerManager] Server will continue without RabbitMQ connection. Reconnection will be attempted automatically."
+      );
     }
   }
 
@@ -89,6 +118,53 @@ export class QueueConsumerManager {
     return {
       consumerCount: this.consumers.length,
       isShuttingDown: this.isShuttingDown
+    };
+  }
+
+  /**
+   * Check if RabbitMQ consumers are healthy
+   * @returns Promise resolving to object with health status and details
+   */
+  async checkHealth(): Promise<{
+    healthy: boolean;
+    configured: boolean;
+    consumerCount: number;
+  }> {
+    // Check if RabbitMQ is configured
+    const isConfigured = !!(
+      process.env.RABBITMQ_HOST &&
+      process.env.RABBITMQ_USER &&
+      process.env.RABBITMQ_PASSWORD
+    );
+
+    if (!isConfigured) {
+      return {
+        healthy: true, // Not unhealthy if not configured
+        configured: false,
+        consumerCount: 0
+      };
+    }
+
+    if (this.consumers.length === 0) {
+      return {
+        healthy: false, // Configured but no consumers = unhealthy
+        configured: true,
+        consumerCount: 0
+      };
+    }
+
+    // Check health of all consumers
+    const healthChecks = await Promise.all(
+      this.consumers.map((consumer) => consumer.healthCheck())
+    );
+
+    // All consumers must be healthy
+    const allHealthy = healthChecks.every((isHealthy) => isHealthy);
+
+    return {
+      healthy: allHealthy,
+      configured: true,
+      consumerCount: this.consumers.length
     };
   }
 }

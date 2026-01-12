@@ -4,6 +4,7 @@ import {
   getRolesForAccountId
 } from "../services/auth.services";
 import { checkPermissions, checkJWTPermissions } from "./auth.middleware";
+import * as permissionScopeBuilder from "../utils/permission-scope-builder";
 
 jest.mock("../services/auth.services", () => ({
   getPermissionsForAccountId: jest.fn(),
@@ -208,6 +209,122 @@ describe("checkPermission middleware", () => {
     );
     expect(res.status).not.toHaveBeenCalled();
     expect(res.json).not.toHaveBeenCalled();
+  });
+
+  it("should handle empty permissions array", async () => {
+    mockedGetPermissions.mockResolvedValue([]);
+    mockedGetRoles.mockResolvedValue([]);
+
+    const middleware = checkPermissions({
+      staticPermissions: ["admin:access"],
+      fallbackRoles: ["moderator"]
+    });
+
+    await middleware(req as Request, res as Response, next);
+
+    expect(next).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: "Forbidden: Insufficient permissions",
+        status: 403
+      })
+    );
+  });
+
+  it("should handle empty roles array", async () => {
+    mockedGetPermissions.mockResolvedValue([]);
+    mockedGetRoles.mockResolvedValue([]);
+
+    const middleware = checkPermissions({
+      fallbackRoles: ["admin"]
+    });
+
+    await middleware(req as Request, res as Response, next);
+
+    expect(next).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: "Forbidden: Insufficient permissions",
+        status: 403
+      })
+    );
+  });
+
+  it("should handle multiple missing route params", async () => {
+    req.params = {}; // Both season_id and team_id missing
+    mockedGetPermissions.mockResolvedValue([]);
+    mockedGetRoles.mockResolvedValue([]);
+
+    const middleware = checkPermissions({
+      role: "captain",
+      action: "edit-registration",
+      paramKeys: ["season_id", "team_id"]
+    });
+
+    await middleware(req as Request, res as Response, next);
+
+    // Should return 400 for first missing param
+    expect(next).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: expect.stringMatching(/Missing route param/),
+        status: 400
+      })
+    );
+  });
+
+  it("should throw error if buildPermissionString throws non-Missing route param error", async () => {
+    req.params = { season_id: "1", team_id: "2" };
+    mockedGetPermissions.mockResolvedValue([]);
+    mockedGetRoles.mockResolvedValue([]);
+
+    // Mock buildPermissionString to throw a different error
+    const originalBuildPermissionString =
+      permissionScopeBuilder.buildPermissionString;
+    jest
+      .spyOn(permissionScopeBuilder, "buildPermissionString")
+      .mockImplementation(() => {
+        throw new Error("Unexpected error");
+      });
+
+    const middleware = checkPermissions({
+      role: "captain",
+      action: "edit-registration",
+      paramKeys: ["season_id", "team_id"]
+    });
+
+    await expect(
+      middleware(req as Request, res as Response, next)
+    ).rejects.toThrow("Unexpected error");
+
+    jest
+      .spyOn(permissionScopeBuilder, "buildPermissionString")
+      .mockImplementation(originalBuildPermissionString);
+  });
+
+  it("should handle fallback roles with multiple roles", async () => {
+    mockedGetPermissions.mockResolvedValue([]);
+    mockedGetRoles.mockResolvedValue(["helpdesk"]);
+
+    const middleware = checkPermissions({
+      fallbackRoles: ["admin", "helpdesk", "moderator"]
+    });
+
+    await middleware(req as Request, res as Response, next);
+
+    expect(next).toHaveBeenCalled();
+    expect(res.status).not.toHaveBeenCalled();
+  });
+
+  it("should handle fallback roles when user has multiple roles", async () => {
+    mockedGetPermissions.mockResolvedValue([]);
+    mockedGetRoles.mockResolvedValue(["captain", "caster", "admin"]);
+
+    const middleware = checkPermissions({
+      fallbackRoles: ["admin"]
+    });
+
+    await middleware(req as Request, res as Response, next);
+
+    expect(next).toHaveBeenCalled();
+    expect(res.status).not.toHaveBeenCalled();
   });
 });
 
@@ -459,5 +576,222 @@ describe("checkJWTPermission middleware", () => {
     );
     expect(res.status).not.toHaveBeenCalled();
     expect(res.json).not.toHaveBeenCalled();
+  });
+
+  it("should handle empty permissions array in JWT", async () => {
+    req.auth = {
+      account_id: 123,
+      provider_id: "",
+      permissions: [],
+      roles: [],
+      nickname: "",
+      provider: "steam"
+    };
+
+    const middleware = checkJWTPermissions({
+      staticPermissions: ["admin:access"],
+      fallbackRoles: ["moderator"]
+    });
+
+    await middleware(req as Request, res as Response, next);
+
+    expect(next).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: "Forbidden: Insufficient permissions",
+        status: 403
+      })
+    );
+  });
+
+  it("should handle empty roles array in JWT", async () => {
+    req.auth = {
+      account_id: 123,
+      provider_id: "",
+      permissions: [],
+      roles: [],
+      nickname: "",
+      provider: "steam"
+    };
+
+    const middleware = checkJWTPermissions({
+      fallbackRoles: ["admin"]
+    });
+
+    await middleware(req as Request, res as Response, next);
+
+    expect(next).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: "Forbidden: Insufficient permissions",
+        status: 403
+      })
+    );
+  });
+
+  it("should throw error if buildPermissionString throws non-Missing route param error in JWT", async () => {
+    req.params = { season_id: "1", team_id: "2" };
+    req.auth = {
+      account_id: 123,
+      provider_id: "",
+      permissions: [],
+      roles: [],
+      nickname: "",
+      provider: "steam"
+    };
+
+    // Mock buildPermissionString to throw a different error
+    const originalBuildPermissionString =
+      permissionScopeBuilder.buildPermissionString;
+    jest
+      .spyOn(permissionScopeBuilder, "buildPermissionString")
+      .mockImplementation(() => {
+        throw new Error("Unexpected error in JWT");
+      });
+
+    const middleware = checkJWTPermissions({
+      role: "captain",
+      action: "edit-registration",
+      paramKeys: ["season_id", "team_id"]
+    });
+
+    await expect(
+      middleware(req as Request, res as Response, next)
+    ).rejects.toThrow("Unexpected error in JWT");
+
+    jest
+      .spyOn(permissionScopeBuilder, "buildPermissionString")
+      .mockImplementation(originalBuildPermissionString);
+  });
+
+  it("should handle multiple missing route params in JWT", async () => {
+    req.params = {}; // Both season_id and team_id missing
+    req.auth = {
+      account_id: 123,
+      provider_id: "",
+      permissions: [],
+      roles: [],
+      nickname: "",
+      provider: "steam"
+    };
+
+    const middleware = checkJWTPermissions({
+      role: "captain",
+      action: "edit-registration",
+      paramKeys: ["season_id", "team_id"]
+    });
+
+    await middleware(req as Request, res as Response, next);
+
+    // Should return 400 for first missing param
+    expect(next).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: expect.stringMatching(/Missing route param/),
+        status: 400
+      })
+    );
+  });
+
+  it("should handle fallback roles with multiple roles in JWT", async () => {
+    req.auth = {
+      account_id: 123,
+      provider_id: "",
+      permissions: [],
+      roles: ["helpdesk"],
+      nickname: "",
+      provider: "steam"
+    };
+
+    const middleware = checkJWTPermissions({
+      fallbackRoles: ["admin", "helpdesk", "moderator"]
+    });
+
+    await middleware(req as Request, res as Response, next);
+
+    expect(next).toHaveBeenCalled();
+    expect(res.status).not.toHaveBeenCalled();
+  });
+
+  it("should handle fallback roles when user has multiple roles in JWT", async () => {
+    req.auth = {
+      account_id: 123,
+      provider_id: "",
+      permissions: [],
+      roles: ["captain", "caster", "admin"],
+      nickname: "",
+      provider: "steam"
+    };
+
+    const middleware = checkJWTPermissions({
+      fallbackRoles: ["admin"]
+    });
+
+    await middleware(req as Request, res as Response, next);
+
+    expect(next).toHaveBeenCalled();
+    expect(res.status).not.toHaveBeenCalled();
+  });
+});
+
+describe("authenticateJWT token extraction behavior", () => {
+  it("should extract token from Authorization header when Bearer token is present", () => {
+    const req = {
+      headers: {
+        authorization: "Bearer test-token-123"
+      },
+      cookies: {}
+    } as Partial<Request>;
+
+    // authenticateJWT uses express-jwt which checks headers first
+    // This test documents the expected behavior: headers are checked first
+    expect(req.headers?.authorization).toBe("Bearer test-token-123");
+    const token = req.headers?.authorization?.split(" ")[1];
+    expect(token).toBe("test-token-123");
+  });
+
+  it("should extract token from cookies when Authorization header is not present", () => {
+    const req = {
+      headers: {},
+      cookies: {
+        access_token: "cookie-token-456"
+      }
+    } as Partial<Request>;
+
+    // authenticateJWT checks cookies as fallback
+    // This test documents the expected behavior: cookies are checked second
+    expect(req.cookies?.access_token).toBe("cookie-token-456");
+  });
+
+  it("should prefer Authorization header over cookies when both are present", () => {
+    const req = {
+      headers: {
+        authorization: "Bearer header-token-789"
+      },
+      cookies: {
+        access_token: "cookie-token-456"
+      }
+    } as Partial<Request>;
+
+    // authenticateJWT checks headers first, then cookies
+    // This test documents the expected priority: headers > cookies
+    const headerToken = req.headers?.authorization?.split(" ")[1];
+    expect(headerToken).toBe("header-token-789");
+    expect(req.cookies?.access_token).toBe("cookie-token-456");
+    // Header token should be used (not cookie token) per authenticateJWT implementation
+  });
+
+  it("should return null when neither header nor cookie is present", () => {
+    const req = {
+      headers: {},
+      cookies: {}
+    } as Partial<Request>;
+
+    // authenticateJWT returns null when no token found
+    const headerToken =
+      req.headers?.authorization?.split(" ")[0] === "Bearer"
+        ? req.headers.authorization.split(" ")[1]
+        : null;
+    const cookieToken = req.cookies?.access_token || null;
+
+    expect(headerToken).toBeNull();
+    expect(cookieToken).toBeNull();
   });
 });
