@@ -5,6 +5,7 @@ import {
 import { runQuery } from "../db/mysqlRunQuery";
 import { getConnection } from "../db/mysqlConnection";
 import { validateSteamId } from "../utils/steam-id-validator";
+import { isErDupEntry } from "../utils/database-errors";
 import {
   type SteamPlayer,
   type ParsedParams,
@@ -152,12 +153,9 @@ export const preparePlayerForSignup = async (
         );
       } catch (insertError: unknown) {
         // Handle race condition: if another request created the player simultaneously
-        if (
-          insertError &&
-          typeof insertError === "object" &&
-          "code" in insertError &&
-          (insertError as { code?: string }).code === "ER_DUP_ENTRY"
-        ) {
+        // We check for ER_DUP_ENTRY to detect this race condition and retry
+        // Other duplicate entry errors will be handled by the Express error handler middleware
+        if (isErDupEntry(insertError)) {
           await connection.rollback();
           connection.release();
           // Retry: check if player now exists and handle as update

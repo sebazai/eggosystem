@@ -439,7 +439,7 @@ describe("Kanahautomo Controller Transactional Logic", () => {
     }
   });
 
-  it("returns 400 if already registered", async () => {
+  it("throws ER_DUP_ENTRY error if already registered (handled by middleware as 409)", async () => {
     const mockAuth: JwtPayload = {
       account_id: 1,
       provider_id: "steamid",
@@ -457,22 +457,25 @@ describe("Kanahautomo Controller Transactional Logic", () => {
       }
     };
     mockOrganizationModels.getOrganizationById.mockResolvedValue([mockOrg]);
+    // Mock database error with ER_DUP_ENTRY code
+    const duplicateError = new Error(
+      "Duplicate entry for key 'KanahautomoRegistrations.steam_id'"
+    );
+    (duplicateError as { code?: string }).code = "ER_DUP_ENTRY";
     mockKanahautomoModels.registerPlayerForKanahautomo.mockRejectedValue(
-      new Error("Duplicate entry")
+      duplicateError
     );
 
     const mockNext = jest.fn();
-    await registerForKanahautomoWithOrganization(
-      mockRequest as Request,
-      mockResponse as Response,
-      mockNext
-    );
-    expect(mockNext).toHaveBeenCalledWith(
-      expect.objectContaining({
-        message: expect.stringContaining("already registered"),
-        status: 400
-      })
-    );
+    await expect(
+      registerForKanahautomoWithOrganization(
+        mockRequest as Request,
+        mockResponse as Response,
+        mockNext
+      )
+    ).rejects.toThrow();
+    // Verify transaction was rolled back
+    expect(connection.rollback).toHaveBeenCalled();
     expect(connection.beginTransaction).toHaveBeenCalled();
   });
 

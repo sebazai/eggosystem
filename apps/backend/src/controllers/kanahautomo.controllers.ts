@@ -191,15 +191,6 @@ export const registerForKanahautomoWithOrganization = async (
     await connection.rollback();
     logger.error(`Error registering for Kanahautomo: ${error}`);
 
-    // Handle duplicate entry error gracefully
-    if (error instanceof Error && error.message.includes("Duplicate entry")) {
-      return next(
-        new BadRequestError(
-          "Player is already registered for this organization"
-        )
-      );
-    }
-
     throw error;
   } finally {
     connection.release();

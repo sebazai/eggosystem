@@ -10,6 +10,7 @@ import {
   getRateLimitForService,
   setRateLimitForService
 } from "../utils/rate-limit-utils";
+import { isValidRank } from "./player-ranks.services";
 
 const isMatchmakingRank = (game: GameRanks): game is MatchmakingRankType =>
   game.dataSource === "matchmaking";
@@ -42,8 +43,13 @@ const getAverageRankForGames = (games: GameRanks[]) => {
     const averageSkillLevel =
       totalSkillLevel / gamesWithinOneAndAHalfYear.length;
 
+    const roundedRank = Math.round(averageSkillLevel);
+    if (!isValidRank(roundedRank)) {
+      return undefined;
+    }
+
     return {
-      average_rank: Math.round(averageSkillLevel),
+      average_rank: roundedRank,
       rank_updated_at: gamesWithinOneAndAHalfYear[0].gameFinishedAt // Latest game
     } satisfies CS2LeetifyAvgRank;
   }

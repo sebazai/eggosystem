@@ -142,4 +142,165 @@ describe("expressErrorHandler - RFC7807 problem+json", () => {
       })
     );
   });
+
+  describe("Database error handling", () => {
+    it("returns problem+json with 409 Conflict for ER_DUP_ENTRY errors", async () => {
+      const app = createApp((_req, _res, next) => {
+        const dbError = new Error(
+          "Duplicate entry '123-456' for key 'KanahautomoRegistrations.steam_id'"
+        );
+        (dbError as { code?: string }).code = "ER_DUP_ENTRY";
+        next(dbError);
+      });
+
+      const res = await request(app).get("/test");
+
+      expect(res.status).toBe(409);
+      expect(res.headers["content-type"]).toMatch(/application\/problem\+json/);
+      expect(res.body).toEqual(
+        expect.objectContaining({
+          type: "about:blank",
+          title: expect.stringMatching(/Conflict/i),
+          status: 409,
+          detail: "You are already registered for this organization",
+          instance: "/test"
+        })
+      );
+    });
+
+    it("returns problem+json with 409 Conflict for ER_DUP_ENTRY with Teams table", async () => {
+      const app = createApp((_req, _res, next) => {
+        const dbError = new Error(
+          "Duplicate entry 'TeamName' for key 'Teams.name'"
+        );
+        (dbError as { code?: string }).code = "ER_DUP_ENTRY";
+        next(dbError);
+      });
+
+      const res = await request(app).get("/test");
+
+      expect(res.status).toBe(409);
+      expect(res.headers["content-type"]).toMatch(/application\/problem\+json/);
+      expect(res.body).toEqual(
+        expect.objectContaining({
+          type: "about:blank",
+          title: expect.stringMatching(/Conflict/i),
+          status: 409,
+          detail: "A team with this name already exists",
+          instance: "/test"
+        })
+      );
+    });
+
+    it("returns problem+json with 409 Conflict for ER_DUP_ENTRY with fallback message", async () => {
+      const app = createApp((_req, _res, next) => {
+        const dbError = new Error(
+          "Duplicate entry for key 'UnknownTable.unknown_key'"
+        );
+        (dbError as { code?: string }).code = "ER_DUP_ENTRY";
+        next(dbError);
+      });
+
+      const res = await request(app).get("/test");
+
+      expect(res.status).toBe(409);
+      expect(res.headers["content-type"]).toMatch(/application\/problem\+json/);
+      expect(res.body).toEqual(
+        expect.objectContaining({
+          type: "about:blank",
+          title: expect.stringMatching(/Conflict/i),
+          status: 409,
+          detail: "This record already exists",
+          instance: "/test"
+        })
+      );
+    });
+
+    it("returns problem+json with 409 Conflict for SQLSTATE 45000 trigger errors", async () => {
+      const app = createApp((_req, _res, next) => {
+        const dbError = {
+          code: "SOME_CODE",
+          sqlState: "45000",
+          sqlMessage: "Team 123 is already registered for season 456",
+          message: "Team 123 is already registered for season 456"
+        };
+        next(dbError as unknown as Error);
+      });
+
+      const res = await request(app).get("/test");
+
+      expect(res.status).toBe(409);
+      expect(res.headers["content-type"]).toMatch(/application\/problem\+json/);
+      expect(res.body).toEqual(
+        expect.objectContaining({
+          type: "about:blank",
+          title: expect.stringMatching(/Conflict/i),
+          status: 409,
+          detail: "Team 123 is already registered for season 456",
+          instance: "/test"
+        })
+      );
+    });
+
+    it("returns problem+json with 409 Conflict for trigger error with external platform ID", async () => {
+      const app = createApp((_req, _res, next) => {
+        const dbError = {
+          code: "SOME_CODE",
+          sqlState: "45000",
+          sqlMessage:
+            'FACEIT Platform ID "abc123" is already used for season 1.',
+          message: 'FACEIT Platform ID "abc123" is already used for season 1.'
+        };
+        next(dbError as unknown as Error);
+      });
+
+      const res = await request(app).get("/test");
+
+      expect(res.status).toBe(409);
+      expect(res.headers["content-type"]).toMatch(/application\/problem\+json/);
+      expect(res.body).toEqual(
+        expect.objectContaining({
+          type: "about:blank",
+          title: expect.stringMatching(/Conflict/i),
+          status: 409,
+          detail: 'FACEIT Platform ID "abc123" is already used for season 1.',
+          instance: "/test"
+        })
+      );
+    });
+
+    it("handles database errors that are not duplicate entry or trigger errors as generic errors", async () => {
+      const app = createApp((_req, _res, next) => {
+        // Create an actual Error instance to match instanceof Error check
+        const dbError = new Error("Some other database error");
+        // Add database error properties
+        (
+          dbError as { code?: string; sqlState?: string; sqlMessage?: string }
+        ).code = "ER_SOME_OTHER_ERROR";
+        (
+          dbError as { code?: string; sqlState?: string; sqlMessage?: string }
+        ).sqlState = "42000";
+        (
+          dbError as { code?: string; sqlState?: string; sqlMessage?: string }
+        ).sqlMessage = "Some other database error";
+        next(dbError);
+      });
+
+      const res = await request(app).get("/test");
+
+      // Database errors that aren't duplicates/triggers are treated as generic Error instances
+      // which default to 400 status
+      expect(res.status).toBe(400);
+      expect(res.headers["content-type"]).toMatch(/application\/problem\+json/);
+      expect(res.body).toEqual(
+        expect.objectContaining({
+          type: "about:blank",
+          title: expect.any(String),
+          status: 400,
+          detail: "Some other database error",
+          instance: "/test"
+        })
+      );
+    });
+  });
 });
