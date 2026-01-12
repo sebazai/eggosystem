@@ -145,11 +145,33 @@ describe("Kanahautomo Models Integration Tests", () => {
       );
 
       // Second registration for same organization should fail due to unique constraint
+      // The error will be a database ER_DUP_ENTRY error, which will be handled by middleware
       await expect(
         registerPlayerForKanahautomo(testSteamId, testOrganizationId, false)
-      ).rejects.toThrow(
-        `Player ${testSteamId} is already registered for Kanahautomo in organization ${testOrganizationId}`
-      );
+      ).rejects.toThrow();
+
+      // Verify it's an ER_DUP_ENTRY error that middleware can handle
+      try {
+        await registerPlayerForKanahautomo(
+          testSteamId,
+          testOrganizationId,
+          false
+        );
+        throw new Error("Expected error to be thrown");
+      } catch (error: unknown) {
+        expect(error).toBeDefined();
+        // Verify it's a database error with ER_DUP_ENTRY code
+        expect(
+          error &&
+            typeof error === "object" &&
+            "code" in error &&
+            (error as { code?: string }).code === "ER_DUP_ENTRY"
+        ).toBe(true);
+        // Verify the error message contains "Duplicate entry"
+        if (error instanceof Error) {
+          expect(error.message).toContain("Duplicate entry");
+        }
+      }
     });
 
     it("should allow registration for different organizations", async () => {
