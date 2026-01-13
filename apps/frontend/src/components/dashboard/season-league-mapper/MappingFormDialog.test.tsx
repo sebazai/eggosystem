@@ -185,7 +185,7 @@ describe("MappingFormDialog", () => {
         external_league_name: "New League",
         stage_id: 1,
         type: "roundRobin",
-        manual_group: undefined
+        manual_group: null
       });
     });
   });
