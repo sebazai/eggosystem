@@ -12,22 +12,13 @@ export function SearchBar({ placeholder }: { placeholder: string }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-
-  // Calculate URL search value during render (React best practice)
-  const urlSearchValue = searchParams.get("q") || "";
-
-  // Store pending user input in state (for debouncing)
-  // Calculate effective value during render: use pending input if exists, otherwise URL value
-  const [pendingInput, setPendingInput] = useState<string | null>(null);
-  const searchValue = pendingInput ?? urlSearchValue;
-
+  const [searchValue, setSearchValue] = useState(searchParams.get("q") || "");
   const [isPending, startTransition] = useTransition();
   const [showInput, setShowInput] = useState(false);
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
   const searchRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const mobile = useIsMobile();
-  const isUpdatingUrlRef = useRef(false);
 
   useEffect(() => {
     if (!isPending && inputRef.current) {
@@ -35,22 +26,13 @@ export function SearchBar({ placeholder }: { placeholder: string }) {
     }
   }, [isPending]);
 
-  // Clear pending input when URL changes externally (not from our update)
-  // This syncs the input with URL params without setState in Effect
+  // Sync state when search params change
   useEffect(() => {
-    if (
-      !isUpdatingUrlRef.current &&
-      urlSearchValue !== pendingInput &&
-      pendingInput !== null
-    ) {
-      setPendingInput(null);
-    }
-    isUpdatingUrlRef.current = false;
-  }, [urlSearchValue, pendingInput]);
+    setSearchValue(searchParams.get("q") || "");
+  }, [searchParams]);
 
   // Update the query parameters
   const updateSearchQuery = (newQuery: string) => {
-    isUpdatingUrlRef.current = true; // Mark that we're updating the URL
     const params = new URLSearchParams(searchParams);
     if (newQuery) {
       params.set("q", newQuery);
@@ -67,19 +49,18 @@ export function SearchBar({ placeholder }: { placeholder: string }) {
   // Handle input change with debounce
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newQuery = e.target.value;
-    setPendingInput(newQuery); // Store in pending state for immediate UI update
+    setSearchValue(newQuery);
 
     if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
     debounceTimeout.current = setTimeout(() => {
       updateSearchQuery(newQuery);
-      // Clear pending after URL is updated (URL change will sync via Effect)
     }, 1000); // Debounce input
   };
 
   // Clear search
   const clearSearch = () => {
-    setPendingInput(null); // Clear pending input immediately
-    updateSearchQuery(""); // Update URL immediately (no debounce for clear)
+    setSearchValue("");
+    updateSearchQuery("");
   };
 
   // Toggle mobile search input
