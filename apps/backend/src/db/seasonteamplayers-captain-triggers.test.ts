@@ -168,7 +168,7 @@ describe("SeasonTeamPlayers Captain Role Triggers (Finalized Roster)", () => {
       []
     );
     await runQuery(
-      "INSERT INTO Teams (id, name) VALUES (998, 'Test Team 2')",
+      "INSERT INTO Teams (id, name) VALUES (998, 'Test Team 2 Multiple')",
       []
     );
 
@@ -250,7 +250,7 @@ describe("SeasonTeamPlayers Captain Role Triggers (Finalized Roster)", () => {
       []
     );
     await runQuery(
-      "INSERT INTO Teams (id, name) VALUES (998, 'Test Team 2')",
+      "INSERT INTO Teams (id, name) VALUES (998, 'Test Team 2 Deleted')",
       []
     );
 

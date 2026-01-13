@@ -20,6 +20,8 @@ import registrationsRouter from "./v1/season-team-registration.routes";
 import matchGameRouter from "./v1/match-game.routes";
 import discordRouter from "./v1/discord.routes";
 import eloRouter from "./v1/elo.routes";
+import { checkDiscordHealth } from "../services/discord.services";
+import { queueConsumerManager } from "../services/queue-consumer-manager";
 import {
   verifyEmailController,
   unsubscribeNewsletterController
@@ -108,7 +110,59 @@ v1Router.get("/stats", async (req, res) => {
   res.status(200).json(stats);
 });
 
-v1Router.use("/health", async (req, res) => {
+v1Router.get("/health/discord", async (req, res) => {
+  const healthStatus = await checkDiscordHealth();
+
+  if (!healthStatus.configured) {
+    res.status(200).json({
+      status: "not_configured",
+      service: "discord",
+      message: "Discord is not configured (environment variables not set)"
+    });
+  } else if (healthStatus.healthy) {
+    res.status(200).json({
+      status: "healthy",
+      service: "discord",
+      message: "Discord client is connected and ready"
+    });
+  } else {
+    res.status(503).json({
+      status: "unhealthy",
+      service: "discord",
+      message: "Discord client is not connected or not ready"
+    });
+  }
+});
+
+v1Router.get("/health/rabbitmq", async (req, res) => {
+  const healthStatus = await queueConsumerManager.checkHealth();
+
+  if (!healthStatus.configured) {
+    res.status(200).json({
+      status: "not_configured",
+      service: "rabbitmq",
+      message: "RabbitMQ is not configured (environment variables not set)"
+    });
+  } else if (healthStatus.healthy) {
+    res.status(200).json({
+      status: "healthy",
+      service: "rabbitmq",
+      message: "RabbitMQ consumers are connected and healthy",
+      consumerCount: healthStatus.consumerCount
+    });
+  } else {
+    res.status(503).json({
+      status: "unhealthy",
+      service: "rabbitmq",
+      message: "RabbitMQ consumers are not connected or unhealthy",
+      consumerCount: healthStatus.consumerCount
+    });
+  }
+});
+
+// General health check endpoint (must be after specific health routes)
+v1Router.get("/health", async (req, res) => {
   res.status(200).json({ message: "API is running" });
 });
+
 export default v1Router;

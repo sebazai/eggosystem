@@ -17,7 +17,7 @@ export const getAuthUserBySteamId = async (steamId: string) => {
  * @param provider
  * @returns
  */
-export const getAuthUserByProviderId = async (
+const getAuthUserByProviderId = async (
   providerId: string,
   provider: "steam" | "discord"
 ) => {

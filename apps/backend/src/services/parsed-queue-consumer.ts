@@ -134,6 +134,9 @@ export class ParsedQueueConsumer {
   private consumerTag: string | null = null;
   private maxRetryAttempts: number;
   private retryCounts = new Map<string, number>(); // Track retries by match_game_id
+  private reconnectTimeout: NodeJS.Timeout | null = null;
+  private isReconnecting = false;
+  private shouldReconnect = true;
 
   constructor(config: Partial<ParseQueueConfig> = {}) {
     this.config = { ...DEFAULT_PARSE_QUEUE_CONFIG, ...config };
@@ -187,6 +190,7 @@ export class ParsedQueueConsumer {
         this.connection.on("error", (error: Error) => {
           logger.error("RabbitMQ connection error", error);
           this.isConnected = false;
+          this.handleConnectionLoss();
         });
 
         this.connection.on("close", () => {
@@ -194,6 +198,7 @@ export class ParsedQueueConsumer {
           this.connection = null;
           this.channel = null;
           this.isConnected = false;
+          this.handleConnectionLoss();
         });
 
         this.isConnected = true;
@@ -535,10 +540,59 @@ export class ParsedQueueConsumer {
   }
 
   /**
+   * Handle connection loss and attempt reconnection
+   */
+  private handleConnectionLoss(): void {
+    if (!this.shouldReconnect || this.isReconnecting || !this.isProcessing) {
+      return;
+    }
+
+    this.isReconnecting = true;
+    logger.info("Scheduling RabbitMQ reconnection attempt...");
+
+    // Clear any existing reconnect timeout
+    if (this.reconnectTimeout) {
+      clearTimeout(this.reconnectTimeout);
+    }
+
+    // Attempt reconnection after a delay (exponential backoff)
+    const reconnectDelay = 5000; // Start with 5 seconds
+    this.reconnectTimeout = setTimeout(async () => {
+      try {
+        // Check again if we should still reconnect
+        if (!this.shouldReconnect || !this.isProcessing) {
+          this.isReconnecting = false;
+          return;
+        }
+
+        logger.info("Attempting to reconnect to RabbitMQ...");
+        await this.connect();
+        await this.startConsumer();
+        this.isReconnecting = false;
+        logger.info("Successfully reconnected to RabbitMQ");
+      } catch (error) {
+        logger.error("Reconnection attempt failed, will retry", error);
+        this.isReconnecting = false;
+        // Schedule another reconnection attempt if we're still supposed to be processing
+        if (this.shouldReconnect && this.isProcessing) {
+          this.handleConnectionLoss();
+        }
+      }
+    }, reconnectDelay);
+  }
+
+  /**
    * Disconnect from RabbitMQ
    */
   async disconnect(): Promise<void> {
     try {
+      this.shouldReconnect = false; // Prevent reconnection attempts
+
+      if (this.reconnectTimeout) {
+        clearTimeout(this.reconnectTimeout);
+        this.reconnectTimeout = null;
+      }
+
       if (this.isProcessing) {
         await this.stopConsumer();
       }

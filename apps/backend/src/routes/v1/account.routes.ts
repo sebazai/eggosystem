@@ -117,8 +117,8 @@ router.get(
 );
 router.get(
   "/my-teams/championships/:season_id/:league_id",
-  authenticateJWT,
   validateNumericParams(["season_id", "league_id"]),
+  authenticateJWT,
   getMyTeamChampionshipsController
 );
 router.post("/my-teams/upload-logo", authenticateJWT, uploadTeamLogoController);

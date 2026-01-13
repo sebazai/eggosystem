@@ -1,15 +1,15 @@
 ---
 description: Quality gates that must pass before completing code changes
-alwaysApply: false
+alwaysApply: true
 ---
 
 # Quality Gates
 
 When writing code, the AI must not finish until all of these succeed:
 
-1. `pnpm typecheck` - TypeScript type checking
-2. `pnpm format` - Code formatting with Prettier
-3. `pnpm lint` - ESLint code quality checks
-4. All unit tests (`pnpm test`) pass
+1. `pnpm knip` - Detect unused exports, dependencies, and dead code
+2. `pnpm typecheck` - TypeScript type checking
+3. `pnpm format` - Code formatting with Prettier
+4. `pnpm lint` - ESLint code quality checks
 
 If any check fails, fix the issues and run checks again.
