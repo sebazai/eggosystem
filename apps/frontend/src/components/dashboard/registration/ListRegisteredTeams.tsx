@@ -41,6 +41,7 @@ export const ListRegisteredTeams = () => {
   const [rowSelection, setRowSelection] = useState({});
   const [isPerformingAction, setIsPerformingAction] = useState(false);
   const [sorting, setSorting] = useState<SortingState>([]);
+  const [isAllRowsExpanded, setIsAllRowsExpanded] = useState(false);
   const tableRef =
     useRef<Table<SeasonRegisteredTeamsWithPlayersValidatedTeams> | null>(null);
 
@@ -344,7 +345,11 @@ export const ListRegisteredTeams = () => {
   };
 
   const handleToggleAllRows = () => {
-    tableRef.current?.toggleAllRowsExpanded();
+    if (tableRef.current) {
+      const newState = !isAllRowsExpanded;
+      tableRef.current.toggleAllRowsExpanded();
+      setIsAllRowsExpanded(newState);
+    }
   };
 
   if (isLoading) {
@@ -432,7 +437,7 @@ export const ListRegisteredTeams = () => {
             size="sm"
             className="flex items-center gap-2"
           >
-            {tableRef.current?.getIsAllRowsExpanded() ? (
+            {isAllRowsExpanded ? (
               <>
                 <ChevronsUp className="w-4 h-4" />
                 Collapse All
@@ -460,6 +465,8 @@ export const ListRegisteredTeams = () => {
           debugTable={false}
           onTableReady={(table) => {
             tableRef.current = table;
+            // Sync initial state
+            setIsAllRowsExpanded(table.getIsAllRowsExpanded());
           }}
           showPagination={false}
           enableRowExpansion={true}
