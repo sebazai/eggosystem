@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   Radar,
   RadarChart,
@@ -140,15 +140,28 @@ export const PlayerSkillRadar: React.FC<PlayerSkillRadarProps> = ({
   isCompareDataNotFound = false,
   playerTeam
 }) => {
-  const [compareOption, setCompareOption] =
-    useState<string>(initialCompareOption);
+  // Use initialCompareOption as the source of truth
+  // For controlled component behavior, parent manages the state
+  // Local state is only for user-initiated changes that haven't been synced yet
+  const [localCompareOption, setLocalCompareOption] = useState<string | null>(
+    null
+  );
 
-  // Sync with parent component's compare option if initialCompareOption changes
-  useEffect(() => {
-    if (initialCompareOption !== compareOption) {
-      setCompareOption(initialCompareOption);
+  // Use prop value if provided, otherwise use local state
+  const compareOption =
+    initialCompareOption !== undefined
+      ? initialCompareOption
+      : (localCompareOption ?? "");
+
+  const setCompareOption = (value: string) => {
+    // If parent is controlling, don't update local state
+    // Otherwise, update local state
+    if (initialCompareOption === undefined) {
+      setLocalCompareOption(value);
     }
-  }, [initialCompareOption, compareOption]);
+    // Always notify parent of change
+    onCompareOptionChange(value);
+  };
 
   const handleCompareChange = (value: string) => {
     setCompareOption(value);

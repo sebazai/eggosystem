@@ -4,13 +4,13 @@ import type { SeasonDetails } from "@eggosystem/types";
 import { createPageMetadata } from "@/lib/metadata";
 import StandingsPage from "@/components/standings/StandingsPage";
 
-type StandingsPage = {
+type StandingsPageProps = {
   params: Promise<{ season: string }>;
 };
 
 export async function generateMetadata({
   params
-}: StandingsPage): Promise<Metadata> {
+}: StandingsPageProps): Promise<Metadata> {
   const { season } = await params;
 
   const result = await fetch(
@@ -29,7 +29,7 @@ export async function generateMetadata({
   });
 }
 
-export default async function Standings({ params }: StandingsPage) {
+export default async function Standings({ params }: StandingsPageProps) {
   const { season } = await params;
   return <StandingsPage seasonId={season} />;
 }

@@ -148,6 +148,7 @@ export const ListRegistrationDrafts = () => {
     []
   );
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data: registrationDrafts ?? [],
     columns,

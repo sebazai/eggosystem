@@ -1,6 +1,3 @@
-"use client";
-import { useEffect, useState } from "react";
-
 interface ClientTimeProps {
   matchDate: string;
   startTime: string;
@@ -14,7 +11,8 @@ export function MatchClientTime({
   endTime,
   className
 }: ClientTimeProps) {
-  const [isClient, setIsClient] = useState(false);
+  // Use lazy initialization for client-side check - already initialized correctly
+  const isClient = typeof window !== "undefined";
 
   // Helper function to format time consistently
   const formatTimeUTC = (date: Date) => date.toTimeString().slice(0, 5); // HH:MM UTC
@@ -26,10 +24,6 @@ export function MatchClientTime({
       timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
     });
   };
-
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
 
   // Always render UTC time initially to prevent hydration mismatch
   const startDate = new Date(`${matchDate}T${startTime}Z`);

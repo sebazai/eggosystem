@@ -163,6 +163,7 @@ export const StandingsTable = ({ data, isLoading }: StandingsTableProps) => {
   );
 
   // TanStack Table configuration
+  // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data,
     columns,

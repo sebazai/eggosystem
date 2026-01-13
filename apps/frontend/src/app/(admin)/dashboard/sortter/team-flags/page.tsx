@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { WithRoleProtection } from "@/components/dashboard/WithRoleProtection";
 import useSWR from "swr";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -128,34 +128,37 @@ export default function TeamFlagsPage() {
     return teamFlags.filter((flag) => flag.season_id === selectedSeason);
   }, [teamFlags, selectedSeason]);
 
-  const fetchTeamFlags = async (seasonToFetch?: number | "all") => {
-    try {
-      console.log(
-        "Fetching team flags for season:",
-        seasonToFetch || selectedSeason
-      );
-      // Use the test route that doesn't require authentication for now
-      // Pass season_id parameter if a specific season is selected
-      const season =
-        seasonToFetch !== undefined ? seasonToFetch : selectedSeason;
-      const seasonParam = season !== "all" ? `?season_id=${season}` : "";
-      const data = await clientApiFetch<TeamFlagWithDetails[]>(
-        `/api/v1/elo/team-flags-test${seasonParam}`
-      );
-      console.log("Team flags data received:", data);
-      setTeamFlags(data || []);
-    } catch (error) {
-      console.error("Error fetching team flags:", error);
-      // Show more detailed error message
-      if (error instanceof Error) {
-        toast.error(`Failed to load team flags: ${error.message}`);
-      } else {
-        toast.error("Failed to load team flags");
+  const fetchTeamFlags = useCallback(
+    async (seasonToFetch?: number | "all") => {
+      try {
+        console.log(
+          "Fetching team flags for season:",
+          seasonToFetch || selectedSeason
+        );
+        // Use the test route that doesn't require authentication for now
+        // Pass season_id parameter if a specific season is selected
+        const season =
+          seasonToFetch !== undefined ? seasonToFetch : selectedSeason;
+        const seasonParam = season !== "all" ? `?season_id=${season}` : "";
+        const data = await clientApiFetch<TeamFlagWithDetails[]>(
+          `/api/v1/elo/team-flags-test${seasonParam}`
+        );
+        console.log("Team flags data received:", data);
+        setTeamFlags(data || []);
+      } catch (error) {
+        console.error("Error fetching team flags:", error);
+        // Show more detailed error message
+        if (error instanceof Error) {
+          toast.error(`Failed to load team flags: ${error.message}`);
+        } else {
+          toast.error("Failed to load team flags");
+        }
+      } finally {
+        setIsLoading(false);
       }
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    },
+    [selectedSeason]
+  );
 
   const refreshData = async () => {
     setIsRefreshing(true);
@@ -202,7 +205,7 @@ export default function TeamFlagsPage() {
 
   useEffect(() => {
     fetchTeamFlags();
-  }, [selectedSeason]); // Re-fetch when season changes
+  }, [fetchTeamFlags]); // Re-fetch when season changes
 
   // Update selectedSeason when URL changes
   useEffect(() => {

@@ -216,9 +216,10 @@ export const FaceitRosterValidationTable = ({
         } satisfies CustomColumnMeta
       }
     ],
-    []
+    [seasonId, stageName]
   );
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data: teams,
     columns,

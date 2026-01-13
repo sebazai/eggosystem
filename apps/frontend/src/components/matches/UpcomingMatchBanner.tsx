@@ -11,31 +11,21 @@ import { createNextUrl } from "@/lib/utils";
 export const UpcomingMatchToast = () => {
   const { user } = useAuth();
   const { matches, isLoading } = useMyTeamsUpcomingMatches();
-  const [currentTime, setCurrentTime] = useState<Date | null>(null);
-  const [mounted, setMounted] = useState(false);
+  const [currentTime, setCurrentTime] = useState<Date>(() => new Date());
   const toastIdRef = useRef<string | number | null>(null);
   const lastMatchIdRef = useRef<number | null>(null);
 
-  // Set mounted state on client
-  useEffect(() => {
-    setMounted(true);
-    setCurrentTime(new Date());
-  }, []);
-
   // Update time every minute to re-check if match is within 2 hours
   useEffect(() => {
-    if (!mounted) return;
-
     const interval = setInterval(() => {
       setCurrentTime(new Date());
     }, 60000); // Update every minute
 
     return () => clearInterval(interval);
-  }, [mounted]);
+  }, []);
 
   useEffect(() => {
-    // Don't show toast if not mounted, not authenticated or still loading
-    if (!mounted || !currentTime || !user || isLoading) {
+    if (!currentTime || !user || isLoading) {
       if (toastIdRef.current) {
         toast.dismiss(toastIdRef.current);
         toastIdRef.current = null;
@@ -179,7 +169,7 @@ export const UpcomingMatchToast = () => {
         toast.dismiss(toastIdRef.current);
       }
     };
-  }, [user, isLoading, matches, currentTime, mounted]);
+  }, [user, isLoading, matches, currentTime]);
 
   return null; // This component doesn't render anything directly
 };

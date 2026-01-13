@@ -162,6 +162,7 @@ export const TeamMatchHistory = ({
   );
 
   // TanStack Table configuration
+  // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data: teamMatchHistory || [],
     columns,

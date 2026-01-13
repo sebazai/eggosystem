@@ -97,22 +97,6 @@ export function useSortter(placeTeamsInDivision: number) {
     }
   );
 
-  // Debug: Log teams data when it changes
-  useEffect(() => {
-    if (teams && teams.length > 0) {
-      console.log("Teams data received:", teams);
-      const flaggedTeams = teams.filter((team) => team.is_flagged);
-      console.log(
-        `Flagged teams: ${flaggedTeams.length}/${teams.length}`,
-        flaggedTeams.map((t) => ({
-          id: t.team_id,
-          name: t.team_name,
-          flagged: t.is_flagged
-        }))
-      );
-    }
-  }, [teams]);
-
   // Fetch preliminary placements for the selected season
   const {
     data: placementsResponse,
@@ -301,9 +285,6 @@ export function useSortter(placeTeamsInDivision: number) {
         // Get all comments from the context, or use override if provided
         const currentComments = overrideComments || getAllComments();
 
-        console.log("Current comments before save:", currentComments);
-        console.log("Current divisions before save:", divisions);
-
         // Find only the placements that have actually changed
         const changedPlacements = placements
           .filter((placement) => {
@@ -325,10 +306,6 @@ export function useSortter(placeTeamsInDivision: number) {
             const currentComment =
               currentComments[placement.team_id] || placement.comments;
 
-            console.log(
-              `Updating team ${placement.team_id}: division ${placement.division} -> ${currentDivision}, comment changed: ${placement.comments !== currentComment}`
-            );
-
             return {
               ...placement,
               division: currentDivision,
@@ -338,26 +315,17 @@ export function useSortter(placeTeamsInDivision: number) {
 
         // If nothing has changed, don't send a request
         if (changedPlacements.length === 0) {
-          console.log("No changes detected, skipping save");
           setIsSaving(false);
           return;
         }
 
-        console.log(
-          `Saving ${changedPlacements.length} changed placements:`,
-          changedPlacements
-        );
-
-        // Send only the changed placements to the server
-        const response = await clientApiFetch(
+        await clientApiFetch(
           `/api/v1/dashboard/sortter/season/${selectedSeason}/placements`,
           {
             method: "POST",
             body: JSON.stringify({ placements: changedPlacements })
           }
         );
-
-        console.log("Save response:", response);
 
         // Update the local cache with the changes
         if (placementsResponse) {
@@ -430,10 +398,6 @@ export function useSortter(placeTeamsInDivision: number) {
   // Handle division change for a team
   const handleDivisionChange = useCallback(
     async (teamId: number, division: number, teamDivision: number | null) => {
-      console.log(
-        `Changing division for team ${teamId} from ${teamDivision} to ${division}`
-      );
-
       // Track this change as pending
       pendingDivisionChanges.current.set(teamId, division);
 
@@ -453,18 +417,10 @@ export function useSortter(placeTeamsInDivision: number) {
       }
 
       try {
-        console.log("Current divisions before update:", divisions);
-        console.log("New divisions with current change:", newDivisions);
-        console.log(
-          "All pending division changes:",
-          Object.fromEntries(pendingDivisionChanges.current)
-        );
-
         // Find the specific placement we're updating
         const teamPlacement = placements.find((p) => p.team_id === teamId);
 
         if (!teamPlacement) {
-          console.error(`Team ${teamId} not found in placements`);
           pendingDivisionChanges.current.delete(teamId); // Clean up
           return;
         }
@@ -479,18 +435,13 @@ export function useSortter(placeTeamsInDivision: number) {
         // This is more efficient and avoids race conditions
         const singleTeamUpdate = [updatedPlacement];
 
-        console.log("Sending single team update to server:", singleTeamUpdate);
-
-        // Send the request to the server
-        const response = await clientApiFetch(
+        await clientApiFetch(
           `/api/v1/dashboard/sortter/season/${selectedSeason}/placements`,
           {
             method: "POST",
             body: JSON.stringify({ placements: singleTeamUpdate })
           }
         );
-
-        console.log("Division change saved successfully:", response);
 
         // Update the local SWR cache with all pending division changes
         if (placementsResponse) {
@@ -512,11 +463,6 @@ export function useSortter(placeTeamsInDivision: number) {
             // No pending change, keep as is
             return placement;
           });
-
-          console.log(
-            "Updating cache with all pending changes:",
-            Object.fromEntries(pendingDivisionChanges.current)
-          );
 
           // Update the cache without revalidating
           mutatePlacements(

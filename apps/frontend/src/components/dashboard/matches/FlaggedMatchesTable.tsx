@@ -151,6 +151,7 @@ export const FlaggedMatchesTable = () => {
   );
 
   // TanStack Table configuration
+  // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data: flaggedMatches ?? [],
     columns,
