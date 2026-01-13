@@ -6,7 +6,7 @@ import { expressFetcher } from "@/lib/utils";
 import type { Nullable } from "@eggosystem/types";
 import type { MultiSelect } from "@/types/MultiSelectType";
 import _ from "lodash";
-import { useMemo } from "react";
+import { useState, useEffect } from "react";
 
 interface ItemFilterProps<T> {
   filterName: string;
@@ -23,8 +23,19 @@ interface ItemFilterProps<T> {
 export const ItemFilter = <T extends { id: number }>(
   props: ItemFilterProps<T>
 ) => {
-  // Use controlled component pattern - derive state from props
-  const selectedItems = props.selectedItems;
+  const [selectedItems, setSelectedItems] = useState<number[]>(
+    props.selectedItems
+  );
+
+  useEffect(() => {
+    if (
+      props.openFilter !== props.filterName &&
+      !_.isEqual(selectedItems, props.selectedItems)
+    ) {
+      setSelectedItems(props.selectedItems);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.selectedItems, props.openFilter, props.filterName]);
 
   const { data, isLoading } = useSWR<T[]>(
     `/api/v1/${props.filterName}`,
@@ -35,25 +46,18 @@ export const ItemFilter = <T extends { id: number }>(
     }
   );
 
-  // Compute selectableIds using useMemo instead of useState + useEffect
-  const selectableIds = useMemo(() => {
-    const selectableIdsIntersection: T[] =
-      data?.filter((item) => (props.selectableIds ?? []).includes(item.id)) ??
-      [];
-    if (props.sorter) selectableIdsIntersection.sort(props.sorter);
-    return selectableIdsIntersection;
-  }, [data, props.selectableIds, props.sorter]);
-
   if (isLoading || !data)
     return (
       <div className="flex justify-center items-center h-10">
-        <div
-          className="w-6 h-6 border-4 border-t-4 border-gray-300 border-t-ring rounded-full animate-spin"
-          role="status"
-          aria-label="Loading"
-        ></div>
+        <div className="w-6 h-6 border-4 border-t-4 border-gray-300 border-t-ring rounded-full animate-spin"></div>
       </div>
     );
+
+  const selectableIdsIntersection =
+    data?.filter((item) => (props.selectableIds ?? []).includes(item.id)) ?? [];
+  const selectableIds = props.sorter
+    ? selectableIdsIntersection.sort(props.sorter)
+    : selectableIdsIntersection;
 
   const selectedIdsToSelectables = selectedItems.map((id) => {
     const label =
@@ -72,7 +76,7 @@ export const ItemFilter = <T extends { id: number }>(
     if (props.openFilter !== props.filterName) {
       props.handleSetSearchParams(props.filterName, selectedValues);
     }
-    // State is controlled by parent via props
+    setSelectedItems(selectedValues);
   };
 
   const handleOpenFilter = (filter: Nullable<string>) => {

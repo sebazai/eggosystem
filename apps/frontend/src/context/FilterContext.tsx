@@ -10,6 +10,7 @@ import { useSearchParams, usePathname } from "next/navigation";
 import {
   useEffect,
   useMemo,
+  useState,
   createContext,
   useContext,
   useCallback
@@ -46,6 +47,7 @@ export const FilterProvider = ({
 }) => {
   const path = usePathname();
   const searchParams = useSearchParams();
+  const [ready, setReady] = useState(false);
 
   const { data, error, isValidating, isLoading } = useSWR<
     { season_id: number },
@@ -57,46 +59,29 @@ export const FilterProvider = ({
     dedupingInterval: 24 * 60 * 60 * 1000
   });
 
-  // Determine ready state based on conditions
-  // Use a ref to track if we've done the initial URL setup
-  const hasInitializedUrl = useMemo(() => {
-    if (typeof window === "undefined") return false;
-    return (
-      searchParams.size !== 0 ||
-      excludePrefixPaths.some((p) => path === p || path.startsWith(`${p}`))
-    );
-  }, [searchParams.size, path]);
-
-  // Derive ready state - it's ready if we have params or are on an excluded path
-  // OR if we've initialized the URL with season params
-  const ready = useMemo(() => {
-    return (
-      hasInitializedUrl ||
-      (searchParams.size > 0 &&
-        data?.season_id &&
-        (includeExactPaths.includes(path) ||
-          includePrefixPaths.some(
-            (p) => path === p || path.startsWith(`${p}/`)
-          )))
-    );
-  }, [hasInitializedUrl, searchParams.size, data?.season_id, path]);
-
   useEffect(() => {
     if (
       searchParams.size === 0 &&
       data?.season_id &&
-      !hasInitializedUrl &&
+      !ready &&
       (includeExactPaths.includes(path) ||
         includePrefixPaths.some((p) => path === p || path.startsWith(`${p}/`)))
     ) {
       const params = new URLSearchParams();
       params.append("seasons", data.season_id.toString());
       const newUrl = `${path}?${params.toString()}`;
-      if (typeof window !== "undefined") {
-        window.history.replaceState(null, "", newUrl);
-      }
+      window.history.replaceState(null, "", newUrl);
     }
-  }, [searchParams.size, data?.season_id, hasInitializedUrl, path]);
+    if (
+      (searchParams.size !== 0 ||
+        excludePrefixPaths.some(
+          (p) => path === p || path.startsWith(`${p}`)
+        )) &&
+      !ready
+    ) {
+      setReady(true);
+    }
+  }, [searchParams, data?.season_id, ready, path]);
 
   const filterParams = useMemo(() => {
     if (!ready) return null;
