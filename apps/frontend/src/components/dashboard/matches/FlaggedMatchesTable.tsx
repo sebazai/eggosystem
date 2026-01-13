@@ -2,15 +2,13 @@
 
 import { useMemo, useState } from "react";
 import {
-  useReactTable,
-  getCoreRowModel,
   getSortedRowModel,
   type ColumnDef,
   type SortingState
 } from "@tanstack/react-table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { BaseTable } from "../../tables/BaseTable";
+import { TanStackTableWrapper } from "../../tables/TanStackTableWrapper";
 import type { FlaggedMatches } from "@eggosystem/types";
 import { useFlaggedMatches } from "@/hooks/data/dashboard/useFlaggedMatches";
 import { TeamBadge } from "./TeamBadge";
@@ -150,18 +148,6 @@ export const FlaggedMatchesTable = () => {
     []
   );
 
-  // TanStack Table configuration
-  const table = useReactTable({
-    data: flaggedMatches ?? [],
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    onSortingChange: setSorting,
-    state: {
-      sorting
-    }
-  });
-
   if (isLoading) {
     return (
       <Card>
@@ -235,7 +221,14 @@ export const FlaggedMatchesTable = () => {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <BaseTable table={table} showPagination={false} />
+        <TanStackTableWrapper
+          data={flaggedMatches ?? []}
+          columns={columns}
+          getSortedRowModel={getSortedRowModel()}
+          sorting={sorting}
+          onSortingChange={setSorting}
+          showPagination={false}
+        />
       </CardContent>
     </Card>
   );

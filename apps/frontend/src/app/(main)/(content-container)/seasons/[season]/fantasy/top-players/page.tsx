@@ -1,6 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
+import { useMemo } from "react";
 import useSWR from "swr";
 import { expressFetcher, cn, createTeamLogoUrl } from "@/lib/utils";
 import { AutoBreadcrumbs } from "@/components/layout/AutoBreadcrumbs";
@@ -22,7 +23,7 @@ import {
   TableRow
 } from "@/components/ui/table";
 import { useSeasonLeagues } from "@/hooks/data/useSeasonLeagues";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Trophy, TrendingUp } from "lucide-react";
 import { NextImageFallback } from "@/components/layout/NextImageFallback";
 
@@ -57,21 +58,20 @@ export default function TopPlayersPage() {
 
   const { seasonLeagues, isLoading: isLoadingLeagues } =
     useSeasonLeagues(seasonId);
-  const [selectedLeagueId, setSelectedLeagueId] = useState<string | undefined>(
-    undefined
-  );
 
   // Auto-select first league when loaded
-  useEffect(() => {
-    if (
-      !isLoadingLeagues &&
-      seasonLeagues &&
-      seasonLeagues.length > 0 &&
-      !selectedLeagueId
-    ) {
-      setSelectedLeagueId(String(seasonLeagues[0]!.id));
+  // Use useMemo for derived state
+  const defaultLeagueId = useMemo(() => {
+    if (!isLoadingLeagues && seasonLeagues && seasonLeagues.length > 0) {
+      return String(seasonLeagues[0]!.id);
     }
-  }, [seasonLeagues, isLoadingLeagues, selectedLeagueId]);
+    return null;
+  }, [seasonLeagues, isLoadingLeagues]);
+
+  // Initialize with defaultLeagueId - use derived value when available
+  const [selectedLeagueId, setSelectedLeagueId] = useState<string | undefined>(
+    defaultLeagueId || undefined
+  );
 
   const {
     data: players,

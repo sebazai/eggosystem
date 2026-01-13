@@ -4,12 +4,8 @@ import { useRef, useEffect, useState, useMemo } from "react";
 import type { LivePlayerValues } from "@/hooks/data/dashboard/useTeamPlayersLive";
 import Image from "next/image";
 import { createNextUrl } from "@/lib/utils";
-import { BaseTable } from "@/components/tables/BaseTable";
-import {
-  useReactTable,
-  getCoreRowModel,
-  type ColumnDef
-} from "@tanstack/react-table";
+import { TanStackTableWrapper } from "@/components/tables/TanStackTableWrapper";
+import type { ColumnDef } from "@tanstack/react-table";
 
 interface LiveTeamPlayersPopupProps {
   players: LivePlayerValues[];
@@ -196,18 +192,6 @@ export function LiveTeamPlayersPopup({
     []
   );
 
-  const primaryTable = useReactTable({
-    data: primaryPlayers,
-    columns,
-    getCoreRowModel: getCoreRowModel()
-  });
-
-  const substituteTable = useReactTable({
-    data: substitutePlayers,
-    columns,
-    getCoreRowModel: getCoreRowModel()
-  });
-
   return (
     <div
       ref={windowRef}
@@ -251,7 +235,11 @@ export function LiveTeamPlayersPopup({
                   Primary Roster ({primaryPlayers.length})
                 </h4>
               </div>
-              <BaseTable table={primaryTable} showPagination={false} />
+              <TanStackTableWrapper
+                data={primaryPlayers}
+                columns={columns}
+                showPagination={false}
+              />
             </div>
           )}
 
@@ -262,7 +250,11 @@ export function LiveTeamPlayersPopup({
                   Substitutes ({substitutePlayers.length})
                 </h4>
               </div>
-              <BaseTable table={substituteTable} showPagination={false} />
+              <TanStackTableWrapper
+                data={substitutePlayers}
+                columns={columns}
+                showPagination={false}
+              />
             </div>
           )}
 

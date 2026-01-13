@@ -4,13 +4,13 @@ import type { SeasonDetails } from "@eggosystem/types";
 import { createPageMetadata } from "@/lib/metadata";
 import CalendarPage from "@/components/calendar/CalendarPage";
 
-type CalendarPage = {
+type CalendarPageProps = {
   params: Promise<{ season: string }>;
 };
 
 export async function generateMetadata({
   params
-}: CalendarPage): Promise<Metadata> {
+}: CalendarPageProps): Promise<Metadata> {
   const { season } = await params;
 
   const result = await fetch(
@@ -29,7 +29,7 @@ export async function generateMetadata({
   });
 }
 
-export default async function Calendar({ params }: CalendarPage) {
+export default async function Calendar({ params }: CalendarPageProps) {
   const { season } = await params;
   return <CalendarPage seasonId={season} />;
 }

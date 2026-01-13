@@ -4,13 +4,13 @@ import type { SeasonDetails } from "@eggosystem/types";
 import { createPageMetadata } from "@/lib/metadata";
 import { FaceitLinksPage } from "@/components/season/FaceitLinksPage";
 
-type FaceitLinksPage = {
+type FaceitLinksPageProps = {
   params: Promise<{ season: string }>;
 };
 
 export async function generateMetadata({
   params
-}: FaceitLinksPage): Promise<Metadata> {
+}: FaceitLinksPageProps): Promise<Metadata> {
   const { season } = await params;
 
   const result = await fetch(
@@ -29,7 +29,7 @@ export async function generateMetadata({
   });
 }
 
-export default async function FaceitLinks({ params }: FaceitLinksPage) {
+export default async function FaceitLinks({ params }: FaceitLinksPageProps) {
   const { season } = await params;
   const result = await fetch(
     `${envConfig.API_URL}/api/v1/seasons/${season}/details`

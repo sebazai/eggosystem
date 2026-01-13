@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { X } from "lucide-react";
 import { cn, createTeamLogoUrl } from "@/lib/utils";
 import { NextImageFallback } from "../layout/NextImageFallback";
+import Image from "next/image";
 import type { SelectedPlayer } from "./FantasyLeague";
 
 type Props = {
@@ -173,10 +174,12 @@ export default function SelectedTeamPanel({
                     {/* Player Photo with gradient overlay */}
                     <div className="relative bg-gradient-to-b from-neutral-800 to-neutral-900 h-28 flex items-center justify-center overflow-hidden">
                       {player.photo ? (
-                        <img
+                        <Image
                           src={player.photo}
                           alt={player.name}
-                          className="w-full h-full object-cover"
+                          fill
+                          className="object-cover"
+                          unoptimized
                         />
                       ) : (
                         <div className="text-3xl text-gray-600 font-bold">

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import type { FilterParamsQuery } from "@/lib/utils";
 import type { MatchTeamInfo, Player, MatchTeamLineup } from "@eggosystem/types";
 import { PlayerCard, PlayerComparisonSection } from "./components";
@@ -20,23 +20,6 @@ export const TeamLineups = ({
 }: TeamLineupsProps) => {
   // Fetch real lineup data
   const { lineups, isLoading } = useMatchTeamLineups(matchId);
-
-  // State for selected players
-  const [selectedPlayer1, setSelectedPlayer1] = useState<Player | null>(null);
-  const [selectedPlayer2, setSelectedPlayer2] = useState<Player | null>(null);
-
-  // Fetch real statistics for selected players with fallback logic
-  const { playerStats: player1Stats, isLoading: isLoadingPlayer1Stats } =
-    usePlayerStatsWithFallback(
-      selectedPlayer1?.steamId || "",
-      baseFilters.seasons?.[0] // Use first season from baseFilters
-    );
-
-  const { playerStats: player2Stats, isLoading: isLoadingPlayer2Stats } =
-    usePlayerStatsWithFallback(
-      selectedPlayer2?.steamId || "",
-      baseFilters.seasons?.[0] // Use first season from baseFilters
-    );
 
   // Get team names safely (teams is now an array)
   const team1Name = teams?.[0]?.name || "Team 1";
@@ -85,15 +68,39 @@ export const TeamLineups = ({
   const team1Players = realTeam1Players;
   const team2Players = realTeam2Players;
 
-  // Initialize with first player from each team selected by default
-  useEffect(() => {
-    if (team1Players.length > 0 && !selectedPlayer1) {
-      setSelectedPlayer1(team1Players[0] || null);
-    }
-    if (team2Players.length > 0 && !selectedPlayer2) {
-      setSelectedPlayer2(team2Players[0] || null);
-    }
-  }, [team1Players, team2Players, selectedPlayer1, selectedPlayer2]);
+  // Calculate default players during render (not in state)
+  const defaultPlayer1 = useMemo(() => {
+    return team1Players.length > 0 ? team1Players[0] : null;
+  }, [team1Players]);
+  const defaultPlayer2 = useMemo(() => {
+    return team2Players.length > 0 ? team2Players[0] : null;
+  }, [team2Players]);
+
+  // Only store user selections in state - defaults are calculated during render
+  const [userSelectedPlayer1, setUserSelectedPlayer1] = useState<Player | null>(
+    null
+  );
+  const [userSelectedPlayer2, setUserSelectedPlayer2] = useState<Player | null>(
+    null
+  );
+
+  // Calculate effective selected players during render (use default if user hasn't selected)
+  // This follows React best practice: calculate during render, don't sync in Effects
+  const selectedPlayer1 = userSelectedPlayer1 ?? defaultPlayer1;
+  const selectedPlayer2 = userSelectedPlayer2 ?? defaultPlayer2;
+
+  // Fetch real statistics for selected players with fallback logic
+  const { playerStats: player1Stats, isLoading: isLoadingPlayer1Stats } =
+    usePlayerStatsWithFallback(
+      selectedPlayer1?.steamId || "",
+      baseFilters.seasons?.[0] // Use first season from baseFilters
+    );
+
+  const { playerStats: player2Stats, isLoading: isLoadingPlayer2Stats } =
+    usePlayerStatsWithFallback(
+      selectedPlayer2?.steamId || "",
+      baseFilters.seasons?.[0] // Use first season from baseFilters
+    );
 
   // NOW SAFE TO HAVE CONDITIONAL RETURNS AFTER ALL HOOKS ARE DECLARED
 
@@ -111,11 +118,11 @@ export const TeamLineups = ({
 
   // Click handlers for player selection
   const handlePlayer1Select = (player: Player) => {
-    setSelectedPlayer1(player);
+    setUserSelectedPlayer1(player);
   };
 
   const handlePlayer2Select = (player: Player) => {
-    setSelectedPlayer2(player);
+    setUserSelectedPlayer2(player);
   };
 
   return (

@@ -4,8 +4,6 @@ import { useRegistrationDrafts } from "@/hooks/data/dashboard/useRegistrationDra
 import { Spinner } from "@/components/ui/spinner";
 import { useMemo, useState } from "react";
 import {
-  useReactTable,
-  getCoreRowModel,
   getExpandedRowModel,
   getSortedRowModel,
   type ColumnDef,
@@ -18,7 +16,7 @@ import {
   type CustomColumnMeta,
   type PlayerValidationResult
 } from "@eggosystem/types";
-import { BaseTable } from "../../tables/BaseTable";
+import { TanStackTableWrapper } from "../../tables/TanStackTableWrapper";
 import { ExpandableRow } from "../../tables/ExpandableRow";
 import { useActiveSignupOrActiveSeasonForApp } from "@/hooks/data/useActiveSignupOrActiveSeasonForApp";
 import { clientApiFetch } from "@/lib/apiClient";
@@ -148,21 +146,6 @@ export const ListRegistrationDrafts = () => {
     []
   );
 
-  const table = useReactTable({
-    data: registrationDrafts ?? [],
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-    getExpandedRowModel: getExpandedRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    onSortingChange: setSorting,
-    getRowCanExpand: (row) =>
-      Array.isArray(row.original.players) && row.original.players.length > 0,
-    state: {
-      sorting
-    },
-    debugTable: false
-  });
-
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-32">
@@ -202,8 +185,18 @@ export const ListRegistrationDrafts = () => {
     <div className="bg-card rounded-md overflow-hidden mt-8">
       <div className="overflow-x-auto">
         <div>In progress length: {registrationDrafts.length}</div>
-        <BaseTable
-          table={table}
+        <TanStackTableWrapper
+          data={registrationDrafts ?? []}
+          columns={columns}
+          getExpandedRowModel={getExpandedRowModel()}
+          getSortedRowModel={getSortedRowModel()}
+          sorting={sorting}
+          onSortingChange={setSorting}
+          getRowCanExpand={(row) =>
+            Array.isArray(row.original.players) &&
+            row.original.players.length > 0
+          }
+          debugTable={false}
           showPagination={false}
           enableRowExpansion={true}
           renderExpandedRow={renderExpandedRow}

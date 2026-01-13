@@ -4,13 +4,13 @@ import { SignupEditForm } from "@/components/signup/SignupEditForm";
 import type { Metadata } from "next";
 import { createPageMetadata } from "@/lib/metadata";
 
-type TeamSignupEditPage = {
+type TeamSignupEditPageProps = {
   params: Promise<{ season: string; teamId: string }>;
 };
 
 export async function generateMetadata({
   params
-}: TeamSignupEditPage): Promise<Metadata> {
+}: TeamSignupEditPageProps): Promise<Metadata> {
   const { season, teamId } = await params;
 
   const result = await fetch(
@@ -38,7 +38,7 @@ export async function generateMetadata({
 
 export default async function TeamSignupEditPage({
   params
-}: TeamSignupEditPage) {
+}: TeamSignupEditPageProps) {
   const { season, teamId } = await params;
   const seasonResult = await fetch(
     `${envConfig.API_URL}/api/v1/seasons/${season}`

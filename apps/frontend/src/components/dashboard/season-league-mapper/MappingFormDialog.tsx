@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import {
   Dialog,
   DialogContent,
@@ -41,32 +41,88 @@ export function MappingFormDialog({
   leagueName,
   editingMapping
 }: MappingFormDialogProps) {
-  const [externalId, setExternalId] = useState("");
-  const [externalLeagueName, setExternalLeagueName] = useState("");
-  const [stageId, setStageId] = useState<string>("1");
-  const [type, setType] = useState<string>("roundRobin");
-  const [manualGroup, setManualGroup] = useState<string>("");
+  // Compute initial form values based on editingMapping and isOpen
+  const initialFormValues = useMemo(() => {
+    if (editingMapping) {
+      return {
+        externalId: editingMapping.external_id,
+        externalLeagueName: editingMapping.external_league_name || "",
+        stageId: editingMapping.stage_id.toString(),
+        type: editingMapping.type,
+        manualGroup: editingMapping.manual_group?.toString() || ""
+      };
+    }
+    if (isOpen) {
+      // Reset form when creating new (only when dialog opens)
+      return {
+        externalId: "",
+        externalLeagueName: "",
+        stageId: "1",
+        type: "roundRobin",
+        manualGroup: ""
+      };
+    }
+    return {
+      externalId: "",
+      externalLeagueName: "",
+      stageId: "1",
+      type: "roundRobin",
+      manualGroup: ""
+    };
+  }, [editingMapping, isOpen]);
 
   const createMutation = useCreateSeasonLeagueExternalId();
   const updateMutation = useUpdateSeasonLeagueExternalId();
 
-  // Populate form when editing
+  // Use initialFormValues directly - calculate during render (React best practice)
+  // Only store user edits in state, otherwise use computed values
+  const [userEdits, setUserEdits] = useState<{
+    externalId?: string;
+    externalLeagueName?: string;
+    stageId?: string;
+    type?: string;
+    manualGroup?: string;
+  }>({});
+
+  // Calculate effective form values during render
+  const externalId = userEdits.externalId ?? initialFormValues.externalId;
+  const externalLeagueName =
+    userEdits.externalLeagueName ?? initialFormValues.externalLeagueName;
+  const stageId = userEdits.stageId ?? initialFormValues.stageId;
+  const type = userEdits.type ?? initialFormValues.type;
+  const manualGroup = userEdits.manualGroup ?? initialFormValues.manualGroup;
+
+  // Clear user edits when editingMapping or isOpen changes
+  // Track previous values to detect changes
+  const prevEditingMappingIdRef = useRef(editingMapping?.id);
+  const prevIsOpenRef = useRef(isOpen);
+
+  // Reset user edits when form context changes (editingMapping or dialog opens)
   useEffect(() => {
-    if (editingMapping) {
-      setExternalId(editingMapping.external_id);
-      setExternalLeagueName(editingMapping.external_league_name || "");
-      setStageId(editingMapping.stage_id.toString());
-      setType(editingMapping.type);
-      setManualGroup(editingMapping.manual_group?.toString() || "");
+    const editingMappingChanged =
+      editingMapping?.id !== prevEditingMappingIdRef.current;
+    const dialogOpened = isOpen && !prevIsOpenRef.current;
+
+    if (editingMappingChanged || dialogOpened) {
+      prevEditingMappingIdRef.current = editingMapping?.id;
+      prevIsOpenRef.current = isOpen;
+      setUserEdits({}); // Clear user edits when form resets
     } else {
-      // Reset form when creating new
-      setExternalId("");
-      setExternalLeagueName("");
-      setStageId("1");
-      setType("roundRobin");
-      setManualGroup("");
+      prevIsOpenRef.current = isOpen;
     }
-  }, [editingMapping, isOpen]);
+  }, [editingMapping?.id, isOpen]);
+
+  // Setters that update user edits
+  const setExternalId = (value: string) =>
+    setUserEdits((prev) => ({ ...prev, externalId: value }));
+  const setExternalLeagueName = (value: string) =>
+    setUserEdits((prev) => ({ ...prev, externalLeagueName: value }));
+  const setStageId = (value: string) =>
+    setUserEdits((prev) => ({ ...prev, stageId: value }));
+  const setType = (value: string) =>
+    setUserEdits((prev) => ({ ...prev, type: value }));
+  const setManualGroup = (value: string) =>
+    setUserEdits((prev) => ({ ...prev, manualGroup: value }));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -107,11 +163,7 @@ export function MappingFormDialog({
   };
 
   const handleClose = () => {
-    setExternalId("");
-    setExternalLeagueName("");
-    setStageId("1");
-    setType("roundRobin");
-    setManualGroup("");
+    setUserEdits({}); // Clear user edits when closing
     onClose();
   };
 

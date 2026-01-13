@@ -1,8 +1,6 @@
 "use client";
 
 import {
-  useReactTable,
-  getCoreRowModel,
   getExpandedRowModel,
   getSortedRowModel,
   type ColumnDef,
@@ -16,7 +14,7 @@ import { useMemo, useState } from "react";
 import { ExternalLink, CheckCircle, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
-import { BaseTable } from "../../tables/BaseTable";
+import { TanStackTableWrapper } from "../../tables/TanStackTableWrapper";
 import { ExpandableRow } from "../../tables/ExpandableRow";
 
 interface FaceitRosterValidationTableProps {
@@ -216,22 +214,8 @@ export const FaceitRosterValidationTable = ({
         } satisfies CustomColumnMeta
       }
     ],
-    []
+    [seasonId, stageName]
   );
-
-  const table = useReactTable({
-    data: teams,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-    getExpandedRowModel: getExpandedRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    onSortingChange: setSorting,
-    getRowCanExpand: () => true,
-    state: {
-      sorting
-    },
-    debugTable: false
-  });
 
   const renderExpandedRow = (team: FaceitTeamRosterComparison) => {
     // Use team-specific championship if available, otherwise fall back to season championship
@@ -427,8 +411,15 @@ export const FaceitRosterValidationTable = ({
         </div>
       </div>
 
-      <BaseTable
-        table={table}
+      <TanStackTableWrapper
+        data={teams}
+        columns={columns}
+        getExpandedRowModel={getExpandedRowModel()}
+        getSortedRowModel={getSortedRowModel()}
+        sorting={sorting}
+        onSortingChange={setSorting}
+        getRowCanExpand={() => true}
+        debugTable={false}
         enableRowExpansion={true}
         renderExpandedRow={renderExpandedRow}
       />

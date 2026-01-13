@@ -1,16 +1,16 @@
 ---
-description: Table component patterns using BaseTable
+description: Table component patterns using TanStackTableWrapper
 alwaysApply: false
 globs: ["apps/frontend/**/components/**/*.tsx"]
 ---
 
 # Table Components Rule
 
-**Always use BaseTable for table implementations**
+**Always use TanStackTableWrapper for table implementations**
 
-When creating or refactoring tables in the frontend, always use the `BaseTable` component from `@/components/tables/BaseTable` instead of manual HTML table implementations. This ensures consistency, responsive design, sorting, pagination, and other table features across the application.
+When creating or refactoring tables in the frontend, always use the `TanStackTableWrapper` component from `@/components/tables/TanStackTableWrapper` instead of directly using `useReactTable` or manual HTML table implementations. This ensures consistency, responsive design, sorting, pagination, and other table features across the application, while isolating React Compiler incompatibilities to a single component.
 
-The `BaseTable` component supports:
+The `TanStackTableWrapper` component supports:
 
 - Responsive column visibility
 - Sorting with visual indicators
@@ -19,19 +19,38 @@ The `BaseTable` component supports:
 - Row selection
 - Custom styling and cell content
 - Tooltips and accessibility features
+- All TanStack Table features (filtering, global filter, etc.)
+
+**React Compiler Compatibility**: The wrapper isolates the `useReactTable` hook (which is incompatible with the React Compiler) to a single component, allowing the rest of your application to benefit from compiler optimizations.
 
 Example usage:
 
 ```typescript
-import { BaseTable } from "@/components/tables/BaseTable";
-import { useReactTable, getCoreRowModel, getSortedRowModel } from "@tanstack/react-table";
+import { TanStackTableWrapper } from "@/components/tables/TanStackTableWrapper";
+import { getSortedRowModel } from "@tanstack/react-table";
 
-const table = useReactTable({
-  data,
-  columns,
-  getCoreRowModel: getCoreRowModel(),
-  getSortedRowModel: getSortedRowModel(),
-});
+return (
+  <TanStackTableWrapper
+    data={data}
+    columns={columns}
+    getSortedRowModel={getSortedRowModel()}
+    sorting={sorting}
+    onSortingChange={setSorting}
+  />
+);
+```
 
-return <BaseTable table={table} />;
+For advanced use cases where you need access to the table instance (e.g., for programmatic operations), use the `onTableReady` callback:
+
+```typescript
+const tableRef = useRef<Table<DataType> | null>(null);
+
+<TanStackTableWrapper
+  data={data}
+  columns={columns}
+  onTableReady={(table) => {
+    tableRef.current = table;
+  }}
+  // ... other props
+/>
 ```

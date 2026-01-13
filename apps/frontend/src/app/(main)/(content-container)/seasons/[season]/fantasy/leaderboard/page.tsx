@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import useSWR from "swr";
 import { expressFetcher } from "@/lib/utils";
 import { AutoBreadcrumbs } from "@/components/layout/AutoBreadcrumbs";
@@ -35,7 +35,6 @@ import { cn } from "@/lib/utils";
 import { useSeasonLeagues } from "@/hooks/data/useSeasonLeagues";
 import TeamViewDialog from "@/components/fantasy/TeamViewDialog";
 import type { MyFantasyTeam } from "@/hooks/data/useMyFantasyTeam";
-import { useState } from "react";
 
 interface LeaderboardEntry {
   rank: number;
@@ -74,28 +73,41 @@ export default function FantasyLeaderboardPage() {
   );
 
   // Determine default league: user's league if they have one, otherwise first available league
-  const defaultLeagueId =
-    (myTeam as { league_id?: number })?.league_id ||
-    (seasonLeagues && seasonLeagues.length > 0 ? seasonLeagues[0]!.id : 1);
+  const defaultLeagueId = useMemo(() => {
+    return (
+      (myTeam as { league_id?: number })?.league_id ||
+      (seasonLeagues && seasonLeagues.length > 0 ? seasonLeagues[0]!.id : 1)
+    );
+  }, [myTeam, seasonLeagues]);
 
   const [viewMode, setViewMode] = useState<"division" | "overall">("division");
+  const [hasUserSelectedLeague, setHasUserSelectedLeague] = useState(false);
+
+  // Initialize selectedLeagueId with default
   const [selectedLeagueId, setSelectedLeagueId] =
     useState<number>(defaultLeagueId);
 
-  // Track if user has made a manual league selection
-  const [hasUserSelectedLeague, setHasUserSelectedLeague] = useState(false);
+  // Use derived value for selectedLeagueId when user hasn't manually selected
+  // Otherwise use the manually selected value
+  const effectiveSelectedLeagueId = hasUserSelectedLeague
+    ? selectedLeagueId
+    : defaultLeagueId;
 
   // Team view dialog state
   const [selectedTeam, setSelectedTeam] = useState<MyFantasyTeam | null>(null);
   const [teamViewDialogOpen, setTeamViewDialogOpen] = useState(false);
 
-  // Update selected league when user's league loads or when leagues are fetched
-  // Only update if user hasn't made a manual selection
+  // Update selectedLeagueId when default changes, but only if user hasn't made a manual selection
+  // Use a ref to track if we should update
+  const prevDefaultRef = useRef(defaultLeagueId);
   useEffect(() => {
-    if (defaultLeagueId && !hasUserSelectedLeague) {
-      setSelectedLeagueId(defaultLeagueId);
+    if (!hasUserSelectedLeague && defaultLeagueId !== prevDefaultRef.current) {
+      prevDefaultRef.current = defaultLeagueId;
+      if (selectedLeagueId !== defaultLeagueId) {
+        setSelectedLeagueId(defaultLeagueId);
+      }
     }
-  }, [defaultLeagueId, hasUserSelectedLeague]);
+  }, [defaultLeagueId, hasUserSelectedLeague, selectedLeagueId]);
 
   // Fetch division-specific leaderboard
   const {
@@ -104,7 +116,7 @@ export default function FantasyLeaderboardPage() {
     isLoading: divisionLoading
   } = useSWR<LeaderboardResponse>(
     viewMode === "division"
-      ? `/api/v1/seasons/${seasonId}/fantasy/leagues/${selectedLeagueId}/leaderboard`
+      ? `/api/v1/seasons/${seasonId}/fantasy/leagues/${effectiveSelectedLeagueId}/leaderboard`
       : null,
     expressFetcher
   );

@@ -7,8 +7,6 @@ import {
 } from "@/hooks/data/dashboard/useRegisteredTeams";
 import { Spinner } from "@/components/ui/spinner";
 import {
-  useReactTable,
-  getCoreRowModel,
   getExpandedRowModel,
   getSortedRowModel,
   getFilteredRowModel,
@@ -19,7 +17,8 @@ import type {
   SeasonRegisteredTeamsWithPlayersValidatedTeams,
   CustomColumnMeta
 } from "@eggosystem/types";
-import { useMemo, useState } from "react";
+import React, { useMemo, useState, useRef } from "react";
+import type { Table } from "@tanstack/react-table";
 import {
   ExternalLink,
   CheckCircle,
@@ -31,7 +30,7 @@ import { createPlatformTeamUrl } from "@/lib/utils";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { BaseTable } from "../../tables/BaseTable";
+import { TanStackTableWrapper } from "../../tables/TanStackTableWrapper";
 import { ExpandableRow } from "../../tables/ExpandableRow";
 import { RowSelection } from "../../tables/RowSelection";
 
@@ -42,6 +41,9 @@ export const ListRegisteredTeams = () => {
   const [rowSelection, setRowSelection] = useState({});
   const [isPerformingAction, setIsPerformingAction] = useState(false);
   const [sorting, setSorting] = useState<SortingState>([]);
+  const [isAllRowsExpanded, setIsAllRowsExpanded] = useState(false);
+  const tableRef =
+    useRef<Table<SeasonRegisteredTeamsWithPlayersValidatedTeams> | null>(null);
 
   const columns = useMemo<
     ColumnDef<SeasonRegisteredTeamsWithPlayersValidatedTeams>[]
@@ -190,25 +192,21 @@ export const ListRegisteredTeams = () => {
     []
   );
 
-  const table = useReactTable({
-    data: registeredTeams ?? [],
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-    getExpandedRowModel: getExpandedRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    onSortingChange: setSorting,
-    getRowCanExpand: () => true,
-    enableRowSelection: true,
-    onRowSelectionChange: setRowSelection,
-    state: {
-      rowSelection,
-      sorting
-    },
-    debugTable: false
-  });
+  // Calculate selected rows from rowSelection state
+  const selectedRows = React.useMemo(() => {
+    if (!registeredTeams) return [];
+    const rowSelectionRecord = rowSelection as Record<string, boolean>;
+    return Object.keys(rowSelectionRecord)
+      .filter((key) => rowSelectionRecord[key])
+      .map((key) => {
+        const index = parseInt(key, 10);
+        return registeredTeams[index];
+      })
+      .filter((team): team is SeasonRegisteredTeamsWithPlayersValidatedTeams =>
+        Boolean(team)
+      );
+  }, [registeredTeams, rowSelection]);
 
-  const selectedRows = table.getFilteredSelectedRowModel().rows;
   const hasSelectedRows = selectedRows.length > 0;
 
   const renderExpandedRow = (
@@ -317,7 +315,7 @@ export const ListRegisteredTeams = () => {
 
     setIsPerformingAction(true);
     try {
-      const teamIds = selectedRows.map((row) => row.original.team_id);
+      const teamIds = selectedRows.map((row) => row.team_id);
       await bulkApprove(teamIds);
       toast.success(`Successfully approved ${teamIds.length} team(s)`);
       setRowSelection({});
@@ -334,7 +332,7 @@ export const ListRegisteredTeams = () => {
 
     setIsPerformingAction(true);
     try {
-      const teamIds = selectedRows.map((row) => row.original.team_id);
+      const teamIds = selectedRows.map((row) => row.team_id);
       await manualValidityCheck(teamIds);
       toast.success(`Successfully validated ${teamIds.length} team(s)`);
       setRowSelection({});
@@ -347,7 +345,11 @@ export const ListRegisteredTeams = () => {
   };
 
   const handleToggleAllRows = () => {
-    table.toggleAllRowsExpanded();
+    if (tableRef.current) {
+      const newState = !isAllRowsExpanded;
+      tableRef.current.toggleAllRowsExpanded();
+      setIsAllRowsExpanded(newState);
+    }
   };
 
   if (isLoading) {
@@ -435,7 +437,7 @@ export const ListRegisteredTeams = () => {
             size="sm"
             className="flex items-center gap-2"
           >
-            {table.getIsAllRowsExpanded() ? (
+            {isAllRowsExpanded ? (
               <>
                 <ChevronsUp className="w-4 h-4" />
                 Collapse All
@@ -448,11 +450,26 @@ export const ListRegisteredTeams = () => {
             )}
           </Button>
         </div>
-        <BaseTable
-          table={table}
+        <TanStackTableWrapper
+          data={registeredTeams ?? []}
+          columns={columns}
+          getExpandedRowModel={getExpandedRowModel()}
+          getSortedRowModel={getSortedRowModel()}
+          getFilteredRowModel={getFilteredRowModel()}
+          sorting={sorting}
+          onSortingChange={setSorting}
+          rowSelection={rowSelection}
+          onRowSelectionChange={setRowSelection}
+          getRowCanExpand={() => true}
+          enableRowSelection={true}
+          debugTable={false}
+          onTableReady={(table) => {
+            tableRef.current = table;
+            // Sync initial state
+            setIsAllRowsExpanded(table.getIsAllRowsExpanded());
+          }}
           showPagination={false}
           enableRowExpansion={true}
-          enableRowSelection={true}
           renderExpandedRow={renderExpandedRow}
         />
       </div>

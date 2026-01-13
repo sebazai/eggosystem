@@ -6,7 +6,7 @@ import { expressFetcher } from "@/lib/utils";
 import type { Nullable } from "@eggosystem/types";
 import type { MultiSelect } from "@/types/MultiSelectType";
 import _ from "lodash";
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 
 interface ItemFilterProps<T> {
   filterName: string;
@@ -26,11 +26,16 @@ export const ItemFilter = <T extends { id: number }>(
   const [selectedItems, setSelectedItems] = useState<number[]>(
     props.selectedItems
   );
-  const [selectableIds, setSelectableIds] = useState<T[]>([]);
 
   useEffect(() => {
-    setSelectedItems(props.selectedItems);
-  }, [props.selectedItems]);
+    if (
+      props.openFilter !== props.filterName &&
+      !_.isEqual(selectedItems, props.selectedItems)
+    ) {
+      setSelectedItems(props.selectedItems);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.selectedItems, props.openFilter, props.filterName]);
 
   const { data, isLoading } = useSWR<T[]>(
     `/api/v1/${props.filterName}`,
@@ -41,20 +46,18 @@ export const ItemFilter = <T extends { id: number }>(
     }
   );
 
-  useEffect(() => {
-    const selectableIdsIntersection: T[] =
-      data?.filter((item) => (props.selectableIds ?? []).includes(item.id)) ??
-      [];
-    if (props.sorter) selectableIdsIntersection.sort(props.sorter);
-    setSelectableIds(selectableIdsIntersection);
-  }, [data, props.selectableIds, props.sorter]);
-
   if (isLoading || !data)
     return (
-      <div className="flex justify-center items-center h-10">
+      <div className="flex justify-center items-center h-10" role="status">
         <div className="w-6 h-6 border-4 border-t-4 border-gray-300 border-t-ring rounded-full animate-spin"></div>
       </div>
     );
+
+  const selectableIdsIntersection =
+    data?.filter((item) => (props.selectableIds ?? []).includes(item.id)) ?? [];
+  const selectableIds = props.sorter
+    ? selectableIdsIntersection.sort(props.sorter)
+    : selectableIdsIntersection;
 
   const selectedIdsToSelectables = selectedItems.map((id) => {
     const label =

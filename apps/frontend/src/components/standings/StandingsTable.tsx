@@ -4,13 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { useMemo, useState } from "react";
 import {
-  useReactTable,
-  getCoreRowModel,
   getSortedRowModel,
   type ColumnDef,
   type SortingState
 } from "@tanstack/react-table";
-import { BaseTable } from "../tables/BaseTable";
+import { TanStackTableWrapper } from "../tables/TanStackTableWrapper";
 import type { StandingsFaceitTeamStats } from "@eggosystem/types";
 
 interface StandingsTableProps {
@@ -162,24 +160,6 @@ export const StandingsTable = ({ data, isLoading }: StandingsTableProps) => {
     []
   );
 
-  // TanStack Table configuration
-  const table = useReactTable({
-    data,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    onSortingChange: setSorting,
-    state: {
-      sorting
-    },
-    initialState: {
-      sorting: [
-        { id: "points", desc: true },
-        { id: "rounds_diff", desc: true }
-      ]
-    }
-  });
-
   if (isLoading) {
     return (
       <Card>
@@ -226,7 +206,20 @@ export const StandingsTable = ({ data, isLoading }: StandingsTableProps) => {
         <CardTitle>League Standings</CardTitle>
       </CardHeader>
       <CardContent>
-        <BaseTable table={table} showPagination={false} />
+        <TanStackTableWrapper
+          data={data}
+          columns={columns}
+          getSortedRowModel={getSortedRowModel()}
+          sorting={sorting}
+          onSortingChange={setSorting}
+          initialState={{
+            sorting: [
+              { id: "points", desc: true },
+              { id: "rounds_diff", desc: true }
+            ]
+          }}
+          showPagination={false}
+        />
       </CardContent>
     </Card>
   );

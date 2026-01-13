@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   Card,
@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle
 } from "@/components/ui/card";
-import { SeasonPlatform } from "@eggosystem/types";
+
 import { useAllSeasons } from "@/hooks/data/useAllSeasons";
 import { usePlayerValidation } from "@/hooks/data/dashboard/usePlayerValidation";
 import { PlayerValidationDisplay } from "@/components/dashboard/PlayerValidationDisplay";
@@ -18,26 +18,38 @@ import { WithRoleProtection } from "@/components/dashboard/WithRoleProtection";
 
 export default function PlayerValidationPage() {
   const searchParams = useSearchParams();
-  const [steamId, setSteamId] = useState("");
-  const [seasonId, setSeasonId] = useState("");
-  const [platform, setPlatform] = useState<SeasonPlatform | null>(null);
+  // Initialize state from URL params using lazy initialization
+  const [steamId, setSteamId] = useState(
+    () => searchParams?.get("steamId") || ""
+  );
+  const [seasonId, setSeasonId] = useState(
+    () => searchParams?.get("seasonId") || ""
+  );
   const [success, setSuccess] = useState<string | null>(null);
 
   // Get all seasons
   const { seasons, isLoading: isLoadingSeasons } = useAllSeasons();
 
-  // Pre-fill form from URL parameters
-  useEffect(() => {
-    const urlSteamId = searchParams?.get("steamId");
-    const urlSeasonId = searchParams?.get("seasonId");
+  // Sync state when URL params change - use a ref to track previous values
+  const urlSteamId = searchParams?.get("steamId");
+  const urlSeasonId = searchParams?.get("seasonId");
+  const prevUrlSteamIdRef = useRef(urlSteamId);
+  const prevUrlSeasonIdRef = useRef(urlSeasonId);
 
-    if (urlSteamId) {
-      setSteamId(urlSteamId);
+  useEffect(() => {
+    if (urlSteamId && urlSteamId !== prevUrlSteamIdRef.current) {
+      prevUrlSteamIdRef.current = urlSteamId;
+      if (urlSteamId !== steamId) {
+        setSteamId(urlSteamId);
+      }
     }
-    if (urlSeasonId) {
-      setSeasonId(urlSeasonId);
+    if (urlSeasonId && urlSeasonId !== prevUrlSeasonIdRef.current) {
+      prevUrlSeasonIdRef.current = urlSeasonId;
+      if (urlSeasonId !== seasonId) {
+        setSeasonId(urlSeasonId);
+      }
     }
-  }, [searchParams]);
+  }, [urlSteamId, urlSeasonId, steamId, seasonId]);
 
   // Player validation hook
   const {
@@ -48,16 +60,11 @@ export default function PlayerValidationPage() {
     clearResults
   } = usePlayerValidation();
 
-  // Set platform when season changes
-  useEffect(() => {
-    if (seasonId) {
-      // Set platform from selected season
-      const selectedSeason = seasons?.find((s) => s.id.toString() === seasonId);
-      if (selectedSeason) {
-        setPlatform(selectedSeason.platform);
-      }
-    }
-  }, [seasonId, seasons]);
+  // Set platform when season changes - calculate during render (React best practice)
+  const selectedSeason = seasonId
+    ? seasons?.find((s) => s.id.toString() === seasonId)
+    : null;
+  const platform = selectedSeason?.platform ?? null;
 
   const handleValidation = async () => {
     setSuccess(null);
@@ -98,14 +105,7 @@ export default function PlayerValidationPage() {
                   setSeasonId(value);
                   clearResults(); // Clear when season changes
                   setSuccess(null);
-
-                  // Set platform from selected season
-                  const selectedSeason = seasons?.find(
-                    (s) => s.id.toString() === value
-                  );
-                  if (selectedSeason) {
-                    setPlatform(selectedSeason.platform);
-                  }
+                  // Platform is calculated during render, no need to set it here
                 }}
                 seasons={seasons}
                 isLoadingSeasons={isLoadingSeasons}

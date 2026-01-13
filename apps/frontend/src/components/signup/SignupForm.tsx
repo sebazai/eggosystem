@@ -101,9 +101,6 @@ export const SignupForm = ({
   isAdminMode = false,
   selectedSeasonId
 }: SignupFormProps) => {
-  const [activeTab, setActiveTab] = useState(
-    editValues ? "players" : "organization"
-  );
   const { user, loading: loadingUser } = useAuth();
   const schema = signupFormSchema({ platform });
   const baseSchema = baseSignupFormSchema({ platform });
@@ -282,14 +279,18 @@ export const SignupForm = ({
   const validPlayerSelectionWithCaptains =
     validPlayerSelection && validCaptainSelection;
 
-  useEffect(() => {
-    if (isEditMode && validTeamExternalIdInForm.success) {
-      setActiveTab("players");
+  // Determine active tab based on edit mode and validation
+  // Compute initial tab value
+  const computeInitialTab = () => {
+    if (isEditMode) {
+      // In edit mode, check if team external ID is valid
+      // This will be computed after form is initialized, so default to "team" initially
+      return "team";
     }
-    if (isEditMode && !validTeamExternalIdInForm.success) {
-      setActiveTab("team");
-    }
-  }, [isEditMode, validTeamExternalIdInForm.success]);
+    return editValues ? "players" : "organization";
+  };
+
+  const [activeTab, setActiveTab] = useState(computeInitialTab);
 
   const onSubmit = async (data: SignupFormValues) => {
     setSuccessMessage(null);
