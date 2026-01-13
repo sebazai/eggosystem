@@ -8,13 +8,11 @@ import {
   mapToReadableNameCapitalFirst
 } from "@/lib/utils";
 import { format } from "date-fns";
-import { BaseTable } from "../tables/BaseTable";
+import { TanStackTableWrapper } from "../tables/TanStackTableWrapper";
 import { usePlayerMatchHistory } from "@/hooks/data/filtered/usePlayerMatchHistory";
 
 import { useFilters } from "@/context/FilterContext";
 import {
-  useReactTable,
-  getCoreRowModel,
   getSortedRowModel,
   getPaginationRowModel,
   flexRender,
@@ -268,29 +266,6 @@ export const PlayerMatchHistoryTable = ({ steamId }: PlayerDetailsProps) => {
     []
   );
 
-  // TanStack Table configuration
-  // eslint-disable-next-line react-hooks/incompatible-library
-  const table = useReactTable({
-    data: matchHistory || [],
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    onSortingChange: setSorting,
-    onPaginationChange: setPagination,
-    state: {
-      sorting,
-      pagination
-    },
-    initialState: {
-      sorting: [{ id: "match_date", desc: true }],
-      pagination: {
-        pageIndex: 0,
-        pageSize: 10
-      }
-    }
-  });
-
   const handleRowClick = (match: MatchHistoryResult) => {
     const url = match.match_game_id
       ? `/matches/${match.match_id}/games/${match.match_game_id}`
@@ -377,12 +352,25 @@ export const PlayerMatchHistoryTable = ({ steamId }: PlayerDetailsProps) => {
 
   return (
     <PlayerMatchHistoryTableWrapper>
-      <BaseTable
-        table={table}
+      <TanStackTableWrapper
+        data={matchHistory || []}
         columns={columns}
+        getSortedRowModel={getSortedRowModel()}
+        getPaginationRowModel={getPaginationRowModel()}
+        sorting={sorting}
+        onSortingChange={setSorting}
+        pagination={pagination}
+        onPaginationChange={setPagination}
+        initialState={{
+          sorting: [{ id: "match_date", desc: true }],
+          pagination: {
+            pageIndex: 0,
+            pageSize: 10
+          }
+        }}
         onRowClick={handleRowClick}
         onRowMiddleClick={handleRowMiddleClick}
-        showPagination={table.getFilteredRowModel().rows.length > 0}
+        showPagination={(matchHistory?.length ?? 0) > 0}
         paginationType="matches"
         customCellClassName={customCellClassName}
         customCellContent={customCellContent}

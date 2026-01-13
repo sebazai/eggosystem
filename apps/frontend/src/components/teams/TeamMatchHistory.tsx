@@ -8,12 +8,10 @@ import {
 import { format } from "date-fns";
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { BaseTable } from "../tables/BaseTable";
+import { TanStackTableWrapper } from "../tables/TanStackTableWrapper";
 import { useFilteredTeamMatchHistory } from "@/hooks/data/filtered/useFilteredTeamMatchHistory";
 import { NextImageFallback } from "../layout/NextImageFallback";
 import {
-  useReactTable,
-  getCoreRowModel,
   getSortedRowModel,
   getPaginationRowModel,
   type ColumnDef,
@@ -161,29 +159,6 @@ export const TeamMatchHistory = ({
     []
   );
 
-  // TanStack Table configuration
-  // eslint-disable-next-line react-hooks/incompatible-library
-  const table = useReactTable({
-    data: teamMatchHistory || [],
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    onSortingChange: setSorting,
-    onPaginationChange: setPagination,
-    state: {
-      sorting,
-      pagination
-    },
-    initialState: {
-      sorting: [{ id: "date", desc: true }],
-      pagination: {
-        pageIndex: 0,
-        pageSize: 10
-      }
-    }
-  });
-
   const handleRowClick = (match: TeamMatchHistoryType) => {
     const url = match.match_game_id
       ? `/matches/${match.match_id}/games/${match.match_game_id}`
@@ -236,11 +211,25 @@ export const TeamMatchHistory = ({
   return (
     <div className="bg-card rounded-md overflow-hidden pt-4 sm:pt-2">
       <h2 className="text-xl font-semibold mb-2">Match History</h2>
-      <BaseTable
-        table={table}
+      <TanStackTableWrapper
+        data={teamMatchHistory || []}
+        columns={columns}
+        getSortedRowModel={getSortedRowModel()}
+        getPaginationRowModel={getPaginationRowModel()}
+        sorting={sorting}
+        onSortingChange={setSorting}
+        pagination={pagination}
+        onPaginationChange={setPagination}
+        initialState={{
+          sorting: [{ id: "date", desc: true }],
+          pagination: {
+            pageIndex: 0,
+            pageSize: 10
+          }
+        }}
         onRowClick={handleRowClick}
         onRowMiddleClick={handleRowMiddleClick}
-        showPagination={table.getFilteredRowModel().rows.length > 0}
+        showPagination={(teamMatchHistory?.length ?? 0) > 0}
         paginationType="matches"
       />
     </div>
