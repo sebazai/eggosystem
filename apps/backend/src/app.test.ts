@@ -1,6 +1,5 @@
 import request from "supertest";
 import { app } from "./app";
-import { logger } from "./utils/app-logger";
 
 jest.mock("./services/discord.services", () => ({
   initializeDiscordClient: jest.fn().mockResolvedValue({}),

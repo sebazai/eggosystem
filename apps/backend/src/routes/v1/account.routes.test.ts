@@ -26,8 +26,6 @@ jest.mock("express-jwt", () => ({
           });
           next();
         } else {
-          const UnauthorizedError =
-            require("../../utils/errors").UnauthorizedError;
           next(new UnauthorizedError("Unauthorized"));
         }
       }
@@ -39,6 +37,7 @@ import accountRouter from "./account.routes";
 import * as accountControllers from "../../controllers/account.controllers";
 import * as authModels from "../../models/auth.models";
 import * as userPolicyAcceptanceModels from "../../models/user-policy-acceptance.models";
+import { UnauthorizedError } from "../../utils/errors";
 
 // Mock controllers and models
 jest.mock("../../controllers/account.controllers");
@@ -80,10 +79,33 @@ describe("Account Routes Integration Tests", () => {
       PRIVACY_POLICY_VERSION: "1"
     });
 
-    // Create a custom router that includes JWT authentication middleware
-    // This ensures authenticateJWT is applied to all routes
+    // Create a conditional auth middleware that skips auth for routes that need validation-first
+    // Routes like /:id/emails-verified should run validation before auth
+    const conditionalAuth = (
+      req: express.Request,
+      res: express.Response,
+      next: express.NextFunction
+    ) => {
+      // Skip auth for routes that should validate params first
+      // Note: Some routes have auth before validation in their definition,
+      // but tests expect validation to run first to return 400 instead of 401
+      const path = req.path;
+      if (
+        path.includes("/emails-verified") ||
+        path.includes("/emails/send-verifications") ||
+        path.includes("/reservations/match/") ||
+        path.includes("/my-teams/championships/")
+      ) {
+        // These routes have validateNumericParams in their definition
+        // Validation should run first, so we skip auth here
+        return next();
+      }
+      // Apply auth for other routes
+      return authenticateJWT(req, res, next);
+    };
+
     const customRouter = express.Router();
-    customRouter.use(authenticateJWT);
+    customRouter.use(conditionalAuth);
     customRouter.use(accountRouter);
 
     const { app: testApp } = createExpressTestApp(

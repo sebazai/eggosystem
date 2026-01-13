@@ -127,9 +127,7 @@ describe("CORS Middleware Integration Tests", () => {
         res.json({ success: true });
       });
 
-      const res = await request(app)
-        .get("/test")
-        .set("Origin", "https://malicious.com");
+      await request(app).get("/test").set("Origin", "https://malicious.com");
 
       // CORS middleware should reject the request
       // The exact behavior depends on CORS library implementation
@@ -173,10 +171,7 @@ describe("CORS Middleware Integration Tests", () => {
         .set("Origin", "https://example.com");
       expect(allowedRes.status).toBe(200);
 
-      // Test disallowed origin
-      const disallowedRes = await request(app)
-        .get("/test")
-        .set("Origin", "https://other.com");
+      await request(app).get("/test").set("Origin", "https://other.com");
       expect(logger.warn).toHaveBeenCalledWith(
         "CORS rejection",
         expect.objectContaining({
@@ -189,15 +184,11 @@ describe("CORS Middleware Integration Tests", () => {
       const originalFrontendUrl = process.env.FRONTEND_URL;
       delete process.env.FRONTEND_URL;
 
-      // Need to clear module cache to test this, or mock the module
-      // Since the module checks FRONTEND_URL at load time, we need to handle this differently
-      // The actual implementation throws at module load, so this test may not be testable
-      // without module mocking. For now, we'll skip the check or use a different approach
       try {
-        // Clear require cache to force re-evaluation
-        delete require.cache[require.resolve("./cors.middleware")];
+        // getCorsOptions() checks for FRONTEND_URL and throws if not defined
+        // This tests the same validation logic as the module load-time check
         expect(() => {
-          require("./cors.middleware");
+          getCorsOptions();
         }).toThrow("FRONTEND_URL is not defined");
       } finally {
         // Restore original value
@@ -211,14 +202,10 @@ describe("CORS Middleware Integration Tests", () => {
       const originalFrontendUrl = process.env.FRONTEND_URL;
       process.env.FRONTEND_URL = "not-a-valid-url";
 
-      // Need to clear module cache to test this
       try {
-        delete require.cache[require.resolve("./cors.middleware")];
+        // getCorsOptions() will throw when trying to create a URL from invalid format
         expect(() => {
-          const {
-            getCorsOptions: getCorsOptionsFresh
-          } = require("./cors.middleware");
-          getCorsOptionsFresh();
+          getCorsOptions();
         }).toThrow();
       } finally {
         // Restore original value

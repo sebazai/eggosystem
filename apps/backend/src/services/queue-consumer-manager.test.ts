@@ -43,10 +43,12 @@ describe("QueueConsumerManager", () => {
       mockParsedQueueConsumer.mockImplementation(() => mockConsumer as any);
 
       // The method uses retryWithBackoff which will retry multiple times
+      // With 5 attempts, initialDelayMs=2000, maxDelayMs=30000, backoffMultiplier=2
+      // Max time: 2000 + 4000 + 8000 + 16000 = 30000ms, but we need buffer
       // After all retries fail, it logs an error but doesn't throw
       // So we expect it to resolve (not reject)
       await expect(manager.startAllConsumers()).resolves.toBeUndefined();
-    }, 15000);
+    }, 60000);
   });
 
   describe("stopAllConsumers", () => {

@@ -25,16 +25,13 @@ export const getCorsOptions = () => {
           allowedOrigins: allowList,
           userAgent: "CORS Middleware"
         });
-        callback(new Error("Not allowed by CORS"));
+        callback(new Error("Not allowed by CORS"), false);
       }
     },
     credentials: true
   } satisfies cors.CorsOptions;
 };
 
-// Initialize CORS middleware with current environment
-// Note: This uses FRONTEND_URL at module load time
-// For tests that change FRONTEND_URL, use getCorsOptions() directly
 const frontendUrlEnv = process.env.FRONTEND_URL;
 if (!frontendUrlEnv) {
   throw new Error("FRONTEND_URL is not defined");
