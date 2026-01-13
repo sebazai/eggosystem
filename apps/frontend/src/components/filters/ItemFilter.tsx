@@ -48,7 +48,7 @@ export const ItemFilter = <T extends { id: number }>(
 
   if (isLoading || !data)
     return (
-      <div className="flex justify-center items-center h-10">
+      <div className="flex justify-center items-center h-10" role="status">
         <div className="w-6 h-6 border-4 border-t-4 border-gray-300 border-t-ring rounded-full animate-spin"></div>
       </div>
     );
