@@ -419,10 +419,7 @@ function SortterPageContent() {
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div className="flex items-center space-x-4">
               {selectedSeason ? (
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm font-medium">Season:</span>
-                  <span className="text-sm">{selectedSeason}</span>
-                </div>
+                <SelectedSeasonBadge />
               ) : (
                 <span className="text-sm text-muted-foreground">
                   Please select a season from the sidebar
