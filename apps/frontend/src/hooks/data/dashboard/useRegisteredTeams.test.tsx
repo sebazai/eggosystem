@@ -51,7 +51,7 @@ describe("useRegisteredTeams", () => {
     it("should fetch registered teams successfully", async () => {
       mockClientApiFetch.mockResolvedValue(mockTeams);
 
-      const { result } = renderHook(() => useRegisteredTeams(), {
+      const { result } = renderHook(() => useRegisteredTeams(null), {
         wrapper: ({ children }) => (
           <SWRConfig value={{ provider: () => new Map() }}>
             {children}
@@ -75,7 +75,7 @@ describe("useRegisteredTeams", () => {
       const error = new Error("Failed to fetch");
       mockClientApiFetch.mockRejectedValue(error);
 
-      const { result } = renderHook(() => useRegisteredTeams(), {
+      const { result } = renderHook(() => useRegisteredTeams(null), {
         wrapper: ({ children }) => (
           <SWRConfig value={{ provider: () => new Map() }}>
             {children}
@@ -97,7 +97,7 @@ describe("useRegisteredTeams", () => {
         () => new Promise((resolve) => setTimeout(resolve, 100))
       );
 
-      const { result } = renderHook(() => useRegisteredTeams(), {
+      const { result } = renderHook(() => useRegisteredTeams(null), {
         wrapper: ({ children }) => (
           <SWRConfig value={{ provider: () => new Map() }}>
             {children}
@@ -112,7 +112,7 @@ describe("useRegisteredTeams", () => {
     it("should cache data and avoid refetching", async () => {
       mockClientApiFetch.mockResolvedValue(mockTeams);
 
-      const { result, rerender } = renderHook(() => useRegisteredTeams(), {
+      const { result, rerender } = renderHook(() => useRegisteredTeams(null), {
         wrapper: ({ children }) => (
           <SWRConfig value={{ provider: () => new Map() }}>
             {children}
@@ -134,7 +134,7 @@ describe("useRegisteredTeams", () => {
     it("should handle empty data", async () => {
       mockClientApiFetch.mockResolvedValue([]);
 
-      const { result } = renderHook(() => useRegisteredTeams(), {
+      const { result } = renderHook(() => useRegisteredTeams(null), {
         wrapper: ({ children }) => (
           <SWRConfig value={{ provider: () => new Map() }}>
             {children}
@@ -155,7 +155,7 @@ describe("useRegisteredTeams", () => {
     it("should call bulk approve API successfully", async () => {
       mockClientApiFetch.mockResolvedValue({ success: true });
 
-      const { result } = renderHook(() => useBulkApproveTeams(), {
+      const { result } = renderHook(() => useBulkApproveTeams(17), {
         wrapper: ({ children }) => (
           <SWRConfig value={{ provider: () => new Map() }}>
             {children}
@@ -182,7 +182,7 @@ describe("useRegisteredTeams", () => {
       const error = new Error("Bulk approve failed");
       mockClientApiFetch.mockRejectedValue(error);
 
-      const { result } = renderHook(() => useBulkApproveTeams(), {
+      const { result } = renderHook(() => useBulkApproveTeams(17), {
         wrapper: ({ children }) => (
           <SWRConfig value={{ provider: () => new Map() }}>
             {children}
@@ -201,7 +201,7 @@ describe("useRegisteredTeams", () => {
       mockClientApiFetch.mockResolvedValue({ success: true });
 
       const mockMutate = jest.fn();
-      const { result } = renderHook(() => useBulkApproveTeams(), {
+      const { result } = renderHook(() => useBulkApproveTeams(17), {
         wrapper: ({ children }) => (
           <SWRConfig value={{ provider: () => new Map() }}>
             {children}
@@ -227,7 +227,7 @@ describe("useRegisteredTeams", () => {
     it("should handle empty team IDs array", async () => {
       mockClientApiFetch.mockResolvedValue({ success: true });
 
-      const { result } = renderHook(() => useBulkApproveTeams(), {
+      const { result } = renderHook(() => useBulkApproveTeams(17), {
         wrapper: ({ children }) => (
           <SWRConfig value={{ provider: () => new Map() }}>
             {children}
@@ -238,7 +238,7 @@ describe("useRegisteredTeams", () => {
       await result.current.bulkApprove([]);
 
       expect(mockClientApiFetch).toHaveBeenCalledWith(
-        "/api/v1/dashboard/registration/bulk-approve",
+        "/api/v1/dashboard/registration/season/17/bulk-approve",
         {
           method: "POST",
           headers: {
@@ -254,7 +254,7 @@ describe("useRegisteredTeams", () => {
     it("should call manual validity check API successfully", async () => {
       mockClientApiFetch.mockResolvedValue({ success: true });
 
-      const { result } = renderHook(() => useManualValidityCheck(), {
+      const { result } = renderHook(() => useManualValidityCheck(17), {
         wrapper: ({ children }) => (
           <SWRConfig value={{ provider: () => new Map() }}>
             {children}
@@ -281,7 +281,7 @@ describe("useRegisteredTeams", () => {
       const error = new Error("Manual validity check failed");
       mockClientApiFetch.mockRejectedValue(error);
 
-      const { result } = renderHook(() => useManualValidityCheck(), {
+      const { result } = renderHook(() => useManualValidityCheck(17), {
         wrapper: ({ children }) => (
           <SWRConfig value={{ provider: () => new Map() }}>
             {children}
@@ -300,7 +300,7 @@ describe("useRegisteredTeams", () => {
       mockClientApiFetch.mockResolvedValue({ success: true });
 
       const mockMutate = jest.fn();
-      const { result } = renderHook(() => useManualValidityCheck(), {
+      const { result } = renderHook(() => useManualValidityCheck(17), {
         wrapper: ({ children }) => (
           <SWRConfig value={{ provider: () => new Map() }}>
             {children}
@@ -319,14 +319,14 @@ describe("useRegisteredTeams", () => {
       await result.current.manualValidityCheck(teamIds);
 
       expect(mockMutate).toHaveBeenCalledWith(
-        "/api/v1/dashboard/registration/registered"
+        "/api/v1/dashboard/registration/season/17/registered"
       );
     });
 
     it("should handle empty team IDs array", async () => {
       mockClientApiFetch.mockResolvedValue({ success: true });
 
-      const { result } = renderHook(() => useManualValidityCheck(), {
+      const { result } = renderHook(() => useManualValidityCheck(17), {
         wrapper: ({ children }) => (
           <SWRConfig value={{ provider: () => new Map() }}>
             {children}
@@ -337,7 +337,7 @@ describe("useRegisteredTeams", () => {
       await result.current.manualValidityCheck([]);
 
       expect(mockClientApiFetch).toHaveBeenCalledWith(
-        "/api/v1/dashboard/registration/manual-validity-check",
+        "/api/v1/dashboard/registration/season/17/manual-validity-check",
         {
           method: "POST",
           headers: {
@@ -353,7 +353,7 @@ describe("useRegisteredTeams", () => {
     it("should not revalidate on focus", async () => {
       mockClientApiFetch.mockResolvedValue(mockTeams);
 
-      const { result } = renderHook(() => useRegisteredTeams(), {
+      const { result } = renderHook(() => useRegisteredTeams(null), {
         wrapper: ({ children }) => (
           <SWRConfig value={{ provider: () => new Map() }}>
             {children}
@@ -375,7 +375,7 @@ describe("useRegisteredTeams", () => {
     it("should handle concurrent requests", async () => {
       mockClientApiFetch.mockResolvedValue(mockTeams);
 
-      const { result: result1 } = renderHook(() => useRegisteredTeams(), {
+      const { result: result1 } = renderHook(() => useRegisteredTeams(null), {
         wrapper: ({ children }) => (
           <SWRConfig value={{ provider: () => new Map() }}>
             {children}
@@ -383,7 +383,7 @@ describe("useRegisteredTeams", () => {
         )
       });
 
-      const { result: result2 } = renderHook(() => useRegisteredTeams(), {
+      const { result: result2 } = renderHook(() => useRegisteredTeams(null), {
         wrapper: ({ children }) => (
           <SWRConfig value={{ provider: () => new Map() }}>
             {children}
@@ -405,7 +405,7 @@ describe("useRegisteredTeams", () => {
     it("should handle network errors", async () => {
       mockClientApiFetch.mockRejectedValue(new Error("Network error"));
 
-      const { result } = renderHook(() => useRegisteredTeams(), {
+      const { result } = renderHook(() => useRegisteredTeams(null), {
         wrapper: ({ children }) => (
           <SWRConfig value={{ provider: () => new Map() }}>
             {children}
@@ -426,7 +426,7 @@ describe("useRegisteredTeams", () => {
       apiError.status = 500;
       mockClientApiFetch.mockRejectedValue(apiError);
 
-      const { result } = renderHook(() => useRegisteredTeams(), {
+      const { result } = renderHook(() => useRegisteredTeams(null), {
         wrapper: ({ children }) => (
           <SWRConfig value={{ provider: () => new Map() }}>
             {children}
@@ -443,7 +443,7 @@ describe("useRegisteredTeams", () => {
 
     it("should handle retry configuration", async () => {
       // Test that SWR is configured with retry options
-      const { result } = renderHook(() => useRegisteredTeams(), {
+      const { result } = renderHook(() => useRegisteredTeams(null), {
         wrapper: ({ children }) => (
           <SWRConfig value={{ provider: () => new Map() }}>
             {children}

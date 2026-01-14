@@ -20,10 +20,18 @@ import {
   CardTitle
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, CheckCircle, Users, XCircle } from "lucide-react";
+import {
+  Loader2,
+  CheckCircle,
+  Users,
+  XCircle,
+  AlertTriangle
+} from "lucide-react";
 
 import { useActiveSignupOrActiveSeasonForApp } from "@/hooks/data/useActiveSignupOrActiveSeasonForApp";
-import { useAllSeasons } from "@/hooks/data/useAllSeasons";
+import { useDashboardSeason } from "@/hooks/data/dashboard/useDashboardSeason";
+import { useAllSeasons } from "@/hooks/data/dashboard/useAllSeasons";
+import { SelectedSeasonBadge } from "@/components/dashboard/SelectedSeasonBadge";
 import { useDashboardSeasonTeams } from "@/hooks/data/useDashboardSeasonTeams";
 import { usePlayerValidation } from "@/hooks/data/dashboard/usePlayerValidation";
 import { useAddSubstitutePlayer } from "@/hooks/data/useAddSubstitutePlayer";
@@ -37,7 +45,7 @@ import { useTeamPlayersLive } from "@/hooks/data/dashboard/useTeamPlayersLive";
 import { Checkbox } from "@/components/ui/checkbox";
 
 export default function AddSubstitutePlayerPage() {
-  const [selectedSeasonId, setSelectedSeasonId] = useState<string>("");
+  const { selectedSeasonId } = useDashboardSeason();
   const [selectedTeamId, setSelectedTeamId] = useState<string>("");
   const [steamId, setSteamId] = useState<string>("");
   const [matchId, setMatchId] = useState<string>("");
@@ -50,16 +58,29 @@ export default function AddSubstitutePlayerPage() {
   const [showRosterPopup, setShowRosterPopup] = useState(false);
   const [popupPosition, setPopupPosition] = useState({ x: 0, y: 0 });
 
-  // Get all seasons
-  const { seasons, isLoading: isLoadingSeasons } = useAllSeasons();
+  // Get all seasons to find platform
+  const { seasons } = useAllSeasons();
 
   // Get active season (app_id 730 for CS)
   const { signupOrActiveSeason: activeSeason } =
     useActiveSignupOrActiveSeasonForApp(730);
 
-  // Get teams for the current active season (not selected season)
+  // Use shared season or fallback to active season
+  const effectiveSeasonId =
+    selectedSeasonId ||
+    (activeSeason?.season_id ? activeSeason.season_id.toString() : "") ||
+    "";
+
+  // Get platform from selected season
+  const selectedSeason = selectedSeasonId
+    ? seasons?.find((s) => s.id.toString() === selectedSeasonId)
+    : null;
+  const platform = selectedSeason?.platform ?? activeSeason?.platform ?? null;
+
+  // Get teams for the selected season (or active season if no season is selected)
   const { teams, isLoading: isLoadingTeams } = useDashboardSeasonTeams(
-    activeSeason?.season_id.toString() ?? null
+    selectedSeasonId ||
+      (activeSeason?.season_id ? activeSeason.season_id.toString() : null)
   );
 
   // Get the selected team
@@ -67,13 +88,16 @@ export default function AddSubstitutePlayerPage() {
     (team) => team.team_id.toString() === selectedTeamId
   );
 
-  // Live team roster hook - uses current active season
+  // Live team roster hook - uses selected season (or active season if no season is selected)
+  const seasonIdForRoster = selectedSeasonId
+    ? Number(selectedSeasonId)
+    : (activeSeason?.season_id ?? null);
   const {
     players: liveTeamPlayers,
     isLoading: isLoadingLiveRoster,
     mutate: mutateLiveRoster
   } = useTeamPlayersLive(
-    activeSeason?.season_id ?? null,
+    seasonIdForRoster,
     selectedTeamId ? Number(selectedTeamId) : null
   );
 
@@ -85,7 +109,7 @@ export default function AddSubstitutePlayerPage() {
     checkEligibility: performEligibilityCheck,
     clearResult: clearEligibilityResult
   } = usePlayerTeamEligibility(
-    selectedSeasonId,
+    effectiveSeasonId,
     selectedTeamId,
     steamId,
     replacingSteamId
@@ -103,20 +127,14 @@ export default function AddSubstitutePlayerPage() {
   // Add substitute player hook
   const { addSubstitutePlayer } = useAddSubstitutePlayer();
 
-  // Set selected season to active season when it loads
-  useEffect(() => {
-    if (activeSeason && !selectedSeasonId) {
-      setSelectedSeasonId(activeSeason.season_id.toString());
-    }
-  }, [activeSeason, selectedSeasonId]);
-
   const handleValidatePlayer = async () => {
     setSuccess(null);
     setApiError(null);
 
     try {
-      await validatePlayer(steamId, selectedSeasonId);
+      const result = await validatePlayer(steamId, effectiveSeasonId);
       // Success case - validationResult will be updated by the hook
+      console.log("Validation result received:", result);
     } catch (err) {
       // Error case - the error will be handled by the PlayerValidationForm component
       // via the validationError prop from the hook
@@ -124,16 +142,19 @@ export default function AddSubstitutePlayerPage() {
     }
   };
 
-  const handleSeasonChange = (value: string) => {
-    setSelectedSeasonId(value);
-    // Clear team selection and results when season changes
-    setSelectedTeamId("");
-    setReplacingSteamId("");
-    clearValidationResults();
-    clearEligibilityResult();
-    setSuccess(null);
-    setApiError(null);
-  };
+  // Reset team selection when season changes (but don't clear validation if season hasn't actually changed)
+  useEffect(() => {
+    // Only clear if we have a selectedSeasonId (meaning user changed it, not initial mount)
+    if (selectedSeasonId !== null && selectedSeasonId !== undefined) {
+      setSelectedTeamId("");
+      setReplacingSteamId("");
+      clearValidationResults();
+      clearEligibilityResult();
+      setSuccess(null);
+      setApiError(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedSeasonId]);
 
   const handleSteamIdChange = (value: string) => {
     setSteamId(value);
@@ -168,7 +189,7 @@ export default function AddSubstitutePlayerPage() {
   };
 
   const handleCheckEligibilityClick = async () => {
-    if (!selectedSeasonId || !selectedTeamId || !steamId) {
+    if (!effectiveSeasonId || !selectedTeamId || !steamId) {
       return;
     }
 
@@ -180,7 +201,7 @@ export default function AddSubstitutePlayerPage() {
   };
 
   const handleAddSubstitutePlayer = async () => {
-    if (!selectedSeasonId || !selectedTeamId || !steamId) {
+    if (!effectiveSeasonId || !selectedTeamId || !steamId) {
       return;
     }
 
@@ -197,7 +218,7 @@ export default function AddSubstitutePlayerPage() {
       const matchIdValue = matchId.trim();
 
       await addSubstitutePlayer({
-        seasonId: selectedSeasonId,
+        seasonId: effectiveSeasonId,
         teamId: selectedTeamId,
         steamId: convertedSteamId,
         matchId: matchIdValue,
@@ -255,9 +276,12 @@ export default function AddSubstitutePlayerPage() {
     <WithRoleProtection allowedRoles={["admin", "helpdesk"]}>
       <div className="flex flex-1 flex-col gap-6 p-4">
         <div className="space-y-2">
-          <h1 className="text-3xl font-bold tracking-tight">
-            Add Substitute Player
-          </h1>
+          <div className="flex items-center justify-between">
+            <h1 className="text-3xl font-bold tracking-tight">
+              Add Substitute Player
+            </h1>
+            <SelectedSeasonBadge />
+          </div>
           <p className="text-muted-foreground">
             Add a substitute player to a team. Only player validation is
             required - no team balance checking.
@@ -275,14 +299,23 @@ export default function AddSubstitutePlayerPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Season Selection Message */}
+              {!selectedSeasonId && (
+                <Alert>
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertDescription>
+                    Please select a season from the sidebar to continue.
+                  </AlertDescription>
+                </Alert>
+              )}
               {/* Player Validation Form */}
               <PlayerValidationForm
                 steamId={steamId}
                 setSteamId={handleSteamIdChange}
-                seasonId={selectedSeasonId}
-                setSeasonId={handleSeasonChange}
-                seasons={seasons}
-                isLoadingSeasons={isLoadingSeasons}
+                seasonId={effectiveSeasonId}
+                setSeasonId={() => {}}
+                seasons={[]}
+                isLoadingSeasons={false}
                 isValidating={isValidating}
                 error={validationError}
                 onValidate={handleValidatePlayer}
@@ -292,72 +325,81 @@ export default function AddSubstitutePlayerPage() {
               />
 
               {/* Team Selector */}
-              <div className="space-y-2">
-                <Label htmlFor="team">Team</Label>
-                <Select
-                  value={selectedTeamId}
-                  onValueChange={handleTeamChange}
-                  data-testid="team-select"
-                >
-                  <SelectTrigger data-testid="team-selector">
-                    <SelectValue placeholder="Select a team" />
-                  </SelectTrigger>
-                  <SelectContent data-testid="team-dropdown">
-                    {isLoadingTeams ? (
-                      <SelectItem
-                        value="loading"
-                        disabled
-                        data-testid="loading-option"
-                      >
-                        Loading teams...
-                      </SelectItem>
-                    ) : teams && teams.length > 0 ? (
-                      teams.map((team) => (
-                        <SelectItem
-                          key={team.team_id}
-                          value={team.team_id.toString()}
-                          data-value={team.team_id.toString()}
-                          data-testid={`team-option-${team.team_id}`}
-                        >
-                          {team.team_name} ({team.league_name})
-                        </SelectItem>
-                      ))
-                    ) : (
-                      <SelectItem
-                        value="no-teams"
-                        disabled
-                        data-testid="no-teams-option"
-                      >
-                        No teams available
-                      </SelectItem>
-                    )}
-                  </SelectContent>
-                </Select>
-
-                {/* View Team Roster Button */}
-                {selectedTeamId && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={(e) => {
-                      const rect = e.currentTarget.getBoundingClientRect();
-                      setPopupPosition({
-                        x: rect.left,
-                        y: rect.bottom + 10
-                      });
-                      setShowRosterPopup(true);
-                      mutateLiveRoster();
-                    }}
-                    className="w-full mt-2"
-                    data-testid="view-roster-button"
+              {selectedSeasonId && (
+                <div className="space-y-2">
+                  <Label htmlFor="team">Team</Label>
+                  <Select
+                    value={selectedTeamId}
+                    onValueChange={handleTeamChange}
+                    data-testid="team-select"
+                    disabled={!selectedSeasonId || isLoadingTeams}
                   >
-                    <Users className="mr-2 h-4 w-4" />
-                    View Current Team Roster
-                  </Button>
-                )}
-              </div>
+                    <SelectTrigger data-testid="team-selector">
+                      <SelectValue placeholder="Select a team" />
+                    </SelectTrigger>
+                    <SelectContent data-testid="team-dropdown">
+                      {isLoadingTeams ? (
+                        <SelectItem
+                          value="loading"
+                          disabled
+                          data-testid="loading-option"
+                        >
+                          Loading teams...
+                        </SelectItem>
+                      ) : teams && teams.length > 0 ? (
+                        teams.map((team) => (
+                          <SelectItem
+                            key={team.team_id}
+                            value={team.team_id.toString()}
+                            data-value={team.team_id.toString()}
+                            data-testid={`team-option-${team.team_id}`}
+                          >
+                            {team.team_name} ({team.league_name})
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem
+                          value="no-teams"
+                          disabled
+                          data-testid="no-teams-option"
+                        >
+                          No teams available
+                        </SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
 
-              {/* Check Eligibility Checkbox */}
+                  {/* View Team Roster Button */}
+                  {selectedTeamId && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={(e) => {
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        setPopupPosition({
+                          x: rect.left,
+                          y: rect.bottom + 10
+                        });
+                        setShowRosterPopup(true);
+                        mutateLiveRoster();
+                      }}
+                      className="w-full mt-2"
+                      data-testid="view-roster-button"
+                    >
+                      <Users className="mr-2 h-4 w-4" />
+                      View Current Team Roster
+                    </Button>
+                  )}
+                </div>
+              )}
+
+              {!selectedSeasonId && (
+                <div className="text-sm text-muted-foreground py-2">
+                  Please select a season from the sidebar to see available
+                  teams.
+                </div>
+              )}
+
               {selectedTeamId && validationResult?.overall_success && (
                 <div className="flex items-center space-x-2 rounded-md border p-3">
                   <Checkbox
@@ -580,10 +622,13 @@ export default function AddSubstitutePlayerPage() {
 
           {/* Validation Results Display */}
           {validationResult && (
-            <PlayerValidationDisplay
-              validationResult={validationResult}
-              variant="compact"
-            />
+            <div className="lg:col-span-2">
+              <PlayerValidationDisplay
+                validationResult={validationResult}
+                platform={platform}
+                variant="compact"
+              />
+            </div>
           )}
 
           {/* Eligibility Results Display */}

@@ -1,4 +1,4 @@
-import { type Request, type Response, type NextFunction } from "express";
+import { type Response, type NextFunction } from "express";
 import {
   getAllRegisteredPlayersForSeason,
   getAllPlayersFromSteamPlayers
@@ -8,8 +8,6 @@ import type { RequestWithParams } from "@eggosystem/types";
 import { BadRequestError, NotFoundError } from "../utils/errors";
 import { calculateKanaElo } from "../services/csrankker.services";
 import { upsertPlayerKanaElo } from "../models/steam-player-kana-elo.models";
-import { getLatestSeasonForPlayer } from "../models/season-player-ranks.models";
-import { getActiveSeasonId } from "../models/season.models";
 import { logger } from "../utils/app-logger";
 
 /**
@@ -50,7 +48,7 @@ export const populateKanaeloQueueController = async (
  * Processes players in batches of 100 using Promise.all
  */
 export const calculateKanaEloForAllPlayersController = async (
-  req: Request,
+  req: RequestWithParams<{ season_id: string }>,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
@@ -62,8 +60,11 @@ export const calculateKanaEloForAllPlayersController = async (
       return next(new NotFoundError("No players found in SteamPlayers table"));
     }
 
-    // Get active season as fallback
-    const activeSeasonId = await getActiveSeasonId();
+    const seasonId = Number(req.params.season_id);
+
+    if (!seasonId || seasonId <= 0) {
+      return next(new BadRequestError("Valid season_id is required"));
+    }
 
     let successful = 0;
     let failed = 0;
@@ -72,7 +73,7 @@ export const calculateKanaEloForAllPlayersController = async (
     const BATCH_SIZE = 100;
 
     logger.info(
-      `[KanaElo] Starting bulk calculation for ${players.length} players in batches of ${BATCH_SIZE}`
+      `[KanaElo] Starting bulk calculation for ${players.length} players in season ${seasonId} in batches of ${BATCH_SIZE}`
     );
 
     // Process players in batches
@@ -89,16 +90,7 @@ export const calculateKanaEloForAllPlayersController = async (
       const batchResults = await Promise.all(
         batch.map(async (steamId) => {
           try {
-            // Get latest season for player, or use active season as fallback
-            let seasonId: number | undefined = undefined;
-            const latestSeason = await getLatestSeasonForPlayer(steamId);
-
-            if (latestSeason) {
-              seasonId = latestSeason;
-            } else if (activeSeasonId) {
-              seasonId = activeSeasonId;
-            }
-
+            // Use season_id from URL parameter
             // Call CSRankker API
             const result = await calculateKanaElo(steamId, seasonId);
 
@@ -156,6 +148,7 @@ export const calculateKanaEloForAllPlayersController = async (
 
     res.json({
       message: `Successfully calculated kana_elo for ${successful} players (${failed} failed)`,
+      season_id: seasonId,
       total_players: players.length,
       successful,
       failed,

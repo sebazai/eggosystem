@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { WithRoleProtection } from "@/components/dashboard/WithRoleProtection";
-import useSWR from "swr";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useDashboardSeason } from "@/hooks/data/dashboard/useDashboardSeason";
+import { SelectedSeasonBadge } from "@/components/dashboard/SelectedSeasonBadge";
 import {
   Card,
   CardContent,
@@ -53,74 +53,16 @@ interface TeamFlagWithDetails extends TeamFlagData {
 }
 
 export default function TeamFlagsPage() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
+  const { selectedSeasonId } = useDashboardSeason();
 
-  // Get season from URL or default to "all"
-  const seasonParam = searchParams.get("season");
-  const initialSeason =
-    seasonParam && seasonParam !== "all" ? parseInt(seasonParam, 10) : "all";
+  // Use shared season from URL, or "all" if not set
+  const selectedSeason: number | "all" = selectedSeasonId
+    ? Number(selectedSeasonId)
+    : "all";
 
   const [teamFlags, setTeamFlags] = useState<TeamFlagWithDetails[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [selectedSeason, setSelectedSeason] = useState<number | "all">(
-    initialSeason
-  );
-
-  // Fetch available seasons from the backend
-  const { data: availableSeasons } = useSWR<{ id: number; name: string }[]>(
-    "/api/v1/seasons",
-    clientApiFetch,
-    {
-      revalidateOnFocus: false
-    }
-  );
-
-  // Get unique seasons from team flags and available seasons
-  const seasons = useMemo(() => {
-    const uniqueSeasons = new Set<number>();
-
-    // Add seasons from team flags
-    teamFlags.forEach((flag) => uniqueSeasons.add(flag.season_id));
-
-    // Add seasons from the database
-    if (availableSeasons) {
-      availableSeasons.forEach((season: { id: number; name: string }) =>
-        uniqueSeasons.add(season.id)
-      );
-    }
-
-    const sortedSeasons = Array.from(uniqueSeasons).sort((a, b) => b - a); // Sort descending (newest first)
-    console.log(
-      "Team flags seasons:",
-      Array.from(new Set(Array.from(teamFlags).map((f) => f.season_id))),
-      "Available seasons from DB:",
-      availableSeasons?.map((s) => s.id),
-      "Unique seasons:",
-      Array.from(uniqueSeasons),
-      "Sorted seasons:",
-      sortedSeasons
-    );
-    return sortedSeasons;
-  }, [teamFlags, availableSeasons]);
-
-  // Update URL when season changes
-  const updateSeasonInUrl = (season: number | "all") => {
-    const params = new URLSearchParams(searchParams.toString());
-    if (season === "all") {
-      params.delete("season");
-    } else {
-      params.set("season", season.toString());
-    }
-    router.push(`?${params.toString()}`);
-  };
-
-  // Handle season change and update URL
-  const handleSeasonChange = (season: number | "all") => {
-    setSelectedSeason(season);
-    updateSeasonInUrl(season);
-  };
 
   // Filter flags by selected season
   const filteredFlags = useMemo(() => {
@@ -207,16 +149,6 @@ export default function TeamFlagsPage() {
     fetchTeamFlags();
   }, [fetchTeamFlags]); // Re-fetch when season changes
 
-  // Update selectedSeason when URL changes
-  useEffect(() => {
-    if (seasonParam && seasonParam !== "all") {
-      const seasonId = parseInt(seasonParam, 10);
-      if (!isNaN(seasonId) && seasonId !== selectedSeason) {
-        setSelectedSeason(seasonId);
-      }
-    }
-  }, [seasonParam, selectedSeason]);
-
   const formatTimestamp = (timestamp: string) => {
     return new Date(timestamp).toLocaleString("en-US", {
       year: "numeric",
@@ -257,36 +189,27 @@ export default function TeamFlagsPage() {
     <WithRoleProtection allowedRoles={["admin", "helpdesk"]}>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">
-              Team Flagging Status
-            </h1>
+          <div className="flex-1">
+            <div className="flex items-center justify-between mb-2">
+              <h1 className="text-3xl font-bold tracking-tight">
+                Team Flagging Status
+              </h1>
+              <SelectedSeasonBadge />
+            </div>
             <p className="text-muted-foreground">
               Monitor teams flagged for ELO adjustment validation
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium">Season:</span>
-              <select
-                className="text-sm border rounded px-2 py-1 bg-background text-foreground border-input focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                value={
-                  selectedSeason === "all" ? "all" : selectedSeason.toString()
-                }
-                onChange={(e) =>
-                  handleSeasonChange(
-                    e.target.value === "all" ? "all" : parseInt(e.target.value)
-                  )
-                }
-              >
-                <option value="all">All Seasons</option>
-                {seasons.map((season) => (
-                  <option key={season} value={season}>
-                    Season {season}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {selectedSeason === "all" ? (
+              <span className="text-sm text-muted-foreground">
+                Select a season from the sidebar to filter team flags
+              </span>
+            ) : (
+              <span className="text-sm font-medium">
+                Season: {selectedSeason}
+              </span>
+            )}
             <Button onClick={refreshData} disabled={isRefreshing}>
               <RefreshCw
                 className={`w-4 h-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`}

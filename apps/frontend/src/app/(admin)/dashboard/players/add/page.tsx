@@ -25,8 +25,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Loader2, CheckCircle, XCircle, Users } from "lucide-react";
 import { extractErrorMessage } from "@/lib/apiClient";
 
-import { useActiveSignupOrActiveSeasonForApp } from "@/hooks/data/useActiveSignupOrActiveSeasonForApp";
-import { useAllSeasons } from "@/hooks/data/useAllSeasons";
+import { useDashboardSeason } from "@/hooks/data/dashboard/useDashboardSeason";
 import { useDashboardSeasonTeams } from "@/hooks/data/useDashboardSeasonTeams";
 import { usePlayerTeamEligibility } from "@/hooks/data/usePlayerTeamEligibility";
 import { usePlayerValidation } from "@/hooks/data/dashboard/usePlayerValidation";
@@ -36,9 +35,10 @@ import { PlayerValidationForm } from "@/components/dashboard/PlayerValidationFor
 import { convertSteamIdToSteamId64 } from "@/lib/utils";
 import { LiveTeamPlayersPopup } from "@/components/dashboard/LiveTeamPlayersPopup";
 import { useTeamPlayersLive } from "@/hooks/data/dashboard/useTeamPlayersLive";
+import { SelectedSeasonBadge } from "@/components/dashboard/SelectedSeasonBadge";
 
 export default function AddPlayerPage() {
-  const [selectedSeasonId, setSelectedSeasonId] = useState<string>("");
+  const { selectedSeasonId: sharedSeasonId } = useDashboardSeason();
   const [selectedContext, setSelectedContext] = useState<
     "finalized" | "registration"
   >("finalized");
@@ -51,22 +51,13 @@ export default function AddPlayerPage() {
   const [showRosterPopup, setShowRosterPopup] = useState(false);
   const [popupPosition, setPopupPosition] = useState({ x: 0, y: 0 });
 
-  // Get all seasons
-  const { seasons, isLoading: isLoadingSeasons } = useAllSeasons();
-
-  // Get active signup season (app_id 730 for CS)
-  const { signupOrActiveSeason: activeSignupSeason } =
-    useActiveSignupOrActiveSeasonForApp(730);
-
-  // Determine if the active signup season has open registration
-  const hasActiveRegistration =
-    activeSignupSeason &&
-    activeSignupSeason.signup_end_date &&
-    new Date(activeSignupSeason.signup_end_date) > new Date();
+  // Use shared season for finalized context
+  // For registration context, we still need a season - use shared season if available
+  const effectiveSeasonId = sharedSeasonId || "";
 
   // Get teams for the selected season with context
   const { teams, isLoading: isLoadingTeams } = useDashboardSeasonTeams(
-    selectedSeasonId,
+    effectiveSeasonId,
     selectedContext
   );
 
@@ -92,29 +83,20 @@ export default function AddPlayerPage() {
     isError: eligibilityError,
     checkEligibility,
     clearResult
-  } = usePlayerTeamEligibility(selectedSeasonId, selectedTeamId, steamId);
+  } = usePlayerTeamEligibility(effectiveSeasonId, selectedTeamId, steamId);
 
   // Add player hook
   const { addPlayer } = useAddPlayer();
 
-  // Live team roster hook - uses current active season, not selected season
+  // Live team roster hook - uses effective season
   const {
     players: liveTeamPlayers,
     isLoading: isLoadingLiveRoster,
     mutate: mutateLiveRoster
   } = useTeamPlayersLive(
-    activeSignupSeason?.season_id ?? null,
+    effectiveSeasonId ? Number(effectiveSeasonId) : null,
     selectedTeamId ? Number(selectedTeamId) : null
   );
-
-  // Set selected season to active season when it loads
-  useEffect(() => {
-    if (hasActiveRegistration && !selectedSeasonId) {
-      // Default to active registration if available
-      setSelectedSeasonId(`registration-${activeSignupSeason.season_id}`);
-      setSelectedContext("registration");
-    }
-  }, [hasActiveRegistration, activeSignupSeason, selectedSeasonId]);
 
   // Handle eligibility check errors from SWR
   useEffect(() => {
@@ -128,7 +110,7 @@ export default function AddPlayerPage() {
     setSuccess(null);
 
     try {
-      await validatePlayer(steamId, selectedSeasonId);
+      await validatePlayer(steamId, effectiveSeasonId);
       // Success case - validationResult will be updated by the hook
     } catch (err) {
       // Error case - the error will be handled by the PlayerValidationForm component
@@ -151,11 +133,8 @@ export default function AddPlayerPage() {
   const handleSeasonChange = (value: string) => {
     // Check if this is a registration context selection
     if (value.startsWith("registration-")) {
-      const seasonId = value.replace("registration-", "");
-      setSelectedSeasonId(seasonId);
       setSelectedContext("registration");
     } else {
-      setSelectedSeasonId(value);
       setSelectedContext("finalized");
     }
     // Clear team selection and results when season changes
@@ -166,6 +145,18 @@ export default function AddPlayerPage() {
     setApiError(null);
     setSkipProfileValidation(false);
   };
+
+  // Reset selections when shared season changes
+  useEffect(() => {
+    if (sharedSeasonId && selectedContext === "finalized") {
+      setSelectedTeamId("");
+      clearValidationResults();
+      clearResult();
+      setSuccess(null);
+      setApiError(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sharedSeasonId, selectedContext]);
 
   const handleSteamIdChange = (value: string) => {
     setSteamId(value);
@@ -188,7 +179,7 @@ export default function AddPlayerPage() {
   };
 
   const handleAddPlayer = async () => {
-    if (!selectedSeasonId || !selectedTeamId) {
+    if (!effectiveSeasonId || !selectedTeamId) {
       return;
     }
 
@@ -231,7 +222,7 @@ export default function AddPlayerPage() {
         eligibilityResult?.selectedTeam.csrankker_components || {};
 
       await addPlayer(
-        selectedSeasonId,
+        effectiveSeasonId,
         selectedTeamId,
         convertedSteamId,
         {
@@ -274,7 +265,10 @@ export default function AddPlayerPage() {
     <WithRoleProtection allowedRoles={["admin", "helpdesk"]}>
       <div className="flex flex-1 flex-col gap-6 p-4">
         <div className="space-y-2">
-          <h1 className="text-3xl font-bold tracking-tight">Add Player</h1>
+          <div className="flex items-center justify-between">
+            <h1 className="text-3xl font-bold tracking-tight">Add Player</h1>
+            <SelectedSeasonBadge />
+          </div>
           <p className="text-muted-foreground">
             Check if a player can be added to a team based on kana_elo balance
           </p>
@@ -290,25 +284,50 @@ export default function AddPlayerPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Context Selection */}
+              <div className="space-y-2">
+                <Label htmlFor="context">Context</Label>
+                <Select
+                  value={selectedContext}
+                  onValueChange={(value: "finalized" | "registration") => {
+                    setSelectedContext(value);
+                    setSelectedTeamId("");
+                    clearValidationResults();
+                    clearResult();
+                    setSuccess(null);
+                    setApiError(null);
+                  }}
+                >
+                  <SelectTrigger id="context">
+                    <SelectValue placeholder="Select context" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="finalized">Finalized Season</SelectItem>
+                    <SelectItem value="registration">Registration</SelectItem>
+                  </SelectContent>
+                </Select>
+                {!sharedSeasonId && (
+                  <p className="text-sm text-muted-foreground">
+                    Please select a season from the sidebar to continue.
+                  </p>
+                )}
+              </div>
+
               {/* Player Validation Form */}
               <PlayerValidationForm
                 steamId={steamId}
                 setSteamId={handleSteamIdChange}
                 seasonId={
                   selectedContext === "registration"
-                    ? `registration-${selectedSeasonId}`
-                    : selectedSeasonId
+                    ? `registration-${effectiveSeasonId}`
+                    : effectiveSeasonId
                 }
                 setSeasonId={handleSeasonChange}
-                seasons={seasons}
-                isLoadingSeasons={isLoadingSeasons}
+                seasons={[]}
+                isLoadingSeasons={false}
                 isValidating={isValidating}
                 error={validationError}
                 onValidate={handleValidatePlayer}
-                activeSeason={activeSignupSeason}
-                activeRegistrationSeason={
-                  hasActiveRegistration ? activeSignupSeason : undefined
-                }
                 buttonText="1. Validate Player"
                 data-testid="validate-player-button"
               />
@@ -411,7 +430,7 @@ export default function AddPlayerPage() {
                 <Button
                   onClick={handleCheckEligibility}
                   disabled={
-                    !selectedSeasonId ||
+                    !effectiveSeasonId ||
                     !selectedTeamId ||
                     !steamId ||
                     isChecking ||
@@ -905,11 +924,11 @@ export default function AddPlayerPage() {
       {showRosterPopup &&
         selectedTeamId &&
         selectedTeam &&
-        activeSignupSeason && (
+        effectiveSeasonId && (
           <LiveTeamPlayersPopup
             players={liveTeamPlayers || []}
             teamName={selectedTeam.team_name}
-            seasonName={activeSignupSeason.full_name}
+            seasonName={`Season ${effectiveSeasonId}`}
             position={popupPosition}
             isLoading={isLoadingLiveRoster}
             onClose={() => setShowRosterPopup(false)}

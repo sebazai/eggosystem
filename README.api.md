@@ -102,6 +102,65 @@ checkPermissions({
 
 - `season_ids`, `league_ids`, `team_ids`, `stages`, `map_ids` (comma-separated)
 
+## 📋 REST API Best Practices
+
+### Explicit Resource Identifiers
+
+**Always use explicit resource identifiers** (e.g., `season_id`, `team_id`, `player_id`) in API endpoints rather than inferring resources from "active" states or other implicit conditions.
+
+**✅ Good - Explicit Identifier**:
+
+```typescript
+// URL parameter
+POST /api/v1/dashboard/registration/season/:season_id/bulk-approve
+
+// Request body
+POST /api/v1/dashboard/registration/approved
+{
+  "season_id": 17,
+  "teamId": 123,
+  ...
+}
+```
+
+**❌ Bad - Implicit "Active" State**:
+
+```typescript
+// Don't infer season from "active" state
+POST / api / v1 / dashboard / registration / bulk - approve;
+// Backend tries to find "active season" - creates implicit dependencies
+```
+
+### Why Explicit Identifiers?
+
+1. **Multi-Organizer Support**: Explicit identifiers allow the system to work with multiple organizers without ambiguity
+2. **Testability**: Explicit parameters make endpoints easier to test with specific scenarios
+3. **Clarity**: API consumers know exactly which resource they're operating on
+4. **REST Compliance**: Follows REST principles where resources are identified by unique identifiers
+5. **No Implicit Dependencies**: Avoids hidden dependencies on database state or time-based conditions
+
+### Resource Inference Pattern
+
+When you have a resource identifier (e.g., `season_id`), you can infer related data:
+
+```typescript
+// ✅ Good: Use season_id to fetch related data
+const seasonId = Number(req.params.season_id);
+const season = await getSeasonById(seasonId);
+// Now you have: app_id, game_id, organizer_id, platform, etc.
+```
+
+### Deprecated Patterns
+
+The following patterns are **deprecated** and should not be used in new code:
+
+- `getActiveSignupOrActiveSeasonForAppId()` - Use explicit `season_id` instead
+- `getActiveOrLatestSeasonForAppId()` - Use explicit `season_id` instead
+- `getActiveSeasonForAppId()` - Use explicit `season_id` instead
+- `getActiveSignupSeasonForAppId()` - Use explicit `season_id` instead
+
+**Migration Path**: Update endpoints to require `season_id` as a URL parameter or in the request body, then use that identifier to fetch season details and related information.
+
 ## 🔧 Middleware
 
 ### Authentication

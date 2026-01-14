@@ -2,6 +2,7 @@
 import * as React from "react";
 import { GalleryVerticalEnd } from "lucide-react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 
 import {
   Sidebar,
@@ -19,6 +20,7 @@ import {
 import { createBaseUrl, createDashboardNextUrl } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { Spinner } from "@/components/ui/spinner";
+import { DashboardSeasonSelector } from "@/components/dashboard/DashboardSeasonSelector";
 interface SubMenuItem {
   title: string;
   url: string;
@@ -180,10 +182,21 @@ export function DashboardAppSidebar(
   props: React.ComponentProps<typeof Sidebar>
 ) {
   const auth = useAuth();
+  const searchParams = useSearchParams();
 
   if (!auth.user) {
     return <Spinner />;
   }
+
+  // Helper function to preserve season query param when creating links
+  const createLinkWithSeason = (url: string) => {
+    const seasonParam = searchParams.get("season");
+    if (seasonParam) {
+      const separator = url.includes("?") ? "&" : "?";
+      return `${url}${separator}season=${seasonParam}`;
+    }
+    return url;
+  };
 
   return (
     <Sidebar {...props}>
@@ -203,6 +216,7 @@ export function DashboardAppSidebar(
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
+        <DashboardSeasonSelector />
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
@@ -220,7 +234,10 @@ export function DashboardAppSidebar(
               return (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <Link href={item.url} className="font-medium">
+                    <Link
+                      href={createLinkWithSeason(item.url)}
+                      className="font-medium"
+                    >
                       {item.title}
                     </Link>
                   </SidebarMenuButton>
@@ -240,7 +257,9 @@ export function DashboardAppSidebar(
                         return (
                           <SidebarMenuSubItem key={item.title}>
                             <SidebarMenuSubButton asChild>
-                              <Link href={item.url}>{item.title}</Link>
+                              <Link href={createLinkWithSeason(item.url)}>
+                                {item.title}
+                              </Link>
                             </SidebarMenuSubButton>
                           </SidebarMenuSubItem>
                         );

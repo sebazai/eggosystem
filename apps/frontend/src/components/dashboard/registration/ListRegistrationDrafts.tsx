@@ -1,6 +1,7 @@
 "use client";
 
 import { useRegistrationDrafts } from "@/hooks/data/dashboard/useRegistrationDrafts";
+import { useDashboardSeason } from "@/hooks/data/dashboard/useDashboardSeason";
 import { Spinner } from "@/components/ui/spinner";
 import { useMemo, useState } from "react";
 import {
@@ -18,7 +19,6 @@ import {
 } from "@eggosystem/types";
 import { TanStackTableWrapper } from "../../tables/TanStackTableWrapper";
 import { ExpandableRow } from "../../tables/ExpandableRow";
-import { useActiveSignupOrActiveSeasonForApp } from "@/hooks/data/useActiveSignupOrActiveSeasonForApp";
 import { clientApiFetch } from "@/lib/apiClient";
 import { getPlayerValidationErrors } from "@/utils/playerValidation";
 import { AlertTriangle } from "lucide-react";
@@ -29,8 +29,20 @@ import {
 } from "@/components/ui/popover";
 
 export const ListRegistrationDrafts = () => {
-  const { registrationDrafts, isLoading, error } = useRegistrationDrafts();
+  const { selectedSeasonId } = useDashboardSeason();
+  const seasonId = selectedSeasonId ? Number(selectedSeasonId) : null;
+  const { registrationDrafts, isLoading, error } = useRegistrationDrafts(
+    seasonId ?? 0
+  );
   const [sorting, setSorting] = useState<SortingState>([]);
+
+  if (!seasonId) {
+    return (
+      <div className="text-center py-8 text-muted-foreground">
+        Please select a season from the sidebar to view registration drafts.
+      </div>
+    );
+  }
 
   const columns = useMemo<ColumnDef<RegistrationDraftRaw>[]>(
     () => [
@@ -255,9 +267,9 @@ const PlayerCard = ({
     coCaptain?: boolean;
   };
 }) => {
-  // Get active season (CS2 app ID is 730)
-  const { signupOrActiveSeason } = useActiveSignupOrActiveSeasonForApp(730);
-  const seasonId = signupOrActiveSeason?.season_id;
+  // Get season from shared selector
+  const { selectedSeasonId } = useDashboardSeason();
+  const seasonId = selectedSeasonId ? Number(selectedSeasonId) : null;
 
   // Fetch validation for this player
   const { data: validationResult } = useSWR<PlayerValidationResult>(

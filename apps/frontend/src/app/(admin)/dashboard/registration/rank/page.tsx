@@ -1,44 +1,17 @@
 import { SeasonPlayerRankForm } from "@/components/dashboard/registration/SeasonPlayerRankForm";
 import { WithRoleProtection } from "@/components/dashboard/WithRoleProtection";
+import { SelectedSeasonBadge } from "@/components/dashboard/SelectedSeasonBadge";
 import { Separator } from "@/components/ui/separator";
 
 export default async function Page() {
   return (
     <WithRoleProtection allowedRoles={["admin", "helpdesk"]}>
-      <h1>Manual rank insert</h1>
+      <div className="flex items-center justify-between mb-4">
+        <h1>Manual rank insert</h1>
+        <SelectedSeasonBadge />
+      </div>
 
       <div className="space-y-4 text-sm">
-        <div>
-          <h2 className="font-semibold mb-2">Required Fields</h2>
-          <ul className="list-disc list-inside space-y-1">
-            <li>
-              <strong>Steam ID:</strong> Must be 17 digits (e.g.,
-              76561198012345678)
-            </li>
-            <li>
-              <strong>At least one rank:</strong> Either CS2 Rank OR External
-              ELO must be provided and greater than 0
-            </li>
-          </ul>
-        </div>
-
-        <div>
-          <h2 className="font-semibold mb-2">Optional Fields</h2>
-          <ul className="list-disc list-inside space-y-1">
-            <li>
-              <strong>CS Hours:</strong> Player&apos;s CS2 playtime in hours
-            </li>
-            <li>
-              <strong>CS2 Rank:</strong> Player&apos;s current CS2 Premier rank
-              (1-35,000+)
-            </li>
-            <li>
-              <strong>External ELO:</strong> FaceIT ELO rating (100-2000+) -
-              automatically converts to FaceIT level
-            </li>
-          </ul>
-        </div>
-
         <div>
           <h2 className="font-semibold mb-2">How It Works</h2>
           <ul className="list-disc list-inside space-y-1">
