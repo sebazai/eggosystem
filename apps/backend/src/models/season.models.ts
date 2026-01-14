@@ -76,6 +76,19 @@ export const getSeasonDetailsById = async (id: number) => {
   return undefined;
 };
 
+/**
+ * @deprecated This function should not be used in new code. Instead, always pass season_id as a parameter
+ * from which app_id, game, organizer, etc. can be inferred if needed. This function relies on finding
+ * an "active" or "latest" season which creates implicit dependencies and makes the code less explicit.
+ *
+ * For REST API endpoints, season_id should be explicitly required from the frontend (via URL params or request body).
+ * The season_id can then be used to fetch season details including app_id, game, organizer, etc.
+ * This approach is essential for multi-organizer support and follows REST API best practices.
+ *
+ * @param organizer_id - The organizer ID
+ * @param app_id - The app ID
+ * @returns Active or latest season for the given app and organizer, or undefined if none found
+ */
 export const getActiveOrLatestSeasonForAppId = async (
   organizer_id: number,
   app_id: number
@@ -106,6 +119,19 @@ export const getActiveOrLatestSeasonForAppId = async (
   return activeSeason;
 };
 
+/**
+ * @deprecated This function should not be used in new code. Instead, always pass season_id as a parameter
+ * from which app_id, game, organizer, etc. can be inferred if needed. This function relies on finding
+ * an "active" season which creates implicit dependencies and makes the code less explicit.
+ *
+ * For REST API endpoints, season_id should be explicitly required from the frontend (via URL params or request body).
+ * The season_id can then be used to fetch season details including app_id, game, organizer, etc.
+ * This approach is essential for multi-organizer support and follows REST API best practices.
+ *
+ * @param organizer_id - The organizer ID
+ * @param app_id - The app ID
+ * @returns Active season for the given app and organizer, or undefined if none found
+ */
 export const getActiveSeasonForAppId = async (
   organizer_id: number,
   app_id: number
@@ -127,15 +153,18 @@ export const getActiveSeasonForAppId = async (
 };
 
 /**
- * Get active season ID for CS2 (app_id 730, organizer_id 1)
- * Used as fallback when player has no season history
- * @returns Active season ID or null if not found
+ * @deprecated This function should not be used in new code. Instead, always pass season_id as a parameter
+ * from which app_id, game, organizer, etc. can be inferred if needed. This function relies on finding
+ * an "active signup" season which creates implicit dependencies and makes the code less explicit.
+ *
+ * For REST API endpoints, season_id should be explicitly required from the frontend (via URL params or request body).
+ * The season_id can then be used to fetch season details including app_id, game, organizer, etc.
+ * This approach is essential for multi-organizer support and follows REST API best practices.
+ *
+ * @param organizer_id - The organizer ID
+ * @param app_id - The app ID
+ * @returns Active signup season for the given app and organizer, or undefined if none found
  */
-export const getActiveSeasonId = async (): Promise<number | null> => {
-  const activeSeason = await getActiveOrLatestSeasonForAppId(1, 730);
-  return activeSeason?.season_id ?? null;
-};
-
 export const getActiveSignupSeasonForAppId = async (
   organizer_id: number,
   app_id: number
@@ -163,6 +192,18 @@ export const getActiveSignupSeasonForAppId = async (
   return activeSignupSeason;
 };
 
+/**
+ * @deprecated This function should not be used in new code. Instead, always pass season_id as a parameter
+ * from which app_id, game, organizer, etc. can be inferred if needed. This function relies on finding
+ * an "active" season which creates implicit dependencies and makes the code less explicit and harder to test.
+ *
+ * For dashboard endpoints, season_id should be explicitly required from the frontend (via URL params or request body).
+ * The season_id can then be used to fetch season details including app_id, game, organizer, etc.
+ *
+ * @param organizer_id - The organizer ID
+ * @param app_id - The app ID
+ * @returns Active signup or active season for the given app and organizer, or undefined if none found
+ */
 export const getActiveSignupOrActiveSeasonForAppId = async (
   organizer_id: number,
   app_id: number

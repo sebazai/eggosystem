@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import * as React from "react";
 import { WithRoleProtection } from "@/components/dashboard/WithRoleProtection";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -22,14 +23,15 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, CheckCircle, XCircle, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
-import { useAllSeasons } from "@/hooks/data/useAllSeasons";
+import { useDashboardSeason } from "@/hooks/data/dashboard/useDashboardSeason";
 import { useDashboardSeasonTeams } from "@/hooks/data/useDashboardSeasonTeams";
 import { useTeamPlayersLive } from "@/hooks/data/dashboard/useTeamPlayersLive";
 import { useDiscardPlayer } from "@/hooks/data/dashboard/useDiscardPlayer";
 import { ApiError } from "@/lib/apiClient";
+import { SelectedSeasonBadge } from "@/components/dashboard/SelectedSeasonBadge";
 
 export default function DiscardPlayerPage() {
-  const [selectedSeasonId, setSelectedSeasonId] = useState<string>("");
+  const { selectedSeasonId } = useDashboardSeason();
   const [selectedTeamId, setSelectedTeamId] = useState<string>("");
   const [selectedPlayerSteamId, setSelectedPlayerSteamId] =
     useState<string>("");
@@ -37,12 +39,9 @@ export default function DiscardPlayerPage() {
   const [success, setSuccess] = useState<string | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
 
-  // Get all seasons
-  const { seasons, isLoading: isLoadingSeasons } = useAllSeasons();
-
   // Get teams for the selected season
   const { teams, isLoading: isLoadingTeams } = useDashboardSeasonTeams(
-    selectedSeasonId,
+    selectedSeasonId || "",
     "finalized"
   );
 
@@ -59,13 +58,18 @@ export default function DiscardPlayerPage() {
   // Discard player hook
   const { discardPlayer } = useDiscardPlayer();
 
-  const handleSeasonChange = (value: string) => {
-    setSelectedSeasonId(value);
+  // Reset team and player selection when season changes
+  const handleSeasonChange = () => {
     setSelectedTeamId("");
     setSelectedPlayerSteamId("");
     setSuccess(null);
     setApiError(null);
   };
+
+  // Effect to reset selections when season changes
+  React.useEffect(() => {
+    handleSeasonChange();
+  }, [selectedSeasonId]);
 
   const handleTeamChange = (value: string) => {
     setSelectedTeamId(value);
@@ -134,10 +138,13 @@ export default function DiscardPlayerPage() {
       <div className="container mx-auto py-8 px-4 max-w-4xl">
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Trash2 className="h-5 w-5" />
-              Discard Player from Team
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <Trash2 className="h-5 w-5" />
+                Discard Player from Team
+              </CardTitle>
+              <SelectedSeasonBadge />
+            </div>
             <CardDescription>
               Soft delete a player from a team. Discarded players will be
               excluded from live rosters, demo validation, and FaceIT roster
@@ -145,29 +152,8 @@ export default function DiscardPlayerPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* Season Selection */}
-            <div className="space-y-2">
-              <Label htmlFor="season">Season</Label>
-              <Select
-                value={selectedSeasonId}
-                onValueChange={handleSeasonChange}
-                disabled={isLoadingSeasons}
-              >
-                <SelectTrigger id="season">
-                  <SelectValue placeholder="Select a season" />
-                </SelectTrigger>
-                <SelectContent>
-                  {seasons?.map((season) => (
-                    <SelectItem key={season.id} value={season.id.toString()}>
-                      {season.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
             {/* Team Selection */}
-            {selectedSeasonId && (
+            {selectedSeasonId ? (
               <div className="space-y-2">
                 <Label htmlFor="team">Team</Label>
                 <Select
@@ -189,6 +175,10 @@ export default function DiscardPlayerPage() {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+            ) : (
+              <div className="text-sm text-muted-foreground">
+                Please select a season from the sidebar to continue.
               </div>
             )}
 

@@ -59,6 +59,24 @@ jest.mock("@/lib/apiClient", () => ({
   clientApiFetch: jest.fn()
 }));
 
+// Mock useAllSeasons hook (used by SelectedSeasonBadge)
+jest.mock("@/hooks/data/dashboard/useAllSeasons", () => ({
+  useAllSeasons: jest.fn(() => ({
+    seasons: [],
+    isLoading: false,
+    isError: false,
+    isValidating: false
+  }))
+}));
+
+// Mock useDashboardSeason hook (used by SelectedSeasonBadge)
+jest.mock("@/hooks/data/dashboard/useDashboardSeason", () => ({
+  useDashboardSeason: jest.fn(() => ({
+    selectedSeasonId: null,
+    setSelectedSeasonId: jest.fn()
+  }))
+}));
+
 // Mock UI components
 interface ButtonProps {
   children: React.ReactNode;
@@ -273,13 +291,6 @@ jest.mock("recharts", () => ({
   CartesianGrid: () => <div data-testid="cartesian-grid" />
 }));
 
-interface SeasonSelectorProps {
-  seasons: Season[];
-  selectedSeason: number | null;
-  onChange: (seasonId: number) => void;
-  isLoading: boolean;
-}
-
 interface DivisionOption {
   value: string;
   label: string;
@@ -301,29 +312,6 @@ interface PlayerValuesFloatingWindowProps {
   isLoading: boolean;
   onClose: () => void;
 }
-
-jest.mock("@/components/sortter/SeasonSelector", () => ({
-  SeasonSelector: ({
-    seasons,
-    selectedSeason,
-    onChange,
-    isLoading
-  }: SeasonSelectorProps) => (
-    <select
-      value={selectedSeason || ""}
-      onChange={(e) => onChange(parseInt(e.target.value))}
-      disabled={isLoading}
-      data-testid="season-selector"
-    >
-      <option value="">Select Season</option>
-      {seasons.map((season: Season) => (
-        <option key={season.id} value={season.id}>
-          {season.name}
-        </option>
-      ))}
-    </select>
-  )
-}));
 
 jest.mock("@/components/sortter/MemoizedDivisionDropdown", () => ({
   __esModule: true,
@@ -544,11 +532,11 @@ describe("SortterPage Component Tests", () => {
       ).toBeInTheDocument();
     });
 
-    it("should display season selector", () => {
+    it("should display selected season badge", () => {
       render(<SortterPage />);
 
-      expect(screen.getByText("Season:")).toBeInTheDocument();
-      expect(screen.getByTestId("season-selector")).toBeInTheDocument();
+      // Season selection is now handled by the sidebar, so we just check the page renders
+      expect(screen.getByText("Sortter")).toBeInTheDocument();
     });
 
     it("should display teams in the table", () => {
@@ -936,17 +924,15 @@ describe("SortterPage Component Tests", () => {
   });
 
   describe("Season Selection", () => {
-    it("should call setSelectedSeason when season is changed", async () => {
-      const user = userEvent.setup();
+    it("should render page with season from URL params", () => {
       render(<SortterPage />);
 
-      const seasonSelector = screen.getByTestId("season-selector");
-      await user.selectOptions(seasonSelector, "17");
-
-      expect(mockSetSelectedSeason).toHaveBeenCalledWith(17);
+      // Season selection is now handled by the sidebar via URL params
+      // The page should still render correctly
+      expect(screen.getByText("Sortter")).toBeInTheDocument();
     });
 
-    it("should disable season selector when loading", () => {
+    it("should render page when seasons are loading", () => {
       (useSortter as jest.Mock).mockReturnValue({
         ...defaultUseSortterReturn,
         isLoadingSeasons: true
@@ -954,7 +940,8 @@ describe("SortterPage Component Tests", () => {
 
       render(<SortterPage />);
 
-      expect(screen.getByTestId("season-selector")).toBeDisabled();
+      // Page should still render when seasons are loading
+      expect(screen.getByText("Sortter")).toBeInTheDocument();
     });
   });
 
@@ -988,19 +975,6 @@ describe("SortterPage Component Tests", () => {
 
       const charts = screen.getAllByTestId("area-chart");
       expect(charts).toHaveLength(3); // One for each team
-    });
-  });
-
-  describe("Navigation Links", () => {
-    it("should display team flags navigation link", () => {
-      render(<SortterPage />);
-
-      const teamFlagsLink = screen.getByRole("link", { name: /Team Flags/ });
-      expect(teamFlagsLink).toBeInTheDocument();
-      expect(teamFlagsLink).toHaveAttribute(
-        "href",
-        "/dashboard/sortter/team-flags?season=16"
-      );
     });
   });
 

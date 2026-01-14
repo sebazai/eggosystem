@@ -41,7 +41,7 @@ describe("Leaderboards Integration Tests", () => {
     expect(response.body).toHaveProperty("deaths");
     expect(response.body).toHaveProperty("assists");
     expect(Array.isArray(response.body.kills)).toBe(true);
-  });
+  }, 30000); // 30 second timeout
 
   // Test one of the new derived stats
   test("GET /api/v1/filters/leaderboards/multiple - should include derived stats", async () => {

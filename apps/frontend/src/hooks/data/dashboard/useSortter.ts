@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, useMemo } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
 import useSWR from "swr";
 import { clientApiFetch } from "@/lib/apiClient";
 import type {
@@ -12,6 +11,7 @@ import type {
 } from "@eggosystem/types";
 import { toast } from "sonner";
 import { useComments } from "@/contexts/CommentsContext";
+import { useDashboardSeason } from "./useDashboardSeason";
 
 type PlacementsResponse = {
   placements: TeamPlacement[];
@@ -19,16 +19,10 @@ type PlacementsResponse = {
 };
 
 export function useSortter(placeTeamsInDivision: number) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
+  const { selectedSeasonId, setSelectedSeasonId } = useDashboardSeason();
 
-  // Get the season parameter from URL or null
-  const seasonParam = searchParams.get("season");
-  const initialSeason = seasonParam ? parseInt(seasonParam, 10) : null;
-
-  const [selectedSeason, setSelectedSeasonState] = useState<number | null>(
-    initialSeason
-  );
+  // Use shared season from URL, convert to number
+  const selectedSeason = selectedSeasonId ? Number(selectedSeasonId) : null;
   const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null);
   const [floatingPosition, setFloatingPosition] = useState<{
     x: number;
@@ -74,12 +68,12 @@ export function useSortter(placeTeamsInDivision: number) {
     return sortedSeasons[0];
   }, [sortedSeasons]);
 
-  // Update selectedSeason when currentActiveSeason changes (for initial load)
+  // Auto-select newest season if no season is selected (only on initial load)
   useEffect(() => {
     if (!selectedSeason && currentActiveSeason?.id) {
-      setSelectedSeasonState(currentActiveSeason.id);
+      setSelectedSeasonId(currentActiveSeason.id.toString());
     }
-  }, [selectedSeason, currentActiveSeason]);
+  }, [selectedSeason, currentActiveSeason, setSelectedSeasonId]);
 
   // Fetch team values for the selected season
   const {
@@ -217,14 +211,10 @@ export function useSortter(placeTeamsInDivision: number) {
   // Handle the URL update when selected season changes
   const setSelectedSeason = useCallback(
     (seasonId: number) => {
-      setSelectedSeasonState(seasonId);
-
-      // Update URL with the season parameter
-      const params = new URLSearchParams(searchParams.toString());
-      params.set("season", seasonId.toString());
-      router.push(`?${params.toString()}`);
+      // Use shared season setter which updates URL
+      setSelectedSeasonId(seasonId.toString());
     },
-    [router, searchParams]
+    [setSelectedSeasonId]
   );
 
   // Show team player values in a floating window

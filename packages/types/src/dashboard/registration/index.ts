@@ -84,7 +84,8 @@ const baseSchema = {
     )
     .min(1, "At least one player must be added"),
   ticketId: z.string().optional(),
-  details: z.string().optional()
+  details: z.string().optional(),
+  season_id: z.number().min(1, "Season ID is required")
 };
 
 const existingOrgSchema = z.object({
@@ -152,7 +153,7 @@ export const seasonPlayerRankFormSchema = z.object({
     .string()
     .min(1, "Steam ID is required")
     .regex(/^\d+$/, "Steam ID must be numeric"),
-
+  season_id: z.number().min(1, "Season ID is required"),
   external_elo: z.number().optional(),
   external_kd: z.number().optional(),
   cs2_rank: z.number().optional(),

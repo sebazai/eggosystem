@@ -1,6 +1,7 @@
 import { getAllRegistrationDraftsController } from "./registration.controllers";
 import { redisClient } from "../../utils/redisClient";
-import type { Request, Response } from "express";
+import type { Response } from "express";
+import type { RequestWithParams } from "@eggosystem/types";
 import { getDiscordUsernameByAccountId } from "../../models/discord.models";
 
 jest.mock("../../utils/redisClient");
@@ -15,7 +16,9 @@ const mockGetDiscordUsernameByAccountId =
 describe("getAllRegistrationDraftsController", () => {
   it("returns an empty array if no drafts exist", async () => {
     mockRedisClient.keys.mockResolvedValue([]);
-    const req = {} as Request;
+    const req = {
+      params: { season_id: "1" }
+    } as unknown as RequestWithParams<{ season_id: string }>;
     const res = {
       status: jest.fn().mockReturnThis(),
       json: jest.fn()
@@ -49,7 +52,9 @@ describe("getAllRegistrationDraftsController", () => {
         return null;
       }
     );
-    const req = {} as Request;
+    const req = {
+      params: { season_id: "1" }
+    } as unknown as RequestWithParams<{ season_id: string }>;
     const res = {
       status: jest.fn().mockReturnThis(),
       json: jest.fn()
@@ -98,7 +103,9 @@ describe("getAllRegistrationDraftsController", () => {
       })
     ]);
     mockGetDiscordUsernameByAccountId.mockResolvedValue(null);
-    const req = {} as Request;
+    const req = {
+      params: { season_id: "1" }
+    } as unknown as RequestWithParams<{ season_id: string }>;
     const res = {
       status: jest.fn().mockReturnThis(),
       json: jest.fn()

@@ -23,12 +23,13 @@ jest.mock("next/navigation", () => ({
   useRouter: () => ({
     push: jest.fn()
   }),
+  usePathname: () => "/dashboard/sortter",
   useSearchParams: () => ({
     get: jest.fn((param) => {
       if (param === "season") return "2";
       return null;
     }),
-    toString: jest.fn(() => "")
+    toString: jest.fn(() => "season=2")
   })
 }));
 

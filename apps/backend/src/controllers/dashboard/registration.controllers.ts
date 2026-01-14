@@ -16,7 +16,6 @@ import {
   bulkApproveTeamRegistrations,
   manualValidityCheck
 } from "../../models/dashboard/registration.models";
-import { getActiveSignupOrActiveSeasonForAppId } from "../../models/season.models";
 import { BadRequestError, NotFoundError } from "../../utils/errors";
 import { redisClient } from "../../utils/redisClient";
 import { isRegistrationDraftRaw } from "@eggosystem/types";
@@ -53,28 +52,24 @@ export const addManualRankForPlayerController = async (
   req: Request,
   res: Response
 ) => {
-  // TODO: Make this dynamic
-  const activeSeason = await getActiveSignupOrActiveSeasonForAppId(1, 730);
-  if (!activeSeason) {
-    throw new BadRequestError("No signup for any season for app id 730");
-  }
   const validatedData = seasonPlayerRankFormSchema.parse(req.body);
 
-  await addSeasonRankForPlayer(validatedData, activeSeason);
+  // Validate that season_id is provided and is a valid number
+  if (!validatedData.season_id || validatedData.season_id <= 0) {
+    throw new BadRequestError("Valid season_id is required");
+  }
+
+  await addSeasonRankForPlayer(validatedData);
 
   res.status(200).json({ ok: true });
 };
 
 export const getRegisteredTeamsController = async (
-  req: Request,
+  req: RequestWithParams<{ season_id: string }>,
   res: Response
 ) => {
-  // TODO: Make this dynamic
-  const activeSeason = await getActiveSignupOrActiveSeasonForAppId(1, 730);
-  if (!activeSeason) {
-    throw new BadRequestError("No signup for any season for app id 730");
-  }
-  const teams = await getRegisteredTeams(activeSeason.season_id);
+  const seasonId = Number(req.params.season_id);
+  const teams = await getRegisteredTeams(seasonId);
   const flaggedTeams = await getTeamsSignupApprovalState(teams);
 
   if (teams.length !== flaggedTeams.length) {
@@ -106,10 +101,11 @@ export const getPlayerFullNameController = async (
 };
 
 export const getAllRegistrationDraftsController = async (
-  req: Request,
+  req: RequestWithParams<{ season_id: string }>,
   res: Response
 ) => {
-  const keys = await redisClient.keys("signup-*");
+  const seasonId = Number(req.params.season_id);
+  const keys = await redisClient.keys(`signup-${seasonId}-*`);
   if (!keys.length) {
     res.status(200).json([]);
     return;
@@ -152,7 +148,7 @@ export const getAllRegistrationDraftsController = async (
 };
 
 export const bulkApproveTeamRegistrationsController = async (
-  req: Request,
+  req: RequestWithParams<{ season_id: string }>,
   res: Response
 ) => {
   const authedUser = req.auth;
@@ -170,14 +166,13 @@ export const bulkApproveTeamRegistrationsController = async (
     return;
   }
 
-  // TODO: Make this dynamic
-  const activeSeason = await getActiveSignupOrActiveSeasonForAppId(1, 730);
-  if (!activeSeason) {
-    throw new BadRequestError("No signup for any season for app id 730");
+  const seasonId = Number(req.params.season_id);
+  if (!seasonId || seasonId <= 0) {
+    throw new BadRequestError("Valid season_id is required");
   }
 
   const result = await bulkApproveTeamRegistrations(
-    activeSeason.season_id,
+    seasonId,
     teamIds,
     authedUser.account_id
   );
@@ -186,7 +181,7 @@ export const bulkApproveTeamRegistrationsController = async (
 };
 
 export const manualValidityCheckController = async (
-  req: Request,
+  req: RequestWithParams<{ season_id: string }>,
   res: Response
 ) => {
   const { teamIds } = req.body;
@@ -203,14 +198,13 @@ export const manualValidityCheckController = async (
     return;
   }
 
-  // TODO: Make this dynamic
-  const activeSeason = await getActiveSignupOrActiveSeasonForAppId(1, 730);
-  if (!activeSeason) {
-    throw new BadRequestError("No signup for any season for app id 730");
+  const seasonId = Number(req.params.season_id);
+  if (!seasonId || seasonId <= 0) {
+    throw new BadRequestError("Valid season_id is required");
   }
 
   const result = await manualValidityCheck(
-    activeSeason.season_id,
+    seasonId,
     teamIds,
     authedUser.account_id
   );

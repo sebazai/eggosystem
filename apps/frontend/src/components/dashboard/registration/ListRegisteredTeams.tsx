@@ -5,6 +5,7 @@ import {
   useBulkApproveTeams,
   useManualValidityCheck
 } from "@/hooks/data/dashboard/useRegisteredTeams";
+import { useDashboardSeason } from "@/hooks/data/dashboard/useDashboardSeason";
 import { Spinner } from "@/components/ui/spinner";
 import {
   getExpandedRowModel,
@@ -35,9 +36,17 @@ import { ExpandableRow } from "../../tables/ExpandableRow";
 import { RowSelection } from "../../tables/RowSelection";
 
 export const ListRegisteredTeams = () => {
-  const { registeredTeams, isLoading, error } = useRegisteredTeams();
-  const { bulkApprove } = useBulkApproveTeams();
-  const { manualValidityCheck } = useManualValidityCheck();
+  const { selectedSeasonId } = useDashboardSeason();
+  const seasonId = selectedSeasonId ? Number(selectedSeasonId) : null;
+
+  // Only call the hook if we have a valid season ID
+  const { registeredTeams, isLoading, error } = useRegisteredTeams(
+    seasonId ?? 0
+  );
+  const { bulkApprove } = useBulkApproveTeams(seasonId);
+  const { manualValidityCheck } = useManualValidityCheck(seasonId);
+
+  // All hooks must be called before any early returns
   const [rowSelection, setRowSelection] = useState({});
   const [isPerformingAction, setIsPerformingAction] = useState(false);
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -351,6 +360,14 @@ export const ListRegisteredTeams = () => {
       setIsAllRowsExpanded(newState);
     }
   };
+
+  if (!seasonId) {
+    return (
+      <div className="text-center py-8 text-muted-foreground">
+        Please select a season from the sidebar to view registered teams.
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (

@@ -5,9 +5,9 @@ import {
   useSeasonLeaguesWithMappings,
   useDeleteSeasonLeagueExternalId
 } from "@/hooks/data/dashboard/useSeasonLeagueMapper";
-import useSWR from "swr";
-import { clientApiFetch } from "@/lib/apiClient";
-import type { Season, SeasonLeagueExternalId } from "@eggosystem/types";
+import { useDashboardSeason } from "@/hooks/data/dashboard/useDashboardSeason";
+import { SelectedSeasonBadge } from "@/components/dashboard/SelectedSeasonBadge";
+import type { SeasonLeagueExternalId } from "@eggosystem/types";
 import {
   Card,
   CardContent,
@@ -17,7 +17,6 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
-import { SeasonSelector } from "@/components/sortter/SeasonSelector";
 import { LeagueNameEditor } from "./LeagueNameEditor";
 import { MappingFormDialog } from "./MappingFormDialog";
 import {
@@ -40,7 +39,8 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export function SeasonLeagueMapperClient() {
-  const [selectedSeason, setSelectedSeason] = useState<number | null>(null);
+  const { selectedSeasonId } = useDashboardSeason();
+  const selectedSeason = selectedSeasonId ? Number(selectedSeasonId) : null;
   const [expandedLeagues, setExpandedLeagues] = useState<Set<number>>(
     new Set()
   );
@@ -52,19 +52,6 @@ export function SeasonLeagueMapperClient() {
   >(undefined);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [mappingToDelete, setMappingToDelete] = useState<number | null>(null);
-
-  // Fetch seasons
-  const { data: seasons, isLoading: isLoadingSeasons } = useSWR<Season[]>(
-    "/api/v1/seasons",
-    clientApiFetch,
-    { revalidateOnFocus: false }
-  );
-
-  // Sort seasons in descending order (newest first)
-  const sortedSeasons = useMemo(() => {
-    if (!seasons) return [];
-    return [...seasons].sort((a, b) => b.id - a.id);
-  }, [seasons]);
 
   // Fetch season leagues with mappings
   const { data: seasonLeagues, isLoading: isLoadingLeagues } =
@@ -133,23 +120,27 @@ export function SeasonLeagueMapperClient() {
   return (
     <div className="space-y-4">
       <div className="flex flex-col space-y-2">
-        <div>
+        <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold tracking-tight">
             Season League Mapper
           </h1>
+          <SelectedSeasonBadge />
+        </div>
+        <div>
           <p className="text-muted-foreground">
             Manage external championship ID mappings and league names
           </p>
         </div>
 
         <div className="flex items-center gap-4">
-          <span className="text-sm font-medium">Season:</span>
-          <SeasonSelector
-            seasons={sortedSeasons || []}
-            selectedSeason={selectedSeason}
-            onChange={setSelectedSeason}
-            isLoading={isLoadingSeasons}
-          />
+          {selectedSeason ? (
+            <SelectedSeasonBadge />
+          ) : (
+            <span className="text-sm text-muted-foreground">
+              Please select a season from the sidebar to view its leagues and
+              mappings.
+            </span>
+          )}
         </div>
 
         {hasDuplicates && (

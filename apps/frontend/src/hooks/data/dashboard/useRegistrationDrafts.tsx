@@ -4,12 +4,18 @@ import useSWR from "swr";
 import { clientApiFetch } from "@/lib/apiClient";
 import type { RegistrationDraftRaw } from "@eggosystem/types";
 
-export const useRegistrationDrafts = () => {
+export const useRegistrationDrafts = (seasonId: number | null) => {
   const { data, error, isLoading, isValidating } = useSWR<
     RegistrationDraftRaw[]
-  >("/api/v1/dashboard/registration/drafts", clientApiFetch, {
-    revalidateOnFocus: false
-  });
+  >(
+    seasonId && seasonId > 0
+      ? `/api/v1/dashboard/registration/season/${seasonId}/drafts`
+      : null,
+    clientApiFetch,
+    {
+      revalidateOnFocus: false
+    }
+  );
 
   return {
     registrationDrafts: data,

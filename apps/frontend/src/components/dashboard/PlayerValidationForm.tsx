@@ -2,31 +2,19 @@
 
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, CheckCircle, XCircle } from "lucide-react";
 import { SteamIdInput } from "@/components/ui/steam-id-input";
-import type { Season } from "@eggosystem/types";
+import { SelectedSeasonBadge } from "@/components/dashboard/SelectedSeasonBadge";
 
 interface PlayerValidationFormProps {
   steamId: string;
   setSteamId: (value: string) => void;
   seasonId: string;
-  setSeasonId: (value: string) => void;
-  seasons: Season[] | undefined;
-  isLoadingSeasons: boolean;
   isValidating: boolean;
   error: string | null;
   success?: string | null;
   onValidate: () => void | Promise<void>;
-  activeSeason?: { season_id: number; full_name?: string } | null;
-  activeRegistrationSeason?: { season_id: number; full_name?: string } | null;
   buttonText?: string;
   disabled?: boolean;
   "data-testid"?: string;
@@ -36,15 +24,10 @@ export function PlayerValidationForm({
   steamId,
   setSteamId,
   seasonId,
-  setSeasonId,
-  seasons,
-  isLoadingSeasons,
   isValidating,
   error,
   success,
   onValidate,
-  activeSeason,
-  activeRegistrationSeason,
   buttonText = "Validate Player",
   disabled = false,
   "data-testid": testId = "validate-player-button"
@@ -65,72 +48,13 @@ export function PlayerValidationForm({
         data-testid="steam-id-input"
       />
 
-      {/* Season Selector */}
-      <div className="space-y-2">
-        <Label htmlFor="season">Season</Label>
-        <Select
-          value={seasonId}
-          onValueChange={setSeasonId}
-          disabled={isValidating}
-          data-testid="season-select"
-        >
-          <SelectTrigger data-testid="season-selector">
-            <SelectValue placeholder="Select a season" />
-          </SelectTrigger>
-          <SelectContent data-testid="season-dropdown">
-            {isLoadingSeasons ? (
-              <SelectItem
-                value="loading"
-                disabled
-                data-testid="loading-season-option"
-              >
-                Loading seasons...
-              </SelectItem>
-            ) : (
-              <>
-                {/* Active Registration Option */}
-                {activeRegistrationSeason && (
-                  <SelectItem
-                    key={`registration-${activeRegistrationSeason.season_id}`}
-                    value={`registration-${activeRegistrationSeason.season_id}`}
-                    data-value={`registration-${activeRegistrationSeason.season_id}`}
-                    data-testid={`season-option-registration-${activeRegistrationSeason.season_id}`}
-                  >
-                    {activeRegistrationSeason.full_name ||
-                      `Season ${activeRegistrationSeason.season_id}`}{" "}
-                    (Active Registration)
-                  </SelectItem>
-                )}
-
-                {/* Finalized Seasons */}
-                {seasons && seasons.length > 0 ? (
-                  seasons
-                    .sort((a, b) => b.id - a.id) // Sort by ID descending (newest first)
-                    .map((season) => (
-                      <SelectItem
-                        key={season.id}
-                        value={season.id.toString()}
-                        data-value={season.id.toString()}
-                        data-testid={`season-option-${season.id}`}
-                      >
-                        {season.full_name}
-                        {activeSeason?.season_id === season.id && " (Active)"}
-                      </SelectItem>
-                    ))
-                ) : (
-                  <SelectItem
-                    value="no-seasons"
-                    disabled
-                    data-testid="no-seasons-option"
-                  >
-                    No seasons available
-                  </SelectItem>
-                )}
-              </>
-            )}
-          </SelectContent>
-        </Select>
-      </div>
+      {/* Season Badge - Season is managed by shared selector */}
+      {seasonId && (
+        <div className="space-y-2">
+          <Label htmlFor="season">Season</Label>
+          <SelectedSeasonBadge />
+        </div>
+      )}
 
       {/* Validate Button */}
       <Button

@@ -2,13 +2,6 @@
 
 import { WithRoleProtection } from "@/components/dashboard/WithRoleProtection";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -17,6 +10,8 @@ import { AlertCircle, RefreshCw, AlertTriangle, Filter } from "lucide-react";
 import { FaceitRosterValidationTable } from "@/components/dashboard/faceit/FaceitRosterValidationTable";
 import { useFaceitRosterValidation } from "@/hooks/data/dashboard/useFaceitRosterValidation";
 import { useAllSeasons } from "@/hooks/data/useAllSeasons";
+import { useDashboardSeason } from "@/hooks/data/dashboard/useDashboardSeason";
+import { SelectedSeasonBadge } from "@/components/dashboard/SelectedSeasonBadge";
 import { useState, useMemo } from "react";
 import type {
   SeasonFaceitRosterValidation,
@@ -25,10 +20,8 @@ import type {
 } from "@eggosystem/types";
 
 function FaceitRosterValidationContent() {
-  const { seasons, isLoading: isLoadingSeasons } = useAllSeasons();
-  const [selectedSeasonId, setSelectedSeasonId] = useState<number | undefined>(
-    undefined
-  );
+  const { seasons } = useAllSeasons();
+  const { selectedSeasonId: sharedSeasonId } = useDashboardSeason();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showOnlyViolations, setShowOnlyViolations] = useState(false);
   const [showOnlyNotifications, setShowOnlyNotifications] = useState(false);
@@ -41,12 +34,19 @@ function FaceitRosterValidationContent() {
       .sort((a, b) => b.id - a.id); // Newest first
   }, [seasons]);
 
-  // Auto-select the newest FaceIt season on load
-  useMemo(() => {
-    if (!selectedSeasonId && faceitSeasons.length > 0) {
-      setSelectedSeasonId(faceitSeasons[0]!.id);
+  // Use shared season if it's a FaceIt season, otherwise use the newest FaceIt season
+  const selectedSeasonId = useMemo(() => {
+    if (sharedSeasonId) {
+      const sharedSeason = faceitSeasons.find(
+        (s) => s.id.toString() === sharedSeasonId
+      );
+      if (sharedSeason) {
+        return sharedSeason.id;
+      }
     }
-  }, [faceitSeasons, selectedSeasonId]);
+    // Fallback to newest FaceIt season if shared season is not a FaceIt season
+    return faceitSeasons.length > 0 ? faceitSeasons[0]!.id : undefined;
+  }, [sharedSeasonId, faceitSeasons]);
 
   const { validation, isLoading, error, refresh } =
     useFaceitRosterValidation(selectedSeasonId);
@@ -161,7 +161,10 @@ function FaceitRosterValidationContent() {
     <div className="flex flex-col gap-6 p-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">FaceIt Roster Validation</h1>
+          <div className="flex items-center justify-between mb-2">
+            <h1 className="text-3xl font-bold">FaceIt Roster Validation</h1>
+            <SelectedSeasonBadge />
+          </div>
           <p className="text-muted-foreground mt-1">
             Validate all championship rosters to detect rule violations
           </p>
@@ -183,45 +186,35 @@ function FaceitRosterValidationContent() {
         )}
       </div>
 
-      {/* Season Selector */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Select Season</CardTitle>
-          <p className="text-sm text-muted-foreground mt-1">
-            This will validate ALL championships in the season at once
-          </p>
-        </CardHeader>
-        <CardContent>
-          {isLoadingSeasons ? (
-            <div className="flex items-center gap-2">
-              <Spinner size="sm" />
-              <span className="text-muted-foreground">Loading seasons...</span>
+      {/* Season Info */}
+      {selectedSeasonId ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Selected Season</CardTitle>
+            <p className="text-sm text-muted-foreground mt-1">
+              Validating ALL championships in the selected season. Select a
+              FaceIt season from the sidebar.
+            </p>
+          </CardHeader>
+          <CardContent>
+            <div className="text-sm">
+              {faceitSeasons.find((s) => s.id === selectedSeasonId)
+                ?.full_name ||
+                faceitSeasons.find((s) => s.id === selectedSeasonId)?.name ||
+                `Season ${selectedSeasonId}`}
             </div>
-          ) : faceitSeasons.length === 0 ? (
-            <div className="text-muted-foreground">
-              No FaceIt seasons available
-            </div>
-          ) : (
-            <Select
-              value={selectedSeasonId?.toString()}
-              onValueChange={(value) =>
-                setSelectedSeasonId(parseInt(value, 10))
-              }
-            >
-              <SelectTrigger className="w-full md:w-[400px]">
-                <SelectValue placeholder="Select a FaceIt season" />
-              </SelectTrigger>
-              <SelectContent>
-                {faceitSeasons.map((season) => (
-                  <SelectItem key={season.id} value={season.id.toString()}>
-                    {season.full_name || season.name} (Season {season.id})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle>Select Season</CardTitle>
+            <p className="text-sm text-muted-foreground mt-1">
+              Please select a FaceIt season from the sidebar to continue.
+            </p>
+          </CardHeader>
+        </Card>
+      )}
 
       {/* Filter Controls */}
       {validation && (

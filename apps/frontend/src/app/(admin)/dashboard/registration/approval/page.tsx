@@ -1,11 +1,15 @@
 import { ManualPlayerApprovalForm } from "@/components/dashboard/registration/ManualPlayerApprovalForm";
 import { WithRoleProtection } from "@/components/dashboard/WithRoleProtection";
+import { SelectedSeasonBadge } from "@/components/dashboard/SelectedSeasonBadge";
 import { Separator } from "@/components/ui/separator";
 
 export default async function Page() {
   return (
     <WithRoleProtection allowedRoles={["admin", "helpdesk"]}>
-      <h1>Manually Approved</h1>
+      <div className="flex items-center justify-between mb-4">
+        <h1>Manually Approved</h1>
+        <SelectedSeasonBadge />
+      </div>
 
       <div className="space-y-4 text-sm">
         <div>
@@ -40,134 +44,12 @@ export default async function Page() {
         </div>
 
         <div>
-          <h2 className="font-semibold mb-2">Common Scenarios</h2>
-
-          <div className="space-y-3">
-            <div className="border border-gray-200 rounded p-3">
-              <h3 className="font-semibold mb-1">
-                Scenario 1: Approve Players for an Existing Organization
-                (Recommended)
-              </h3>
-              <ul className="list-disc list-inside space-y-1 text-sm pl-4">
-                <li>Select an existing organization from the dropdown</li>
-                <li>Leave the team field empty</li>
-                <li>Add the player Steam IDs</li>
-                <li>
-                  <strong>Result:</strong> Players can join any team within that
-                  organization
-                </li>
-                <li>
-                  <strong>Next steps:</strong> Team captains can add these
-                  players to their teams during the signup process
-                </li>
-              </ul>
-            </div>
-
-            <div className="border border-gray-200 rounded p-3">
-              <h3 className="font-semibold mb-1">
-                Scenario 2: Approve Players for a Specific Team
-              </h3>
-              <ul className="list-disc list-inside space-y-1 text-sm pl-4">
-                <li>Select an existing team from the dropdown</li>
-                <li>Add the player Steam IDs</li>
-                <li>
-                  <strong>Result:</strong> Players can only join that specific
-                  team
-                </li>
-                <li>
-                  <strong>When to use:</strong> Use this when the team is not
-                  linked to any organization, or when you want to restrict
-                  players to one specific team
-                </li>
-              </ul>
-            </div>
-
-            <div className="border border-gray-200 rounded p-3">
-              <h3 className="font-semibold mb-1">
-                Scenario 3: Create a New Organization and Approve Players
-              </h3>
-              <ul className="list-disc list-inside space-y-1 text-sm pl-4">
-                <li>Select &quot;Create New Organization&quot;</li>
-                <li>
-                  Fill in the organization name, business ID (y-tunnus), and
-                  website
-                </li>
-                <li>Leave the team field empty</li>
-                <li>Add the player Steam IDs</li>
-                <li>
-                  <strong>Result:</strong> A new organization is created, and
-                  players are approved for any team within it
-                </li>
-                <li>
-                  <strong className="text-kanaliiga-orange">
-                    Important next step:
-                  </strong>{" "}
-                  Instruct team captains to go to the signup form, select the
-                  newly created organization from the dropdown in the
-                  Organization tab, click &quot;Create organization & continue
-                  to team&quot;, then fill in their team details
-                </li>
-              </ul>
-            </div>
-
-            <div className="border border-gray-200 rounded p-3">
-              <h3 className="font-semibold mb-1">
-                Scenario 4: Create a New Team Under an Existing Organization
-              </h3>
-              <ul className="list-disc list-inside space-y-1 text-sm pl-4">
-                <li>Select an existing organization from the dropdown</li>
-                <li>Add the player Steam IDs</li>
-                <li>
-                  <strong>Result:</strong> Players are approved for the
-                  organization (they can join any team within it)
-                </li>
-                <li>
-                  <strong className="text-kanaliiga-orange">
-                    Important next step:
-                  </strong>{" "}
-                  Instruct the team captain to go to the signup form, select the
-                  organization, click &quot;Continue to team selection&quot;,
-                  then select &quot;Add new...&quot; to create their team
-                </li>
-              </ul>
-            </div>
-
-            <div className="border border-gray-200 rounded p-3">
-              <h3 className="font-semibold mb-1">
-                Scenario 5: Create Both a New Organization and a New Team
-              </h3>
-              <ul className="list-disc list-inside space-y-1 text-sm pl-4">
-                <li>Select &quot;Create New Organization&quot;</li>
-                <li>
-                  Fill in the organization name, business ID (y-tunnus), and
-                  website
-                </li>
-                <li>Add the player Steam IDs</li>
-                <li>
-                  <strong>Result:</strong> A new organization is created, and
-                  players are approved for the organization
-                </li>
-                <li>
-                  <strong className="text-kanaliiga-orange">
-                    Important next step:
-                  </strong>{" "}
-                  Instruct the team captain to: 1) Go to the signup form, 2)
-                  Select the newly created organization from the Organization
-                  tab, 3) Click &quot;Create organization & continue to
-                  team&quot;, 4) In the Team tab, select &quot;Add new...&quot;
-                  to create their team
-                </li>
-              </ul>
-            </div>
-          </div>
-        </div>
-
-        <div>
           <h2 className="font-semibold mb-2">How Does the Approval Work?</h2>
           <ul className="list-disc list-inside space-y-1 pl-4">
             <li>
               Each player is added to the SeasonPlayerApprovals table for the
-              current active CS2 season
+              selected season (or the current active CS2 season if no season is
+              selected)
             </li>
             <li>
               Players are linked to either an organization OR a team (never

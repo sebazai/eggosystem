@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { useSortter } from "@/hooks/data/dashboard/useSortter";
+import { SelectedSeasonBadge } from "@/components/dashboard/SelectedSeasonBadge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -11,7 +12,6 @@ import {
   CardTitle
 } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
-import { SeasonSelector } from "@/components/sortter/SeasonSelector";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
@@ -217,7 +217,6 @@ function SortterPageContent() {
 
   const {
     teams,
-    sortedSeasons,
     playerValues,
     placements,
     selectedSeason,
@@ -225,13 +224,11 @@ function SortterPageContent() {
     floatingPosition,
     divisions,
     isLoadingTeams,
-    isLoadingSeasons,
     isLoadingPlayerValues,
     isLoadingPlacements,
     isSaving,
     isFinalizing,
     error,
-    setSelectedSeason,
     showTeamPlayerValues,
     closeTeamPlayerValues,
     prefetchPlayerValues,
@@ -397,36 +394,24 @@ function SortterPageContent() {
       <div className="space-y-4 w-full flex flex-col">
         <div className="flex flex-col space-y-2 flex-shrink-0">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Sortter</h1>
+            <div className="flex items-center justify-between">
+              <h1 className="text-3xl font-bold tracking-tight">Sortter</h1>
+              <SelectedSeasonBadge />
+            </div>
             <p className="text-muted-foreground">
               Team ranking management and analysis tool
             </p>
           </div>
 
-          {/* Navigation Links */}
-          <div className="flex items-center space-x-4 pt-2">
-            <Button variant="ghost" size="sm" asChild>
-              <a
-                href={`/dashboard/sortter/team-flags${selectedSeason ? `?season=${selectedSeason}` : ""}`}
-                className="flex items-center gap-2"
-              >
-                <AlertTriangle className="w-4 h-4" />
-                Team Flags
-              </a>
-            </Button>
-          </div>
-
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <span className="text-sm font-medium">Season:</span>
-                <SeasonSelector
-                  seasons={sortedSeasons || []}
-                  selectedSeason={selectedSeason}
-                  onChange={setSelectedSeason}
-                  isLoading={isLoadingSeasons}
-                />
-              </div>
+              {selectedSeason ? (
+                <SelectedSeasonBadge />
+              ) : (
+                <span className="text-sm text-muted-foreground">
+                  Please select a season from the sidebar
+                </span>
+              )}
               <div className="flex items-center space-x-2">
                 <span className="text-sm font-medium">Teams per Division:</span>
                 <Select
