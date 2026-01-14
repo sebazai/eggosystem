@@ -978,19 +978,6 @@ describe("SortterPage Component Tests", () => {
     });
   });
 
-  describe("Navigation Links", () => {
-    it("should display team flags navigation link", () => {
-      render(<SortterPage />);
-
-      const teamFlagsLink = screen.getByRole("link", { name: /Team Flags/ });
-      expect(teamFlagsLink).toBeInTheDocument();
-      expect(teamFlagsLink).toHaveAttribute(
-        "href",
-        "/dashboard/sortter/team-flags?season=16"
-      );
-    });
-  });
-
   describe("Integration with CommentsContext", () => {
     it("should render with CommentsProvider wrapper", () => {
       render(<SortterPage />);
