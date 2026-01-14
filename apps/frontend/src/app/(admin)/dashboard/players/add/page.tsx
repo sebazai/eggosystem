@@ -130,22 +130,6 @@ export default function AddPlayerPage() {
     }
   };
 
-  const handleSeasonChange = (value: string) => {
-    // Check if this is a registration context selection
-    if (value.startsWith("registration-")) {
-      setSelectedContext("registration");
-    } else {
-      setSelectedContext("finalized");
-    }
-    // Clear team selection and results when season changes
-    setSelectedTeamId("");
-    clearValidationResults();
-    clearResult();
-    setSuccess(null);
-    setApiError(null);
-    setSkipProfileValidation(false);
-  };
-
   // Reset selections when shared season changes
   useEffect(() => {
     if (sharedSeasonId && selectedContext === "finalized") {
@@ -317,14 +301,7 @@ export default function AddPlayerPage() {
               <PlayerValidationForm
                 steamId={steamId}
                 setSteamId={handleSteamIdChange}
-                seasonId={
-                  selectedContext === "registration"
-                    ? `registration-${effectiveSeasonId}`
-                    : effectiveSeasonId
-                }
-                setSeasonId={handleSeasonChange}
-                seasons={[]}
-                isLoadingSeasons={false}
+                seasonId={effectiveSeasonId}
                 isValidating={isValidating}
                 error={validationError}
                 onValidate={handleValidatePlayer}

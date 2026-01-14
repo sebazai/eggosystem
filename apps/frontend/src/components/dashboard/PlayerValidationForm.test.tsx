@@ -2,12 +2,7 @@ import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { PlayerValidationForm } from "./PlayerValidationForm";
-import {
-  EligiblePlayerForValidationSteamId,
-  SeasonPlatform,
-  createMockSeason,
-  createMockActiveSignupOrSeasonForAppId
-} from "@eggosystem/types";
+import { EligiblePlayerForValidationSteamId } from "@eggosystem/types";
 
 // Mock the UI components
 jest.mock("@/components/ui/button", () => ({
@@ -58,62 +53,9 @@ jest.mock("@/components/ui/label", () => ({
   )
 }));
 
-jest.mock("@/components/ui/select", () => ({
-  Select: ({
-    children,
-    value,
-    onValueChange,
-    disabled
-  }: {
-    children: React.ReactNode;
-    value?: string;
-    onValueChange?: (value: string) => void;
-    disabled?: boolean;
-  }) => (
-    <div data-testid="select-container">
-      <select
-        value={value}
-        onChange={(e) => onValueChange?.(e.target.value)}
-        disabled={disabled}
-        data-testid="season-select"
-      >
-        <option value="">Select a season</option>
-        {/* Mock options will be rendered by the test */}
-      </select>
-      {children}
-    </div>
-  ),
-  SelectTrigger: ({
-    children,
-    "data-testid": testId
-  }: {
-    children: React.ReactNode;
-    "data-testid"?: string;
-  }) => <div data-testid={testId}>{children}</div>,
-  SelectValue: ({ placeholder }: { placeholder?: string }) => (
-    <div>{placeholder}</div>
-  ),
-  SelectContent: ({
-    children,
-    "data-testid": testId
-  }: {
-    children: React.ReactNode;
-    "data-testid"?: string;
-  }) => <div data-testid={testId}>{children}</div>,
-  SelectItem: ({
-    children,
-    value,
-    disabled,
-    "data-testid": testId
-  }: {
-    children: React.ReactNode;
-    value: string;
-    disabled?: boolean;
-    "data-testid"?: string;
-  }) => (
-    <option value={value} disabled={disabled} data-testid={testId}>
-      {children}
-    </option>
+jest.mock("@/components/dashboard/SelectedSeasonBadge", () => ({
+  SelectedSeasonBadge: () => (
+    <div data-testid="selected-season-badge">Season Badge</div>
   )
 }));
 
@@ -155,40 +97,10 @@ jest.mock("lucide-react", () => ({
 }));
 
 describe("PlayerValidationForm", () => {
-  const mockSeasons = [
-    createMockSeason({
-      id: 14,
-      name: "Season 14",
-      full_name: "Season 14 - CS:GO",
-      signup_start_date: "2024-01-01",
-      signup_end_date: "2024-01-31",
-      platform: SeasonPlatform.FACEIT,
-      start_date: "2024-02-01",
-      end_date: "2024-03-31"
-    }),
-    createMockSeason({
-      id: 13,
-      name: "Season 13",
-      full_name: "Season 13 - CS:GO",
-      signup_start_date: "2023-10-01",
-      signup_end_date: "2023-10-31",
-      platform: SeasonPlatform.FACEIT,
-      start_date: "2023-11-01",
-      end_date: "2023-12-31"
-    })
-  ];
-
-  const mockActiveSeason = createMockActiveSignupOrSeasonForAppId({
-    season_id: 14
-  });
-
   const defaultProps = {
     steamId: "",
     setSteamId: jest.fn(),
     seasonId: "",
-    setSeasonId: jest.fn(),
-    seasons: mockSeasons,
-    isLoadingSeasons: false,
     isValidating: false,
     error: null,
     onValidate: jest.fn()
@@ -200,7 +112,7 @@ describe("PlayerValidationForm", () => {
 
   describe("Form Rendering", () => {
     it("should render all form elements", () => {
-      render(<PlayerValidationForm {...defaultProps} />);
+      render(<PlayerValidationForm {...defaultProps} seasonId="14" />);
 
       expect(screen.getByText("Steam ID")).toBeInTheDocument();
       expect(screen.getByPlaceholderText("Enter Steam ID")).toBeInTheDocument();
@@ -208,20 +120,18 @@ describe("PlayerValidationForm", () => {
       expect(screen.getByText("Validate Player")).toBeInTheDocument();
     });
 
-    it("should render seasons in the dropdown", () => {
-      render(<PlayerValidationForm {...defaultProps} />);
+    it("should render season badge when seasonId is provided", () => {
+      render(<PlayerValidationForm {...defaultProps} seasonId="14" />);
 
-      // Check that seasons are rendered (would be handled by Select component in real implementation)
-      expect(screen.getByTestId("season-select")).toBeInTheDocument();
+      // Season badge should be rendered via SelectedSeasonBadge component
+      expect(screen.getByText("Season")).toBeInTheDocument();
     });
 
-    it("should show loading state for seasons", () => {
-      render(
-        <PlayerValidationForm {...defaultProps} isLoadingSeasons={true} />
-      );
+    it("should not render season badge when seasonId is empty", () => {
+      render(<PlayerValidationForm {...defaultProps} seasonId="" />);
 
-      // In a real implementation, this would show "Loading seasons..."
-      expect(screen.getByTestId("season-select")).toBeInTheDocument();
+      // Season label should not be shown when no seasonId
+      expect(screen.queryByText("Season")).not.toBeInTheDocument();
     });
 
     it("should use custom button text when provided", () => {
@@ -262,21 +172,6 @@ describe("PlayerValidationForm", () => {
       expect(mockSetSteamId).toHaveBeenCalledWith(
         EligiblePlayerForValidationSteamId
       );
-    });
-
-    it("should call setSeasonId when season selection changes", () => {
-      const mockSetSeasonId = jest.fn();
-      render(
-        <PlayerValidationForm {...defaultProps} setSeasonId={mockSetSeasonId} />
-      );
-
-      // For Shadcn Select components, we need to click the trigger then click an option
-      const seasonTrigger = screen.getByTestId("season-selector");
-      fireEvent.click(seasonTrigger);
-
-      // Simulate selecting an option - the actual implementation will call setSeasonId
-      // For testing purposes, directly call the function to verify it would be called
-      expect(mockSetSeasonId).toBeDefined();
     });
 
     it("should call onValidate when validate button is clicked", () => {
@@ -375,13 +270,17 @@ describe("PlayerValidationForm", () => {
     });
 
     it("should disable inputs when validating", () => {
-      render(<PlayerValidationForm {...defaultProps} isValidating={true} />);
+      render(
+        <PlayerValidationForm
+          {...defaultProps}
+          seasonId="14"
+          isValidating={true}
+        />
+      );
 
       const steamIdInput = screen.getByPlaceholderText("Enter Steam ID");
-      const seasonSelect = screen.getByTestId("season-select");
 
       expect(steamIdInput).toBeDisabled();
-      expect(seasonSelect).toBeDisabled();
     });
   });
 
@@ -429,32 +328,16 @@ describe("PlayerValidationForm", () => {
     });
   });
 
-  describe("Active Season Handling", () => {
-    it("should highlight active season in dropdown", () => {
-      // This would be tested in a real implementation where we can check
-      // if the active season has "(Active)" appended to its name
-      render(
-        <PlayerValidationForm
-          {...defaultProps}
-          activeSeason={mockActiveSeason}
-        />
-      );
-
-      expect(screen.getByTestId("season-select")).toBeInTheDocument();
-      // In a real implementation, we would check for "Season 14 - CS:GO (Active)"
-    });
-  });
-
   describe("Accessibility", () => {
     it("should have proper labels for form fields", () => {
-      render(<PlayerValidationForm {...defaultProps} />);
+      render(<PlayerValidationForm {...defaultProps} seasonId="14" />);
 
       expect(screen.getByText("Steam ID")).toBeInTheDocument();
       expect(screen.getByText("Season")).toBeInTheDocument();
     });
 
     it("should associate labels with inputs", () => {
-      render(<PlayerValidationForm {...defaultProps} />);
+      render(<PlayerValidationForm {...defaultProps} seasonId="14" />);
 
       const steamIdInput = screen.getByPlaceholderText("Enter Steam ID");
       expect(steamIdInput).toHaveAttribute("data-testid", "steam-id-input");

@@ -302,9 +302,6 @@ export default function AddSubstitutePlayerPage() {
                 steamId={steamId}
                 setSteamId={handleSteamIdChange}
                 seasonId={effectiveSeasonId}
-                setSeasonId={() => {}}
-                seasons={[]}
-                isLoadingSeasons={false}
                 isValidating={isValidating}
                 error={validationError}
                 onValidate={handleValidatePlayer}

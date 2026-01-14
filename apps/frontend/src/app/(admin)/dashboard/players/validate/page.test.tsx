@@ -47,7 +47,7 @@ jest.mock("@/components/dashboard/PlayerValidationForm", () => ({
     steamId: string;
     seasonId: string;
     setSteamId: (value: string) => void;
-    setSeasonId: (value: string) => void;
+    setSeasonId?: (value: string) => void;
   }) => (
     <div data-testid="player-validation-form">
       <input
@@ -58,7 +58,7 @@ jest.mock("@/components/dashboard/PlayerValidationForm", () => ({
       <input
         data-testid="season-id-input"
         value={seasonId}
-        onChange={(e) => setSeasonId(e.target.value)}
+        onChange={(e) => setSeasonId?.(e.target.value)}
       />
     </div>
   )

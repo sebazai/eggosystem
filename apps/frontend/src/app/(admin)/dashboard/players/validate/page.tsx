@@ -105,13 +105,6 @@ export default function PlayerValidationPage() {
                     setSuccess(null);
                   }}
                   seasonId={seasonId}
-                  setSeasonId={() => {
-                    // Season is managed by shared selector, but we can still clear results
-                    clearResults();
-                    setSuccess(null);
-                  }}
-                  seasons={[]}
-                  isLoadingSeasons={false}
                   isValidating={isValidating}
                   error={error}
                   success={success}

@@ -9,6 +9,7 @@ import { BadRequestError, NotFoundError } from "../utils/errors";
 import { calculateKanaElo } from "../services/csrankker.services";
 import { upsertPlayerKanaElo } from "../models/steam-player-kana-elo.models";
 import { logger } from "../utils/app-logger";
+import { getLatestSeasonForPlayer } from "../models/season-player-ranks.models";
 
 /**
  * Controller to populate the kanaelo queue for all players in a season
@@ -60,21 +61,13 @@ export const calculateKanaEloForAllPlayersController = async (
       return next(new NotFoundError("No players found in SteamPlayers table"));
     }
 
-    const seasonId = Number(req.params.season_id);
-
-    if (!seasonId || seasonId <= 0) {
-      return next(new BadRequestError("Valid season_id is required"));
-    }
-
     let successful = 0;
     let failed = 0;
     const errors: Array<{ steam_id: string; error: string }> = [];
 
     const BATCH_SIZE = 100;
 
-    logger.info(
-      `[KanaElo] Starting bulk calculation for ${players.length} players in season ${seasonId} in batches of ${BATCH_SIZE}`
-    );
+    logger.info(`[KanaElo] Starting bulk calculation for ${players.length}`);
 
     // Process players in batches
     for (let i = 0; i < players.length; i += BATCH_SIZE) {
@@ -90,9 +83,13 @@ export const calculateKanaEloForAllPlayersController = async (
       const batchResults = await Promise.all(
         batch.map(async (steamId) => {
           try {
-            // Use season_id from URL parameter
+            const seasonId = await getLatestSeasonForPlayer(steamId);
+
             // Call CSRankker API
-            const result = await calculateKanaElo(steamId, seasonId);
+            const result = await calculateKanaElo(
+              steamId,
+              seasonId ?? undefined
+            );
 
             if (!result || result.status !== "success") {
               return {
@@ -148,7 +145,6 @@ export const calculateKanaEloForAllPlayersController = async (
 
     res.json({
       message: `Successfully calculated kana_elo for ${successful} players (${failed} failed)`,
-      season_id: seasonId,
       total_players: players.length,
       successful,
       failed,
