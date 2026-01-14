@@ -126,23 +126,19 @@ test.describe("Add Player Workflow", () => {
       });
     });
 
-    // Navigate to the add player page
-    await page.goto("/dashboard/players/add");
+    // Navigate to the add player page with season 14 selected
+    // The season selector is now in the sidebar and reads from URL params
+    await page.goto("/dashboard/players/add?season=14");
 
     // Verify page loads correctly
     await expect(
       page.getByRole("heading", { name: /add player/i })
     ).toBeVisible();
 
-    // Select season 14 manually
+    // Verify season is selected in the sidebar selector (the UI shows "CS2 Season 2" not just "14")
     await page.waitForSelector('[data-testid="season-selector"]', {
       timeout: 5000
     });
-    await page.click('[data-testid="season-selector"]');
-    await page.waitForSelector('[data-testid="season-dropdown"]');
-    await page.click('[data-testid="season-option-14"]');
-
-    // Verify season is selected (the UI shows "CS2 Season 2" not just "14")
     await expect(page.locator('[data-testid="season-selector"]')).toContainText(
       "CS2 Season 2"
     );
@@ -272,8 +268,9 @@ test.describe("Add Player Workflow", () => {
   });
 
   test("should show proper form validation behavior", async ({ page }) => {
-    // Navigate to the add player page
-    await page.goto("/dashboard/players/add");
+    // Navigate to the add player page with season 14 selected
+    // The season selector is now in the sidebar and reads from URL params
+    await page.goto("/dashboard/players/add?season=14");
 
     // Verify page loads correctly
     await expect(
@@ -285,15 +282,10 @@ test.describe("Add Player Workflow", () => {
       page.locator('[data-testid="validate-player-button"]')
     ).toBeDisabled();
 
-    // Select season 14 manually
+    // Verify season is selected in the sidebar selector (the UI shows "CS2 Season 2" not just "14")
     await page.waitForSelector('[data-testid="season-selector"]', {
       timeout: 5000
     });
-    await page.click('[data-testid="season-selector"]');
-    await page.waitForSelector('[data-testid="season-dropdown"]');
-    await page.click('[data-testid="season-option-14"]');
-
-    // Verify season is selected (the UI shows "CS2 Season 2" not just "14")
     await expect(page.locator('[data-testid="season-selector"]')).toContainText(
       "CS2 Season 2"
     );

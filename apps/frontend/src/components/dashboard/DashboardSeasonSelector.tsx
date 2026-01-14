@@ -70,7 +70,10 @@ export function DashboardSeasonSelector() {
   }
 
   return (
-    <div className="px-2 py-1.5">
+    <div
+      className="px-2 py-1.5"
+      data-testid="dashboard-season-selector-container"
+    >
       <Select
         value={selectedSeasonId || "all"}
         onValueChange={(value) => {
@@ -81,15 +84,19 @@ export function DashboardSeasonSelector() {
           }
         }}
       >
-        <SelectTrigger className="w-full">
+        <SelectTrigger className="w-full" data-testid="season-selector">
           <SelectValue placeholder="Select a season" />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent data-testid="season-dropdown">
           <SelectItem value="all" className="text-muted-foreground">
             All Seasons
           </SelectItem>
           {seasons.map((season) => (
-            <SelectItem key={season.id} value={season.id.toString()}>
+            <SelectItem
+              key={season.id}
+              value={season.id.toString()}
+              data-testid={`season-option-${season.id}`}
+            >
               {season.full_name || season.name || `Season ${season.id}`}
               {activeSeasonId === season.id && " (Active)"}
             </SelectItem>
