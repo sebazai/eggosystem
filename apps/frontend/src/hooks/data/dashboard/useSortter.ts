@@ -114,7 +114,7 @@ export function useSortter(placeTeamsInDivision: number) {
     return placementsResponse?.placements || [];
   }, [placementsResponse?.placements]);
 
-  // Sort teams by division first, then by avg4 within each division
+  // Sort teams by division first, then by avg5 within each division
   const sortedTeams = useMemo(() => {
     if (!teams || !placements) return [];
 

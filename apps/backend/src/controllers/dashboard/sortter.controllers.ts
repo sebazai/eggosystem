@@ -16,7 +16,7 @@ import {
  * This returns all teams for a given season with their values:
  * - team name
  * - top 5 players kanaelo sum
- * - top 4 players kanaelo average
+ * - top 5 players kanaelo average
  * - team league
  * - kanaelo values for top 5 players
  */

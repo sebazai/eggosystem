@@ -272,8 +272,8 @@ describe("AddPlayerPage", () => {
       }
     },
     topTeamsInLeague: [
-      { team_id: 100, team_name: "Top Team", avg4: 200, rank: 1 },
-      { team_id: 101, team_name: "Second Team", avg4: 190, rank: 2 }
+      { team_id: 100, team_name: "Top Team", avg5: 200, rank: 1 },
+      { team_id: 101, team_name: "Second Team", avg5: 190, rank: 2 }
     ],
     canAddPlayer: true,
     league_name: "Test League"

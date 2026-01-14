@@ -369,7 +369,7 @@ test.describe("Backend Integration Tests for Add Player", () => {
         new_player_kana_elo: 180
       },
       topTeamsInLeague: [
-        { team_id: 100, team_name: "Top Team", avg4: 200, rank: 1 }
+        { team_id: 100, team_name: "Top Team", avg5: 200, rank: 1 }
       ],
       league_name: "Test League"
     };
@@ -412,7 +412,7 @@ test.describe("Backend Integration Tests for Add Player", () => {
         new_player_kana_elo: 350
       },
       topTeamsInLeague: [
-        { team_id: 100, team_name: "Top Team", avg4: 200, rank: 1 }
+        { team_id: 100, team_name: "Top Team", avg5: 200, rank: 1 }
       ],
       league_name: "Test League"
     };
@@ -420,7 +420,7 @@ test.describe("Backend Integration Tests for Add Player", () => {
     // Check the expected structure using our mock data
     expect(mockResult.canAddPlayer).toBe(false);
     expect(mockResult.selectedTeam.new_avg_with_player).toBeGreaterThan(
-      mockResult.topTeamsInLeague[0]?.avg4 || 0
+      mockResult.topTeamsInLeague[0]?.avg5 || 0
     );
   });
 
