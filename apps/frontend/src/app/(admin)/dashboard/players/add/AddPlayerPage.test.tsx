@@ -24,6 +24,10 @@ jest.mock("@/hooks/data/useAllSeasons", () => ({
   useAllSeasons: jest.fn()
 }));
 
+jest.mock("@/hooks/data/dashboard/useAllSeasons", () => ({
+  useAllSeasons: jest.fn()
+}));
+
 jest.mock("@/hooks/data/useDashboardSeasonTeams", () => ({
   useDashboardSeasonTeams: jest.fn()
 }));
@@ -185,6 +189,7 @@ jest.mock("@/components/ui/card", () => ({
 import { clientApiFetch } from "@/lib/apiClient";
 import { useActiveSignupOrActiveSeasonForApp } from "@/hooks/data/useActiveSignupOrActiveSeasonForApp";
 import { useAllSeasons } from "@/hooks/data/useAllSeasons";
+import { useAllSeasons as useDashboardAllSeasons } from "@/hooks/data/dashboard/useAllSeasons";
 import { useDashboardSeasonTeams } from "@/hooks/data/useDashboardSeasonTeams";
 import { useDashboardSeason } from "@/hooks/data/dashboard/useDashboardSeason";
 import { usePlayerTeamEligibility } from "@/hooks/data/usePlayerTeamEligibility";
@@ -204,6 +209,10 @@ describe("AddPlayerPage", () => {
   const mockUseAllSeasons = useAllSeasons as jest.MockedFunction<
     typeof useAllSeasons
   >;
+  const mockUseDashboardAllSeasons =
+    useDashboardAllSeasons as jest.MockedFunction<
+      typeof useDashboardAllSeasons
+    >;
   const mockUseDashboardSeasonTeams =
     useDashboardSeasonTeams as jest.MockedFunction<
       typeof useDashboardSeasonTeams
@@ -301,19 +310,28 @@ describe("AddPlayerPage", () => {
       isValidating: false
     });
 
+    const mockSeasons = [
+      createMockSeason({
+        id: 14,
+        name: "Season 14",
+        full_name: "Season 14 - CS:GO",
+        signup_start_date: "2024-01-01",
+        signup_end_date: "2024-01-31",
+        platform: SeasonPlatform.Kanaliiga,
+        start_date: "2024-02-01",
+        end_date: "2024-03-31"
+      })
+    ];
+
     mockUseAllSeasons.mockReturnValue({
-      seasons: [
-        createMockSeason({
-          id: 14,
-          name: "Season 14",
-          full_name: "Season 14 - CS:GO",
-          signup_start_date: "2024-01-01",
-          signup_end_date: "2024-01-31",
-          platform: SeasonPlatform.Kanaliiga,
-          start_date: "2024-02-01",
-          end_date: "2024-03-31"
-        })
-      ],
+      seasons: mockSeasons,
+      isLoading: false,
+      isError: null,
+      isValidating: false
+    });
+
+    mockUseDashboardAllSeasons.mockReturnValue({
+      seasons: mockSeasons,
       isLoading: false,
       isError: null,
       isValidating: false

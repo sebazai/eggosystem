@@ -167,8 +167,14 @@ jest.mock("@/components/ui/select", () => {
       onValueChangeCallback = onValueChange;
       return <div data-testid="team-select">{children}</div>;
     },
-    SelectTrigger: ({ children }: { children: React.ReactNode }) => (
-      <div data-testid="team-selector" onClick={() => {}}>
+    SelectTrigger: ({
+      children,
+      "data-testid": testId
+    }: {
+      children: React.ReactNode;
+      "data-testid"?: string;
+    }) => (
+      <div data-testid={testId || "select-trigger"} onClick={() => {}}>
         {children}
       </div>
     ),

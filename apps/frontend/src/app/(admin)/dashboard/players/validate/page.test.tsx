@@ -2,12 +2,14 @@ import { render, screen, waitFor } from "@testing-library/react";
 import PlayerValidationPage from "./page";
 import { SeasonPlatform, createMockSeason } from "@eggosystem/types";
 import { useAllSeasons } from "@/hooks/data/useAllSeasons";
+import { useAllSeasons as useDashboardAllSeasons } from "@/hooks/data/dashboard/useAllSeasons";
 import { usePlayerValidation } from "@/hooks/data/dashboard/usePlayerValidation";
 import { useSearchParams } from "next/navigation";
 import { useDashboardSeason } from "@/hooks/data/dashboard/useDashboardSeason";
 
 // Mock the custom hooks
 jest.mock("@/hooks/data/useAllSeasons");
+jest.mock("@/hooks/data/dashboard/useAllSeasons");
 jest.mock("@/hooks/data/dashboard/usePlayerValidation");
 jest.mock("@/hooks/data/dashboard/useDashboardSeason", () => ({
   useDashboardSeason: jest.fn()
@@ -72,6 +74,8 @@ jest.mock("@/components/dashboard/PlayerValidationDisplay", () => ({
 const mockUseAllSeasons = useAllSeasons as jest.MockedFunction<
   typeof useAllSeasons
 >;
+const mockUseDashboardAllSeasons =
+  useDashboardAllSeasons as jest.MockedFunction<typeof useDashboardAllSeasons>;
 const mockUsePlayerValidation = usePlayerValidation as jest.MockedFunction<
   typeof usePlayerValidation
 >;
@@ -101,6 +105,12 @@ describe("PlayerValidationPage - URL Parameter Sync", () => {
       isError: false,
       isValidating: false
     });
+    mockUseDashboardAllSeasons.mockReturnValue({
+      seasons: mockSeasons,
+      isLoading: false,
+      isError: false,
+      isValidating: false
+    });
     mockUsePlayerValidation.mockReturnValue({
       validationResult: null,
       isValidating: false,
@@ -108,8 +118,9 @@ describe("PlayerValidationPage - URL Parameter Sync", () => {
       validatePlayer: jest.fn(),
       clearResults: jest.fn()
     });
+    // Default to having a season selected so the form renders
     mockUseDashboardSeason.mockReturnValue({
-      selectedSeasonId: null,
+      selectedSeasonId: "1",
       setSelectedSeasonId: jest.fn()
     });
   });
@@ -143,6 +154,11 @@ describe("PlayerValidationPage - URL Parameter Sync", () => {
       "steamId=76561198012345678&seasonId=2"
     );
     mockUseSearchParams.mockReturnValue(searchParams as any);
+    // Set selectedSeasonId to null so URL params are used
+    mockUseDashboardSeason.mockReturnValue({
+      selectedSeasonId: null,
+      setSelectedSeasonId: jest.fn()
+    });
 
     render(<PlayerValidationPage />);
 
@@ -172,6 +188,11 @@ describe("PlayerValidationPage - URL Parameter Sync", () => {
   it("should update state when URL params change", () => {
     const searchParams1 = new URLSearchParams("steamId=76561198012345678");
     mockUseSearchParams.mockReturnValue(searchParams1 as any);
+    // Set selectedSeasonId to null so URL params are used
+    mockUseDashboardSeason.mockReturnValue({
+      selectedSeasonId: null,
+      setSelectedSeasonId: jest.fn()
+    });
 
     const { rerender } = render(<PlayerValidationPage />);
 
@@ -197,6 +218,11 @@ describe("PlayerValidationPage - URL Parameter Sync", () => {
   it("should handle empty URL params", () => {
     const searchParams = new URLSearchParams();
     mockUseSearchParams.mockReturnValue(searchParams as any);
+    // Set selectedSeasonId to null so URL params are used
+    mockUseDashboardSeason.mockReturnValue({
+      selectedSeasonId: null,
+      setSelectedSeasonId: jest.fn()
+    });
 
     render(<PlayerValidationPage />);
 

@@ -40,6 +40,24 @@ jest.mock("@/hooks/data/dashboard/useTeamHistory", () => ({
   }))
 }));
 
+// Mock useAllSeasons hook (used by SelectedSeasonBadge)
+jest.mock("@/hooks/data/dashboard/useAllSeasons", () => ({
+  useAllSeasons: jest.fn(() => ({
+    seasons: [],
+    isLoading: false,
+    isError: false,
+    isValidating: false
+  }))
+}));
+
+// Mock useDashboardSeason hook (used by SelectedSeasonBadge)
+jest.mock("@/hooks/data/dashboard/useDashboardSeason", () => ({
+  useDashboardSeason: jest.fn(() => ({
+    selectedSeasonId: null,
+    setSelectedSeasonId: jest.fn()
+  }))
+}));
+
 // Mock WithRoleProtection component
 jest.mock("@/components/dashboard/WithRoleProtection", () => ({
   WithRoleProtection: ({ children }: { children: React.ReactNode }) => (
