@@ -28,7 +28,6 @@ import {
   AlertTriangle
 } from "lucide-react";
 
-import { useActiveSignupOrActiveSeasonForApp } from "@/hooks/data/useActiveSignupOrActiveSeasonForApp";
 import { useDashboardSeason } from "@/hooks/data/dashboard/useDashboardSeason";
 import { useAllSeasons } from "@/hooks/data/dashboard/useAllSeasons";
 import { SelectedSeasonBadge } from "@/components/dashboard/SelectedSeasonBadge";
@@ -61,26 +60,18 @@ export default function AddSubstitutePlayerPage() {
   // Get all seasons to find platform
   const { seasons } = useAllSeasons();
 
-  // Get active season (app_id 730 for CS)
-  const { signupOrActiveSeason: activeSeason } =
-    useActiveSignupOrActiveSeasonForApp(730);
-
-  // Use shared season or fallback to active season
-  const effectiveSeasonId =
-    selectedSeasonId ||
-    (activeSeason?.season_id ? activeSeason.season_id.toString() : "") ||
-    "";
+  // Use selected season from sidebar
+  const effectiveSeasonId = selectedSeasonId || "";
 
   // Get platform from selected season
   const selectedSeason = selectedSeasonId
     ? seasons?.find((s) => s.id.toString() === selectedSeasonId)
     : null;
-  const platform = selectedSeason?.platform ?? activeSeason?.platform ?? null;
+  const platform = selectedSeason?.platform ?? null;
 
-  // Get teams for the selected season (or active season if no season is selected)
+  // Get teams for the selected season
   const { teams, isLoading: isLoadingTeams } = useDashboardSeasonTeams(
-    selectedSeasonId ||
-      (activeSeason?.season_id ? activeSeason.season_id.toString() : null)
+    selectedSeasonId || null
   );
 
   // Get the selected team
@@ -88,10 +79,8 @@ export default function AddSubstitutePlayerPage() {
     (team) => team.team_id.toString() === selectedTeamId
   );
 
-  // Live team roster hook - uses selected season (or active season if no season is selected)
-  const seasonIdForRoster = selectedSeasonId
-    ? Number(selectedSeasonId)
-    : (activeSeason?.season_id ?? null);
+  // Live team roster hook - uses selected season
+  const seasonIdForRoster = selectedSeasonId ? Number(selectedSeasonId) : null;
   const {
     players: liveTeamPlayers,
     isLoading: isLoadingLiveRoster,
@@ -319,7 +308,6 @@ export default function AddSubstitutePlayerPage() {
                 isValidating={isValidating}
                 error={validationError}
                 onValidate={handleValidatePlayer}
-                activeSeason={activeSeason}
                 buttonText="1. Validate Player"
                 data-testid="validate-player-button"
               />
@@ -734,11 +722,11 @@ export default function AddSubstitutePlayerPage() {
       </div>
 
       {/* Live Team Roster Popup */}
-      {showRosterPopup && selectedTeamId && selectedTeam && activeSeason && (
+      {showRosterPopup && selectedTeamId && selectedTeam && selectedSeason && (
         <LiveTeamPlayersPopup
           players={liveTeamPlayers || []}
           teamName={selectedTeam.team_name}
-          seasonName={activeSeason.full_name}
+          seasonName={selectedSeason.full_name}
           position={popupPosition}
           isLoading={isLoadingLiveRoster}
           onClose={() => setShowRosterPopup(false)}

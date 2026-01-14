@@ -91,6 +91,7 @@ export function DashboardSeasonSelector() {
           {seasons.map((season) => (
             <SelectItem key={season.id} value={season.id.toString()}>
               {season.full_name || season.name || `Season ${season.id}`}
+              {activeSeasonId === season.id && " (Active)"}
             </SelectItem>
           ))}
         </SelectContent>
