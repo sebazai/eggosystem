@@ -1,4 +1,4 @@
-import { type Response, type NextFunction } from "express";
+import { type Request, type Response, type NextFunction } from "express";
 import {
   getAllRegisteredPlayersForSeason,
   getAllPlayersFromSteamPlayers
@@ -49,7 +49,7 @@ export const populateKanaeloQueueController = async (
  * Processes players in batches of 100 using Promise.all
  */
 export const calculateKanaEloForAllPlayersController = async (
-  req: RequestWithParams<{ season_id: string }>,
+  req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> => {

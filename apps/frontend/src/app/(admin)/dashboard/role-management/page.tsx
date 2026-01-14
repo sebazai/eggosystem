@@ -36,7 +36,6 @@ import { useDashboardSeason } from "@/hooks/data/dashboard/useDashboardSeason";
 import { SelectedSeasonBadge } from "@/components/dashboard/SelectedSeasonBadge";
 import { useTeamsForSeason } from "@/hooks/data/dashboard/useTeamsForSeason";
 import { useCheckCaptain } from "@/hooks/data/dashboard/useCheckCaptain";
-import { useAllSeasons } from "@/hooks/data/dashboard/useAllSeasons";
 
 export default function RoleManagementPage() {
   const { selectedSeasonId, setSelectedSeasonId } = useDashboardSeason();
@@ -44,9 +43,6 @@ export default function RoleManagementPage() {
   const [steamId, setSteamId] = useState<string>("");
   const [selectedTeamId, setSelectedTeamId] = useState<string>("");
   const [success, setSuccess] = useState<string | null>(null);
-
-  // Get all seasons for displaying season name
-  const { seasons } = useAllSeasons();
 
   // Get manageable roles for the current user
   const { roles: manageableRoles, isLoading: isLoadingRoles } =
@@ -219,17 +215,9 @@ export default function RoleManagementPage() {
               {/* Season Selection (only for captain/co-captain) */}
               {isCaptainRole && (
                 <div className="space-y-2">
-                  <Label htmlFor="season">Season (Optional)</Label>
+                  <Label htmlFor="season">For season</Label>
                   {selectedSeasonId ? (
-                    <div className="text-sm py-2 px-3 rounded-md border bg-muted">
-                      {seasons?.find(
-                        (s) => s.id.toString() === selectedSeasonId
-                      )?.full_name ||
-                        seasons?.find(
-                          (s) => s.id.toString() === selectedSeasonId
-                        )?.name ||
-                        `Season ${selectedSeasonId}`}
-                    </div>
+                    <SelectedSeasonBadge />
                   ) : (
                     <div className="text-sm text-muted-foreground py-2">
                       Please select a season from the sidebar to assign{" "}
@@ -272,9 +260,6 @@ export default function RoleManagementPage() {
                       )}
                     </SelectContent>
                   </Select>
-                  <p className="text-sm text-muted-foreground">
-                    Required when season is selected
-                  </p>
                 </div>
               )}
 
