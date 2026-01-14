@@ -8,9 +8,8 @@ import type { RequestWithParams } from "@eggosystem/types";
 import { BadRequestError, NotFoundError } from "../utils/errors";
 import { calculateKanaElo } from "../services/csrankker.services";
 import { upsertPlayerKanaElo } from "../models/steam-player-kana-elo.models";
-import { getLatestSeasonForPlayer } from "../models/season-player-ranks.models";
-import { getActiveSeasonId } from "../models/season.models";
 import { logger } from "../utils/app-logger";
+import { getLatestSeasonForPlayer } from "../models/season-player-ranks.models";
 
 /**
  * Controller to populate the kanaelo queue for all players in a season
@@ -62,18 +61,13 @@ export const calculateKanaEloForAllPlayersController = async (
       return next(new NotFoundError("No players found in SteamPlayers table"));
     }
 
-    // Get active season as fallback
-    const activeSeasonId = await getActiveSeasonId();
-
     let successful = 0;
     let failed = 0;
     const errors: Array<{ steam_id: string; error: string }> = [];
 
     const BATCH_SIZE = 100;
 
-    logger.info(
-      `[KanaElo] Starting bulk calculation for ${players.length} players in batches of ${BATCH_SIZE}`
-    );
+    logger.info(`[KanaElo] Starting bulk calculation for ${players.length}`);
 
     // Process players in batches
     for (let i = 0; i < players.length; i += BATCH_SIZE) {
@@ -89,18 +83,13 @@ export const calculateKanaEloForAllPlayersController = async (
       const batchResults = await Promise.all(
         batch.map(async (steamId) => {
           try {
-            // Get latest season for player, or use active season as fallback
-            let seasonId: number | undefined = undefined;
-            const latestSeason = await getLatestSeasonForPlayer(steamId);
-
-            if (latestSeason) {
-              seasonId = latestSeason;
-            } else if (activeSeasonId) {
-              seasonId = activeSeasonId;
-            }
+            const seasonId = await getLatestSeasonForPlayer(steamId);
 
             // Call CSRankker API
-            const result = await calculateKanaElo(steamId, seasonId);
+            const result = await calculateKanaElo(
+              steamId,
+              seasonId ?? undefined
+            );
 
             if (!result || result.status !== "success") {
               return {

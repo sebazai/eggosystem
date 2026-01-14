@@ -92,7 +92,7 @@ router.post(
 );
 
 // GET /api/v1/dashboard/sortter/team-flags
-router.get("/team-flags", getTeamFlagsController);
+router.get("/team-flags/season/:season_id", getTeamFlagsController);
 
 // POST /api/v1/dashboard/sortter/team-flags (triggers database refresh)
 router.post("/team-flags", refreshTeamFlagsFromDatabaseController);

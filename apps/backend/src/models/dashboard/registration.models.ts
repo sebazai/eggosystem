@@ -2,7 +2,6 @@ import {
   type SeasonPlatform,
   type SeasonPlayerRankFormValues,
   type PostTeamManualPlayerApprovalSchemaType,
-  type ActiveSeasonSignupForAppId,
   type SeasonRegisteredTeamsWithPlayers,
   type SeasonTeamRegistration,
   type PlayerFullName
@@ -10,7 +9,6 @@ import {
 import JSONBig from "json-bigint";
 import { getConnection } from "../../db/mysqlConnection";
 import { handlePreApprovedRegistration } from "../../services/dashboard/registration.services";
-import { getActiveSignupOrActiveSeasonForAppId } from "../season.models";
 import { BadRequestError } from "../../utils/errors";
 import { insertPlayerRankForSeason } from "../season-player-ranks.models";
 import { faceitEloToLevel } from "../../utils/faceit-utils";
@@ -22,23 +20,25 @@ export const addManuallyApprovedPartialSignupForSeason = async (
 ) => {
   const connection = await getConnection();
 
-  // TODO: Make this dynamic
-  const activeSeason = await getActiveSignupOrActiveSeasonForAppId(1, 730);
-
-  if (!activeSeason) {
-    throw new BadRequestError("No active registration ongoing for CS");
+  // Require season_id to be provided
+  if (!formData.season_id || formData.season_id <= 0) {
+    throw new BadRequestError(
+      "season_id is required and must be a valid number"
+    );
   }
+
+  const seasonId = formData.season_id;
 
   try {
     await connection.beginTransaction();
     const data = await handlePreApprovedRegistration(
-      activeSeason.season_id,
+      seasonId,
       formData,
       approvedByAccountId,
       connection
     );
     await connection.commit();
-    return { seasonId: activeSeason.season_id, ...data };
+    return { seasonId, ...data };
   } catch (error) {
     await connection.rollback();
     throw error;
@@ -48,15 +48,14 @@ export const addManuallyApprovedPartialSignupForSeason = async (
 };
 
 export const addSeasonRankForPlayer = async (
-  formData: SeasonPlayerRankFormValues,
-  season: ActiveSeasonSignupForAppId
+  formData: SeasonPlayerRankFormValues
 ) => {
   const cs2Rank = formData.cs2_rank;
   const csHours = formData.cs_hours;
 
   await insertPlayerRankForSeason(
     formData.steam_id,
-    season.season_id,
+    formData.season_id,
     cs2Rank ?? null,
     csHours ?? null,
     {

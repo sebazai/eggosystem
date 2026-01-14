@@ -21,10 +21,26 @@ router.get(
   getPlayerFullNameController
 );
 router.post("/rank", addManualRankForPlayerController);
-router.get("/registered", getRegisteredTeamsController);
-router.get("/drafts", getAllRegistrationDraftsController);
-router.post("/bulk-approve", bulkApproveTeamRegistrationsController);
-router.post("/manual-validity-check", manualValidityCheckController);
+router.get(
+  "/season/:season_id/registered",
+  validateNumericParams(["season_id"]),
+  getRegisteredTeamsController
+);
+router.get(
+  "/season/:season_id/drafts",
+  validateNumericParams(["season_id"]),
+  getAllRegistrationDraftsController
+);
+router.post(
+  "/season/:season_id/bulk-approve",
+  validateNumericParams(["season_id"]),
+  bulkApproveTeamRegistrationsController
+);
+router.post(
+  "/season/:season_id/manual-validity-check",
+  validateNumericParams(["season_id"]),
+  manualValidityCheckController
+);
 router.post(
   "/season/:season_id/signup",
   validateNumericParams(),

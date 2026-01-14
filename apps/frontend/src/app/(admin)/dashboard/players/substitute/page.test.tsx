@@ -17,6 +17,24 @@ jest.mock("@/hooks/data/useDashboardSeasonTeams", () => ({
   useDashboardSeasonTeams: jest.fn()
 }));
 
+jest.mock("@/hooks/data/dashboard/useDashboardSeason", () => ({
+  useDashboardSeason: jest.fn(() => ({
+    selectedSeasonId: "1",
+    setSelectedSeasonId: jest.fn()
+  }))
+}));
+
+// Mock Next.js navigation
+jest.mock("next/navigation", () => ({
+  useRouter: jest.fn(() => ({
+    push: jest.fn(),
+    replace: jest.fn(),
+    prefetch: jest.fn()
+  })),
+  usePathname: jest.fn(() => "/dashboard/players/substitute"),
+  useSearchParams: jest.fn(() => new URLSearchParams("season=1"))
+}));
+
 jest.mock("@/hooks/data/dashboard/usePlayerValidation", () => ({
   usePlayerValidation: jest.fn()
 }));
@@ -57,7 +75,7 @@ jest.mock("@/components/dashboard/PlayerValidationForm", () => ({
     steamId: string;
     setSteamId: (value: string) => void;
     seasonId: string;
-    setSeasonId: (value: string) => void;
+    setSeasonId?: (value: string) => void;
     onValidate: () => void;
     buttonText: string;
   }) => (
@@ -67,14 +85,8 @@ jest.mock("@/components/dashboard/PlayerValidationForm", () => ({
         value={steamId}
         onChange={(e) => setSteamId(e.target.value)}
       />
-      <select
-        data-testid="season-select"
-        value={seasonId}
-        onChange={(e) => setSeasonId(e.target.value)}
-      >
-        <option value="">Select Season</option>
-        <option value="1">Season 1</option>
-      </select>
+      <div data-testid="season-badge">{seasonId}</div>
+      <div data-testid="season-badge">{seasonId}</div>
       <button onClick={onValidate} data-testid="validate-button">
         {buttonText}
       </button>
@@ -252,13 +264,11 @@ describe("AddSubstitutePlayerPage", () => {
 
     // Fill in required fields
     const steamIdInput = screen.getByTestId("steam-id-input");
-    const seasonSelect = screen.getByTestId("season-select");
     const teamSelect = screen.getByTestId("team-selector");
     const matchIdInput = screen.getByTestId("match-id-input");
     const ticketNumberInput = screen.getByTestId("ticket-number-input");
 
     fireEvent.change(steamIdInput, { target: { value: "76561198000000001" } });
-    fireEvent.change(seasonSelect, { target: { value: "1" } });
     fireEvent.change(matchIdInput, { target: { value: "123" } });
     fireEvent.change(ticketNumberInput, { target: { value: "TICKET-123" } });
     fireEvent.click(teamSelect);
@@ -298,10 +308,8 @@ describe("AddSubstitutePlayerPage", () => {
 
     // Fill in required fields (but not match ID)
     const steamIdInput = screen.getByTestId("steam-id-input");
-    const seasonSelect = screen.getByTestId("season-select");
 
     fireEvent.change(steamIdInput, { target: { value: "76561198000000001" } });
-    fireEvent.change(seasonSelect, { target: { value: "1" } });
 
     // Select team
     const teamSelect = screen.getByTestId("team-selector");
@@ -355,12 +363,10 @@ describe("AddSubstitutePlayerPage", () => {
 
     // Fill in required fields
     const steamIdInput = screen.getByTestId("steam-id-input");
-    const seasonSelect = screen.getByTestId("season-select");
     const matchIdInput = screen.getByTestId("match-id-input");
     const ticketNumberInput = screen.getByTestId("ticket-number-input");
 
     fireEvent.change(steamIdInput, { target: { value: "76561198000000001" } });
-    fireEvent.change(seasonSelect, { target: { value: "1" } });
     fireEvent.change(matchIdInput, { target: { value: "123" } });
     fireEvent.change(ticketNumberInput, { target: { value: "TICKET-123" } });
 
@@ -416,12 +422,10 @@ describe("AddSubstitutePlayerPage", () => {
 
     // Fill in required fields and submit
     const steamIdInput = screen.getByTestId("steam-id-input");
-    const seasonSelect = screen.getByTestId("season-select");
     const matchIdInput = screen.getByTestId("match-id-input");
     const ticketNumberInput = screen.getByTestId("ticket-number-input");
 
     fireEvent.change(steamIdInput, { target: { value: "76561198000000001" } });
-    fireEvent.change(seasonSelect, { target: { value: "1" } });
     fireEvent.change(matchIdInput, { target: { value: "123" } });
     fireEvent.change(ticketNumberInput, { target: { value: "TICKET-123" } });
 
@@ -507,12 +511,10 @@ describe("AddSubstitutePlayerPage", () => {
 
     // Fill in required fields
     const steamIdInput = screen.getByTestId("steam-id-input");
-    const seasonSelect = screen.getByTestId("season-select");
     const matchIdInput = screen.getByTestId("match-id-input");
     const ticketNumberInput = screen.getByTestId("ticket-number-input");
 
     fireEvent.change(steamIdInput, { target: { value: "76561198000000001" } });
-    fireEvent.change(seasonSelect, { target: { value: "1" } });
     fireEvent.change(matchIdInput, { target: { value: "1-invalid-room" } });
     fireEvent.change(ticketNumberInput, { target: { value: "TICKET-123" } });
 
@@ -571,12 +573,10 @@ describe("AddSubstitutePlayerPage", () => {
 
     // Fill in required fields with invalid match ID
     const steamIdInput = screen.getByTestId("steam-id-input");
-    const seasonSelect = screen.getByTestId("season-select");
     const matchIdInput = screen.getByTestId("match-id-input");
     const ticketNumberInput = screen.getByTestId("ticket-number-input");
 
     fireEvent.change(steamIdInput, { target: { value: "76561198000000001" } });
-    fireEvent.change(seasonSelect, { target: { value: "1" } });
     fireEvent.change(matchIdInput, { target: { value: "invalid-id" } });
     fireEvent.change(ticketNumberInput, { target: { value: "TICKET-123" } });
 

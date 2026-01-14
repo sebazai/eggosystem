@@ -28,7 +28,10 @@ import {
 } from "@eggosystem/types";
 import { useSelectableTeams } from "@/hooks/data/dashboard/useSelectableTeams";
 import { useSelectableOrgs } from "@/hooks/data/dashboard/useSelectableOrgs";
-import { PlusIcon } from "lucide-react";
+import { useDashboardSeason } from "@/hooks/data/dashboard/useDashboardSeason";
+import { SelectedSeasonBadge } from "@/components/dashboard/SelectedSeasonBadge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertTriangle, PlusIcon } from "lucide-react";
 import { NewOrganizationForm } from "@/components/organizations/NewOrganizationForm";
 import { useState } from "react";
 import {
@@ -41,7 +44,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { usePlayerFullName } from "@/hooks/data/dashboard/usePlayerFullName";
 import type { FieldValues } from "react-hook-form";
 
-const generatePayload = (data: ManualPlayerApprovalFormSchemaType) => {
+const generatePayload = (
+  data: ManualPlayerApprovalFormSchemaType,
+  seasonId: number
+) => {
   const steamIds = data.acceptedPlayerSteamIds.map((p) => p.steamId);
 
   // New team and new org
@@ -55,6 +61,7 @@ const generatePayload = (data: ManualPlayerApprovalFormSchemaType) => {
         newTeamName: data.newTeamName!,
         ticketId: data.ticketId,
         details: data.details,
+        season_id: seasonId,
         type: "new-team-and-org"
       } satisfies NewTeamAndOrgManualApprovalType;
     }
@@ -69,6 +76,7 @@ const generatePayload = (data: ManualPlayerApprovalFormSchemaType) => {
       newOrganizationWebsite: data.organizationWebsite!,
       ticketId: data.ticketId,
       details: data.details,
+      season_id: seasonId,
       type: "new-org"
     } satisfies NewOrgManualApprovalType;
   }
@@ -79,6 +87,7 @@ const generatePayload = (data: ManualPlayerApprovalFormSchemaType) => {
       newTeamName: data.newTeamName!,
       ticketId: data.ticketId,
       details: data.details,
+      season_id: seasonId,
       type: "new-team"
     } satisfies NewTeamManualApprovalType;
   }
@@ -89,6 +98,7 @@ const generatePayload = (data: ManualPlayerApprovalFormSchemaType) => {
       organizationId: Number(data.organizationId),
       ticketId: data.ticketId,
       details: data.details,
+      season_id: seasonId,
       type: "existing-org"
     } satisfies ExistingOrgManualApprovalType;
   }
@@ -99,6 +109,7 @@ const generatePayload = (data: ManualPlayerApprovalFormSchemaType) => {
       acceptedPlayerSteamIds: steamIds,
       ticketId: data.ticketId,
       details: data.details,
+      season_id: seasonId,
       type: "existing-team"
     } satisfies ExistingTeamManualApprovalType;
   }
@@ -144,6 +155,7 @@ function SteamIdInputWithName({
 }
 
 export function ManualPlayerApprovalForm() {
+  const { selectedSeasonId } = useDashboardSeason();
   const methods = useForm({
     resolver: zodResolver(manualPlayerApprovalFormSchema),
     defaultValues: {
@@ -160,10 +172,10 @@ export function ManualPlayerApprovalForm() {
   });
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const selectedTeamId = methods.watch("teamId");
   const selectedOrgId = methods.watch("organizationId");
   const { organizations } = useSelectableOrgs(selectedTeamId);
-  // eslint-disable-next-line react-hooks/incompatible-library
   const { teams } = useSelectableTeams(selectedOrgId);
 
   const { fields, append, remove } = useFieldArray({
@@ -173,7 +185,13 @@ export function ManualPlayerApprovalForm() {
 
   const onSubmit = async (data: ManualPlayerApprovalFormSchemaType) => {
     setErrorMessage(null);
-    const payload = generatePayload(data);
+
+    if (!selectedSeasonId) {
+      setErrorMessage("Please select a season from the sidebar");
+      return;
+    }
+
+    const payload = generatePayload(data, Number(selectedSeasonId));
 
     try {
       await clientApiFetch<{ seasonId: number; teamId: number }>(
@@ -186,6 +204,7 @@ export function ManualPlayerApprovalForm() {
       );
 
       toast.success("Registration submitted successfully");
+      methods.reset();
     } catch (error) {
       if (error instanceof ApiError) {
         setErrorMessage(error.message);
@@ -201,6 +220,23 @@ export function ManualPlayerApprovalForm() {
         onSubmit={methods.handleSubmit(onSubmit)}
         className="space-y-6 max-w-md"
       >
+        {!selectedSeasonId && (
+          <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              Please select a season from the sidebar to submit player
+              approvals.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {selectedSeasonId && (
+          <div className="space-y-2">
+            <Label>Season</Label>
+            <SelectedSeasonBadge />
+          </div>
+        )}
+
         <FormField
           control={methods.control}
           name={"organizationId"}
@@ -374,7 +410,10 @@ export function ManualPlayerApprovalForm() {
         />
 
         <div className="flex gap-2">
-          <Button type="submit" disabled={methods.formState.isSubmitting}>
+          <Button
+            type="submit"
+            disabled={methods.formState.isSubmitting || !selectedSeasonId}
+          >
             {methods.formState.isSubmitting ? "Submitting..." : "Submit"}
           </Button>
           <Button

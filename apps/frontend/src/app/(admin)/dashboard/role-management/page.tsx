@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { WithRoleProtection } from "@/components/dashboard/WithRoleProtection";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -32,14 +32,15 @@ import {
 import { useUsersWithRole } from "@/hooks/data/dashboard/useRoleUsers";
 import { useRoleActions } from "@/hooks/data/dashboard/useRoleActions";
 import { useManageableRoles } from "@/hooks/data/dashboard/useManageableRoles";
-import { useAllSeasons } from "@/hooks/data/useAllSeasons";
+import { useDashboardSeason } from "@/hooks/data/dashboard/useDashboardSeason";
+import { SelectedSeasonBadge } from "@/components/dashboard/SelectedSeasonBadge";
 import { useTeamsForSeason } from "@/hooks/data/dashboard/useTeamsForSeason";
 import { useCheckCaptain } from "@/hooks/data/dashboard/useCheckCaptain";
 
 export default function RoleManagementPage() {
+  const { selectedSeasonId, setSelectedSeasonId } = useDashboardSeason();
   const [selectedRole, setSelectedRole] = useState<string>("");
   const [steamId, setSteamId] = useState<string>("");
-  const [selectedSeasonId, setSelectedSeasonId] = useState<string>("");
   const [selectedTeamId, setSelectedTeamId] = useState<string>("");
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -62,9 +63,6 @@ export default function RoleManagementPage() {
     error,
     clearError
   } = useRoleActions();
-
-  // Seasons for captain/co-captain roles
-  const { seasons, isLoading: isLoadingSeasons } = useAllSeasons();
 
   // Teams for selected season
   const { teams, isLoading: isLoadingTeams } = useTeamsForSeason(
@@ -106,7 +104,7 @@ export default function RoleManagementPage() {
           : `${selectedRole} role added successfully`
       );
       setSteamId(""); // Clear the input
-      setSelectedSeasonId(""); // Clear season
+      setSelectedSeasonId(null); // Clear season
       setSelectedTeamId(""); // Clear team
       refetchUsers(); // Refresh the user list
     } catch (err) {
@@ -133,18 +131,18 @@ export default function RoleManagementPage() {
 
   const handleRoleChange = (value: string) => {
     setSelectedRole(value);
-    setSelectedSeasonId(""); // Clear season when role changes
+    setSelectedSeasonId(null); // Clear season when role changes
     setSelectedTeamId(""); // Clear team when role changes
     setSuccess(null);
     clearError();
   };
 
-  const handleSeasonChange = (value: string) => {
-    setSelectedSeasonId(value);
-    setSelectedTeamId(""); // Clear team when season changes
+  // Reset team when season changes
+  useEffect(() => {
+    setSelectedTeamId("");
     setSuccess(null);
     clearError();
-  };
+  }, [selectedSeasonId, clearError]);
 
   const handleTeamChange = (value: string) => {
     setSelectedTeamId(value);
@@ -162,7 +160,12 @@ export default function RoleManagementPage() {
     <WithRoleProtection allowedRoles={["admin", "helpdesk"]}>
       <div className="flex flex-1 flex-col gap-6 p-4">
         <div className="space-y-2">
-          <h1 className="text-3xl font-bold tracking-tight">Role Management</h1>
+          <div className="flex items-center justify-between">
+            <h1 className="text-3xl font-bold tracking-tight">
+              Role Management
+            </h1>
+            <SelectedSeasonBadge />
+          </div>
           <p className="text-muted-foreground">
             Manage user roles and permissions
           </p>
@@ -212,39 +215,15 @@ export default function RoleManagementPage() {
               {/* Season Selection (only for captain/co-captain) */}
               {isCaptainRole && (
                 <div className="space-y-2">
-                  <Label htmlFor="season">Season (Optional)</Label>
-                  <Select
-                    value={selectedSeasonId}
-                    onValueChange={handleSeasonChange}
-                    disabled={isLoadingSeasons}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a season (optional)" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {isLoadingSeasons ? (
-                        <SelectItem value="loading" disabled>
-                          Loading seasons...
-                        </SelectItem>
-                      ) : seasons && seasons.length > 0 ? (
-                        seasons.map((season) => (
-                          <SelectItem
-                            key={season.id}
-                            value={season.id.toString()}
-                          >
-                            {season.full_name || `Season ${season.id}`}
-                          </SelectItem>
-                        ))
-                      ) : (
-                        <SelectItem value="no-seasons" disabled>
-                          No seasons available
-                        </SelectItem>
-                      )}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-sm text-muted-foreground">
-                    Select season to assign {selectedRole} to a specific team
-                  </p>
+                  <Label htmlFor="season">For season</Label>
+                  {selectedSeasonId ? (
+                    <SelectedSeasonBadge />
+                  ) : (
+                    <div className="text-sm text-muted-foreground py-2">
+                      Please select a season from the sidebar to assign{" "}
+                      {selectedRole} to a specific team
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -281,9 +260,6 @@ export default function RoleManagementPage() {
                       )}
                     </SelectContent>
                   </Select>
-                  <p className="text-sm text-muted-foreground">
-                    Required when season is selected
-                  </p>
                 </div>
               )}
 

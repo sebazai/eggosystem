@@ -24,8 +24,16 @@ jest.mock("@/hooks/data/useAllSeasons", () => ({
   useAllSeasons: jest.fn()
 }));
 
+jest.mock("@/hooks/data/dashboard/useAllSeasons", () => ({
+  useAllSeasons: jest.fn()
+}));
+
 jest.mock("@/hooks/data/useDashboardSeasonTeams", () => ({
   useDashboardSeasonTeams: jest.fn()
+}));
+
+jest.mock("@/hooks/data/dashboard/useDashboardSeason", () => ({
+  useDashboardSeason: jest.fn()
 }));
 
 jest.mock("@/hooks/data/usePlayerTeamEligibility", () => ({
@@ -38,6 +46,17 @@ jest.mock("@/hooks/data/dashboard/usePlayerValidation", () => ({
 
 jest.mock("@/hooks/data/useAddPlayer", () => ({
   useAddPlayer: jest.fn()
+}));
+
+// Mock Next.js navigation
+jest.mock("next/navigation", () => ({
+  useRouter: jest.fn(() => ({
+    push: jest.fn(),
+    replace: jest.fn(),
+    prefetch: jest.fn()
+  })),
+  usePathname: jest.fn(() => "/dashboard/players/add"),
+  useSearchParams: jest.fn(() => new URLSearchParams())
 }));
 
 // Mock reusable components
@@ -170,7 +189,9 @@ jest.mock("@/components/ui/card", () => ({
 import { clientApiFetch } from "@/lib/apiClient";
 import { useActiveSignupOrActiveSeasonForApp } from "@/hooks/data/useActiveSignupOrActiveSeasonForApp";
 import { useAllSeasons } from "@/hooks/data/useAllSeasons";
+import { useAllSeasons as useDashboardAllSeasons } from "@/hooks/data/dashboard/useAllSeasons";
 import { useDashboardSeasonTeams } from "@/hooks/data/useDashboardSeasonTeams";
+import { useDashboardSeason } from "@/hooks/data/dashboard/useDashboardSeason";
 import { usePlayerTeamEligibility } from "@/hooks/data/usePlayerTeamEligibility";
 import { usePlayerValidation } from "@/hooks/data/dashboard/usePlayerValidation";
 import { useAddPlayer } from "@/hooks/data/useAddPlayer";
@@ -188,10 +209,17 @@ describe("AddPlayerPage", () => {
   const mockUseAllSeasons = useAllSeasons as jest.MockedFunction<
     typeof useAllSeasons
   >;
+  const mockUseDashboardAllSeasons =
+    useDashboardAllSeasons as jest.MockedFunction<
+      typeof useDashboardAllSeasons
+    >;
   const mockUseDashboardSeasonTeams =
     useDashboardSeasonTeams as jest.MockedFunction<
       typeof useDashboardSeasonTeams
     >;
+  const mockUseDashboardSeason = useDashboardSeason as jest.MockedFunction<
+    typeof useDashboardSeason
+  >;
   const mockUsePlayerTeamEligibility =
     usePlayerTeamEligibility as jest.MockedFunction<
       typeof usePlayerTeamEligibility
@@ -282,19 +310,28 @@ describe("AddPlayerPage", () => {
       isValidating: false
     });
 
+    const mockSeasons = [
+      createMockSeason({
+        id: 14,
+        name: "Season 14",
+        full_name: "Season 14 - CS:GO",
+        signup_start_date: "2024-01-01",
+        signup_end_date: "2024-01-31",
+        platform: SeasonPlatform.Kanaliiga,
+        start_date: "2024-02-01",
+        end_date: "2024-03-31"
+      })
+    ];
+
     mockUseAllSeasons.mockReturnValue({
-      seasons: [
-        createMockSeason({
-          id: 14,
-          name: "Season 14",
-          full_name: "Season 14 - CS:GO",
-          signup_start_date: "2024-01-01",
-          signup_end_date: "2024-01-31",
-          platform: SeasonPlatform.Kanaliiga,
-          start_date: "2024-02-01",
-          end_date: "2024-03-31"
-        })
-      ],
+      seasons: mockSeasons,
+      isLoading: false,
+      isError: null,
+      isValidating: false
+    });
+
+    mockUseDashboardAllSeasons.mockReturnValue({
+      seasons: mockSeasons,
       isLoading: false,
       isError: null,
       isValidating: false
@@ -305,6 +342,11 @@ describe("AddPlayerPage", () => {
       isLoading: false,
       isError: null,
       isValidating: false
+    });
+
+    mockUseDashboardSeason.mockReturnValue({
+      selectedSeasonId: "14",
+      setSelectedSeasonId: jest.fn()
     });
 
     mockUsePlayerTeamEligibility.mockReturnValue({

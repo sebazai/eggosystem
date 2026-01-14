@@ -12,7 +12,6 @@ import * as seasonTeamRegistrationModels from "../../models/season-team-registra
 import * as seasonTeamRegistrationServices from "../../services/season-team-registration.services";
 import {
   SeasonPlatform,
-  type ActiveSignupOrSeasonForAppId,
   type SeasonDetails,
   createMockSeasonDetails,
   createMockSignupFormValues
@@ -57,7 +56,10 @@ describe("Registration Controllers", () => {
       next();
     });
 
-    app.post("/bulk-approve", bulkApproveTeamRegistrationsController);
+    app.post(
+      "/season/:season_id/bulk-approve",
+      bulkApproveTeamRegistrationsController
+    );
     app.use(expressErrorHandler);
   });
 
@@ -67,20 +69,6 @@ describe("Registration Controllers", () => {
 
   describe("bulkApproveTeamRegistrationsController", () => {
     it("should approve teams successfully", async () => {
-      // Mock the active season
-      const mockActiveSeason: ActiveSignupOrSeasonForAppId = {
-        season_id: 1,
-        platform: SeasonPlatform.Kanaliiga,
-        signup_start_date: "2024-01-01",
-        signup_end_date: "2024-12-31",
-        start_date: "2025-01-01",
-        end_date: "2025-03-31",
-        full_name: "Test Season"
-      };
-      mockSeasonModels.getActiveSignupOrActiveSeasonForAppId.mockResolvedValue(
-        mockActiveSeason
-      );
-
       // Mock the bulk approval function
       mockRegistrationModels.bulkApproveTeamRegistrations.mockResolvedValue({
         success: true,
@@ -89,7 +77,7 @@ describe("Registration Controllers", () => {
       });
 
       const response = await request(app)
-        .post("/bulk-approve")
+        .post("/season/1/bulk-approve")
         .send({ teamIds: [1, 2] });
 
       expect(response.status).toBe(200);
@@ -105,13 +93,13 @@ describe("Registration Controllers", () => {
       const appWithoutAuth = express();
       appWithoutAuth.use(express.json());
       appWithoutAuth.post(
-        "/bulk-approve",
+        "/season/:season_id/bulk-approve",
         bulkApproveTeamRegistrationsController
       );
       appWithoutAuth.use(expressErrorHandler);
 
       const response = await request(appWithoutAuth)
-        .post("/bulk-approve")
+        .post("/season/1/bulk-approve")
         .send({ teamIds: [1, 2] });
 
       expect(response.status).toBe(401);
@@ -119,7 +107,7 @@ describe("Registration Controllers", () => {
 
     it("should return 400 when teamIds is not an array", async () => {
       const response = await request(app)
-        .post("/bulk-approve")
+        .post("/season/1/bulk-approve")
         .send({ teamIds: "not-an-array" });
 
       expect(response.status).toBe(400);
@@ -130,7 +118,7 @@ describe("Registration Controllers", () => {
 
     it("should return 400 when teamIds array is empty", async () => {
       const response = await request(app)
-        .post("/bulk-approve")
+        .post("/season/1/bulk-approve")
         .send({ teamIds: [] });
 
       expect(response.status).toBe(400);
@@ -139,16 +127,14 @@ describe("Registration Controllers", () => {
       );
     });
 
-    it("should throw error when no active season", async () => {
-      mockSeasonModels.getActiveSignupOrActiveSeasonForAppId.mockResolvedValue(
-        undefined
-      );
-
+    it("should return 400 when season_id is invalid", async () => {
       const response = await request(app)
-        .post("/bulk-approve")
+        .post("/season/0/bulk-approve")
         .send({ teamIds: [1, 2] });
 
       expect(response.status).toBe(400);
+      expect(response.body.title).toBe("Bad Request");
+      expect(response.body.detail).toBe("Valid season_id is required");
     });
   });
 

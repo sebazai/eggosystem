@@ -5,7 +5,25 @@ import type { PlayerValidationResult } from "@eggosystem/types";
 
 // Mock the custom hooks
 jest.mock("@/hooks/data/useAllSeasons");
+jest.mock("@/hooks/data/dashboard/useAllSeasons");
 jest.mock("@/hooks/data/dashboard/usePlayerValidation");
+jest.mock("@/hooks/data/dashboard/useDashboardSeason", () => ({
+  useDashboardSeason: jest.fn(() => ({
+    selectedSeasonId: "1",
+    setSelectedSeasonId: jest.fn()
+  }))
+}));
+
+// Mock Next.js navigation
+jest.mock("next/navigation", () => ({
+  useRouter: jest.fn(() => ({
+    push: jest.fn(),
+    replace: jest.fn(),
+    prefetch: jest.fn()
+  })),
+  usePathname: jest.fn(() => "/dashboard/players/validate"),
+  useSearchParams: jest.fn(() => new URLSearchParams())
+}));
 
 // Mock WithRoleProtection
 jest.mock("@/components/dashboard/WithRoleProtection", () => ({
@@ -16,11 +34,14 @@ jest.mock("@/components/dashboard/WithRoleProtection", () => ({
 
 // Mock dependencies
 import { useAllSeasons } from "@/hooks/data/useAllSeasons";
+import { useAllSeasons as useDashboardAllSeasons } from "@/hooks/data/dashboard/useAllSeasons";
 import { usePlayerValidation } from "@/hooks/data/dashboard/usePlayerValidation";
 
 const mockUseAllSeasons = useAllSeasons as jest.MockedFunction<
   typeof useAllSeasons
 >;
+const mockUseDashboardAllSeasons =
+  useDashboardAllSeasons as jest.MockedFunction<typeof useDashboardAllSeasons>;
 const mockUsePlayerValidation = usePlayerValidation as jest.MockedFunction<
   typeof usePlayerValidation
 >;
@@ -123,6 +144,12 @@ describe("PlayerValidationPage", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockUseAllSeasons.mockReturnValue({
+      seasons: mockSeasons,
+      isLoading: false,
+      isError: false,
+      isValidating: false
+    });
+    mockUseDashboardAllSeasons.mockReturnValue({
       seasons: mockSeasons,
       isLoading: false,
       isError: false,
