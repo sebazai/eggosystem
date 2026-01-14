@@ -81,9 +81,9 @@ export default function TeamFlagsPage() {
         // Pass season_id parameter if a specific season is selected
         const season =
           seasonToFetch !== undefined ? seasonToFetch : selectedSeason;
-        const seasonParam = season !== "all" ? `?season_id=${season}` : "";
+
         const data = await clientApiFetch<TeamFlagWithDetails[]>(
-          `/api/v1/elo/team-flags-test${seasonParam}`
+          `/api/v1/dashboard/sortter/team-flags/season/${season}`
         );
         console.log("Team flags data received:", data);
         setTeamFlags(data || []);

@@ -108,13 +108,14 @@ export const getTeamPlayerValuesController = async (
 };
 
 export const getTeamFlagsController = async (
-  req: Request,
+  req: RequestWithParams<{ season_id: string }>,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    // Get all team flags from Redis
-    const teamFlags = await getTeamFlags();
+    const seasonId =
+      req.params.season_id === "all" ? undefined : Number(req.params.season_id);
+    const teamFlags = await getTeamFlags(seasonId);
 
     res.json(teamFlags);
   } catch (error) {
