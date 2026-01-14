@@ -127,7 +127,13 @@ const data: { navMain: Array<MenuItem> } = {
       title: "Sortter",
       url: createDashboardNextUrl("sortter"),
       requiredRoles: ["admin"],
-      items: [] satisfies Array<SubMenuItem>
+      items: [
+        {
+          title: "Team Flags",
+          url: createDashboardNextUrl("sortter/team-flags"),
+          requiredRoles: ["admin"]
+        }
+      ] satisfies Array<SubMenuItem>
     },
     {
       title: "Season League Mapper",

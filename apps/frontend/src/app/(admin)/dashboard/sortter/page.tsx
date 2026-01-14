@@ -403,19 +403,6 @@ function SortterPageContent() {
             </p>
           </div>
 
-          {/* Navigation Links */}
-          <div className="flex items-center space-x-4 pt-2">
-            <Button variant="ghost" size="sm" asChild>
-              <a
-                href={`/dashboard/sortter/team-flags${selectedSeason ? `?season=${selectedSeason}` : ""}`}
-                className="flex items-center gap-2"
-              >
-                <AlertTriangle className="w-4 h-4" />
-                Team Flags
-              </a>
-            </Button>
-          </div>
-
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div className="flex items-center space-x-4">
               {selectedSeason ? (
