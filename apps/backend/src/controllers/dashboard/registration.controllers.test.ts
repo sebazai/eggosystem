@@ -12,7 +12,6 @@ import * as seasonTeamRegistrationModels from "../../models/season-team-registra
 import * as seasonTeamRegistrationServices from "../../services/season-team-registration.services";
 import {
   SeasonPlatform,
-  type ActiveSignupOrSeasonForAppId,
   type SeasonDetails,
   createMockSeasonDetails,
   createMockSignupFormValues
