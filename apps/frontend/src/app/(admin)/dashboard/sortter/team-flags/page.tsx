@@ -194,7 +194,6 @@ export default function TeamFlagsPage() {
               <h1 className="text-3xl font-bold tracking-tight">
                 Team Flagging Status
               </h1>
-              <SelectedSeasonBadge />
             </div>
             <p className="text-muted-foreground">
               Monitor teams flagged for ELO adjustment validation
@@ -206,9 +205,7 @@ export default function TeamFlagsPage() {
                 Select a season from the sidebar to filter team flags
               </span>
             ) : (
-              <span className="text-sm font-medium">
-                Season: {selectedSeason}
-              </span>
+              <SelectedSeasonBadge />
             )}
             <Button onClick={refreshData} disabled={isRefreshing}>
               <RefreshCw
