@@ -163,6 +163,7 @@ export function ManualPlayerApprovalForm() {
   const selectedTeamId = methods.watch("teamId");
   const selectedOrgId = methods.watch("organizationId");
   const { organizations } = useSelectableOrgs(selectedTeamId);
+  // eslint-disable-next-line react-hooks/incompatible-library
   const { teams } = useSelectableTeams(selectedOrgId);
 
   const { fields, append, remove } = useFieldArray({

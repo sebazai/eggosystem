@@ -2,8 +2,6 @@
 
 import { useMemo } from "react";
 import {
-  useReactTable,
-  getCoreRowModel,
   getSortedRowModel,
   type ColumnDef,
   type SortingState,
@@ -15,7 +13,7 @@ import {
 } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { BaseTable } from "../../tables/BaseTable";
+import { TanStackTableWrapper } from "../../tables/TanStackTableWrapper";
 import { ServerSidePagination } from "../../tables/ServerSidePagination";
 import type { FailedParseMessage, CustomColumnMeta } from "@eggosystem/types";
 import { useMatchDetailsByGameId } from "@/hooks/data/useMatchDetailsByGameId";
@@ -223,22 +221,6 @@ export const FailedParseTableContent = ({
     []
   );
 
-  // TanStack Table configuration
-  const table = useReactTable({
-    data: failedMessages,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    onSortingChange,
-    onRowSelectionChange,
-    state: {
-      sorting,
-      rowSelection
-    },
-    getRowId: (row) => row.id.toString(),
-    enableRowSelection: (row) => row.original.status === "failed"
-  });
-
   const customCellClassName = (
     cell: Cell<FailedParseMessage, unknown>,
     _row: FailedParseMessage
@@ -255,9 +237,16 @@ export const FailedParseTableContent = ({
   };
 
   return (
-    <BaseTable
-      table={table}
+    <TanStackTableWrapper
+      data={failedMessages}
       columns={columns}
+      getSortedRowModel={getSortedRowModel()}
+      sorting={sorting}
+      onSortingChange={onSortingChange}
+      rowSelection={rowSelection}
+      onRowSelectionChange={onRowSelectionChange}
+      getRowId={(row) => row.id.toString()}
+      enableRowSelection={(row) => row.original.status === "failed"}
       showPagination={false}
       customCellClassName={customCellClassName}
       customRowClassName={customRowClassName}

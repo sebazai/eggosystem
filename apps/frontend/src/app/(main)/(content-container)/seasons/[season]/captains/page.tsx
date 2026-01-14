@@ -4,13 +4,13 @@ import type { SeasonDetails } from "@eggosystem/types";
 import { createPageMetadata } from "@/lib/metadata";
 import { CaptainsPage } from "@/components/season/CaptainsPage";
 
-type CaptainsPage = {
+type CaptainsPageProps = {
   params: Promise<{ season: string }>;
 };
 
 export async function generateMetadata({
   params
-}: CaptainsPage): Promise<Metadata> {
+}: CaptainsPageProps): Promise<Metadata> {
   const { season } = await params;
 
   const result = await fetch(
@@ -29,7 +29,7 @@ export async function generateMetadata({
   });
 }
 
-export default async function Captains({ params }: CaptainsPage) {
+export default async function Captains({ params }: CaptainsPageProps) {
   const { season } = await params;
   const result = await fetch(
     `${envConfig.API_URL}/api/v1/seasons/${season}/details`

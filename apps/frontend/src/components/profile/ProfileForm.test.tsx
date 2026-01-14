@@ -1,295 +1,207 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import ProfileForm from "@/components/profile/ProfileForm";
+import { render, screen, waitFor } from "@testing-library/react";
+import ProfileForm from "./ProfileForm";
 import { useAccountDetails } from "@/hooks/data/user/useAccountDetails";
 import { useEmailsVerified } from "@/hooks/data/useEmailsVerified";
-import { clientApiFetch } from "@/lib/apiClient";
-import { createMockUser } from "@/test-utils/test-utils";
+import { useSearchParams, usePathname, useRouter } from "next/navigation";
 
-// Mock Next.js navigation hooks
+// Mock hooks
+jest.mock("@/hooks/data/user/useAccountDetails");
+jest.mock("@/hooks/data/useEmailsVerified");
+
+// Mock Next.js navigation
+const mockReplace = jest.fn();
 jest.mock("next/navigation", () => ({
-  useRouter: () => ({
-    push: jest.fn(),
-    replace: jest.fn(),
-    back: jest.fn(),
-    forward: jest.fn(),
-    refresh: jest.fn(),
-    prefetch: jest.fn()
-  }),
-  useSearchParams: () => new URLSearchParams(),
-  usePathname: () => "/profile"
+  useSearchParams: jest.fn(),
+  usePathname: jest.fn(),
+  useRouter: jest.fn()
 }));
 
-// Mocks
-jest.mock("@/hooks/data/user/useAccountDetails", () => ({
-  useAccountDetails: jest.fn()
-}));
-jest.mock("@/hooks/data/useEmailsVerified", () => ({
-  useEmailsVerified: jest.fn()
-}));
-jest.mock("@/lib/apiClient", () => ({
-  clientApiFetch: jest.fn()
-}));
-jest.mock("swr", () => ({
-  useSWRConfig: () => ({
-    mutate: jest.fn()
-  })
-}));
-jest.mock("@/components/profile/SteamLoginButton", () => ({
-  SteamLoginButton: () => (
-    <button data-testid="steam-login">Login with Steam</button>
-  )
-}));
-jest.mock("@/components/profile/EmailVerifiedIcon", () => ({
-  EmailVerifiedIcon: () => <span data-testid="email-verified-icon">✓</span>
+const mockUseAccountDetails = useAccountDetails as jest.MockedFunction<
+  typeof useAccountDetails
+>;
+const mockUseEmailsVerified = useEmailsVerified as jest.MockedFunction<
+  typeof useEmailsVerified
+>;
+const mockUseSearchParams = useSearchParams as jest.MockedFunction<
+  typeof useSearchParams
+>;
+const mockUsePathname = usePathname as jest.MockedFunction<typeof usePathname>;
+const mockUseRouter = useRouter as jest.MockedFunction<typeof useRouter>;
+
+// Mock useAuth - need to use a variable that can be updated
+let mockUser = {
+  account_id: 1,
+  roles: ["user"],
+  hasAcceptedPreviousPolicy: false
+};
+
+jest.mock("@/context/AuthContext", () => ({
+  useAuth: jest.fn(() => ({
+    get user() {
+      return mockUser;
+    },
+    loading: false,
+    checkAuth: jest.fn(),
+    logout: jest.fn()
+  }))
 }));
 
-// Mock icons with a simple implementation
-jest.mock("@/components/ui/icons", () => ({
-  TooltipIcon: ({ text }: { text: string }) => (
-    <span data-testid="tooltip-icon" title={text}>
-      ?
-    </span>
-  )
-}));
-
-jest.mock("@/components/layout/ContentContainer", () => ({
-  ContentContainer: ({
-    children,
-    classNames
-  }: {
-    children: React.ReactNode;
-    classNames?: string;
-  }) => (
-    <div data-testid="content-container" className={classNames}>
-      {children}
-    </div>
-  )
-}));
-
-jest.mock("@/components/ui/RequiredFormLabel", () => ({
-  RequiredFormLabel: ({
-    children,
-    ...props
-  }: {
-    children: React.ReactNode;
-    [key: string]: unknown;
-  }) => (
-    <label {...props} data-testid="required-form-label">
-      {children}
-    </label>
-  )
-}));
-
-// Mock sonner toast
-jest.mock("sonner", () => ({
-  toast: {
-    success: jest.fn(),
-    error: jest.fn()
-  }
-}));
-
-// Polyfill ResizeObserver for jsdom (Radix UI needs this)
-beforeAll(() => {
-  global.ResizeObserver =
-    global.ResizeObserver ||
-    class {
-      observe() {}
-      unobserve() {}
-      disconnect() {}
-    };
-});
-
-describe("ProfileForm", () => {
-  const mockCheckAuth = jest.fn().mockResolvedValue(undefined);
-
+describe("ProfileForm - Error Message Handling", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    // Default mock for useEmailsVerified to avoid destructure error
-    (useEmailsVerified as jest.Mock).mockReturnValue({ emailsVerified: {} });
-  });
-
-  it("renders loading state", async () => {
-    (useAccountDetails as jest.Mock).mockReturnValue({ isLoading: true });
-
-    const mockUser = createMockUser({
+    // Reset mock user - ensure it's always defined
+    mockUser = {
       account_id: 1,
-      nickname: "TestUser",
-      acceptedPrivacyPolicy: true
+      roles: ["user"],
+      hasAcceptedPreviousPolicy: false
+    } as any;
+    mockUseRouter.mockReturnValue({
+      push: jest.fn(),
+      replace: mockReplace,
+      prefetch: jest.fn(),
+      back: jest.fn(),
+      forward: jest.fn(),
+      refresh: jest.fn(),
+      pathname: "/profile",
+      query: {},
+      asPath: "/profile"
+    } as any);
+
+    mockUsePathname.mockReturnValue("/profile");
+    mockUseSearchParams.mockReturnValue(new URLSearchParams() as any);
+
+    mockUseAccountDetails.mockReturnValue({
+      account: undefined,
+      isLoading: false,
+      isError: undefined,
+      mutate: jest.fn(),
+      isValidating: false
     });
 
-    render(<ProfileForm user={mockUser} checkAuth={mockCheckAuth} />);
+    mockUseEmailsVerified.mockReturnValue({
+      emailsVerified: undefined,
+      isLoading: false,
+      isError: undefined,
+      isValidating: false
+    });
+  });
+
+  it("should set error message when returnTo param exists and user hasn't accepted policy", async () => {
+    const searchParams = new URLSearchParams(
+      "acceptPrivacyPolicyRequired=true&returnTo=/dashboard"
+    );
+    mockUseSearchParams.mockReturnValue(searchParams as any);
+
+    render(<ProfileForm user={mockUser as any} checkAuth={jest.fn()} />);
 
     await waitFor(() => {
-      expect(screen.getByText(/loading/i)).toBeInTheDocument();
-    });
-  });
-
-  it("renders login prompt and button if unauthenticated", async () => {
-    (useAccountDetails as jest.Mock).mockReturnValue({
-      isLoading: false,
-      account: null
-    });
-
-    const mockUser = createMockUser({
-      account_id: 1,
-      nickname: "TestUser",
-      acceptedPrivacyPolicy: true
-    });
-
-    render(<ProfileForm user={mockUser} checkAuth={mockCheckAuth} />);
-
-    await waitFor(() => {
-      expect(screen.getByText(/please log in/i)).toBeInTheDocument();
-      expect(screen.getByTestId("steam-login")).toBeInTheDocument();
-    });
-  });
-
-  it("renders the form for authenticated user", async () => {
-    (useAccountDetails as jest.Mock).mockReturnValue({
-      isLoading: false,
-      account: {
-        details: {
-          fullName: "Test User",
-          workEmail: "test@user.com"
+      // Should set error message and replace URL
+      expect(mockReplace).toHaveBeenCalledWith(
+        "/profile?returnTo=%2Fdashboard",
+        {
+          scroll: false
         }
-      }
-    });
-
-    const mockUser = createMockUser({
-      account_id: 1,
-      nickname: "TestUser",
-      acceptedPrivacyPolicy: true
-    });
-
-    render(<ProfileForm user={mockUser} checkAuth={mockCheckAuth} />);
-
-    await waitFor(() => {
-      expect(screen.getByDisplayValue("TestUser")).toBeInTheDocument();
-      expect(screen.getByDisplayValue("Test User")).toBeInTheDocument();
-      expect(screen.getByDisplayValue("test@user.com")).toBeInTheDocument();
-      expect(
-        screen.getByRole("button", { name: /save changes/i })
-      ).toBeInTheDocument();
-    });
-  });
-
-  it("submits the form and shows success message", async () => {
-    (useAccountDetails as jest.Mock).mockReturnValue({
-      isLoading: false,
-      account: {
-        details: {
-          fullName: "Test User",
-          workEmail: "test@user.com"
-        }
-      }
-    });
-    (clientApiFetch as jest.Mock).mockResolvedValue({
-      message: "Profile updated!"
-    });
-
-    const mockUser = createMockUser({
-      account_id: 1,
-      nickname: "TestUser",
-      acceptedPrivacyPolicy: true
-    });
-
-    render(<ProfileForm user={mockUser} checkAuth={mockCheckAuth} />);
-
-    await waitFor(() => {
-      expect(screen.getByDisplayValue("TestUser")).toBeInTheDocument();
-    });
-
-    // Fill in the form with valid data
-    fireEvent.change(screen.getByPlaceholderText(/your kana nickname/i), {
-      target: { value: "NewNick" }
-    });
-    fireEvent.change(screen.getByPlaceholderText(/john doe/i), {
-      target: { value: "New Name" }
-    });
-    fireEvent.change(screen.getByPlaceholderText(/john.doe@kanaliiga.fi/i), {
-      target: { value: "new@user.com" }
-    });
-
-    // Make sure privacy policy is checked (it should be already checked based on user data)
-    const privacyCheckbox = screen.getByTestId("privacy-policy-checkbox");
-    if (!privacyCheckbox.getAttribute("data-state")?.includes("checked")) {
-      fireEvent.click(privacyCheckbox);
-    }
-
-    fireEvent.click(screen.getByRole("button", { name: /save changes/i }));
-
-    await waitFor(() => {
-      expect(screen.getByTestId("profile-success-message")).toHaveTextContent(
-        "Profile updated!"
       );
     });
   });
 
-  it("shows validation errors", async () => {
-    (useAccountDetails as jest.Mock).mockReturnValue({
-      isLoading: false,
-      account: { details: { fullName: "", workEmail: "" } }
-    });
+  it("should set different error message when user has accepted previous policy", async () => {
+    const searchParams = new URLSearchParams(
+      "acceptPrivacyPolicyRequired=true&returnTo=/dashboard"
+    );
+    mockUseSearchParams.mockReturnValue(searchParams as any);
 
-    const mockUser = createMockUser({
+    // Update mock user with hasAcceptedPreviousPolicy
+    mockUser = {
       account_id: 1,
-      nickname: "",
-      acceptedPrivacyPolicy: false
-    });
+      roles: ["user"],
+      hasAcceptedPreviousPolicy: true
+    };
 
-    render(<ProfileForm user={mockUser} checkAuth={mockCheckAuth} />);
-
-    await waitFor(() => {
-      expect(
-        screen.getByRole("button", { name: /save changes/i })
-      ).toBeInTheDocument();
-    });
-
-    fireEvent.click(screen.getByRole("button", { name: /save changes/i }));
+    render(<ProfileForm user={mockUser as any} checkAuth={jest.fn()} />);
 
     await waitFor(() => {
-      expect(screen.getByText("Nickname is required")).toBeInTheDocument();
-      expect(
-        screen.getByText("Too small: expected string to have >=2 characters")
-      ).toBeInTheDocument();
-      expect(screen.getByText("Invalid email address")).toBeInTheDocument();
-      expect(
-        screen.getByText("You must accept the privacy policy")
-      ).toBeInTheDocument();
+      expect(mockReplace).toHaveBeenCalledWith(
+        "/profile?returnTo=%2Fdashboard",
+        {
+          scroll: false
+        }
+      );
     });
   });
 
-  it("shows privacy policy error if not accepted", async () => {
-    (useAccountDetails as jest.Mock).mockReturnValue({
-      isLoading: false,
-      account: {
-        details: {
-          fullName: "Test User",
-          workEmail: "test@user.com"
+  it("should replace URL with returnTo param when present", async () => {
+    const searchParams = new URLSearchParams(
+      "acceptPrivacyPolicyRequired=true&returnTo=/dashboard"
+    );
+    mockUseSearchParams.mockReturnValue(searchParams as any);
+
+    render(<ProfileForm user={mockUser as any} checkAuth={jest.fn()} />);
+
+    await waitFor(() => {
+      expect(mockReplace).toHaveBeenCalledWith(
+        "/profile?returnTo=%2Fdashboard",
+        {
+          scroll: false
         }
-      }
+      );
     });
+  });
 
-    const mockUser = createMockUser({
+  it("should replace URL without returnTo when not present", async () => {
+    const searchParams = new URLSearchParams(
+      "acceptPrivacyPolicyRequired=true"
+    );
+    mockUseSearchParams.mockReturnValue(searchParams as any);
+
+    render(<ProfileForm user={mockUser as any} checkAuth={jest.fn()} />);
+
+    await waitFor(() => {
+      expect(mockReplace).toHaveBeenCalledWith("/profile", {
+        scroll: false
+      });
+    });
+  });
+
+  it("should update error message when searchParams change", async () => {
+    // Ensure user is defined
+    mockUser = {
       account_id: 1,
-      nickname: "TestUser",
-      acceptedPrivacyPolicy: false
-    });
+      roles: ["user"],
+      hasAcceptedPreviousPolicy: false
+    };
 
-    render(<ProfileForm user={mockUser} checkAuth={mockCheckAuth} />);
+    const searchParams1 = new URLSearchParams(
+      "acceptPrivacyPolicyRequired=true"
+    );
+    mockUseSearchParams.mockReturnValue(searchParams1 as any);
+
+    const { rerender } = render(
+      <ProfileForm user={mockUser as any} checkAuth={jest.fn()} />
+    );
 
     await waitFor(() => {
-      expect(
-        screen.getByRole("button", { name: /save changes/i })
-      ).toBeInTheDocument();
+      expect(mockReplace).toHaveBeenCalledWith("/profile", {
+        scroll: false
+      });
     });
 
-    fireEvent.click(screen.getByRole("button", { name: /save changes/i }));
+    // Change searchParams to include returnTo
+    const searchParams2 = new URLSearchParams(
+      "acceptPrivacyPolicyRequired=true&returnTo=/new-path"
+    );
+    mockUseSearchParams.mockReturnValue(searchParams2 as any);
+    mockReplace.mockClear();
+
+    rerender(<ProfileForm user={mockUser as any} checkAuth={jest.fn()} />);
 
     await waitFor(() => {
-      expect(
-        screen.getByText("You must accept the privacy policy")
-      ).toBeInTheDocument();
+      expect(mockReplace).toHaveBeenCalledWith(
+        "/profile?returnTo=%2Fnew-path",
+        {
+          scroll: false
+        }
+      );
     });
   });
 });

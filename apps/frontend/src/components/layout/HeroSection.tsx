@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
@@ -269,20 +269,13 @@ function MatchesLoadingSkeleton() {
 export default function HeroSection({ device: _device }: HeroSectionProps) {
   const router = useRouter();
 
-  // Track if component is mounted (client-side) to avoid hydration mismatch
-  const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
   // Get current season (CS2 app ID is typically 1)
   const { signupOrActiveSeason } = useActiveSignupOrActiveSeasonForApp(730);
   const currentSeasonId = signupOrActiveSeason?.season_id?.toString() || "16"; // fallback to season 16
 
   // Determine season status based on dates - only calculate on client to avoid hydration mismatch
   const seasonStatus = useMemo(() => {
-    if (!signupOrActiveSeason || !isMounted) {
+    if (!signupOrActiveSeason) {
       return {
         isSeasonLive: false,
         isSignupOpen: false,
@@ -328,7 +321,7 @@ export default function HeroSection({ device: _device }: HeroSectionProps) {
       : (signupOrActiveSeason.season_id?.toString() ?? "Unknown");
 
     return { isSeasonLive, isSignupOpen, seasonName, seasonNumber };
-  }, [signupOrActiveSeason, isMounted]);
+  }, [signupOrActiveSeason]);
 
   // Get upcoming matches for all divisions
   const { data: calendarMatches, isLoading: isLoadingMatches } =
@@ -345,9 +338,6 @@ export default function HeroSection({ device: _device }: HeroSectionProps) {
     calendarMatches || []
   );
 
-  // Filter state for matches
-  const [matchFilter, setMatchFilter] = useState<"all" | "streamed">("all");
-
   // Check if there are any streamed matches
   const hasStreamedMatches = useMemo(() => {
     return allUpcomingStreamedMatches.some(
@@ -358,13 +348,16 @@ export default function HeroSection({ device: _device }: HeroSectionProps) {
   }, [allUpcomingStreamedMatches]);
 
   // Set smart default: streamed if available, otherwise all
-  useEffect(() => {
-    if (hasStreamedMatches) {
-      setMatchFilter("streamed");
-    } else {
-      setMatchFilter("all");
-    }
+  // Use useMemo for derived state and initialize matchFilter with it
+  const derivedMatchFilter = useMemo(() => {
+    return hasStreamedMatches ? "streamed" : "all";
   }, [hasStreamedMatches]);
+
+  // Use derived value as initial state, but allow user to override
+  // No sync effect needed - user can change it, and it will default to derived value on remount
+  const [matchFilter, setMatchFilter] = useState<"all" | "streamed">(
+    derivedMatchFilter
+  );
 
   // Filter matches based on selection
   const upcomingMatches = useMemo(() => {

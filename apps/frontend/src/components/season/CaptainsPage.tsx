@@ -9,15 +9,13 @@ import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import { useState, useMemo } from "react";
 import {
-  useReactTable,
-  getCoreRowModel,
   getSortedRowModel,
   getFilteredRowModel,
   type ColumnDef,
   type SortingState
 } from "@tanstack/react-table";
 import type { TeamCaptain, CustomColumnMeta } from "@eggosystem/types";
-import { BaseTable } from "../tables/BaseTable";
+import { TanStackTableWrapper } from "../tables/TanStackTableWrapper";
 
 export const CaptainsPage = ({
   seasonId,
@@ -87,21 +85,6 @@ export const CaptainsPage = ({
     ],
     []
   );
-
-  const table = useReactTable({
-    data: captains || [],
-    columns,
-    state: {
-      sorting,
-      globalFilter
-    },
-    onSortingChange: setSorting,
-    onGlobalFilterChange: setGlobalFilter,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    globalFilterFn: "includesString"
-  });
 
   // Check if user has access
   if (!hasCaptainsAccess(user)) {
@@ -174,14 +157,25 @@ export const CaptainsPage = ({
       </div>
 
       <CardContainer classNames="p-2 md:p-4">
-        <BaseTable
-          table={table}
+        <TanStackTableWrapper
+          data={captains || []}
+          columns={columns}
+          getSortedRowModel={getSortedRowModel()}
+          getFilteredRowModel={getFilteredRowModel()}
+          sorting={sorting}
+          onSortingChange={setSorting}
+          state={{
+            sorting,
+            globalFilter
+          }}
+          onGlobalFilterChange={setGlobalFilter}
+          globalFilterFn="includesString"
           showPagination={false}
           customRowClassName={() =>
             "border-b border-border h-10 transition-colors hover:bg-kanaliiga-light-brown/10"
           }
         />
-        {table.getRowModel().rows.length === 0 && (
+        {(captains?.length ?? 0) === 0 && (
           <div className="text-center py-8 text-muted-foreground">
             {globalFilter
               ? "No results found for your search."

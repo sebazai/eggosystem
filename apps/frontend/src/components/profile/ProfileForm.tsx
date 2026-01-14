@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Input } from "@/components/ui/input";
@@ -54,25 +54,37 @@ export default function ProfileForm({
   const router = useRouter();
   const pathname = usePathname(); // Get current pathname
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { account, isLoading: isLoadingProfile } = useAccountDetails();
-  const { emailsVerified } = useEmailsVerified(user.account_id);
+  const { emailsVerified } = useEmailsVerified(user?.account_id);
   const { mutate } = useSWRConfig();
   const discordCallbackProcessed = useRef(false);
 
+  // Compute error message based on search params and user state
+  const computedErrorMessage = useMemo(() => {
+    const requiresPolicyAcceptance = searchParams.get(
+      "acceptPrivacyPolicyRequired"
+    );
+    if (requiresPolicyAcceptance) {
+      // Show different message if user has accepted a previous version
+      return user?.hasAcceptedPreviousPolicy
+        ? "Privacy policy has been updated, please accept the new policy."
+        : "You need to fill in the form and accept the privacy policy";
+    }
+    return null;
+  }, [searchParams, user?.hasAcceptedPreviousPolicy]);
+
+  // Initialize errorMessage with computed value
+  const [errorMessage, setErrorMessage] = useState<string | null>(
+    () => computedErrorMessage
+  );
+
   useEffect(() => {
+    // Handle URL replacement for privacy policy acceptance
     const requiresPolicyAcceptance = searchParams.get(
       "acceptPrivacyPolicyRequired"
     );
     if (requiresPolicyAcceptance) {
       const returnTo = searchParams.get("returnTo");
-
-      // Show different message if user has accepted a previous version
-      const errorMsg = user?.hasAcceptedPreviousPolicy
-        ? "Privacy policy has been updated, please accept the new policy."
-        : "You need to fill in the form and accept the privacy policy";
-
-      setErrorMessage(errorMsg);
       const replacedUrl = returnTo
         ? `${pathname}?returnTo=${encodeURIComponent(returnTo)}`
         : pathname;
@@ -80,7 +92,7 @@ export default function ProfileForm({
         scroll: false
       });
     }
-  }, [searchParams, pathname, router, user]);
+  }, [computedErrorMessage, errorMessage, searchParams, pathname, router]);
 
   useEffect(() => {
     const discordLinked = searchParams.get("discordLinked");

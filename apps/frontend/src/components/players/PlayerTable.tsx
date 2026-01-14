@@ -4,10 +4,8 @@ import React, { useMemo, useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { useSearchParams, useRouter } from "next/navigation";
 import type { PlayerStatsTable } from "@eggosystem/types";
-import { BaseTable } from "../tables/BaseTable";
+import { TanStackTableWrapper } from "../tables/TanStackTableWrapper";
 import {
-  useReactTable,
-  getCoreRowModel,
   getSortedRowModel,
   getPaginationRowModel,
   type ColumnDef,
@@ -207,32 +205,10 @@ export const PlayerTable: React.FC<PlayerTableProps> = ({
     [hideTeamName]
   );
 
-  // TanStack Table configuration
-  const table = useReactTable({
-    data: players || [],
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    onSortingChange: setSorting,
-    onPaginationChange: setPagination,
-    state: {
-      sorting,
-      pagination
-    },
-    initialState: {
-      sorting: [{ id: "kana_rating", desc: true }],
-      pagination: {
-        pageIndex: 0,
-        pageSize: initialPageSize || 10
-      }
-    }
-  });
-
   // Reset pagination when players and playerName changes
   useEffect(() => {
-    table.setPageIndex(0);
-  }, [players, playerName, table]);
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  }, [players, playerName]);
 
   const handleRowClick = (player: PlayerStatsTable) => {
     router.push(
@@ -257,9 +233,22 @@ export const PlayerTable: React.FC<PlayerTableProps> = ({
   };
 
   return (
-    <BaseTable
-      table={table}
+    <TanStackTableWrapper
+      data={players || []}
       columns={columns}
+      getSortedRowModel={getSortedRowModel()}
+      getPaginationRowModel={getPaginationRowModel()}
+      sorting={sorting}
+      onSortingChange={setSorting}
+      pagination={pagination}
+      onPaginationChange={setPagination}
+      initialState={{
+        sorting: [{ id: "kana_rating", desc: true }],
+        pagination: {
+          pageIndex: 0,
+          pageSize: initialPageSize || 10
+        }
+      }}
       onRowClick={handleRowClick}
       onRowMiddleClick={handleRowMiddleClick}
       showPagination={players && players.length > (initialPageSize ?? 0)}

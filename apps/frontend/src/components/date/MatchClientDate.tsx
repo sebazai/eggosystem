@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
 
 interface ClientDateProps {
   matchDate: string;
@@ -12,33 +12,29 @@ export function MatchClientDate({
   startTime,
   className
 }: ClientDateProps) {
-  const [formattedDate, setFormattedDate] = useState<string>("");
-  const [isClient, setIsClient] = useState(false);
+  const isClient = typeof window !== "undefined";
 
-  useEffect(() => {
-    setIsClient(true);
+  // Calculate date from props
+  const date = useMemo(() => {
     const dateTime = startTime
       ? `${matchDate}T${startTime}Z`
       : `${matchDate}T00:00:00Z`;
-    const date = new Date(dateTime);
-
-    const formatted = date.toLocaleDateString("en-US", {
-      month: "short",
-      day: "2-digit",
-      year: "2-digit",
-      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
-    });
-
-    setFormattedDate(formatted.toUpperCase());
+    return new Date(dateTime);
   }, [matchDate, startTime]);
 
-  // Show server-rendered fallback until hydration
-  if (!isClient) {
-    const dateTime = startTime
-      ? `${matchDate}T${startTime}Z`
-      : `${matchDate}T00:00:00Z`;
-    const date = new Date(dateTime);
-    const fallbackFormatted = date
+  // Format date - use client timezone if available, otherwise UTC
+  const formattedDate = useMemo(() => {
+    if (isClient) {
+      return date
+        .toLocaleDateString("en-US", {
+          month: "short",
+          day: "2-digit",
+          year: "2-digit",
+          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+        })
+        .toUpperCase();
+    }
+    return date
       .toLocaleDateString("en-US", {
         month: "short",
         day: "2-digit",
@@ -46,9 +42,7 @@ export function MatchClientDate({
         timeZone: "UTC"
       })
       .toUpperCase();
-
-    return <span className={className}>{fallbackFormatted}</span>;
-  }
+  }, [date, isClient]);
 
   return <span className={className}>{formattedDate}</span>;
 }
