@@ -16,7 +16,6 @@ import {
   bulkApproveTeamRegistrations,
   manualValidityCheck
 } from "../../models/dashboard/registration.models";
-import { getActiveSignupOrActiveSeasonForAppId } from "../../models/season.models";
 import { BadRequestError, NotFoundError } from "../../utils/errors";
 import { redisClient } from "../../utils/redisClient";
 import { isRegistrationDraftRaw } from "@eggosystem/types";

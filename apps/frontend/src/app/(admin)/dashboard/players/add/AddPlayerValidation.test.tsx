@@ -89,6 +89,24 @@ jest.mock("@/hooks/data/useDashboardSeasonTeams", () => ({
   })
 }));
 
+jest.mock("@/hooks/data/dashboard/useDashboardSeason", () => ({
+  useDashboardSeason: () => ({
+    selectedSeasonId: "14",
+    setSelectedSeasonId: jest.fn()
+  })
+}));
+
+// Mock Next.js navigation
+jest.mock("next/navigation", () => ({
+  useRouter: jest.fn(() => ({
+    push: jest.fn(),
+    replace: jest.fn(),
+    prefetch: jest.fn()
+  })),
+  usePathname: jest.fn(() => "/dashboard/players/add"),
+  useSearchParams: jest.fn(() => new URLSearchParams())
+}));
+
 // Mock WithRoleProtection
 jest.mock("@/components/dashboard/WithRoleProtection", () => ({
   WithRoleProtection: ({ children }: { children: React.ReactNode }) => (

@@ -9,6 +9,23 @@ import { createMockTeam, createMockOrganization } from "@eggosystem/types";
 jest.mock("@/hooks/data/dashboard/useSelectableTeams");
 jest.mock("@/hooks/data/dashboard/useSelectableOrgs");
 jest.mock("@/hooks/data/dashboard/usePlayerFullName");
+jest.mock("@/hooks/data/dashboard/useDashboardSeason", () => ({
+  useDashboardSeason: jest.fn(() => ({
+    selectedSeasonId: "1",
+    setSelectedSeasonId: jest.fn()
+  }))
+}));
+
+// Mock Next.js navigation
+jest.mock("next/navigation", () => ({
+  useRouter: jest.fn(() => ({
+    push: jest.fn(),
+    replace: jest.fn(),
+    prefetch: jest.fn()
+  })),
+  usePathname: jest.fn(() => "/dashboard/registration"),
+  useSearchParams: jest.fn(() => new URLSearchParams())
+}));
 
 const mockUseSelectableTeams = useSelectableTeams as jest.MockedFunction<
   typeof useSelectableTeams

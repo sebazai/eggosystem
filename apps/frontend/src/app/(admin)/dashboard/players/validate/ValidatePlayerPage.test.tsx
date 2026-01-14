@@ -6,6 +6,23 @@ import type { PlayerValidationResult } from "@eggosystem/types";
 // Mock the custom hooks
 jest.mock("@/hooks/data/useAllSeasons");
 jest.mock("@/hooks/data/dashboard/usePlayerValidation");
+jest.mock("@/hooks/data/dashboard/useDashboardSeason", () => ({
+  useDashboardSeason: jest.fn(() => ({
+    selectedSeasonId: null,
+    setSelectedSeasonId: jest.fn()
+  }))
+}));
+
+// Mock Next.js navigation
+jest.mock("next/navigation", () => ({
+  useRouter: jest.fn(() => ({
+    push: jest.fn(),
+    replace: jest.fn(),
+    prefetch: jest.fn()
+  })),
+  usePathname: jest.fn(() => "/dashboard/players/validate"),
+  useSearchParams: jest.fn(() => new URLSearchParams())
+}));
 
 // Mock WithRoleProtection
 jest.mock("@/components/dashboard/WithRoleProtection", () => ({

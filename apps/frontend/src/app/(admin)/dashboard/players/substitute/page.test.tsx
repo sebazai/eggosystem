@@ -17,6 +17,24 @@ jest.mock("@/hooks/data/useDashboardSeasonTeams", () => ({
   useDashboardSeasonTeams: jest.fn()
 }));
 
+jest.mock("@/hooks/data/dashboard/useDashboardSeason", () => ({
+  useDashboardSeason: jest.fn(() => ({
+    selectedSeasonId: "1",
+    setSelectedSeasonId: jest.fn()
+  }))
+}));
+
+// Mock Next.js navigation
+jest.mock("next/navigation", () => ({
+  useRouter: jest.fn(() => ({
+    push: jest.fn(),
+    replace: jest.fn(),
+    prefetch: jest.fn()
+  })),
+  usePathname: jest.fn(() => "/dashboard/players/substitute"),
+  useSearchParams: jest.fn(() => new URLSearchParams("season=1"))
+}));
+
 jest.mock("@/hooks/data/dashboard/usePlayerValidation", () => ({
   usePlayerValidation: jest.fn()
 }));

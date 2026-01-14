@@ -51,7 +51,7 @@ describe("useRegisteredTeams", () => {
     it("should fetch registered teams successfully", async () => {
       mockClientApiFetch.mockResolvedValue(mockTeams);
 
-      const { result } = renderHook(() => useRegisteredTeams(null), {
+      const { result } = renderHook(() => useRegisteredTeams(1), {
         wrapper: ({ children }) => (
           <SWRConfig value={{ provider: () => new Map() }}>
             {children}
@@ -75,7 +75,7 @@ describe("useRegisteredTeams", () => {
       const error = new Error("Failed to fetch");
       mockClientApiFetch.mockRejectedValue(error);
 
-      const { result } = renderHook(() => useRegisteredTeams(null), {
+      const { result } = renderHook(() => useRegisteredTeams(1), {
         wrapper: ({ children }) => (
           <SWRConfig value={{ provider: () => new Map() }}>
             {children}
@@ -97,7 +97,7 @@ describe("useRegisteredTeams", () => {
         () => new Promise((resolve) => setTimeout(resolve, 100))
       );
 
-      const { result } = renderHook(() => useRegisteredTeams(null), {
+      const { result } = renderHook(() => useRegisteredTeams(1), {
         wrapper: ({ children }) => (
           <SWRConfig value={{ provider: () => new Map() }}>
             {children}
@@ -112,7 +112,7 @@ describe("useRegisteredTeams", () => {
     it("should cache data and avoid refetching", async () => {
       mockClientApiFetch.mockResolvedValue(mockTeams);
 
-      const { result, rerender } = renderHook(() => useRegisteredTeams(null), {
+      const { result, rerender } = renderHook(() => useRegisteredTeams(1), {
         wrapper: ({ children }) => (
           <SWRConfig value={{ provider: () => new Map() }}>
             {children}
@@ -134,7 +134,7 @@ describe("useRegisteredTeams", () => {
     it("should handle empty data", async () => {
       mockClientApiFetch.mockResolvedValue([]);
 
-      const { result } = renderHook(() => useRegisteredTeams(null), {
+      const { result } = renderHook(() => useRegisteredTeams(1), {
         wrapper: ({ children }) => (
           <SWRConfig value={{ provider: () => new Map() }}>
             {children}
@@ -148,6 +148,36 @@ describe("useRegisteredTeams", () => {
 
       expect(result.current.registeredTeams).toEqual([]);
       expect(result.current.error).toBeUndefined();
+    });
+
+    it("should not fetch when seasonId is null", () => {
+      const { result } = renderHook(() => useRegisteredTeams(null), {
+        wrapper: ({ children }) => (
+          <SWRConfig value={{ provider: () => new Map() }}>
+            {children}
+          </SWRConfig>
+        )
+      });
+
+      // When seasonId is null, SWR key is null, so it won't fetch
+      expect(result.current.isLoading).toBe(false);
+      expect(result.current.registeredTeams).toBeUndefined();
+      expect(mockClientApiFetch).not.toHaveBeenCalled();
+    });
+
+    it("should not fetch when seasonId is 0", () => {
+      const { result } = renderHook(() => useRegisteredTeams(0), {
+        wrapper: ({ children }) => (
+          <SWRConfig value={{ provider: () => new Map() }}>
+            {children}
+          </SWRConfig>
+        )
+      });
+
+      // When seasonId is 0, SWR key is null, so it won't fetch
+      expect(result.current.isLoading).toBe(false);
+      expect(result.current.registeredTeams).toBeUndefined();
+      expect(mockClientApiFetch).not.toHaveBeenCalled();
     });
   });
 
@@ -167,7 +197,7 @@ describe("useRegisteredTeams", () => {
       await result.current.bulkApprove(teamIds);
 
       expect(mockClientApiFetch).toHaveBeenCalledWith(
-        "/api/v1/dashboard/registration/bulk-approve",
+        "/api/v1/dashboard/registration/season/17/bulk-approve",
         {
           method: "POST",
           headers: {
@@ -213,14 +243,14 @@ describe("useRegisteredTeams", () => {
       const originalMutate = result.current.bulkApprove;
       result.current.bulkApprove = async (teamIds: number[]) => {
         await originalMutate(teamIds);
-        mockMutate("/api/v1/dashboard/registration/registered");
+        mockMutate("/api/v1/dashboard/registration/season/17/registered");
       };
 
       const teamIds = [123, 456];
       await result.current.bulkApprove(teamIds);
 
       expect(mockMutate).toHaveBeenCalledWith(
-        "/api/v1/dashboard/registration/registered"
+        "/api/v1/dashboard/registration/season/17/registered"
       );
     });
 
@@ -266,7 +296,7 @@ describe("useRegisteredTeams", () => {
       await result.current.manualValidityCheck(teamIds);
 
       expect(mockClientApiFetch).toHaveBeenCalledWith(
-        "/api/v1/dashboard/registration/manual-validity-check",
+        "/api/v1/dashboard/registration/season/17/manual-validity-check",
         {
           method: "POST",
           headers: {
@@ -312,7 +342,7 @@ describe("useRegisteredTeams", () => {
       const originalManualValidityCheck = result.current.manualValidityCheck;
       result.current.manualValidityCheck = async (teamIds: number[]) => {
         await originalManualValidityCheck(teamIds);
-        mockMutate("/api/v1/dashboard/registration/registered");
+        mockMutate("/api/v1/dashboard/registration/season/17/registered");
       };
 
       const teamIds = [123, 456];
@@ -353,7 +383,7 @@ describe("useRegisteredTeams", () => {
     it("should not revalidate on focus", async () => {
       mockClientApiFetch.mockResolvedValue(mockTeams);
 
-      const { result } = renderHook(() => useRegisteredTeams(null), {
+      const { result } = renderHook(() => useRegisteredTeams(1), {
         wrapper: ({ children }) => (
           <SWRConfig value={{ provider: () => new Map() }}>
             {children}
@@ -375,7 +405,7 @@ describe("useRegisteredTeams", () => {
     it("should handle concurrent requests", async () => {
       mockClientApiFetch.mockResolvedValue(mockTeams);
 
-      const { result: result1 } = renderHook(() => useRegisteredTeams(null), {
+      const { result: result1 } = renderHook(() => useRegisteredTeams(1), {
         wrapper: ({ children }) => (
           <SWRConfig value={{ provider: () => new Map() }}>
             {children}
@@ -383,7 +413,7 @@ describe("useRegisteredTeams", () => {
         )
       });
 
-      const { result: result2 } = renderHook(() => useRegisteredTeams(null), {
+      const { result: result2 } = renderHook(() => useRegisteredTeams(1), {
         wrapper: ({ children }) => (
           <SWRConfig value={{ provider: () => new Map() }}>
             {children}
@@ -405,7 +435,7 @@ describe("useRegisteredTeams", () => {
     it("should handle network errors", async () => {
       mockClientApiFetch.mockRejectedValue(new Error("Network error"));
 
-      const { result } = renderHook(() => useRegisteredTeams(null), {
+      const { result } = renderHook(() => useRegisteredTeams(1), {
         wrapper: ({ children }) => (
           <SWRConfig value={{ provider: () => new Map() }}>
             {children}
@@ -426,7 +456,7 @@ describe("useRegisteredTeams", () => {
       apiError.status = 500;
       mockClientApiFetch.mockRejectedValue(apiError);
 
-      const { result } = renderHook(() => useRegisteredTeams(null), {
+      const { result } = renderHook(() => useRegisteredTeams(1), {
         wrapper: ({ children }) => (
           <SWRConfig value={{ provider: () => new Map() }}>
             {children}
@@ -443,7 +473,7 @@ describe("useRegisteredTeams", () => {
 
     it("should handle retry configuration", async () => {
       // Test that SWR is configured with retry options
-      const { result } = renderHook(() => useRegisteredTeams(null), {
+      const { result } = renderHook(() => useRegisteredTeams(1), {
         wrapper: ({ children }) => (
           <SWRConfig value={{ provider: () => new Map() }}>
             {children}

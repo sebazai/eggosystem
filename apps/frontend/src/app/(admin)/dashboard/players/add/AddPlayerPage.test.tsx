@@ -28,6 +28,10 @@ jest.mock("@/hooks/data/useDashboardSeasonTeams", () => ({
   useDashboardSeasonTeams: jest.fn()
 }));
 
+jest.mock("@/hooks/data/dashboard/useDashboardSeason", () => ({
+  useDashboardSeason: jest.fn()
+}));
+
 jest.mock("@/hooks/data/usePlayerTeamEligibility", () => ({
   usePlayerTeamEligibility: jest.fn()
 }));
@@ -38,6 +42,17 @@ jest.mock("@/hooks/data/dashboard/usePlayerValidation", () => ({
 
 jest.mock("@/hooks/data/useAddPlayer", () => ({
   useAddPlayer: jest.fn()
+}));
+
+// Mock Next.js navigation
+jest.mock("next/navigation", () => ({
+  useRouter: jest.fn(() => ({
+    push: jest.fn(),
+    replace: jest.fn(),
+    prefetch: jest.fn()
+  })),
+  usePathname: jest.fn(() => "/dashboard/players/add"),
+  useSearchParams: jest.fn(() => new URLSearchParams())
 }));
 
 // Mock reusable components
@@ -171,6 +186,7 @@ import { clientApiFetch } from "@/lib/apiClient";
 import { useActiveSignupOrActiveSeasonForApp } from "@/hooks/data/useActiveSignupOrActiveSeasonForApp";
 import { useAllSeasons } from "@/hooks/data/useAllSeasons";
 import { useDashboardSeasonTeams } from "@/hooks/data/useDashboardSeasonTeams";
+import { useDashboardSeason } from "@/hooks/data/dashboard/useDashboardSeason";
 import { usePlayerTeamEligibility } from "@/hooks/data/usePlayerTeamEligibility";
 import { usePlayerValidation } from "@/hooks/data/dashboard/usePlayerValidation";
 import { useAddPlayer } from "@/hooks/data/useAddPlayer";
@@ -192,6 +208,9 @@ describe("AddPlayerPage", () => {
     useDashboardSeasonTeams as jest.MockedFunction<
       typeof useDashboardSeasonTeams
     >;
+  const mockUseDashboardSeason = useDashboardSeason as jest.MockedFunction<
+    typeof useDashboardSeason
+  >;
   const mockUsePlayerTeamEligibility =
     usePlayerTeamEligibility as jest.MockedFunction<
       typeof usePlayerTeamEligibility
@@ -305,6 +324,11 @@ describe("AddPlayerPage", () => {
       isLoading: false,
       isError: null,
       isValidating: false
+    });
+
+    mockUseDashboardSeason.mockReturnValue({
+      selectedSeasonId: "14",
+      setSelectedSeasonId: jest.fn()
     });
 
     mockUsePlayerTeamEligibility.mockReturnValue({

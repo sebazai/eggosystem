@@ -217,7 +217,6 @@ function SortterPageContent() {
 
   const {
     teams,
-    sortedSeasons,
     playerValues,
     placements,
     selectedSeason,
@@ -225,13 +224,11 @@ function SortterPageContent() {
     floatingPosition,
     divisions,
     isLoadingTeams,
-    isLoadingSeasons,
     isLoadingPlayerValues,
     isLoadingPlacements,
     isSaving,
     isFinalizing,
     error,
-    setSelectedSeason,
     showTeamPlayerValues,
     closeTeamPlayerValues,
     prefetchPlayerValues,

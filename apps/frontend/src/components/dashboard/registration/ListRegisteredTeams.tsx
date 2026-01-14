@@ -46,14 +46,7 @@ export const ListRegisteredTeams = () => {
   const { bulkApprove } = useBulkApproveTeams(seasonId);
   const { manualValidityCheck } = useManualValidityCheck(seasonId);
 
-  if (!seasonId) {
-    return (
-      <div className="text-center py-8 text-muted-foreground">
-        Please select a season from the sidebar to view registered teams.
-      </div>
-    );
-  }
-
+  // All hooks must be called before any early returns
   const [rowSelection, setRowSelection] = useState({});
   const [isPerformingAction, setIsPerformingAction] = useState(false);
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -367,6 +360,14 @@ export const ListRegisteredTeams = () => {
       setIsAllRowsExpanded(newState);
     }
   };
+
+  if (!seasonId) {
+    return (
+      <div className="text-center py-8 text-muted-foreground">
+        Please select a season from the sidebar to view registered teams.
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (

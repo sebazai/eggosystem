@@ -2,13 +2,6 @@
 
 import { WithRoleProtection } from "@/components/dashboard/WithRoleProtection";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -19,7 +12,7 @@ import { useFaceitRosterValidation } from "@/hooks/data/dashboard/useFaceitRoste
 import { useAllSeasons } from "@/hooks/data/useAllSeasons";
 import { useDashboardSeason } from "@/hooks/data/dashboard/useDashboardSeason";
 import { SelectedSeasonBadge } from "@/components/dashboard/SelectedSeasonBadge";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import type {
   SeasonFaceitRosterValidation,
   ChampionshipValidationResult,
@@ -27,7 +20,7 @@ import type {
 } from "@eggosystem/types";
 
 function FaceitRosterValidationContent() {
-  const { seasons, isLoading: isLoadingSeasons } = useAllSeasons();
+  const { seasons } = useAllSeasons();
   const { selectedSeasonId: sharedSeasonId } = useDashboardSeason();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showOnlyViolations, setShowOnlyViolations] = useState(false);

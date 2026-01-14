@@ -4,16 +4,26 @@ import { SeasonPlatform, createMockSeason } from "@eggosystem/types";
 import { useAllSeasons } from "@/hooks/data/useAllSeasons";
 import { usePlayerValidation } from "@/hooks/data/dashboard/usePlayerValidation";
 import { useSearchParams } from "next/navigation";
+import { useDashboardSeason } from "@/hooks/data/dashboard/useDashboardSeason";
 
 // Mock the custom hooks
 jest.mock("@/hooks/data/useAllSeasons");
 jest.mock("@/hooks/data/dashboard/usePlayerValidation");
+jest.mock("@/hooks/data/dashboard/useDashboardSeason", () => ({
+  useDashboardSeason: jest.fn()
+}));
 
 // Mock Next.js navigation
 const mockUseSearchParams = useSearchParams as jest.MockedFunction<
   typeof useSearchParams
 >;
 jest.mock("next/navigation", () => ({
+  useRouter: jest.fn(() => ({
+    push: jest.fn(),
+    replace: jest.fn(),
+    prefetch: jest.fn()
+  })),
+  usePathname: jest.fn(() => "/dashboard/players/validate"),
   useSearchParams: jest.fn()
 }));
 
@@ -65,6 +75,9 @@ const mockUseAllSeasons = useAllSeasons as jest.MockedFunction<
 const mockUsePlayerValidation = usePlayerValidation as jest.MockedFunction<
   typeof usePlayerValidation
 >;
+const mockUseDashboardSeason = useDashboardSeason as jest.MockedFunction<
+  typeof useDashboardSeason
+>;
 
 describe("PlayerValidationPage - URL Parameter Sync", () => {
   const mockSeasons = [
@@ -94,6 +107,10 @@ describe("PlayerValidationPage - URL Parameter Sync", () => {
       error: null,
       validatePlayer: jest.fn(),
       clearResults: jest.fn()
+    });
+    mockUseDashboardSeason.mockReturnValue({
+      selectedSeasonId: null,
+      setSelectedSeasonId: jest.fn()
     });
   });
 

@@ -12,6 +12,24 @@ import {
 
 // Mock dependencies
 jest.mock("@/hooks/data/dashboard/useRegisteredTeams");
+jest.mock("@/hooks/data/dashboard/useDashboardSeason", () => ({
+  useDashboardSeason: jest.fn(() => ({
+    selectedSeasonId: "1",
+    setSelectedSeasonId: jest.fn()
+  }))
+}));
+
+// Mock Next.js navigation
+jest.mock("next/navigation", () => ({
+  useRouter: jest.fn(() => ({
+    push: jest.fn(),
+    replace: jest.fn(),
+    prefetch: jest.fn()
+  })),
+  usePathname: jest.fn(() => "/dashboard/registration"),
+  useSearchParams: jest.fn(() => new URLSearchParams("season=1"))
+}));
+
 jest.mock("sonner");
 
 const mockUseRegisteredTeams = useRegisteredTeams as jest.MockedFunction<

@@ -36,14 +36,6 @@ export const ListRegistrationDrafts = () => {
   );
   const [sorting, setSorting] = useState<SortingState>([]);
 
-  if (!seasonId) {
-    return (
-      <div className="text-center py-8 text-muted-foreground">
-        Please select a season from the sidebar to view registration drafts.
-      </div>
-    );
-  }
-
   const columns = useMemo<ColumnDef<RegistrationDraftRaw>[]>(
     () => [
       {
@@ -157,6 +149,14 @@ export const ListRegistrationDrafts = () => {
     ],
     []
   );
+
+  if (!seasonId) {
+    return (
+      <div className="text-center py-8 text-muted-foreground">
+        Please select a season from the sidebar to view registration drafts.
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (

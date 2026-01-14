@@ -11,6 +11,7 @@ import type {
 } from "@eggosystem/types";
 import { toast } from "sonner";
 import { useComments } from "@/contexts/CommentsContext";
+import { useDashboardSeason } from "./useDashboardSeason";
 
 type PlacementsResponse = {
   placements: TeamPlacement[];
