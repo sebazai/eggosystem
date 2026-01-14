@@ -134,9 +134,7 @@ export function SeasonLeagueMapperClient() {
 
         <div className="flex items-center gap-4">
           {selectedSeason ? (
-            <span className="text-sm font-medium">
-              Season: {selectedSeason}
-            </span>
+            <SelectedSeasonBadge />
           ) : (
             <span className="text-sm text-muted-foreground">
               Please select a season from the sidebar to view its leagues and
