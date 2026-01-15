@@ -58,14 +58,14 @@ describe("useSortter", () => {
         team_name: "Team 1",
         top5_values: [350, 345, 340, 335, 330],
         division: 1,
-        avg4: 342.5
+        avg5: 342.5
       },
       {
         team_id: 2,
         team_name: "Team 2",
         top5_values: [340, 335, 330, 325, 320],
         division: 1,
-        avg4: 332.5
+        avg5: 332.5
       }
     ];
 
@@ -162,7 +162,7 @@ describe("useSortter", () => {
         team_id: 1,
         team_name: "Team 1",
         top5_values: [350, 345, 340, 335, 330],
-        avg4: 342.5
+        avg5: 342.5
       }
     ];
     const mockPlacements = {
@@ -223,7 +223,7 @@ describe("useSortter", () => {
         team_id: 1,
         team_name: "Team 1",
         top5_values: [350, 345, 340, 335, 330],
-        avg4: 342.5
+        avg5: 342.5
       }
     ];
     const mockPlacements = {
@@ -291,7 +291,7 @@ describe("useSortter", () => {
         team_id: 1,
         team_name: "Team 1",
         top5_values: [350, 345, 340, 335, 330],
-        avg4: 342.5
+        avg5: 342.5
       }
     ];
     const mockPlacements = {
@@ -387,7 +387,7 @@ describe("useSortter", () => {
         team_id: 1,
         team_name: "Team 1",
         top5_values: [350, 345, 340, 335, 330],
-        avg4: 342.5
+        avg5: 342.5
       }
     ];
     const mockPlacements = {
@@ -455,7 +455,7 @@ describe("useSortter", () => {
         team_id: 1,
         team_name: "Team 1",
         top5_values: [350, 345, 340, 335, 330],
-        avg4: 342.5
+        avg5: 342.5
       }
     ];
     const mockPlacements = {
