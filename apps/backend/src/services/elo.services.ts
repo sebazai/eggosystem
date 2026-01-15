@@ -675,7 +675,7 @@ function adjuster(
   let minmax = -0.15;
   let maxmin = 0.15;
 
-  if (offeredElo > 270) {
+  if (offeredElo > 170) {
     // Scale difference to directly map to 0.9 - 1.1 for high ELO players
     minmax = -0.1;
     maxmin = 0.1;
