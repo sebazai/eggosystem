@@ -1,7 +1,4 @@
-import {
-  type CSRankkerResponse,
-  type TeamEligibilityResult
-} from "@eggosystem/types";
+import { type TeamEligibilityResult } from "@eggosystem/types";
 import { type PoolConnection } from "mysql2/promise";
 import { runQuery } from "../../db/mysqlRunQuery";
 import { ensureSeasonMaxPlayersForTeam } from "../../services/season.services";
@@ -12,75 +9,7 @@ import {
   canAddPlayerToTeam,
   SQL_COLUMNS
 } from "../../utils/team-calculations";
-
-/**
- * Gets stabilized kana_elo from CSRankker service
- */
-const getStabilizedKanaElo = async (steamId: string): Promise<number> => {
-  const csRankkerUrl =
-    process.env.CSRANKKER_BACKEND_API ||
-    "https://csrankker.kanaliiga.fi/api/v1/kanaelo";
-  const url = `${csRankkerUrl}/${steamId}`;
-
-  try {
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(
-        `CSRankker API returned ${response.status}: ${response.statusText}`
-      );
-    }
-
-    const data: CSRankkerResponse = await response.json();
-
-    if (data.status !== "success") {
-      throw new Error("CSRankker API returned unsuccessful status");
-    }
-
-    return data.result.stabilizedKanaelo;
-  } catch (error) {
-    throw new Error(
-      `Failed to fetch stabilized kana_elo from CSRankker: ${error instanceof Error ? error.message : "Unknown error"}`
-    );
-  }
-};
-
-// Helper function to fetch CSRankker components with timeout
-async function fetchCSRankkerComponents(
-  steamId: string,
-  timeoutMs: number = 5000
-): Promise<
-  { trueLevel: number; mm: number; hour: number; kana: number } | undefined
-> {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-
-  try {
-    const csRankkerUrl =
-      process.env.CSRANKKER_BACKEND_API ||
-      "https://csrankker.kanaliiga.fi/api/v1/kanaelo";
-
-    const response = await fetch(`${csRankkerUrl}/${steamId}`, {
-      signal: controller.signal
-    });
-
-    if (response.ok) {
-      const data: CSRankkerResponse = await response.json();
-      if (data.status === "success") {
-        return data.result.components;
-      }
-    }
-  } catch (error) {
-    // Silently fail for components - we still have the kana_elo value
-    // Only log in non-test environments to avoid test pollution
-    if (process.env.NODE_ENV !== "test" && !controller.signal.aborted) {
-      console.warn("Failed to fetch CSRankker components:", error);
-    }
-  } finally {
-    clearTimeout(timeoutId);
-  }
-
-  return undefined;
-}
+import { calculateKanaElo } from "../../services/csrankker.services";
 
 /**
  * Checks if a player can be added to a team based on kana_elo balance
@@ -111,11 +40,14 @@ export const checkPlayerAdditionEligibility = async (
   // For registration context, skip league checks
   if (context === "registration") {
     // Get stabilized kana_elo from CSRankker service
-    const stabilizedKanaElo = await getStabilizedKanaElo(newPlayerSteamId);
+    const kanaElo = await calculateKanaElo(newPlayerSteamId, seasonId);
 
-    // Get CSRankker components for display
-    const csrankkerComponents =
-      await fetchCSRankkerComponents(newPlayerSteamId);
+    if (!kanaElo) {
+      throw new Error("Failed to calculate kana_elo");
+    }
+
+    const csrankkerComponents = kanaElo.result.components;
+    const stabilizedKanaElo = kanaElo.result.stabilizedKanaelo;
 
     // Get the selected team's info from registrations
     const teamQuery = `
@@ -171,11 +103,14 @@ export const checkPlayerAdditionEligibility = async (
   const leagueId = leagueResults[0].league_id;
 
   await ensureSeasonMaxPlayersForTeam(seasonId, teamId);
-  // Get stabilized kana_elo from CSRankker service
-  const stabilizedKanaElo = await getStabilizedKanaElo(newPlayerSteamId);
+  const kanaElo = await calculateKanaElo(newPlayerSteamId, seasonId);
 
-  // Get CSRankker components for display
-  const csrankkerComponents = await fetchCSRankkerComponents(newPlayerSteamId);
+  if (!kanaElo) {
+    throw new Error("Failed to calculate kana_elo");
+  }
+
+  const csrankkerComponents = kanaElo.result.components;
+  const stabilizedKanaElo = kanaElo.result.stabilizedKanaelo;
 
   // Get the selected team's current top players + new player analysis
   // If excludeSteamId is provided, we exclude that player from calculations (for substitution scenarios)
