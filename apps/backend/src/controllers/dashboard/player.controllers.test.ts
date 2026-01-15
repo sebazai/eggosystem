@@ -14,6 +14,7 @@ import {
 import * as seasonModels from "../../models/dashboard/season.models";
 import * as playerModels from "../../models/player.models";
 import * as rankModels from "../../models/season-player-ranks.models";
+import * as seasonModelsBase from "../../models/season.models";
 import { runQuery } from "../../db/mysqlRunQuery";
 import * as matchUtils from "../../utils/matchUtils";
 import * as steamIdValidator from "../../utils/steam-id-validator";
@@ -25,6 +26,7 @@ import * as dbConnection from "../../db/mysqlConnection";
 jest.mock("../../models/dashboard/season.models");
 jest.mock("../../models/player.models");
 jest.mock("../../models/season-player-ranks.models");
+jest.mock("../../models/season.models");
 jest.mock("../../db/mysqlRunQuery");
 jest.mock("../../utils/matchUtils");
 jest.mock("../../utils/steam-id-validator");
@@ -35,6 +37,9 @@ jest.mock("../../db/mysqlConnection");
 const mockSeasonModels = seasonModels as jest.Mocked<typeof seasonModels>;
 const mockPlayerModels = playerModels as jest.Mocked<typeof playerModels>;
 const mockRankModels = rankModels as jest.Mocked<typeof rankModels>;
+const mockSeasonModelsBase = seasonModelsBase as jest.Mocked<
+  typeof seasonModelsBase
+>;
 const mockRunQuery = runQuery as jest.MockedFunction<typeof runQuery>;
 const mockMatchUtils = matchUtils as jest.Mocked<typeof matchUtils>;
 const mockSteamIdValidator = steamIdValidator as jest.Mocked<
@@ -127,7 +132,7 @@ describe("addPlayerToTeamController", () => {
     // 2. getSeasonById query
     mockRunQuery.mockResolvedValueOnce([season]);
 
-    // 3. getActiveMapPoolBySeasonId (called by getSeasonById)
+    // 3. getActiveMapPoolBySeasonId (called by getSeasonById) - needs to return array of arrays
     mockRunQuery.mockResolvedValueOnce(mapPool);
 
     // 4. SeasonPlayerRanks query (if provided)
@@ -234,6 +239,17 @@ describe("addPlayerToTeamController", () => {
       ]
     });
 
+    // Mock getSeasonPlatformAndAppId
+    mockSeasonModelsBase.getSeasonPlatformAndAppId.mockResolvedValueOnce({
+      platform: "FACEIT" as never,
+      app_id: 730
+    });
+
+    // Mock ensurePlayerRankDataExists
+    mockPlayerRankServices.ensurePlayerRankDataExists.mockResolvedValueOnce(
+      undefined
+    );
+
     setupEligibilityMock({
       canAddPlayer: true,
       newPlayerKanaElo: 200,
@@ -293,22 +309,16 @@ describe("addPlayerToTeamController", () => {
       seasonPlayerRank: []
     });
 
-    mockPlayerRankServices.getCSRank.mockResolvedValueOnce({
-      average_rank: 15000,
-      rank_updated_at: null
+    // Mock getSeasonPlatformAndAppId
+    mockSeasonModelsBase.getSeasonPlatformAndAppId.mockResolvedValueOnce({
+      platform: "FACEIT" as never,
+      app_id: 730
     });
-    mockPlayerRankServices.getPlayerHoursForSteamAppId.mockResolvedValueOnce({
-      hours: 1000
-    });
-    mockFaceitServices.getFaceITCS2Rank.mockResolvedValueOnce({
-      faceit_level: 5,
-      faceit_elo: 1500,
-      faceit_kd: 1.2,
-      faceit_date: new Date("2024-01-01").getTime(),
-      metadata: {
-        faceit_decay: false
-      }
-    });
+
+    // Mock ensurePlayerRankDataExists (which internally calls insertPlayerRankForSeason)
+    mockPlayerRankServices.ensurePlayerRankDataExists.mockResolvedValueOnce(
+      undefined
+    );
 
     setupEligibilityMock({
       canAddPlayer: true,
@@ -318,10 +328,6 @@ describe("addPlayerToTeamController", () => {
 
     mockRunQuery.mockResolvedValueOnce(createMockPlayerProfile());
 
-    mockRankModels.insertPlayerRankForSeason.mockResolvedValueOnce(
-      {} as unknown
-    );
-
     mockPlayerModels.setPlayerKanaElo.mockResolvedValueOnce(true);
 
     mockRunQuery.mockResolvedValueOnce({ insertId: 1 });
@@ -329,8 +335,10 @@ describe("addPlayerToTeamController", () => {
     // Call the controller
     await addPlayerToTeamController(mockRequest, mockResponse, mockNext);
 
-    // Verify player data was created
-    expect(mockRankModels.insertPlayerRankForSeason).toHaveBeenCalled();
+    // Verify player data was created via ensurePlayerRankDataExists
+    expect(
+      mockPlayerRankServices.ensurePlayerRankDataExists
+    ).toHaveBeenCalled();
     expect(mockRunQuery).toHaveBeenCalledWith(
       expect.stringContaining("INSERT INTO SeasonTeamPlayers"),
       [14, 1650, EligiblePlayerForValidationSteamId],
@@ -354,6 +362,27 @@ describe("addPlayerToTeamController", () => {
         })
       ]
     });
+
+    // Mock getSeasonPlatformAndAppId
+    mockSeasonModelsBase.getSeasonPlatformAndAppId.mockResolvedValueOnce({
+      platform: "FACEIT" as never,
+      app_id: 730
+    });
+
+    // Mock ensurePlayerRankDataExists
+    mockPlayerRankServices.ensurePlayerRankDataExists.mockResolvedValueOnce(
+      undefined
+    );
+
+    // Mock queries for checkPlayerAdditionEligibility -> ensureSeasonMaxPlayersForTeam -> getSeasonById -> getActiveMapPoolBySeasonId
+    mockRunQuery.mockResolvedValueOnce([{ steam_id: "76561198000000001" }]); // getPrimaryPlayersForTeam
+    mockRunQuery.mockResolvedValueOnce([{ id: 14, max_players: 9 }]); // getSeasonById
+    mockRunQuery.mockResolvedValueOnce([
+      { map_id: 1 },
+      { map_id: 2 },
+      { map_id: 3 }
+    ]); // getActiveMapPoolBySeasonId
+    mockRunQuery.mockResolvedValueOnce([{ league_id: 1 }]); // league query
 
     setupEligibilityMock({
       canAddPlayer: false,
@@ -402,6 +431,17 @@ describe("addPlayerToTeamController", () => {
         }
       ]
     });
+
+    // Mock getSeasonPlatformAndAppId
+    mockSeasonModelsBase.getSeasonPlatformAndAppId.mockResolvedValueOnce({
+      platform: "FACEIT" as never,
+      app_id: 730
+    });
+
+    // Mock ensurePlayerRankDataExists
+    mockPlayerRankServices.ensurePlayerRankDataExists.mockResolvedValueOnce(
+      undefined
+    );
 
     setupEligibilityMock({
       canAddPlayer: true,
@@ -517,6 +557,15 @@ describe("addSubstitutePlayerController", () => {
     ]);
     // Mock tier query - not tier 1
     mockRunQuery.mockResolvedValueOnce([{ tier: 2 }]);
+    // Mock queries for checkPlayerAdditionEligibility -> ensureSeasonMaxPlayersForTeam -> getSeasonById -> getActiveMapPoolBySeasonId
+    mockRunQuery.mockResolvedValueOnce([{ steam_id: "76561198000000001" }]); // getPrimaryPlayersForTeam
+    mockRunQuery.mockResolvedValueOnce([{ id: 14, max_players: 9 }]); // getSeasonById
+    mockRunQuery.mockResolvedValueOnce([
+      { map_id: 1 },
+      { map_id: 2 },
+      { map_id: 3 }
+    ]); // getActiveMapPoolBySeasonId
+    mockRunQuery.mockResolvedValueOnce([{ league_id: 1 }]); // league query
     // Mock eligibility check
     mockSeasonModels.checkPlayerAdditionEligibility.mockResolvedValueOnce({
       selectedTeam: {

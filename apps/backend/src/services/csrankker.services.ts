@@ -32,10 +32,9 @@ export const calculateKanaElo = async (
     clearTimeout(timeoutId);
 
     if (!response.ok) {
-      logger.warn(
-        `[CSRankker] API returned ${response.status} for steam_id: ${steamId}`
-      );
-      return null;
+      const errorMessage = `CSRankker API returned ${response.status}: ${response.statusText}`;
+      logger.warn(`[CSRankker] ${errorMessage} for steam_id: ${steamId}`);
+      throw new Error(errorMessage);
     }
 
     const data: CSRankkerResponse = await response.json();
@@ -49,12 +48,25 @@ export const calculateKanaElo = async (
 
     return data;
   } catch (error) {
-    if (error instanceof Error && error.name === "AbortError") {
-      logger.warn(`[CSRankker] Request timeout for steam_id: ${steamId}`);
-    } else {
+    if (error instanceof Error) {
+      // Re-throw if it's already our formatted error
+      if (error.message.includes("CSRankker API returned")) {
+        throw error;
+      }
+      // Handle network/fetch errors
+      if (error.name === "AbortError") {
+        logger.warn(`[CSRankker] Request timeout for steam_id: ${steamId}`);
+        throw new Error(
+          "Failed to fetch stabilized kana_elo from CSRankker: Request timeout"
+        );
+      }
+      // Handle other fetch errors (network errors, etc.)
       logger.error(
         `[CSRankker] Failed to fetch kana_elo for steam_id: ${steamId}`,
         error
+      );
+      throw new Error(
+        `Failed to fetch stabilized kana_elo from CSRankker: ${error.message}`
       );
     }
     return null;
