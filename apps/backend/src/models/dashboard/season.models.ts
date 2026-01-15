@@ -47,6 +47,8 @@ export const checkPlayerAdditionEligibility = async (
     }
 
     const csrankkerComponents = kanaElo.result.components;
+    const csRankkerCalculusString = kanaElo.result.calculus;
+    const originalKanaelo = kanaElo.result.originalKanaelo;
     const stabilizedKanaElo = kanaElo.result.stabilizedKanaelo;
 
     // Get the selected team's info from registrations
@@ -73,7 +75,9 @@ export const checkPlayerAdditionEligibility = async (
         current_top5_avg: 0,
         new_player_kana_elo: stabilizedKanaElo,
         new_avg_with_player: 0,
-        csrankker_components: csrankkerComponents
+        csrankker_components: csrankkerComponents,
+        csrankker_calculus: csRankkerCalculusString,
+        csrankker_original_kanaelo: originalKanaelo
       },
       topTeamsInLeague: [],
       canAddPlayer: true, // Always true for registrations
@@ -110,6 +114,8 @@ export const checkPlayerAdditionEligibility = async (
   }
 
   const csrankkerComponents = kanaElo.result.components;
+  const csRankkerCalculusString = kanaElo.result.calculus;
+  const originalKanaelo = kanaElo.result.originalKanaelo;
   const stabilizedKanaElo = kanaElo.result.stabilizedKanaelo;
 
   // Get the selected team's current top players + new player analysis
@@ -255,7 +261,9 @@ export const checkPlayerAdditionEligibility = async (
       current_top5_avg: currentComparisonAvg, // Now top 5 based on TOP_N_FOR_COMPARISON=5
       new_player_kana_elo: stabilizedKanaElo,
       new_avg_with_player: newAvgWithPlayer,
-      csrankker_components: csrankkerComponents
+      csrankker_components: csrankkerComponents,
+      csrankker_calculus: csRankkerCalculusString,
+      csrankker_original_kanaelo: originalKanaelo
     },
     topTeamsInLeague: topTeamsFormatted,
     canAddPlayer,

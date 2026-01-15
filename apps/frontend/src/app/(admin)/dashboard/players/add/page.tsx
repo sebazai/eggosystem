@@ -203,7 +203,9 @@ export default function AddPlayerPage() {
       // The backend will fetch the actual kana_elo internally
       const kanaElo = eligibilityResult?.selectedTeam.new_player_kana_elo ?? 0;
       const calculus =
-        eligibilityResult?.selectedTeam.csrankker_components || {};
+        eligibilityResult?.selectedTeam.csrankker_calculus ||
+        eligibilityResult?.selectedTeam.csrankker_components ||
+        {};
 
       await addPlayer(
         effectiveSeasonId,

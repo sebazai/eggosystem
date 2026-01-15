@@ -122,17 +122,17 @@ export const addPlayerToTeamController = async (
       );
 
       // 6. Set the player's kana_elo from the eligibility check
+      // Use csrankker_calculus from CSRankker API response
       const calculusString =
-        typeof eligibility.selectedTeam.csrankker_components === "object"
-          ? JSON.stringify(eligibility.selectedTeam.csrankker_components)
-          : String(eligibility.selectedTeam.csrankker_components || "{}");
+        eligibility.selectedTeam.csrankker_calculus || "{}";
+      const offeredElo = eligibility.selectedTeam.csrankker_original_kanaelo;
 
       await setPlayerKanaElo(
         steamId,
         eligibility.selectedTeam.new_player_kana_elo,
         calculusString,
         seasonId,
-        undefined, // offered_elo (not needed here)
+        offeredElo,
         connection
       );
 
@@ -227,17 +227,21 @@ export const addPlayerToTeamController = async (
     }
 
     // 7. Set the player's kana_elo from the eligibility check
+    // Use csrankker_calculus if available, otherwise fall back to request body calculus
     const calculusString =
-      typeof calculusData === "object"
+      eligibility.selectedTeam.csrankker_calculus ||
+      (typeof calculusData === "object"
         ? JSON.stringify(calculusData)
-        : String(calculusData || "{}");
+        : String(calculusData || "{}"));
+    // Use originalKanaelo as offered_elo if available
+    const offeredElo = eligibility.selectedTeam.csrankker_original_kanaelo;
 
     await setPlayerKanaElo(
       steamId,
       eligibility.selectedTeam.new_player_kana_elo,
       calculusString,
       seasonId,
-      undefined, // offered_elo (not needed here)
+      offeredElo,
       connection
     );
 
@@ -598,17 +602,18 @@ export const addSubstitutePlayerController = async (
       }
 
       // Set the player's kana_elo from the eligibility check
+      // Use csrankker_calculus if available, otherwise fall back to empty string
       const calculusString =
-        typeof eligibility.selectedTeam.csrankker_components === "object"
-          ? JSON.stringify(eligibility.selectedTeam.csrankker_components)
-          : String(eligibility.selectedTeam.csrankker_components || "{}");
+        eligibility.selectedTeam.csrankker_calculus || "{}";
+      // Use originalKanaelo as offered_elo if available
+      const offeredElo = eligibility.selectedTeam.csrankker_original_kanaelo;
 
       await setPlayerKanaElo(
         steamId,
         eligibility.selectedTeam.new_player_kana_elo,
         calculusString,
         seasonId,
-        undefined, // offered_elo (not needed here)
+        offeredElo,
         connection
       );
     }
