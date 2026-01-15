@@ -207,7 +207,9 @@ describe("Season Models", () => {
 
       await expect(
         checkPlayerAdditionEligibility(1, 1, csrankkerNetworkErrorSteamId)
-      ).rejects.toThrow("Failed to calculate kana_elo");
+      ).rejects.toThrow(
+        "Failed to fetch stabilized kana_elo from CSRankker: Failed to fetch"
+      );
     });
 
     it("should handle CSRankker API non-success status", async () => {
@@ -238,7 +240,7 @@ describe("Season Models", () => {
 
       await expect(
         checkPlayerAdditionEligibility(1, 1, csrankkerNotFoundSteamId)
-      ).rejects.toThrow("Failed to calculate kana_elo");
+      ).rejects.toThrow("CSRankker API returned 404: Not Found");
     });
 
     it("should throw error if team not found in season", async () => {
