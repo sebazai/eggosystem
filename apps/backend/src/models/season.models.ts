@@ -3,7 +3,8 @@ import type {
   Season,
   ActiveSeasonSignupForAppId,
   ActiveSignupOrSeasonForAppId,
-  SeasonFormRaw
+  SeasonFormRaw,
+  SeasonPlatform
 } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
 import { type PoolConnection } from "mysql2/promise";
@@ -74,6 +75,28 @@ export const getSeasonDetailsById = async (id: number) => {
     return formatSeasonDates(data);
   }
   return undefined;
+};
+
+/**
+ * Gets season platform and app_id for a given season ID.
+ * Useful for operations that need to know the game platform and app ID.
+ *
+ * @param seasonId The season ID
+ * @param connection Optional database connection for transactions
+ * @returns Object with platform and app_id, or undefined if season not found
+ */
+export const getSeasonPlatformAndAppId = async (
+  seasonId: number,
+  connection?: PoolConnection
+): Promise<{ platform: SeasonPlatform; app_id: number } | undefined> => {
+  const [data] = await runQuery<
+    Array<{ platform: SeasonPlatform; app_id: number } | undefined>
+  >(
+    "SELECT s.platform, g.app_id FROM Seasons s JOIN Games g ON s.game_id = g.id WHERE s.id = ?",
+    [seasonId],
+    connection
+  );
+  return data;
 };
 
 /**

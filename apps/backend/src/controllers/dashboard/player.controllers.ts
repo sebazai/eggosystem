@@ -1,10 +1,12 @@
 import { type NextFunction, type Response } from "express";
 
 import { checkPlayerAdditionEligibility } from "../../models/dashboard/season.models";
+import { getSeasonPlatformAndAppId } from "../../models/season.models";
 import { runQuery } from "../../db/mysqlRunQuery";
 import { BadRequestError, UnauthorizedError } from "../../utils/errors";
 import { getConnection } from "../../db/mysqlConnection";
 import {
+  ensurePlayerRankDataExists,
   getCSRank,
   getPlayerHoursForSteamAppId
 } from "../../services/player-ranks.services";
@@ -91,7 +93,27 @@ export const addPlayerToTeamController = async (
         );
       }
 
-      // 2. Check eligibility (mainly for kana_elo calculation)
+      // 2. Get season details to fetch platform and app_id
+      const seasonData = await getSeasonPlatformAndAppId(seasonId, connection);
+
+      if (!seasonData) {
+        return next(
+          new BadRequestError(`Season with ID ${seasonId} not found`)
+        );
+      }
+
+      const { platform, app_id: appId } = seasonData;
+
+      // 3. Ensure player rank data exists (same logic as signup)
+      await ensurePlayerRankDataExists(
+        steamId,
+        seasonId,
+        appId,
+        platform,
+        connection
+      );
+
+      // 5. Check eligibility (mainly for kana_elo calculation)
       const eligibility = await checkPlayerAdditionEligibility(
         seasonId,
         teamId,
@@ -99,22 +121,22 @@ export const addPlayerToTeamController = async (
         { connection, context: "registration" }
       );
 
-      // 3. Set the player's kana_elo from the eligibility check
+      // 6. Set the player's kana_elo from the eligibility check
+      // Use csrankker_calculus from CSRankker API response
       const calculusString =
-        typeof eligibility.selectedTeam.csrankker_components === "object"
-          ? JSON.stringify(eligibility.selectedTeam.csrankker_components)
-          : String(eligibility.selectedTeam.csrankker_components || "{}");
+        eligibility.selectedTeam.csrankker_calculus || "{}";
+      const offeredElo = eligibility.selectedTeam.csrankker_original_kanaelo;
 
       await setPlayerKanaElo(
         steamId,
         eligibility.selectedTeam.new_player_kana_elo,
         calculusString,
         seasonId,
-        undefined, // offered_elo (not needed here)
+        offeredElo,
         connection
       );
 
-      // 5. Add player to SeasonTeamRegistrationPlayers (not captain, not co-captain)
+      // 7. Add player to SeasonTeamRegistrationPlayers (not captain, not co-captain)
       await insertSeasonTeamRegistrationPlayer(
         seasonId,
         teamId,
@@ -139,106 +161,23 @@ export const addPlayerToTeamController = async (
     }
 
     // Finalized season context - original logic
-    // 1. First, check if player has all required data in SeasonPlayerRanks
-    const checkPlayerQuery = `
-        SELECT 
-          id, 
-          cs2_rank, 
-          faceit_level, 
-          faceit_elo, 
-          cs_hours, 
-          kana_elo 
-        FROM SeasonPlayerRanks 
-        WHERE season_id = ? AND steam_id = ?
-      `;
-    const existingPlayerResult = await runQuery<
-      Array<{
-        id: number;
-        cs2_rank: number | null;
-        faceit_level: number | null;
-        faceit_elo: number | null;
-        cs_hours: number | null;
-        kana_elo: number | null;
-      }>
-    >(checkPlayerQuery, [seasonId, steamId], connection);
+    // 1. Get season details to fetch platform and app_id
+    const seasonData = await getSeasonPlatformAndAppId(seasonId, connection);
 
-    const existingPlayer =
-      existingPlayerResult && existingPlayerResult.length > 0
-        ? existingPlayerResult[0]
-        : null;
-
-    // 2. If player data is incomplete, fetch it from external services
-    if (
-      !existingPlayer ||
-      existingPlayer.cs2_rank === null ||
-      existingPlayer.faceit_level === null ||
-      existingPlayer.cs_hours === null
-    ) {
-      // Fetch real CS2 rank data from Leetify (range 1000-30000)
-      const rankData = await getCSRank(steamId);
-      const playerCS2Rank =
-        rankData.average_rank !== -1
-          ? rankData.average_rank
-          : (existingPlayer?.cs2_rank ?? null);
-
-      // Fetch real hours played from Steam API
-      const hoursData = await getPlayerHoursForSteamAppId(steamId, 730);
-      const playerCSHours =
-        hoursData.hours !== -1
-          ? hoursData.hours
-          : (existingPlayer?.cs_hours ?? null);
-
-      // Fetch real FACEIT data (levels 1-10, ELO values)
-      const faceitData = await getFaceITCS2Rank(steamId);
-
-      // Only fail if we have no data at all (neither from API nor existing)
-      if (
-        faceitData.faceit_elo < 0 &&
-        (!existingPlayer || existingPlayer.faceit_elo === null)
-      ) {
-        return next(new BadRequestError("FaceIT data not found"));
-      }
-
-      if (
-        rankData.average_rank < 0 &&
-        (!existingPlayer || existingPlayer.cs2_rank === null)
-      ) {
-        return next(new BadRequestError("CS2 rank not found"));
-      }
-
-      if (
-        hoursData.hours < 0 &&
-        (!existingPlayer || existingPlayer.cs_hours === null)
-      ) {
-        return next(new BadRequestError("Hours not found"));
-      }
-
-      // Use API data if available, otherwise fall back to existing data
-      const finalFaceitData =
-        faceitData.faceit_elo >= 0
-          ? faceitData
-          : {
-              faceit_level: existingPlayer?.faceit_level ?? undefined,
-              faceit_elo: existingPlayer?.faceit_elo ?? undefined,
-              faceit_kd: undefined,
-              faceit_date: undefined
-            };
-
-      // Create or update player in SeasonPlayerRanks with real data
-      await insertPlayerRankForSeason(
-        steamId,
-        seasonId,
-        playerCS2Rank, // Real CS2 rank (1000-30000 range) or existing
-        playerCSHours, // Real hours played from Steam or existing
-        {
-          faceit_level: finalFaceitData.faceit_level,
-          faceit_elo: finalFaceitData.faceit_elo,
-          faceit_kd: finalFaceitData.faceit_kd,
-          faceit_date: finalFaceitData.faceit_date
-        },
-        { connection }
-      );
+    if (!seasonData) {
+      return next(new BadRequestError(`Season with ID ${seasonId} not found`));
     }
+
+    const { platform, app_id: appId } = seasonData;
+
+    // 2. Ensure player rank data exists (same logic as signup)
+    await ensurePlayerRankDataExists(
+      steamId,
+      seasonId,
+      appId,
+      platform,
+      connection
+    );
 
     // 3. Check if team is in tier 1 league
     const tierQuery = `
@@ -288,17 +227,21 @@ export const addPlayerToTeamController = async (
     }
 
     // 7. Set the player's kana_elo from the eligibility check
+    // Use csrankker_calculus if available, otherwise fall back to request body calculus
     const calculusString =
-      typeof calculusData === "object"
+      eligibility.selectedTeam.csrankker_calculus ||
+      (typeof calculusData === "object"
         ? JSON.stringify(calculusData)
-        : String(calculusData || "{}");
+        : String(calculusData || "{}"));
+    // Use originalKanaelo as offered_elo if available
+    const offeredElo = eligibility.selectedTeam.csrankker_original_kanaelo;
 
     await setPlayerKanaElo(
       steamId,
       eligibility.selectedTeam.new_player_kana_elo,
       calculusString,
       seasonId,
-      undefined, // offered_elo (not needed here)
+      offeredElo,
       connection
     );
 
@@ -354,22 +297,13 @@ export const validatePlayerController = async (
 
   try {
     // First, get the season details to get platform and app_id
-    const seasonQuery = `
-        SELECT s.platform, g.app_id 
-        FROM Seasons s 
-        JOIN Games g ON s.game_id = g.id 
-        WHERE s.id = ?
-      `;
-    const seasonResult = await runQuery<
-      Array<{ platform: SeasonPlatform; app_id: number }>
-    >(seasonQuery, [seasonId]);
+    const seasonData = await getSeasonPlatformAndAppId(seasonId);
 
-    if (!seasonResult || seasonResult.length === 0) {
+    if (!seasonData) {
       return next(new BadRequestError(`Season with ID ${seasonId} not found`));
     }
 
-    const season = seasonResult[0];
-    const { platform, app_id: appId } = season;
+    const { platform, app_id: appId } = seasonData;
 
     // Run all validation checks in parallel
     const [hoursData, rankData, platformRankData, playerData] =
@@ -668,17 +602,18 @@ export const addSubstitutePlayerController = async (
       }
 
       // Set the player's kana_elo from the eligibility check
+      // Use csrankker_calculus if available, otherwise fall back to empty string
       const calculusString =
-        typeof eligibility.selectedTeam.csrankker_components === "object"
-          ? JSON.stringify(eligibility.selectedTeam.csrankker_components)
-          : String(eligibility.selectedTeam.csrankker_components || "{}");
+        eligibility.selectedTeam.csrankker_calculus || "{}";
+      // Use originalKanaelo as offered_elo if available
+      const offeredElo = eligibility.selectedTeam.csrankker_original_kanaelo;
 
       await setPlayerKanaElo(
         steamId,
         eligibility.selectedTeam.new_player_kana_elo,
         calculusString,
         seasonId,
-        undefined, // offered_elo (not needed here)
+        offeredElo,
         connection
       );
     }

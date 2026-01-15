@@ -1,3 +1,12 @@
+import { cpus } from "os";
+import { existsSync } from "fs";
+
+// Detect if running in devcontainer (common indicators)
+const isDevContainer =
+  process.env.DEVCONTAINER === "true" ||
+  existsSync("/.devcontainer") ||
+  process.env.CODESPACES === "true";
+
 export const preset = "ts-jest";
 export const testEnvironment = "node";
 export const moduleFileExtensions = ["ts", "tsx", "js", "jsx", "json", "node"];
@@ -12,6 +21,10 @@ export const transformIgnorePatterns = [
 export const openHandlesTimeout = 2 * 1000;
 export const testMatch = ["**/?(*.)+(spec|test).ts?(x)"];
 export const testPathIgnorePatterns = ["/node_modules/", "<rootDir>/dist/"];
+// Exclude dist from module resolution to prevent duplicate mock warnings
+export const modulePathIgnorePatterns = ["<rootDir>/dist/"];
+// Exclude dist from watch mode file watching
+export const watchPathIgnorePatterns = ["<rootDir>/dist/"];
 export const reporters = [
   "default",
   [
@@ -54,3 +67,31 @@ export const moduleNameMapper = {
     "<rootDir>/../../packages/shared-msw/dist/index.js"
 };
 export const testTimeout = 10000;
+
+// Parallel execution configuration
+// In devcontainers, use fewer workers due to volume mount I/O overhead
+// Otherwise use 50% of available CPU cores, with a minimum of 2 and maximum of 8 workers
+// This balances speed with resource usage and database connection limits
+const getDefaultMaxWorkers = () => {
+  if (isDevContainer) {
+    // In devcontainer, be more conservative due to volume mount I/O overhead
+    // Use 25% of cores, min 2, max 4
+    return Math.max(2, Math.min(4, Math.floor(cpus().length * 0.25)));
+  }
+  // Normal environment: 50% of cores, min 2, max 8
+  return Math.max(2, Math.min(8, Math.floor(cpus().length * 0.5)));
+};
+
+export const maxWorkers = process.env.JEST_MAX_WORKERS
+  ? parseInt(process.env.JEST_MAX_WORKERS, 10)
+  : getDefaultMaxWorkers();
+
+// Cache configuration - optimize for devcontainer performance
+// Use a cache directory that's not on the mounted volume if possible (faster I/O)
+// Fallback to node_modules/.cache which is typically faster than root
+export const cache = true;
+export const cacheDirectory =
+  process.env.JEST_CACHE_DIR ||
+  (isDevContainer
+    ? "<rootDir>/node_modules/.cache/jest"
+    : "<rootDir>/.jest-cache");

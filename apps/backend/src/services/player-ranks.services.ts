@@ -1,8 +1,10 @@
 import {
   type SeasonPlayerRank,
   type CS2LeetifyAvgRank,
-  SeasonPlatform
+  SeasonPlatform,
+  isFaceITCSRank
 } from "@eggosystem/types";
+import { type PoolConnection } from "mysql2/promise";
 import { runQuery } from "../db/mysqlRunQuery";
 import _ from "lodash";
 import { expireIn30Days, redisClient } from "../utils/redisClient";
@@ -10,7 +12,8 @@ import {
   getPlayerHoursForSeason,
   getPlayerRankForSeason,
   getPlayerKanaElo,
-  getTopXPlayersKanaElo
+  getTopXPlayersKanaElo,
+  insertPlayerRankForSeason
 } from "../models/season-player-ranks.models";
 import { getCS2RankFromLeetify } from "./leetify.services";
 import { getFaceITCS2Rank } from "./faceit.services";
@@ -397,4 +400,106 @@ export const getPlayerKanaRank = async (steam_id: string) => {
     is_top50: playerPosition !== -1,
     position: playerPosition !== -1 ? position : null
   } satisfies PlayerKanaRank;
+};
+
+/**
+ * Ensures player rank data exists in SeasonPlayerRanks for a given season.
+ * Checks if data exists and is complete, and if not, fetches from external services
+ * and inserts/updates it. This is the same logic used in signup flow.
+ *
+ * @param steamId The steam ID of the player
+ * @param seasonId The season ID
+ * @param appId The game app ID (e.g., 730 for CS2)
+ * @param platform The season platform (FACEIT, Kanaliiga, etc.)
+ * @param connection Optional database connection for transactions
+ * @throws BadRequestError if required data cannot be fetched
+ */
+export const ensurePlayerRankDataExists = async (
+  steamId: string,
+  seasonId: number,
+  appId: number,
+  platform: SeasonPlatform | null,
+  connection?: PoolConnection
+): Promise<void> => {
+  // Check if player has all required data in SeasonPlayerRanks
+  const checkPlayerQuery = `
+    SELECT 
+      id, 
+      cs2_rank, 
+      faceit_level, 
+      faceit_elo, 
+      cs_hours, 
+      kana_elo 
+    FROM SeasonPlayerRanks 
+    WHERE season_id = ? AND steam_id = ?
+  `;
+  const existingPlayerResult = await runQuery<
+    Array<{
+      id: number;
+      cs2_rank: number | null;
+      faceit_level: number | null;
+      faceit_elo: number | null;
+      cs_hours: number | null;
+      kana_elo: number | null;
+    }>
+  >(checkPlayerQuery, [seasonId, steamId], connection);
+
+  const existingPlayer =
+    existingPlayerResult && existingPlayerResult.length > 0
+      ? existingPlayerResult[0]
+      : null;
+
+  // If player data is incomplete, fetch it from external services
+  if (
+    !existingPlayer ||
+    existingPlayer.cs2_rank === null ||
+    existingPlayer.faceit_level === null ||
+    existingPlayer.cs_hours === null
+  ) {
+    // Fetch data in parallel (same pattern as signup)
+    const [rank, { hours }, externalRank] = await Promise.all([
+      getPlayerAppIdRank(steamId, appId, seasonId),
+      getPlayerHoursForSteamAppId(steamId, appId, seasonId),
+      getPlayerRankForPlatform(steamId, platform, seasonId)
+    ]);
+
+    // Validate hours
+    if (hours === -1) {
+      throw new BadRequestError(`Player ${steamId} hours not found.`);
+    }
+
+    // Validate rank
+    if (rank.average_rank === -1 || !isValidRank(rank.average_rank)) {
+      throw new BadRequestError(
+        `Player ${steamId} has no app id rank. Found ${rank.average_rank}.`
+      );
+    }
+
+    // Validate external rank (FaceIT) - optional for Kanaliiga platform
+    if (
+      externalRank &&
+      "faceit_elo" in externalRank &&
+      externalRank.faceit_elo === -1 &&
+      platform !== SeasonPlatform.Kanaliiga
+    ) {
+      throw new BadRequestError(`Player ${steamId} has no ${platform} rank.`);
+    }
+
+    // Insert or update player rank data
+    await insertPlayerRankForSeason(
+      steamId,
+      seasonId,
+      rank.average_rank,
+      hours,
+      isFaceITCSRank(externalRank)
+        ? externalRank
+        : {
+            faceit_elo: undefined,
+            faceit_level: undefined,
+            faceit_kd: undefined,
+            faceit_date: undefined
+          },
+      { connection }
+    );
+  }
 };

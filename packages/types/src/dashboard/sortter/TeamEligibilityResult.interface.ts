@@ -12,6 +12,8 @@ export interface TeamEligibilityResult {
       hour: number;
       kana: number;
     };
+    csrankker_calculus?: string;
+    csrankker_original_kanaelo?: number; // Original/offered ELO before stabilization
   };
   topTeamsInLeague: Array<{
     team_id: number;

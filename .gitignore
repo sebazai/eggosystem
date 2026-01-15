@@ -60,6 +60,7 @@ Kanaliiga.session.sql
 # apps/backend/
 **/dbdump/kanaclean.sql
 **/dbdump/kanaclean1.sql
+**/.jest-cache/
 
 
 
