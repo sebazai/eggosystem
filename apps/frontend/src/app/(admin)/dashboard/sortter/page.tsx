@@ -269,8 +269,11 @@ function SortterPageContent() {
   // Find the selected team name
   const selectedTeam = teams.find((team) => team.team_id === selectedTeamId);
 
-  // Calculate max division number based on actual divisions or team count
-  const maxDivision = React.useMemo(() => {
+  // Track the max division number (can be increased by user)
+  const [maxDivision, setMaxDivision] = React.useState<number>(0);
+
+  // Calculate the actual max division based on teams
+  const calculatedMaxDivision = React.useMemo(() => {
     if (!teams.length) return 0;
 
     // Find the highest actual division number
@@ -288,11 +291,32 @@ function SortterPageContent() {
     return actualMaxDivision;
   }, [teams, divisions, placements, teamsPerDivision]);
 
+  // Update maxDivision when calculatedMaxDivision changes
+  React.useEffect(() => {
+    if (calculatedMaxDivision > maxDivision) {
+      setMaxDivision(calculatedMaxDivision);
+    }
+  }, [calculatedMaxDivision, maxDivision]);
+
   // Memoize division options to prevent recalculation on every render
   const divisionOptions = React.useMemo(
     () => generateDivisionOptions(maxDivision),
     [maxDivision]
   );
+
+  // Handle adding a new division
+  const handleAddNewDivision = React.useCallback(() => {
+    if (isViewMode) {
+      toast.error("Cannot add divisions - placements have been finalized");
+      return;
+    }
+    // Increment the max division to add a new one
+    setMaxDivision((prev) => prev + 1);
+    toast.success(`Added ${getDivisionName(maxDivision + 1)}`, {
+      duration: 2000,
+      position: "bottom-right"
+    });
+  }, [maxDivision, isViewMode]);
 
   // Calculate division summary
   const divisionSummary = React.useMemo(() => {
@@ -686,6 +710,7 @@ function SortterPageContent() {
                                   options={divisionOptions}
                                   disabled={isViewMode}
                                   onValueChange={handleDivisionChange}
+                                  onAddNewDivision={handleAddNewDivision}
                                   originalValue={team.division}
                                 />
                               </td>
