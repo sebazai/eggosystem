@@ -121,7 +121,8 @@ jest.mock("@/components/ui/select", () => ({
     <option value={value}>{children}</option>
   ),
   SelectTrigger: ({ children }: any) => <div>{children}</div>,
-  SelectValue: ({ placeholder }: any) => <span>{placeholder}</span>
+  SelectValue: ({ placeholder }: any) => <span>{placeholder}</span>,
+  SelectSeparator: () => <hr />
 }));
 
 jest.mock("@/components/ui/card", () => ({
