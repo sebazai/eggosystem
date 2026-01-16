@@ -218,7 +218,6 @@ export const getFantasyPlayersByLeague = async (
     WHERE stp.season_id = ? 
       AND slt.league_id = ?
     GROUP BY p.steam_id, p.nickname, stp.team_id, t.name, t.team_logo, lv.value, lv.tier
-    HAVING maps_played > 0
     ORDER BY t.name ASC, kana_rating DESC
   `;
 
