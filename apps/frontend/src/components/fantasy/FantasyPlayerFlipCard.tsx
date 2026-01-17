@@ -282,7 +282,7 @@ export default function FantasyPlayerFlipCard({
                         "drop-shadow-[0_0_6px_rgba(255,255,255,0.3)]"
                       )}
                     >
-                      {player.stats.rating.toFixed(2)}
+                      {player.stats.rating?.toFixed(2) ?? "0.00"}
                     </div>
                   </div>
 
@@ -298,7 +298,7 @@ export default function FantasyPlayerFlipCard({
                         "drop-shadow-[0_0_6px_rgba(255,255,255,0.3)]"
                       )}
                     >
-                      {player.stats.kd.toFixed(2)}
+                      {player.stats.kd?.toFixed(2) ?? "0.00"}
                     </div>
                   </div>
 
@@ -448,7 +448,7 @@ export default function FantasyPlayerFlipCard({
                         tierTextGlow[player.tier]
                       )}
                     >
-                      {player.stats.rating.toFixed(2)}
+                      {player.stats.rating?.toFixed(2) ?? "0.00"}
                     </div>
                     <div className="text-[9px] text-gray-400 mt-0.5 uppercase tracking-wider font-bold">
                       Rating
@@ -467,7 +467,7 @@ export default function FantasyPlayerFlipCard({
                         tierTextGlow[player.tier]
                       )}
                     >
-                      {player.stats.kd.toFixed(2)}
+                      {player.stats.kd?.toFixed(2) ?? "0.00"}
                     </div>
                     <div className="text-[9px] text-gray-400 mt-0.5 uppercase tracking-wider font-bold">
                       K/D
@@ -500,18 +500,19 @@ export default function FantasyPlayerFlipCard({
                 <div className="space-y-2">
                   {/* Headshot % and KAST */}
                   <div className="grid grid-cols-2 gap-2">
-                    {player.stats.headshotPercentage > 0 && (
-                      <div className="bg-neutral-800/60 rounded-lg p-2 border border-neutral-700/30">
-                        <div className="flex justify-between items-center">
-                          <span className="text-[10px] text-gray-400 uppercase tracking-wider font-bold">
-                            HS%
-                          </span>
-                          <span className="text-base font-black text-orange-400">
-                            {player.stats.headshotPercentage.toFixed(1)}%
-                          </span>
+                    {player.stats.headshotPercentage &&
+                      player.stats.headshotPercentage > 0 && (
+                        <div className="bg-neutral-800/60 rounded-lg p-2 border border-neutral-700/30">
+                          <div className="flex justify-between items-center">
+                            <span className="text-[10px] text-gray-400 uppercase tracking-wider font-bold">
+                              HS%
+                            </span>
+                            <span className="text-base font-black text-orange-400">
+                              {player.stats.headshotPercentage.toFixed(1)}%
+                            </span>
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
                     {player.stats.kast && (
                       <div className="bg-neutral-800/60 rounded-lg p-2 border border-neutral-700/30">
                         <div className="flex justify-between items-center">

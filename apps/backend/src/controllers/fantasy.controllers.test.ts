@@ -70,6 +70,8 @@ describe("Fantasy Controllers", () => {
           team_id: 1,
           team_name: "Test Team",
           team_logo: null,
+          value: 200000,
+          tier: "silver" as const,
           kana_rating: 0.8,
           kd: 1.2,
           kills: 100,

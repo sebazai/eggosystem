@@ -2,7 +2,14 @@
 
 import { ExternalLink, Menu } from "lucide-react";
 import Image from "next/image";
-import { useEffect, useReducer, useRef, useState, type JSX } from "react";
+import {
+  useEffect,
+  useReducer,
+  useRef,
+  useState,
+  type JSX,
+  useMemo
+} from "react";
 import Link from "next/link";
 
 import {
@@ -228,10 +235,16 @@ export const Navigation = (props: NavbarProps) => {
   const { user, logout } = useAuth();
   const { signupOrActiveSeason } = useActiveSignupOrActiveSeasonForApp(730);
   const { options, ...otherProps } = props;
-  const navigationProps =
-    Object.keys(otherProps).length === 0
+
+  // Memoize navigationProps to avoid recalculating on every render
+  // getSeasonMenuItems returns [] when signupOrActiveSeason is undefined (during SSR/initial load)
+  // This keeps the menu structure stable until data loads
+  const navigationProps = useMemo(() => {
+    return Object.keys(otherProps).length === 0
       ? getDefaultMenuItems(signupOrActiveSeason)
       : props;
+  }, [signupOrActiveSeason, otherProps, props]);
+
   const { logo, menu, mobileExtraLinks } = navigationProps;
 
   const navRef = useRef<HTMLDivElement>(null); // Ref for the navbar
@@ -329,7 +342,11 @@ export const Navigation = (props: NavbarProps) => {
               />
             </Link>
           )}
-          <NavigationMenu delayDuration={0} viewport={false}>
+          <NavigationMenu
+            key={menu?.length || 0}
+            delayDuration={0}
+            viewport={false}
+          >
             <NavigationMenuList>
               {menu?.map((m) => renderMenuItem(m, params))}
             </NavigationMenuList>
