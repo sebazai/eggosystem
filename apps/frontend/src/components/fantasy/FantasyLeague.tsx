@@ -27,8 +27,7 @@ import { RefreshCw, TrendingUp, Award } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import { SteamLoginButton } from "@/components/profile/SteamLoginButton";
-
-export type PlayerTier = "bronze" | "silver" | "gold";
+import { type PlayerTier, calculatePlayerTier } from "@eggosystem/types";
 
 export type FantasyPlayer = {
   id: number;
@@ -86,14 +85,6 @@ type Props = {
 };
 
 const BUDGET = 1000000;
-
-// Helper to determine tier based on player value (HLTV-style)
-// Gold: €210K+ (top 20% most expensive), Silver: €180K-210K (middle 40%), Bronze: <€180K (bottom 40%)
-const calculateTier = (value: number): PlayerTier => {
-  if (value >= 210000) return "gold"; // €210K+ = Gold
-  if (value >= 180000) return "silver"; // €180K-210K = Silver
-  return "bronze"; // <€180K = Bronze
-};
 
 export default function FantasyLeague({ seasonId }: Props) {
   const { user, loading: authLoading } = useAuth();
@@ -885,7 +876,8 @@ export default function FantasyLeague({ seasonId }: Props) {
                       team: player.team_name || "Free Agent",
                       teamLogo: teamLogoForPlayer,
                       value: player.player_value,
-                      tier: player.tier || calculateTier(player.player_value), // Use tier from backend if available
+                      tier:
+                        player.tier || calculatePlayerTier(player.player_value), // Use tier from backend if available
                       photo: undefined,
                       stats: {
                         rating: player.kana_rating || 0,

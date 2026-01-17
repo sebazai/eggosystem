@@ -110,9 +110,21 @@ export default function FantasyPlayerFlipCard({
           "relative w-full h-full transition-transform duration-500 ease-in-out transform-style-preserve-3d",
           isFlipped && "rotate-y-180"
         )}
+        style={{
+          transformStyle: "preserve-3d",
+          WebkitTransformStyle: "preserve-3d"
+        }}
       >
         {/* Front of Card */}
-        <div className="absolute inset-0 backface-hidden">
+        <div
+          className="absolute inset-0 backface-hidden"
+          style={{
+            backfaceVisibility: "hidden",
+            WebkitBackfaceVisibility: "hidden",
+            transform: "rotateY(0deg)",
+            WebkitTransform: "rotateY(0deg)"
+          }}
+        >
           {/* Outer Drop Shadow */}
           <div
             className={cn(
@@ -364,7 +376,15 @@ export default function FantasyPlayerFlipCard({
         </div>
 
         {/* Back of Card - Detailed Stats */}
-        <div className="absolute inset-0 rotate-y-180 backface-hidden">
+        <div
+          className="absolute inset-0 rotate-y-180 backface-hidden"
+          style={{
+            backfaceVisibility: "hidden",
+            WebkitBackfaceVisibility: "hidden",
+            transform: "rotateY(180deg)",
+            WebkitTransform: "rotateY(180deg)"
+          }}
+        >
           {/* Premium Frame with Shadow */}
           <div
             className={cn(
