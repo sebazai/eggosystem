@@ -48,55 +48,32 @@ export function calculatePlayerTier(value: number): PlayerTier {
 export function calculateInitialPlayerValue(
   rating: number,
   kd: number,
-  kills: number,
-  kanaElo?: number | null
+  kills: number
 ): number {
   const MIN_RATING = 0.4;
   const MAX_RATING = 1.1;
 
-  // Normalize rating to 0-1 scale
-  const normalizedRating = Math.min(
-    1,
-    Math.max(0, (rating - MIN_RATING) / (MAX_RATING - MIN_RATING))
-  );
+  // Normalize rating (0 to 1)
+  const normalizedRating = (rating - MIN_RATING) / (MAX_RATING - MIN_RATING);
 
-  // If kana_elo is provided, blend it with rating for better distribution
-  // ELO range: ~50 (bronze) to ~350 (top players)
-  let blendedScore = normalizedRating;
-  if (kanaElo !== undefined && kanaElo !== null && kanaElo > 0) {
-    const MIN_ELO = 50;
-    const MAX_ELO = 350;
-    const normalizedElo = Math.min(
-      1,
-      Math.max(0, (kanaElo - MIN_ELO) / (MAX_ELO - MIN_ELO))
-    );
-    // Weight: 60% ELO, 40% rating - ELO is more reliable for skill assessment
-    blendedScore = normalizedElo * 0.6 + normalizedRating * 0.4;
-  }
+  // Use gentler curve for better spread (sigmoid factor 4 instead of 6)
+  const curved = 1 / (1 + Math.exp(-4 * (normalizedRating - 0.5)));
 
-  // Sigmoid with factor 4 for good spread
-  // This creates a natural S-curve distribution
-  const curved = 1 / (1 + Math.exp(-4 * (blendedScore - 0.5)));
+  // Map to wider base range: 155K to 225K (70K spread)
+  const BASE = 155000;
+  const SPREAD = 70000;
+  let baseValue = BASE + curved * SPREAD;
 
-  // Map to new range: 150K to 230K base (80K spread)
-  // Center (~0.5 sigmoid output) = €190K (solidly in Silver tier: €175K-€215K)
-  let baseValue = 150000 + curved * 80000;
-
-  // K/D bonus ±5% (reduced to prevent pushing too many players to Gold)
-  const kdBonus = Math.min(Math.max((kd - 1.0) * 0.05, -0.025), 0.05);
+  // Increase K/D impact (up to ±8% instead of ±4%)
+  const kdBonus = Math.min(Math.max((kd - 1.0) * 0.08, -0.04), 0.08);
   baseValue = baseValue * (1 + kdBonus);
 
-  // Kills bonus up to 3% (small bonus for consistency/experience)
-  const killBonus = Math.min(kills / 6000, 0.03);
+  // Increase kills impact (up to 5% instead of 2.5%)
+  const killBonus = Math.min(kills / 4000, 0.05);
   baseValue = baseValue * (1 + killBonus);
 
-  // Final bounds: 150K to 250K
-  return Math.floor(
-    Math.max(
-      TIER_BOUNDARIES.VALUE_MIN,
-      Math.min(TIER_BOUNDARIES.VALUE_MAX, baseValue)
-    )
-  );
+  // Final bounds: 160K to 240K
+  return Math.floor(Math.max(160000, Math.min(240000, baseValue)));
 }
 
 /**
@@ -169,6 +146,8 @@ export interface FantasyPlayerStats {
   team_id: number;
   team_name: string;
   team_logo: string | null;
+  value: number;
+  tier: PlayerTier;
   kana_rating: number;
   kd: number;
   kills: number;

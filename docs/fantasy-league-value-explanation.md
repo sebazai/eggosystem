@@ -32,7 +32,7 @@
   - Starts with initial value based on stats (rating, K/D, kills)
   - After each match: Uses the **latest value from `FantasyPlayerValues`** (or snapshot if first match)
   - Formula: `newValue = currentValue + (currentValue * (pointsEarned / 30) * 0.03)`
-  - Capped at ±3% change per match
+  - Capped at ±3% change per match (reduced from 5% for smoother progression over 14 games)
   - Clamped between €150K and €250K
   - **Important**: Each match builds on the previous match's value, not the snapshot value
 
@@ -74,7 +74,7 @@ The code already does this correctly:
    - **Fourth**: Calculate from current match stats (last resort)
 3. **Points calculated** → Individual points, team points, role points
 4. **Value change calculated** → `newValue = currentValue + (currentValue * (pointsEarned / 30) * 0.03)`
-   - Capped at ±3% change per match
+   - Capped at ±3% change per match (reduced from 5% for smoother progression over 14 games)
    - Clamped between €150K and €250K
 5. **Value updated** → `FantasyPlayerValues.value` updated (or inserted if doesn't exist)
 6. **Metadata saved** → `FantasyPlayerValues.performance_stats` stores update details
