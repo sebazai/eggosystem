@@ -183,10 +183,33 @@ export const getFantasyPlayersByLeague = async (
       WHERE season_id = ?
       GROUP BY steam_id
     ) latest ON latest.steam_id = fpv.steam_id AND latest.max_created = fpv.created_at
+    ),
+    previous_season_stats AS (
+      SELECT
+        ps.steam_id,
+        ROUND(AVG(ps.kana_rating), 2) as prev_kana_rating,
+        ROUND(SUM(ps.kills) / NULLIF(SUM(ps.deaths), 0), 2) as prev_kd,
+        SUM(ps.kills) as prev_kills,
+        m.season_id as prev_season_id
+      FROM PlayerStats ps
+      INNER JOIN MatchGames mg ON mg.id = ps.match_game_id
+      INNER JOIN Matches m ON m.id = mg.match_id
+      INNER JOIN (
+        SELECT 
+          ps2.steam_id,
+          MAX(m2.season_id) as latest_season
+        FROM PlayerStats ps2
+        INNER JOIN MatchGames mg2 ON mg2.id = ps2.match_game_id
+        INNER JOIN Matches m2 ON m2.id = mg2.match_id
+        WHERE m2.season_id < ?
+        GROUP BY ps2.steam_id
+      ) latest ON latest.steam_id = ps.steam_id AND m.season_id = latest.latest_season
+      GROUP BY ps.steam_id, m.season_id
     )
     SELECT 
       p.steam_id,
       p.nickname,
+      spr.kana_elo,
       stp.team_id,
       t.name as team_name,
       t.team_logo,
@@ -205,51 +228,98 @@ export const getFantasyPlayersByLeague = async (
       ROUND(AVG(ps.kast), 1) as kast,
       COUNT(DISTINCT ps.match_game_id) as maps_played,
       lv.value as db_value,
-      lv.tier as db_tier
+      lv.tier as db_tier,
+      pss.prev_kana_rating,
+      pss.prev_kd,
+      pss.prev_kills
     FROM SeasonTeamPlayers stp
     INNER JOIN SteamPlayers p ON p.steam_id = stp.steam_id
     INNER JOIN Teams t ON t.id = stp.team_id
     INNER JOIN SeasonLeagueTeams slt ON slt.team_id = stp.team_id AND slt.season_id = stp.season_id
+    LEFT JOIN SeasonPlayerRanks spr ON spr.steam_id = p.steam_id AND spr.season_id = stp.season_id
     LEFT JOIN MatchTeams mt ON mt.team_id = stp.team_id
     LEFT JOIN Matches m ON m.id = mt.match_id AND m.season_id = stp.season_id AND m.league_id = slt.league_id
     LEFT JOIN MatchGames mg ON mg.match_id = m.id
     LEFT JOIN PlayerStats ps ON ps.match_game_id = mg.id AND ps.steam_id = stp.steam_id
     LEFT JOIN latest_values lv ON lv.steam_id = p.steam_id
+    LEFT JOIN previous_season_stats pss ON pss.steam_id = p.steam_id
     WHERE stp.season_id = ? 
       AND slt.league_id = ?
-    GROUP BY p.steam_id, p.nickname, stp.team_id, t.name, t.team_logo, lv.value, lv.tier
-    ORDER BY t.name ASC, kana_rating DESC
+    GROUP BY p.steam_id, p.nickname, spr.kana_elo, stp.team_id, t.name, t.team_logo, lv.value, lv.tier, pss.prev_kana_rating, pss.prev_kd, pss.prev_kills
+    ORDER BY t.name ASC, COALESCE(kana_rating, pss.prev_kana_rating, 0) DESC
   `;
 
   const results = await runQuery<
     Array<{
       steam_id: string;
       nickname: string;
+      kana_elo: number | null;
       team_id: number;
       team_name: string;
       team_logo: string | null;
-      kana_rating: number;
-      kd: number;
-      kills: number;
-      deaths: number;
+      kana_rating: number | null;
+      kd: number | null;
+      kills: number | null;
+      deaths: number | null;
       adr: number | null;
       adr_t: number | null;
       adr_ct: number | null;
-      headshots: number;
-      headshot_percentage: number;
-      flash_assists: number;
-      first_kills: number;
-      first_deaths: number;
+      headshots: number | null;
+      headshot_percentage: number | null;
+      flash_assists: number | null;
+      first_kills: number | null;
+      first_deaths: number | null;
       kast: number | null;
       maps_played: number;
       db_value: number | null;
       db_tier: PlayerTier | null;
+      prev_kana_rating: number | null;
+      prev_kd: number | null;
+      prev_kills: number | null;
     }>
-  >(query, [seasonId, seasonId, leagueId]);
+  >(query, [seasonId, seasonId, seasonId, leagueId]);
 
   // Calculate values with Redis caching (same logic as top players)
   const playersWithValues = await Promise.all(
     results.map(async (row) => {
+      // Determine which stats to use:
+      // 1. Current season stats if maps_played > 0
+      // 2. Previous season stats if current season maps_played = 0 AND previous season stats exist
+      // 3. Kana ELO estimation if no historical stats (new player)
+      const hasCurrentSeasonStats = row.maps_played > 0;
+      const hasPreviousSeasonStats =
+        row.prev_kana_rating !== null &&
+        row.prev_kd !== null &&
+        row.prev_kills !== null;
+
+      // Determine the stats to display and use for calculation
+      let displayRating: number;
+      let displayKd: number;
+      let displayKills: number;
+
+      if (hasCurrentSeasonStats) {
+        // Has current season stats - use them
+        displayRating = row.kana_rating ?? 0;
+        displayKd = row.kd ?? 0;
+        displayKills = row.kills ?? 0;
+      } else if (hasPreviousSeasonStats) {
+        // No current season games, but has previous season stats - show those
+        displayRating = row.prev_kana_rating!;
+        displayKd = row.prev_kd!;
+        displayKills = row.prev_kills!;
+      } else if (row.kana_elo !== null) {
+        // New player with no historical stats - use elo/200 as estimated rating
+        // kana_elo range ~70-224, so /200 gives ~0.35-1.12 which matches rating range
+        displayRating = row.kana_elo / 200;
+        displayKd = 1.0; // Conservative estimate
+        displayKills = 100; // Conservative estimate
+      } else {
+        // Completely new player with no data at all
+        displayRating = 0;
+        displayKd = 0;
+        displayKills = 0;
+      }
+
       // If we have a value in DB, use it
       if (row.db_value !== null && row.db_tier !== null) {
         return {
@@ -258,19 +328,23 @@ export const getFantasyPlayersByLeague = async (
           team_id: row.team_id,
           team_name: row.team_name,
           team_logo: row.team_logo,
-          kana_rating: row.kana_rating,
-          kd: row.kd,
-          kills: row.kills,
-          deaths: row.deaths,
-          adr: row.adr,
-          adr_t: row.adr_t,
-          adr_ct: row.adr_ct,
-          headshots: row.headshots,
-          headshot_percentage: row.headshot_percentage,
-          flash_assists: row.flash_assists,
-          first_kills: row.first_kills,
-          first_deaths: row.first_deaths,
-          kast: row.kast,
+          value: row.db_value,
+          tier: row.db_tier,
+          kana_rating: displayRating,
+          kd: displayKd,
+          kills: displayKills,
+          deaths: hasCurrentSeasonStats ? (row.deaths ?? 0) : 0,
+          adr: hasCurrentSeasonStats ? row.adr : null,
+          adr_t: hasCurrentSeasonStats ? row.adr_t : null,
+          adr_ct: hasCurrentSeasonStats ? row.adr_ct : null,
+          headshots: hasCurrentSeasonStats ? (row.headshots ?? 0) : 0,
+          headshot_percentage: hasCurrentSeasonStats
+            ? (row.headshot_percentage ?? 0)
+            : 0,
+          flash_assists: hasCurrentSeasonStats ? (row.flash_assists ?? 0) : 0,
+          first_kills: hasCurrentSeasonStats ? (row.first_kills ?? 0) : 0,
+          first_deaths: hasCurrentSeasonStats ? (row.first_deaths ?? 0) : 0,
+          kast: hasCurrentSeasonStats ? row.kast : null,
           maps_played: row.maps_played
         };
       }
@@ -281,36 +355,45 @@ export const getFantasyPlayersByLeague = async (
       // Try to get from cache
       const cachedValue = await redisClient.get(cacheKey);
       if (cachedValue) {
-        // Cache hit - return the stats (value will be calculated on frontend from stats)
+        // Cache hit - parse and return cached value/tier with stats
+        const cached = JSON.parse(cachedValue) as {
+          value: number;
+          tier: PlayerTier;
+        };
         return {
           steam_id: row.steam_id,
           nickname: row.nickname,
           team_id: row.team_id,
           team_name: row.team_name,
           team_logo: row.team_logo,
-          kana_rating: row.kana_rating,
-          kd: row.kd,
-          kills: row.kills,
-          deaths: row.deaths,
-          adr: row.adr,
-          adr_t: row.adr_t,
-          adr_ct: row.adr_ct,
-          headshots: row.headshots,
-          headshot_percentage: row.headshot_percentage,
-          flash_assists: row.flash_assists,
-          first_kills: row.first_kills,
-          first_deaths: row.first_deaths,
-          kast: row.kast,
+          value: cached.value,
+          tier: cached.tier,
+          kana_rating: displayRating,
+          kd: displayKd,
+          kills: displayKills,
+          deaths: hasCurrentSeasonStats ? (row.deaths ?? 0) : 0,
+          adr: hasCurrentSeasonStats ? row.adr : null,
+          adr_t: hasCurrentSeasonStats ? row.adr_t : null,
+          adr_ct: hasCurrentSeasonStats ? row.adr_ct : null,
+          headshots: hasCurrentSeasonStats ? (row.headshots ?? 0) : 0,
+          headshot_percentage: hasCurrentSeasonStats
+            ? (row.headshot_percentage ?? 0)
+            : 0,
+          flash_assists: hasCurrentSeasonStats ? (row.flash_assists ?? 0) : 0,
+          first_kills: hasCurrentSeasonStats ? (row.first_kills ?? 0) : 0,
+          first_deaths: hasCurrentSeasonStats ? (row.first_deaths ?? 0) : 0,
+          kast: hasCurrentSeasonStats ? row.kast : null,
           maps_played: row.maps_played
         };
       }
 
-      // Calculate and cache initial value
-      const initialValue = calculateInitialPlayerValue(
-        row.kana_rating,
-        row.kd,
-        row.kills
-      );
+      // Calculate initial value based on available stats
+      // Just use the display stats directly (no elo blending)
+      const initialValue =
+        displayRating > 0 || displayKd > 0 || displayKills > 0
+          ? calculateInitialPlayerValue(displayRating, displayKd, displayKills)
+          : 185000; // Conservative default for completely new players
+
       const initialTier = calculatePlayerTier(initialValue);
 
       // Cache for 30 days
@@ -333,19 +416,23 @@ export const getFantasyPlayersByLeague = async (
         team_id: row.team_id,
         team_name: row.team_name,
         team_logo: row.team_logo,
-        kana_rating: row.kana_rating,
-        kd: row.kd,
-        kills: row.kills,
-        deaths: row.deaths,
-        adr: row.adr,
-        adr_t: row.adr_t,
-        adr_ct: row.adr_ct,
-        headshots: row.headshots,
-        headshot_percentage: row.headshot_percentage,
-        flash_assists: row.flash_assists,
-        first_kills: row.first_kills,
-        first_deaths: row.first_deaths,
-        kast: row.kast,
+        value: initialValue,
+        tier: initialTier,
+        kana_rating: displayRating,
+        kd: displayKd,
+        kills: displayKills,
+        deaths: hasCurrentSeasonStats ? (row.deaths ?? 0) : 0,
+        adr: hasCurrentSeasonStats ? row.adr : null,
+        adr_t: hasCurrentSeasonStats ? row.adr_t : null,
+        adr_ct: hasCurrentSeasonStats ? row.adr_ct : null,
+        headshots: hasCurrentSeasonStats ? (row.headshots ?? 0) : 0,
+        headshot_percentage: hasCurrentSeasonStats
+          ? (row.headshot_percentage ?? 0)
+          : 0,
+        flash_assists: hasCurrentSeasonStats ? (row.flash_assists ?? 0) : 0,
+        first_kills: hasCurrentSeasonStats ? (row.first_kills ?? 0) : 0,
+        first_deaths: hasCurrentSeasonStats ? (row.first_deaths ?? 0) : 0,
+        kast: hasCurrentSeasonStats ? row.kast : null,
         maps_played: row.maps_played
       };
     })

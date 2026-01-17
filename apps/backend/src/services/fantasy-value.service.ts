@@ -31,9 +31,10 @@ export const calculatePlayerValueData = (
   rating: number,
   kd: number,
   kills: number,
-  kanaElo?: number | null
+  _kanaElo?: number | null
 ): PlayerValueData => {
-  const value = calculateInitialPlayerValue(rating, kd, kills, kanaElo);
+  // Just use the rating as-is (kanaElo scales differently than rating, don't blend)
+  const value = calculateInitialPlayerValue(rating, kd, kills);
   const tier = calculatePlayerTier(value); // Tier based on value
   return {
     value,
@@ -91,12 +92,11 @@ export const calculateInitialPlayerValues = async (
     (
       player: WeeklyPerformanceStats & { steam_id: string; kana_elo?: number }
     ) => {
-      // Calculate value using kana_elo for better distribution
+      // Just use rating as-is (kana_elo scales differently, don't blend)
       const value = calculateInitialPlayerValue(
         player.kana_rating,
         player.kd,
-        player.kills,
-        player.kana_elo
+        player.kills
       );
       const tier = calculatePlayerTier(value);
       return {

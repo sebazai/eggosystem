@@ -95,35 +95,6 @@ const calculateTier = (value: number): PlayerTier => {
   return "bronze"; // <€180K = Bronze
 };
 
-// Helper to calculate player value with better spread across price range
-// Target range: 160K-240K with wider distribution for strategic team building
-const calculateValue = (rating: number, kd: number, kills: number): number => {
-  const MIN_RATING = 0.4;
-  const MAX_RATING = 1.1;
-
-  // Normalize rating (0 to 1)
-  const normalizedRating = (rating - MIN_RATING) / (MAX_RATING - MIN_RATING);
-
-  // Use gentler curve for better spread (sigmoid factor 4 instead of 6)
-  const curved = 1 / (1 + Math.exp(-4 * (normalizedRating - 0.5)));
-
-  // Map to wider base range: 155K to 225K (70K spread)
-  const BASE = 155000;
-  const SPREAD = 70000;
-  let baseValue = BASE + curved * SPREAD;
-
-  // Increase K/D impact (up to ±8% instead of ±4%)
-  const kdBonus = Math.min(Math.max((kd - 1.0) * 0.08, -0.04), 0.08);
-  baseValue = baseValue * (1 + kdBonus);
-
-  // Increase kills impact (up to 5% instead of 2.5%)
-  const killBonus = Math.min(kills / 4000, 0.05);
-  baseValue = baseValue * (1 + killBonus);
-
-  // Final bounds: 160K to 240K
-  return Math.floor(Math.max(160000, Math.min(240000, baseValue)));
-};
-
 export default function FantasyLeague({ seasonId }: Props) {
   const { user, loading: authLoading } = useAuth();
   const [selectedLeagueId, setSelectedLeagueId] = useState<string>("");
@@ -213,11 +184,9 @@ export default function FantasyLeague({ seasonId }: Props) {
     if (!players) return [];
 
     return players.map((p) => {
-      // 1. Calculate value first
-      const value = calculateValue(p.kana_rating, p.kd, p.kills);
-
-      // 2. Determine tier based on value (not rating)
-      const tier = calculateTier(value);
+      // Use value and tier from backend API (already calculated with proper logic)
+      const value = p.value;
+      const tier = p.tier;
 
       return {
         id: parseInt(String(p.steam_id).slice(-9)), // Convert to string first, then use last 9 digits as number
@@ -227,8 +196,8 @@ export default function FantasyLeague({ seasonId }: Props) {
         teamLogo: p.team_logo
           ? createTeamLogoUrl(p.team_logo)
           : "/team-images/nologo.png",
-        value, // Use calculated value
-        tier, // Use value-based tier
+        value, // Use API value
+        tier, // Use API tier
         stats: {
           rating: p.kana_rating,
           kills: p.kills,
