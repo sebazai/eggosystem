@@ -640,14 +640,8 @@ export default function AddPlayerPage() {
                           Total (Original Kana Elo):
                         </span>
                         <span className="font-mono font-semibold">
-                          {eligibilityResult.selectedTeam.csrankker_components
-                            .trueLevel +
-                            eligibilityResult.selectedTeam.csrankker_components
-                              .mm +
-                            eligibilityResult.selectedTeam.csrankker_components
-                              .hour +
-                            eligibilityResult.selectedTeam.csrankker_components
-                              .kana}
+                          {eligibilityResult.selectedTeam
+                            .csrankker_original_kanaelo ?? "N/A"}
                         </span>
                       </div>
                       <div className="flex justify-between text-xs mt-1 text-muted-foreground">
