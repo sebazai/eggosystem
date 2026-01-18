@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import FantasyPlayerFlipCard from "./FantasyPlayerFlipCard";
 import { createTeamLogoUrl } from "@/lib/utils";
 import type { MyFantasyTeam } from "@/hooks/data/useMyFantasyTeam";
+import { calculatePlayerTier } from "@eggosystem/types";
 
 type Props = {
   open: boolean;
@@ -112,7 +113,8 @@ export default function TeamViewDialog({ open, onOpenChange, team }: Props) {
                     team: player.team_name || "Free Agent",
                     teamLogo: teamLogoForPlayer,
                     value: player.player_value,
-                    tier: player.tier || "bronze", // Default to bronze if not set
+                    tier:
+                      player.tier || calculatePlayerTier(player.player_value), // Calculate tier from value if not provided
                     photo: undefined,
                     stats: {
                       rating: player.kana_rating || 0,
