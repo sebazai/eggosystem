@@ -21,6 +21,7 @@ import {
   type MyFantasyTeam
 } from "@/hooks/data/useMyFantasyTeam";
 import { createTeamLogoUrl, expressFetcher, cn } from "@/lib/utils";
+import { clientApiFetch } from "@/lib/apiClient";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { RefreshCw, TrendingUp, Award } from "lucide-react";
@@ -296,16 +297,12 @@ export default function FantasyLeague({ seasonId }: Props) {
         };
       });
 
-      await expressFetcher<{
+      await clientApiFetch<{
         team_id: number;
         success: boolean;
         message: string;
       }>(`/api/v1/seasons/${seasonId}/fantasy/teams`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        credentials: "include", // Include cookies for authentication
         body: JSON.stringify({
           league_id: parseInt(selectedLeagueId),
           team_name: teamName.trim(),
@@ -397,15 +394,11 @@ export default function FantasyLeague({ seasonId }: Props) {
     setIsSubmitting(true);
 
     try {
-      const response = await expressFetcher<{
+      const response = await clientApiFetch<{
         success: boolean;
         remaining_swaps: number;
       }>(`/api/v1/seasons/${seasonId}/fantasy/teams/me/roles`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        credentials: "include",
         body: JSON.stringify({
           role_updates: [
             {
@@ -466,14 +459,10 @@ export default function FantasyLeague({ seasonId }: Props) {
         return;
       }
 
-      await expressFetcher(
+      await clientApiFetch(
         `/api/v1/seasons/${seasonId}/fantasy/teams/me/roles`,
         {
           method: "PUT",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          credentials: "include",
           body: JSON.stringify({ role_updates: roleUpdates })
         }
       );
@@ -505,15 +494,11 @@ export default function FantasyLeague({ seasonId }: Props) {
       // Use current week number from backend, fallback to week 1
       const weekNumber = existingTeam?.current_week_number || 1;
 
-      const response = await expressFetcher<{
+      const response = await clientApiFetch<{
         success: boolean;
         remaining_substitutions: number;
       }>(`/api/v1/seasons/${seasonId}/fantasy/teams/me/players`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        credentials: "include",
         body: JSON.stringify({
           remove_player_id: playerToReplace.steam_id,
           add_player_id: newPlayerSteamId,
@@ -526,14 +511,10 @@ export default function FantasyLeague({ seasonId }: Props) {
       // If role is provided, assign it (this doesn't count as a role swap since it's a new player)
       if (role) {
         try {
-          await expressFetcher(
+          await clientApiFetch(
             `/api/v1/seasons/${seasonId}/fantasy/teams/me/roles`,
             {
               method: "PUT",
-              headers: {
-                "Content-Type": "application/json"
-              },
-              credentials: "include",
               body: JSON.stringify({
                 role_updates: [
                   {
