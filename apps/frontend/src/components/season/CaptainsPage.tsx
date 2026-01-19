@@ -24,7 +24,7 @@ export const CaptainsPage = ({
   seasonId: string;
   seasonName: string;
 }) => {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { captains, isLoading, isValidating, isError } =
     useSeasonCaptains(seasonId);
   const [sorting, setSorting] = useState<SortingState>([
@@ -85,6 +85,15 @@ export const CaptainsPage = ({
     ],
     []
   );
+
+  // Show loading while initial auth check
+  if (authLoading) {
+    return (
+      <ContentContainer>
+        <div className="text-center text-lg">Checking auth...</div>
+      </ContentContainer>
+    );
+  }
 
   // Check if user has access
   if (!hasCaptainsAccess(user)) {

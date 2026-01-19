@@ -4,7 +4,8 @@ import {
   clientApiFetch,
   setAuthFailureCallback,
   markValidSession,
-  clearSessionState
+  clearSessionState,
+  refreshAccessToken
 } from "@/lib/apiClient";
 import {
   createContext,
@@ -31,6 +32,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const checkAuth = useCallback(async () => {
     try {
+      await refreshAccessToken().catch(() => {});
+
       const res = await clientApiFetch<{ user: UserFullPayload }>(
         "/api/v1/auth/me"
       );

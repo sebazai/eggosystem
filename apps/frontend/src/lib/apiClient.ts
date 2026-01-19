@@ -30,6 +30,68 @@ const addRefreshSubscriber = (callback: () => void) => {
 };
 
 /**
+ * Manually refresh the access token.
+ * This is useful when you need to ensure the token has the latest permissions/roles
+ * even if the current token hasn't expired yet.
+ * @returns Promise that resolves when token is refreshed, or rejects on error
+ */
+export const refreshAccessToken = async (): Promise<void> => {
+  if (isRefreshing) {
+    // If already refreshing, wait for it to complete
+    return new Promise((resolve, _reject) => {
+      addRefreshSubscriber(() => {
+        resolve();
+      });
+      // If refresh fails, the error will be handled by the ongoing refresh
+      // Check periodically if refresh completed (success or failure)
+      const checkInterval = setInterval(() => {
+        if (!isRefreshing) {
+          clearInterval(checkInterval);
+          resolve();
+        }
+      }, 100);
+    });
+  }
+
+  isRefreshing = true;
+
+  try {
+    const response = await fetch(
+      `${envConfig.CLIENT_API_URL}/api/v1/auth/refresh`,
+      {
+        method: "POST",
+        credentials: "include"
+      }
+    );
+
+    if (response.ok) {
+      onTokenRefreshed(); // Notify all waiting requests
+      return;
+    }
+
+    if (response.status === 401) {
+      console.warn("No refresh token available or session expired.");
+      // Only trigger auth failure if we had a valid session that actually expired
+      if (onAuthFailure && hasHadValidSession) {
+        onAuthFailure();
+      }
+      throw new Error("No refresh token available or session expired.");
+    }
+
+    // Only trigger auth failure for actual refresh failures when we had a session
+    if (onAuthFailure && hasHadValidSession) {
+      onAuthFailure();
+    }
+    throw new Error("Token refresh failed");
+  } catch (error) {
+    refreshSubscribers = [];
+    throw error;
+  } finally {
+    isRefreshing = false;
+  }
+};
+
+/**
  * RFC 7807 Problem Details for HTTP APIs
  * @see https://datatracker.ietf.org/doc/html/rfc7807
  */
@@ -161,46 +223,6 @@ export async function clientApiFetch<T>(
   ...args: [RequestInfo, RequestInit?]
 ): Promise<T> {
   const [url, options] = args;
-
-  const refreshAccessToken = async () => {
-    if (isRefreshing) return;
-    isRefreshing = true;
-
-    try {
-      const response = await fetch(
-        `${envConfig.CLIENT_API_URL}/api/v1/auth/refresh`,
-        {
-          method: "POST",
-          credentials: "include"
-        }
-      );
-
-      if (response.ok) {
-        onTokenRefreshed(); // Notify all waiting requests
-        return;
-      }
-
-      if (response.status === 401) {
-        console.warn("No refresh token available or session expired.");
-        // Only trigger auth failure if we had a valid session that actually expired
-        if (onAuthFailure && hasHadValidSession) {
-          onAuthFailure();
-        }
-        throw new Error("No refresh token available or session expired.");
-      }
-
-      // Only trigger auth failure for actual refresh failures when we had a session
-      if (onAuthFailure && hasHadValidSession) {
-        onAuthFailure();
-      }
-      throw new Error("Token refresh failed");
-    } catch (error) {
-      refreshSubscribers = [];
-      throw error;
-    } finally {
-      isRefreshing = false;
-    }
-  };
 
   const fetchWithRetry = async (retryAttempted = false): Promise<T> => {
     // Prepare headers
