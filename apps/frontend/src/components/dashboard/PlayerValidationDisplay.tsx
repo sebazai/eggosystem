@@ -198,7 +198,7 @@ export function PlayerValidationDisplay({
                     </p>
                   </div>
                   <Link
-                    href={`/dashboard/players/validate?steamId=${encodeURIComponent(validationResult.steam_id)}&seasonId=${validationResult.season_id}`}
+                    href={`/dashboard/players/validate?steamId=${encodeURIComponent(validationResult.steam_id)}&season=${validationResult.season_id}`}
                     className="ml-4 inline-flex items-center px-3 py-2 text-sm font-medium text-blue-600 bg-white border border-blue-300 rounded-md hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:bg-blue-800 dark:text-blue-100 dark:border-blue-600 dark:hover:bg-blue-700"
                   >
                     View Details
