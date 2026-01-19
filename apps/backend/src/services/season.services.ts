@@ -36,7 +36,7 @@ export const ensureSeasonMaxPlayersForTeam = async (
   const maxPlayersForSeason = season.max_players ?? maxPlayers;
 
   // +1 for the new player
-  if (primaryPlayers.length + 1 >= maxPlayersForSeason) {
+  if (primaryPlayers.length + 1 > maxPlayersForSeason) {
     throw new BadRequestError(
       `Team ${teamId} already has the maximum number of players (${maxPlayersForSeason})`
     );
