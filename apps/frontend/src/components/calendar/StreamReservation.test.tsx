@@ -53,7 +53,6 @@ describe("StreamReservation", () => {
       user: mockCasterUser,
       loading: false,
       checkAuth: jest.fn(),
-      refreshAuth: jest.fn(),
       logout: jest.fn()
     });
     mockHasCasterAccess.mockReturnValue(true);
