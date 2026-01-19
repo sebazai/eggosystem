@@ -293,7 +293,7 @@ export default function AddPlayerPage() {
                   </SelectContent>
                 </Select>
                 {!sharedSeasonId && (
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-destructive">
                     Please select a season from the sidebar to continue.
                   </p>
                 )}
@@ -586,7 +586,7 @@ export default function AddPlayerPage() {
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span>New Average (Top 3 + New Player):</span>
+                      <span>New Average (Top 5, including New Player):</span>
                       <span className="font-mono font-semibold">
                         {eligibilityResult.selectedTeam.new_avg_with_player}
                       </span>

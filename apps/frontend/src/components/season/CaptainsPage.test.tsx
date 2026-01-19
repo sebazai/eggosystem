@@ -97,7 +97,6 @@ describe("CaptainsPage", () => {
       user: { ...mockUser, roles: ["player"] },
       loading: false,
       checkAuth: jest.fn(),
-      refreshAuth: jest.fn(),
       logout: jest.fn()
     });
 
@@ -124,7 +123,6 @@ describe("CaptainsPage", () => {
       user: mockUser,
       loading: false,
       checkAuth: jest.fn(),
-      refreshAuth: jest.fn(),
       logout: jest.fn()
     });
 
