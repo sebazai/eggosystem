@@ -34,6 +34,56 @@ import { toast } from "sonner";
 import { TanStackTableWrapper } from "../../tables/TanStackTableWrapper";
 import { ExpandableRow } from "../../tables/ExpandableRow";
 import { RowSelection } from "../../tables/RowSelection";
+import type { RegisteredTeamPlayer } from "@eggosystem/types";
+
+/**
+ * Determines the reason why a player needs approval based on their data
+ * and the team's email domain pattern
+ */
+function getPlayerApprovalReason(
+  player: RegisteredTeamPlayer,
+  team: SeasonRegisteredTeamsWithPlayersValidatedTeams
+): string[] {
+  const reasons: string[] = [];
+
+  // Check if work email is not verified
+  if (!player.work_email_verified) {
+    reasons.push("Work email not verified");
+  }
+
+  // Check if it's a personal email
+  if (player.is_work_email_personal_email) {
+    reasons.push("Personal email requires approval");
+  }
+
+  // Check if email domain differs from team's common domain
+  // Find the most common work email ending (only for non-personal emails)
+  const workEmailEndings = team.players
+    .filter((p) => !p.is_work_email_personal_email)
+    .map((p) => p.work_email.split("@")[1]);
+
+  if (workEmailEndings.length > 0) {
+    const mostCommonEmailEnding = workEmailEndings.reduce((a, b) => {
+      const countA = workEmailEndings.filter((v) => v === a).length;
+      const countB = workEmailEndings.filter((v) => v === b).length;
+      if (countA > countB) return a;
+      if (countB > countA) return b;
+      return a;
+    });
+
+    const playerEmailDomain = player.work_email.split("@")[1];
+    if (
+      !player.is_work_email_personal_email &&
+      playerEmailDomain !== mostCommonEmailEnding
+    ) {
+      reasons.push(
+        `Different email domain (${playerEmailDomain} vs ${mostCommonEmailEnding})`
+      );
+    }
+  }
+
+  return reasons.length > 0 ? reasons : ["Requires approval"];
+}
 
 export const ListRegisteredTeams = () => {
   const { selectedSeasonId } = useDashboardSeason();
@@ -308,9 +358,21 @@ export const ListRegisteredTeams = () => {
                 {player.steam_id}
               </span>
               {isInvalid && (
-                <span className="text-[0.65rem] text-red-600 font-medium">
-                  ⚠️ Needs approval
-                </span>
+                <div className="flex flex-col gap-1 mt-1">
+                  <span className="text-[0.65rem] text-red-600 font-medium">
+                    ⚠️ Needs approval
+                  </span>
+                  <div className="text-[0.65rem] text-red-600 space-y-0.5">
+                    {getPlayerApprovalReason(player, team).map(
+                      (reason, idx) => (
+                        <div key={idx} className="flex items-start gap-1">
+                          <span className="text-red-500">•</span>
+                          <span>{reason}</span>
+                        </div>
+                      )
+                    )}
+                  </div>
+                </div>
               )}
             </div>
           );
