@@ -52,8 +52,7 @@ export const TeamMapStatsCards = ({
     isPistolStatsLoading ||
     isPlantStatsLoading ||
     isRetakeStatsLoading ||
-    isTradeStatsLoading ||
-    !teamMapStats
+    isTradeStatsLoading
   ) {
     // Return skeleton loader
     return (
@@ -75,6 +74,17 @@ export const TeamMapStatsCards = ({
             </div>
           </div>
         ))}
+      </div>
+    );
+  }
+
+  // Handle empty state
+  if (!teamMapStats || teamMapStats.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-muted-foreground">
+          No detailed map statistics available
+        </p>
       </div>
     );
   }

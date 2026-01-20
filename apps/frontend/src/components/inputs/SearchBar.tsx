@@ -106,11 +106,14 @@ export function SearchBar({ placeholder }: { placeholder: string }) {
         <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
           ref={inputRef}
+          id="search-input"
+          name="search"
           placeholder={placeholder}
           className="pl-8"
           value={searchValue}
           onChange={handleChange}
           disabled={isPending}
+          aria-label={placeholder}
         />
 
         {isPending && (

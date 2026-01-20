@@ -682,6 +682,102 @@ describe("Fantasy Controllers", () => {
 
       expect(mockFantasyModels.updatePlayerRoles).toHaveBeenCalled();
     });
+
+    it("should propagate error when player not found in team", async () => {
+      const mockTeam = {
+        id: 1,
+        steam_id: "12345",
+        season_id: 1,
+        league_id: 1,
+        team_name: "My Team",
+        budget_remaining: 500000,
+        total_points: 100,
+        created_at: new Date(),
+        updated_at: new Date(),
+        players: []
+      };
+
+      const error = Object.assign(
+        new Error("Player 76561197992956290 not found in team"),
+        {
+          name: "Bad Request",
+          status: 400
+        }
+      );
+
+      mockFantasyModels.getFantasyTeamByUser.mockResolvedValue(mockTeam);
+      mockFantasyModels.updatePlayerRoles.mockRejectedValue(error);
+
+      await expect(
+        updatePlayerRolesController(mockRequest, mockResponse, mockNext)
+      ).rejects.toThrow("Player 76561197992956290 not found in team");
+    });
+
+    it("should propagate error when role already assigned to another player", async () => {
+      const mockTeam = {
+        id: 1,
+        steam_id: "12345",
+        season_id: 1,
+        league_id: 1,
+        team_name: "My Team",
+        budget_remaining: 500000,
+        total_points: 100,
+        created_at: new Date(),
+        updated_at: new Date(),
+        players: []
+      };
+
+      const error = Object.assign(
+        new Error('Role "main_awp" is already assigned to another player'),
+        {
+          name: "Bad Request",
+          status: 400
+        }
+      );
+
+      mockFantasyModels.getFantasyTeamByUser.mockResolvedValue(mockTeam);
+      mockFantasyModels.updatePlayerRoles.mockRejectedValue(error);
+
+      await expect(
+        updatePlayerRolesController(mockRequest, mockResponse, mockNext)
+      ).rejects.toThrow(
+        'Role "main_awp" is already assigned to another player'
+      );
+    });
+
+    it("should propagate error when role swap limit exceeded", async () => {
+      const mockTeam = {
+        id: 1,
+        steam_id: "12345",
+        season_id: 1,
+        league_id: 1,
+        team_name: "My Team",
+        budget_remaining: 500000,
+        total_points: 100,
+        created_at: new Date(),
+        updated_at: new Date(),
+        players: []
+      };
+
+      const error = Object.assign(
+        new Error(
+          "Maximum 2 role swaps per week allowed. You have 0 remaining."
+        ),
+        {
+          name: "Bad Request",
+          status: 400
+        }
+      );
+
+      mockFantasyModels.getFantasyTeamByUser.mockResolvedValue(mockTeam);
+      mockFantasyModels.updatePlayerRoles.mockRejectedValue(error);
+
+      await expect(
+        updatePlayerRolesController(mockRequest, mockResponse, mockNext)
+      ).rejects.toThrow(
+        "Maximum 2 role swaps per week allowed. You have 0 remaining."
+      );
+    });
   });
 
   describe("getFantasyLeaderboardController", () => {

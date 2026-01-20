@@ -12,6 +12,7 @@ import {
 } from "../utils/week-calculation";
 import { redisClient } from "../utils/redisClient";
 import { logger } from "../utils/app-logger";
+import { BadRequestError } from "../utils/errors";
 
 export type PlayerRole =
   | "main_awp"
@@ -454,14 +455,14 @@ export const createFantasyTeam = async (
 
     // Validate: Must have exactly 5 players
     if (data.players.length !== 5) {
-      throw new Error("Fantasy team must have exactly 5 players");
+      throw new BadRequestError("Fantasy team must have exactly 5 players");
     }
 
     // Validate: Roles must be unique (no duplicate roles)
     const roles = data.players.map((p) => p.role).filter(Boolean);
     const uniqueRoles = new Set(roles);
     if (roles.length !== uniqueRoles.size) {
-      throw new Error("Each role can only be assigned to one player");
+      throw new BadRequestError("Each role can only be assigned to one player");
     }
 
     // Calculate total cost
@@ -469,7 +470,9 @@ export const createFantasyTeam = async (
     const budgetRemaining = 1000000 - totalCost;
 
     if (totalCost > 1000000) {
-      throw new Error("Total player value exceeds budget of 1,000,000 €");
+      throw new BadRequestError(
+        "Total player value exceeds budget of 1,000,000 €"
+      );
     }
 
     // Check if user already has a team for this season
@@ -480,7 +483,9 @@ export const createFantasyTeam = async (
     );
 
     if (existingTeam) {
-      throw new Error("User already has a fantasy team for this season");
+      throw new BadRequestError(
+        "User already has a fantasy team for this season"
+      );
     }
 
     // Insert fantasy team
@@ -842,7 +847,7 @@ export const substitutePlayer = async (
     );
 
     if (!team) {
-      throw new Error("Fantasy team not found");
+      throw new BadRequestError("Fantasy team not found");
     }
 
     // Check substitution limit (2 per week)
@@ -854,7 +859,7 @@ export const substitutePlayer = async (
     );
 
     if (subsCount && subsCount.count >= 2) {
-      throw new Error("Maximum 2 substitutions per week allowed");
+      throw new BadRequestError("Maximum 2 substitutions per week allowed");
     }
 
     // Get player being removed
@@ -867,7 +872,7 @@ export const substitutePlayer = async (
     );
 
     if (!removedPlayer) {
-      throw new Error("Player to remove not found in team");
+      throw new BadRequestError("Player to remove not found in team");
     }
 
     // Check if the player being removed has already played in the current week
@@ -879,7 +884,7 @@ export const substitutePlayer = async (
     );
 
     if (hasPlayed) {
-      throw new Error(
+      throw new BadRequestError(
         "Cannot substitute a player who has already played matches this week. Players are locked after their first match."
       );
     }
@@ -889,7 +894,7 @@ export const substitutePlayer = async (
     const newBudget = team.budget_remaining + budgetChange;
 
     if (newBudget < 0) {
-      throw new Error("Insufficient budget for substitution");
+      throw new BadRequestError("Insufficient budget for substitution");
     }
 
     // Deactivate old player
@@ -1007,7 +1012,9 @@ export const updatePlayerRoles = async (
     // Check if all players exist
     for (const update of roleUpdates) {
       if (!currentRolesMap.has(update.steam_id)) {
-        throw new Error(`Player ${update.steam_id} not found in team`);
+        throw new BadRequestError(
+          `Player ${update.steam_id} not found in team`
+        );
       }
     }
 
@@ -1036,7 +1043,7 @@ export const updatePlayerRoles = async (
       if (update.role !== null) {
         const existingPlayer = roleAssignments.get(update.role);
         if (existingPlayer) {
-          throw new Error(
+          throw new BadRequestError(
             `Role "${update.role}" is already assigned to another player`
           );
         }
@@ -1063,7 +1070,7 @@ export const updatePlayerRoles = async (
       }).length;
 
       if (currentSwaps + actualSwaps > 2) {
-        throw new Error(
+        throw new BadRequestError(
           `Maximum 2 role swaps per week allowed. You have ${2 - currentSwaps} remaining.`
         );
       }

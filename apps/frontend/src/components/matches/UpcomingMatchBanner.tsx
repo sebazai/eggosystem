@@ -35,7 +35,9 @@ export const UpcomingMatchToast = () => {
 
     // Find the next upcoming match that is within 2 hours (or already started)
     const upcomingMatch = matches.find((match) => {
-      const matchDateTime = new Date(`${match.match_date}T${match.start_time}`);
+      const matchDateTime = new Date(
+        `${match.match_date}T${match.start_time}Z`
+      );
       const timeDiff = matchDateTime.getTime() - currentTime.getTime();
       const minutesUntilMatch = Math.floor(timeDiff / (1000 * 60));
 
@@ -57,7 +59,7 @@ export const UpcomingMatchToast = () => {
     }
 
     const matchDateTime = new Date(
-      `${upcomingMatch.match_date}T${upcomingMatch.start_time}`
+      `${upcomingMatch.match_date}T${upcomingMatch.start_time}Z`
     );
     const timeDiff = matchDateTime.getTime() - currentTime.getTime();
     const minutesUntilMatch = Math.floor(timeDiff / (1000 * 60));
@@ -125,7 +127,8 @@ export const UpcomingMatchToast = () => {
                 month: "short",
                 day: "numeric",
                 hour: "numeric",
-                minute: "2-digit"
+                minute: "2-digit",
+                timeZone: "Europe/Helsinki"
               })}
             </div>
             <div className="flex gap-1 flex-wrap">
