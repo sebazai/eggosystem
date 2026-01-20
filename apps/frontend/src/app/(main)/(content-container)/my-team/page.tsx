@@ -43,13 +43,15 @@ export default function MyTeamPage() {
   };
 
   const formatMatchDateTime = (date: string, time: string) => {
-    const dateObj = new Date(`${date}T${time}`);
+    // Parse as UTC and convert to GMT+2
+    const dateObj = new Date(`${date}T${time}Z`);
     return dateObj.toLocaleString("en-US", {
       weekday: "short",
       month: "short",
       day: "numeric",
       hour: "2-digit",
-      minute: "2-digit"
+      minute: "2-digit",
+      timeZone: "Europe/Helsinki" // GMT+2 (EET/EEST)
     });
   };
 
@@ -149,10 +151,10 @@ export default function MyTeamPage() {
                 return (
                   <div
                     key={match.match_id}
-                    className="border-border flex items-center justify-between rounded-lg border p-4"
+                    className="border-border rounded-lg border p-4"
                   >
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
+                    <div className="flex flex-col gap-3">
+                      <div className="flex flex-wrap items-center gap-2">
                         <Link
                           href={createNextUrl(`/matches/${match.match_id}`)}
                           className="hover:underline"
@@ -174,26 +176,28 @@ export default function MyTeamPage() {
                           {match.status}
                         </Badge>
                       </div>
-                      <div className="text-muted-foreground mt-1 text-sm">
+                      <div className="text-muted-foreground text-sm">
                         {formatMatchDateTime(
                           match.match_date,
                           match.start_time
                         )}{" "}
                         • {match.season_name} - {match.league_name}
                       </div>
+                      {faceitLink && (
+                        <div>
+                          <Button variant="ghost" size="sm" asChild>
+                            <a
+                              href={faceitLink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <ExternalLink className="h-4 w-4" />
+                              FaceIT
+                            </a>
+                          </Button>
+                        </div>
+                      )}
                     </div>
-                    {faceitLink && (
-                      <Button variant="ghost" size="sm" asChild>
-                        <a
-                          href={faceitLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          <ExternalLink className="h-4 w-4" />
-                          FaceIT
-                        </a>
-                      </Button>
-                    )}
                   </div>
                 );
               })}
