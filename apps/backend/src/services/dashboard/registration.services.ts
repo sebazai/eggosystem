@@ -283,7 +283,6 @@ export const getTeamsSignupApprovalState = async (
     if (playersWithUnverifiedEmails.length > 0) {
       teamValidationResult.is_valid = false;
       teamValidationResult.invalid_players.push(...playersWithUnverifiedEmails);
-      return teamValidationResult;
     }
 
     // Find the most common work email ending (only for non-personal emails)
