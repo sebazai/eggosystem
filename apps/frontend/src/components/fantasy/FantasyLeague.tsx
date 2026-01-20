@@ -836,7 +836,9 @@ export default function FantasyLeague({ seasonId }: Props) {
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
                 {/* Sort players by steam_id for stable ordering (prevents reorder on role change) */}
                 {[...existingTeam.players]
-                  .sort((a, b) => a.steam_id.localeCompare(b.steam_id))
+                  .sort((a, b) =>
+                    String(a.steam_id).localeCompare(String(b.steam_id))
+                  )
                   .map((player) => {
                     // Convert existing team player to FantasyPlayer format
                     // Use same logo logic as draft page - fallback to team name-based logo
