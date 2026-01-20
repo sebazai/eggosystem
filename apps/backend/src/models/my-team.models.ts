@@ -1,5 +1,6 @@
 import type { MyTeamDetails, MyTeamUpcomingMatch } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
+import { formatDateFromDatabase } from "../utils/date-utils";
 import JSONBig from "json-bigint";
 
 /**
@@ -103,8 +104,7 @@ export const getMyTeamsUpcomingMatches = async (
       t.name as team_name,
       mt_opp.team_id as opponent_team_id,
       t_opp.name as opponent_team_name,
-      m.match_date,
-      m.start_time,
+      m.start_timestamp,
       m.season_id,
       s.name as season_name,
       m.league_id,
@@ -125,15 +125,22 @@ export const getMyTeamsUpcomingMatches = async (
     WHERE stp.steam_id = ?
       AND m.status IN ('SCHEDULED', 'CHECK_IN', 'VOTING', 'CONFIGURING', 'READY', 'ONGOING')
       AND (
-        m.match_date > CURDATE()
-        OR (m.match_date = CURDATE() AND m.start_time >= CURTIME())
+        DATE(m.start_timestamp) > CURDATE()
+        OR (DATE(m.start_timestamp) = CURDATE() AND TIME(m.start_timestamp) >= CURTIME())
         OR m.status IN ('ONGOING', 'READY', 'CONFIGURING', 'VOTING', 'CHECK_IN')
       )
-    ORDER BY m.match_date ASC, m.start_time ASC
+    ORDER BY m.start_timestamp ASC
     LIMIT 50
   `;
 
-  return runQuery<MyTeamUpcomingMatch[]>(query, [steam_id]);
+  const results = await runQuery<MyTeamUpcomingMatch[]>(query, [steam_id]);
+
+  // Format timestamps to ISO strings (UTC) for client
+  return results.map((match) => ({
+    ...match,
+    start_timestamp:
+      formatDateFromDatabase(match.start_timestamp) || match.start_timestamp
+  }));
 };
 
 /**

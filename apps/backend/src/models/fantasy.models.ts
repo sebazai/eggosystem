@@ -640,8 +640,8 @@ export const getFantasyTeamByUser = async (
          INNER JOIN Matches m_week ON m_week.id = mg_week.match_id
          WHERE ps_week.steam_id = ftp.steam_id
            AND m_week.season_id = ?
-           AND m_week.match_date >= ?
-           AND m_week.match_date <= ?
+           AND DATE(m_week.start_timestamp) >= ?
+           AND DATE(m_week.start_timestamp) <= ?
            AND m_week.status = 'finished'
        ), 0) as has_played_this_week,
        AVG(ps.kana_rating) as kana_rating,
@@ -817,8 +817,8 @@ const hasPlayerPlayedInWeek = async (
      INNER JOIN Matches m ON m.id = mg.match_id
      WHERE ps.steam_id = ?
        AND m.season_id = ?
-       AND m.match_date >= ?
-       AND m.match_date <= ?
+       AND DATE(m.start_timestamp) >= ?
+       AND DATE(m.start_timestamp) <= ?
        AND m.status = 'finished'`,
     [steamId, seasonId, weekStartDate, weekEndDate],
     connection
@@ -1638,7 +1638,7 @@ export const getPlayerPointHistory = async (
   const query = `
     SELECT 
       fpl.match_game_id,
-      m.match_date,
+      DATE(m.start_timestamp) as match_date,
       map.name as map_name,
       opponent_team.name as opponent,
       NULL as opponent_logo,
@@ -1661,7 +1661,7 @@ export const getPlayerPointHistory = async (
     WHERE ftp.steam_id = ?
       AND ft.season_id = ?
       AND ftp.is_active = TRUE
-    ORDER BY m.match_date DESC, fpl.match_game_id DESC
+    ORDER BY m.start_timestamp DESC, fpl.match_game_id DESC
   `;
 
   const results = await runQuery<

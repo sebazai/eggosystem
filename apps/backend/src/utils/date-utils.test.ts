@@ -1,6 +1,5 @@
 import {
   convertISOToFinnishTime,
-  convertISOToTime,
   formatDateForDatabase,
   formatDateFromDatabase
 } from "./date-utils";
@@ -78,40 +77,6 @@ describe("convertISOToFinnishTime", () => {
 
     expect(nullResult).toContain("Invalid");
     expect(undefinedResult).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/);
-  });
-
-  it("should work correctly when chained with convertISOToTime", () => {
-    // Test the chaining: convertISOToTime(convertISOToFinnishTime(finishedAt))
-    const testCases = [
-      {
-        input: "2025-07-10T19:09:07Z",
-        expectedFinnishTime: "2025-07-10 22:09:07",
-        expectedTimeOnly: "22:09:07"
-      },
-      {
-        input: "2025-07-20T15:34:10Z",
-        expectedFinnishTime: "2025-07-20 18:34:10",
-        expectedTimeOnly: "18:34:10"
-      },
-      {
-        input: "2025-07-20T15:12:33Z",
-        expectedFinnishTime: "2025-07-20 18:12:33",
-        expectedTimeOnly: "18:12:33"
-      }
-    ];
-
-    testCases.forEach(({ input, expectedFinnishTime, expectedTimeOnly }) => {
-      // Test the chaining as requested
-      const endTime = convertISOToTime(convertISOToFinnishTime(input));
-      expect(endTime).toBe(expectedTimeOnly);
-
-      // Also test each function individually for clarity
-      const finnishTime = convertISOToFinnishTime(input);
-      expect(finnishTime).toBe(expectedFinnishTime);
-
-      const timeOnly = convertISOToTime(finnishTime);
-      expect(timeOnly).toBe(expectedTimeOnly);
-    });
   });
 });
 

@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { clientApiFetch } from "@/lib/apiClient";
+import { formatDateShort } from "@/lib/date-utils";
 
 interface TeamFlagData {
   season_id: number;
@@ -150,12 +151,9 @@ export default function TeamFlagsPage() {
   }, [fetchTeamFlags]); // Re-fetch when season changes
 
   const formatTimestamp = (timestamp: string) => {
-    return new Date(timestamp).toLocaleString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit"
+    return formatDateShort(new Date(timestamp), {
+      withHours: true,
+      withMinutes: true
     });
   };
 

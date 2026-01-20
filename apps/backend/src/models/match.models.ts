@@ -32,15 +32,18 @@ import { getConnection } from "../db/mysqlConnection";
 import { logger } from "../utils/app-logger";
 import {
   adjustMatchDateTime,
-  convertISOToTime,
+  formatDateForDatabase,
+  formatDateFromDatabase,
+  formatMatchTimestamps,
   getMatchDateTime
 } from "../utils/date-utils";
 import { type PoolConnection } from "mysql2/promise";
 import { getSeasonLeagueExternalIdByExternalIdWithSeasonSettings } from "./season-league-external-id.models";
 import { getSeasonLeagueTeamByExternalId } from "./season-league-team.models";
 
-export const getMatches = (): Promise<Match[]> => {
-  return runQuery("SELECT * FROM Matches");
+export const getMatches = async (): Promise<Match[]> => {
+  const matches = await runQuery<Match[]>("SELECT * FROM Matches");
+  return matches.map(formatMatchTimestamps);
 };
 
 export const getMatchesWithTeamDataBySeasonId = async (
@@ -50,9 +53,8 @@ export const getMatchesWithTeamDataBySeasonId = async (
   const query = `
     SELECT 
       m.id AS match_id,
-      m.match_date,
-      m.start_time,
-      m.end_time,
+      m.start_timestamp,
+      m.end_timestamp,
       m.external_match_room_id,
       m.league_id,
       l.name AS league_name,
@@ -75,29 +77,41 @@ export const getMatchesWithTeamDataBySeasonId = async (
     JOIN Seasons s ON s.id = m.season_id
     JOIN Leagues l ON l.id = m.league_id
     WHERE m.season_id = ? AND (? IS NULL OR m.league_id = ?) AND m.status NOT IN ('FINISHED', 'CANCELLED', 'FORFEIT', 'ABORTED')
-    GROUP BY m.id, m.match_date, m.start_time, m.end_time, m.external_match_room_id, 
+    GROUP BY m.id, m.start_timestamp, m.end_timestamp, m.external_match_room_id, 
              m.league_id, l.name, m.season_id, s.full_name, s.platform, m.best_of, m.stage
-    ORDER BY m.match_date DESC
+    ORDER BY m.start_timestamp DESC
   `;
-  return runQuery<MatchesWithTeamDataQuery[]>(query, [
+  const results = await runQuery<MatchesWithTeamDataQuery[]>(query, [
     seasonId,
     leagueId,
     leagueId
   ]);
+
+  // Format timestamps to ISO strings
+  return results.map((match) => ({
+    ...match,
+    start_timestamp:
+      formatDateFromDatabase(match.start_timestamp) || match.start_timestamp,
+    end_timestamp: match.end_timestamp
+      ? formatDateFromDatabase(match.end_timestamp) || match.end_timestamp
+      : match.end_timestamp
+  }));
 };
 
-export const getMatch = (matchId: number) => {
-  return runQuery<Array<Match | undefined>>(
+export const getMatch = async (matchId: number) => {
+  const matches = await runQuery<Match[]>(
     "SELECT * FROM Matches WHERE id = ?",
     [matchId]
   );
+  return matches.map(formatMatchTimestamps);
 };
 
-export const getMatchWithBreadcrumbInfo = (matchId: number) => {
-  return runQuery<Array<(Match & Stage) | undefined>>(
+export const getMatchWithBreadcrumbInfo = async (matchId: number) => {
+  const matches = await runQuery<(Match & Stage)[]>(
     "SELECT * FROM Matches m JOIN Stages s ON m.stage = s.id WHERE m.id = ?",
     [matchId]
   );
+  return matches.map(formatMatchTimestamps);
 };
 
 export const getMatchGame = (matchId: number, matchGameId: number) => {
@@ -265,7 +279,7 @@ export const getMatchesByFilters = async ({
   const baseQuery = `
       SELECT 
           m.id AS match_id,
-          m.match_date,
+          DATE(m.start_timestamp) AS match_date,
           l.name AS league_name,
           m.stage,
           ${!mapFilterPresent ? "GROUP_CONCAT(DISTINCT map.name SEPARATOR ',') AS map_name," : "map.name AS map_name,"}
@@ -295,9 +309,9 @@ export const getMatchesByFilters = async ({
       JOIN Teams t2 ON tms2.team_id = t2.id
       WHERE ${query}
       GROUP BY 
-          ${!mapFilterPresent ? "m.id, m.match_date, l.name, m.stage, t1.name, t1.team_logo, t2.name, t2.team_logo" : "mmp.id, l.name, m.stage, t1.name, t1.team_logo, t2.name, t2.team_logo"}
+          ${!mapFilterPresent ? "m.id, DATE(m.start_timestamp), l.name, m.stage, t1.name, t1.team_logo, t2.name, t2.team_logo" : "mmp.id, l.name, m.stage, t1.name, t1.team_logo, t2.name, t2.team_logo"}
       ORDER BY 
-          m.match_date DESC ${query === "1=1" ? "LIMIT 500" : "LIMIT 100"}`;
+          m.start_timestamp DESC ${query === "1=1" ? "LIMIT 500" : "LIMIT 100"}`;
   return runQuery<MatchesByFilters[]>(baseQuery, queryParams);
 };
 
@@ -328,14 +342,13 @@ export const getMatchInfo = async (
       WITH MatchData AS (
           SELECT 
               m.id AS match_id,
-              m.match_date,
               m.league_id,
               m.season_id,
               m.stage,
               m.best_of,
-              m.start_time,
-              m.end_time,
               m.external_match_room_id,
+              m.start_timestamp,
+              m.end_timestamp,
               t.id AS team_id,
               t.name AS team_name,
               t.team_logo,
@@ -390,9 +403,8 @@ export const getMatchInfo = async (
       )
       SELECT 
           a.match_id,
-          m.match_date,
-          m.start_time,
-          m.end_time,
+          m.start_timestamp,
+          m.end_timestamp,
           m.external_match_room_id,
           m.league_id,
           l.name AS league_name,
@@ -417,12 +429,24 @@ export const getMatchInfo = async (
       JOIN Seasons s ON s.id = m.season_id
       JOIN Leagues l ON l.id = m.league_id
       LEFT JOIN GameIds g ON a.match_id = g.match_id
-      GROUP BY a.match_id, m.match_date, m.league_id, m.season_id, m.stage, g.match_game_ids;
+      GROUP BY a.match_id, m.start_timestamp, m.end_timestamp, m.league_id, m.season_id, m.stage, g.match_game_ids;
   `;
 
   const [match] = await runQuery<MatchInfoQuery[]>(query, [matchId]);
 
-  return match;
+  if (!match) {
+    return null;
+  }
+
+  // Format timestamps to ISO strings
+  return {
+    ...match,
+    start_timestamp:
+      formatDateFromDatabase(match.start_timestamp) || match.start_timestamp,
+    end_timestamp: match.end_timestamp
+      ? formatDateFromDatabase(match.end_timestamp) || match.end_timestamp
+      : match.end_timestamp
+  };
 };
 
 export const getMatchMapVetoes = async (match_id: number) => {
@@ -457,7 +481,7 @@ export const getMatchGamesByTeam = async (
       tgs_ct.team_id as team2_id,
       t_t.name as team1_name,
       t_ct.name as team2_name,
-      DATE_FORMAT(m.match_date, '%Y-%m-%d') as match_date,
+      DATE(m.start_timestamp) as match_date,
       m.league_id,
       m.season_id,
       mg.id as match_game_id,
@@ -477,7 +501,7 @@ export const getMatchGamesByTeam = async (
     JOIN Teams t_ct ON tgs_ct.team_id = t_ct.id
     WHERE (mt1.team_id = ? OR mt2.team_id = ?)
     ${seasonFilter}
-    ORDER BY m.match_date DESC, m.id DESC, mg.map_order ASC
+    ORDER BY m.start_timestamp DESC, m.id DESC, mg.map_order ASC
   `;
 
   return runQuery<MatchGamesByTeam[]>(matchGamesQuery, queryParams);
@@ -519,10 +543,12 @@ export const updateMatchDateAndStartTime = async (
   matchDate: string,
   startTime: string
 ): Promise<void> => {
-  await runQuery(
-    "UPDATE Matches SET match_date = ?, start_time = ? WHERE id = ?",
-    [matchDate, startTime, matchId]
-  );
+  // Combine date and time into a timestamp
+  const timestamp = `${matchDate}T${startTime}Z`;
+  await runQuery("UPDATE Matches SET start_timestamp = ? WHERE id = ?", [
+    formatDateForDatabase(timestamp),
+    matchId
+  ]);
 };
 
 export const getMatchesByExternalId = async (
@@ -532,11 +558,11 @@ export const getMatchesByExternalId = async (
     SELECT *
     FROM Matches 
     WHERE external_match_room_id = ?
-    ORDER BY id, start_time ASC
+    ORDER BY id, start_timestamp ASC
   `;
 
   const matches = await runQuery<Match[]>(query, [externalMatchRoomId]);
-  return matches;
+  return matches.map(formatMatchTimestamps);
 };
 
 export const addMatchToDatabase = async (
@@ -600,9 +626,7 @@ export const addMatchToDatabase = async (
 
     const { is_round_robin_bo2_as_2xbo1 } = seasonLeagueExternalRoom;
 
-    const { match_date, start_time } = getMatchDateTime(
-      matchDetails.scheduled_at
-    );
+    const startTimestamp = getMatchDateTime(matchDetails.scheduled_at);
 
     const realBestOf =
       matchDetails.best_of === 2 && is_round_robin_bo2_as_2xbo1
@@ -614,8 +638,7 @@ export const addMatchToDatabase = async (
       season_id,
       stage_id,
       realBestOf,
-      match_date,
-      start_time,
+      formatDateForDatabase(startTimestamp),
       null,
       matchDetails.match_id,
       matchDetails.status,
@@ -629,14 +652,13 @@ export const addMatchToDatabase = async (
         season_id,
         stage,
         best_of,
-        match_date,
-        start_time,
-        end_time,
+        start_timestamp,
+        end_timestamp,
         external_match_room_id,
         status,
         round,
         \`group\`
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
     `;
 
     if (is_round_robin_bo2_as_2xbo1 && matchDetails.best_of === 2) {
@@ -647,19 +669,17 @@ export const addMatchToDatabase = async (
       );
       const firstMatchId = firstMatch.insertId;
 
-      const { match_date: secondMatchDate, start_time: secondMatchTime } =
-        adjustMatchDateTime(match_date, start_time, {
-          hours: 1
-        });
+      const secondStartTimestamp = adjustMatchDateTime(startTimestamp, {
+        hours: 1
+      });
 
-      // Create new params array for second match with adjusted date/time
+      // Create new params array for second match with adjusted timestamp
       const secondMatchParams = [
         league_id,
         season_id,
         stage_id,
         realBestOf,
-        secondMatchDate,
-        secondMatchTime,
+        formatDateForDatabase(secondStartTimestamp),
         null,
         matchDetails.match_id,
         matchDetails.status,
@@ -768,15 +788,15 @@ export const updateMatchFinished = async (
     return;
   }
 
-  const startTime = convertISOToTime(startedAt);
-  const endTime = convertISOToTime(finishedAt);
+  const startTimestamp = formatDateForDatabase(startedAt);
+  const endTimestamp = formatDateForDatabase(finishedAt);
 
   await runQuery(
-    "UPDATE Matches SET start_time = ?, end_time = ?, status = ? WHERE external_match_room_id = ?",
-    [startTime, endTime, MatchStatus.FINISHED, externalMatchRoomId]
+    "UPDATE Matches SET start_timestamp = ?, end_timestamp = ?, status = ? WHERE external_match_room_id = ?",
+    [startTimestamp, endTimestamp, MatchStatus.FINISHED, externalMatchRoomId]
   );
   logger.info(
-    `Updated start_time to ${startTime} and end_time to ${endTime} for ${matches.length} match(es) with external_match_room_id: ${externalMatchRoomId}`
+    `Updated start_timestamp to ${startTimestamp} and end_timestamp to ${endTimestamp} for ${matches.length} match(es) with external_match_room_id: ${externalMatchRoomId}`
   );
 };
 
@@ -796,15 +816,15 @@ export const updateMatchEndTime = async (
     return;
   }
 
-  const endTime = convertISOToTime(finishedAt);
+  const endTimestamp = formatDateForDatabase(finishedAt);
 
   await runQuery(
-    "UPDATE Matches SET end_time = ? WHERE external_match_room_id = ?",
-    [endTime, externalMatchRoomId]
+    "UPDATE Matches SET end_timestamp = ? WHERE external_match_room_id = ?",
+    [endTimestamp, externalMatchRoomId]
   );
 
   logger.info(
-    `Updated end_time to ${endTime} for ${matches.length} match(es) with external_match_room_id: ${externalMatchRoomId}`
+    `Updated end_timestamp to ${endTimestamp} for ${matches.length} match(es) with external_match_room_id: ${externalMatchRoomId}`
   );
 };
 
@@ -831,9 +851,8 @@ export const getMatchesBySeasonAndLeagueWithStreamUrls = async (
       m.season_id,
       s.platform,
       m.stage,
-      m.match_date,
-      m.start_time,
-      m.end_time,
+      m.start_timestamp,
+      m.end_timestamp,
       m.best_of,
       m.external_match_room_id,
       m.status,
@@ -851,8 +870,8 @@ export const getMatchesBySeasonAndLeagueWithStreamUrls = async (
     LEFT JOIN Teams t ON mt.team_id = t.id
     LEFT JOIN Reservations r ON m.id = r.match_id AND m.status NOT IN ('FINISHED', 'CANCELLED', 'FORFEIT', 'ABORTED')
     WHERE m.season_id = ? AND (? IS NULL OR m.league_id = ?) AND m.status NOT IN ('CANCELLED', 'ABORTED')
-    GROUP BY m.id, m.league_id, m.season_id, m.stage, m.match_date, m.start_time, m.end_time, m.best_of, m.external_match_room_id, m.status, m.round, m.group, l.name, sl.tier
-    ORDER BY m.match_date ASC, COUNT(CASE WHEN r.stream_url IS NOT NULL THEN r.stream_url END) DESC, sl.tier ASC
+    GROUP BY m.id, m.league_id, m.season_id, m.stage, m.start_timestamp, m.end_timestamp, m.best_of, m.external_match_room_id, m.status, m.round, m.group, l.name, sl.tier
+    ORDER BY m.start_timestamp ASC, COUNT(CASE WHEN r.stream_url IS NOT NULL THEN r.stream_url END) DESC, sl.tier ASC
   `;
 
   const results = await runQuery<
@@ -862,9 +881,8 @@ export const getMatchesBySeasonAndLeagueWithStreamUrls = async (
       season_id: Season["id"];
       platform: Season["platform"];
       stage: Match["stage"];
-      match_date: Match["match_date"];
-      start_time: Match["start_time"];
-      end_time: Match["end_time"];
+      start_timestamp: string;
+      end_timestamp: string | null;
       best_of: Match["best_of"];
       external_match_room_id: Match["external_match_room_id"];
       status: Match["status"];
@@ -881,32 +899,31 @@ export const getMatchesBySeasonAndLeagueWithStreamUrls = async (
     const teamNames = match.team_names || "Unknown vs Unknown";
     const teams = teamNames.split(" vs ");
 
-    // Calculate end time if it's null
-    let endTime = match.end_time;
-    if (!endTime) {
+    // Format start timestamp to ISO string (UTC)
+    const startTimestampISO =
+      formatDateFromDatabase(match.start_timestamp) || match.start_timestamp;
+
+    // Calculate end timestamp if it's null
+    let endTimestamp = match.end_timestamp;
+    if (!endTimestamp) {
       // Assume each best_of game takes 1 hour
       const hoursToAdd = match.best_of || 1;
-      const startTime = new Date(`${match.match_date}T${match.start_time}`);
+      // Parse the formatted ISO timestamp to ensure correct UTC handling
+      const startDate = new Date(startTimestampISO);
       const endDate = new Date(
-        startTime.getTime() + hoursToAdd * 60 * 60 * 1000
+        startDate.getTime() + hoursToAdd * 60 * 60 * 1000
       );
-
-      // If the calculated end time goes to the next day, cap it at 23:59:00
-      const startDate = new Date(`${match.match_date}T00:00:00`);
-      const nextDay = new Date(startDate.getTime() + 24 * 60 * 60 * 1000);
-
-      if (endDate >= nextDay) {
-        endTime = "23:59:00";
-      } else {
-        endTime = endDate.toTimeString().split(" ")[0]; // Get HH:MM:SS format
-      }
+      endTimestamp = endDate.toISOString();
+    } else {
+      // Format end timestamp to ISO string (UTC)
+      endTimestamp = formatDateFromDatabase(endTimestamp) || endTimestamp;
     }
 
     return {
       match_id: match.id.toString(),
       title: teamNames,
-      match_start: `${match.match_date}T${match.start_time}Z`,
-      match_end: `${match.match_date}T${endTime}Z`,
+      match_start: startTimestampISO,
+      match_end: endTimestamp,
       match_status: match.status,
       league_name: match.league_name,
       league_tier: match.league_tier,

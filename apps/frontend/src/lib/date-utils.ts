@@ -61,3 +61,31 @@ export const formatDateTimeForInput = (
     return null;
   }
 };
+
+export const formatDateShort = (
+  date: Date,
+  {
+    toUpperCase = true,
+    timezone = "UTC",
+    withHours = false,
+    withMinutes = false
+  }: {
+    toUpperCase?: boolean;
+    timezone?: string;
+    withHours?: boolean;
+    withMinutes?: boolean;
+  } = {}
+) => {
+  const formattedDate = date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "2-digit",
+    year: "2-digit",
+    ...(withHours ? { hour: "2-digit" } : {}),
+    ...(withMinutes ? { minute: "2-digit" } : {}),
+    timeZone: timezone
+  });
+  if (toUpperCase) {
+    return formattedDate.toUpperCase();
+  }
+  return formattedDate;
+};

@@ -5,9 +5,8 @@ export interface Match {
   league_id: League["id"];
   season_id: Season["id"];
   stage: number; // TINYINT UNSIGNED, stored as number
-  match_date: string; // DATE, represented as string (ISO format)
-  start_time: string; // TIME, represented as string (ISO format)
-  end_time: string; // TIME, represented as string (ISO format)
+  start_timestamp: string; // TIMESTAMP, represented as string (ISO format, UTC)
+  end_timestamp: string | null; // TIMESTAMP, represented as string (ISO format, UTC)
   best_of: number; // TINYINT UNSIGNED, stored as number
   external_match_room_id: string | null;
   status: keyof typeof MatchStatus;

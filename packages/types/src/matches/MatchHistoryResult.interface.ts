@@ -19,7 +19,7 @@ export type MatchHistoryResult = {
   league_id: Match["league_id"];
   league_name: League["name"];
   stage: Match["stage"];
-  match_date: Match["match_date"];
+  match_date: string; // Computed from DATE(start_timestamp) in queries
   team_id: SeasonTeamPlayer["team_id"];
   team_name: Team["name"];
   team_logo: Team["team_logo"];

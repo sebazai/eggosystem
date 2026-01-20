@@ -71,7 +71,6 @@ export const seasonFormSchema = z
       )
       .optional()
       .nullable(),
-    timezone: z.string().optional(),
     active_map_pool: z
       .array(z.number().int().positive())
       .min(1, "At least one map must be selected"),

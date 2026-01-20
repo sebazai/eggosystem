@@ -522,7 +522,7 @@ export const getPlayerMatchHistoryByFilters = async (
         m.league_id,
         l.name AS league_name,
         m.stage,
-        m.match_date,
+        DATE(m.start_timestamp) AS match_date,
 
         stp.team_id AS team_id,
         t.name AS team_name,
@@ -584,7 +584,7 @@ export const getPlayerMatchHistoryByFilters = async (
         m.league_id,
         l.name,
         m.stage,
-        m.match_date,
+        DATE(m.start_timestamp) AS match_date,
         stp.team_id,
         t.name,
         t.team_logo,

@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { ExternalLink, Swords } from "lucide-react";
 import Link from "next/link";
 import { createNextUrl } from "@/lib/utils";
+import { formatDateShort } from "@/lib/date-utils";
 
 export const UpcomingMatchToast = () => {
   const { user } = useAuth();
@@ -35,9 +36,7 @@ export const UpcomingMatchToast = () => {
 
     // Find the next upcoming match that is within 2 hours (or already started)
     const upcomingMatch = matches.find((match) => {
-      const matchDateTime = new Date(
-        `${match.match_date}T${match.start_time}Z`
-      );
+      const matchDateTime = new Date(match.start_timestamp);
       const timeDiff = matchDateTime.getTime() - currentTime.getTime();
       const minutesUntilMatch = Math.floor(timeDiff / (1000 * 60));
 
@@ -58,9 +57,7 @@ export const UpcomingMatchToast = () => {
       return;
     }
 
-    const matchDateTime = new Date(
-      `${upcomingMatch.match_date}T${upcomingMatch.start_time}Z`
-    );
+    const matchDateTime = new Date(upcomingMatch.start_timestamp);
     const timeDiff = matchDateTime.getTime() - currentTime.getTime();
     const minutesUntilMatch = Math.floor(timeDiff / (1000 * 60));
 
@@ -123,12 +120,9 @@ export const UpcomingMatchToast = () => {
             </div>
             <div className="text-xs text-muted-foreground mb-1">
               BO{upcomingMatch.best_of} •{" "}
-              {matchDateTime.toLocaleString("en-US", {
-                month: "short",
-                day: "numeric",
-                hour: "numeric",
-                minute: "2-digit",
-                timeZone: "Europe/Helsinki"
+              {formatDateShort(matchDateTime, {
+                withHours: true,
+                withMinutes: true
               })}
             </div>
             <div className="flex gap-1 flex-wrap">

@@ -1,48 +1,23 @@
 "use client";
+import { formatDateShort } from "@/lib/date-utils";
 import { useMemo } from "react";
 
 interface ClientDateProps {
-  matchDate: string;
-  startTime?: string;
+  startTimestamp: string;
   className?: string;
 }
 
 export function MatchClientDate({
-  matchDate,
-  startTime,
+  startTimestamp,
   className
 }: ClientDateProps) {
-  const isClient = typeof window !== "undefined";
-
-  // Calculate date from props
   const date = useMemo(() => {
-    const dateTime = startTime
-      ? `${matchDate}T${startTime}Z`
-      : `${matchDate}T00:00:00Z`;
-    return new Date(dateTime);
-  }, [matchDate, startTime]);
+    return new Date(startTimestamp);
+  }, [startTimestamp]);
 
-  // Format date - use client timezone if available, otherwise UTC
   const formattedDate = useMemo(() => {
-    if (isClient) {
-      return date
-        .toLocaleDateString("en-US", {
-          month: "short",
-          day: "2-digit",
-          year: "2-digit",
-          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
-        })
-        .toUpperCase();
-    }
-    return date
-      .toLocaleDateString("en-US", {
-        month: "short",
-        day: "2-digit",
-        year: "2-digit",
-        timeZone: "UTC"
-      })
-      .toUpperCase();
-  }, [date, isClient]);
+    return formatDateShort(date, { toUpperCase: true });
+  }, [date]);
 
   return <span className={className}>{formattedDate}</span>;
 }

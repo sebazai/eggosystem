@@ -800,21 +800,24 @@ export const syncMatchSchedule = async (
     return;
   }
 
-  // Convert FACEIT scheduled_at (Unix timestamp) to match_date and start_time
-  const faceitSchedule = getMatchDateTime(faceitMatch.scheduled_at);
+  // Convert FACEIT scheduled_at (Unix timestamp) to timestamp
+  const faceitScheduleTimestamp = getMatchDateTime(faceitMatch.scheduled_at);
+  const faceitScheduleDate = new Date(faceitScheduleTimestamp);
+  const faceitScheduleDateStr = faceitScheduleDate.toISOString().slice(0, 10);
+  const faceitScheduleTimeStr = faceitScheduleDate.toISOString().slice(11, 19);
 
   const firstMatch = databaseMatches[0];
-  const first_match_date = firstMatch.match_date;
-  const first_match_time = firstMatch.start_time;
-  if (
-    first_match_date === faceitSchedule.match_date &&
-    first_match_time === faceitSchedule.start_time
-  ) {
+  const firstMatchTimestamp = firstMatch.start_timestamp;
+  const firstMatchDate = new Date(firstMatchTimestamp);
+  const first_match_date = firstMatchDate.toISOString().slice(0, 10);
+  const first_match_time = firstMatchDate.toISOString().slice(11, 19);
+
+  if (firstMatchTimestamp === faceitScheduleTimestamp) {
     return;
   }
 
   logger.info(
-    `[FACEIT] New time for match ${faceitMatch.match_id} ${faceitSchedule.match_date} ${faceitSchedule.start_time}`
+    `[FACEIT] New time for match ${faceitMatch.match_id} ${faceitScheduleDateStr} ${faceitScheduleTimeStr}`
   );
 
   if (is_round_robin_bo2_as_2xbo1 && databaseMatches.length === 2) {
@@ -823,8 +826,8 @@ export const syncMatchSchedule = async (
     const firstMatch = databaseMatches[0];
     await updateMatchDateAndStartTime(
       firstMatch.id,
-      faceitSchedule.match_date,
-      faceitSchedule.start_time
+      faceitScheduleDateStr,
+      faceitScheduleTimeStr
     );
 
     // Notify reservations for first match
@@ -832,22 +835,33 @@ export const syncMatchSchedule = async (
       firstMatch.id,
       first_match_date,
       first_match_time,
-      faceitSchedule.match_date,
-      faceitSchedule.start_time
+      faceitScheduleDateStr,
+      faceitScheduleTimeStr
     );
 
     // Second match gets +1 hour from the first match
-    const secondMatchSchedule = adjustMatchDateTime(
-      faceitSchedule.match_date,
-      faceitSchedule.start_time,
+    const secondMatchScheduleTimestamp = adjustMatchDateTime(
+      faceitScheduleTimestamp,
       { hours: 1 }
     );
-    const second_match_old_date = databaseMatches[1].match_date;
-    const second_match_old_time = databaseMatches[1].start_time;
+    const secondMatchScheduleDate = new Date(secondMatchScheduleTimestamp);
+    const secondMatchScheduleDateStr = secondMatchScheduleDate
+      .toISOString()
+      .slice(0, 10);
+    const secondMatchScheduleTimeStr = secondMatchScheduleDate
+      .toISOString()
+      .slice(11, 19);
+
+    const secondMatch = databaseMatches[1];
+    const secondMatchTimestamp = secondMatch.start_timestamp;
+    const secondMatchDate = new Date(secondMatchTimestamp);
+    const second_match_old_date = secondMatchDate.toISOString().slice(0, 10);
+    const second_match_old_time = secondMatchDate.toISOString().slice(11, 19);
+
     await updateMatchDateAndStartTime(
       databaseMatches[1].id,
-      secondMatchSchedule.match_date,
-      secondMatchSchedule.start_time
+      secondMatchScheduleDateStr,
+      secondMatchScheduleTimeStr
     );
 
     // Notify reservations for second match
@@ -855,18 +869,18 @@ export const syncMatchSchedule = async (
       databaseMatches[1].id,
       second_match_old_date,
       second_match_old_time,
-      secondMatchSchedule.match_date,
-      secondMatchSchedule.start_time
+      secondMatchScheduleDateStr,
+      secondMatchScheduleTimeStr
     );
 
     logger.info(
-      `Updated BO2 match schedules: First match at ${faceitSchedule.match_date} ${faceitSchedule.start_time}, Second match at ${secondMatchSchedule.match_date} ${secondMatchSchedule.start_time}`
+      `Updated BO2 match schedules: First match at ${faceitScheduleDateStr} ${faceitScheduleTimeStr}, Second match at ${secondMatchScheduleDateStr} ${secondMatchScheduleTimeStr}`
     );
   } else {
     await updateMatchDateAndStartTime(
       databaseMatches[0].id,
-      faceitSchedule.match_date,
-      faceitSchedule.start_time
+      faceitScheduleDateStr,
+      faceitScheduleTimeStr
     );
 
     // Notify reservations
@@ -874,12 +888,12 @@ export const syncMatchSchedule = async (
       databaseMatches[0].id,
       first_match_date,
       first_match_time,
-      faceitSchedule.match_date,
-      faceitSchedule.start_time
+      faceitScheduleDateStr,
+      faceitScheduleTimeStr
     );
 
     logger.info(
-      `Updated single match ${databaseMatches[0].id} schedule: ${faceitSchedule.match_date} ${faceitSchedule.start_time}`
+      `Updated single match ${databaseMatches[0].id} schedule: ${faceitScheduleDateStr} ${faceitScheduleTimeStr}`
     );
   }
 };

@@ -5,8 +5,8 @@ import { League, Match, Season, SeasonLeague } from "../db";
 export interface MatchWithStreamUrls {
   match_id: string;
   title: string;
-  match_start: string;
-  match_end: string;
+  match_start: string; // ISO 8601 timestamp string (UTC)
+  match_end: string; // ISO 8601 timestamp string (UTC)
   match_status: Match["status"];
   league_name: League["name"];
   league_tier: SeasonLeague["tier"];

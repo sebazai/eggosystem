@@ -7,6 +7,7 @@ import { ContentContainer } from "@/components/layout/ContentContainer";
 import { AutoBreadcrumbs } from "@/components/layout/AutoBreadcrumbs";
 import { createPageMetadata } from "@/lib/metadata";
 import { UpcomingMatchHeader } from "@/components/matches/upcoming/UpcomingMatchHeader";
+import { formatDateShort } from "@/lib/date-utils";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -36,16 +37,12 @@ export async function generateMetadata({ params }: LayoutProps) {
       title: "Match not found"
     };
   }
-  // Use a simple date format for metadata (no timezone conversion needed for SEO)
-  const date = new Date(result.match_date);
-  const formattedDate = date
-    .toLocaleDateString("en-US", {
-      month: "short",
-      day: "2-digit",
-      year: "2-digit",
-      timeZone: "UTC"
-    })
-    .toUpperCase();
+
+  const date = new Date(result.start_timestamp);
+  const formattedDate = formatDateShort(date, {
+    timezone: "UTC",
+    toUpperCase: true
+  });
 
   return createPageMetadata({
     title: `Match ${team1.name} vs ${team2.name} - ${formattedDate}`
@@ -92,9 +89,8 @@ export default async function Layout({ children, params }: LayoutProps) {
       <MatchHeader
         team1={teams[0]!}
         team2={teams[1]!}
-        matchDate={matchInfo.match_date}
-        matchStartTime={matchInfo.start_time}
-        matchEndTime={matchInfo.end_time}
+        matchStartTime={matchInfo.start_timestamp}
+        matchEndTime={matchInfo.end_timestamp}
         seasonName={matchInfo.season_name}
         leagueName={matchInfo.league_name}
         seasonId={matchInfo.season_id}

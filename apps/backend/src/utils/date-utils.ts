@@ -19,8 +19,8 @@ export const formatDateForDatabase = (utcDate: Date | string): string => {
 /**
  * Converts a database date string to ISO 8601 format with UTC indicator
  * Database returns dates as strings (due to dateStrings: true)
- * For timestamp columns, MariaDB returns them in session timezone (UTC after our migration)
- * @param dbDateString - Date string from database (YYYY-MM-DD HH:mm:ss format)
+ * For timestamp columns, MariaDB returns them in session timezone (UTC)
+ * @param dbDateString - Date string from database (YYYY-MM-DD HH:mm:ss format) or ISO string
  * @returns ISO 8601 string with UTC indicator (e.g., '2025-01-15T10:30:00Z') or null
  */
 export const formatDateFromDatabase = (
@@ -29,10 +29,36 @@ export const formatDateFromDatabase = (
   if (!dbDateString) {
     return null;
   }
+
+  // If already in ISO format (contains 'T' and ends with 'Z'), return as-is
+  if (dbDateString.includes("T") && dbDateString.endsWith("Z")) {
+    return dbDateString;
+  }
+
   // Parse as UTC (since session timezone is UTC)
   const utcMoment = moment.utc(dbDateString, "YYYY-MM-DD HH:mm:ss");
   // Return as ISO string with Z indicator
   return utcMoment.toISOString();
+};
+
+/**
+ * Formats Match timestamps to ISO 8601 UTC strings for client consumption
+ * Ensures all timestamps are in ISO format with Z indicator
+ */
+export const formatMatchTimestamps = <
+  T extends { start_timestamp?: string | null; end_timestamp?: string | null }
+>(
+  match: T
+): T => {
+  return {
+    ...match,
+    start_timestamp: match.start_timestamp
+      ? formatDateFromDatabase(match.start_timestamp) || match.start_timestamp
+      : match.start_timestamp,
+    end_timestamp: match.end_timestamp
+      ? formatDateFromDatabase(match.end_timestamp) || match.end_timestamp
+      : match.end_timestamp
+  };
 };
 
 export const getSevenDaysLaterInMillis = () => {
@@ -51,10 +77,6 @@ export const getMonthDifference = (timestamp1: number, timestamp2: number) => {
   return yearsDiff * 12 + monthsDiff;
 };
 
-export const convertISOToTime = (isoString: string) => {
-  return new Date(isoString).toISOString().slice(11, 19);
-};
-
 export const convertISOToFinnishTime = (isoString: string) => {
   const utcDate = moment(isoString);
   const finnishTime = utcDate
@@ -71,7 +93,7 @@ export const generateYMD = (timestamp: number): string => {
   return `${year}-${month}-${day}`;
 };
 
-const getNextWednesdayMatchTime = () => {
+const getNextWednesdayMatchTime = (): string => {
   const now = moment();
 
   // Find next Wednesday
@@ -88,48 +110,49 @@ const getNextWednesdayMatchTime = () => {
     .second(0)
     .millisecond(0);
 
-  // Convert to UTC for database storage
+  // Convert to UTC for database storage and return as ISO string
   const utcTime = helsinkiTime.utc();
-
-  const match_date = utcTime.format("YYYY-MM-DD");
-  const start_time = utcTime.format("HH:mm:ss");
-
-  return { match_date, start_time };
+  return utcTime.toISOString();
 };
 
-export const getMatchDateTime = (scheduledAt?: number) => {
+/**
+ * Gets match timestamp from scheduled time or defaults to next Wednesday
+ * @param scheduledAt - Unix timestamp in seconds (optional)
+ * @returns ISO 8601 timestamp string (UTC)
+ */
+export const getMatchDateTime = (scheduledAt?: number): string => {
   if (scheduledAt) {
     const date = new Date(scheduledAt * 1000);
-    const match_date = date.toISOString().slice(0, 10); // YYYY-MM-DD
-    const start_time = date.toISOString().slice(11, 19); // HH:MM:SS
-    return { match_date, start_time };
+    return date.toISOString();
   }
 
   return getNextWednesdayMatchTime();
 };
 
+/**
+ * Adjusts a match timestamp by adding hours, minutes, or days
+ * @param timestamp - ISO 8601 timestamp string (UTC)
+ * @param options - Object with hours, minutes, and/or days to add
+ * @returns ISO 8601 timestamp string (UTC)
+ */
 export const adjustMatchDateTime = (
-  match_date: string,
-  start_time: string,
+  timestamp: string,
   options: {
     hours?: number;
     minutes?: number;
     days?: number;
   } = {}
-) => {
+): string => {
   const { hours = 0, minutes = 0, days = 0 } = options;
 
-  const dateTimeString = `${match_date}T${start_time}Z`;
-  const date = new Date(dateTimeString);
+  // Parse the timestamp
+  const date = new Date(timestamp);
 
   // Add the specified time
-  date.setHours(date.getHours() + hours);
-  date.setMinutes(date.getMinutes() + minutes);
-  date.setDate(date.getDate() + days);
+  date.setHours(date.getUTCHours() + hours);
+  date.setMinutes(date.getUTCMinutes() + minutes);
+  date.setUTCDate(date.getUTCDate() + days);
 
-  // Extract the new date and time
-  const new_match_date = date.toISOString().slice(0, 10); // YYYY-MM-DD
-  const new_start_time = date.toISOString().slice(11, 19); // HH:MM:SS
-
-  return { match_date: new_match_date, start_time: new_start_time };
+  // Return as ISO string
+  return date.toISOString();
 };
