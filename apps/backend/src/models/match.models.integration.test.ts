@@ -43,12 +43,12 @@ describe("getMatchesBySeasonAndLeagueWithStreamUrls - Integration Tests", () => 
       ).toBe(true);
       expect(typeof firstMatch.season_platform).toBe("string");
 
-      // Check date format
+      // Check date format (accepts with or without milliseconds)
       expect(firstMatch.match_start).toMatch(
-        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/
+        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$/
       );
       expect(firstMatch.match_end).toMatch(
-        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/
+        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$/
       );
 
       // Check that title contains both team names
@@ -71,19 +71,21 @@ describe("getMatchesBySeasonAndLeagueWithStreamUrls - Integration Tests", () => 
     if (firstMatch) {
       // Verify the match has all required properties
       expect(firstMatch.match_start).toMatch(
-        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/
+        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$/
       );
       expect(firstMatch.match_end).toMatch(
-        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/
+        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$/
       );
       expect(Array.isArray(firstMatch.stream_urls)).toBe(true);
       expect(typeof firstMatch.title).toBe("string");
       expect(typeof firstMatch.season_platform).toBe("string");
 
       // Check that start and end times are logically consistent
-      const startTime = new Date(firstMatch.match_start);
-      const endTime = new Date(firstMatch.match_end);
-      expect(endTime.getTime()).toBeGreaterThanOrEqual(startTime.getTime());
+      if (firstMatch.match_start && firstMatch.match_end) {
+        const startTime = new Date(firstMatch.match_start);
+        const endTime = new Date(firstMatch.match_end);
+        expect(endTime.getTime()).toBeGreaterThanOrEqual(startTime.getTime());
+      }
     }
   });
 
@@ -203,11 +205,13 @@ describe("getMatchesBySeasonAndLeagueWithStreamUrls - Integration Tests", () => 
       expect(typeof match.match_team2).toBe("string");
       expect(typeof match.season_platform).toBe("string");
 
-      // Verify date formats
+      // Verify date formats (accepts with or without milliseconds)
       expect(match.match_start).toMatch(
-        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/
+        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$/
       );
-      expect(match.match_end).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/);
+      expect(match.match_end).toMatch(
+        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$/
+      );
     });
   });
 });

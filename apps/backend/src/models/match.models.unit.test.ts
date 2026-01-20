@@ -21,9 +21,8 @@ describe("getMatchesBySeasonAndLeagueWithStreamUrls - Unit Tests", () => {
         league_id: 1,
         season_id: 11,
         stage: 1,
-        match_date: "2025-08-01",
-        start_time: "20:00:00",
-        end_time: "22:00:00",
+        start_timestamp: "2025-08-01 20:00:00",
+        end_timestamp: "2025-08-01 22:00:00",
         best_of: 3,
         external_match_room_id: "room123",
         status: "SCHEDULED",
@@ -51,8 +50,8 @@ describe("getMatchesBySeasonAndLeagueWithStreamUrls - Unit Tests", () => {
       {
         match_id: "1",
         title: "Team Alpha vs Team Beta",
-        match_start: "2025-08-01T20:00:00Z",
-        match_end: "2025-08-01T22:00:00Z",
+        match_start: "2025-08-01T20:00:00.000Z",
+        match_end: "2025-08-01T22:00:00.000Z",
         league_name: "Masters",
         league_tier: 1,
         stream_urls: ["https://twitch.tv/stream1", "https://twitch.tv/stream2"],
@@ -76,9 +75,8 @@ describe("getMatchesBySeasonAndLeagueWithStreamUrls - Unit Tests", () => {
         league_id: 1,
         season_id: 11,
         stage: 1,
-        match_date: "2025-08-02",
-        start_time: "21:00:00",
-        end_time: "23:00:00",
+        start_timestamp: "2025-08-02 21:00:00",
+        end_timestamp: "2025-08-02 23:00:00",
         best_of: 5,
         external_match_room_id: "room456",
         status: "SCHEDULED",
@@ -105,8 +103,8 @@ describe("getMatchesBySeasonAndLeagueWithStreamUrls - Unit Tests", () => {
       {
         match_id: "2",
         title: "Team Gamma vs Team Delta",
-        match_start: "2025-08-02T21:00:00Z",
-        match_end: "2025-08-02T23:00:00Z",
+        match_start: "2025-08-02T21:00:00.000Z",
+        match_end: "2025-08-02T23:00:00.000Z",
         league_name: "Masters",
         match_status: "SCHEDULED",
         league_tier: 1,
@@ -147,9 +145,8 @@ describe("getMatchesBySeasonAndLeagueWithStreamUrls - Unit Tests", () => {
         league_id: 1,
         season_id: 1,
         stage: 1,
-        match_date: "2025-08-04",
-        start_time: "20:00:00",
-        end_time: null, // Test case for null end_time
+        start_timestamp: "2025-08-04 20:00:00",
+        end_timestamp: null, // Test case for null end_timestamp
         best_of: 3,
         external_match_room_id: "room789",
         status: "SCHEDULED",
@@ -176,8 +173,8 @@ describe("getMatchesBySeasonAndLeagueWithStreamUrls - Unit Tests", () => {
       {
         match_id: "16",
         title: "Team Echo vs Team Foxtrot",
-        match_start: "2025-08-04T20:00:00Z",
-        match_end: "2025-08-04T23:00:00Z", // Expected calculated end time (20:00 + 3 hours)
+        match_start: "2025-08-04T20:00:00.000Z",
+        match_end: "2025-08-04T23:00:00.000Z", // Expected calculated end time (20:00 + 3 hours)
         league_name: "Masters",
         league_tier: 1,
         stream_urls: [],

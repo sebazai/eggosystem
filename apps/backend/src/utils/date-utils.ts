@@ -16,51 +16,6 @@ export const formatDateForDatabase = (utcDate: Date | string): string => {
   return utcMoment.format("YYYY-MM-DD HH:mm:ss");
 };
 
-/**
- * Converts a database date string to ISO 8601 format with UTC indicator
- * Database returns dates as strings (due to dateStrings: true)
- * For timestamp columns, MariaDB returns them in session timezone (UTC)
- * @param dbDateString - Date string from database (YYYY-MM-DD HH:mm:ss format) or ISO string
- * @returns ISO 8601 string with UTC indicator (e.g., '2025-01-15T10:30:00Z') or null
- */
-export const formatDateFromDatabase = (
-  dbDateString: string | null | undefined
-): string | null => {
-  if (!dbDateString) {
-    return null;
-  }
-
-  // If already in ISO format (contains 'T' and ends with 'Z'), return as-is
-  if (dbDateString.includes("T") && dbDateString.endsWith("Z")) {
-    return dbDateString;
-  }
-
-  // Parse as UTC (since session timezone is UTC)
-  const utcMoment = moment.utc(dbDateString, "YYYY-MM-DD HH:mm:ss");
-  // Return as ISO string with Z indicator
-  return utcMoment.toISOString();
-};
-
-/**
- * Formats Match timestamps to ISO 8601 UTC strings for client consumption
- * Ensures all timestamps are in ISO format with Z indicator
- */
-export const formatMatchTimestamps = <
-  T extends { start_timestamp?: string | null; end_timestamp?: string | null }
->(
-  match: T
-): T => {
-  return {
-    ...match,
-    start_timestamp: match.start_timestamp
-      ? formatDateFromDatabase(match.start_timestamp) || match.start_timestamp
-      : match.start_timestamp,
-    end_timestamp: match.end_timestamp
-      ? formatDateFromDatabase(match.end_timestamp) || match.end_timestamp
-      : match.end_timestamp
-  };
-};
-
 export const getSevenDaysLaterInMillis = () => {
   const now = new Date();
   const sevenDaysLater = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);

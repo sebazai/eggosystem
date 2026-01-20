@@ -33,8 +33,6 @@ import { logger } from "../utils/app-logger";
 import {
   adjustMatchDateTime,
   formatDateForDatabase,
-  formatDateFromDatabase,
-  formatMatchTimestamps,
   getMatchDateTime
 } from "../utils/date-utils";
 import { type PoolConnection } from "mysql2/promise";
@@ -43,7 +41,7 @@ import { getSeasonLeagueTeamByExternalId } from "./season-league-team.models";
 
 export const getMatches = async (): Promise<Match[]> => {
   const matches = await runQuery<Match[]>("SELECT * FROM Matches");
-  return matches.map(formatMatchTimestamps);
+  return matches;
 };
 
 export const getMatchesWithTeamDataBySeasonId = async (
@@ -87,15 +85,7 @@ export const getMatchesWithTeamDataBySeasonId = async (
     leagueId
   ]);
 
-  // Format timestamps to ISO strings
-  return results.map((match) => ({
-    ...match,
-    start_timestamp:
-      formatDateFromDatabase(match.start_timestamp) || match.start_timestamp,
-    end_timestamp: match.end_timestamp
-      ? formatDateFromDatabase(match.end_timestamp) || match.end_timestamp
-      : match.end_timestamp
-  }));
+  return results;
 };
 
 export const getMatch = async (matchId: number) => {
@@ -103,7 +93,7 @@ export const getMatch = async (matchId: number) => {
     "SELECT * FROM Matches WHERE id = ?",
     [matchId]
   );
-  return matches.map(formatMatchTimestamps);
+  return matches;
 };
 
 export const getMatchWithBreadcrumbInfo = async (matchId: number) => {
@@ -111,7 +101,7 @@ export const getMatchWithBreadcrumbInfo = async (matchId: number) => {
     "SELECT * FROM Matches m JOIN Stages s ON m.stage = s.id WHERE m.id = ?",
     [matchId]
   );
-  return matches.map(formatMatchTimestamps);
+  return matches;
 };
 
 export const getMatchGame = (matchId: number, matchGameId: number) => {
@@ -438,15 +428,7 @@ export const getMatchInfo = async (
     return null;
   }
 
-  // Format timestamps to ISO strings
-  return {
-    ...match,
-    start_timestamp:
-      formatDateFromDatabase(match.start_timestamp) || match.start_timestamp,
-    end_timestamp: match.end_timestamp
-      ? formatDateFromDatabase(match.end_timestamp) || match.end_timestamp
-      : match.end_timestamp
-  };
+  return match;
 };
 
 export const getMatchMapVetoes = async (match_id: number) => {
@@ -562,7 +544,7 @@ export const getMatchesByExternalId = async (
   `;
 
   const matches = await runQuery<Match[]>(query, [externalMatchRoomId]);
-  return matches.map(formatMatchTimestamps);
+  return matches;
 };
 
 export const addMatchToDatabase = async (
@@ -881,8 +863,8 @@ export const getMatchesBySeasonAndLeagueWithStreamUrls = async (
       season_id: Season["id"];
       platform: Season["platform"];
       stage: Match["stage"];
-      start_timestamp: string;
-      end_timestamp: string | null;
+      start_timestamp: Match["start_timestamp"];
+      end_timestamp: Match["end_timestamp"];
       best_of: Match["best_of"];
       external_match_room_id: Match["external_match_room_id"];
       status: Match["status"];
@@ -899,31 +881,33 @@ export const getMatchesBySeasonAndLeagueWithStreamUrls = async (
     const teamNames = match.team_names || "Unknown vs Unknown";
     const teams = teamNames.split(" vs ");
 
-    // Format start timestamp to ISO string (UTC)
-    const startTimestampISO =
-      formatDateFromDatabase(match.start_timestamp) || match.start_timestamp;
+    const startTimestampISO = new Date(match.start_timestamp);
 
     // Calculate end timestamp if it's null
-    let endTimestamp = match.end_timestamp;
-    if (!endTimestamp) {
+    let endTimestamp = match.end_timestamp
+      ? new Date(match.end_timestamp)
+      : null;
+    if (!endTimestamp && startTimestampISO) {
       // Assume each best_of game takes 1 hour
       const hoursToAdd = match.best_of || 1;
-      // Parse the formatted ISO timestamp to ensure correct UTC handling
-      const startDate = new Date(startTimestampISO);
-      const endDate = new Date(
-        startDate.getTime() + hoursToAdd * 60 * 60 * 1000
-      );
-      endTimestamp = endDate.toISOString();
-    } else {
-      // Format end timestamp to ISO string (UTC)
-      endTimestamp = formatDateFromDatabase(endTimestamp) || endTimestamp;
+
+      // Check if date is valid before using it
+      if (!isNaN(startTimestampISO.getTime())) {
+        const endDate = new Date(
+          startTimestampISO.getTime() + hoursToAdd * 60 * 60 * 1000
+        );
+        endTimestamp = endDate;
+      } else {
+        // If start date is invalid, set endTimestamp to null
+        endTimestamp = null;
+      }
     }
 
     return {
       match_id: match.id.toString(),
       title: teamNames,
-      match_start: startTimestampISO,
-      match_end: endTimestamp,
+      match_start: startTimestampISO.toISOString(),
+      match_end: endTimestamp ? endTimestamp.toISOString() : "",
       match_status: match.status,
       league_name: match.league_name,
       league_tier: match.league_tier,
