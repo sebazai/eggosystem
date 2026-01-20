@@ -51,12 +51,16 @@
   },
   "postCreateCommand": "pnpm install",
   // Use 'forwardPorts' to make a list of ports inside the container available locally.
-  // "forwardPorts": [3000],
+  "forwardPorts": [3000, 3001],
   // Use 'portsAttributes' to set default properties for specific forwarded ports.
   // More info: https://containers.dev/implementors/json_reference/#port-attributes
   "portsAttributes": {
     "3000": {
-      "label": "Hello Remote World",
+      "label": "Frontend (Next.js)",
+      "onAutoForward": "notify"
+    },
+    "3001": {
+      "label": "Backend (Express)",
       "onAutoForward": "notify"
     },
     "3010": {
