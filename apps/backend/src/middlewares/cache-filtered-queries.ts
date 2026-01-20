@@ -1,9 +1,10 @@
-import type { Request, Response, NextFunction } from "express";
+import type { Response, NextFunction } from "express";
 import { createHash } from "crypto";
 import { expireIn7Days, redisClient } from "../utils/redisClient";
-import { getActiveSeasonForAppId } from "../models/season.models";
+import { getActiveSeason } from "../models/season.models";
 import { logger } from "../utils/app-logger";
 import { normalizeParsedParams } from "../utils/normalize-parsed-params";
+import { type RequestWithQuery } from "@eggosystem/types";
 
 interface CacheResponseOptions {
   cachePrefix: string;
@@ -15,7 +16,12 @@ export function cacheResponseMiddleware({
   cachePrefix,
   ttlSeconds = expireIn7Days
 }: CacheResponseOptions) {
-  return async (req: Request, res: Response, next: NextFunction) => {
+  return async (
+    req: RequestWithQuery<{ organizer_id: string; app_id: string }>,
+    res: Response,
+    next: NextFunction
+  ) => {
+    const { organizer_id, app_id } = req.query;
     const searchParams = req.parsedParams;
 
     const allNull = Object.values(searchParams).every(
@@ -31,8 +37,11 @@ export function cacheResponseMiddleware({
       return;
     }
 
+    const organizerId = Number(organizer_id);
+    const appId = Number(app_id);
+
     // If active season is present, do not cache
-    const activeSeason = await getActiveSeasonForAppId(1, 730);
+    const activeSeason = await getActiveSeason(organizerId ?? 1, appId ?? 730);
     if (activeSeason) {
       const filtersHasActiveSeason = searchParams.season_ids?.find(
         (id) => id === activeSeason.season_id

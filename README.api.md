@@ -150,17 +150,6 @@ const season = await getSeasonById(seasonId);
 // Now you have: app_id, game_id, organizer_id, platform, etc.
 ```
 
-### Deprecated Patterns
-
-The following patterns are **deprecated** and should not be used in new code:
-
-- `getActiveSignupOrActiveSeasonForAppId()` - Use explicit `season_id` instead
-- `getActiveOrLatestSeasonForAppId()` - Use explicit `season_id` instead
-- `getActiveSeasonForAppId()` - Use explicit `season_id` instead
-- `getActiveSignupSeasonForAppId()` - Use explicit `season_id` instead
-
-**Migration Path**: Update endpoints to require `season_id` as a URL parameter or in the request body, then use that identifier to fetch season details and related information.
-
 ## 🔧 Middleware
 
 ### Authentication

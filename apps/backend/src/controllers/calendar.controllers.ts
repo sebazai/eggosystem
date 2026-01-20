@@ -1,6 +1,7 @@
 import { type Request, type Response } from "express";
 import { getMatchesBySeasonAndLeagueWithStreamUrls } from "../models/match.models";
-import { getActiveOrLatestSeasonForAppId } from "../models/season.models";
+import { getActiveSeason } from "../models/season.models";
+import { type RequestWithParamsAndQuery } from "@eggosystem/types";
 
 export const getMatchesBySeasonAndLeagueController = async (
   req: Request,
@@ -22,11 +23,14 @@ export const getMatchesBySeasonAndLeagueController = async (
  * It automatically finds the active/latest season for the given organizer and game
  */
 export const getMatchesByOrganizerAndAppController = async (
-  req: Request,
+  req: RequestWithParamsAndQuery<
+    { organizer_id: string; app_id: string },
+    { league_id?: string; gametype?: string }
+  >,
   res: Response
 ): Promise<void> => {
   const { organizer_id, app_id } = req.params;
-  const { league_id } = req.query;
+  const { league_id, gametype } = req.query;
 
   const organizerId = Number(organizer_id);
   const appId = Number(app_id);
@@ -39,8 +43,7 @@ export const getMatchesByOrganizerAndAppController = async (
     return;
   }
 
-  // Find the active or latest season for this organizer and app
-  const season = await getActiveOrLatestSeasonForAppId(organizerId, appId);
+  const season = await getActiveSeason(organizerId, appId, gametype);
 
   if (!season) {
     res.status(404).json({

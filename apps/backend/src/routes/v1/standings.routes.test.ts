@@ -6,6 +6,7 @@ import type express from "express";
 import { createExpressTestApp, setupEnvironment } from "../../test-utils";
 import standingsRouter from "./standings.routes";
 import * as standingsControllers from "../../controllers/standings.controllers";
+import { BadRequestError } from "../../utils/errors";
 
 jest.mock("../../controllers/standings.controllers");
 
@@ -56,12 +57,22 @@ describe("Standings Routes Integration Tests", () => {
     cleanup();
   });
 
-  describe("GET /leagues", () => {
+  describe("GET /season/:season_id/leagues", () => {
     it("should return FaceIT leagues without authentication", async () => {
-      const res = await request(app).get("/api/v1/standings/leagues");
+      const res = await request(app).get("/api/v1/standings/season/1/leagues");
 
       expect(res.status).toBe(200);
       expect(mockGetFaceitLeaguesController).toHaveBeenCalled();
+      expect(mockGetStandingsController).not.toHaveBeenCalled();
+    });
+
+    it("should validate numeric season_id param", async () => {
+      const res = await request(app).get(
+        "/api/v1/standings/season/invalid/leagues"
+      );
+
+      expect(res.status).toBe(400);
+      expect(res.body.detail).toContain("Invalid numeric param");
     });
   });
 
@@ -81,15 +92,43 @@ describe("Standings Routes Integration Tests", () => {
   });
 
   describe("GET /teams/:team_id", () => {
-    it("should return team external ID", async () => {
-      const res = await request(app).get("/api/v1/standings/teams/123");
+    it("should return team external ID with season_id query param", async () => {
+      const res = await request(app).get(
+        "/api/v1/standings/teams/123?season_id=1"
+      );
 
       expect(res.status).toBe(200);
       expect(mockGetStandingsTeamsExternalIdController).toHaveBeenCalled();
     });
 
-    it("should not require authentication", async () => {
+    it("should return 400 when season_id is missing", async () => {
+      mockGetStandingsTeamsExternalIdController.mockImplementation(async () => {
+        throw new BadRequestError("Season ID is required");
+      });
+
       const res = await request(app).get("/api/v1/standings/teams/123");
+
+      expect(res.status).toBe(400);
+      expect(res.body.detail).toBe("Season ID is required");
+    });
+
+    it("should return 400 when season_id is invalid", async () => {
+      mockGetStandingsTeamsExternalIdController.mockImplementation(async () => {
+        throw new BadRequestError("Season ID is required");
+      });
+
+      const res = await request(app).get(
+        "/api/v1/standings/teams/123?season_id=invalid"
+      );
+
+      expect(res.status).toBe(400);
+      expect(res.body.detail).toBe("Season ID is required");
+    });
+
+    it("should not require authentication", async () => {
+      const res = await request(app).get(
+        "/api/v1/standings/teams/123?season_id=1"
+      );
 
       expect(res.status).toBe(200);
     });

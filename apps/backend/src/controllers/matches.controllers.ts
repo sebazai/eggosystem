@@ -24,7 +24,7 @@ import type {
   RequestWithParamsAndQuery
 } from "@eggosystem/types";
 import { BadRequestError, NotFoundError } from "../utils/errors";
-import { getActiveOrPassedSeasonId } from "../services/season.services";
+import { getSeasonById } from "../models/season.models";
 
 export const getMatchesController = async (req: Request, res: Response) => {
   const matches = await getMatches(); // Wait for the promise to resolve
@@ -44,9 +44,13 @@ export const getMatchIs2xBO1Controller = async (
 export const getMatchesBySeasonIdController = async (
   req: RequestWithParamsAndQuery<{ season_id: string }, { league_id?: string }>,
   res: Response,
-  _next: NextFunction
+  next: NextFunction
 ) => {
-  const seasonId = await getActiveOrPassedSeasonId(req.params.season_id);
+  const season = await getSeasonById(Number(req.params.season_id));
+
+  if (!season) {
+    return next(new NotFoundError("Season not found"));
+  }
 
   const leagueId = req.query.league_id
     ? isNaN(Number(req.query.league_id))
@@ -54,7 +58,7 @@ export const getMatchesBySeasonIdController = async (
       : Number(req.query.league_id)
     : null;
 
-  const matches = await getMatchesWithTeamDataBySeasonId(seasonId, leagueId);
+  const matches = await getMatchesWithTeamDataBySeasonId(season.id, leagueId);
   res.status(200).json({
     matches: matches.map(
       (match) =>

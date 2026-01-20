@@ -43,7 +43,7 @@ describe("Season Routes - Integration Tests", () => {
     });
   });
 
-  describe("GET /:id", () => {
+  describe("GET /:season_id", () => {
     it("should return 400 for invalid season ID", async () => {
       const response = await request(app).get("/invalid").expect(400);
 
@@ -51,7 +51,7 @@ describe("Season Routes - Integration Tests", () => {
         type: "about:blank",
         title: "Bad Request",
         status: 400,
-        detail: "Invalid numeric param: id"
+        detail: "Invalid numeric param: season_id"
       });
     });
 
@@ -67,7 +67,7 @@ describe("Season Routes - Integration Tests", () => {
     });
   });
 
-  describe("GET /:id/details", () => {
+  describe("GET /:season_id/details", () => {
     it("should return 400 for invalid season ID", async () => {
       const response = await request(app).get("/invalid/details").expect(400);
 
@@ -75,7 +75,7 @@ describe("Season Routes - Integration Tests", () => {
         type: "about:blank",
         title: "Bad Request",
         status: 400,
-        detail: "Invalid numeric param: id"
+        detail: "Invalid numeric param: season_id"
       });
     });
 

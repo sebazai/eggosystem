@@ -2,7 +2,6 @@ import type {
   SeasonDetails,
   Season,
   ActiveSeasonSignupForAppId,
-  ActiveSignupOrSeasonForAppId,
   SeasonFormRaw,
   SeasonPlatform
 } from "@eggosystem/types";
@@ -13,6 +12,7 @@ import {
   setActiveMapPoolForSeason,
   getActiveMapPoolBySeasonId
 } from "./season-active-map-pool.models";
+import { getGameTypeIdByName } from "./game.models";
 
 export const getSeasons = async () => {
   const seasons = await runQuery<Season[]>("SELECT * FROM Seasons");
@@ -86,152 +86,32 @@ export const getSeasonPlatformAndAppId = async (
 };
 
 /**
- * @deprecated This function should not be used in new code. Instead, always pass season_id as a parameter
- * from which app_id, game, organizer, etc. can be inferred if needed. This function relies on finding
- * an "active" or "latest" season which creates implicit dependencies and makes the code less explicit.
- *
- * For REST API endpoints, season_id should be explicitly required from the frontend (via URL params or request body).
- * The season_id can then be used to fetch season details including app_id, game, organizer, etc.
- * This approach is essential for multi-organizer support and follows REST API best practices.
- *
- * @param organizer_id - The organizer ID
- * @param app_id - The app ID
- * @returns Active or latest season for the given app and organizer, or undefined if none found
- */
-export const getActiveOrLatestSeasonForAppId = async (
-  organizer_id: number,
-  app_id: number
-) => {
-  const [activeSeason] = await runQuery<
-    Array<{ season_id: number } | undefined>
-  >(
-    `SELECT s.id AS season_id
-     FROM Seasons s
-     JOIN Games g ON s.game_id = g.id
-     JOIN Organizers o ON s.organizer_id = o.id
-     WHERE g.app_id = ? AND o.id = ?
-     AND (
-         (s.start_date <= NOW() AND (s.end_date IS NULL OR s.end_date >= NOW()))
-         OR s.id = (
-            SELECT MAX(s2.id)
-            FROM Seasons s2 
-            JOIN Games g2 ON s2.game_id = g2.id 
-            WHERE g2.app_id = ?
-            AND s2.end_date IS NOT NULL
-            AND s2.end_date < NOW()
-         )
-     )
-     ORDER BY s.id DESC
-     LIMIT 1;`,
-    [app_id, organizer_id, app_id]
-  );
-  return activeSeason;
-};
-
-/**
- * @deprecated This function should not be used in new code. Instead, always pass season_id as a parameter
- * from which app_id, game, organizer, etc. can be inferred if needed. This function relies on finding
- * an "active" season which creates implicit dependencies and makes the code less explicit.
- *
- * For REST API endpoints, season_id should be explicitly required from the frontend (via URL params or request body).
- * The season_id can then be used to fetch season details including app_id, game, organizer, etc.
- * This approach is essential for multi-organizer support and follows REST API best practices.
- *
- * @param organizer_id - The organizer ID
- * @param app_id - The app ID
- * @returns Active season for the given app and organizer, or undefined if none found
- */
-export const getActiveSeasonForAppId = async (
-  organizer_id: number,
-  app_id: number
-) => {
-  const [activeSeason] = await runQuery<
-    Array<{ season_id: number } | undefined>
-  >(
-    `SELECT s.id AS season_id
-     FROM Seasons s
-     JOIN Games g ON s.game_id = g.id
-     JOIN Organizers o ON s.organizer_id = o.id
-     WHERE g.app_id = ? AND o.id = ?
-     AND s.start_date <= NOW() AND (s.end_date IS NULL OR s.end_date >= NOW())
-     ORDER BY s.id DESC
-     LIMIT 1;`,
-    [app_id, organizer_id]
-  );
-  return activeSeason;
-};
-
-/**
- * @deprecated This function should not be used in new code. Instead, always pass season_id as a parameter
- * from which app_id, game, organizer, etc. can be inferred if needed. This function relies on finding
- * an "active signup" season which creates implicit dependencies and makes the code less explicit.
- *
- * For REST API endpoints, season_id should be explicitly required from the frontend (via URL params or request body).
- * The season_id can then be used to fetch season details including app_id, game, organizer, etc.
- * This approach is essential for multi-organizer support and follows REST API best practices.
+ * Gets the active or active signup season for a given organizer, app, and game type.
  *
  * @param organizer_id - The organizer ID
  * @param app_id - The app ID
  * @returns Active signup season for the given app and organizer, or undefined if none found
  */
-export const getActiveSignupSeasonForAppId = async (
+export const getActiveSeason = async (
   organizer_id: number,
-  app_id: number
+  app_id: number,
+  gametype: string = "comp"
 ) => {
+  const game_type_id = await getGameTypeIdByName(gametype);
   const [activeSignupSeason] = await runQuery<
     Array<ActiveSeasonSignupForAppId | undefined>
   >(
     `SELECT s.id AS season_id, s.platform, s.signup_end_date, s.full_name
      FROM Seasons s
      JOIN Games g ON s.game_id = g.id
+     JOIN GameTypes gt ON s.game_type_id = gt.id
      JOIN Organizers o ON s.organizer_id = o.id
-     WHERE g.app_id = ? AND o.id = ? AND s.start_date >= NOW() AND s.signup_start_date <= NOW() AND (s.signup_end_date IS NULL OR s.signup_end_date >= NOW())
+     WHERE g.app_id = ? AND o.id = ? AND gt.id = ? AND s.start_date >= NOW() AND s.signup_start_date <= NOW() AND (s.signup_end_date IS NULL OR s.signup_end_date >= NOW())
      ORDER BY s.id DESC
      LIMIT 1;`,
-    [app_id, organizer_id]
+    [app_id, organizer_id, game_type_id]
   );
   return activeSignupSeason;
-};
-
-/**
- * @deprecated This function should not be used in new code. Instead, always pass season_id as a parameter
- * from which app_id, game, organizer, etc. can be inferred if needed. This function relies on finding
- * an "active" season which creates implicit dependencies and makes the code less explicit and harder to test.
- *
- * For dashboard endpoints, season_id should be explicitly required from the frontend (via URL params or request body).
- * The season_id can then be used to fetch season details including app_id, game, organizer, etc.
- *
- * @param organizer_id - The organizer ID
- * @param app_id - The app ID
- * @returns Active signup or active season for the given app and organizer, or undefined if none found
- */
-export const getActiveSignupOrActiveSeasonForAppId = async (
-  organizer_id: number,
-  app_id: number
-) => {
-  const [activeSignupOrActiveSeason] = await runQuery<
-    Array<ActiveSignupOrSeasonForAppId | undefined>
-  >(
-    `SELECT s.id AS season_id, s.platform, s.signup_start_date, s.signup_end_date, s.start_date, s.end_date, s.full_name
-     FROM Seasons s
-     JOIN Games g ON s.game_id = g.id
-     JOIN Organizers o ON s.organizer_id = o.id
-     WHERE g.app_id = ? AND o.id = ?
-     AND (
-       (s.start_date <= NOW() AND (s.end_date IS NULL OR s.end_date >= NOW()))
-       OR
-       (s.signup_start_date <= NOW() AND (s.signup_end_date IS NULL OR s.signup_end_date >= NOW()) AND s.start_date > NOW())
-     )
-     ORDER BY 
-       CASE 
-         WHEN s.start_date <= NOW() AND (s.end_date IS NULL OR s.end_date >= NOW()) THEN 0
-         ELSE 1
-       END,
-       s.id DESC
-     LIMIT 1;`,
-    [app_id, organizer_id]
-  );
-  return activeSignupOrActiveSeason;
 };
 
 /**

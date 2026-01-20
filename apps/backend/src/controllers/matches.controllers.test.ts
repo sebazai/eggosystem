@@ -27,7 +27,7 @@ import {
   getMatchMapVetoes,
   getMatchesWithTeamDataBySeasonId
 } from "../models/match.models";
-import { getActiveSeasonForAppId } from "../models/season.models";
+import { getSeasonById } from "../models/season.models";
 import {
   type RequestWithParams,
   type Match,
@@ -40,7 +40,7 @@ import {
   type MatchesWithTeamDataQuery,
   type MatchGame,
   type ParsedParams,
-  type SeasonPlatform,
+  SeasonPlatform,
   type MatchMapsPlayed
 } from "@eggosystem/types";
 import { createMockMatch } from "@eggosystem/types";
@@ -83,10 +83,9 @@ const mockGetMatchesWithTeamDataBySeasonId =
   getMatchesWithTeamDataBySeasonId as jest.MockedFunction<
     typeof getMatchesWithTeamDataBySeasonId
   >;
-const mockGetActiveSeasonForAppId =
-  getActiveSeasonForAppId as jest.MockedFunction<
-    typeof getActiveSeasonForAppId
-  >;
+const mockGetSeasonById = getSeasonById as jest.MockedFunction<
+  typeof getSeasonById
+>;
 
 // Test data objects
 const mockMatch = createMockMatch({
@@ -195,17 +194,44 @@ describe("Matches Controllers", () => {
   describe("getMatchesBySeasonIdController", () => {
     it("should return matches for valid season ID", async () => {
       mockRequest.params = { season_id: "123" };
+      mockRequest.query = {};
+      mockGetSeasonById.mockResolvedValue({
+        id: 123,
+        game_id: 1,
+        game_type_id: 1,
+        organizer_id: 1,
+        name: "Test Season",
+        full_name: "Test Season",
+        signup_start_date: null,
+        signup_end_date: null,
+        start_date: "2024-01-01",
+        end_date: null,
+        platform: SeasonPlatform.Kanaliiga,
+        is_round_robin_bo2_as_2xbo1: false,
+        grand_final_round_one_only: false,
+        payment_link: null,
+        registration_price: null,
+        has_vat: false,
+        early_bird_price_discount: null,
+        early_bird_price_discount_end_date: null,
+        active_map_pool: [1],
+        rulebook_url: null,
+        discord_link: null
+      });
       mockGetMatchesWithTeamDataBySeasonId.mockResolvedValue(
         mockMatchesWithTeamData
       );
 
       const mockNext = jest.fn();
       await getMatchesBySeasonIdController(
-        mockRequest as TestRequestWithParams<{ season_id: string }>,
+        mockRequest as TestRequestWithParams<{ season_id: string }> & {
+          query: { league_id?: string };
+        },
         mockResponse as Response,
         mockNext
       );
 
+      expect(mockGetSeasonById).toHaveBeenCalledWith(123);
       expect(mockGetMatchesWithTeamDataBySeasonId).toHaveBeenCalledWith(
         123,
         null
@@ -220,72 +246,116 @@ describe("Matches Controllers", () => {
 
     it("should handle invalid season ID", async () => {
       mockRequest.params = { season_id: "invalid" };
-
-      const mockNext = jest.fn();
-      await expect(
-        getMatchesBySeasonIdController(
-          mockRequest as TestRequestWithParams<{ season_id: string }>,
-          mockResponse as Response,
-          mockNext
-        )
-      ).rejects.toThrow("Invalid season ID");
-    });
-
-    it("should handle negative season ID", async () => {
-      mockRequest.params = { season_id: "-123" };
-      mockGetMatchesWithTeamDataBySeasonId.mockResolvedValue(
-        mockMatchesWithTeamData
-      );
-
-      const mockNext = jest.fn();
-      await expect(
-        getMatchesBySeasonIdController(
-          mockRequest as TestRequestWithParams<{ season_id: string }>,
-          mockResponse as Response,
-          mockNext
-        )
-      ).rejects.toThrow("Invalid season ID");
-    });
-
-    it("should handle zero season ID", async () => {
-      mockRequest.params = { season_id: "0" };
-      mockGetMatchesWithTeamDataBySeasonId.mockResolvedValue(
-        mockMatchesWithTeamData
-      );
+      mockRequest.query = {};
+      mockGetSeasonById.mockResolvedValue(undefined);
 
       const mockNext = jest.fn();
       await getMatchesBySeasonIdController(
-        mockRequest as TestRequestWithParams<{ season_id: string }>,
+        mockRequest as TestRequestWithParams<{ season_id: string }> & {
+          query: { league_id?: string };
+        },
         mockResponse as Response,
         mockNext
       );
 
-      expect(mockGetMatchesWithTeamDataBySeasonId).toHaveBeenCalledWith(
-        0,
-        null
+      expect(mockGetSeasonById).toHaveBeenCalledWith(NaN);
+      expect(mockNext).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: "Season not found",
+          status: 404
+        })
       );
-      expect(mockJson).toHaveBeenCalledWith({
-        matches: mockMatchesWithTeamData.map((match) => ({
-          ...match,
-          teams: JSON.parse(match.teams)
-        }))
-      });
+      expect(mockGetMatchesWithTeamDataBySeasonId).not.toHaveBeenCalled();
+    });
+
+    it("should handle negative season ID", async () => {
+      mockRequest.params = { season_id: "-123" };
+      mockRequest.query = {};
+      mockGetSeasonById.mockResolvedValue(undefined);
+
+      const mockNext = jest.fn();
+      await getMatchesBySeasonIdController(
+        mockRequest as TestRequestWithParams<{ season_id: string }> & {
+          query: { league_id?: string };
+        },
+        mockResponse as Response,
+        mockNext
+      );
+
+      expect(mockGetSeasonById).toHaveBeenCalledWith(-123);
+      expect(mockNext).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: "Season not found",
+          status: 404
+        })
+      );
+      expect(mockGetMatchesWithTeamDataBySeasonId).not.toHaveBeenCalled();
+    });
+
+    it("should handle zero season ID", async () => {
+      mockRequest.params = { season_id: "0" };
+      mockRequest.query = {};
+      mockGetSeasonById.mockResolvedValue(undefined);
+
+      const mockNext = jest.fn();
+      await getMatchesBySeasonIdController(
+        mockRequest as TestRequestWithParams<{ season_id: string }> & {
+          query: { league_id?: string };
+        },
+        mockResponse as Response,
+        mockNext
+      );
+
+      expect(mockGetSeasonById).toHaveBeenCalledWith(0);
+      expect(mockNext).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: "Season not found",
+          status: 404
+        })
+      );
+      expect(mockGetMatchesWithTeamDataBySeasonId).not.toHaveBeenCalled();
     });
 
     it("should return matches for valid season ID with league_id filter", async () => {
       mockRequest.params = { season_id: "123" };
       mockRequest.query = { league_id: "456" };
+      mockGetSeasonById.mockResolvedValue({
+        id: 123,
+        game_id: 1,
+        game_type_id: 1,
+        organizer_id: 1,
+        name: "Test Season",
+        full_name: "Test Season",
+        signup_start_date: null,
+        signup_end_date: null,
+        start_date: "2024-01-01",
+        end_date: null,
+        platform: SeasonPlatform.Kanaliiga,
+        is_round_robin_bo2_as_2xbo1: false,
+        grand_final_round_one_only: false,
+        payment_link: null,
+        registration_price: null,
+        has_vat: false,
+        early_bird_price_discount: null,
+        early_bird_price_discount_end_date: null,
+        active_map_pool: [1],
+        rulebook_url: null,
+        discord_link: null
+      });
       mockGetMatchesWithTeamDataBySeasonId.mockResolvedValue(
         mockMatchesWithTeamData
       );
 
       const mockNext = jest.fn();
       await getMatchesBySeasonIdController(
-        mockRequest as TestRequestWithParams<{ season_id: string }>,
+        mockRequest as TestRequestWithParams<{ season_id: string }> & {
+          query: { league_id?: string };
+        },
         mockResponse as Response,
         mockNext
       );
 
+      expect(mockGetSeasonById).toHaveBeenCalledWith(123);
       expect(mockGetMatchesWithTeamDataBySeasonId).toHaveBeenCalledWith(
         123,
         456
@@ -301,18 +371,44 @@ describe("Matches Controllers", () => {
     it("should return matches for valid season ID with invalid league_id", async () => {
       mockRequest.params = { season_id: "123" };
       mockRequest.query = { league_id: "invalid" };
+      mockGetSeasonById.mockResolvedValue({
+        id: 123,
+        game_id: 1,
+        game_type_id: 1,
+        organizer_id: 1,
+        name: "Test Season",
+        full_name: "Test Season",
+        signup_start_date: null,
+        signup_end_date: null,
+        start_date: "2024-01-01",
+        end_date: null,
+        platform: SeasonPlatform.Kanaliiga,
+        is_round_robin_bo2_as_2xbo1: false,
+        grand_final_round_one_only: false,
+        payment_link: null,
+        registration_price: null,
+        has_vat: false,
+        early_bird_price_discount: null,
+        early_bird_price_discount_end_date: null,
+        active_map_pool: [1],
+        rulebook_url: null,
+        discord_link: null
+      });
       mockGetMatchesWithTeamDataBySeasonId.mockResolvedValue(
         mockMatchesWithTeamData
       );
 
       const mockNext = jest.fn();
       await getMatchesBySeasonIdController(
-        mockRequest as TestRequestWithParams<{ season_id: string }>,
+        mockRequest as TestRequestWithParams<{ season_id: string }> & {
+          query: { league_id?: string };
+        },
         mockResponse as Response,
         mockNext
       );
 
-      // Invalid league_id becomes NaN when passed through Number()
+      expect(mockGetSeasonById).toHaveBeenCalledWith(123);
+      // Invalid league_id becomes NaN when passed through Number(), then becomes null
       expect(mockGetMatchesWithTeamDataBySeasonId).toHaveBeenCalledWith(
         123,
         null
@@ -327,6 +423,7 @@ describe("Matches Controllers", () => {
 
     it("should filter out matches with excluded statuses", async () => {
       mockRequest.params = { season_id: "123" };
+      mockRequest.query = {};
       // Create test data that includes matches with different statuses
       const mixedStatusMatches: MatchesWithTeamDataQuery[] = [
         {
@@ -339,17 +436,43 @@ describe("Matches Controllers", () => {
         }
       ];
 
+      mockGetSeasonById.mockResolvedValue({
+        id: 123,
+        game_id: 1,
+        game_type_id: 1,
+        organizer_id: 1,
+        name: "Test Season",
+        full_name: "Test Season",
+        signup_start_date: null,
+        signup_end_date: null,
+        start_date: "2024-01-01",
+        end_date: null,
+        platform: SeasonPlatform.Kanaliiga,
+        is_round_robin_bo2_as_2xbo1: false,
+        grand_final_round_one_only: false,
+        payment_link: null,
+        registration_price: null,
+        has_vat: false,
+        early_bird_price_discount: null,
+        early_bird_price_discount_end_date: null,
+        active_map_pool: [1],
+        rulebook_url: null,
+        discord_link: null
+      });
       mockGetMatchesWithTeamDataBySeasonId.mockResolvedValue(
         mixedStatusMatches
       );
 
       const mockNext = jest.fn();
       await getMatchesBySeasonIdController(
-        mockRequest as TestRequestWithParams<{ season_id: string }>,
+        mockRequest as TestRequestWithParams<{ season_id: string }> & {
+          query: { league_id?: string };
+        },
         mockResponse as Response,
         mockNext
       );
 
+      expect(mockGetSeasonById).toHaveBeenCalledWith(123);
       // Verify the model is called with correct parameters
       expect(mockGetMatchesWithTeamDataBySeasonId).toHaveBeenCalledWith(
         123,
@@ -359,36 +482,6 @@ describe("Matches Controllers", () => {
       // Verify response contains the filtered matches
       expect(mockJson).toHaveBeenCalledWith({
         matches: mixedStatusMatches.map((match) => ({
-          ...match,
-          teams: JSON.parse(match.teams)
-        }))
-      });
-    });
-
-    it("should handle active season with league_id filter", async () => {
-      mockRequest.params = { season_id: "active" };
-      mockRequest.query = { league_id: "789" };
-
-      // Mock the active season lookup
-      mockGetActiveSeasonForAppId.mockResolvedValue({ season_id: 999 });
-
-      mockGetMatchesWithTeamDataBySeasonId.mockResolvedValue(
-        mockMatchesWithTeamData
-      );
-
-      const mockNext = jest.fn();
-      await getMatchesBySeasonIdController(
-        mockRequest as TestRequestWithParams<{ season_id: string }>,
-        mockResponse as Response,
-        mockNext
-      );
-
-      expect(mockGetMatchesWithTeamDataBySeasonId).toHaveBeenCalledWith(
-        999,
-        789
-      );
-      expect(mockJson).toHaveBeenCalledWith({
-        matches: mockMatchesWithTeamData.map((match) => ({
           ...match,
           teams: JSON.parse(match.teams)
         }))
