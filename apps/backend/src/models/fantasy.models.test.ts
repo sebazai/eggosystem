@@ -523,6 +523,77 @@ describe("Fantasy Models", () => {
         "Maximum 2 role swaps per week allowed"
       );
     });
+
+    it("should throw BadRequestError when player not found in team", async () => {
+      const roleUpdates = [
+        { steam_id: "76561197992956290", role: "main_awp" as PlayerRole }
+      ];
+
+      // Reset mocks for this test
+      mockRunQuery.mockReset();
+
+      // Mock that the player is NOT in the team (empty result)
+      mockRunQuery.mockResolvedValueOnce([]); // Get current players - empty means player not found
+
+      const error = await updatePlayerRoles(1, roleUpdates, 1, false).catch(
+        (e) => e
+      );
+
+      expect(error).toBeInstanceOf(Error);
+      expect(error.message).toBe("Player 76561197992956290 not found in team");
+      expect(error.name).toBe("Bad Request");
+      expect(error.status).toBe(400);
+      expect(mockConnection.rollback).toHaveBeenCalled();
+    });
+
+    it("should throw BadRequestError for multiple players when one is not in team", async () => {
+      const roleUpdates = [
+        { steam_id: "1", role: "main_awp" as PlayerRole },
+        { steam_id: "76561197992956290", role: "leader" as PlayerRole }
+      ];
+
+      // Reset mocks for this test
+      mockRunQuery.mockReset();
+
+      // Mock that only player "1" is in the team, player "76561197992956290" is not
+      mockRunQuery.mockResolvedValueOnce([{ steam_id: "1", role: "support" }]); // Get current players
+
+      const error = await updatePlayerRoles(1, roleUpdates, 1, false).catch(
+        (e) => e
+      );
+
+      expect(error).toBeInstanceOf(Error);
+      expect(error.message).toBe("Player 76561197992956290 not found in team");
+      expect(error.name).toBe("Bad Request");
+      expect(error.status).toBe(400);
+      expect(mockConnection.rollback).toHaveBeenCalled();
+    });
+
+    it("should throw BadRequestError when role is already assigned to another player", async () => {
+      const roleUpdates = [{ steam_id: "1", role: "main_awp" as PlayerRole }];
+
+      // Reset mocks for this test
+      mockRunQuery.mockReset();
+
+      mockRunQuery
+        .mockResolvedValueOnce([{ steam_id: "1", role: "support" }]) // Get current players
+        .mockResolvedValueOnce([
+          { steam_id: "2", role: "main_awp" }, // Another player already has main_awp role
+          { steam_id: "3", role: "leader" }
+        ]); // Get all team roles
+
+      const error = await updatePlayerRoles(1, roleUpdates, 1, false).catch(
+        (e) => e
+      );
+
+      expect(error).toBeInstanceOf(Error);
+      expect(error.message).toBe(
+        'Role "main_awp" is already assigned to another player'
+      );
+      expect(error.name).toBe("Bad Request");
+      expect(error.status).toBe(400);
+      expect(mockConnection.rollback).toHaveBeenCalled();
+    });
   });
 
   describe("getFantasyLeaderboard", () => {

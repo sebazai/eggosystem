@@ -682,6 +682,101 @@ describe("Fantasy Controllers", () => {
 
       expect(mockFantasyModels.updatePlayerRoles).toHaveBeenCalled();
     });
+
+    it("should handle error when player not found in team", async () => {
+      const mockTeam = {
+        id: 1,
+        steam_id: "12345",
+        season_id: 1,
+        league_id: 1,
+        team_name: "My Team",
+        budget_remaining: 500000,
+        total_points: 100,
+        created_at: new Date(),
+        updated_at: new Date(),
+        players: []
+      };
+
+      const playerNotFoundError = new Error(
+        "Player 76561197992956290 not found in team"
+      );
+      Object.assign(playerNotFoundError, {
+        name: "Bad Request",
+        status: 400
+      });
+
+      mockFantasyModels.getFantasyTeamByUser.mockResolvedValue(mockTeam);
+      mockFantasyModels.updatePlayerRoles.mockRejectedValue(
+        playerNotFoundError
+      );
+
+      await updatePlayerRolesController(mockRequest, mockResponse, mockNext);
+
+      expect(mockNext).toHaveBeenCalledWith(playerNotFoundError);
+      expect(mockResponse.json).not.toHaveBeenCalled();
+    });
+
+    it("should handle error when role already assigned to another player", async () => {
+      const mockTeam = {
+        id: 1,
+        steam_id: "12345",
+        season_id: 1,
+        league_id: 1,
+        team_name: "My Team",
+        budget_remaining: 500000,
+        total_points: 100,
+        created_at: new Date(),
+        updated_at: new Date(),
+        players: []
+      };
+
+      const roleConflictError = new Error(
+        'Role "main_awp" is already assigned to another player'
+      );
+      Object.assign(roleConflictError, {
+        name: "Bad Request",
+        status: 400
+      });
+
+      mockFantasyModels.getFantasyTeamByUser.mockResolvedValue(mockTeam);
+      mockFantasyModels.updatePlayerRoles.mockRejectedValue(roleConflictError);
+
+      await updatePlayerRolesController(mockRequest, mockResponse, mockNext);
+
+      expect(mockNext).toHaveBeenCalledWith(roleConflictError);
+      expect(mockResponse.json).not.toHaveBeenCalled();
+    });
+
+    it("should handle error when role swap limit exceeded", async () => {
+      const mockTeam = {
+        id: 1,
+        steam_id: "12345",
+        season_id: 1,
+        league_id: 1,
+        team_name: "My Team",
+        budget_remaining: 500000,
+        total_points: 100,
+        created_at: new Date(),
+        updated_at: new Date(),
+        players: []
+      };
+
+      const swapLimitError = new Error(
+        "Maximum 2 role swaps per week allowed. You have 0 remaining."
+      );
+      Object.assign(swapLimitError, {
+        name: "Bad Request",
+        status: 400
+      });
+
+      mockFantasyModels.getFantasyTeamByUser.mockResolvedValue(mockTeam);
+      mockFantasyModels.updatePlayerRoles.mockRejectedValue(swapLimitError);
+
+      await updatePlayerRolesController(mockRequest, mockResponse, mockNext);
+
+      expect(mockNext).toHaveBeenCalledWith(swapLimitError);
+      expect(mockResponse.json).not.toHaveBeenCalled();
+    });
   });
 
   describe("getFantasyLeaderboardController", () => {

@@ -458,7 +458,7 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
       // Mobile event display
       dayMaxEventRows: 2, // Limit event rows on mobile
       // Mobile popover positioning
-      popoverParent: document.body // Ensure popover is positioned relative to body
+      popoverParent: typeof window !== "undefined" ? document.body : undefined // Ensure popover is positioned relative to body
     }),
     [view, calendarMatches, timeRange.minTime, timeRange.maxTime]
   );
