@@ -1,6 +1,5 @@
 import { runQuery } from "../db/mysqlRunQuery";
 import { getMatchesByExternalId } from "../models/match.models";
-import { mswServer } from "@eggosystem/shared-msw";
 import { validateAndUpdateScheduledMatchTeams } from "./cron-scheduler.services";
 
 // Test constants
@@ -18,14 +17,6 @@ const MATCH_1_EXTERNAL_ID = "match-1-external-id";
 const MATCH_2_EXTERNAL_ID = "match-2-external-id";
 
 describe("Match Team Validation Integration Test", () => {
-  beforeAll(() => {
-    mswServer.listen({ onUnhandledRequest: "bypass" });
-  });
-
-  afterAll(() => {
-    mswServer.close();
-  });
-
   beforeEach(async () => {
     // Clean up test data
     await cleanupTestData();

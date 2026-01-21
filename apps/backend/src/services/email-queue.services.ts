@@ -218,7 +218,11 @@ export const closeEmailQueue = async (queue?: Queue): Promise<void> => {
       logger.info("Email queue closed successfully");
     }
   } catch (error) {
+    // Log error but don't throw - allow other cleanup to proceed
     logger.error("Error closing email queue", error);
-    throw error;
+    // Reset queue reference even if close failed to prevent retry issues
+    if (emailQueue === _welcomeEmailQueue) {
+      _welcomeEmailQueue = null;
+    }
   }
 };

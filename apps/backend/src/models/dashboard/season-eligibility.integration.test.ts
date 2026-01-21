@@ -2,22 +2,15 @@ import { checkPlayerAdditionEligibility } from "./season.models";
 import { runQuery } from "../../db/mysqlRunQuery";
 import { getConnection } from "../../db/mysqlConnection";
 import type { PoolConnection } from "mysql2/promise";
-import { mswServer } from "@eggosystem/shared-msw";
 
 describe("Season Eligibility Integration Tests", () => {
   let connection: PoolConnection;
 
   beforeAll(async () => {
-    // Start MSW server
-    mswServer.listen();
-
     connection = await getConnection();
   });
 
   afterAll(async () => {
-    // Stop MSW server
-    mswServer.close();
-
     if (connection) {
       connection.release();
     }
