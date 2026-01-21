@@ -12,7 +12,7 @@ const mockGetConnection = getConnection as jest.MockedFunction<
   typeof getConnection
 >;
 
-describe.skip("manual validity override", () => {
+describe("manual validity override", () => {
   const mockConnection = {
     beginTransaction: jest.fn(),
     commit: jest.fn(),
