@@ -427,7 +427,7 @@ export default function HeroSection({ device: _device }: HeroSectionProps) {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
               <div className="text-center p-3 sm:p-4 bg-white/5 rounded-lg border border-white/10">
                 <div className="text-2xl sm:text-3xl lg:text-3xl 2xl:text-4xl font-bold text-orange-400">
-                  90+
+                  85
                 </div>
                 <div className="text-sm sm:text-base lg:text-base 2xl:text-lg text-slate-400">
                   Organizations
@@ -435,7 +435,7 @@ export default function HeroSection({ device: _device }: HeroSectionProps) {
               </div>
               <div className="text-center p-3 sm:p-4 bg-white/5 rounded-lg border border-white/10">
                 <div className="text-2xl sm:text-3xl lg:text-3xl 2xl:text-4xl font-bold text-orange-400">
-                  800+
+                  700+
                 </div>
                 <div className="text-sm sm:text-base lg:text-base 2xl:text-lg text-slate-400">
                   Players
@@ -443,7 +443,7 @@ export default function HeroSection({ device: _device }: HeroSectionProps) {
               </div>
               <div className="text-center p-3 sm:p-4 bg-white/5 rounded-lg border border-white/10">
                 <div className="text-2xl sm:text-3xl lg:text-3xl 2xl:text-4xl font-bold text-orange-400">
-                  110+
+                  96
                 </div>
                 <div className="text-sm sm:text-base lg:text-base 2xl:text-lg text-slate-400">
                   Teams
