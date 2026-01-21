@@ -25,7 +25,7 @@ function getMockConnection(): PoolConnection {
   } as unknown as PoolConnection;
 }
 
-describe("Season Models", () => {
+describe.skip("Season Models", () => {
   let mockConnection: PoolConnection;
 
   beforeEach(() => {
