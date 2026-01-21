@@ -245,6 +245,7 @@ audit:
         fi
       fi
   artifacts:
+    expire_in: 7 days
     reports:
       dependency_scanning: gl-dependency-scanning.json
     paths:
@@ -285,6 +286,7 @@ test:backend:
     - cd apps/backend && NODE_ENV=test npx jest --shard=$CI_NODE_INDEX/$CI_NODE_TOTAL --coverage --ci --detectOpenHandles && mv coverage/coverage-final.json coverage/coverage-final-$CI_NODE_INDEX.json
   coverage: '/Statements\s+:\s+([\d.]+)%/'
   artifacts:
+    expire_in: 7 days
     when: always
     reports:
       junit:
@@ -334,6 +336,7 @@ test:frontend:
     - pnpm --filter=frontend test
   coverage: '/Statements\s+:\s+([\d.]+)%/'
   artifacts:
+    expire_in: 7 days
     when: always
     reports:
       junit:
@@ -351,6 +354,7 @@ build:types:
   script:
     - npx turbo run build --filter='@eggosystem/types'
   artifacts:
+    expire_in: 7 days
     paths:
       - packages/types/dist/
 
@@ -360,6 +364,7 @@ build:shared-msw:
   script:
     - npx turbo run build --filter='@eggosystem/shared-msw'
   artifacts:
+    expire_in: 7 days
     paths:
       - packages/shared-msw/dist/
 
@@ -369,6 +374,7 @@ build:frontend:
   script:
     - npx turbo run build --filter='!backend'
   artifacts:
+    expire_in: 7 days
     paths:
       - apps/frontend/.next/
 
@@ -378,6 +384,7 @@ build:backend:
   script:
     - npx turbo run build --filter='!frontend'
   artifacts:
+    expire_in: 7 days
     paths:
       - apps/backend/dist/
 
@@ -422,6 +429,7 @@ test-e2e:frontend:
     - unset NODE_ENV
     - pnpm test:e2e
   artifacts:
+    expire_in: 7 days
     when: always
     paths:
       - apps/frontend/playwright-report/
@@ -905,6 +913,7 @@ pages:
       echo "🔗 Database Schema: https://${CI_PROJECT_NAMESPACE}.gitlab.io/${CI_PROJECT_NAME}/"
       echo "=============================================="
   artifacts:
+    expire_in: 7 days
     paths:
       - public
   rules:

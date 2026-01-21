@@ -130,6 +130,7 @@ export const discardSeasonTeamPlayer = async (
 };
 
 export const validatePlayersInTeams = async (
+  seasonId: number,
   teams: FaceitMatchTeams,
   externalMatchId: string
 ) => {
@@ -145,7 +146,10 @@ export const validatePlayersInTeams = async (
 
   const teamsArray = [teams.faction1, teams.faction2];
   for (const team of teamsArray) {
-    const teamFromDb = await getSeasonLeagueTeamByExternalId(team.faction_id);
+    const teamFromDb = await getSeasonLeagueTeamByExternalId(
+      team.faction_id,
+      seasonId
+    );
     if (!teamFromDb) {
       throw new Error(
         `Team with external_team_id ${team.faction_id} not found`

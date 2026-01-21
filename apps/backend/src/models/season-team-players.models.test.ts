@@ -110,6 +110,7 @@ describe("season-team-players.models", () => {
     ];
 
     const mockMatchIds = [{ id: 1001 }, { id: 1002 }];
+    const seasonId = 1;
 
     beforeEach(() => {
       jest.clearAllMocks();
@@ -137,7 +138,7 @@ describe("season-team-players.models", () => {
           ]); // Team 2 players (all have null match_id)
 
         // Act
-        await validatePlayersInTeams(mockTeams, "match123");
+        await validatePlayersInTeams(seasonId, mockTeams, "match123");
 
         // Assert
         expect(mockGetHubMatchesByExternalMatchRoomId).toHaveBeenCalledWith(
@@ -145,10 +146,12 @@ describe("season-team-players.models", () => {
         );
         expect(mockGetSeasonLeagueTeamByExternalId).toHaveBeenCalledTimes(2);
         expect(mockGetSeasonLeagueTeamByExternalId).toHaveBeenCalledWith(
-          "team1-external-id"
+          "team1-external-id",
+          seasonId
         );
         expect(mockGetSeasonLeagueTeamByExternalId).toHaveBeenCalledWith(
-          "team2-external-id"
+          "team2-external-id",
+          seasonId
         );
 
         expect(mockRunQuery).toHaveBeenCalledTimes(2);
@@ -173,7 +176,7 @@ describe("season-team-players.models", () => {
 
         // Act & Assert
         await expect(
-          validatePlayersInTeams(mockTeams, "match123")
+          validatePlayersInTeams(seasonId, mockTeams, "match123")
         ).rejects.toThrow(
           "Match with external_match_room_id match123 not found"
         );
@@ -190,7 +193,7 @@ describe("season-team-players.models", () => {
 
         // Act & Assert
         await expect(
-          validatePlayersInTeams(mockTeams, "match123")
+          validatePlayersInTeams(seasonId, mockTeams, "match123")
         ).rejects.toThrow(
           "Team with external_team_id team1-external-id not found"
         );
@@ -200,7 +203,8 @@ describe("season-team-players.models", () => {
         );
         expect(mockGetSeasonLeagueTeamByExternalId).toHaveBeenCalledTimes(1);
         expect(mockGetSeasonLeagueTeamByExternalId).toHaveBeenCalledWith(
-          "team1-external-id"
+          "team1-external-id",
+          seasonId
         );
       });
 
@@ -216,7 +220,7 @@ describe("season-team-players.models", () => {
 
         // Act & Assert
         await expect(
-          validatePlayersInTeams(mockTeams, "match123")
+          validatePlayersInTeams(seasonId, mockTeams, "match123")
         ).rejects.toThrow(
           "Team with external_team_id team2-external-id not found"
         );
@@ -226,10 +230,12 @@ describe("season-team-players.models", () => {
         );
         expect(mockGetSeasonLeagueTeamByExternalId).toHaveBeenCalledTimes(2);
         expect(mockGetSeasonLeagueTeamByExternalId).toHaveBeenCalledWith(
-          "team1-external-id"
+          "team1-external-id",
+          seasonId
         );
         expect(mockGetSeasonLeagueTeamByExternalId).toHaveBeenCalledWith(
-          "team2-external-id"
+          "team2-external-id",
+          seasonId
         );
       });
     });
@@ -260,7 +266,7 @@ describe("season-team-players.models", () => {
           ]); // All team 2 players found
 
         // Act
-        await validatePlayersInTeams(mockTeams, "match123");
+        await validatePlayersInTeams(seasonId, mockTeams, "match123");
 
         // Assert
         expect(mockGetHubMatchesByExternalMatchRoomId).toHaveBeenCalledWith(
@@ -293,7 +299,7 @@ describe("season-team-players.models", () => {
           .mockResolvedValueOnce([]); // No players found for team 2
 
         // Act
-        await validatePlayersInTeams(mockTeams, "match123");
+        await validatePlayersInTeams(seasonId, mockTeams, "match123");
 
         // Assert
         expect(mockGetHubMatchesByExternalMatchRoomId).toHaveBeenCalledWith(
@@ -349,7 +355,7 @@ describe("season-team-players.models", () => {
           ]); // All team 2 players found (null match_id)
 
         // Act
-        await validatePlayersInTeams(mockTeams, "match123");
+        await validatePlayersInTeams(seasonId, mockTeams, "match123");
 
         // Assert
         expect(mockGetHubMatchesByExternalMatchRoomId).toHaveBeenCalledWith(
@@ -394,7 +400,7 @@ describe("season-team-players.models", () => {
           ]);
 
         // Act
-        await validatePlayersInTeams(mockTeams, "match123");
+        await validatePlayersInTeams(seasonId, mockTeams, "match123");
 
         // Assert
         expect(mockGetHubMatchesByExternalMatchRoomId).toHaveBeenCalledWith(
@@ -436,7 +442,7 @@ describe("season-team-players.models", () => {
           ]);
 
         // Act
-        await validatePlayersInTeams(mockTeams, "match123");
+        await validatePlayersInTeams(seasonId, mockTeams, "match123");
 
         // Assert
         expect(mockGetHubMatchesByExternalMatchRoomId).toHaveBeenCalledWith(
@@ -483,7 +489,7 @@ describe("season-team-players.models", () => {
           ]);
 
         // Act
-        await validatePlayersInTeams(mockTeams, "match123");
+        await validatePlayersInTeams(seasonId, mockTeams, "match123");
 
         // Assert
         expect(mockRedisClient.set).toHaveBeenCalledWith(
@@ -534,7 +540,7 @@ describe("season-team-players.models", () => {
           ]);
 
         // Act
-        await validatePlayersInTeams(mockTeams, "match123");
+        await validatePlayersInTeams(seasonId, mockTeams, "match123");
 
         // Assert - No Redis call should be made since all validations pass
         expect(mockRedisClient.set).not.toHaveBeenCalled();
@@ -574,7 +580,7 @@ describe("season-team-players.models", () => {
           ]);
 
         // Act
-        await validatePlayersInTeams(mockTeams, "match123");
+        await validatePlayersInTeams(seasonId, mockTeams, "match123");
 
         // Assert - All validations should pass
         expect(mockRedisClient.set).not.toHaveBeenCalled();
@@ -607,7 +613,7 @@ describe("season-team-players.models", () => {
           ]);
 
         // Act
-        await validatePlayersInTeams(mockTeams, "match123");
+        await validatePlayersInTeams(seasonId, mockTeams, "match123");
 
         // Assert
         expect(mockRedisClient.set).not.toHaveBeenCalled();
@@ -686,7 +692,7 @@ describe("season-team-players.models", () => {
           );
 
         // Act
-        await validatePlayersInTeams(largeTeams, "match123");
+        await validatePlayersInTeams(seasonId, largeTeams, "match123");
 
         // Assert - All players should be valid
         expect(mockRedisClient.set).not.toHaveBeenCalled();
@@ -698,7 +704,7 @@ describe("season-team-players.models", () => {
 
         // Act & Assert
         await expect(
-          validatePlayersInTeams(mockTeams, "match123")
+          validatePlayersInTeams(seasonId, mockTeams, "match123")
         ).rejects.toThrow(
           "Match with external_match_room_id match123 not found"
         );
@@ -734,7 +740,11 @@ describe("season-team-players.models", () => {
           .mockResolvedValueOnce([]); // Empty roster returns empty array
 
         // Act
-        await validatePlayersInTeams(teamsWithEmptyRoster, "match123");
+        await validatePlayersInTeams(
+          seasonId,
+          teamsWithEmptyRoster,
+          "match123"
+        );
 
         // Assert
         expect(mockGetHubMatchesByExternalMatchRoomId).toHaveBeenCalledWith(
@@ -782,7 +792,11 @@ describe("season-team-players.models", () => {
           ]);
 
         // Act
-        await validatePlayersInTeams(teamsWithSinglePlayer, "match123");
+        await validatePlayersInTeams(
+          seasonId,
+          teamsWithSinglePlayer,
+          "match123"
+        );
 
         // Assert
         expect(mockGetHubMatchesByExternalMatchRoomId).toHaveBeenCalledWith(

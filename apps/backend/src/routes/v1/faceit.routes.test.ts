@@ -1922,6 +1922,7 @@ describe("FaceIT Routes - Webhook", () => {
 
         // Verify players were validated
         expect(mockValidatePlayersInTeams).toHaveBeenCalledWith(
+          1, // season_id from mock
           validMatchDetailsMatchDemoReady.teams,
           validMatchDetailsMatchDemoReady.match_id
         );
@@ -1985,8 +1986,8 @@ describe("FaceIT Routes - Webhook", () => {
         // Verify webhook data was saved
         expect(mockSaveWebhookData).toHaveBeenCalled();
 
-        // Verify players were validated
-        expect(mockValidatePlayersInTeams).toHaveBeenCalled();
+        // Verify players were NOT validated (error thrown before validation)
+        expect(mockValidatePlayersInTeams).not.toHaveBeenCalled();
 
         // Verify match games were NOT added
         expect(mockAddFaceitMatchGameToDatabase).not.toHaveBeenCalled();

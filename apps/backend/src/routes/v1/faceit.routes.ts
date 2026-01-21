@@ -11,7 +11,10 @@ import {
   authenticateJWT,
   checkPermissions
 } from "../../middlewares/auth.middleware";
-import { saveWebhookData } from "../../models/faceit.models";
+import {
+  saveWebhookData,
+  updateErrorForWebhook
+} from "../../models/faceit.models";
 import { logger } from "../../utils/app-logger";
 import {
   type MatchStatusReadyWebhook,
@@ -289,11 +292,28 @@ router.post(
             return;
           }
         }
+        const externalMatchRoomId = validatedWebhook.payload.id;
 
-        await addMatchToDatabase(
-          validatedMatchDetails,
-          validatedWebhook.payload.entity.id
-        );
+        try {
+          await addMatchToDatabase(
+            validatedMatchDetails,
+            validatedWebhook.payload.entity.id
+          );
+        } catch (error) {
+          logger.error(
+            `Error adding match to database for external match room id ${externalMatchRoomId}: ${error}`
+          );
+          await updateErrorForWebhook(
+            externalMatchRoomId,
+            "UNKNOWN_ERROR",
+            error
+          ).catch(() => {
+            logger.error(
+              `Error updating error for webhook for external match room id ${externalMatchRoomId}: ${error}`
+            );
+          });
+          throw error;
+        }
 
         res.status(200).send("Webhook received");
         return;
@@ -487,11 +507,6 @@ router.post(
           webhookData.event,
           manualReprocess
         );
-        // Validate players in both teams that all the steam_ids are in the SeasonTeamPlayers table
-        await validatePlayersInTeams(
-          validatedMatchDetails.teams,
-          validatedMatchDetails.match_id
-        );
 
         const externalLeagueId = webhookData.payload.entity.id;
         const seasonLeague =
@@ -503,6 +518,12 @@ router.post(
             `No SeasonLeagueExternalId entry found when adding match games for external_id: ${externalLeagueId}`
           );
         }
+        // Validate players in both teams that all the steam_ids are in the SeasonTeamPlayers table
+        await validatePlayersInTeams(
+          seasonLeague.season_id,
+          validatedMatchDetails.teams,
+          validatedMatchDetails.match_id
+        );
 
         const matchGameId = await addFaceitMatchGameToDatabase(
           validatedWebhook,
