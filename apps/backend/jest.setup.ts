@@ -31,8 +31,27 @@ jest.mock("ioredis", () => {
   }));
 });
 
+// Mock BullMQ before any imports that might use it
+// This prevents real Redis connections from being created during tests
+jest.mock("bullmq", () => {
+  return {
+    Queue: jest.fn().mockImplementation(() => ({
+      add: jest.fn(),
+      addBulk: jest.fn(),
+      getWaitingCount: jest.fn().mockResolvedValue(0),
+      getActiveCount: jest.fn().mockResolvedValue(0),
+      getCompletedCount: jest.fn().mockResolvedValue(0),
+      getFailedCount: jest.fn().mockResolvedValue(0),
+      getDelayedCount: jest.fn().mockResolvedValue(0),
+      close: jest.fn().mockResolvedValue(undefined)
+    })),
+    Worker: jest.fn()
+  };
+});
+
 import { endDbConnection } from "./src/db/mysqlConnection";
 import { closeRedis } from "./src/utils/redisClient";
+import { closeEmailQueue } from "./src/services/email-queue.services";
 import { mswServer } from "@eggosystem/shared-msw";
 import { cleanupLogger } from "./src/utils/app-logger";
 import { http, HttpResponse } from "@eggosystem/shared-msw";
@@ -96,6 +115,7 @@ afterEach(() => {
 afterAll(async () => {
   await endDbConnection();
   await closeRedis();
+  await closeEmailQueue();
   await cleanupLogger();
   mswServer.close();
 });
