@@ -25,7 +25,7 @@ export const playerExistsInSeasonTeam = async (
 ): Promise<boolean> => {
   const players = await runQuery<Array<{ steam_id: string }>>(
     `SELECT steam_id FROM SeasonTeamPlayers 
-     WHERE season_id = ? AND team_id = ? AND steam_id = ?`,
+     WHERE season_id = ? AND team_id = ? AND steam_id = ? AND discarded_at IS NULL`,
     [seasonId, teamId, steamId],
     connection
   );
@@ -97,7 +97,7 @@ export const discardSeasonTeamPlayer = async (
 ) => {
   // First verify the player exists and is not already discarded
   const [existingPlayer] = await runQuery<Array<SeasonTeamPlayer>>(
-    `SELECT * FROM SeasonTeamPlayers WHERE season_id = ? AND team_id = ? AND steam_id = ?`,
+    `SELECT * FROM SeasonTeamPlayers WHERE season_id = ? AND team_id = ? AND steam_id = ? AND discarded_at IS NULL`,
     [seasonId, teamId, steamId],
     connection
   );
@@ -202,7 +202,7 @@ export const getPrimaryPlayersForTeam = async (
   teamId: number,
   seasonId: number
 ) => {
-  const query = `SELECT steam_id FROM SeasonTeamPlayers WHERE team_id = ? AND season_id = ? AND role = 'primary'`;
+  const query = `SELECT steam_id FROM SeasonTeamPlayers WHERE team_id = ? AND season_id = ? AND role = 'primary' AND discarded_at IS NULL`;
   const result = await runQuery<Array<{ steam_id: string }>>(query, [
     teamId,
     seasonId

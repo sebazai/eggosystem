@@ -47,7 +47,7 @@ WHERE aps.account_id = ?;
 SELECT sp.steam_id, sp.nickname, stp.role, stp.is_captain, stp.is_co_captain
 FROM SeasonTeamPlayers stp
 JOIN SteamPlayers sp ON stp.steam_id = sp.steam_id
-WHERE stp.season_id = ? AND stp.team_id = ?;
+WHERE stp.season_id = ? AND stp.team_id = ? AND stp.discarded_at IS NULL;
 ```
 
 **Usage**: Display current team roster for matches (not registration roster).
@@ -333,7 +333,7 @@ WHERE season_id = ? AND team_id = ?
 UNION ALL
 SELECT 'Active' as type, steam_id, is_captain, is_co_captain
 FROM SeasonTeamPlayers
-WHERE season_id = ? AND team_id = ?;
+WHERE season_id = ? AND team_id = ? AND discarded_at IS NULL;
 ```
 
 **Understanding**:

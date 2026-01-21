@@ -262,7 +262,7 @@ export const getFinalizedPlayersWithEmailsAndConsent = async (
     INNER JOIN Teams t ON t.id = stp.team_id
     INNER JOIN SeasonLeagueTeams slt ON slt.team_id = t.id AND slt.season_id = stp.season_id
     INNER JOIN Leagues l ON l.id = slt.league_id
-    WHERE stp.season_id = ? AND stp.discarded_at IS NULL AND a.work_email_verified = 1
+    WHERE stp.season_id = ? AND stp.discarded_at IS NULL AND a.work_email_verified = 1 AND stp.discarded_at IS NULL
   `;
 
   const players = await runQuery<Array<FinalizedPlayer>>(query, [seasonId]);
