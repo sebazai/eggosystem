@@ -40,27 +40,43 @@ const EMAIL_SEND_DELAY_MS = parseInt(
 // Queue configuration
 const QUEUE_NAME = "welcome-emails";
 
-// Initialize BullMQ Queue with Redis connection
-export const welcomeEmailQueue = new Queue(QUEUE_NAME, {
-  connection: {
-    host: process.env.REDIS_HOST ?? "eggo-redis",
-    port: parseInt(process.env.REDIS_PORT ?? "6379", 10)
-  },
-  defaultJobOptions: {
-    attempts: 3,
-    backoff: {
-      type: "exponential",
-      delay: 1000 // 1s, 2s, 4s
-    },
-    delay: EMAIL_SEND_DELAY_MS,
-    removeOnComplete: {
-      age: expireIn7Days // Remove completed jobs after 7 days
-    },
-    removeOnFail: {
-      age: expireIn30Days // Keep failed jobs for 30 days for debugging
-    }
+const createWelcomeEmailQueue = (queue?: Queue): Queue => {
+  if (queue) {
+    return queue; // Allow injection for testing
   }
-});
+
+  // Production: create new queue
+  return new Queue(QUEUE_NAME, {
+    connection: {
+      host: process.env.REDIS_HOST ?? "eggo-redis",
+      port: parseInt(process.env.REDIS_PORT ?? "6379", 10)
+    },
+    defaultJobOptions: {
+      attempts: 3,
+      backoff: {
+        type: "exponential",
+        delay: 1000 // 1s, 2s, 4s
+      },
+      delay: EMAIL_SEND_DELAY_MS,
+      removeOnComplete: {
+        age: expireIn7Days // Remove completed jobs after 7 days
+      },
+      removeOnFail: {
+        age: expireIn30Days // Keep failed jobs for 30 days for debugging
+      }
+    }
+  });
+};
+
+// Singleton instance for production use
+let _welcomeEmailQueue: Queue | null = null;
+
+const getWelcomeEmailQueue = (): Queue => {
+  if (!_welcomeEmailQueue) {
+    _welcomeEmailQueue = createWelcomeEmailQueue();
+  }
+  return _welcomeEmailQueue;
+};
 
 // Note: Rate limiting is configured in the worker, not the queue
 // The queue just stores jobs, the worker controls processing rate
@@ -69,10 +85,13 @@ export const welcomeEmailQueue = new Queue(QUEUE_NAME, {
  * Enqueue a single welcome email job
  */
 export const enqueueSeasonWelcomeEmail = async (
-  jobData: WelcomeEmailJobData
+  jobData: WelcomeEmailJobData,
+  queue?: Queue // Optional injection for testing
 ): Promise<void> => {
+  const emailQueue = queue ?? getWelcomeEmailQueue();
+
   try {
-    await welcomeEmailQueue.add("send-welcome-email", jobData, {
+    await emailQueue.add("send-welcome-email", jobData, {
       jobId: `welcome-${jobData.seasonId}-${jobData.accountId}-${Date.now()}`
     });
 
@@ -99,8 +118,10 @@ export const enqueueBulkSeasonWelcomeEmails = async (
   platform: string,
   rulebookUrl: string | null,
   discordLink: string | null,
-  mapNames: string[]
+  mapNames: string[],
+  queue?: Queue // Optional injection for testing
 ): Promise<{ enqueued: number; failed: number }> => {
+  const emailQueue = queue ?? getWelcomeEmailQueue();
   let enqueued = 0;
   let failed = 0;
 
@@ -133,7 +154,7 @@ export const enqueueBulkSeasonWelcomeEmails = async (
 
   try {
     // Use BullMQ's bulk add for efficiency
-    await welcomeEmailQueue.addBulk(jobs);
+    await emailQueue.addBulk(jobs);
     enqueued = jobs.length;
 
     logger.info(
@@ -154,14 +175,18 @@ export const enqueueBulkSeasonWelcomeEmails = async (
 /**
  * Get queue statistics for monitoring
  */
-export const getEmailQueueStats = async () => {
+export const getEmailQueueStats = async (
+  queue?: Queue // Optional injection for testing
+) => {
+  const emailQueue = queue ?? getWelcomeEmailQueue();
+
   try {
     const [waiting, active, completed, failed, delayed] = await Promise.all([
-      welcomeEmailQueue.getWaitingCount(),
-      welcomeEmailQueue.getActiveCount(),
-      welcomeEmailQueue.getCompletedCount(),
-      welcomeEmailQueue.getFailedCount(),
-      welcomeEmailQueue.getDelayedCount()
+      emailQueue.getWaitingCount(),
+      emailQueue.getActiveCount(),
+      emailQueue.getCompletedCount(),
+      emailQueue.getFailedCount(),
+      emailQueue.getDelayedCount()
     ]);
 
     return {
@@ -181,10 +206,17 @@ export const getEmailQueueStats = async () => {
 /**
  * Close the queue connection gracefully
  */
-export const closeEmailQueue = async (): Promise<void> => {
+export const closeEmailQueue = async (queue?: Queue): Promise<void> => {
+  const emailQueue = queue ?? _welcomeEmailQueue;
+
   try {
-    await welcomeEmailQueue.close();
-    logger.info("Email queue closed successfully");
+    if (emailQueue) {
+      await emailQueue.close();
+      if (emailQueue === _welcomeEmailQueue) {
+        _welcomeEmailQueue = null; // Reset so it can be re-initialized if needed
+      }
+      logger.info("Email queue closed successfully");
+    }
   } catch (error) {
     logger.error("Error closing email queue", error);
     throw error;

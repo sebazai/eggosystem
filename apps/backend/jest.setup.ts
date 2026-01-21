@@ -1,3 +1,36 @@
+// Mock ioredis before any imports that might use it
+// This is needed because redisClient creates a Redis instance at module level
+jest.mock("ioredis", () => {
+  // In-memory storage for the mock (shared across all instances)
+  const mockRedisStorage = new Map<string, string>();
+
+  return jest.fn().mockImplementation(() => ({
+    get: jest.fn().mockImplementation((key: string) => {
+      return Promise.resolve(mockRedisStorage.get(key) || null);
+    }),
+    set: jest
+      .fn()
+      .mockImplementation((key: string, value: string, ..._args: unknown[]) => {
+        // Handle set with EX option (expiration) - we ignore expiration in the mock
+        mockRedisStorage.set(key, value);
+        return Promise.resolve("OK");
+      }),
+    del: jest.fn().mockImplementation((key: string) => {
+      const existed = mockRedisStorage.has(key);
+      mockRedisStorage.delete(key);
+      return Promise.resolve(existed ? 1 : 0);
+    }),
+    keys: jest.fn().mockResolvedValue([]),
+    mget: jest.fn().mockResolvedValue([]),
+    flushall: jest.fn().mockImplementation(() => {
+      mockRedisStorage.clear();
+      return Promise.resolve("OK");
+    }),
+    quit: jest.fn().mockResolvedValue("OK"),
+    on: jest.fn()
+  }));
+});
+
 import { endDbConnection } from "./src/db/mysqlConnection";
 import { closeRedis } from "./src/utils/redisClient";
 import { mswServer } from "@eggosystem/shared-msw";
