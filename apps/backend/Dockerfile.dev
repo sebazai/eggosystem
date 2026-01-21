@@ -1,5 +1,5 @@
 # Base image
-FROM node:25-slim@sha256:9b0d2dd3a55e1d10c1b17f0d1e8835b04965c7251ad65de0df67252d4a6f0159 AS base
+FROM node:25-slim@sha256:f9e63fcfea470fdfd6ffeb0d6a4307ecf99f7b3292707897f82ba9088aa181e5 AS base
 ENV NODE_ENV=development
 WORKDIR /usr/src/app
 RUN npm install -g pnpm
