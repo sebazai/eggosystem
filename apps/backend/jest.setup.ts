@@ -115,7 +115,11 @@ afterEach(() => {
 afterAll(async () => {
   await endDbConnection();
   await closeRedis();
-  await closeEmailQueue();
+  try {
+    await closeEmailQueue();
+  } catch (_error) {
+    // Ignore errors during test cleanup to allow other cleanup to proceed
+  }
   await cleanupLogger();
   mswServer.close();
 });
