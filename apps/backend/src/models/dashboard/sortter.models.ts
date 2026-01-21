@@ -357,8 +357,8 @@ export const getTeamPlayerValuesLive = async (
       stp.is_captain,
       stp.is_co_captain,
       stp.match_id,
-      DATE(m.start_timestamp) AS match_date,
-      match_teams
+      m.start_timestamp,
+      teams_in_match.match_teams
     ORDER BY
       CASE stp.role WHEN 'primary' THEN 0 ELSE 1 END,
       spr.kana_elo DESC
