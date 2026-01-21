@@ -2,6 +2,17 @@ import { type FaceitLink, type FaceitValidationError } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
 import { type PoolConnection } from "mysql2/promise";
 
+export const updateErrorForWebhook = async (
+  externalPayloadId: string,
+  errorType: FaceitValidationError,
+  errorDetails: unknown
+) => {
+  return runQuery<{ insertId: number }>(
+    "UPDATE FaceitWebhooks SET error_type = ?, error_details = ? WHERE external_payload_id = ?",
+    [errorType, JSON.stringify(errorDetails), externalPayloadId]
+  );
+};
+
 export const saveWebhookData = async (
   externalPayloadId: string,
   retryCount: number,

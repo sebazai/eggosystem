@@ -14,6 +14,8 @@ import {
   FaceitMatchStatus,
   validateChampionshipDetailsObjectCreated
 } from "@eggosystem/types";
+import { getSeasonLeagueExternalIdByExternalIdWithSeasonSettings } from "../models/season-league-external-id.models";
+import { NotFoundError } from "../utils/errors";
 
 const _syncMatchesManualGroup = async (type: string): Promise<void> => {
   const seasonLeagueExternalIds = await runQuery<SeasonLeagueExternalId[]>(
@@ -164,6 +166,17 @@ export const validateAndUpdateScheduledMatchTeams = async (): Promise<void> => {
         continue;
       }
 
+      const externalLeagueId = faceitMatchDetails.competition_id;
+      const seasonExternalLeagueRow =
+        await getSeasonLeagueExternalIdByExternalIdWithSeasonSettings(
+          externalLeagueId
+        );
+      if (!seasonExternalLeagueRow) {
+        throw new NotFoundError(
+          `Could not find season external league row for id ${externalLeagueId}`
+        );
+      }
+
       // Get teams from FaceIT match details
       const faceitTeam1ExternalId =
         faceitMatchDetails.teams.faction1.faction_id;
@@ -172,10 +185,12 @@ export const validateAndUpdateScheduledMatchTeams = async (): Promise<void> => {
 
       // Get teams from database
       const dbTeam1 = await getSeasonLeagueTeamByExternalId(
-        faceitTeam1ExternalId
+        faceitTeam1ExternalId,
+        seasonExternalLeagueRow.season_id
       );
       const dbTeam2 = await getSeasonLeagueTeamByExternalId(
-        faceitTeam2ExternalId
+        faceitTeam2ExternalId,
+        seasonExternalLeagueRow.season_id
       );
 
       if (!dbTeam1 || !dbTeam2) {

@@ -7,12 +7,13 @@ import { type PoolConnection } from "mysql2/promise";
 
 export const getSeasonLeagueTeamByExternalId = async (
   externalId: string,
+  seasonId: number,
   connection?: PoolConnection
 ) => {
-  const query = `SELECT * FROM SeasonLeagueTeams WHERE external_team_id = ?`;
+  const query = `SELECT * FROM SeasonLeagueTeams WHERE external_team_id = ? AND season_id = ?`;
   const [seasonLeagueTeam] = await runQuery<
     Array<SeasonLeagueTeam | undefined>
-  >(query, [externalId], connection);
+  >(query, [externalId, seasonId], connection);
   return seasonLeagueTeam;
 };
 

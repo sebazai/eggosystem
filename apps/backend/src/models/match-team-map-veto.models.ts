@@ -11,6 +11,8 @@ import {
 import { getSeasonLeagueTeamByExternalId } from "./season-league-team.models";
 import { getConnection } from "../db/mysqlConnection";
 import { logger } from "../utils/app-logger";
+import { getSeasonLeagueExternalIdByExternalIdWithSeasonSettings } from "./season-league-external-id.models";
+import { NotFoundError } from "../utils/errors";
 
 // FACEIT Match History API Response Interfaces
 interface FaceitMatchHistoryEntity {
@@ -166,6 +168,18 @@ export const addMatchTeamMapVetoes = async (
       connection
     );
 
+    const seasonExternal =
+      await getSeasonLeagueExternalIdByExternalIdWithSeasonSettings(
+        externalLeagueId,
+        connection
+      );
+
+    if (!seasonExternal) {
+      throw new NotFoundError(
+        `Could not find season external league row for id ${externalLeagueId}`
+      );
+    }
+
     if (!matches || matches.length === 0) {
       throw new Error(
         `No matches found when adding match games for external_id: ${externalLeagueId}`
@@ -177,10 +191,12 @@ export const addMatchTeamMapVetoes = async (
 
     const teamOne = await getSeasonLeagueTeamByExternalId(
       teamOneExternalId,
+      seasonExternal.season_id,
       connection
     );
     const teamTwo = await getSeasonLeagueTeamByExternalId(
       teamTwoExternalId,
+      seasonExternal.season_id,
       connection
     );
 

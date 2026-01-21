@@ -582,10 +582,12 @@ export const addMatchToDatabase = async (
 
     const teamOne = await getSeasonLeagueTeamByExternalId(
       teamOneExternalId,
+      seasonLeagueExternalRoom.season_id,
       connection
     );
     const teamTwo = await getSeasonLeagueTeamByExternalId(
       teamTwoExternalId,
+      seasonLeagueExternalRoom.season_id,
       connection
     );
 
