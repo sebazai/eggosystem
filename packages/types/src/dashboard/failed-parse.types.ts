@@ -4,6 +4,10 @@ export interface FailedParseMessage {
   id: number;
   queue_name: string;
   match_game_id: string;
+  /**
+   * Failure timestamp in UTC, ISO 8601 format with 'Z' indicator (e.g., '2025-01-15T10:30:00.000Z')
+   * Stored as TIMESTAMP in database (UTC). Returned as Date object from models, serialized to ISO string by Express res.json()
+   */
   failed_at: string;
   final_error: string;
   original_message: Record<string, unknown>;
@@ -12,7 +16,15 @@ export interface FailedParseMessage {
   message_type?: string;
   source?: string;
   status: "failed" | "requeued" | "resolved";
+  /**
+   * Creation timestamp in UTC, ISO 8601 format with 'Z' indicator (e.g., '2025-01-15T10:30:00.000Z')
+   * Stored as TIMESTAMP in database (UTC). Returned as Date object from models, serialized to ISO string by Express res.json()
+   */
   created_at: string;
+  /**
+   * Last update timestamp in UTC, ISO 8601 format with 'Z' indicator (e.g., '2025-01-15T10:30:00.000Z')
+   * Stored as TIMESTAMP in database (UTC). Returned as Date object from models, serialized to ISO string by Express res.json()
+   */
   updated_at: string;
   _rabbitMQMessage?: unknown; // Internal RabbitMQ message reference
 }

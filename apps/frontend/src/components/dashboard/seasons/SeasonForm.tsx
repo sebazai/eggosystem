@@ -60,8 +60,10 @@ export function SeasonForm({
   const { maps, isLoading: mapsLoading } = useMaps();
 
   // Convert Season to SeasonFormValues for editing
+  // Backend returns UTC ISO strings (e.g., "2024-01-15T18:30:00.000Z")
+  // We convert them to local time for display in datetime-local inputs
   const getInitialValues = (season: Season): SeasonFormValues => {
-    // Convert ISO date strings to YYYY-MM-DD format for date inputs
+    // Convert ISO date strings to YYYY-MM-DD format for date inputs (date-only, no time)
     const formatDateForInput = (dateStr: string | null): string | null => {
       if (!dateStr) return null;
       // If already in YYYY-MM-DD format, return as is
@@ -81,6 +83,8 @@ export function SeasonForm({
       organizer_id: season.organizer_id,
       name: season.name,
       full_name: season.full_name,
+      // formatDateTimeForInput converts UTC ISO → local datetime-local format
+      // Example: "2024-01-15T18:30:00.000Z" (UTC) → "2024-01-15T20:30" (Helsinki, UTC+2)
       signup_start_date: formatDateTimeForInput(season.signup_start_date),
       signup_end_date: formatDateTimeForInput(season.signup_end_date),
       start_date: formatDateForInput(season.start_date) || "",
@@ -151,6 +155,9 @@ export function SeasonForm({
         organizer_id: data.organizer_id || 1,
         name: data.name,
         full_name: data.full_name,
+        // convertLocalDateTimeToISO converts local datetime-local → UTC ISO format
+        // Example: "2024-01-15T20:30" (Helsinki, UTC+2) → "2024-01-15T18:30:00.000Z" (UTC)
+        // Backend expects UTC ISO strings and stores them as UTC in the database
         signup_start_date: convertLocalDateTimeToISO(
           data.signup_start_date ?? null
         ),

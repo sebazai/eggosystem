@@ -2,8 +2,24 @@ import moment from "moment-timezone";
 
 /**
  * Formats a UTC date for database insertion (MySQL format)
- * @param utcDate - Date object or ISO string in UTC
- * @returns MySQL datetime format string (e.g., '2025-01-15 10:30:00')
+ *
+ * **Timezone Handling:**
+ * - If input has timezone info (e.g., `+02:00`, `-05:00`, `Z`), it's converted to UTC
+ * - If input has NO timezone info, it's **assumed to be UTC** (moment.utc() behavior)
+ * - This means timestamps without timezone are treated as UTC, not local time
+ *
+ * @param utcDate - Date object or ISO string (with or without timezone)
+ * @returns MySQL datetime format string in UTC (e.g., '2025-01-15 10:30:00')
+ *
+ * @example
+ * // With UTC timezone
+ * formatDateForDatabase('2024-01-15T18:30:00.000Z') // → '2024-01-15 18:30:00'
+ *
+ * // With timezone offset (converted to UTC)
+ * formatDateForDatabase('2024-01-15T20:30:00.000+02:00') // → '2024-01-15 18:30:00'
+ *
+ * // Without timezone (assumed UTC)
+ * formatDateForDatabase('2024-01-15T18:30:00.000') // → '2024-01-15 18:30:00'
  */
 export const formatDateForDatabase = (utcDate: Date | string): string => {
   // Parse directly as UTC to avoid timezone issues

@@ -520,12 +520,25 @@ export const getHubMatchesByExternalMatchRoomId = async (
   return matches;
 };
 
+/**
+ * Updates a match's start timestamp
+ *
+ * **Timezone Handling:**
+ * - Assumes `matchDate` and `startTime` represent UTC time
+ * - The 'Z' suffix is added to indicate UTC before formatting
+ * - Result is stored in database as UTC
+ *
+ * @param matchId - The match ID to update
+ * @param matchDate - Date string in YYYY-MM-DD format (assumed UTC)
+ * @param startTime - Time string in HH:mm:ss format (assumed UTC)
+ */
 export const updateMatchDateAndStartTime = async (
   matchId: number,
   matchDate: string,
   startTime: string
 ): Promise<void> => {
-  // Combine date and time into a timestamp
+  // Combine date and time into a timestamp, adding 'Z' to indicate UTC
+  // This assumes the input date/time are already in UTC
   const timestamp = `${matchDate}T${startTime}Z`;
   await runQuery("UPDATE Matches SET start_timestamp = ? WHERE id = ?", [
     formatDateForDatabase(timestamp),

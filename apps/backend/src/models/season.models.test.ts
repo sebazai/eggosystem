@@ -1,11 +1,7 @@
 import { createSeason, updateSeason, getSeasonById } from "./season.models";
 import { runQuery } from "../db/mysqlRunQuery";
 import { getConnection } from "../db/mysqlConnection";
-import {
-  SeasonPlatform,
-  createMockSeason,
-  createMockSeasonFormRaw
-} from "@eggosystem/types";
+import { SeasonPlatform, createMockSeasonFormRaw } from "@eggosystem/types";
 import type { PoolConnection } from "mysql2/promise";
 
 jest.mock("../db/mysqlRunQuery");
@@ -191,33 +187,6 @@ describe("Season Models", () => {
   });
 
   describe("getSeasonById", () => {
-    it("should return a season when found", async () => {
-      // Mock the raw database response (MySQL format dates)
-      const mockSeasonRaw = createMockSeason({
-        id: 123,
-        signup_start_date: "2024-01-01 00:00:00", // Database format
-        signup_end_date: "2024-01-15 00:00:00", // Database format
-        end_date: "2024-12-31",
-        registration_price: 150
-      });
-
-      mockRunQuery.mockResolvedValue([mockSeasonRaw]);
-
-      const result = await getSeasonById(123);
-
-      expect(mockRunQuery).toHaveBeenCalledWith(
-        "SELECT * FROM Seasons WHERE id = ?",
-        [123],
-        undefined
-      );
-      // Result should have ISO 8601 formatted dates (converted by formatDateFromDatabase)
-      expect(result).toEqual({
-        ...mockSeasonRaw,
-        signup_start_date: "2024-01-01T00:00:00.000Z", // ISO 8601 format
-        signup_end_date: "2024-01-15T00:00:00.000Z" // ISO 8601 format
-      });
-    });
-
     it("should return undefined when season not found", async () => {
       mockRunQuery.mockResolvedValue([undefined]);
 
@@ -229,6 +198,147 @@ describe("Season Models", () => {
         undefined
       );
       expect(result).toBeUndefined();
+    });
+  });
+
+  describe("getSeasonById integration", () => {
+    let connection: PoolConnection;
+    const testSeasonId = 9998;
+    let realRunQuery: typeof runQuery;
+    let realGetConnection: typeof getConnection;
+    let realGetSeasonById: typeof getSeasonById;
+
+    beforeAll(async () => {
+      // Get real implementations for integration test
+      // Clear module cache and require actual implementations
+      jest.resetModules();
+      jest.unmock("../db/mysqlRunQuery");
+      jest.unmock("../db/mysqlConnection");
+      jest.unmock("./season-active-map-pool.models");
+
+      realRunQuery = jest.requireActual("../db/mysqlRunQuery").runQuery;
+      realGetConnection = jest.requireActual(
+        "../db/mysqlConnection"
+      ).getConnection;
+      const seasonModels = jest.requireActual("./season.models");
+      realGetSeasonById = seasonModels.getSeasonById;
+      connection = await realGetConnection();
+    });
+
+    afterAll(async () => {
+      if (connection) {
+        connection.release();
+      }
+      // Restore mocks for other tests
+      jest.doMock("../db/mysqlRunQuery");
+      jest.doMock("../db/mysqlConnection");
+      jest.doMock("./season-active-map-pool.models", () => ({
+        setActiveMapPoolForSeason: jest.fn().mockResolvedValue(undefined),
+        getActiveMapPoolBySeasonId: jest.fn().mockResolvedValue([1, 2, 3])
+      }));
+    });
+
+    beforeEach(async () => {
+      // Clean up test data
+      try {
+        await realRunQuery(
+          "DELETE FROM SeasonActiveMapPool WHERE season_id = ?",
+          [testSeasonId],
+          connection
+        );
+      } catch (error: unknown) {
+        // Table might not exist if migrations haven't been run
+        if (!(error as Error).message?.includes("doesn't exist")) {
+          throw error;
+        }
+      }
+      await realRunQuery(
+        "DELETE FROM Seasons WHERE id = ?",
+        [testSeasonId],
+        connection
+      );
+
+      // Seed test season with specific dates in UTC
+      await realRunQuery(
+        `INSERT INTO Seasons (
+          id, game_id, game_type_id, organizer_id, name, full_name,
+          signup_start_date, signup_end_date, start_date, end_date,
+          platform, is_round_robin_bo2_as_2xbo1, has_vat, registration_price
+        ) VALUES (?, 1, 1, 1, 'Test Season', 'Test Season Full Name',
+          ?, ?, '2024-02-01', ?,
+          'faceit', false, true, ?)`,
+        [
+          testSeasonId,
+          "2024-01-01 00:00:00", // UTC datetime
+          "2024-01-15 00:00:00", // UTC datetime
+          "2024-12-31",
+          150
+        ],
+        connection
+      );
+
+      // Seed active map pool (required for getSeasonById)
+      try {
+        await realRunQuery(
+          `INSERT INTO SeasonActiveMapPool (season_id, map_id) VALUES (?, ?), (?, ?), (?, ?)`,
+          [testSeasonId, 1, testSeasonId, 2, testSeasonId, 3],
+          connection
+        );
+      } catch (error: unknown) {
+        // Table might not exist if migrations haven't been run
+        if (!(error as Error).message?.includes("doesn't exist")) {
+          throw error;
+        }
+      }
+    });
+
+    afterEach(async () => {
+      // Clean up test data
+      try {
+        await realRunQuery(
+          "DELETE FROM SeasonActiveMapPool WHERE season_id = ?",
+          [testSeasonId],
+          connection
+        );
+      } catch (error: unknown) {
+        if (!(error as Error).message?.includes("doesn't exist")) {
+          throw error;
+        }
+      }
+      await realRunQuery(
+        "DELETE FROM Seasons WHERE id = ?",
+        [testSeasonId],
+        connection
+      );
+    });
+
+    it("should return a season when found with dates in UTC timezone", async () => {
+      // Verify the season was inserted
+      const [insertedSeason] = await realRunQuery<
+        Array<{ id: number } | undefined>
+      >("SELECT id FROM Seasons WHERE id = ?", [testSeasonId], connection);
+      expect(insertedSeason).toBeDefined();
+      expect(insertedSeason?.id).toBe(testSeasonId);
+
+      // Use real implementation to ensure it uses the real database connection
+      const result = await realGetSeasonById(testSeasonId, connection);
+
+      expect(result).toBeDefined();
+      expect(result?.id).toBe(testSeasonId);
+      expect(result?.registration_price).toBe(150);
+
+      // Dates should be Date objects (Express res.json() will serialize them to ISO strings)
+      // MySQL TIMESTAMP fields are stored in UTC and returned as Date objects when dateStrings is false
+      expect(result?.signup_start_date).toBeInstanceOf(Date);
+      expect(result?.signup_end_date).toBeInstanceOf(Date);
+
+      // Verify the Date objects represent the correct UTC time
+      expect((result?.signup_start_date as unknown as Date).toISOString()).toBe(
+        "2024-01-01T00:00:00.000Z"
+      );
+      expect((result?.signup_end_date as unknown as Date).toISOString()).toBe(
+        "2024-01-15T00:00:00.000Z"
+      );
     });
   });
 });

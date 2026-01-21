@@ -17,15 +17,8 @@ import {
   type SeasonFormValues
 } from "@eggosystem/types";
 import { ZodError } from "zod";
-import { formatDateForDatabase } from "../../utils/date-utils";
-
-// Helper function to format UTC ISO string for database
-// Frontend already converts local time to UTC ISO strings, so we just format for MySQL
-const formatDateForDB = (dateString: string): string => {
-  // Date string is already in UTC ISO format (e.g., "2025-01-15T16:30:00.000Z")
-  // Just format it for MySQL datetime format
-  return formatDateForDatabase(dateString);
-};
+// Note: Date formatting is now handled by Zod schema transforms in SeasonForm.interface.ts
+// The validatedData already contains MySQL-formatted datetime strings
 
 /**
  * Controller to get all seasons
@@ -124,18 +117,16 @@ export const createSeasonController = async (
     const validatedData = seasonFormSchema.parse(req.body);
 
     // Convert form data to raw format for database insertion
+    // Note: Date fields (signup_start_date, signup_end_date, early_bird_price_discount_end_date)
+    // are already transformed to MySQL datetime format by Zod schema transforms
     const seasonData: SeasonFormRaw = {
       game_id: validatedData.game_id,
       game_type_id: validatedData.game_type_id,
       organizer_id: validatedData.organizer_id,
       name: validatedData.name,
       full_name: validatedData.full_name,
-      signup_start_date: validatedData.signup_start_date
-        ? formatDateForDB(validatedData.signup_start_date)
-        : null,
-      signup_end_date: validatedData.signup_end_date
-        ? formatDateForDB(validatedData.signup_end_date)
-        : null,
+      signup_start_date: validatedData.signup_start_date ?? null,
+      signup_end_date: validatedData.signup_end_date ?? null,
       start_date: new Date(validatedData.start_date)
         .toISOString()
         .split("T")[0], // YYYY-MM-DD format
@@ -150,9 +141,7 @@ export const createSeasonController = async (
       early_bird_price_discount:
         validatedData.early_bird_price_discount ?? null,
       early_bird_price_discount_end_date:
-        validatedData.early_bird_price_discount_end_date
-          ? formatDateForDB(validatedData.early_bird_price_discount_end_date)
-          : null,
+        validatedData.early_bird_price_discount_end_date ?? null,
       active_map_pool: validatedData.active_map_pool,
       rulebook_url: validatedData.rulebook_url || null,
       discord_link: validatedData.discord_link || null
@@ -196,18 +185,16 @@ export const updateSeasonController = async (
     const validatedData = seasonFormSchema.parse(req.body);
 
     // Convert form data to raw format for database update
+    // Note: Date fields (signup_start_date, signup_end_date, early_bird_price_discount_end_date)
+    // are already transformed to MySQL datetime format by Zod schema transforms
     const seasonData: SeasonFormRaw = {
       game_id: validatedData.game_id,
       game_type_id: validatedData.game_type_id,
       organizer_id: validatedData.organizer_id,
       name: validatedData.name,
       full_name: validatedData.full_name,
-      signup_start_date: validatedData.signup_start_date
-        ? formatDateForDB(validatedData.signup_start_date)
-        : null,
-      signup_end_date: validatedData.signup_end_date
-        ? formatDateForDB(validatedData.signup_end_date)
-        : null,
+      signup_start_date: validatedData.signup_start_date ?? null,
+      signup_end_date: validatedData.signup_end_date ?? null,
       start_date: new Date(validatedData.start_date)
         .toISOString()
         .split("T")[0], // YYYY-MM-DD format
@@ -222,9 +209,7 @@ export const updateSeasonController = async (
       early_bird_price_discount:
         validatedData.early_bird_price_discount ?? null,
       early_bird_price_discount_end_date:
-        validatedData.early_bird_price_discount_end_date
-          ? formatDateForDB(validatedData.early_bird_price_discount_end_date)
-          : null,
+        validatedData.early_bird_price_discount_end_date ?? null,
       active_map_pool: validatedData.active_map_pool,
       rulebook_url: validatedData.rulebook_url || null,
       discord_link: validatedData.discord_link || null

@@ -1,6 +1,5 @@
 import type { MyTeamDetails, MyTeamUpcomingMatch } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
-import { formatDateFromDatabase } from "../utils/date-utils";
 import JSONBig from "json-bigint";
 
 /**
@@ -135,12 +134,7 @@ export const getMyTeamsUpcomingMatches = async (
 
   const results = await runQuery<MyTeamUpcomingMatch[]>(query, [steam_id]);
 
-  // Format timestamps to ISO strings (UTC) for client
-  return results.map((match) => ({
-    ...match,
-    start_timestamp:
-      formatDateFromDatabase(match.start_timestamp) || match.start_timestamp
-  }));
+  return results;
 };
 
 /**

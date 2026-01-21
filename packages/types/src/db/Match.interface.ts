@@ -5,8 +5,16 @@ export interface Match {
   league_id: League["id"];
   season_id: Season["id"];
   stage: number; // TINYINT UNSIGNED, stored as number
-  start_timestamp: string; // TIMESTAMP, represented as string (ISO format, UTC)
-  end_timestamp: string | null; // TIMESTAMP, represented as string (ISO format, UTC)
+  /**
+   * Match start timestamp in UTC, ISO 8601 format with 'Z' indicator (e.g., '2025-01-15T10:30:00.000Z')
+   * Stored as TIMESTAMP in database (UTC). Returned as Date object from models, serialized to ISO string by Express res.json()
+   */
+  start_timestamp: string;
+  /**
+   * Match end timestamp in UTC, ISO 8601 format with 'Z' indicator (e.g., '2025-01-15T10:30:00.000Z')
+   * Stored as TIMESTAMP in database (UTC). Returned as Date object from models, serialized to ISO string by Express res.json()
+   */
+  end_timestamp: string | null;
   best_of: number; // TINYINT UNSIGNED, stored as number
   external_match_room_id: string | null;
   status: keyof typeof MatchStatus;

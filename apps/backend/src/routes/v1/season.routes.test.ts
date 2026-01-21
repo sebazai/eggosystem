@@ -5,6 +5,9 @@ import type express from "express";
 import request from "supertest";
 import { createExpressTestApp } from "../../test-utils";
 import seasonRouter from "./season.routes";
+import { runQuery } from "../../db/mysqlRunQuery";
+import { getConnection } from "../../db/mysqlConnection";
+import type { PoolConnection } from "mysql2/promise";
 
 // Mock the logger
 jest.mock("../../utils/app-logger");
@@ -103,6 +106,95 @@ describe("Season Routes - Integration Tests", () => {
       const response = await request(app).get("/-1/leagues").expect(200);
 
       expect(response.body).toEqual([]);
+    });
+  });
+
+  describe("GET /:id - Date serialization", () => {
+    let connection: PoolConnection;
+    const testSeasonId = 9997;
+
+    beforeAll(async () => {
+      connection = await getConnection();
+    });
+
+    afterAll(async () => {
+      if (connection) {
+        connection.release();
+      }
+    });
+
+    beforeEach(async () => {
+      // Clean up test data
+      await runQuery(
+        "DELETE FROM SeasonActiveMapPool WHERE season_id = ?",
+        [testSeasonId],
+        connection
+      ).catch(() => {
+        // Ignore if table doesn't exist
+      });
+      await runQuery(
+        "DELETE FROM Seasons WHERE id = ?",
+        [testSeasonId],
+        connection
+      );
+
+      // Seed test season with specific dates and times in UTC
+      await runQuery(
+        `INSERT INTO Seasons (
+          id, game_id, game_type_id, organizer_id, name, full_name,
+          signup_start_date, signup_end_date, start_date, end_date,
+          platform, is_round_robin_bo2_as_2xbo1, has_vat, registration_price
+        ) VALUES (?, 1, 1, 1, 'Test Season', 'Test Season Full Name',
+          ?, ?, '2024-02-01', ?,
+          'faceit', false, true, ?)`,
+        [
+          testSeasonId,
+          "2024-01-01 10:30:00", // UTC datetime with time
+          "2024-01-15 18:45:00", // UTC datetime with time
+          "2024-12-31",
+          150
+        ],
+        connection
+      );
+
+      // Seed active map pool (required for getSeasonById)
+      await runQuery(
+        `INSERT INTO SeasonActiveMapPool (season_id, map_id) VALUES (?, ?), (?, ?), (?, ?)`,
+        [testSeasonId, 1, testSeasonId, 2, testSeasonId, 3],
+        connection
+      ).catch(() => {
+        // Ignore if table doesn't exist
+      });
+    });
+
+    afterEach(async () => {
+      // Clean up test data
+      await runQuery(
+        "DELETE FROM SeasonActiveMapPool WHERE season_id = ?",
+        [testSeasonId],
+        connection
+      ).catch(() => {
+        // Ignore if table doesn't exist
+      });
+      await runQuery(
+        "DELETE FROM Seasons WHERE id = ?",
+        [testSeasonId],
+        connection
+      );
+    });
+
+    it("should return dates in UTC ISO 8601 format when serialized by Express", async () => {
+      const response = await request(app).get(`/${testSeasonId}`).expect(200);
+
+      expect(response.body).toBeDefined();
+      expect(response.body.id).toBe(testSeasonId);
+      expect(response.body.registration_price).toBe(150);
+
+      // Express res.json() automatically serializes Date objects to ISO strings
+      // Dates should be in UTC ISO 8601 format with 'Z' indicator
+      // Using non-midnight times ensures TIMESTAMP fields are correctly handled (not treated as date-only)
+      expect(response.body.signup_start_date).toBe("2024-01-01T10:30:00.000Z");
+      expect(response.body.signup_end_date).toBe("2024-01-15T18:45:00.000Z");
     });
   });
 });

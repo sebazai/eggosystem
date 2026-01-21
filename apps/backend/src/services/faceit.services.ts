@@ -800,18 +800,25 @@ export const syncMatchSchedule = async (
     return;
   }
 
-  // Convert FACEIT scheduled_at (Unix timestamp) to timestamp
+  // Convert FACEIT scheduled_at (Unix timestamp in seconds, e.g., 1773252000) to UTC ISO string
+  // FACEIT timestamps are Unix seconds since epoch (UTC). getMatchDateTime multiplies by 1000
+  // and converts to ISO string, always returning UTC format like "2024-01-15T18:30:00.000Z"
   const faceitScheduleTimestamp = getMatchDateTime(faceitMatch.scheduled_at);
-  const faceitScheduleDate = new Date(faceitScheduleTimestamp);
-  const faceitScheduleDateStr = faceitScheduleDate.toISOString().slice(0, 10);
-  const faceitScheduleTimeStr = faceitScheduleDate.toISOString().slice(11, 19);
+  // Extract date and time directly from ISO string (no need to parse back to Date)
+  // Since it's always UTC with 'Z' suffix, we can safely slice the string
+  const faceitScheduleDateStr = faceitScheduleTimestamp.slice(0, 10); // "YYYY-MM-DD"
+  const faceitScheduleTimeStr = faceitScheduleTimestamp.slice(11, 19); // "HH:mm:ss"
 
   const firstMatch = databaseMatches[0];
-  const firstMatchTimestamp = firstMatch.start_timestamp;
-  const firstMatchDate = new Date(firstMatchTimestamp);
-  const first_match_date = firstMatchDate.toISOString().slice(0, 10);
-  const first_match_time = firstMatchDate.toISOString().slice(11, 19);
+  // Database TIMESTAMP fields are Date objects at model layer (before Express serialization)
+  // new Date() works safely with both Date objects and strings, converting to ISO string
+  const firstMatchTimestamp = new Date(
+    firstMatch.start_timestamp
+  ).toISOString();
+  const first_match_date = firstMatchTimestamp.slice(0, 10);
+  const first_match_time = firstMatchTimestamp.slice(11, 19);
 
+  // Compare ISO strings (both UTC)
   if (firstMatchTimestamp === faceitScheduleTimestamp) {
     return;
   }
@@ -840,23 +847,28 @@ export const syncMatchSchedule = async (
     );
 
     // Second match gets +1 hour from the first match
+    // adjustMatchDateTime returns UTC ISO string, extract date/time directly
     const secondMatchScheduleTimestamp = adjustMatchDateTime(
       faceitScheduleTimestamp,
       { hours: 1 }
     );
-    const secondMatchScheduleDate = new Date(secondMatchScheduleTimestamp);
-    const secondMatchScheduleDateStr = secondMatchScheduleDate
-      .toISOString()
-      .slice(0, 10);
-    const secondMatchScheduleTimeStr = secondMatchScheduleDate
-      .toISOString()
-      .slice(11, 19);
+    const secondMatchScheduleDateStr = secondMatchScheduleTimestamp.slice(
+      0,
+      10
+    );
+    const secondMatchScheduleTimeStr = secondMatchScheduleTimestamp.slice(
+      11,
+      19
+    );
 
     const secondMatch = databaseMatches[1];
-    const secondMatchTimestamp = secondMatch.start_timestamp;
-    const secondMatchDate = new Date(secondMatchTimestamp);
-    const second_match_old_date = secondMatchDate.toISOString().slice(0, 10);
-    const second_match_old_time = secondMatchDate.toISOString().slice(11, 19);
+    // Database TIMESTAMP fields are Date objects at model layer (before Express serialization)
+    // new Date() works safely with both Date objects and strings, converting to ISO string
+    const secondMatchTimestamp = new Date(
+      secondMatch.start_timestamp
+    ).toISOString();
+    const second_match_old_date = secondMatchTimestamp.slice(0, 10);
+    const second_match_old_time = secondMatchTimestamp.slice(11, 19);
 
     await updateMatchDateAndStartTime(
       databaseMatches[1].id,

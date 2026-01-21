@@ -14,13 +14,13 @@ export interface Season {
   name: string;
   full_name: string;
   /**
-   * Signup start date in UTC, ISO 8601 format with 'Z' indicator (e.g., '2025-01-15T10:30:00Z')
-   * Stored as TIMESTAMP in database (UTC)
+   * Signup start date in UTC, ISO 8601 format with 'Z' indicator (e.g., '2025-01-15T10:30:00.000Z')
+   * Stored as TIMESTAMP in database (UTC). Returned as Date object from models, serialized to ISO string by Express res.json()
    */
   signup_start_date: string | null;
   /**
-   * Signup end date in UTC, ISO 8601 format with 'Z' indicator (e.g., '2025-01-15T10:30:00Z')
-   * Stored as TIMESTAMP in database (UTC)
+   * Signup end date in UTC, ISO 8601 format with 'Z' indicator (e.g., '2025-01-15T10:30:00.000Z')
+   * Stored as TIMESTAMP in database (UTC). Returned as Date object from models, serialized to ISO string by Express res.json()
    */
   signup_end_date: string | null;
   platform: SeasonPlatform;
@@ -39,8 +39,8 @@ export interface Season {
   has_vat: boolean;
   early_bird_price_discount: number | null;
   /**
-   * Early bird discount end date in UTC, ISO 8601 format with 'Z' indicator (e.g., '2025-01-15T10:30:00Z')
-   * Stored as TIMESTAMP in database (UTC)
+   * Early bird discount end date in UTC, ISO 8601 format with 'Z' indicator (e.g., '2025-01-15T10:30:00.000Z')
+   * Stored as TIMESTAMP in database (UTC). Returned as Date object from models, serialized to ISO string by Express res.json()
    */
   early_bird_price_discount_end_date: string | null;
   /**
