@@ -14,7 +14,7 @@ jest.mock("../../middlewares/auth.middleware", () => ({
   )
 }));
 
-describe.skip("Season Controllers Integration Tests - Active Map Pool", () => {
+describe("Season Controllers Integration Tests - Active Map Pool", () => {
   let app: express.Application;
   let connection: PoolConnection;
   const testSeasonId = 9998;

@@ -105,7 +105,7 @@ jest.mock("../../db/mysqlRunQuery");
 jest.mock("../../services/fantasy-value.service");
 jest.mock("../../utils/week-calculation");
 
-describe.skip("Season Routes Authentication Tests", () => {
+describe("Season Routes Authentication Tests", () => {
   let app: express.Application;
   let cleanup: () => void;
 
