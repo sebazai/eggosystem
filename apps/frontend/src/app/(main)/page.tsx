@@ -79,7 +79,7 @@ export default async function Home() {
                 <Card className="shadow-md dark:shadow-white/20 hover:bg-kanaliiga-light-brown/30">
                   <CardContent className="p-2 sm:p-4 text-center">
                     <p className="text-2xl sm:text-3xl font-bold text-kanaliiga-orange">
-                      {data.total_organizations}+
+                      {data.total_organizations}
                     </p>
                     <p className="text-sm text-muted-foreground">
                       Organizations
@@ -91,7 +91,7 @@ export default async function Home() {
                 <Card className="shadow-md dark:shadow-white/20 hover:bg-kanaliiga-light-brown/30">
                   <CardContent className="p-2 sm:p-4 text-center">
                     <p className="text-2xl sm:text-3xl font-bold text-kanaliiga-orange">
-                      {data.total_teams}+
+                      {data.total_teams}
                     </p>
                     <p className="text-sm text-muted-foreground">
                       Unique Teams
@@ -103,7 +103,7 @@ export default async function Home() {
                 <Card className="shadow-md dark:shadow-white/20 hover:bg-kanaliiga-light-brown/30">
                   <CardContent className="p-2 sm:p-4 text-center">
                     <p className="text-2xl sm:text-3xl font-bold text-kanaliiga-orange">
-                      {data.unique_players}+
+                      {data.unique_players}
                     </p>
                     <p className="text-sm text-muted-foreground">
                       Unique Players
@@ -115,7 +115,7 @@ export default async function Home() {
                 <Card className="shadow-md dark:shadow-white/20 hover:bg-kanaliiga-light-brown/30">
                   <CardContent className="p-2 sm:p-4 text-center">
                     <p className="text-2xl sm:text-3xl font-bold text-kanaliiga-orange">
-                      {data.total_games}+
+                      {data.total_games}
                     </p>
                     <p className="text-sm text-muted-foreground">
                       Total Games Played
