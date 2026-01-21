@@ -25,11 +25,14 @@ import {
   FACEIT_DEFAULT_ELO,
   FACEIT_DEFAULT_KD
 } from "../utils/faceit-utils";
-import { getMatchDateTime, adjustMatchDateTime } from "../utils/date-utils";
+import {
+  getFaceitMatchDateTime,
+  adjustMatchDateTime
+} from "../utils/date-utils";
 import {
   getHubMatchesByExternalMatchRoomId,
   getMatchesByExternalId,
-  updateMatchDateAndStartTime
+  updateMatchStartTimestamp
 } from "../models/match.models";
 import { fetchAllItemsWithPagination } from "../utils/pagination-utils";
 import { getActiveSeasonChampionshipIds } from "../models/season-league-external-id.models";
@@ -800,28 +803,26 @@ export const syncMatchSchedule = async (
     return;
   }
 
-  // Convert FACEIT scheduled_at (Unix timestamp in seconds, e.g., 1773252000) to UTC ISO string
-  // FACEIT timestamps are Unix seconds since epoch (UTC). getMatchDateTime multiplies by 1000
-  // and converts to ISO string, always returning UTC format like "2024-01-15T18:30:00.000Z"
-  const faceitScheduleTimestamp = getMatchDateTime(faceitMatch.scheduled_at);
-  // Extract date and time directly from ISO string (no need to parse back to Date)
-  // Since it's always UTC with 'Z' suffix, we can safely slice the string
-  const faceitScheduleDateStr = faceitScheduleTimestamp.slice(0, 10); // "YYYY-MM-DD"
-  const faceitScheduleTimeStr = faceitScheduleTimestamp.slice(11, 19); // "HH:mm:ss"
+  // Convert FACEIT scheduled_at (Unix timestamp in seconds) to UTC ISO string
+  // FACEIT timestamps are Unix seconds since epoch (UTC)
+  const faceitScheduleTimestamp = getFaceitMatchDateTime(
+    faceitMatch.scheduled_at
+  );
 
   const firstMatch = databaseMatches[0];
-  // Database TIMESTAMP fields are Date objects at model layer (before Express serialization)
-  // new Date() works safely with both Date objects and strings, converting to ISO string
+  // Convert database timestamp to ISO string for comparison
   const firstMatchTimestamp = new Date(
     firstMatch.start_timestamp
   ).toISOString();
-  const first_match_date = firstMatchTimestamp.slice(0, 10);
-  const first_match_time = firstMatchTimestamp.slice(11, 19);
 
-  // Compare ISO strings (both UTC)
+  // Compare timestamps directly (both UTC ISO strings)
   if (firstMatchTimestamp === faceitScheduleTimestamp) {
     return;
   }
+
+  // Extract date/time for logging
+  const faceitScheduleDateStr = faceitScheduleTimestamp.slice(0, 10);
+  const faceitScheduleTimeStr = faceitScheduleTimestamp.slice(11, 19);
 
   logger.info(
     `[FACEIT] New time for match ${faceitMatch.match_id} ${faceitScheduleDateStr} ${faceitScheduleTimeStr}`
@@ -830,28 +831,41 @@ export const syncMatchSchedule = async (
   if (is_round_robin_bo2_as_2xbo1 && databaseMatches.length === 2) {
     // Handle BO2 matches stored as 2 BO1 matches
     // First match gets the FACEIT schedule
-    const firstMatch = databaseMatches[0];
-    await updateMatchDateAndStartTime(
-      firstMatch.id,
-      faceitScheduleDateStr,
-      faceitScheduleTimeStr
+    await updateMatchStartTimestamp(
+      databaseMatches[0].id,
+      faceitScheduleTimestamp
     );
 
     // Notify reservations for first match
     await notifyReservationsOfScheduleChange(
-      firstMatch.id,
-      first_match_date,
-      first_match_time,
-      faceitScheduleDateStr,
-      faceitScheduleTimeStr
+      databaseMatches[0].id,
+      firstMatchTimestamp,
+      faceitScheduleTimestamp
     );
 
     // Second match gets +1 hour from the first match
-    // adjustMatchDateTime returns UTC ISO string, extract date/time directly
     const secondMatchScheduleTimestamp = adjustMatchDateTime(
       faceitScheduleTimestamp,
       { hours: 1 }
     );
+
+    const secondMatch = databaseMatches[1];
+    const secondMatchTimestamp = new Date(
+      secondMatch.start_timestamp
+    ).toISOString();
+
+    await updateMatchStartTimestamp(
+      databaseMatches[1].id,
+      secondMatchScheduleTimestamp
+    );
+
+    // Notify reservations for second match
+    await notifyReservationsOfScheduleChange(
+      databaseMatches[1].id,
+      secondMatchTimestamp,
+      secondMatchScheduleTimestamp
+    );
+
     const secondMatchScheduleDateStr = secondMatchScheduleTimestamp.slice(
       0,
       10
@@ -860,48 +874,20 @@ export const syncMatchSchedule = async (
       11,
       19
     );
-
-    const secondMatch = databaseMatches[1];
-    // Database TIMESTAMP fields are Date objects at model layer (before Express serialization)
-    // new Date() works safely with both Date objects and strings, converting to ISO string
-    const secondMatchTimestamp = new Date(
-      secondMatch.start_timestamp
-    ).toISOString();
-    const second_match_old_date = secondMatchTimestamp.slice(0, 10);
-    const second_match_old_time = secondMatchTimestamp.slice(11, 19);
-
-    await updateMatchDateAndStartTime(
-      databaseMatches[1].id,
-      secondMatchScheduleDateStr,
-      secondMatchScheduleTimeStr
-    );
-
-    // Notify reservations for second match
-    await notifyReservationsOfScheduleChange(
-      databaseMatches[1].id,
-      second_match_old_date,
-      second_match_old_time,
-      secondMatchScheduleDateStr,
-      secondMatchScheduleTimeStr
-    );
-
     logger.info(
       `Updated BO2 match schedules: First match at ${faceitScheduleDateStr} ${faceitScheduleTimeStr}, Second match at ${secondMatchScheduleDateStr} ${secondMatchScheduleTimeStr}`
     );
   } else {
-    await updateMatchDateAndStartTime(
+    await updateMatchStartTimestamp(
       databaseMatches[0].id,
-      faceitScheduleDateStr,
-      faceitScheduleTimeStr
+      faceitScheduleTimestamp
     );
 
     // Notify reservations
     await notifyReservationsOfScheduleChange(
       databaseMatches[0].id,
-      first_match_date,
-      first_match_time,
-      faceitScheduleDateStr,
-      faceitScheduleTimeStr
+      firstMatchTimestamp,
+      faceitScheduleTimestamp
     );
 
     logger.info(
@@ -912,13 +898,14 @@ export const syncMatchSchedule = async (
 
 /**
  * Notifies casters with reservations when a match schedule changes
+ * @param matchId - The match ID
+ * @param oldTimestamp - ISO 8601 timestamp string (UTC) for the old schedule
+ * @param newTimestamp - ISO 8601 timestamp string (UTC) for the new schedule
  */
 const notifyReservationsOfScheduleChange = async (
   matchId: number,
-  oldDate: string,
-  oldTime: string,
-  newDate: string,
-  newTime: string
+  oldTimestamp: string,
+  newTimestamp: string
 ): Promise<void> => {
   try {
     // Get all reservations for this match with caster emails
@@ -944,10 +931,8 @@ const notifyReservationsOfScheduleChange = async (
       try {
         await sendMatchScheduleChangeEmail(reservation.email, {
           teamNames,
-          oldDate,
-          oldTime,
-          newDate,
-          newTime,
+          oldTimestamp,
+          newTimestamp,
           reservationHash: reservation.hash
         });
 

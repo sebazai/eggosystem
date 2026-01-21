@@ -25,16 +25,7 @@ const dbPool = createPool({
     if (field.type === "DATE") {
       return field.string();
     }
-
-    // Handle DATE() function results - they may be returned as DATETIME but represent date-only values
-    // TIMESTAMP/DATETIME fields should always be returned as Date objects, even if time is midnight
-    const result = next();
-
-    // DATE type fields are already handled above (line 25), so we don't need to check again here
-    // This section is for handling computed DATE() function results if needed in the future
-    // For now, just return the result as-is for TIMESTAMP/DATETIME fields
-
-    return result;
+    return next();
   }
 } satisfies PoolOptions);
 

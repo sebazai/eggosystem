@@ -17,8 +17,6 @@ import {
   type SeasonFormValues
 } from "@eggosystem/types";
 import { ZodError } from "zod";
-// Note: Date formatting is now handled by Zod schema transforms in SeasonForm.interface.ts
-// The validatedData already contains MySQL-formatted datetime strings
 
 /**
  * Controller to get all seasons
@@ -117,8 +115,6 @@ export const createSeasonController = async (
     const validatedData = seasonFormSchema.parse(req.body);
 
     // Convert form data to raw format for database insertion
-    // Note: Date fields (signup_start_date, signup_end_date, early_bird_price_discount_end_date)
-    // are already transformed to MySQL datetime format by Zod schema transforms
     const seasonData: SeasonFormRaw = {
       game_id: validatedData.game_id,
       game_type_id: validatedData.game_type_id,
@@ -185,8 +181,6 @@ export const updateSeasonController = async (
     const validatedData = seasonFormSchema.parse(req.body);
 
     // Convert form data to raw format for database update
-    // Note: Date fields (signup_start_date, signup_end_date, early_bird_price_discount_end_date)
-    // are already transformed to MySQL datetime format by Zod schema transforms
     const seasonData: SeasonFormRaw = {
       game_id: validatedData.game_id,
       game_type_id: validatedData.game_type_id,

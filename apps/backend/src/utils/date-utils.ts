@@ -91,7 +91,7 @@ const getNextWednesdayMatchTime = (): string => {
  * @param scheduledAt - Unix timestamp in seconds (optional)
  * @returns ISO 8601 timestamp string (UTC)
  */
-export const getMatchDateTime = (scheduledAt?: number): string => {
+export const getFaceitMatchDateTime = (scheduledAt?: number): string => {
   if (scheduledAt) {
     const date = new Date(scheduledAt * 1000);
     return date.toISOString();

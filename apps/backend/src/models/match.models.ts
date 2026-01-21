@@ -33,7 +33,7 @@ import { logger } from "../utils/app-logger";
 import {
   adjustMatchDateTime,
   formatDateForDatabase,
-  getMatchDateTime
+  getFaceitMatchDateTime
 } from "../utils/date-utils";
 import { type PoolConnection } from "mysql2/promise";
 import { getSeasonLeagueExternalIdByExternalIdWithSeasonSettings } from "./season-league-external-id.models";
@@ -278,7 +278,7 @@ export const getMatchesByFilters = async ({
           t2.name AS team2_name,
           t2.team_logo AS team2_logo,
           CASE
-            WHEN m.best_of = 1 THEN mmp.id
+            WHEN m.best_of = 1 THEN ${!mapFilterPresent ? "MAX(mmp.id)" : "mmp.id"}
             ELSE NULL
           END AS match_game_id,
           CASE 
@@ -521,25 +521,19 @@ export const getHubMatchesByExternalMatchRoomId = async (
 };
 
 /**
- * Updates a match's start timestamp
+ * Updates a match's start timestamp using an ISO 8601 timestamp string
  *
  * **Timezone Handling:**
- * - Assumes `matchDate` and `startTime` represent UTC time
- * - The 'Z' suffix is added to indicate UTC before formatting
+ * - Assumes timestamp is in UTC (ISO string with 'Z' suffix or UTC Date)
  * - Result is stored in database as UTC
  *
  * @param matchId - The match ID to update
- * @param matchDate - Date string in YYYY-MM-DD format (assumed UTC)
- * @param startTime - Time string in HH:mm:ss format (assumed UTC)
+ * @param timestamp - ISO 8601 timestamp string (UTC) or Date object
  */
-export const updateMatchDateAndStartTime = async (
+export const updateMatchStartTimestamp = async (
   matchId: number,
-  matchDate: string,
-  startTime: string
+  timestamp: string | Date
 ): Promise<void> => {
-  // Combine date and time into a timestamp, adding 'Z' to indicate UTC
-  // This assumes the input date/time are already in UTC
-  const timestamp = `${matchDate}T${startTime}Z`;
   await runQuery("UPDATE Matches SET start_timestamp = ? WHERE id = ?", [
     formatDateForDatabase(timestamp),
     matchId
@@ -621,7 +615,7 @@ export const addMatchToDatabase = async (
 
     const { is_round_robin_bo2_as_2xbo1 } = seasonLeagueExternalRoom;
 
-    const startTimestamp = getMatchDateTime(matchDetails.scheduled_at);
+    const startTimestamp = getFaceitMatchDateTime(matchDetails.scheduled_at);
 
     const realBestOf =
       matchDetails.best_of === 2 && is_round_robin_bo2_as_2xbo1
