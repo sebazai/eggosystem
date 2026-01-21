@@ -119,7 +119,6 @@ export const adjustMatchDateTime = (
 ) => {
   const { hours = 0, minutes = 0, days = 0 } = options;
 
-  // Create a date object from the match_date and start_time
   const dateTimeString = `${match_date}T${start_time}Z`;
   const date = new Date(dateTimeString);
 
