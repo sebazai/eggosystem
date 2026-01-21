@@ -260,7 +260,7 @@ export const stabilizePlayerElo = async (
     `SELECT stp.team_id 
      FROM SeasonTeamPlayers stp
      INNER JOIN SeasonLeagueTeams slt ON stp.team_id = slt.team_id AND stp.season_id = slt.season_id
-     WHERE stp.steam_id = ? AND stp.season_id = ? AND slt.league_id = ?
+     WHERE stp.steam_id = ? AND stp.season_id = ? AND slt.league_id = ? AND stp.discarded_at IS NULL
      LIMIT 1`,
     [steam_id, season_id, league_id]
   );

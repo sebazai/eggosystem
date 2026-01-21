@@ -106,7 +106,9 @@ export const checkPlayerAdditionEligibility = async (
 
   const leagueId = leagueResults[0].league_id;
 
-  await ensureSeasonMaxPlayersForTeam(seasonId, teamId);
+  await ensureSeasonMaxPlayersForTeam(seasonId, teamId, {
+    excludeSteamId: !!options?.excludeSteamId
+  });
   const kanaElo = await calculateKanaElo(newPlayerSteamId, seasonId);
 
   if (!kanaElo) {

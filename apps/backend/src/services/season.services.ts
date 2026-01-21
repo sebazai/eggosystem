@@ -26,7 +26,10 @@ export const getActiveOrPassedSeasonId = async (seasonId: string) => {
 export const ensureSeasonMaxPlayersForTeam = async (
   seasonId: number,
   teamId: number,
-  maxPlayers: number = 9
+  {
+    maxPlayers = 9,
+    excludeSteamId = false
+  }: { maxPlayers?: number; excludeSteamId?: boolean } = {}
 ) => {
   const primaryPlayers = await getPrimaryPlayersForTeam(teamId, seasonId);
   const season = await getSeasonByIdOrThrow(seasonId);
@@ -36,7 +39,7 @@ export const ensureSeasonMaxPlayersForTeam = async (
   const maxPlayersForSeason = season.max_players ?? maxPlayers;
 
   // +1 for the new player
-  if (primaryPlayers.length + 1 > maxPlayersForSeason) {
+  if (primaryPlayers.length + (excludeSteamId ? 0 : 1) > maxPlayersForSeason) {
     throw new BadRequestError(
       `Team ${teamId} already has the maximum number of players (${maxPlayersForSeason})`
     );

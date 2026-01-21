@@ -905,7 +905,7 @@ describe("season-team-players.models", () => {
       expect(mockRunQuery).toHaveBeenCalledTimes(2);
       expect(mockRunQuery).toHaveBeenNthCalledWith(
         1,
-        "SELECT * FROM SeasonTeamPlayers WHERE season_id = ? AND team_id = ? AND steam_id = ?",
+        "SELECT * FROM SeasonTeamPlayers WHERE season_id = ? AND team_id = ? AND steam_id = ? AND discarded_at IS NULL",
         [seasonId, teamId, steamId],
         mockConnection
       );
