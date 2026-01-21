@@ -10,7 +10,7 @@ import { getTeamValuesForSortter } from "../../../models/dashboard/sortter.model
 import sortterRouter from "./sortter.routes";
 import { expressErrorHandler } from "../../../middlewares/express-error-handler";
 
-describe.skip("Integration Tests", () => {
+describe("Integration Tests", () => {
   const mockGetTeamValuesForSorter =
     getTeamValuesForSortter as jest.MockedFunction<
       typeof getTeamValuesForSortter
