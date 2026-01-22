@@ -6,7 +6,7 @@ import { Match, Season, League, Team, TeamGameScore } from "../db";
  */
 export interface MatchHistoryItem {
   match_id: Match["id"];
-  date: Match["match_date"];
+  date: string; // Computed from DATE(start_timestamp) in queries
   season_name: Season["name"];
   league_name: League["name"];
   opponent_name: Team["name"];

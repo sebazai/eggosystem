@@ -295,8 +295,7 @@ describe("Dashboard Season Controllers", () => {
           start_date: "2025-02-01",
           end_date: "2025-12-31",
           signup_start_date: "2025-01-15T10:30:00.000Z",
-          signup_end_date: "2025-01-20T10:30:00.000Z",
-          timezone: "Europe/Helsinki" // This field is ignored - dates are already in UTC
+          signup_end_date: "2025-01-20T10:30:00.000Z"
         }
       } as RequestWithBody<SeasonFormValues>;
 

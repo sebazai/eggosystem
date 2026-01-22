@@ -1,6 +1,5 @@
 import { runQuery } from "../db/mysqlRunQuery";
 import { getMatchesByExternalId } from "../models/match.models";
-import { mswServer } from "@eggosystem/shared-msw";
 import { validateAndUpdateScheduledMatchTeams } from "./cron-scheduler.services";
 
 // Test constants
@@ -18,14 +17,6 @@ const MATCH_1_EXTERNAL_ID = "match-1-external-id";
 const MATCH_2_EXTERNAL_ID = "match-2-external-id";
 
 describe("Match Team Validation Integration Test", () => {
-  beforeAll(() => {
-    mswServer.listen({ onUnhandledRequest: "bypass" });
-  });
-
-  afterAll(() => {
-    mswServer.close();
-  });
-
   beforeEach(async () => {
     // Clean up test data
     await cleanupTestData();
@@ -132,8 +123,8 @@ describe("Match Team Validation Integration Test", () => {
 
     // Insert Match 1: Team A vs Team B (ABORTED - Team A abandoned)
     await runQuery(
-      `INSERT INTO Matches (id, league_id, season_id, stage, best_of, match_date, start_time, end_time, external_match_room_id, status, round, \`group\`)
-       VALUES (?, ?, ?, ?, 1, '2024-01-15', '18:00:00', NULL, ?, 'ABORTED', 1, 1)`,
+      `INSERT INTO Matches (id, league_id, season_id, stage, best_of, start_timestamp, end_timestamp, external_match_room_id, status, round, \`group\`)
+       VALUES (?, ?, ?, ?, 1, '2024-01-15 18:00:00', NULL, ?, 'ABORTED', 1, 1)`,
       [
         TEST_TEAM_A_ID,
         TEST_LEAGUE_ID,
@@ -164,8 +155,8 @@ describe("Match Team Validation Integration Test", () => {
     // Insert Match 2: Team B vs Team C (SCHEDULED - created because Match 1 was abandoned)
     // This match has wrong teams because Match 1 was restarted and Team A won
     await runQuery(
-      `INSERT INTO Matches (id, league_id, season_id, stage, best_of, match_date, start_time, end_time, external_match_room_id, status, round, \`group\`)
-       VALUES (?, ?, ?, ?, 1, '2024-01-20', '18:00:00', NULL, ?, 'SCHEDULED', 2, 1)`,
+      `INSERT INTO Matches (id, league_id, season_id, stage, best_of, start_timestamp, end_timestamp, external_match_room_id, status, round, \`group\`)
+       VALUES (?, ?, ?, ?, 1, '2024-01-20 18:00:00', NULL, ?, 'SCHEDULED', 2, 1)`,
       [
         TEST_TEAM_B_ID,
         TEST_LEAGUE_ID,

@@ -302,7 +302,7 @@ export const getTeamPlayerValuesLive = async (
         WHEN stp.match_id IS NOT NULL THEN 
           CONCAT(
             'Match #', stp.match_id,
-            ' (', DATE_FORMAT(m.match_date, '%Y-%m-%d'), ')',
+            ' (', DATE_FORMAT(m.start_timestamp, '%Y-%m-%d'), ')',
             CASE 
               WHEN match_teams IS NOT NULL THEN CONCAT(' - ', match_teams)
               ELSE ''
@@ -357,8 +357,8 @@ export const getTeamPlayerValuesLive = async (
       stp.is_captain,
       stp.is_co_captain,
       stp.match_id,
-      m.match_date,
-      match_teams
+      m.start_timestamp,
+      teams_in_match.match_teams
     ORDER BY
       CASE stp.role WHEN 'primary' THEN 0 ELSE 1 END,
       spr.kana_elo DESC

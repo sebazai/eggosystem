@@ -23,6 +23,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "@/context/AuthContext";
 import { SteamLoginButton } from "@/components/profile/SteamLoginButton";
 import { ContentContainer } from "@/components/layout/ContentContainer";
+import { formatDateShort } from "@/lib/date-utils";
 
 export default function MyTeamPage() {
   const auth = useAuth();
@@ -42,17 +43,10 @@ export default function MyTeamPage() {
     }
   };
 
-  const formatMatchDateTime = (date: string, time: string) => {
-    // Parse as UTC and convert to GMT+2
-    const dateObj = new Date(`${date}T${time}Z`);
-    return dateObj.toLocaleString("en-US", {
-      weekday: "short",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      timeZone: "Europe/Helsinki" // GMT+2 (EET/EEST)
-    });
+  const formatMatchDateTime = (timestamp: string) => {
+    // Parse timestamp (assumes ISO format from database) and convert to GMT+2
+    const dateObj = new Date(timestamp);
+    return formatDateShort(dateObj, { withHours: true, withMinutes: true });
   };
 
   const getFaceitMatchLink = (
@@ -177,11 +171,8 @@ export default function MyTeamPage() {
                         </Badge>
                       </div>
                       <div className="text-muted-foreground text-sm">
-                        {formatMatchDateTime(
-                          match.match_date,
-                          match.start_time
-                        )}{" "}
-                        • {match.season_name} - {match.league_name}
+                        {formatMatchDateTime(match.start_timestamp)} •{" "}
+                        {match.season_name} - {match.league_name}
                       </div>
                       {faceitLink && (
                         <div>

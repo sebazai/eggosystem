@@ -8,30 +8,16 @@ import type {
 } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
 import { type PoolConnection } from "mysql2/promise";
-import { formatDateFromDatabase } from "../utils/date-utils";
 import { getConnection } from "../db/mysqlConnection";
 import {
   setActiveMapPoolForSeason,
   getActiveMapPoolBySeasonId
 } from "./season-active-map-pool.models";
 
-/**
- * Formats date fields in a Season object to ISO 8601 with UTC indicator
- */
-const formatSeasonDates = <T extends Season | SeasonDetails>(season: T): T => {
-  return {
-    ...season,
-    signup_start_date: formatDateFromDatabase(season.signup_start_date),
-    signup_end_date: formatDateFromDatabase(season.signup_end_date),
-    early_bird_price_discount_end_date: formatDateFromDatabase(
-      season.early_bird_price_discount_end_date
-    )
-  };
-};
-
 export const getSeasons = async () => {
   const seasons = await runQuery<Season[]>("SELECT * FROM Seasons");
-  return seasons.map(formatSeasonDates);
+  // Express res.json() will automatically serialize Date objects to ISO strings
+  return seasons;
 };
 
 export const getSeasonById = async (
@@ -46,11 +32,13 @@ export const getSeasonById = async (
   if (!data) {
     return undefined;
   }
-  const season = formatSeasonDates(data);
+
   // Get active map pool
   const activeMapPool = await getActiveMapPoolBySeasonId(id, connection);
+
+  // Express res.json() will automatically serialize Date objects to ISO strings
   return {
-    ...season,
+    ...data,
     active_map_pool: activeMapPool
   };
 };
@@ -71,10 +59,8 @@ export const getSeasonDetailsById = async (id: number) => {
     "SELECT s.*, g.app_id FROM Seasons s JOIN Games g ON s.game_id = g.id WHERE s.id = ?",
     [id]
   );
-  if (data) {
-    return formatSeasonDates(data);
-  }
-  return undefined;
+  // Express res.json() will automatically serialize Date objects to ISO strings
+  return data;
 };
 
 /**
@@ -204,14 +190,6 @@ export const getActiveSignupSeasonForAppId = async (
      LIMIT 1;`,
     [app_id, organizer_id]
   );
-  if (activeSignupSeason) {
-    return {
-      ...activeSignupSeason,
-      signup_end_date: formatDateFromDatabase(
-        activeSignupSeason.signup_end_date
-      )
-    };
-  }
   return activeSignupSeason;
 };
 
@@ -253,17 +231,6 @@ export const getActiveSignupOrActiveSeasonForAppId = async (
      LIMIT 1;`,
     [app_id, organizer_id]
   );
-  if (activeSignupOrActiveSeason) {
-    return {
-      ...activeSignupOrActiveSeason,
-      signup_start_date: formatDateFromDatabase(
-        activeSignupOrActiveSeason.signup_start_date
-      ),
-      signup_end_date: formatDateFromDatabase(
-        activeSignupOrActiveSeason.signup_end_date
-      )
-    };
-  }
   return activeSignupOrActiveSeason;
 };
 

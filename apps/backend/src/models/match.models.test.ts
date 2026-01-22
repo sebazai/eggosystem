@@ -60,6 +60,93 @@ describe("getMatchesByFilters", () => {
     expect(result[result.length - 1].team1_score).toEqual(6);
     expect(result[result.length - 1].team2_score).toEqual(13);
   });
+
+  it("correctly groups BO3 matches when no map filter is present", async () => {
+    // Test with a specific BO3 match (10148) that has multiple maps
+    const result = await getMatchesByFilters({
+      season_ids: null,
+      league_ids: [1],
+      stages: [2],
+      team_ids: [1697],
+      map_ids: null // No map filter - triggers GROUP BY path
+    });
+
+    // Verify the query executes without errors
+    expect(result).toBeDefined();
+    expect(Array.isArray(result)).toBe(true);
+
+    // Find match 10148 in results
+    const match10148 = result.find((m) => m.match_id === 10148);
+    expect(match10148).toBeDefined();
+
+    if (match10148) {
+      // Verify match appears only once (GROUP BY is working)
+      const matchesWithId10148 = result.filter((m) => m.match_id === 10148);
+      expect(matchesWithId10148.length).toBe(1);
+
+      // Verify map names are concatenated (should contain multiple maps for BO3)
+      expect(match10148.map_name).toBeDefined();
+      expect(typeof match10148.map_name).toBe("string");
+      // For a BO3 match, map_name should contain comma-separated map names
+      // or at least be a non-empty string
+      expect(match10148.map_name.length).toBeGreaterThan(0);
+
+      // Verify scores are aggregated correctly (sum of wins for BO3)
+      // For BO3, scores should be the number of maps won (0-3 range typically)
+      expect(match10148.team1_score).toBeDefined();
+      expect(match10148.team2_score).toBeDefined();
+      expect(typeof match10148.team1_score).toBe("number");
+      expect(typeof match10148.team2_score).toBe("number");
+      // Scores should be non-negative integers representing map wins
+      expect(match10148.team1_score).toBeGreaterThanOrEqual(0);
+      expect(match10148.team2_score).toBeGreaterThanOrEqual(0);
+
+      // Verify match_game_id is null for BO3 matches (best_of != 1)
+      expect(match10148.match_game_id).toBeNull();
+
+      // Verify other required fields are present
+      expect(match10148.match_date).toBeDefined();
+      expect(match10148.league_name).toBeDefined();
+      expect(match10148.stage).toBeDefined();
+      expect(match10148.team1_name).toBeDefined();
+      expect(match10148.team2_name).toBeDefined();
+    }
+  });
+
+  it("ensures no duplicate match_ids when grouping without map filter", async () => {
+    // Test with multiple matches to ensure GROUP BY prevents duplicates
+    const result = await getMatchesByFilters({
+      season_ids: null,
+      league_ids: [1],
+      stages: [2],
+      team_ids: [1697],
+      map_ids: null // No map filter
+    });
+
+    // Collect all match_ids
+    const matchIds = result.map((m) => m.match_id);
+
+    // Verify no duplicate match_ids exist
+    const uniqueMatchIds = [...new Set(matchIds)];
+    expect(matchIds.length).toBe(uniqueMatchIds.length);
+
+    // Verify each match has required aggregated fields
+    result.forEach((match) => {
+      // map_name should be a string (could be comma-separated for BO3)
+      expect(typeof match.map_name).toBe("string");
+      expect(match.map_name.length).toBeGreaterThan(0);
+
+      // Scores should be numbers (aggregated for BO3)
+      expect(typeof match.team1_score).toBe("number");
+      expect(typeof match.team2_score).toBe("number");
+
+      // match_game_id should be null for BO3 matches
+      if (match.match_game_id !== null) {
+        // If not null, it should be a number (BO1 match)
+        expect(typeof match.match_game_id).toBe("number");
+      }
+    });
+  });
 });
 
 describe("getMatchTopPlayers", () => {

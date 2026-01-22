@@ -5,7 +5,7 @@ import type { MyTeamUpcomingMatch } from "@eggosystem/types";
 import { clientApiFetch } from "@/lib/apiClient";
 
 export const useMyTeamsUpcomingMatches = () => {
-  const { data, error, isLoading, mutate } = useSWR<
+  const { data, error, isLoading } = useSWR<
     { matches: MyTeamUpcomingMatch[] },
     Error
   >(`/api/v1/accounts/my-teams/upcoming-matches`, clientApiFetch, {
@@ -15,7 +15,6 @@ export const useMyTeamsUpcomingMatches = () => {
   return {
     matches: data?.matches ?? [],
     isLoading,
-    isError: error,
-    mutate
+    isError: error
   };
 };

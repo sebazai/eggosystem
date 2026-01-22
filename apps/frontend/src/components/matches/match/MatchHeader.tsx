@@ -14,8 +14,7 @@ interface MatchHeaderProps {
   team1: MatchTeamInfo;
   team2: MatchTeamInfo;
   matchStartTime: string;
-  matchEndTime: string;
-  matchDate: string;
+  matchEndTime: string | null;
   seasonName: string;
   seasonId: number;
   leagueName: string;
@@ -28,7 +27,7 @@ export function MatchHeader({
   team2,
   matchStartTime,
   matchEndTime,
-  matchDate,
+
   seasonName,
   seasonId,
   leagueName,
@@ -109,14 +108,10 @@ export function MatchHeader({
             {/* Info */}
             <div className="hidden xs:flex flex-col items-center justify-center px-4 py-6 text-xxs md:text-xs text-muted-foreground">
               <MatchClientTime
-                matchDate={matchDate}
-                startTime={matchStartTime}
-                endTime={matchEndTime}
+                startTimestamp={matchStartTime}
+                endTimestamp={matchEndTime}
               />
-              <MatchClientDate
-                matchDate={matchDate}
-                startTime={matchStartTime}
-              />
+              <MatchClientDate startTimestamp={matchStartTime} />
               <span>
                 {seasonName} {leagueName}
               </span>

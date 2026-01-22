@@ -111,7 +111,7 @@ export const getReservationsWithEmailForMatch = async (
   matchId: number
 ): Promise<Array<Reservation & { email: string | null }>> => {
   return await runQuery<Array<Reservation & { email: string | null }>>(
-    `SELECT r.*, a.email 
+    `SELECT r.*, a.work_email 
      FROM Reservations r 
      LEFT JOIN Accounts a ON r.account_id = a.id 
      WHERE r.match_id = ?`,

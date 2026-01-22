@@ -1,6 +1,6 @@
 import * as cron from "node-cron";
 import {
-  syncAllFaceitChampionshipMatches,
+  syncFaceitChampionshipMatches,
   getFaceITMatchDetails
 } from "./faceit.services";
 import { logger } from "../utils/app-logger";
@@ -81,7 +81,7 @@ export const startFaceitMatchSyncCron = (): void => {
       );
 
       try {
-        await syncAllFaceitChampionshipMatches();
+        await syncFaceitChampionshipMatches();
         await validateAndUpdateScheduledMatchTeams();
         // await syncMatchesManualGroup("past");
         // await syncMatchesManualGroup("upcoming");
@@ -104,11 +104,13 @@ export const startFaceitMatchSyncCron = (): void => {
   );
 };
 
-export const triggerManualFaceitSync = async (): Promise<void> => {
+export const triggerManualFaceitSync = async (
+  season_id: number
+): Promise<void> => {
   logger.info("Manual FACEIT match sync triggered...");
   // await syncMatchesManualGroup("past");
   // await syncMatchesManualGroup("upcoming");
-  await syncAllFaceitChampionshipMatches();
+  await syncFaceitChampionshipMatches(season_id);
 };
 
 /**

@@ -13,6 +13,7 @@ import Link from "next/link";
 import { Tv } from "lucide-react";
 import { useMatchStreamUrls } from "@/hooks/data/useMatchStreamUrls";
 import { FaceitLink } from "../../ui/FaceitLink";
+import { formatDateShort } from "@/lib/date-utils";
 
 interface UpcomingMatchHeaderProps {
   matchId: number;
@@ -43,7 +44,7 @@ export function UpcomingMatchHeader({
     organization_name: ""
   };
 
-  const matchDate = matchInfo.match_date || "";
+  const matchDate = matchInfo.start_timestamp || "";
   const seasonName = matchInfo.season_name;
   const seasonId = matchInfo.season_id;
   const leagueName = matchInfo.league_name;
@@ -59,16 +60,11 @@ export function UpcomingMatchHeader({
   // Parse date for formatting
   const date = matchDate ? new Date(matchDate) : new Date();
 
-  const formatDate = (date: Date) =>
-    date
-      .toLocaleDateString("en-US", {
-        month: "short",
-        day: "2-digit",
-        year: "2-digit"
-      })
-      .toUpperCase(); // MMM DD, YY
-
-  const formattedDate = formatDate(date);
+  const formattedDate = formatDateShort(date, {
+    toUpperCase: true,
+    withHours: true,
+    withMinutes: true
+  });
 
   // For upcoming matches, we use a placeholder for the score
   const placeholderScore = "?";

@@ -1,7 +1,39 @@
 import request from "supertest";
-import express from "express";
+import type express from "express";
 import { createExpressTestApp } from "../../../test-utils";
-import dashboardRouter from "./index";
+
+// Mock BullMQ before any imports that might use it
+jest.mock("bullmq", () => {
+  const mockQueue = {
+    add: jest.fn(),
+    addBulk: jest.fn(),
+    getWaitingCount: jest.fn().mockResolvedValue(0),
+    getActiveCount: jest.fn().mockResolvedValue(0),
+    getCompletedCount: jest.fn().mockResolvedValue(0),
+    getFailedCount: jest.fn().mockResolvedValue(0),
+    getDelayedCount: jest.fn().mockResolvedValue(0),
+    close: jest.fn().mockResolvedValue(undefined)
+  };
+
+  return {
+    Queue: jest.fn().mockImplementation(() => mockQueue),
+    Worker: jest.fn()
+  };
+});
+
+// Mock ioredis before any imports that might use it
+jest.mock("ioredis", () => {
+  return jest.fn().mockImplementation(() => ({
+    get: jest.fn(),
+    set: jest.fn(),
+    del: jest.fn(),
+    keys: jest.fn(),
+    quit: jest.fn(),
+    flushall: jest.fn()
+  }));
+});
+
+import sortterRouter from "./sortter.routes";
 
 // Mock all the authentication and permission middleware to allow access
 jest.mock("../../../middlewares/auth.middleware", () => ({
@@ -32,12 +64,9 @@ describe("GET /api/v1/dashboard/sortter/season/:season_id/team/:team_id/players"
   let cleanup: () => void;
 
   beforeEach(() => {
-    const customRouter = express.Router();
-    customRouter.use(dashboardRouter);
-
     const { app: testApp, cleanup: appCleanup } = createExpressTestApp(
-      customRouter,
-      "/api/v1/dashboard"
+      sortterRouter,
+      "/api/v1/dashboard/sortter"
     );
     app = testApp;
     cleanup = appCleanup;

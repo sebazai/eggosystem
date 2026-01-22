@@ -17,7 +17,23 @@ jest.mock("../../db/mysqlRunQuery");
 const mockRunQuery = runQuery as jest.MockedFunction<typeof runQuery>;
 
 // Mock Redis
-jest.mock("../../utils/redisClient");
+jest.mock("../../utils/redisClient", () => ({
+  redisClient: {
+    get: jest.fn(),
+    set: jest.fn(),
+    del: jest.fn(),
+    keys: jest.fn(),
+    mget: jest.fn(),
+    flushall: jest.fn(),
+    quit: jest.fn(),
+    on: jest.fn()
+  },
+  expireInOneDay: 24 * 60 * 60,
+  expireIn30Days: 30 * 24 * 60 * 60,
+  expireIn7Days: 7 * 24 * 60 * 60,
+  expireIn20m: 20 * 60,
+  closeRedis: jest.fn()
+}));
 const mockRedisClient = redisClient as jest.Mocked<typeof redisClient>;
 
 // Mock the logger

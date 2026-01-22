@@ -331,11 +331,13 @@ export default function HeroSection({ device: _device }: HeroSectionProps) {
   const allUpcomingMatches = getUpcomingMatchesSorted(
     calendarMatches || [],
     10,
-    10
+    100
   );
 
   const allUpcomingStreamedMatches = getUpcomingStreamedMatchesSorted(
-    calendarMatches || []
+    calendarMatches || [],
+    20,
+    20
   );
 
   // Check if there are any streamed matches

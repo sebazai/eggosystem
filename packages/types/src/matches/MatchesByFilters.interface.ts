@@ -11,7 +11,7 @@ import type {
 export interface MatchesByFilters {
   match_id: Match["id"];
   match_game_id: Nullable<MatchGame["id"]>;
-  match_date: Match["match_date"];
+  match_date: string; // Computed from DATE(start_timestamp) in queries
   stage: Match["stage"];
   league_name: League["name"];
   map_name: Map["name"];

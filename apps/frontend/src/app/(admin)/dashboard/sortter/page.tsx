@@ -747,10 +747,6 @@ function SortterPageContent() {
                                     const currentValue =
                                       comments[team.team_id] || "";
 
-                                    console.log(
-                                      `Comment check for team ${team.team_id}: current="${currentValue}" new="${newValue}"`
-                                    );
-
                                     // Always update context and save if there's any change
                                     // This handles both setting and clearing comments
                                     if (currentValue !== newValue) {
@@ -772,9 +768,6 @@ function SortterPageContent() {
                                           [team.team_id]: commentToSave
                                         };
                                         await savePlacements(updatedComments);
-                                        console.log(
-                                          `Comment saved for team ${team.team_id}`
-                                        );
                                       } catch (error) {
                                         console.error(
                                           `Failed to save comment for team ${team.team_id}:`,

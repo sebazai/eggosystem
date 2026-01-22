@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { SeasonPlatform } from "../enums";
+import { formatDateForDatabase } from "../utils/date-utils";
 
 // Zod schema for season form validation
 export const seasonFormSchema = z
@@ -17,18 +18,33 @@ export const seasonFormSchema = z
       .max(255, "Full season name must be 255 characters or less"),
     signup_start_date: z
       .string()
-      .refine(
-        (val) => !val || !isNaN(Date.parse(val)),
-        "Invalid signup start date format"
-      )
+      .refine((val) => {
+        if (!val) return true;
+        // Must be a valid ISO 8601 date string
+        // If no timezone is specified, backend assumes UTC
+        return !isNaN(Date.parse(val));
+      }, "Signup start date must be in ISO 8601 format (e.g., '2025-01-15T10:30:00.000Z' or '2025-01-15T10:30:00.000'). If no timezone is specified, UTC is assumed.")
+      .transform((val) => {
+        // Transform UTC ISO string to MySQL datetime format
+        // This happens at validation time, so controllers receive already-formatted values
+        if (!val) return null;
+        return formatDateForDatabase(val);
+      })
       .optional()
       .nullable(),
     signup_end_date: z
       .string()
-      .refine(
-        (val) => !val || !isNaN(Date.parse(val)),
-        "Invalid signup end date format"
-      )
+      .refine((val) => {
+        if (!val) return true;
+        // Must be a valid ISO 8601 date string
+        // If no timezone is specified, backend assumes UTC
+        return !isNaN(Date.parse(val));
+      }, "Signup end date must be in ISO 8601 format (e.g., '2025-01-15T10:30:00.000Z' or '2025-01-15T10:30:00.000'). If no timezone is specified, UTC is assumed.")
+      .transform((val) => {
+        // Transform UTC ISO string to MySQL datetime format
+        if (!val) return null;
+        return formatDateForDatabase(val);
+      })
       .optional()
       .nullable(),
     start_date: z
@@ -39,12 +55,9 @@ export const seasonFormSchema = z
       .regex(/^\d{4}-\d{2}-\d{2}$/, "End date must be in YYYY-MM-DD format")
       .optional()
       .nullable(),
-    platform: z.enum(
-      Object.values(SeasonPlatform) as [SeasonPlatform, ...SeasonPlatform[]],
-      {
-        message: "Invalid platform selection"
-      }
-    ),
+    platform: z.enum(Object.values(SeasonPlatform), {
+      message: "Invalid platform selection"
+    }),
     is_round_robin_bo2_as_2xbo1: z.boolean(),
     payment_link: z
       .string()
@@ -65,13 +78,19 @@ export const seasonFormSchema = z
       .nullable(),
     early_bird_price_discount_end_date: z
       .string()
-      .refine(
-        (val) => !val || !isNaN(Date.parse(val)),
-        "Invalid early bird discount end date format"
-      )
+      .refine((val) => {
+        if (!val) return true;
+        // Must be a valid ISO 8601 date string
+        // If no timezone is specified, backend assumes UTC
+        return !isNaN(Date.parse(val));
+      }, "Early bird discount end date must be in ISO 8601 format (e.g., '2025-01-15T10:30:00.000Z' or '2025-01-15T10:30:00.000'). If no timezone is specified, UTC is assumed.")
+      .transform((val) => {
+        // Transform UTC ISO string to MySQL datetime format
+        if (!val) return null;
+        return formatDateForDatabase(val);
+      })
       .optional()
       .nullable(),
-    timezone: z.string().optional(),
     active_map_pool: z
       .array(z.number().int().positive())
       .min(1, "At least one map must be selected"),
@@ -89,6 +108,7 @@ export const seasonFormSchema = z
   .refine(
     (data) => {
       // If signup dates are provided, signup_start_date should be before signup_end_date
+      // Note: At this point, dates are still ISO strings (before transform)
       if (data.signup_start_date && data.signup_end_date) {
         return (
           new Date(data.signup_start_date) < new Date(data.signup_end_date)
@@ -142,13 +162,13 @@ export interface SeasonFormRaw {
   name: string;
   full_name: string;
   /**
-   * Signup start date in ISO 8601 UTC format (e.g., '2025-01-15T10:30:00.000Z')
-   * Frontend converts local time to UTC before sending, backend stores as-is
+   * Signup start date in MySQL datetime format (e.g., '2025-01-15 10:30:00')
+   * Transformed from UTC ISO string by Zod schema transform
    */
   signup_start_date: string | null;
   /**
-   * Signup end date in ISO 8601 UTC format (e.g., '2025-01-15T10:30:00.000Z')
-   * Frontend converts local time to UTC before sending, backend stores as-is
+   * Signup end date in MySQL datetime format (e.g., '2025-01-15 10:30:00')
+   * Transformed from UTC ISO string by Zod schema transform
    */
   signup_end_date: string | null;
   /**
@@ -166,8 +186,8 @@ export interface SeasonFormRaw {
   has_vat: boolean;
   early_bird_price_discount: number | null;
   /**
-   * Early bird discount end date in ISO 8601 UTC format (e.g., '2025-01-15T10:30:00.000Z')
-   * Frontend converts local time to UTC before sending, backend stores as-is
+   * Early bird discount end date in MySQL datetime format (e.g., '2025-01-15 10:30:00')
+   * Transformed from UTC ISO string by Zod schema transform
    */
   early_bird_price_discount_end_date: string | null;
   /**
