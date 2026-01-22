@@ -47,11 +47,6 @@ export const convertLocalDateTimeToISO = (
  *
  * @param dateStr - UTC ISO 8601 string (e.g., "2025-01-15T16:30:00.000Z")
  * @returns datetime-local format string in user's local timezone (e.g., "2025-01-15T18:30" in UTC+2) or null if input is invalid
- *
- * @example
- * // UTC time 16:30 displayed in Helsinki (UTC+2) timezone
- * formatDateTimeForInput("2025-01-15T16:30:00.000Z")
- * // Returns: "2025-01-15T18:30" (16:30 UTC = 18:30 Helsinki)
  */
 export const formatDateTimeForInput = (
   dateStr: string | null

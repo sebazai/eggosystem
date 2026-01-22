@@ -48,14 +48,6 @@ export const getMonthDifference = (timestamp1: number, timestamp2: number) => {
   return yearsDiff * 12 + monthsDiff;
 };
 
-export const convertISOToFinnishTime = (isoString: string) => {
-  const utcDate = moment(isoString);
-  const finnishTime = utcDate
-    .tz("Europe/Helsinki")
-    .format("YYYY-MM-DD HH:mm:ss");
-  return finnishTime;
-};
-
 export const generateYMD = (timestamp: number): string => {
   const date = new Date(timestamp * 1000);
   const year = date.getUTCFullYear();
