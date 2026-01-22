@@ -179,3 +179,33 @@ export const getDiscordInfoByAccountId = async (
     discordUsername: discordLink.provider_username
   };
 };
+
+// Unlink Discord account from user
+// Only deletes real OAuth links (excludes fake links with provider_id LIKE 'fake_%')
+export const unlinkDiscordAccount = async (
+  accountId: number,
+  connection?: PoolConnection
+) => {
+  if (!accountId || accountId <= 0) {
+    throw new Error("Invalid account ID provided");
+  }
+
+  // Delete only real OAuth links (exclude fake links)
+  const result = await runQuery<{ affectedRows: number }>(
+    `DELETE FROM LinkedAccounts 
+     WHERE provider = 'discord' 
+     AND account_id = ? 
+     AND provider_id IS NOT NULL 
+     AND provider_id NOT LIKE 'fake_%'`,
+    [accountId],
+    connection
+  );
+
+  if (result.affectedRows > 0) {
+    logger.info(
+      `Successfully unlinked Discord account for account ${accountId}`
+    );
+  }
+
+  return result.affectedRows > 0;
+};

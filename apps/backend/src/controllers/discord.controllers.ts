@@ -2,7 +2,10 @@ import { type Request, type Response, type NextFunction } from "express";
 import { logger } from "../utils/app-logger";
 import { runQuery } from "../db/mysqlRunQuery";
 import { UnauthorizedError, InternalServerError } from "../utils/errors";
-import { getDiscordUsernameByAccountId } from "../models/discord.models";
+import {
+  getDiscordUsernameByAccountId,
+  unlinkDiscordAccount
+} from "../models/discord.models";
 
 // Get user's Discord registration status
 export const getUserDiscordStatus = async (
@@ -49,6 +52,30 @@ export const getUserDiscordStatus = async (
     });
   } catch (error) {
     logger.error("Error getting user Discord status:", error);
+    return next(new InternalServerError("Internal server error"));
+  }
+};
+
+// Unlink Discord account for authenticated user
+export const unlinkDiscordAccountController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    if (!req.auth) {
+      return next(new UnauthorizedError("Unauthorized"));
+    }
+
+    const accountId = req.auth.account_id;
+
+    await unlinkDiscordAccount(accountId);
+
+    res.json({
+      message: "Discord account unlinked successfully"
+    });
+  } catch (error) {
+    logger.error("Error unlinking Discord account:", error);
     return next(new InternalServerError("Internal server error"));
   }
 };

@@ -49,7 +49,10 @@ export default function ProfilePage() {
       <h1 className="pb-4">User profile</h1>
       <AvatarSettings steamId={user.provider_id} />
       <ProfileForm user={user} checkAuth={checkAuth} />
-      <DiscordSettings discordLinked={user.discordLinked} />
+      <DiscordSettings
+        discordLinked={user.discordLinked}
+        checkAuth={checkAuth}
+      />
       <CasterUrlSettings canManageUrls={hasCasterAccess(user)} />
     </div>
   );
