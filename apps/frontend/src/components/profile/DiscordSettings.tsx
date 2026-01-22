@@ -1,12 +1,44 @@
 "use client";
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { envConfig } from "@/configs/env";
 import { MessageSquare } from "lucide-react";
+import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
+import { clientApiFetch } from "@/lib/apiClient";
+import { toast } from "sonner";
 
-export function DiscordSettings({ discordLinked }: { discordLinked: boolean }) {
+export function DiscordSettings({
+  discordLinked,
+  checkAuth
+}: {
+  discordLinked: boolean;
+  checkAuth?: () => Promise<void>;
+}) {
   const router = useRouter();
+  const [showUnlinkConfirmation, setShowUnlinkConfirmation] = useState(false);
+  const [isUnlinking, setIsUnlinking] = useState(false);
+
+  const handleUnlink = async () => {
+    setIsUnlinking(true);
+    try {
+      await clientApiFetch<{ message: string }>("/api/v1/discord/unlink", {
+        method: "DELETE"
+      });
+      toast.success("Discord account unlinked successfully");
+      setShowUnlinkConfirmation(false);
+      if (checkAuth) {
+        await checkAuth();
+      }
+    } catch (error) {
+      toast.error(
+        `Failed to unlink Discord account: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
+    } finally {
+      setIsUnlinking(false);
+    }
+  };
 
   return (
     <div className="space-y-4 pt-6 border-t">
@@ -39,6 +71,17 @@ export function DiscordSettings({ discordLinked }: { discordLinked: boolean }) {
               <span>Link Discord Account</span>
             </Button>
           )}
+          {discordLinked && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setShowUnlinkConfirmation(true)}
+              disabled={isUnlinking}
+              className="flex items-center space-x-2"
+            >
+              <span>Unlink Discord Account</span>
+            </Button>
+          )}
           <div className="text-sm">
             {discordLinked ? (
               <span className="text-green-600">✓ Discord linked</span>
@@ -59,6 +102,16 @@ export function DiscordSettings({ discordLinked }: { discordLinked: boolean }) {
           </div>
         )}
       </div>
+      <ConfirmationModal
+        open={showUnlinkConfirmation}
+        onOpenChange={setShowUnlinkConfirmation}
+        onConfirm={handleUnlink}
+        title="Unlink Discord Account"
+        description="Are you sure you want to unlink your Discord account? You will need to link it again if you want to use Discord features."
+        confirmText="Unlink"
+        cancelText="Cancel"
+        confirmVariant="destructive"
+      />
     </div>
   );
 }

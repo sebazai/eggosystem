@@ -1,8 +1,14 @@
 import { type Request, type Response } from "express";
-import { getUserDiscordStatus } from "./discord.controllers";
+import {
+  getUserDiscordStatus,
+  unlinkDiscordAccountController
+} from "./discord.controllers";
 import { runQuery } from "../db/mysqlRunQuery";
 import { logger } from "../utils/app-logger";
-import { getDiscordUsernameByAccountId } from "../models/discord.models";
+import {
+  getDiscordUsernameByAccountId,
+  unlinkDiscordAccount
+} from "../models/discord.models";
 import { createMockUserPayload } from "@eggosystem/types";
 
 // Mock dependencies
@@ -14,6 +20,9 @@ const mockGetDiscordUsernameByAccountId =
   getDiscordUsernameByAccountId as jest.MockedFunction<
     typeof getDiscordUsernameByAccountId
   >;
+const mockUnlinkDiscordAccount = unlinkDiscordAccount as jest.MockedFunction<
+  typeof unlinkDiscordAccount
+>;
 const mockRunQuery = runQuery as jest.MockedFunction<typeof runQuery>;
 const mockLogger = logger as jest.Mocked<typeof logger>;
 
@@ -229,6 +238,98 @@ describe("Discord Controllers", () => {
         discordUsername: "testuser",
         kanahautomoRegistrations: mockRegistrations
       });
+    });
+  });
+
+  describe("unlinkDiscordAccountController", () => {
+    it("should return 401 when user is not authenticated", async () => {
+      mockRequest.auth = undefined;
+
+      const mockNext = jest.fn();
+      await unlinkDiscordAccountController(
+        mockRequest as Request,
+        mockResponse as Response,
+        mockNext
+      );
+
+      expect(mockNext).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: "Unauthorized",
+          status: 401
+        })
+      );
+      expect(mockUnlinkDiscordAccount).not.toHaveBeenCalled();
+    });
+
+    it("should successfully unlink Discord account when authenticated", async () => {
+      mockUnlinkDiscordAccount.mockResolvedValue(true);
+
+      const mockNext = jest.fn();
+      await unlinkDiscordAccountController(
+        mockRequest as Request,
+        mockResponse as Response,
+        mockNext
+      );
+
+      expect(mockUnlinkDiscordAccount).toHaveBeenCalledWith(123);
+      expect(mockJson).toHaveBeenCalledWith({
+        message: "Discord account unlinked successfully"
+      });
+      expect(mockNext).not.toHaveBeenCalled();
+    });
+
+    it("should return appropriate success response with message", async () => {
+      mockUnlinkDiscordAccount.mockResolvedValue(true);
+
+      const mockNext = jest.fn();
+      await unlinkDiscordAccountController(
+        mockRequest as Request,
+        mockResponse as Response,
+        mockNext
+      );
+
+      expect(mockJson).toHaveBeenCalledWith({
+        message: "Discord account unlinked successfully"
+      });
+    });
+
+    it("should handle errors from model function gracefully", async () => {
+      const error = new Error("Database error");
+      mockUnlinkDiscordAccount.mockRejectedValue(error);
+
+      const mockNext = jest.fn();
+      await unlinkDiscordAccountController(
+        mockRequest as Request,
+        mockResponse as Response,
+        mockNext
+      );
+
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        "Error unlinking Discord account:",
+        error
+      );
+      expect(mockNext).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: "Internal server error",
+          status: 500
+        })
+      );
+    });
+
+    it("should ensure user can only unlink their own Discord account", async () => {
+      mockUnlinkDiscordAccount.mockResolvedValue(true);
+
+      const mockNext = jest.fn();
+      await unlinkDiscordAccountController(
+        mockRequest as Request,
+        mockResponse as Response,
+        mockNext
+      );
+
+      // Verify that the account_id from req.auth is used
+      expect(mockUnlinkDiscordAccount).toHaveBeenCalledWith(
+        mockRequest.auth?.account_id
+      );
     });
   });
 });

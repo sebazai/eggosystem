@@ -539,6 +539,11 @@ export const getFaceitPlayerDetails = async (
     return JSON.parse(redisData) as FaceitPlayerDetails;
   }
 
+  const rateLimit = await getRateLimitForService("FaceIT");
+  if (rateLimit) {
+    return null;
+  }
+
   const { controller, clearAbortTimeout } = createAbortController(
     "getFaceitPlayerDetails"
   );
@@ -568,6 +573,14 @@ export const getFaceitPlayerDetails = async (
           `[FaceIT] Player not found for faceit_user_id: ${faceit_user_id} (${duration}ms)`
         );
         return null;
+      }
+
+      if (response.status === 429) {
+        await setRateLimitForService(
+          "FaceIT",
+          response.headers.get("Retry-After"),
+          response.headers.get("X-RateLimit-Reset")
+        );
       }
 
       throw new Error(
@@ -738,7 +751,7 @@ export const getChampionshipTeamsWithMembers = async (
           // Fall back to API if not found in database
           const playerDetails = await getFaceitPlayerDetails(member.user_id);
 
-          if (playerDetails?.games?.cs2) {
+          if (playerDetails && playerDetails?.games?.cs2) {
             logger.info(
               `[FaceIT] ✅ Got player details from API: ${playerDetails.nickname} (Steam ID: ${playerDetails.games.cs2.game_player_id})`
             );
