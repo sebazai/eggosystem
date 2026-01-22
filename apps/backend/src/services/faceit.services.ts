@@ -43,6 +43,10 @@ import { getReservationsWithEmailForMatch } from "../models/match-streams.models
 import { sendMatchScheduleChangeEmail } from "./email.services";
 import { runQuery } from "../db/mysqlRunQuery";
 import {
+  getPlayerByFaceitId,
+  updateSteamPlayerFaceitData
+} from "../models/player.models";
+import {
   getRateLimitForService,
   setRateLimitForService
 } from "../utils/rate-limit-utils";
@@ -699,11 +703,44 @@ export const getChampionshipTeamsWithMembers = async (
       // Get player details for each team member concurrently
       const teamMembers = await Promise.all(
         subscription.team.members.map(async (member) => {
+          // First check database for existing player data
+          const dbPlayer = await getPlayerByFaceitId(member.user_id);
+
+          if (dbPlayer) {
+            // Update faceit_nickname if it differs from member.nickname
+            if (
+              member.nickname !== dbPlayer.faceit_nickname &&
+              dbPlayer.steam_id
+            ) {
+              await updateSteamPlayerFaceitData(
+                dbPlayer.steam_id,
+                member.nickname,
+                member.user_id
+              );
+              logger.info(
+                `[FaceIT] Updated faceit_nickname for ${dbPlayer.steam_id}: ${dbPlayer.faceit_nickname} -> ${member.nickname}`
+              );
+            }
+
+            logger.info(
+              `[FaceIT] ✅ Found player in database: ${member.nickname || dbPlayer.faceit_nickname || dbPlayer.nickname} (Steam ID: ${dbPlayer.steam_id})`
+            );
+            return {
+              faceit_user_id: member.user_id,
+              nickname:
+                member.nickname ||
+                dbPlayer.faceit_nickname ||
+                dbPlayer.nickname,
+              steam_id: dbPlayer.steam_id ? String(dbPlayer.steam_id) : null
+            };
+          }
+
+          // Fall back to API if not found in database
           const playerDetails = await getFaceitPlayerDetails(member.user_id);
 
           if (playerDetails?.games?.cs2) {
             logger.info(
-              `[FaceIT] ✅ Got player details: ${playerDetails.nickname} (Steam ID: ${playerDetails.games.cs2.game_player_id})`
+              `[FaceIT] ✅ Got player details from API: ${playerDetails.nickname} (Steam ID: ${playerDetails.games.cs2.game_player_id})`
             );
             return {
               faceit_user_id: member.user_id,

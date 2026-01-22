@@ -21,11 +21,11 @@ import type {
  * Starting point: FaceIt championship subscriptions → match to HUB teams
  */
 export const validateAllSeasonChampionships = async (
-  req: RequestWithParams<{ seasonId: string }>,
+  req: RequestWithParams<{ season_id: string }>,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
-  const seasonId = parseInt(req.params.seasonId, 10);
+  const seasonId = parseInt(req.params.season_id, 10);
   const forceRefresh = req.query.refresh === "true";
 
   if (isNaN(seasonId)) {
