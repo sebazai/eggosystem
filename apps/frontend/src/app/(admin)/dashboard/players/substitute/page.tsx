@@ -121,10 +121,8 @@ export default function AddSubstitutePlayerPage() {
     setApiError(null);
 
     try {
-      const result = await validatePlayer(steamId, effectiveSeasonId);
+      await validatePlayer(steamId, effectiveSeasonId);
     } catch (err) {
-      // Error case - the error will be handled by the PlayerValidationForm component
-      // via the validationError prop from the hook
       console.error("Validation failed:", err);
     }
   };
