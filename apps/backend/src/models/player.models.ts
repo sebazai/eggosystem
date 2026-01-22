@@ -37,6 +37,36 @@ export const getPlayerBySteamId = async (steam_id: string) => {
 };
 
 /**
+ * Get player by FaceIT ID
+ * @param faceit_id The FaceIT user ID
+ * @returns Player data with steam_id, nickname, and faceit_nickname, or null if not found
+ */
+export const getPlayerByFaceitId = async (
+  faceit_id: string
+): Promise<{
+  steam_id: string;
+  nickname: string;
+  faceit_nickname: string | null;
+} | null> => {
+  const results = await runQuery<
+    Array<{
+      steam_id: string;
+      nickname: string;
+      faceit_nickname: string | null;
+    }>
+  >(
+    "SELECT steam_id, nickname, faceit_nickname FROM SteamPlayers WHERE faceit_id = ?",
+    [faceit_id]
+  );
+
+  if (results.length > 0 && results[0]) {
+    return results[0];
+  }
+
+  return null;
+};
+
+/**
  * Search for a player by nickname, provider_username, or faceit_nickname.
  * Returns the steam_id if found, null otherwise.
  * @param searchTerm The nickname, provider_username, or faceit_nickname to search for
