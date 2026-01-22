@@ -539,6 +539,11 @@ export const getFaceitPlayerDetails = async (
     return JSON.parse(redisData) as FaceitPlayerDetails;
   }
 
+  const rateLimit = await getRateLimitForService("FaceIT");
+  if (rateLimit) {
+    return null;
+  }
+
   const { controller, clearAbortTimeout } = createAbortController(
     "getFaceitPlayerDetails"
   );
@@ -568,6 +573,14 @@ export const getFaceitPlayerDetails = async (
           `[FaceIT] Player not found for faceit_user_id: ${faceit_user_id} (${duration}ms)`
         );
         return null;
+      }
+
+      if (response.status === 429) {
+        await setRateLimitForService(
+          "FaceIT",
+          response.headers.get("Retry-After"),
+          response.headers.get("X-RateLimit-Reset")
+        );
       }
 
       throw new Error(
