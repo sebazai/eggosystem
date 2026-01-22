@@ -751,7 +751,7 @@ export const getChampionshipTeamsWithMembers = async (
           // Fall back to API if not found in database
           const playerDetails = await getFaceitPlayerDetails(member.user_id);
 
-          if (playerDetails?.games?.cs2) {
+          if (playerDetails && playerDetails?.games?.cs2) {
             logger.info(
               `[FaceIT] ✅ Got player details from API: ${playerDetails.nickname} (Steam ID: ${playerDetails.games.cs2.game_player_id})`
             );
