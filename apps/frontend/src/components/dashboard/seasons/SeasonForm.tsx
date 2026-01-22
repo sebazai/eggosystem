@@ -36,7 +36,11 @@ import { useGames } from "@/hooks/data/useGames";
 import { useGameTypes } from "@/hooks/data/useGameTypes";
 import { useSeason } from "@/hooks/data/useSeason";
 import { useMaps } from "@/hooks/data/useMaps";
-import { formatDateForInput, formatDateTimeForInput } from "@/lib/date-utils";
+import {
+  formatDateForInput,
+  formatDateTimeForInput,
+  convertLocalDateTimeToISO
+} from "@/lib/date-utils";
 
 interface SeasonFormProps {
   onSubmit?: (data: SeasonFormRaw) => void | Promise<void>;
@@ -152,8 +156,12 @@ export function SeasonForm({
         organizer_id: data.organizer_id || 1,
         name: data.name,
         full_name: data.full_name,
-        signup_start_date: data.signup_start_date ?? null,
-        signup_end_date: data.signup_end_date ?? null,
+        signup_start_date: convertLocalDateTimeToISO(
+          data.signup_start_date ?? null
+        ),
+        signup_end_date: convertLocalDateTimeToISO(
+          data.signup_end_date ?? null
+        ),
         start_date: data.start_date,
         end_date: data.end_date || null,
         platform: data.platform,
@@ -170,8 +178,9 @@ export function SeasonForm({
           data.early_bird_price_discount !== null
             ? data.early_bird_price_discount
             : null,
-        early_bird_price_discount_end_date:
-          data.early_bird_price_discount_end_date ?? null,
+        early_bird_price_discount_end_date: convertLocalDateTimeToISO(
+          data.early_bird_price_discount_end_date ?? null
+        ),
         active_map_pool: data.active_map_pool,
         rulebook_url: data.rulebook_url || null,
         discord_link: data.discord_link || null

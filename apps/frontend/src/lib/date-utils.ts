@@ -37,6 +37,41 @@ export const formatDateTimeForInput = (
   }
 };
 
+/**
+ * Converts a datetime-local input value to ISO UTC format
+ *
+ * datetime-local inputs return values like "2025-01-15T10:30" which are
+ * interpreted as local time. This function converts them to UTC ISO format.
+ *
+ * @param datetimeLocal - datetime-local format string (e.g., "2025-01-15T10:30")
+ * @returns ISO UTC format string (e.g., "2025-01-15T08:30:00.000Z") or null if invalid
+ *
+ * @example
+ * // User in UTC+2 enters "2025-01-15T10:30" (10:30 local time)
+ * convertLocalDateTimeToISO("2025-01-15T10:30") // → "2025-01-15T08:30:00.000Z" (08:30 UTC)
+ */
+export const convertLocalDateTimeToISO = (
+  datetimeLocal: string | null
+): string | null => {
+  if (!datetimeLocal) return null;
+
+  try {
+    // datetime-local format is "YYYY-MM-DDTHH:mm"
+    // JavaScript Date constructor interprets this as local time
+    const date = new Date(datetimeLocal);
+
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+      return null;
+    }
+
+    // Convert to ISO UTC format
+    return date.toISOString();
+  } catch {
+    return null;
+  }
+};
+
 export const formatDateShort = (
   date: Date,
   {
