@@ -6,58 +6,25 @@ export const convertTimeToLocalTimeWithoutSeconds = (time: string) => {
   })}`;
 };
 
-/**
- * Converts a datetime-local input value (YYYY-MM-DDTHH:mm) to UTC ISO 8601 format.
- *
- * The datetime-local input provides values in the user's local timezone.
- * This function converts that local time back to UTC for storage in the database.
- *
- * @param localDateTime - The datetime-local string value (e.g., "2025-01-15T18:30")
- * @returns UTC ISO 8601 string (e.g., "2025-01-15T16:30:00.000Z") or null if input is invalid
- *
- * @example
- * // User in Helsinki (UTC+2) enters 18:30 local time
- * convertLocalDateTimeToISO("2025-01-15T18:30")
- * // Returns: "2025-01-15T16:30:00.000Z" (18:30 Helsinki = 16:30 UTC)
- */
-export const convertLocalDateTimeToISO = (
-  localDateTime: string | null
-): string | null => {
-  if (!localDateTime) return null;
+export const formatDateForInput = (dateStr: string | null): string | null => {
+  if (!dateStr) return null;
+  // If already in YYYY-MM-DD format, return as is
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
+  // Otherwise, parse ISO format and convert to YYYY-MM-DD
   try {
-    // datetime-local format is YYYY-MM-DDTHH:mm, add seconds if missing
-    const dateTimeStr =
-      localDateTime.length === 16 ? `${localDateTime}:00` : localDateTime;
-
-    // new Date() interprets datetime-local strings as local time
-    // toISOString() converts to UTC automatically
-    const localDate = new Date(dateTimeStr);
-    return localDate.toISOString();
+    const date = new Date(dateStr);
+    return date.toISOString().split("T")[0] || null;
   } catch {
     return null;
   }
 };
 
-/**
- * Converts a UTC ISO 8601 datetime string to datetime-local format (YYYY-MM-DDTHH:mm)
- * for use in HTML datetime-local input fields.
- *
- * The datetime-local input displays times in the user's local timezone automatically.
- * This function converts UTC times from the backend to local time for display.
- *
- * @param dateStr - UTC ISO 8601 string (e.g., "2025-01-15T16:30:00.000Z")
- * @returns datetime-local format string in user's local timezone (e.g., "2025-01-15T18:30" in UTC+2) or null if input is invalid
- */
 export const formatDateTimeForInput = (
   dateStr: string | null
 ): string | null => {
   if (!dateStr) return null;
   try {
-    // Parse UTC ISO string - Date object represents the moment in time
     const date = new Date(dateStr);
-
-    // Use local timezone getters (getFullYear, getMonth, etc. return local timezone values)
-    // This automatically converts UTC to the user's local timezone
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, "0");
     const day = String(date.getDate()).padStart(2, "0");

@@ -29,16 +29,14 @@ import {
   type SeasonFormValues,
   type SeasonFormRaw,
   type Season,
-  SeasonPlatform
+  SeasonPlatform,
+  isSeasonPlatform
 } from "@eggosystem/types";
 import { useGames } from "@/hooks/data/useGames";
 import { useGameTypes } from "@/hooks/data/useGameTypes";
 import { useSeason } from "@/hooks/data/useSeason";
 import { useMaps } from "@/hooks/data/useMaps";
-import {
-  convertLocalDateTimeToISO,
-  formatDateTimeForInput
-} from "@/lib/date-utils";
+import { formatDateForInput, formatDateTimeForInput } from "@/lib/date-utils";
 
 interface SeasonFormProps {
   onSubmit?: (data: SeasonFormRaw) => void | Promise<void>;
@@ -63,20 +61,6 @@ export function SeasonForm({
   // Backend returns UTC ISO strings (e.g., "2024-01-15T18:30:00.000Z")
   // We convert them to local time for display in datetime-local inputs
   const getInitialValues = (season: Season): SeasonFormValues => {
-    // Convert ISO date strings to YYYY-MM-DD format for date inputs (date-only, no time)
-    const formatDateForInput = (dateStr: string | null): string | null => {
-      if (!dateStr) return null;
-      // If already in YYYY-MM-DD format, return as is
-      if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
-      // Otherwise, parse ISO format and convert to YYYY-MM-DD
-      try {
-        const date = new Date(dateStr);
-        return date.toISOString().split("T")[0] || null;
-      } catch {
-        return null;
-      }
-    };
-
     return {
       game_id: season.game_id,
       game_type_id: season.game_type_id,
@@ -135,7 +119,20 @@ export function SeasonForm({
     if (season) {
       form.reset(getInitialValues(season));
     }
-  }, [season, form]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [season]);
+
+  // Ensure platform value is always valid (normalize if needed)
+  useEffect(() => {
+    const currentPlatform = form.getValues("platform");
+    if (!isSeasonPlatform(currentPlatform)) {
+      const validPlatform =
+        mode === "edit" && season?.platform && isSeasonPlatform(season.platform)
+          ? season.platform
+          : SeasonPlatform.Kanaliiga;
+      form.setValue("platform", validPlatform, { shouldValidate: false });
+    }
+  }, [form, mode, season]);
 
   const selectedGameId = form.watch("game_id");
 
@@ -155,15 +152,8 @@ export function SeasonForm({
         organizer_id: data.organizer_id || 1,
         name: data.name,
         full_name: data.full_name,
-        // convertLocalDateTimeToISO converts local datetime-local → UTC ISO format
-        // Example: "2024-01-15T20:30" (Helsinki, UTC+2) → "2024-01-15T18:30:00.000Z" (UTC)
-        // Backend expects UTC ISO strings and stores them as UTC in the database
-        signup_start_date: convertLocalDateTimeToISO(
-          data.signup_start_date ?? null
-        ),
-        signup_end_date: convertLocalDateTimeToISO(
-          data.signup_end_date ?? null
-        ),
+        signup_start_date: data.signup_start_date ?? null,
+        signup_end_date: data.signup_end_date ?? null,
         start_date: data.start_date,
         end_date: data.end_date || null,
         platform: data.platform,
@@ -180,9 +170,8 @@ export function SeasonForm({
           data.early_bird_price_discount !== null
             ? data.early_bird_price_discount
             : null,
-        early_bird_price_discount_end_date: convertLocalDateTimeToISO(
-          data.early_bird_price_discount_end_date ?? null
-        ),
+        early_bird_price_discount_end_date:
+          data.early_bird_price_discount_end_date ?? null,
         active_map_pool: data.active_map_pool,
         rulebook_url: data.rulebook_url || null,
         discord_link: data.discord_link || null
@@ -339,33 +328,48 @@ export function SeasonForm({
               <FormField
                 control={form.control}
                 name="platform"
-                render={({ field }) => (
-                  <FormItem>
-                    <RequiredFormLabel required>Platform</RequiredFormLabel>
-                    <Select
-                      onValueChange={(value) =>
-                        field.onChange(value as SeasonPlatform)
-                      }
-                      value={field.value}
-                      disabled={isFormDisabled}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a platform" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {Object.values(SeasonPlatform).map((platform) => (
-                          <SelectItem key={platform} value={platform}>
-                            {platform.charAt(0).toUpperCase() +
-                              platform.slice(1)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                render={({ field }) => {
+                  // Ensure value is a valid SeasonPlatform string
+                  // Radix UI Select requires value to match a SelectItem exactly
+                  const platformValue = isSeasonPlatform(field.value)
+                    ? field.value
+                    : mode === "edit" &&
+                        season?.platform &&
+                        isSeasonPlatform(season.platform)
+                      ? season.platform
+                      : SeasonPlatform.Kanaliiga;
+
+                  return (
+                    <FormItem>
+                      <RequiredFormLabel required>Platform</RequiredFormLabel>
+                      <Select
+                        onValueChange={(value) => {
+                          // Ensure the value is a valid SeasonPlatform enum value before setting
+                          if (isSeasonPlatform(value)) {
+                            field.onChange(value);
+                          }
+                        }}
+                        value={platformValue}
+                        disabled={isFormDisabled}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a platform" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {Object.values(SeasonPlatform).map((platform) => (
+                            <SelectItem key={platform} value={platform}>
+                              {platform.charAt(0).toUpperCase() +
+                                platform.slice(1)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
               />
 
               {/* Start Date */}

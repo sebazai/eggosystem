@@ -55,12 +55,9 @@ export const seasonFormSchema = z
       .regex(/^\d{4}-\d{2}-\d{2}$/, "End date must be in YYYY-MM-DD format")
       .optional()
       .nullable(),
-    platform: z.enum(
-      Object.values(SeasonPlatform) as [SeasonPlatform, ...SeasonPlatform[]],
-      {
-        message: "Invalid platform selection"
-      }
-    ),
+    platform: z.enum(Object.values(SeasonPlatform), {
+      message: "Invalid platform selection"
+    }),
     is_round_robin_bo2_as_2xbo1: z.boolean(),
     payment_link: z
       .string()
