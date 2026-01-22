@@ -60,7 +60,11 @@ export function UpcomingMatchHeader({
   // Parse date for formatting
   const date = matchDate ? new Date(matchDate) : new Date();
 
-  const formattedDate = formatDateShort(date, { toUpperCase: true });
+  const formattedDate = formatDateShort(date, {
+    toUpperCase: true,
+    withHours: true,
+    withMinutes: true
+  });
 
   // For upcoming matches, we use a placeholder for the score
   const placeholderScore = "?";

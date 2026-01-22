@@ -79,12 +79,12 @@ export const formatDateShort = (
   date: Date,
   {
     toUpperCase = true,
-    timezone = "UTC",
+    timezone = null,
     withHours = false,
     withMinutes = false
   }: {
     toUpperCase?: boolean;
-    timezone?: string;
+    timezone?: string | null;
     withHours?: boolean;
     withMinutes?: boolean;
   } = {}
@@ -95,7 +95,7 @@ export const formatDateShort = (
     year: "2-digit",
     ...(withHours ? { hour: "2-digit" } : {}),
     ...(withMinutes ? { minute: "2-digit" } : {}),
-    timeZone: timezone
+    timeZone: timezone ?? undefined
   });
   if (toUpperCase) {
     return formattedDate.toUpperCase();
