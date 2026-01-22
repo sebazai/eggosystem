@@ -1,10 +1,12 @@
+import { type PoolConnection } from "mysql2/promise";
 import { runQuery } from "../db/mysqlRunQuery";
 import {
   updateUserDiscordId,
   linkDiscordAccount,
   getDiscordIdByAccountId,
   getDiscordUsernameByAccountId,
-  getDiscordInfoByAccountId
+  getDiscordInfoByAccountId,
+  unlinkDiscordAccount
 } from "./discord.models";
 
 // Mock the database connection
@@ -238,6 +240,88 @@ describe("Discord Models", () => {
       const result = await getDiscordInfoByAccountId(accountId);
 
       expect(result).toBeNull();
+    });
+  });
+
+  describe("unlinkDiscordAccount", () => {
+    it("should successfully unlink Discord account when link exists", async () => {
+      const accountId = 123;
+
+      mockRunQuery.mockResolvedValueOnce({ affectedRows: 1 });
+
+      const result = await unlinkDiscordAccount(accountId);
+
+      expect(result).toBe(true);
+      expect(mockRunQuery).toHaveBeenCalledWith(
+        expect.stringContaining("DELETE FROM LinkedAccounts"),
+        [accountId],
+        undefined
+      );
+      expect(mockRunQuery).toHaveBeenCalledWith(
+        expect.stringContaining("provider = 'discord'"),
+        expect.any(Array),
+        undefined
+      );
+      expect(mockRunQuery).toHaveBeenCalledWith(
+        expect.stringContaining("provider_id NOT LIKE 'fake_%'"),
+        expect.any(Array),
+        undefined
+      );
+    });
+
+    it("should handle case when no Discord link exists (should not throw error)", async () => {
+      const accountId = 123;
+
+      mockRunQuery.mockResolvedValueOnce({ affectedRows: 0 });
+
+      const result = await unlinkDiscordAccount(accountId);
+
+      expect(result).toBe(false);
+      expect(mockRunQuery).toHaveBeenCalledWith(
+        expect.stringContaining("DELETE FROM LinkedAccounts"),
+        [accountId],
+        undefined
+      );
+    });
+
+    it("should only delete real OAuth links (excludes fake links)", async () => {
+      const accountId = 123;
+
+      mockRunQuery.mockResolvedValueOnce({ affectedRows: 1 });
+
+      await unlinkDiscordAccount(accountId);
+
+      const deleteCall = mockRunQuery.mock.calls.find((call) =>
+        call[0].includes("DELETE FROM LinkedAccounts")
+      );
+
+      expect(deleteCall).toBeDefined();
+      expect(deleteCall?.[0]).toContain("provider_id NOT LIKE 'fake_%'");
+      expect(deleteCall?.[0]).toContain("provider_id IS NOT NULL");
+    });
+
+    it("should support transaction via connection parameter", async () => {
+      const accountId = 123;
+      const mockConnection = {} as PoolConnection;
+
+      mockRunQuery.mockResolvedValueOnce({ affectedRows: 1 });
+
+      await unlinkDiscordAccount(accountId, mockConnection);
+
+      expect(mockRunQuery).toHaveBeenCalledWith(
+        expect.stringContaining("DELETE FROM LinkedAccounts"),
+        [accountId],
+        mockConnection
+      );
+    });
+
+    it("should throw error when account ID is invalid", async () => {
+      await expect(unlinkDiscordAccount(0)).rejects.toThrow(
+        "Invalid account ID provided"
+      );
+      await expect(unlinkDiscordAccount(-1)).rejects.toThrow(
+        "Invalid account ID provided"
+      );
     });
   });
 });
