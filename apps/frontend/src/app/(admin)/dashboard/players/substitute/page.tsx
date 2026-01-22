@@ -122,8 +122,6 @@ export default function AddSubstitutePlayerPage() {
 
     try {
       const result = await validatePlayer(steamId, effectiveSeasonId);
-      // Success case - validationResult will be updated by the hook
-      console.log("Validation result received:", result);
     } catch (err) {
       // Error case - the error will be handled by the PlayerValidationForm component
       // via the validationError prop from the hook

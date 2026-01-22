@@ -74,10 +74,6 @@ export default function TeamFlagsPage() {
   const fetchTeamFlags = useCallback(
     async (seasonToFetch?: number | "all") => {
       try {
-        console.log(
-          "Fetching team flags for season:",
-          seasonToFetch || selectedSeason
-        );
         // Use the test route that doesn't require authentication for now
         // Pass season_id parameter if a specific season is selected
         const season =
@@ -86,7 +82,6 @@ export default function TeamFlagsPage() {
         const data = await clientApiFetch<TeamFlagWithDetails[]>(
           `/api/v1/dashboard/sortter/team-flags/season/${season}`
         );
-        console.log("Team flags data received:", data);
         setTeamFlags(data || []);
       } catch (error) {
         console.error("Error fetching team flags:", error);

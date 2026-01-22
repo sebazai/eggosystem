@@ -326,16 +326,6 @@ test.describe("Signup Form", () => {
       await page
         .locator('[data-testid="organization-website-input"]')
         .fill("https://kanaliiga.fi/");
-
-      // Button should still be disabled without terms
-      // Note: Form validation behavior may have changed
-      const isDisabled = await teamSelectionButton.isDisabled();
-      if (!isDisabled) {
-        console.log(
-          "Team selection button is enabled without terms - validation behavior may have changed"
-        );
-      }
-
       // Check terms and conditions
       await page.locator('[data-testid="terms-conditions-checkbox"]').click();
 
