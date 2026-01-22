@@ -10,7 +10,8 @@ import { getSeasonLeagueTeamsBySeasonLeagueExternalId } from "../models/season-l
 import {
   type TeamWithExternalDataValidated,
   type TeamWithExternalData,
-  type ChampionshipDetails
+  type ChampionshipDetails,
+  type RequestWithParams
 } from "@eggosystem/types";
 import { logger } from "../utils/app-logger";
 import { triggerManualFaceitSync } from "../services/cron-scheduler.services";
@@ -118,17 +119,19 @@ export const validateChampionshipTeamsController = async (
  * This endpoint can be used for testing or manual operations
  */
 export const triggerFaceitMatchSync = async (
-  req: Request,
+  req: RequestWithParams<{ season_id: string }>,
   res: Response
 ): Promise<void> => {
   logger.info("Manual FACEIT match sync triggered via API endpoint");
 
   // Start the sync process asynchronously
-  await triggerManualFaceitSync();
+  void triggerManualFaceitSync(Number(req.params.season_id));
 
   // Return immediate response to avoid timeout
   res.status(200).json({
-    message: "FACEIT match sync initiated successfully",
+    message:
+      "FACEIT match sync initiated successfully for season " +
+      req.params.season_id,
     note: "The sync process is running in the background. Check server logs for progress and results."
   });
 };

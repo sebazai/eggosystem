@@ -35,7 +35,10 @@ import {
   updateMatchStartTimestamp
 } from "../models/match.models";
 import { fetchAllItemsWithPagination } from "../utils/pagination-utils";
-import { getActiveSeasonChampionshipIds } from "../models/season-league-external-id.models";
+import {
+  getActiveSeasonChampionshipIds,
+  getSeasonChampionshipIds
+} from "../models/season-league-external-id.models";
 import { getReservationsWithEmailForMatch } from "../models/match-streams.models";
 import { sendMatchScheduleChangeEmail } from "./email.services";
 import { runQuery } from "../db/mysqlRunQuery";
@@ -770,7 +773,7 @@ export const fetchFaceitChampionshipUpcomingMatches = async (
   }
 
   const response = await fetch(
-    `https://open.faceit.com/data/v4/championships/${championshipId}/matches?type=upcoming`,
+    `https://open.faceit.com/data/v4/championships/${championshipId}/matches?type=upcoming&limit=100`,
     {
       headers: {
         Authorization: `Bearer ${apiKey}`,
@@ -815,20 +818,28 @@ export const syncMatchSchedule = async (
     firstMatch.start_timestamp
   ).toISOString();
 
-  // Compare timestamps directly (both UTC ISO strings)
-  if (firstMatchTimestamp === faceitScheduleTimestamp) {
-    return;
-  }
-
-  // Extract date/time for logging
-  const faceitScheduleDateStr = faceitScheduleTimestamp.slice(0, 10);
-  const faceitScheduleTimeStr = faceitScheduleTimestamp.slice(11, 19);
-
-  logger.info(
-    `[FACEIT] New time for match ${faceitMatch.match_id} ${faceitScheduleDateStr} ${faceitScheduleTimeStr}`
-  );
-
   if (is_round_robin_bo2_as_2xbo1 && databaseMatches.length === 2) {
+    const secondMatch = databaseMatches[1];
+    const secondMatchTimestamp = new Date(
+      secondMatch.start_timestamp
+    ).toISOString();
+
+    const faceitSecondAssumedScheduledTimestamp = adjustMatchDateTime(
+      faceitScheduleTimestamp,
+      { hours: 1 }
+    );
+
+    if (
+      firstMatchTimestamp === faceitScheduleTimestamp &&
+      secondMatchTimestamp === faceitSecondAssumedScheduledTimestamp
+    ) {
+      return;
+    }
+
+    logger.info(
+      `[FACEIT] New time for match ${faceitMatch.match_id}: new ${faceitScheduleTimestamp} or ${faceitSecondAssumedScheduledTimestamp} vs. old ${firstMatchTimestamp} or ${secondMatchTimestamp} (2xBO1 as BO2)`
+    );
+
     // Handle BO2 matches stored as 2 BO1 matches
     // First match gets the FACEIT schedule
     await updateMatchStartTimestamp(
@@ -849,11 +860,6 @@ export const syncMatchSchedule = async (
       { hours: 1 }
     );
 
-    const secondMatch = databaseMatches[1];
-    const secondMatchTimestamp = new Date(
-      secondMatch.start_timestamp
-    ).toISOString();
-
     await updateMatchStartTimestamp(
       databaseMatches[1].id,
       secondMatchScheduleTimestamp
@@ -866,18 +872,18 @@ export const syncMatchSchedule = async (
       secondMatchScheduleTimestamp
     );
 
-    const secondMatchScheduleDateStr = secondMatchScheduleTimestamp.slice(
-      0,
-      10
-    );
-    const secondMatchScheduleTimeStr = secondMatchScheduleTimestamp.slice(
-      11,
-      19
-    );
     logger.info(
-      `Updated BO2 match schedules: First match at ${faceitScheduleDateStr} ${faceitScheduleTimeStr}, Second match at ${secondMatchScheduleDateStr} ${secondMatchScheduleTimeStr}`
+      `Updated BO2 match schedules: First match at ${faceitScheduleTimestamp}, Second match at ${secondMatchScheduleTimestamp}`
     );
   } else {
+    if (firstMatchTimestamp === faceitScheduleTimestamp) {
+      return;
+    }
+
+    logger.info(
+      `[FACEIT] New time for match ${faceitMatch.match_id}: new ${faceitScheduleTimestamp} vs. old ${firstMatchTimestamp}`
+    );
+
     await updateMatchStartTimestamp(
       databaseMatches[0].id,
       faceitScheduleTimestamp
@@ -891,7 +897,7 @@ export const syncMatchSchedule = async (
     );
 
     logger.info(
-      `Updated single match ${databaseMatches[0].id} schedule: ${faceitScheduleDateStr} ${faceitScheduleTimeStr}`
+      `Updated single match ${databaseMatches[0].id} schedule: ${faceitScheduleTimestamp}`
     );
   }
 };
@@ -975,11 +981,15 @@ const getMatchTeamNames = async (matchId: number): Promise<string> => {
   return `${teams[0].name} vs ${teams[1].name}`;
 };
 
-export const syncAllFaceitChampionshipMatches = async (): Promise<void> => {
+export const syncFaceitChampionshipMatches = async (
+  season_id?: number
+): Promise<void> => {
   logger.info("Starting FACEIT championship match sync...");
 
   // Get all active season championship IDs
-  const championshipIds = await getActiveSeasonChampionshipIds();
+  const championshipIds = season_id
+    ? await getSeasonChampionshipIds(season_id)
+    : await getActiveSeasonChampionshipIds();
   logger.info(
     `Found ${championshipIds.length} active season championships to sync`
   );

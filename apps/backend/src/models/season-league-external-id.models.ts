@@ -50,6 +50,21 @@ export const removeSeasonLeagueExternalId = async (
   await runQuery(query, [externalId], connection);
 };
 
+export const getSeasonChampionshipIds = async (
+  season_id: number
+): Promise<{ external_id: string; is_round_robin_bo2_as_2xbo1: boolean }[]> => {
+  const query = `
+    SELECT slei.external_id, s.is_round_robin_bo2_as_2xbo1
+    FROM SeasonLeagueExternalIds slei
+    JOIN Seasons s ON slei.season_id = s.id
+    WHERE slei.season_id = ?
+  `;
+  const results = await runQuery<
+    Array<{ external_id: string; is_round_robin_bo2_as_2xbo1: boolean }>
+  >(query, [season_id]);
+  return results;
+};
+
 export const getActiveSeasonChampionshipIds = async (): Promise<
   { external_id: string; is_round_robin_bo2_as_2xbo1: boolean }[]
 > => {

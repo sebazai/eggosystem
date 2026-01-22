@@ -5,13 +5,22 @@ import { clientApiFetch } from "@/lib/apiClient";
 import { toast } from "sonner";
 import { useState } from "react";
 
-export function FaceitSyncButton() {
+interface FaceitSyncButtonProps {
+  seasonId?: string | null;
+}
+
+export function FaceitSyncButton({ seasonId }: FaceitSyncButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSync = async () => {
+    if (!seasonId) {
+      toast.error("Please select a season first");
+      return;
+    }
+
     setIsLoading(true);
     try {
-      await clientApiFetch("/api/v1/faceit/sync", {
+      await clientApiFetch(`/api/v1/faceit/sync/season/${seasonId}`, {
         method: "POST"
       });
 
@@ -25,7 +34,11 @@ export function FaceitSyncButton() {
   };
 
   return (
-    <Button onClick={handleSync} disabled={isLoading} className="w-full">
+    <Button
+      onClick={handleSync}
+      disabled={isLoading || !seasonId}
+      className="w-full"
+    >
       {isLoading ? "Syncing..." : "Sync FACEIT Match schedules"}
     </Button>
   );
