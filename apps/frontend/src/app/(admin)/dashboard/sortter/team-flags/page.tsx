@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { clientApiFetch } from "@/lib/apiClient";
+import { formatDateShort } from "@/lib/date-utils";
 
 interface TeamFlagData {
   season_id: number;
@@ -73,10 +74,6 @@ export default function TeamFlagsPage() {
   const fetchTeamFlags = useCallback(
     async (seasonToFetch?: number | "all") => {
       try {
-        console.log(
-          "Fetching team flags for season:",
-          seasonToFetch || selectedSeason
-        );
         // Use the test route that doesn't require authentication for now
         // Pass season_id parameter if a specific season is selected
         const season =
@@ -85,7 +82,6 @@ export default function TeamFlagsPage() {
         const data = await clientApiFetch<TeamFlagWithDetails[]>(
           `/api/v1/dashboard/sortter/team-flags/season/${season}`
         );
-        console.log("Team flags data received:", data);
         setTeamFlags(data || []);
       } catch (error) {
         console.error("Error fetching team flags:", error);
@@ -150,12 +146,9 @@ export default function TeamFlagsPage() {
   }, [fetchTeamFlags]); // Re-fetch when season changes
 
   const formatTimestamp = (timestamp: string) => {
-    return new Date(timestamp).toLocaleString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit"
+    return formatDateShort(new Date(timestamp), {
+      withHours: true,
+      withMinutes: true
     });
   };
 

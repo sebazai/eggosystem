@@ -1,107 +1,98 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { MatchClientDate } from "./MatchClientDate";
 
+// Mock the date-utils module to control date formatting
+jest.mock("@/lib/date-utils", () => ({
+  formatDateShort: jest.fn((date: Date) => {
+    // Simple mock that formats date as "MON DD, YY" in UTC
+    const monthNames = [
+      "JAN",
+      "FEB",
+      "MAR",
+      "APR",
+      "MAY",
+      "JUN",
+      "JUL",
+      "AUG",
+      "SEP",
+      "OCT",
+      "NOV",
+      "DEC"
+    ];
+    const month = monthNames[date.getUTCMonth()];
+    const day = String(date.getUTCDate()).padStart(2, "0");
+    const year = String(date.getUTCFullYear()).slice(-2);
+    return `${month} ${day}, ${year}`;
+  })
+}));
+
 describe("MatchClientDate", () => {
-  const originalWindow = global.window;
-
-  beforeEach(() => {
-    // Restore window before each test
-    global.window = originalWindow;
-    // Mock Intl.DateTimeFormat for consistent testing
-    jest.spyOn(Intl, "DateTimeFormat").mockImplementation(
-      () =>
-        ({
-          resolvedOptions: () => ({
-            timeZone: "America/New_York"
-          }),
-          format: jest.fn(),
-          formatToParts: jest.fn(),
-          formatRange: jest.fn(),
-          formatRangeToParts: jest.fn()
-        }) as any
+  it("should render formatted date", () => {
+    render(
+      <MatchClientDate
+        startTimestamp="2024-01-15T00:00:00.000Z"
+        className="test-class"
+      />
     );
-  });
 
-  afterEach(() => {
-    jest.restoreAllMocks();
-    // Restore window object
-    global.window = originalWindow;
-  });
-
-  it("should render UTC date initially (server-side)", () => {
-    // In test environment, window is always defined, so component uses client-side formatting
-    // "2024-01-15" at 00:00:00 UTC = "2024-01-14" at 19:00:00 EST (UTC-5)
-    // So we expect JAN 14 in America/New_York timezone
-    render(<MatchClientDate matchDate="2024-01-15" className="test-class" />);
-
-    const dateElement = screen.getByText(/JAN 14, 24/i);
+    const dateElement = screen.getByText(/JAN 15, 24/i);
     expect(dateElement).toBeInTheDocument();
     expect(dateElement).toHaveClass("test-class");
   });
 
-  it("should update to client timezone after hydration", async () => {
-    render(<MatchClientDate matchDate="2024-01-15" startTime="14:30:00" />);
+  it("should format date with different timestamps", () => {
+    render(<MatchClientDate startTimestamp="2024-01-15T14:30:00.000Z" />);
 
-    // Initially shows UTC
-    expect(screen.getByText(/JAN 15, 24/i)).toBeInTheDocument();
-
-    // After hydration, should show client timezone
-    await waitFor(() => {
-      const dateElement = screen.getByText(/JAN 15, 24/i);
-      expect(dateElement).toBeInTheDocument();
-    });
-  });
-
-  it("should handle date without startTime", () => {
-    // In test environment, window is always defined, so component uses client-side formatting
-    // "2024-01-15" at 00:00:00 UTC = "2024-01-14" at 19:00:00 EST (UTC-5)
-    render(<MatchClientDate matchDate="2024-01-15" />);
-
-    expect(screen.getByText(/JAN 14, 24/i)).toBeInTheDocument();
-  });
-
-  it("should format date with startTime correctly", () => {
-    // Mock client-side
-    global.window = originalWindow;
-
-    render(<MatchClientDate matchDate="2024-01-15" startTime="14:30:00" />);
-
-    // 14:30 UTC = 09:30 EST on Jan 15, so date is still JAN 15
+    // Date should be Jan 15 regardless of time
     expect(screen.getByText(/JAN 15, 24/i)).toBeInTheDocument();
   });
 
   it("should apply className prop", () => {
-    // In test environment, window is always defined, so component uses client-side formatting
-    render(<MatchClientDate matchDate="2024-01-15" className="custom-class" />);
+    render(
+      <MatchClientDate
+        startTimestamp="2024-01-15T00:00:00.000Z"
+        className="custom-class"
+      />
+    );
 
-    const dateElement = screen.getByText(/JAN 14, 24/i);
+    const dateElement = screen.getByText(/JAN 15, 24/i);
     expect(dateElement).toHaveClass("custom-class");
   });
 
   it("should handle different dates", () => {
-    // In test environment, window is always defined, so component uses client-side formatting
-    const { rerender } = render(<MatchClientDate matchDate="2024-01-15" />);
-
-    // "2024-01-15" at 00:00:00 UTC = "2024-01-14" at 19:00:00 EST
-    expect(screen.getByText(/JAN 14, 24/i)).toBeInTheDocument();
-
-    rerender(<MatchClientDate matchDate="2024-12-25" />);
-    // "2024-12-25" at 00:00:00 UTC = "2024-12-24" at 19:00:00 EST
-    expect(screen.getByText(/DEC 24, 24/i)).toBeInTheDocument();
-  });
-
-  it("should update when startTime changes", () => {
-    // Mock client-side
-    global.window = originalWindow;
-
     const { rerender } = render(
-      <MatchClientDate matchDate="2024-01-15" startTime="14:30:00" />
+      <MatchClientDate startTimestamp="2024-01-15T00:00:00.000Z" />
     );
 
     expect(screen.getByText(/JAN 15, 24/i)).toBeInTheDocument();
 
-    rerender(<MatchClientDate matchDate="2024-01-15" startTime="18:45:00" />);
+    rerender(<MatchClientDate startTimestamp="2024-12-25T00:00:00.000Z" />);
+
+    expect(screen.getByText(/DEC 25, 24/i)).toBeInTheDocument();
+  });
+
+  it("should update when startTimestamp changes", () => {
+    const { rerender } = render(
+      <MatchClientDate startTimestamp="2024-01-15T14:30:00.000Z" />
+    );
 
     expect(screen.getByText(/JAN 15, 24/i)).toBeInTheDocument();
+
+    rerender(<MatchClientDate startTimestamp="2024-01-15T18:45:00.000Z" />);
+
+    // Same date, different time - should still show same date
+    expect(screen.getByText(/JAN 15, 24/i)).toBeInTheDocument();
+  });
+
+  it("should handle year boundary dates", () => {
+    render(<MatchClientDate startTimestamp="2023-12-31T23:59:59.000Z" />);
+
+    expect(screen.getByText(/DEC 31, 23/i)).toBeInTheDocument();
+  });
+
+  it("should handle leap year dates", () => {
+    render(<MatchClientDate startTimestamp="2024-02-29T00:00:00.000Z" />);
+
+    expect(screen.getByText(/FEB 29, 24/i)).toBeInTheDocument();
   });
 });

@@ -39,7 +39,6 @@ export const createMockSeasonFormValues = (
     payment_link: "https://example.com/payment",
     registration_price: 150,
     has_vat: true,
-    timezone: "Europe/Helsinki",
     active_map_pool: [1, 2, 3],
     ...overrides
   };

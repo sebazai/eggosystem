@@ -10,6 +10,9 @@ import type {
   MatchTeamLineup,
   TeamStatsResponse
 } from "@eggosystem/types";
+import { runQuery } from "../../db/mysqlRunQuery";
+import { getConnection } from "../../db/mysqlConnection";
+import type { PoolConnection } from "mysql2/promise";
 
 describe("Match Routes", () => {
   let app: express.Application;
@@ -218,6 +221,112 @@ describe("Match Routes", () => {
       expect(response.body).toEqual({
         streamUrls: []
       });
+    });
+  });
+
+  describe("GET /api/v1/matches/:match_id - Timestamp serialization", () => {
+    let connection: PoolConnection;
+    const testMatchId = 99999;
+
+    beforeAll(async () => {
+      connection = await getConnection();
+    });
+
+    afterAll(async () => {
+      if (connection) {
+        connection.release();
+      }
+    });
+
+    beforeEach(async () => {
+      // Clean up test data first
+      await runQuery(
+        "DELETE FROM MatchTeams WHERE match_id = ?",
+        [testMatchId],
+        connection
+      ).catch(() => {
+        // Ignore if table doesn't exist
+      });
+      await runQuery(
+        "DELETE FROM Matches WHERE id = ?",
+        [testMatchId],
+        connection
+      );
+
+      // Seed test match with specific timestamps in UTC
+      // Need to insert into Seasons and Leagues first for foreign key constraints
+      await runQuery(
+        `INSERT IGNORE INTO Seasons (id, game_id, game_type_id, organizer_id, name, full_name, start_date, platform, is_round_robin_bo2_as_2xbo1, has_vat)
+         VALUES (9999, 1, 1, 1, 'Test Season', 'Test Season', '2024-01-01', 'faceit', false, true)`,
+        [],
+        connection
+      );
+
+      await runQuery(
+        `INSERT IGNORE INTO Leagues (id, name) VALUES (9999, 'Test League')`,
+        [],
+        connection
+      );
+
+      // Insert SeasonLeague for foreign key constraint (Matches references SeasonLeagues)
+      // Use REPLACE to ensure it exists
+      await runQuery(
+        `REPLACE INTO SeasonLeagues (season_id, league_id, tier)
+         VALUES (9999, 9999, 1)`,
+        [],
+        connection
+      );
+
+      // Also need to insert into Stages for stage foreign key
+      await runQuery(
+        `INSERT IGNORE INTO Stages (id, name) VALUES (1, 'Regular')`,
+        [],
+        connection
+      );
+
+      await runQuery(
+        `INSERT INTO Matches (
+          id, league_id, season_id, stage, start_timestamp, end_timestamp,
+          best_of, status, round, \`group\`
+        ) VALUES (?, 9999, 9999, 1, ?, ?,
+          3, 'SCHEDULED', 1, 1)`,
+        [
+          testMatchId,
+          "2024-01-15 18:00:00", // UTC datetime
+          "2024-01-15 20:00:00" // UTC datetime
+        ],
+        connection
+      );
+    });
+
+    afterEach(async () => {
+      // Clean up test data
+      await runQuery(
+        "DELETE FROM MatchTeams WHERE match_id = ?",
+        [testMatchId],
+        connection
+      ).catch(() => {
+        // Ignore if table doesn't exist
+      });
+      await runQuery(
+        "DELETE FROM Matches WHERE id = ?",
+        [testMatchId],
+        connection
+      );
+    });
+
+    it("should return timestamps in UTC ISO 8601 format when serialized by Express", async () => {
+      const response = await request(app)
+        .get(`/api/v1/matches/${testMatchId}`)
+        .expect(200);
+
+      expect(response.body).toBeDefined();
+      expect(response.body.id).toBe(testMatchId);
+
+      // Express res.json() automatically serializes Date objects to ISO strings
+      // Timestamps should be in UTC ISO 8601 format with 'Z' indicator
+      expect(response.body.start_timestamp).toBe("2024-01-15T18:00:00.000Z");
+      expect(response.body.end_timestamp).toBe("2024-01-15T20:00:00.000Z");
     });
   });
 });

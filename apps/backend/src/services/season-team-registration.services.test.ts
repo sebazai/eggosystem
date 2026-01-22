@@ -1014,9 +1014,28 @@ describe("Season team registration services", () => {
       expect(getPlayerRank.faceit_kd).toEqual(1.35);
       const date = new Date();
       const formatted = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-      expect(getPlayerRank.rank_updated_at).toContain(formatted);
-      expect(getPlayerRank.hours_updated_at).toContain(formatted);
-      expect(getPlayerRank.faceit_date).toContain(formatted);
+      // These are Date objects at runtime (TIMESTAMP fields), but typed as string in interface
+      // Convert to ISO string for comparison
+      const rankUpdatedAtValue = getPlayerRank.rank_updated_at as unknown;
+      const hoursUpdatedAtValue = getPlayerRank.hours_updated_at as unknown;
+      const faceitDateValue = getPlayerRank.faceit_date as unknown;
+
+      const rankUpdatedAtStr =
+        rankUpdatedAtValue instanceof Date
+          ? rankUpdatedAtValue.toISOString()
+          : String(rankUpdatedAtValue);
+      const hoursUpdatedAtStr =
+        hoursUpdatedAtValue instanceof Date
+          ? hoursUpdatedAtValue.toISOString()
+          : String(hoursUpdatedAtValue);
+      const faceitDateStr =
+        faceitDateValue instanceof Date
+          ? faceitDateValue.toISOString()
+          : String(faceitDateValue);
+
+      expect(rankUpdatedAtStr).toContain(formatted);
+      expect(hoursUpdatedAtStr).toContain(formatted);
+      expect(faceitDateStr).toContain(formatted);
     });
     it("Should fetch hours and FaceIT rank from APIs when AppIdRank is already in database but hours and platform rank are not", async () => {
       const formData = _.cloneDeep(validSignupData);

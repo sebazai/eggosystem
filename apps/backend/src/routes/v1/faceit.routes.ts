@@ -85,11 +85,13 @@ import {
 } from "../../controllers/faceit.controllers";
 import { sendDemoForAllStarPOTGClip } from "../../services/allstar.services";
 import { publishDemoProcessingRequest } from "../../services/match-game.services";
+import { validateNumericParams } from "../../middlewares/validate-numeric-params";
 
 const router = Router();
 
 router.post(
-  "/sync",
+  "/sync/season/:season_id",
+  validateNumericParams(),
   authenticateJWT,
   checkPermissions({ fallbackRoles: ["admin", "helpdesk"] }),
   triggerFaceitMatchSync

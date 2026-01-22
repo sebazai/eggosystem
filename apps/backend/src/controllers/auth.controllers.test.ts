@@ -262,6 +262,9 @@ describe("AuthControllers", () => {
         return { steamId: "12345", jti: "123123" };
       });
 
+      // Set up the refresh token in Redis to match the cookie token
+      (redisClient.get as jest.Mock).mockResolvedValue("mockRefreshToken");
+
       jest
         .spyOn(authServices, "getPermissionsForAccountId")
         .mockResolvedValue([]);
@@ -330,6 +333,9 @@ describe("AuthControllers", () => {
         (jest.spyOn(jwt, "verify") as jest.Mock).mockImplementation(() => {
           return { steamId: "12345", jti: "123123" };
         });
+
+        // Set up the refresh token in Redis to match the cookie token
+        (redisClient.get as jest.Mock).mockResolvedValue("mockRefreshToken");
 
         const mockNext = jest.fn();
         await authControllers.refreshToken(req, res, mockNext);

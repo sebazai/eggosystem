@@ -91,8 +91,8 @@ const mockGetActiveSeasonForAppId =
 // Test data objects
 const mockMatch = createMockMatch({
   id: 123,
-  start_time: "12:00:00",
-  end_time: "14:00:00",
+  start_timestamp: "2024-01-01T12:00:00.000Z",
+  end_timestamp: "2024-01-01T14:00:00.000Z",
   external_match_room_id: "123",
   status: "FINISHED"
 });
@@ -100,8 +100,8 @@ const mockMatch = createMockMatch({
 const mockMatchWithBreadcrumb = {
   ...createMockMatch({
     id: 123,
-    start_time: "12:00:00",
-    end_time: "14:00:00",
+    start_timestamp: "2024-01-01T12:00:00.000Z",
+    end_timestamp: "2024-01-01T14:00:00.000Z",
     external_match_room_id: "123",
     status: "FINISHED"
   }),
@@ -113,9 +113,8 @@ const mockMatches = [mockMatch] satisfies Match[];
 const mockMatchesWithTeamData: MatchesWithTeamDataQuery[] = [
   {
     match_id: 123,
-    match_date: "2024-01-01",
-    start_time: "12:00:00",
-    end_time: "14:00:00",
+    start_timestamp: "2024-01-01T12:00:00.000Z",
+    end_timestamp: "2024-01-01T14:00:00.000Z",
     best_of: 1,
     external_match_room_id: "123",
     league_id: 1,
@@ -583,9 +582,8 @@ describe("Matches Controllers", () => {
       mockRequest.params = { match_id: "123" };
       const mockMatchInfo: MatchInfoQuery = {
         match_id: 123,
-        match_date: "2024-01-01",
-        start_time: "12:00:00",
-        end_time: "14:00:00",
+        start_timestamp: "2024-01-01T12:00:00.000Z",
+        end_timestamp: "2024-01-01T14:00:00.000Z",
         best_of: 1,
         external_match_room_id: "123",
         league_id: 1,

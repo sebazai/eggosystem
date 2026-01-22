@@ -9,9 +9,8 @@ import type {
 
 export interface MatchInfo {
   match_id: Match["id"];
-  match_date: Match["match_date"];
-  start_time: Match["start_time"];
-  end_time: Match["end_time"];
+  start_timestamp: Match["start_timestamp"];
+  end_timestamp: Match["end_timestamp"];
   best_of: Match["best_of"];
   external_match_room_id: Match["external_match_room_id"];
   league_id: Match["league_id"];

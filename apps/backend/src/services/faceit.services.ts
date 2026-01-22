@@ -25,14 +25,20 @@ import {
   FACEIT_DEFAULT_ELO,
   FACEIT_DEFAULT_KD
 } from "../utils/faceit-utils";
-import { getMatchDateTime, adjustMatchDateTime } from "../utils/date-utils";
+import {
+  getFaceitMatchDateTime,
+  adjustMatchDateTime
+} from "../utils/date-utils";
 import {
   getHubMatchesByExternalMatchRoomId,
   getMatchesByExternalId,
-  updateMatchDateAndStartTime
+  updateMatchStartTimestamp
 } from "../models/match.models";
 import { fetchAllItemsWithPagination } from "../utils/pagination-utils";
-import { getActiveSeasonChampionshipIds } from "../models/season-league-external-id.models";
+import {
+  getActiveSeasonChampionshipIds,
+  getSeasonChampionshipIds
+} from "../models/season-league-external-id.models";
 import { getReservationsWithEmailForMatch } from "../models/match-streams.models";
 import { sendMatchScheduleChangeEmail } from "./email.services";
 import { runQuery } from "../db/mysqlRunQuery";
@@ -767,7 +773,7 @@ export const fetchFaceitChampionshipUpcomingMatches = async (
   }
 
   const response = await fetch(
-    `https://open.faceit.com/data/v4/championships/${championshipId}/matches?type=upcoming`,
+    `https://open.faceit.com/data/v4/championships/${championshipId}/matches?type=upcoming&limit=100`,
     {
       headers: {
         Authorization: `Bearer ${apiKey}`,
@@ -800,99 +806,112 @@ export const syncMatchSchedule = async (
     return;
   }
 
-  // Convert FACEIT scheduled_at (Unix timestamp) to match_date and start_time
-  const faceitSchedule = getMatchDateTime(faceitMatch.scheduled_at);
-
-  const firstMatch = databaseMatches[0];
-  const first_match_date = firstMatch.match_date;
-  const first_match_time = firstMatch.start_time;
-  if (
-    first_match_date === faceitSchedule.match_date &&
-    first_match_time === faceitSchedule.start_time
-  ) {
-    return;
-  }
-
-  logger.info(
-    `[FACEIT] New time for match ${faceitMatch.match_id} ${faceitSchedule.match_date} ${faceitSchedule.start_time}`
+  // Convert FACEIT scheduled_at (Unix timestamp in seconds) to UTC ISO string
+  // FACEIT timestamps are Unix seconds since epoch (UTC)
+  const faceitScheduleTimestamp = getFaceitMatchDateTime(
+    faceitMatch.scheduled_at
   );
 
+  const firstMatch = databaseMatches[0];
+  // Convert database timestamp to ISO string for comparison
+  const firstMatchTimestamp = new Date(
+    firstMatch.start_timestamp
+  ).toISOString();
+
   if (is_round_robin_bo2_as_2xbo1 && databaseMatches.length === 2) {
+    const secondMatch = databaseMatches[1];
+    const secondMatchTimestamp = new Date(
+      secondMatch.start_timestamp
+    ).toISOString();
+
+    const faceitSecondAssumedScheduledTimestamp = adjustMatchDateTime(
+      faceitScheduleTimestamp,
+      { hours: 1 }
+    );
+
+    if (
+      firstMatchTimestamp === faceitScheduleTimestamp &&
+      secondMatchTimestamp === faceitSecondAssumedScheduledTimestamp
+    ) {
+      return;
+    }
+
+    logger.info(
+      `[FACEIT] New time for match ${faceitMatch.match_id}: new ${faceitScheduleTimestamp} or ${faceitSecondAssumedScheduledTimestamp} vs. old ${firstMatchTimestamp} or ${secondMatchTimestamp} (2xBO1 as BO2)`
+    );
+
     // Handle BO2 matches stored as 2 BO1 matches
     // First match gets the FACEIT schedule
-    const firstMatch = databaseMatches[0];
-    await updateMatchDateAndStartTime(
-      firstMatch.id,
-      faceitSchedule.match_date,
-      faceitSchedule.start_time
+    await updateMatchStartTimestamp(
+      databaseMatches[0].id,
+      faceitScheduleTimestamp
     );
 
     // Notify reservations for first match
     await notifyReservationsOfScheduleChange(
-      firstMatch.id,
-      first_match_date,
-      first_match_time,
-      faceitSchedule.match_date,
-      faceitSchedule.start_time
+      databaseMatches[0].id,
+      firstMatchTimestamp,
+      faceitScheduleTimestamp
     );
 
     // Second match gets +1 hour from the first match
-    const secondMatchSchedule = adjustMatchDateTime(
-      faceitSchedule.match_date,
-      faceitSchedule.start_time,
+    const secondMatchScheduleTimestamp = adjustMatchDateTime(
+      faceitScheduleTimestamp,
       { hours: 1 }
     );
-    const second_match_old_date = databaseMatches[1].match_date;
-    const second_match_old_time = databaseMatches[1].start_time;
-    await updateMatchDateAndStartTime(
+
+    await updateMatchStartTimestamp(
       databaseMatches[1].id,
-      secondMatchSchedule.match_date,
-      secondMatchSchedule.start_time
+      secondMatchScheduleTimestamp
     );
 
     // Notify reservations for second match
     await notifyReservationsOfScheduleChange(
       databaseMatches[1].id,
-      second_match_old_date,
-      second_match_old_time,
-      secondMatchSchedule.match_date,
-      secondMatchSchedule.start_time
+      secondMatchTimestamp,
+      secondMatchScheduleTimestamp
     );
 
     logger.info(
-      `Updated BO2 match schedules: First match at ${faceitSchedule.match_date} ${faceitSchedule.start_time}, Second match at ${secondMatchSchedule.match_date} ${secondMatchSchedule.start_time}`
+      `Updated BO2 match schedules: First match at ${faceitScheduleTimestamp}, Second match at ${secondMatchScheduleTimestamp}`
     );
   } else {
-    await updateMatchDateAndStartTime(
+    if (firstMatchTimestamp === faceitScheduleTimestamp) {
+      return;
+    }
+
+    logger.info(
+      `[FACEIT] New time for match ${faceitMatch.match_id}: new ${faceitScheduleTimestamp} vs. old ${firstMatchTimestamp}`
+    );
+
+    await updateMatchStartTimestamp(
       databaseMatches[0].id,
-      faceitSchedule.match_date,
-      faceitSchedule.start_time
+      faceitScheduleTimestamp
     );
 
     // Notify reservations
     await notifyReservationsOfScheduleChange(
       databaseMatches[0].id,
-      first_match_date,
-      first_match_time,
-      faceitSchedule.match_date,
-      faceitSchedule.start_time
+      firstMatchTimestamp,
+      faceitScheduleTimestamp
     );
 
     logger.info(
-      `Updated single match ${databaseMatches[0].id} schedule: ${faceitSchedule.match_date} ${faceitSchedule.start_time}`
+      `Updated single match ${databaseMatches[0].id} schedule: ${faceitScheduleTimestamp}`
     );
   }
 };
 
 /**
  * Notifies casters with reservations when a match schedule changes
+ * @param matchId - The match ID
+ * @param oldTimestamp - ISO 8601 timestamp string (UTC) for the old schedule
+ * @param newTimestamp - ISO 8601 timestamp string (UTC) for the new schedule
  */
 const notifyReservationsOfScheduleChange = async (
   matchId: number,
-  oldDate: string,
-  oldTime: string,
-  newDate: string,
-  newTime: string
+  oldTimestamp: string,
+  newTimestamp: string
 ): Promise<void> => {
   try {
     // Get all reservations for this match with caster emails
@@ -918,10 +937,8 @@ const notifyReservationsOfScheduleChange = async (
       try {
         await sendMatchScheduleChangeEmail(reservation.email, {
           teamNames,
-          oldDate,
-          oldTime,
-          newDate,
-          newTime,
+          oldTimestamp,
+          newTimestamp,
           reservationHash: reservation.hash
         });
 
@@ -964,11 +981,15 @@ const getMatchTeamNames = async (matchId: number): Promise<string> => {
   return `${teams[0].name} vs ${teams[1].name}`;
 };
 
-export const syncAllFaceitChampionshipMatches = async (): Promise<void> => {
+export const syncFaceitChampionshipMatches = async (
+  season_id?: number
+): Promise<void> => {
   logger.info("Starting FACEIT championship match sync...");
 
   // Get all active season championship IDs
-  const championshipIds = await getActiveSeasonChampionshipIds();
+  const championshipIds = season_id
+    ? await getSeasonChampionshipIds(season_id)
+    : await getActiveSeasonChampionshipIds();
   logger.info(
     `Found ${championshipIds.length} active season championships to sync`
   );

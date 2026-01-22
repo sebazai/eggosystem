@@ -234,9 +234,8 @@ describe("addMatchToDatabase", () => {
           1, // season_id
           1, // stage_id
           matchDetails.best_of,
-          expect.any(String), // match_date
-          expect.any(String), // start_time
-          null, // end_time
+          expect.any(String), // start_timestamp (MySQL datetime format: YYYY-MM-DD HH:mm:ss)
+          null, // end_timestamp
           matchDetails.match_id,
           matchDetails.status,
           matchDetails.round,
@@ -357,12 +356,11 @@ describe("addMatchToDatabase", () => {
       await addMatchToDatabase(matchDetails, externalLeagueId);
 
       // Verify the scheduled_at timestamp is converted correctly
-      const expectedDate = new Date(1703123456 * 1000)
+      // formatDateForDatabase converts ISO to MySQL datetime format (YYYY-MM-DD HH:mm:ss)
+      const expectedTimestamp = new Date(1703123456 * 1000)
         .toISOString()
-        .slice(0, 10);
-      const expectedTime = new Date(1703123456 * 1000)
-        .toISOString()
-        .slice(11, 19);
+        .slice(0, 19)
+        .replace("T", " ");
 
       expect(mockRunQuery).toHaveBeenCalledWith(
         expect.stringContaining("INSERT INTO Matches"),
@@ -371,9 +369,8 @@ describe("addMatchToDatabase", () => {
           expect.any(Number), // season_id
           expect.any(Number), // stage_id
           matchDetails.best_of,
-          expectedDate, // match_date
-          expectedTime, // start_time
-          null, // end_time
+          expectedTimestamp, // start_timestamp (MySQL datetime format)
+          null, // end_timestamp
           matchDetails.match_id,
           matchDetails.status,
           matchDetails.round,
@@ -430,6 +427,7 @@ describe("addMatchToDatabase", () => {
 
       // Verify default date/time is used (next Wednesday at 20:00 Helsinki time)
       // DST conversion varies: 20:00 Helsinki = 17:00 UTC (summer) or 18:00 UTC (winter)
+      // formatDateForDatabase returns MySQL datetime format (YYYY-MM-DD HH:mm:ss)
       expect(mockRunQuery).toHaveBeenCalledWith(
         expect.stringContaining("INSERT INTO Matches"),
         expect.arrayContaining([
@@ -437,9 +435,8 @@ describe("addMatchToDatabase", () => {
           expect.any(Number), // season_id
           expect.any(Number), // stage_id
           matchDetails.best_of,
-          expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/), // match_date format
-          expect.stringMatching(/^(17|18):00:00$/), // start_time (DST-dependent)
-          null, // end_time
+          expect.stringMatching(/^\d{4}-\d{2}-\d{2} (17|18):00:00$/), // start_timestamp (MySQL datetime format, DST-dependent)
+          null, // end_timestamp
           matchDetails.match_id,
           matchDetails.status,
           matchDetails.round,

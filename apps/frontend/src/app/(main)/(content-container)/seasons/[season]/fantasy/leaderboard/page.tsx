@@ -157,11 +157,9 @@ export default function FantasyLeaderboardPage() {
     }
 
     const url = `/api/v1/seasons/${seasonId}/fantasy/teams/${entry.steam_id}`;
-    console.log("Fetching team details from:", url);
 
     try {
       const teamData = await expressFetcher<MyFantasyTeam>(url);
-      console.log("Team data received:", teamData);
       setSelectedTeam(teamData);
       setTeamViewDialogOpen(true);
     } catch (error) {

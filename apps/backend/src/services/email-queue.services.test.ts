@@ -1,6 +1,5 @@
 import type { Queue } from "bullmq";
 import {
-  welcomeEmailQueue,
   enqueueSeasonWelcomeEmail,
   enqueueBulkSeasonWelcomeEmails,
   getEmailQueueStats,
@@ -9,15 +8,23 @@ import {
   type PlayerEmailData
 } from "./email-queue.services";
 
-// Mock BullMQ
-jest.mock("bullmq");
-
 describe("Email Queue Services", () => {
   let mockQueue: jest.Mocked<Queue>;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockQueue = welcomeEmailQueue as jest.Mocked<Queue>;
+
+    // Create a mock queue with Jest mock functions
+    mockQueue = {
+      add: jest.fn(),
+      addBulk: jest.fn(),
+      getWaitingCount: jest.fn(),
+      getActiveCount: jest.fn(),
+      getCompletedCount: jest.fn(),
+      getFailedCount: jest.fn(),
+      getDelayedCount: jest.fn(),
+      close: jest.fn()
+    } as unknown as jest.Mocked<Queue>;
   });
 
   describe("enqueueSeasonWelcomeEmail", () => {
@@ -38,9 +45,10 @@ describe("Email Queue Services", () => {
         playerNickname: "TestPlayer"
       };
 
-      mockQueue.add = jest.fn().mockResolvedValue({});
+      (mockQueue.add as jest.Mock).mockResolvedValue({});
 
-      await enqueueSeasonWelcomeEmail(jobData);
+      // Pass mock queue as parameter
+      await enqueueSeasonWelcomeEmail(jobData, mockQueue);
 
       expect(mockQueue.add).toHaveBeenCalledWith(
         "send-welcome-email",
@@ -68,11 +76,11 @@ describe("Email Queue Services", () => {
         playerNickname: "TestPlayer"
       };
 
-      mockQueue.add = jest.fn().mockRejectedValue(new Error("Queue error"));
+      (mockQueue.add as jest.Mock).mockRejectedValue(new Error("Queue error"));
 
-      await expect(enqueueSeasonWelcomeEmail(jobData)).rejects.toThrow(
-        "Queue error"
-      );
+      await expect(
+        enqueueSeasonWelcomeEmail(jobData, mockQueue)
+      ).rejects.toThrow("Queue error");
     });
   });
 
@@ -95,7 +103,7 @@ describe("Email Queue Services", () => {
         }
       ];
 
-      mockQueue.addBulk = jest.fn().mockResolvedValue([]);
+      (mockQueue.addBulk as jest.Mock).mockResolvedValue([]);
 
       const result = await enqueueBulkSeasonWelcomeEmails(
         1,
@@ -105,7 +113,8 @@ describe("Email Queue Services", () => {
         "Kanaliiga",
         "https://example.com/rules",
         "https://discord.gg/test",
-        ["Dust2", "Mirage"]
+        ["Dust2", "Mirage"],
+        mockQueue
       );
 
       expect(result).toEqual({ enqueued: 2, failed: 0 });
@@ -142,7 +151,9 @@ describe("Email Queue Services", () => {
         }
       ];
 
-      mockQueue.addBulk = jest.fn().mockRejectedValue(new Error("Bulk error"));
+      (mockQueue.addBulk as jest.Mock).mockRejectedValue(
+        new Error("Bulk error")
+      );
 
       await expect(
         enqueueBulkSeasonWelcomeEmails(
@@ -153,7 +164,8 @@ describe("Email Queue Services", () => {
           "Kanaliiga",
           null,
           null,
-          []
+          [],
+          mockQueue
         )
       ).rejects.toThrow("Bulk error");
     });
@@ -161,13 +173,13 @@ describe("Email Queue Services", () => {
 
   describe("getEmailQueueStats", () => {
     it("should return queue statistics", async () => {
-      mockQueue.getWaitingCount = jest.fn().mockResolvedValue(10);
-      mockQueue.getActiveCount = jest.fn().mockResolvedValue(2);
-      mockQueue.getCompletedCount = jest.fn().mockResolvedValue(50);
-      mockQueue.getFailedCount = jest.fn().mockResolvedValue(3);
-      mockQueue.getDelayedCount = jest.fn().mockResolvedValue(5);
+      (mockQueue.getWaitingCount as jest.Mock).mockResolvedValue(10);
+      (mockQueue.getActiveCount as jest.Mock).mockResolvedValue(2);
+      (mockQueue.getCompletedCount as jest.Mock).mockResolvedValue(50);
+      (mockQueue.getFailedCount as jest.Mock).mockResolvedValue(3);
+      (mockQueue.getDelayedCount as jest.Mock).mockResolvedValue(5);
 
-      const stats = await getEmailQueueStats();
+      const stats = await getEmailQueueStats(mockQueue);
 
       expect(stats).toEqual({
         waiting: 10,
@@ -180,27 +192,31 @@ describe("Email Queue Services", () => {
     });
 
     it("should throw error if getting stats fails", async () => {
-      mockQueue.getWaitingCount = jest
-        .fn()
-        .mockRejectedValue(new Error("Stats error"));
+      (mockQueue.getWaitingCount as jest.Mock).mockRejectedValue(
+        new Error("Stats error")
+      );
 
-      await expect(getEmailQueueStats()).rejects.toThrow("Stats error");
+      await expect(getEmailQueueStats(mockQueue)).rejects.toThrow(
+        "Stats error"
+      );
     });
   });
 
   describe("closeEmailQueue", () => {
     it("should close the queue connection", async () => {
-      mockQueue.close = jest.fn().mockResolvedValue(undefined);
+      (mockQueue.close as jest.Mock).mockResolvedValue(undefined);
 
-      await closeEmailQueue();
+      await closeEmailQueue(mockQueue);
 
       expect(mockQueue.close).toHaveBeenCalled();
     });
 
     it("should throw error if closing fails", async () => {
-      mockQueue.close = jest.fn().mockRejectedValue(new Error("Close error"));
+      (mockQueue.close as jest.Mock).mockRejectedValue(
+        new Error("Close error")
+      );
 
-      await expect(closeEmailQueue()).rejects.toThrow("Close error");
+      await expect(closeEmailQueue(mockQueue)).rejects.toThrow("Close error");
     });
   });
 });

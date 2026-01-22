@@ -71,8 +71,7 @@ export function StreamReservation({
         setStreamUrl(response.stream_url);
       }
     } catch (_error) {
-      // If no default URL is found, just continue with empty input
-      console.log("No default stream URL found");
+      // No default URL found, which is fine
     } finally {
       setIsLoadingDefault(false);
     }

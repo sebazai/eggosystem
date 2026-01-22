@@ -364,19 +364,32 @@ export const sendSeasonCaptainWelcomeEmail = async (
   await transporter?.sendMail(mailOptions);
 };
 
+/**
+ * Formats an ISO 8601 timestamp string to a human-readable date and time with UTC indicator
+ * @param timestamp - ISO 8601 timestamp string (UTC)
+ * @returns Formatted string like "2024-01-15 at 18:30:00 (UTC +00:00)"
+ */
+const formatTimestampForEmail = (timestamp: string): string => {
+  const date = new Date(timestamp);
+  const dateStr = date.toISOString().slice(0, 10); // YYYY-MM-DD
+  const timeStr = date.toISOString().slice(11, 19); // HH:mm:ss
+  return `${dateStr} at ${timeStr} (UTC +00:00)`;
+};
+
 export const sendMatchScheduleChangeEmail = async (
   to: string,
   matchDetails: {
     teamNames: string;
-    oldDate: string;
-    oldTime: string;
-    newDate: string;
-    newTime: string;
+    oldTimestamp: string; // ISO 8601 timestamp string (UTC)
+    newTimestamp: string; // ISO 8601 timestamp string (UTC)
     reservationHash: string;
   }
 ) => {
   const transporter = createTransporter();
   const removalUrl = `${process.env.FRONTEND_URL}/api/v1/reservations/remove/${matchDetails.reservationHash}`;
+
+  const oldTimeFormatted = formatTimestampForEmail(matchDetails.oldTimestamp);
+  const newTimeFormatted = formatTimestampForEmail(matchDetails.newTimestamp);
 
   const mailOptions = {
     from: "Kanahub by Kanaliiga <cs@kanaliiga.fi>",
@@ -400,11 +413,11 @@ export const sendMatchScheduleChangeEmail = async (
             </tr>
             <tr style="background-color: #fff3cd;">
               <td style="padding: 12px; border-bottom: 1px solid #eee;"><strong>Previous Time:</strong></td>
-              <td style="padding: 12px; border-bottom: 1px solid #eee; text-decoration: line-through; color: #666;">${matchDetails.oldDate} at ${matchDetails.oldTime}</td>
+              <td style="padding: 12px; border-bottom: 1px solid #eee; text-decoration: line-through; color: #666;">${oldTimeFormatted}</td>
             </tr>
             <tr style="background-color: #d4edda;">
               <td style="padding: 12px;"><strong>New Time:</strong></td>
-              <td style="padding: 12px; font-weight: bold; color: hsl(35, 93%, 49%);">${matchDetails.newDate} at ${matchDetails.newTime}</td>
+              <td style="padding: 12px; font-weight: bold; color: hsl(35, 93%, 49%);">${newTimeFormatted}</td>
             </tr>
           </table>
   

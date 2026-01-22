@@ -325,8 +325,8 @@ describe("saveParsedDemoDataForGame Integration Tests", () => {
     // Insert test match
     await runQuery(
       `
-      INSERT INTO Matches (id, league_id, season_id, stage, best_of, match_date, start_time, end_time, status)
-      VALUES (5, 9999, 9999, 1, 3, '2024-01-01', '18:00:00', '20:00:00', 'FINISHED')
+      INSERT INTO Matches (id, league_id, season_id, stage, best_of, start_timestamp, end_timestamp, status)
+      VALUES (5, 9999, 9999, 1, 3, '2024-01-01 18:00:00', '2024-01-01 20:00:00', 'FINISHED')
     `,
       []
     );

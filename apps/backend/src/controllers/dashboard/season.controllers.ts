@@ -17,15 +17,6 @@ import {
   type SeasonFormValues
 } from "@eggosystem/types";
 import { ZodError } from "zod";
-import { formatDateForDatabase } from "../../utils/date-utils";
-
-// Helper function to format UTC ISO string for database
-// Frontend already converts local time to UTC ISO strings, so we just format for MySQL
-const formatDateForDB = (dateString: string): string => {
-  // Date string is already in UTC ISO format (e.g., "2025-01-15T16:30:00.000Z")
-  // Just format it for MySQL datetime format
-  return formatDateForDatabase(dateString);
-};
 
 /**
  * Controller to get all seasons
@@ -130,12 +121,8 @@ export const createSeasonController = async (
       organizer_id: validatedData.organizer_id,
       name: validatedData.name,
       full_name: validatedData.full_name,
-      signup_start_date: validatedData.signup_start_date
-        ? formatDateForDB(validatedData.signup_start_date)
-        : null,
-      signup_end_date: validatedData.signup_end_date
-        ? formatDateForDB(validatedData.signup_end_date)
-        : null,
+      signup_start_date: validatedData.signup_start_date ?? null,
+      signup_end_date: validatedData.signup_end_date ?? null,
       start_date: new Date(validatedData.start_date)
         .toISOString()
         .split("T")[0], // YYYY-MM-DD format
@@ -150,9 +137,7 @@ export const createSeasonController = async (
       early_bird_price_discount:
         validatedData.early_bird_price_discount ?? null,
       early_bird_price_discount_end_date:
-        validatedData.early_bird_price_discount_end_date
-          ? formatDateForDB(validatedData.early_bird_price_discount_end_date)
-          : null,
+        validatedData.early_bird_price_discount_end_date ?? null,
       active_map_pool: validatedData.active_map_pool,
       rulebook_url: validatedData.rulebook_url || null,
       discord_link: validatedData.discord_link || null
@@ -202,12 +187,8 @@ export const updateSeasonController = async (
       organizer_id: validatedData.organizer_id,
       name: validatedData.name,
       full_name: validatedData.full_name,
-      signup_start_date: validatedData.signup_start_date
-        ? formatDateForDB(validatedData.signup_start_date)
-        : null,
-      signup_end_date: validatedData.signup_end_date
-        ? formatDateForDB(validatedData.signup_end_date)
-        : null,
+      signup_start_date: validatedData.signup_start_date ?? null,
+      signup_end_date: validatedData.signup_end_date ?? null,
       start_date: new Date(validatedData.start_date)
         .toISOString()
         .split("T")[0], // YYYY-MM-DD format
@@ -222,9 +203,7 @@ export const updateSeasonController = async (
       early_bird_price_discount:
         validatedData.early_bird_price_discount ?? null,
       early_bird_price_discount_end_date:
-        validatedData.early_bird_price_discount_end_date
-          ? formatDateForDB(validatedData.early_bird_price_discount_end_date)
-          : null,
+        validatedData.early_bird_price_discount_end_date ?? null,
       active_map_pool: validatedData.active_map_pool,
       rulebook_url: validatedData.rulebook_url || null,
       discord_link: validatedData.discord_link || null

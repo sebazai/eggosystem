@@ -2,22 +2,15 @@ import { checkPlayerAdditionEligibility } from "./season.models";
 import { runQuery } from "../../db/mysqlRunQuery";
 import { getConnection } from "../../db/mysqlConnection";
 import type { PoolConnection } from "mysql2/promise";
-import { mswServer } from "@eggosystem/shared-msw";
 
 describe("Season Eligibility Integration Tests", () => {
   let connection: PoolConnection;
 
   beforeAll(async () => {
-    // Start MSW server
-    mswServer.listen();
-
     connection = await getConnection();
   });
 
   afterAll(async () => {
-    // Stop MSW server
-    mswServer.close();
-
     if (connection) {
       connection.release();
     }
@@ -130,8 +123,8 @@ describe("Season Eligibility Integration Tests", () => {
 
     // Insert test match (needed for foreign key constraint when setting match_id = 999)
     await runQuery(
-      `INSERT INTO Matches (id, league_id, season_id, stage, best_of, match_date, start_time, end_time)
-       VALUES (999, 999, 999, 1, 3, '2024-01-01', '19:00:00', '22:00:00')`,
+      `INSERT INTO Matches (id, league_id, season_id, stage, best_of, start_timestamp, end_timestamp)
+       VALUES (999, 999, 999, 1, 3, '2024-01-01 19:00:00', '2024-01-01 22:00:00')`,
       [],
       connection
     );

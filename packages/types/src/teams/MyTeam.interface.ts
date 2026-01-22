@@ -1,4 +1,4 @@
-import type { SteamPlayer, Team } from "@eggosystem/types";
+import type { Match, SteamPlayer, Team } from "@eggosystem/types";
 
 export interface MyTeamPlayer {
   steam_id: SteamPlayer["steam_id"];
@@ -30,19 +30,18 @@ export interface MyTeamChampionship {
 }
 
 export interface MyTeamUpcomingMatch {
-  match_id: number;
+  match_id: Match["id"];
   team_id: Team["id"];
   team_name: string;
   opponent_team_id: Team["id"];
   opponent_team_name: string;
-  match_date: string;
-  start_time: string;
-  season_id: number;
+  start_timestamp: Match["start_timestamp"];
+  season_id: Match["season_id"];
   season_name: string;
-  league_id: number;
+  league_id: Match["league_id"];
   league_name: string;
-  best_of: number;
-  external_match_room_id: string | null;
-  status: string;
+  best_of: Match["best_of"];
+  external_match_room_id: Match["external_match_room_id"];
+  status: Match["status"];
   platform: string | null;
 }

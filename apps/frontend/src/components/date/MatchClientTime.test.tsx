@@ -1,98 +1,39 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { MatchClientTime } from "./MatchClientTime";
 
 describe("MatchClientTime", () => {
-  const originalWindow = global.window;
-
-  beforeEach(() => {
-    // Restore window before each test
-    global.window = originalWindow;
-    // Mock Intl.DateTimeFormat for consistent testing
-    jest.spyOn(Intl, "DateTimeFormat").mockImplementation(
-      () =>
-        ({
-          resolvedOptions: () => ({
-            timeZone: "America/New_York"
-          }),
-          format: jest.fn(),
-          formatToParts: jest.fn(),
-          formatRange: jest.fn(),
-          formatRangeToParts: jest.fn()
-        }) as any
-    );
-  });
-
-  afterEach(() => {
-    jest.restoreAllMocks();
-    // Restore window object
-    global.window = originalWindow;
-  });
-
-  it("should render UTC time initially (server-side)", () => {
-    // In test environment, window is always defined, so component uses client-side formatting
-    // "2024-01-15" at 14:30:00 UTC = "2024-01-15" at 09:30:00 EST (UTC-5)
+  it("should render UTC time with startTimestamp only", () => {
     render(
       <MatchClientTime
-        matchDate="2024-01-15"
-        startTime="14:30:00"
+        startTimestamp="2024-01-15T14:30:00.000Z"
         className="test-class"
       />
     );
 
-    const timeElement = screen.getByText(/Starts: 09:30/i);
+    const timeElement = screen.getByText(/Starts: 14:30/i);
     expect(timeElement).toBeInTheDocument();
     expect(timeElement).toHaveClass("test-class");
   });
 
-  it("should update to client timezone after hydration", async () => {
-    // Mock client-side (window exists)
-    global.window = originalWindow;
-
-    render(<MatchClientTime matchDate="2024-01-15" startTime="14:30:00" />);
-
-    // On client, shows local time (America/New_York is UTC-5, so 14:30 UTC = 09:30 EST)
-    // The exact time will depend on timezone, but component should render
-    await waitFor(() => {
-      const timeElement = screen.getByText(/Starts:/i);
-      expect(timeElement).toBeInTheDocument();
-    });
-  });
-
-  it("should handle time range with endTime", () => {
-    // Mock client-side
-    global.window = originalWindow;
-
+  it("should handle time range with endTimestamp", () => {
     render(
       <MatchClientTime
-        matchDate="2024-01-15"
-        startTime="14:30:00"
-        endTime="16:00:00"
+        startTimestamp="2024-01-15T14:30:00.000Z"
+        endTimestamp="2024-01-15T16:00:00.000Z"
         className="test-class"
       />
     );
 
-    // Should show time range (local timezone - America/New_York is UTC-5)
-    // 14:30 UTC = 09:30 EST, 16:00 UTC = 11:00 EST
-    const timeElement = screen.getByText(/09:30–11:00/i);
+    // Should show UTC time range: 14:30–16:00
+    const timeElement = screen.getByText(/14:30–16:00/i);
     expect(timeElement).toBeInTheDocument();
     expect(timeElement).toHaveClass("test-class");
-  });
-
-  it("should handle time range without endTime", () => {
-    // Mock client-side
-    global.window = originalWindow;
-
-    render(<MatchClientTime matchDate="2024-01-15" startTime="14:30:00" />);
-
-    // Shows local time (09:30 EST for 14:30 UTC)
-    expect(screen.getByText(/Starts: 09:30/i)).toBeInTheDocument();
   });
 
   it("should apply className prop", () => {
     render(
       <MatchClientTime
-        matchDate="2024-01-15"
-        startTime="14:30:00"
+        startTimestamp="2024-01-15T14:30:00.000Z"
         className="custom-class"
       />
     );
@@ -102,62 +43,57 @@ describe("MatchClientTime", () => {
   });
 
   it("should handle different start times", () => {
-    // Mock client-side
-    global.window = originalWindow;
-
     const { rerender } = render(
-      <MatchClientTime matchDate="2024-01-15" startTime="14:30:00" />
+      <MatchClientTime startTimestamp="2024-01-15T14:30:00.000Z" />
     );
 
-    // 14:30 UTC = 09:30 EST
-    expect(screen.getByText(/Starts: 09:30/i)).toBeInTheDocument();
+    expect(screen.getByText(/Starts: 14:30/i)).toBeInTheDocument();
 
-    rerender(<MatchClientTime matchDate="2024-01-15" startTime="18:45:00" />);
+    rerender(<MatchClientTime startTimestamp="2024-01-15T18:45:00.000Z" />);
 
-    // 18:45 UTC = 13:45 EST
-    expect(screen.getByText(/Starts: 13:45/i)).toBeInTheDocument();
+    expect(screen.getByText(/Starts: 18:45/i)).toBeInTheDocument();
   });
 
-  it("should update when endTime changes", () => {
-    // Mock client-side
-    global.window = originalWindow;
-
+  it("should update when endTimestamp changes", () => {
     const { rerender } = render(
       <MatchClientTime
-        matchDate="2024-01-15"
-        startTime="14:30:00"
-        endTime="16:00:00"
+        startTimestamp="2024-01-15T14:30:00.000Z"
+        endTimestamp="2024-01-15T16:00:00.000Z"
       />
     );
 
-    // 14:30 UTC = 09:30 EST, 16:00 UTC = 11:00 EST
-    expect(screen.getByText(/09:30–11:00/i)).toBeInTheDocument();
+    expect(screen.getByText(/14:30–16:00/i)).toBeInTheDocument();
 
     rerender(
       <MatchClientTime
-        matchDate="2024-01-15"
-        startTime="14:30:00"
-        endTime="17:30:00"
+        startTimestamp="2024-01-15T14:30:00.000Z"
+        endTimestamp="2024-01-15T17:30:00.000Z"
       />
     );
 
-    // 14:30 UTC = 09:30 EST, 17:30 UTC = 12:30 EST
-    expect(screen.getByText(/09:30–12:30/i)).toBeInTheDocument();
+    expect(screen.getByText(/14:30–17:30/i)).toBeInTheDocument();
   });
 
-  it("should handle null endTime", () => {
-    // Mock client-side
-    global.window = originalWindow;
-
+  it("should handle null endTimestamp", () => {
     render(
       <MatchClientTime
-        matchDate="2024-01-15"
-        startTime="14:30:00"
-        endTime={null}
+        startTimestamp="2024-01-15T14:30:00.000Z"
+        endTimestamp={null}
       />
     );
 
-    // 14:30 UTC = 09:30 EST
-    expect(screen.getByText(/Starts: 09:30/i)).toBeInTheDocument();
+    expect(screen.getByText(/Starts: 14:30/i)).toBeInTheDocument();
+  });
+
+  it("should format midnight correctly", () => {
+    render(<MatchClientTime startTimestamp="2024-01-15T00:00:00.000Z" />);
+
+    expect(screen.getByText(/Starts: 00:00/i)).toBeInTheDocument();
+  });
+
+  it("should format late evening times correctly", () => {
+    render(<MatchClientTime startTimestamp="2024-01-15T23:59:00.000Z" />);
+
+    expect(screen.getByText(/Starts: 23:59/i)).toBeInTheDocument();
   });
 });

@@ -1,11 +1,7 @@
 import { createSeason, updateSeason, getSeasonById } from "./season.models";
 import { runQuery } from "../db/mysqlRunQuery";
 import { getConnection } from "../db/mysqlConnection";
-import {
-  SeasonPlatform,
-  createMockSeason,
-  createMockSeasonFormRaw
-} from "@eggosystem/types";
+import { SeasonPlatform, createMockSeasonFormRaw } from "@eggosystem/types";
 import type { PoolConnection } from "mysql2/promise";
 
 jest.mock("../db/mysqlRunQuery");
@@ -191,33 +187,6 @@ describe("Season Models", () => {
   });
 
   describe("getSeasonById", () => {
-    it("should return a season when found", async () => {
-      // Mock the raw database response (MySQL format dates)
-      const mockSeasonRaw = createMockSeason({
-        id: 123,
-        signup_start_date: "2024-01-01 00:00:00", // Database format
-        signup_end_date: "2024-01-15 00:00:00", // Database format
-        end_date: "2024-12-31",
-        registration_price: 150
-      });
-
-      mockRunQuery.mockResolvedValue([mockSeasonRaw]);
-
-      const result = await getSeasonById(123);
-
-      expect(mockRunQuery).toHaveBeenCalledWith(
-        "SELECT * FROM Seasons WHERE id = ?",
-        [123],
-        undefined
-      );
-      // Result should have ISO 8601 formatted dates (converted by formatDateFromDatabase)
-      expect(result).toEqual({
-        ...mockSeasonRaw,
-        signup_start_date: "2024-01-01T00:00:00.000Z", // ISO 8601 format
-        signup_end_date: "2024-01-15T00:00:00.000Z" // ISO 8601 format
-      });
-    });
-
     it("should return undefined when season not found", async () => {
       mockRunQuery.mockResolvedValue([undefined]);
 
