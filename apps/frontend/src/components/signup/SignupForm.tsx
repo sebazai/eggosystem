@@ -2,6 +2,7 @@
 import { RequiresSteamLogin } from "@/components/layout/RequiresSteamLogin";
 import { ContentContainer } from "@/components/layout/ContentContainer";
 import { Button } from "@/components/ui/button";
+import { CardSkeleton } from "@/components/loading";
 import { Card, CardContent } from "@/components/ui/card";
 import Link from "next/link";
 import { FormControl, FormField, FormItem } from "@/components/ui/form";
@@ -445,7 +446,13 @@ export const SignupForm = ({
   }
 
   if (isLoading || isValidating || loadingUser) {
-    return <ContentContainer classNames="w-full">Loading...</ContentContainer>;
+    return (
+      <div className="w-full space-y-4">
+        <CardSkeleton showHeader={true} contentLines={4} />
+        <CardSkeleton showHeader={true} contentLines={6} />
+        <CardSkeleton showHeader={true} contentLines={5} />
+      </div>
+    );
   }
 
   if (isError || !seasonDetails) {

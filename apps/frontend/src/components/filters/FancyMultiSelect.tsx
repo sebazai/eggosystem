@@ -284,7 +284,9 @@ export function FancySelect<T>({
             placeholder={
               (!isMulti && currentSelection.length > 0) ||
               currentSelection.length === selectable.length
-                ? ""
+                ? currentSelection.length > 0 && selectable.length > 0
+                  ? ""
+                  : `No ${filter.slice(0, -1)} items available`
                 : placeholder
             }
             className="ml-2 flex-1 bg-transparent min-w-[50px] outline-none placeholder:text-muted-foreground"

@@ -35,6 +35,7 @@ import { cn } from "@/lib/utils";
 import { useSeasonLeagues } from "@/hooks/data/useSeasonLeagues";
 import TeamViewDialog from "@/components/fantasy/TeamViewDialog";
 import type { MyFantasyTeam } from "@/hooks/data/useMyFantasyTeam";
+import { TableSkeleton } from "@/components/loading";
 
 interface LeaderboardEntry {
   rank: number;
@@ -172,12 +173,19 @@ export default function FantasyLeaderboardPage() {
       <>
         <AutoBreadcrumbs />
         <div className="fantasy-content-scale">
-          <div className="container mx-auto py-8">
+          <div className="container mx-auto py-8 space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Fantasy League Leaderboard</CardTitle>
-                <CardDescription>Loading...</CardDescription>
+                <CardTitle className="text-3xl font-bold">
+                  Fantasy League Leaderboard
+                </CardTitle>
+                <CardDescription>
+                  Top 50 fantasy teams ranked by total points
+                </CardDescription>
               </CardHeader>
+              <CardContent>
+                <TableSkeleton rows={10} columns={6} showHeader={false} />
+              </CardContent>
             </Card>
           </div>
         </div>
@@ -302,9 +310,7 @@ export default function FantasyLeaderboardPage() {
 
                 <TabsContent value="division" className="mt-6">
                   {divisionLoading ? (
-                    <p className="text-center text-muted-foreground py-8">
-                      Loading...
-                    </p>
+                    <TableSkeleton rows={10} columns={4} showHeader={false} />
                   ) : divisionError ? (
                     <p className="text-center text-red-500 py-8">
                       Error loading leaderboard
@@ -396,9 +402,7 @@ export default function FantasyLeaderboardPage() {
 
                 <TabsContent value="overall" className="mt-6">
                   {overallLoading ? (
-                    <p className="text-center text-muted-foreground py-8">
-                      Loading...
-                    </p>
+                    <TableSkeleton rows={10} columns={5} showHeader={false} />
                   ) : overallError ? (
                     <p className="text-center text-red-500 py-8">
                       Error loading overall leaderboard

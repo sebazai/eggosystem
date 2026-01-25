@@ -47,11 +47,9 @@ describe("StandingsTable", () => {
     render(<StandingsTable data={[]} isLoading={true} />);
 
     expect(screen.getByText("League Standings")).toBeInTheDocument();
-    expect(screen.getByText("Loading standings...")).toBeInTheDocument();
-    // Check for loading spinner
-    expect(
-      screen.getByText("Loading standings...").closest("div")
-    ).toBeInTheDocument();
+    // TableSkeleton is used for loading state
+    const skeleton = document.querySelector('[class*="animate-pulse"]');
+    expect(skeleton).toBeInTheDocument();
   });
 
   it("renders empty state correctly", () => {

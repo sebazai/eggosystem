@@ -26,6 +26,7 @@ import { useSeasonLeagues } from "@/hooks/data/useSeasonLeagues";
 import { useState } from "react";
 import { Trophy, TrendingUp } from "lucide-react";
 import { NextImageFallback } from "@/components/layout/NextImageFallback";
+import { TableSkeleton } from "@/components/loading";
 
 type PlayerTier = "bronze" | "silver" | "gold";
 
@@ -266,13 +267,8 @@ export default function TopPlayersPage() {
           {/* Loading State */}
           {isLoading && (
             <Card>
-              <CardContent className="py-8">
-                <div className="flex items-center justify-center gap-2">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-                  <span className="text-muted-foreground">
-                    Loading players...
-                  </span>
-                </div>
+              <CardContent className="p-0">
+                <TableSkeleton rows={10} columns={8} showHeader={false} />
               </CardContent>
             </Card>
           )}

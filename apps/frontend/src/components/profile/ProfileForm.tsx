@@ -17,6 +17,7 @@ import {
 import Link from "next/link";
 import { ContentContainer } from "../layout/ContentContainer";
 import { SteamLoginButton } from "@/components/profile/SteamLoginButton";
+import { CardSkeleton } from "@/components/loading";
 import {
   accountSchema,
   type Account,
@@ -146,7 +147,12 @@ export default function ProfileForm({
   }, [searchParams, router, checkAuth]);
 
   if (isLoadingProfile) {
-    return <ContentContainer>Loading...</ContentContainer>;
+    return (
+      <div className="space-y-6">
+        <CardSkeleton showHeader={true} contentLines={4} />
+        <CardSkeleton showHeader={true} contentLines={3} />
+      </div>
+    );
   }
 
   if (!account) {

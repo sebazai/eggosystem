@@ -26,6 +26,7 @@ import {
   ChartTooltipContent,
   type ChartConfig
 } from "@/components/ui/chart";
+import { CardSkeleton } from "@/components/loading";
 import {
   LineChart,
   Line,
@@ -692,9 +693,22 @@ export const PlayerHistoricalTab = ({ steamId }: PlayerHistoricalTabProps) => {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        <h2 className="text-2xl font-semibold mb-4">Historical Data</h2>
-        <div className="text-center py-8">Loading historical data...</div>
+      <div className="space-y-8">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="h-8 w-48 bg-accent animate-pulse rounded" />
+          <div className="flex gap-3">
+            <div className="h-10 w-48 bg-accent animate-pulse rounded" />
+            <div className="h-10 w-64 bg-accent animate-pulse rounded" />
+          </div>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-7 gap-6">
+          <div className="lg:col-span-5">
+            <CardSkeleton showHeader={true} contentLines={4} />
+          </div>
+          <div className="lg:col-span-2">
+            <CardSkeleton showHeader={true} contentLines={4} />
+          </div>
+        </div>
       </div>
     );
   }

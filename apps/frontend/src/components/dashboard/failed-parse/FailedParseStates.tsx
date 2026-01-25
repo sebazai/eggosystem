@@ -3,6 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, RefreshCw } from "lucide-react";
+import { TableSkeleton } from "@/components/loading";
 
 export const FailedParseLoadingState = () => (
   <Card>
@@ -10,12 +11,7 @@ export const FailedParseLoadingState = () => (
       <CardTitle>Failed Parse Messages</CardTitle>
     </CardHeader>
     <CardContent>
-      <div className="flex items-center justify-center py-12">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading failed messages...</p>
-        </div>
-      </div>
+      <TableSkeleton rows={10} columns={6} showHeader={false} />
     </CardContent>
   </Card>
 );

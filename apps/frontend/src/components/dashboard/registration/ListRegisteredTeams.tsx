@@ -35,6 +35,7 @@ import { TanStackTableWrapper } from "../../tables/TanStackTableWrapper";
 import { ExpandableRow } from "../../tables/ExpandableRow";
 import { RowSelection } from "../../tables/RowSelection";
 import type { RegisteredTeamPlayer } from "@eggosystem/types";
+import { TableSkeleton } from "@/components/loading";
 
 /**
  * Determines the reason why a player needs approval based on their data
@@ -433,8 +434,8 @@ export const ListRegisteredTeams = () => {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-32">
-        <Spinner />
+      <div className="bg-card rounded-md overflow-hidden">
+        <TableSkeleton rows={10} columns={8} showHeader={false} />
       </div>
     );
   }

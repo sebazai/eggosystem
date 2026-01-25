@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation";
 import { TanStackTableWrapper } from "../tables/TanStackTableWrapper";
 import { useFilteredTeamMatchHistory } from "@/hooks/data/filtered/useFilteredTeamMatchHistory";
 import { NextImageFallback } from "../layout/NextImageFallback";
+import { TableSkeleton } from "@/components/loading";
 import {
   getSortedRowModel,
   getPaginationRowModel,
@@ -189,10 +190,7 @@ export const TeamMatchHistory = ({
     return (
       <div className="bg-card rounded-md overflow-hidden pt-4 sm:pt-2">
         <h2 className="text-xl font-semibold mb-2">Match History</h2>
-        <div className="text-center">
-          <div className="h-6 w-40 bg-kanaliiga-light-brown/30 animate-pulse rounded mx-auto mb-3" />
-          <div className="h-4 w-60 bg-kanaliiga-light-brown/30 animate-pulse rounded mx-auto" />
-        </div>
+        <TableSkeleton rows={10} columns={6} showHeader={false} />
       </div>
     );
   }

@@ -5,6 +5,7 @@ import { createNextUrl } from "@/lib/utils";
 import Image from "next/image";
 import { TrophyBadge } from "../trophies/TrophyBadge";
 import type { TrophyAssignment } from "@eggosystem/types";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface PlayerTrophiesProps {
   steamId: string;
@@ -52,7 +53,11 @@ export const PlayerTrophies = ({ steamId }: PlayerTrophiesProps) => {
       <div className="flex gap-3 items-center flex-wrap">
         {/* Loading state */}
         {isLoading && (
-          <div className="text-sm text-muted-foreground">Loading...</div>
+          <div className="flex gap-3 items-center">
+            <Skeleton className="w-12 h-12 rounded-full" />
+            <Skeleton className="w-12 h-12 rounded-full" />
+            <Skeleton className="w-12 h-12 rounded-full" />
+          </div>
         )}
 
         {/* Kanarank trophy */}

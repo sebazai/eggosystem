@@ -3,7 +3,7 @@
 exports[`LeaderboardsGrid Snapshot Tests renders correctly in error state 1`] = `
 <div>
   <div
-    class="flex items-center justify-center min-h-[70vh]"
+    class="flex items-center justify-center min-h-[50vh]"
   >
     Error loading data.
   </div>

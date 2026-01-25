@@ -15,6 +15,7 @@ import { TeamBadge } from "./TeamBadge";
 import { PlayerBadge } from "./PlayerBadge";
 import { MatchIdBadge } from "./MatchIdBadge";
 import { ExternalMatchIdBadge } from "./ExternalMatchIdBadge";
+import { TableSkeleton } from "@/components/loading";
 
 export const FlaggedMatchesTable = () => {
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -155,14 +156,7 @@ export const FlaggedMatchesTable = () => {
           <CardTitle>Flagged Matches</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center py-12">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-              <p className="text-muted-foreground">
-                Loading flagged matches...
-              </p>
-            </div>
-          </div>
+          <TableSkeleton rows={10} columns={5} showHeader={false} />
         </CardContent>
       </Card>
     );

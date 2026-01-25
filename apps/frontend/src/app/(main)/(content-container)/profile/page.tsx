@@ -9,7 +9,7 @@ import { ContentContainer } from "@/components/layout/ContentContainer";
 import { SteamLoginButton } from "@/components/profile/SteamLoginButton";
 import { useEffect } from "react";
 import { hasCasterAccess } from "@/lib/roleUtils";
-import { Spinner } from "@/components/ui/spinner";
+import { AuthLoading } from "@/components/loading";
 
 export default function ProfilePage() {
   useEffect(() => {
@@ -18,14 +18,7 @@ export default function ProfilePage() {
   const { user, loading, checkAuth } = useAuth();
 
   if (loading) {
-    return (
-      <ContentContainer>
-        <div className="flex flex-col items-center justify-center gap-4 py-12">
-          <Spinner size="lg" />
-          <p className="text-muted-foreground">Loading profile page...</p>
-        </div>
-      </ContentContainer>
-    );
+    return <AuthLoading />;
   }
 
   if (!user) {

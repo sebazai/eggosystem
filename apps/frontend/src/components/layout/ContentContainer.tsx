@@ -11,7 +11,7 @@ export const ContentContainer = ({
   return (
     <div
       className={cn(
-        "flex items-center justify-center min-h-[70vh]",
+        "flex items-center justify-center min-h-[50vh]",
         classNames
       )}
     >
