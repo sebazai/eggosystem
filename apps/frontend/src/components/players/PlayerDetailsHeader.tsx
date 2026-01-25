@@ -31,12 +31,19 @@ export const PlayerDetailsHeader = ({ steamId }: { steamId: string }) => {
   if (isLoading) {
     return (
       <div className="bg-card rounded-md overflow-hidden">
-        <div className="border-b border-kanaliiga-orange animate-pulse">
-          <div className="flex items-center gap-4">
-            <div className="w-20 h-20 bg-kanaliiga-light-brown/30 rounded-full" />
-            <div className="space-y-2">
-              <div className="h-6 w-40 bg-kanaliiga-light-brown/30 rounded" />
-              <div className="h-4 w-20 bg-kanaliiga-light-brown/30 rounded" />
+        <div className="p-3 sm:p-6 border-b border-kanaliiga-orange border-b-2">
+          <div className="flex items-center gap-2 sm:gap-4">
+            <div className="w-20 h-20 bg-kanaliiga-light-brown/30 rounded-full flex-shrink-0" />
+            <div className="flex-1 space-y-2">
+              <div className="h-7 w-48 bg-kanaliiga-light-brown/30 rounded animate-pulse" />
+              <div className="flex items-center gap-2">
+                <div className="w-5 h-5 rounded-full bg-kanaliiga-light-brown/30 animate-pulse" />
+                <div className="w-5 h-5 rounded-full bg-kanaliiga-light-brown/30 animate-pulse" />
+              </div>
+              <div className="h-4 w-32 bg-kanaliiga-light-brown/30 rounded animate-pulse" />
+            </div>
+            <div className="ml-auto">
+              <div className="h-16 w-24 bg-kanaliiga-light-brown/30 rounded animate-pulse" />
             </div>
           </div>
         </div>

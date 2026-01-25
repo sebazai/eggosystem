@@ -25,6 +25,7 @@ import {
 import React from "react";
 import { use2DViewerDataUntilReady } from "@/hooks/data/use2DViewerDataUntilReady";
 import { Spinner } from "@/components/ui/spinner";
+import { RoundRowsSkeleton } from "@/components/loading";
 
 interface RoundInfoProps {
   matchGameId: number;
@@ -246,7 +247,18 @@ export const RoundInfo = ({
     isLoading: isLoadingViewerDataUntilReady
   } = use2DViewerDataUntilReady(matchGameId.toString());
 
-  if (isLoading) return <div>Loading...</div>;
+  if (isLoading) {
+    return (
+      <div className="relative overflow-x-auto">
+        <div className="flex flex-row gap-2 mb-5 sm:mb-3 items-center">
+          <h2>ROUND HISTORY</h2>
+        </div>
+        <div className="min-w-[max-content]">
+          <RoundRowsSkeleton rounds={16} />
+        </div>
+      </div>
+    );
+  }
   if (isError) return <div>Error loading round info</div>;
   const firstRound = roundInfo?.[0];
   if (!roundInfo || !firstRound) return null;

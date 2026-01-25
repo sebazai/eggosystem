@@ -6,6 +6,7 @@ import { hasCaptainsAccess, getUserHighestRole } from "@/lib/roleUtils";
 import { CardContainer } from "../layout/CardContainer";
 import { ContentContainer } from "../layout/ContentContainer";
 import { AuthLoading } from "../loading/AuthLoading";
+import { TableSkeleton } from "../loading/TableSkeleton";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import { useState, useMemo } from "react";
@@ -127,14 +128,6 @@ export const CaptainsPage = ({
     );
   }
 
-  if (isLoading || isValidating) {
-    return (
-      <ContentContainer>
-        <div className="text-center text-lg">Loading team captains...</div>
-      </ContentContainer>
-    );
-  }
-
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -158,35 +151,42 @@ export const CaptainsPage = ({
             value={globalFilter ?? ""}
             onChange={(e) => setGlobalFilter(e.target.value)}
             className="pl-10"
+            disabled={isLoading || isValidating}
           />
         </div>
       </div>
 
       <CardContainer classNames="p-2 md:p-4">
-        <TanStackTableWrapper
-          data={captains || []}
-          columns={columns}
-          getSortedRowModel={getSortedRowModel()}
-          getFilteredRowModel={getFilteredRowModel()}
-          sorting={sorting}
-          onSortingChange={setSorting}
-          state={{
-            sorting,
-            globalFilter
-          }}
-          onGlobalFilterChange={setGlobalFilter}
-          globalFilterFn="includesString"
-          showPagination={false}
-          customRowClassName={() =>
-            "border-b border-border h-10 transition-colors hover:bg-kanaliiga-light-brown/10"
-          }
-        />
-        {(captains?.length ?? 0) === 0 && (
-          <div className="text-center py-8 text-muted-foreground">
-            {globalFilter
-              ? "No results found for your search."
-              : "No team captains found."}
-          </div>
+        {isLoading || isValidating ? (
+          <TableSkeleton rows={10} columns={3} />
+        ) : (
+          <>
+            <TanStackTableWrapper
+              data={captains || []}
+              columns={columns}
+              getSortedRowModel={getSortedRowModel()}
+              getFilteredRowModel={getFilteredRowModel()}
+              sorting={sorting}
+              onSortingChange={setSorting}
+              state={{
+                sorting,
+                globalFilter
+              }}
+              onGlobalFilterChange={setGlobalFilter}
+              globalFilterFn="includesString"
+              showPagination={false}
+              customRowClassName={() =>
+                "border-b border-border h-10 transition-colors hover:bg-kanaliiga-light-brown/10"
+              }
+            />
+            {(captains?.length ?? 0) === 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                {globalFilter
+                  ? "No results found for your search."
+                  : "No team captains found."}
+              </div>
+            )}
+          </>
         )}
       </CardContainer>
     </div>

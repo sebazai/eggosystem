@@ -186,8 +186,7 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
   );
 
   const calendarRef = useRef<FullCalendar>(null);
-  const { seasonLeagues, isLoading: isLoadingSeasonLeagues } =
-    useSeasonLeagues(seasonId);
+  const { seasonLeagues } = useSeasonLeagues(seasonId);
 
   const {
     data: calendarMatches,
@@ -544,18 +543,14 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Divisions</SelectItem>
-                      {isLoadingSeasonLeagues ? (
-                        <SelectItem value="loading">Loading...</SelectItem>
-                      ) : (
-                        seasonLeagues?.map((league) => (
-                          <SelectItem
-                            key={league.id}
-                            value={league.id.toString()}
-                          >
-                            {league.name}
-                          </SelectItem>
-                        ))
-                      )}
+                      {seasonLeagues?.map((league) => (
+                        <SelectItem
+                          key={league.id}
+                          value={league.id.toString()}
+                        >
+                          {league.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -621,18 +616,14 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Divisions</SelectItem>
-                      {isLoadingSeasonLeagues ? (
-                        <SelectItem value="loading">Loading...</SelectItem>
-                      ) : (
-                        seasonLeagues?.map((league) => (
-                          <SelectItem
-                            key={league.id}
-                            value={league.id.toString()}
-                          >
-                            {league.name}
-                          </SelectItem>
-                        ))
-                      )}
+                      {seasonLeagues?.map((league) => (
+                        <SelectItem
+                          key={league.id}
+                          value={league.id.toString()}
+                        >
+                          {league.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>

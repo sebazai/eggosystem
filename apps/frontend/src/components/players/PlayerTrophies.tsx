@@ -19,12 +19,22 @@ export const PlayerTrophies = ({ steamId }: PlayerTrophiesProps) => {
 
   const isLoading = kanaRankLoading || awardLoading;
 
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="bg-card rounded-lg mb-4">
+        <h2 className="text-base font-bold mb-3">Trophies</h2>
+        <div className="flex gap-3 items-center flex-wrap">
+          <Skeleton className="w-12 h-12 rounded-full" />
+          <Skeleton className="w-12 h-12 rounded-full" />
+          <Skeleton className="w-12 h-12 rounded-full" />
+        </div>
+      </div>
+    );
+  }
+
   // Don't show section if no data at all
-  if (
-    !isLoading &&
-    !kanaRankData &&
-    (!awardData || awardData.trophies.length === 0)
-  ) {
+  if (!kanaRankData && (!awardData || awardData.trophies.length === 0)) {
     return null;
   }
 
@@ -51,15 +61,6 @@ export const PlayerTrophies = ({ steamId }: PlayerTrophiesProps) => {
     <div className="bg-card rounded-lg mb-4">
       <h2 className="text-base font-bold mb-3">Trophies</h2>
       <div className="flex gap-3 items-center flex-wrap">
-        {/* Loading state */}
-        {isLoading && (
-          <div className="flex gap-3 items-center">
-            <Skeleton className="w-12 h-12 rounded-full" />
-            <Skeleton className="w-12 h-12 rounded-full" />
-            <Skeleton className="w-12 h-12 rounded-full" />
-          </div>
-        )}
-
         {/* Kanarank trophy */}
         {kanaRankData && (
           <div className="flex flex-col items-center">

@@ -333,7 +333,7 @@ export const PlayerMatchHistoryTable = ({ steamId }: PlayerDetailsProps) => {
   if (isLoading) {
     return (
       <PlayerMatchHistoryTableWrapper>
-        <TableSkeleton rows={10} columns={8} showHeader={false} />
+        <TableSkeleton rows={10} columns={8} />
       </PlayerMatchHistoryTableWrapper>
     );
   }

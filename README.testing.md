@@ -351,11 +351,28 @@ describe("UserList Integration", () => {
   it("should load and display users", async () => {
     render(<UserList />);
 
+    // Wait for skeleton loading state to disappear
     await waitFor(() => {
-      expect(screen.getByText("Loading...")).not.toBeInTheDocument();
+      const skeleton = document.querySelector('[class*="animate-pulse"]');
+      expect(skeleton).not.toBeInTheDocument();
     });
 
     expect(screen.getByText("John Doe")).toBeInTheDocument();
+  });
+
+  it("should show skeleton during loading", () => {
+    // Mock loading state
+    jest.spyOn(useUsers, "useUsers").mockReturnValue({
+      users: undefined,
+      isLoading: true,
+      error: null
+    });
+
+    render(<UserList />);
+
+    // Check for skeleton elements
+    const skeleton = document.querySelector('[class*="animate-pulse"]');
+    expect(skeleton).toBeInTheDocument();
   });
 });
 ```
@@ -510,6 +527,21 @@ it("should display error message", async () => {
   await waitFor(() => {
     expect(screen.getByText("Failed to load users")).toBeInTheDocument();
   });
+});
+
+// Test loading states with skeletons
+it("should show skeleton during loading", () => {
+  jest.spyOn(api, "fetchUsers").mockReturnValue({
+    data: undefined,
+    isLoading: true,
+    error: null
+  });
+
+  render(<UserList />);
+
+  // Check for skeleton loading component
+  const skeleton = document.querySelector('[class*="animate-pulse"]');
+  expect(skeleton).toBeInTheDocument();
 });
 ```
 

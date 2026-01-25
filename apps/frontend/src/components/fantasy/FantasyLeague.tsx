@@ -1076,11 +1076,7 @@ export default function FantasyLeague({ seasonId }: Props) {
                 onValueChange={setSelectedLeagueId}
               >
                 <SelectTrigger className="w-full md:w-[300px]">
-                  <SelectValue
-                    placeholder={
-                      isLoadingLeagues ? "Loading..." : "Choose a league"
-                    }
-                  />
+                  <SelectValue placeholder={"Choose a league"} />
                 </SelectTrigger>
                 <SelectContent>
                   {seasonLeagues?.map((league) => (
