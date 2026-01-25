@@ -12,6 +12,7 @@ import { TanStackTableWrapper } from "../tables/TanStackTableWrapper";
 import { usePlayerMatchHistory } from "@/hooks/data/filtered/usePlayerMatchHistory";
 
 import { useFilters } from "@/context/FilterContext";
+import { TableSkeleton } from "@/components/loading";
 import {
   getSortedRowModel,
   getPaginationRowModel,
@@ -332,10 +333,7 @@ export const PlayerMatchHistoryTable = ({ steamId }: PlayerDetailsProps) => {
   if (isLoading) {
     return (
       <PlayerMatchHistoryTableWrapper>
-        <div className="text-center">
-          <div className="h-6 w-40 bg-kanaliiga-light-brown/30 animate-pulse rounded mx-auto mb-3" />
-          <div className="h-4 w-60 bg-kanaliiga-light-brown/30 animate-pulse rounded mx-auto" />
-        </div>
+        <TableSkeleton rows={10} columns={8} showHeader={false} />
       </PlayerMatchHistoryTableWrapper>
     );
   }

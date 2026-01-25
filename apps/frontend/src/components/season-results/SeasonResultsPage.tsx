@@ -19,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue
 } from "@/components/ui/select";
+import { RowSkeleton } from "@/components/loading";
 import type {
   SeasonResultsTeam,
   SeasonResultsDivision
@@ -163,9 +164,30 @@ export const SeasonResultsPage = () => {
       </div>
 
       {isLoading || seasonsLoading ? (
-        <ContentContainer classNames="min-h-[30vh]">
-          Loading...
-        </ContentContainer>
+        <div>
+          <div className="mb-6">
+            <div className="h-6 w-48 bg-accent animate-pulse rounded mb-3" />
+            <CardContainer classNames="p-2 md:p-4">
+              <RowSkeleton
+                rows={3}
+                showRank={true}
+                showAvatar={true}
+                showRightContent={false}
+              />
+            </CardContainer>
+          </div>
+          <div className="mb-6">
+            <div className="h-6 w-48 bg-accent animate-pulse rounded mb-3" />
+            <CardContainer classNames="p-2 md:p-4">
+              <RowSkeleton
+                rows={3}
+                showRank={true}
+                showAvatar={true}
+                showRightContent={false}
+              />
+            </CardContainer>
+          </div>
+        </div>
       ) : !data || data.divisions.length === 0 ? (
         <ContentContainer classNames="min-h-[30vh]">
           No results data available for this season.

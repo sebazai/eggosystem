@@ -4,6 +4,7 @@ import { useSignupEdit } from "@/hooks/data/useSignupEdit";
 import type { SeasonPlatform } from "@eggosystem/types";
 import { ContentContainer } from "../layout/ContentContainer";
 import { SignupForm } from "./SignupForm";
+import { CardSkeleton } from "@/components/loading";
 
 interface SignupFormProps {
   seasonId: string;
@@ -30,7 +31,13 @@ export const SignupEditForm = ({
   }
 
   if (isLoading || isValidating) {
-    return <ContentContainer>Loading form data...</ContentContainer>;
+    return (
+      <div className="space-y-4">
+        <CardSkeleton showHeader={true} contentLines={4} />
+        <CardSkeleton showHeader={true} contentLines={6} />
+        <CardSkeleton showHeader={true} contentLines={5} />
+      </div>
+    );
   }
 
   return (

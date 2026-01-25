@@ -8,14 +8,13 @@ import { LeaderboardsGrid } from "@/components/leaderboards/LeaderboardsGrid";
 import { useFilters } from "@/context/FilterContext";
 import { ContentContainer } from "@/components/layout/ContentContainer";
 import { CardContainer } from "@/components/layout/CardContainer";
+import { PageSkeleton } from "@/components/loading";
 
 export const LeaderboardsPage = () => {
   const { filterParams, isLoading, error, isValidating, areFiltersEmpty } =
     useFilters();
 
-  if (error) return <ContentContainer>Failed to load filters</ContentContainer>;
-  if (isLoading || !filterParams || isValidating)
-    return <ContentContainer>Loading...</ContentContainer>;
+  const isFiltersLoading = isLoading || !filterParams || isValidating;
 
   return (
     <div>
@@ -24,14 +23,22 @@ export const LeaderboardsPage = () => {
         At least 3 maps must be played to be eligible for the leaderboard.
       </p>
       <div className="pb-2">
-        <MultiFilters {...filterParams} />
+        {filterParams && <MultiFilters {...filterParams} />}
+        {!filterParams && (
+          <div className="h-10 bg-accent animate-pulse rounded-md" />
+        )}
       </div>
       <CardContainer classNames="p-2 md:p-4">
-        {areFiltersEmpty ? (
+        {isFiltersLoading && <PageSkeleton />}
+        {!isFiltersLoading && error && (
+          <ContentContainer>Failed to load filters</ContentContainer>
+        )}
+        {!isFiltersLoading && !error && areFiltersEmpty && (
           <ContentContainer classNames="min-h-[30vh]">
             Please select one filter.
           </ContentContainer>
-        ) : (
+        )}
+        {!isFiltersLoading && !error && !areFiltersEmpty && filterParams && (
           <LeaderboardsGrid filterQueryParams={filterParams} />
         )}
       </CardContainer>

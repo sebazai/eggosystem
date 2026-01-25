@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/context/AuthContext";
 import { SteamLoginButton } from "../profile/SteamLoginButton";
-import { Spinner } from "../ui/spinner";
+import { AuthLoading } from "../loading/AuthLoading";
 
 type WithRoleProtectionProps = {
   children: React.ReactNode;
@@ -19,14 +19,7 @@ export function WithRoleProtection({
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-4">
-          <Spinner className="h-8 w-8" />
-          <p className="text-sm text-muted-foreground">
-            Ensuring authentication...
-          </p>
-        </div>
-      </div>
+      <AuthLoading fullScreen={true} message="Ensuring authentication..." />
     );
   }
 

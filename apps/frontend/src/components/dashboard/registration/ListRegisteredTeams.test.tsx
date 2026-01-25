@@ -140,11 +140,9 @@ describe("ListRegisteredTeams", () => {
       });
 
       render(<ListRegisteredTeams />);
-      // Check for the spinner div with the specific classes
-      const spinnerDiv = document.querySelector(
-        ".animate-spin.rounded-full.h-6.w-6.border-2"
-      );
-      expect(spinnerDiv).toBeInTheDocument();
+      // TableSkeleton is used for loading state
+      const skeleton = document.querySelector('[class*="animate-pulse"]');
+      expect(skeleton).toBeInTheDocument();
     });
   });
 

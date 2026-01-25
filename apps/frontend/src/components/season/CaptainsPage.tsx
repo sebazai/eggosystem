@@ -5,6 +5,7 @@ import { useSeasonCaptains } from "@/hooks/data/useSeasonCaptains";
 import { hasCaptainsAccess, getUserHighestRole } from "@/lib/roleUtils";
 import { CardContainer } from "../layout/CardContainer";
 import { ContentContainer } from "../layout/ContentContainer";
+import { AuthLoading } from "../loading/AuthLoading";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import { useState, useMemo } from "react";
@@ -88,11 +89,7 @@ export const CaptainsPage = ({
 
   // Show loading while initial auth check
   if (authLoading) {
-    return (
-      <ContentContainer>
-        <div className="text-center text-lg">Checking auth...</div>
-      </ContentContainer>
-    );
+    return <AuthLoading />;
   }
 
   // Check if user has access

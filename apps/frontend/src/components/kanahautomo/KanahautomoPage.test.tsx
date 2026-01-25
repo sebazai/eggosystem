@@ -245,8 +245,9 @@ describe("KanahautomoPage", () => {
         logout: jest.fn()
       });
       renderKanahautomoPage();
-      const loadingSpinner = document.querySelector(".animate-spin");
-      expect(loadingSpinner).toBeInTheDocument();
+      // CardSkeleton is used for loading state
+      const skeleton = document.querySelector('[class*="animate-pulse"]');
+      expect(skeleton).toBeInTheDocument();
     });
 
     it("shows form when user is authenticated", () => {
@@ -265,8 +266,9 @@ describe("KanahautomoPage", () => {
         isValidating: false
       });
       renderKanahautomoPage();
-      const loadingSpinner = document.querySelector(".animate-spin");
-      expect(loadingSpinner).toBeInTheDocument();
+      // CardSkeleton is used for loading state
+      const skeleton = document.querySelector('[class*="animate-pulse"]');
+      expect(skeleton).toBeInTheDocument();
     });
 
     it("shows error state when organizations fail to load", () => {

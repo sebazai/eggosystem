@@ -45,6 +45,7 @@ import { useRouter } from "next/navigation";
 import { envConfig } from "@/configs/env";
 import { SteamLoginButton } from "@/components/profile/SteamLoginButton";
 import { OrganizationDiscordInviteLink } from "@/components/organizations/OrganizationDiscordInviteLink";
+import { CardSkeleton } from "@/components/loading";
 
 const KANAHUTOMO_FORM_STORAGE_KEY = "kanahautomo_form_data";
 
@@ -167,9 +168,7 @@ export default function KanahautomoPage() {
   if (authLoading || orgsLoading) {
     return (
       <div className="mx-auto">
-        <div className="flex justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-        </div>
+        <CardSkeleton showHeader={true} contentLines={6} />
       </div>
     );
   }

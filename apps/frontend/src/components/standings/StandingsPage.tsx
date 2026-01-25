@@ -6,6 +6,7 @@ import { LeagueSelector } from "@/components/standings/LeagueSelector";
 import { StandingsTable } from "@/components/standings/StandingsTable";
 import { useStandings } from "@/hooks/data/useStandings";
 import { useStandingLeagues } from "@/hooks/data/useStandingLeagues";
+import { PageSkeleton } from "@/components/loading";
 
 export default function StandingsPage({ seasonId }: { seasonId: string }) {
   const searchParams = useSearchParams();
@@ -97,14 +98,7 @@ export default function StandingsPage({ seasonId }: { seasonId: string }) {
     return (
       <div>
         <AutoBreadcrumbs />
-        <div className="space-y-6">
-          <div>
-            <h1 className="text-3xl font-bold">League Standings</h1>
-            <p className="text-muted-foreground mt-2">
-              Loading league standings...
-            </p>
-          </div>
-        </div>
+        <PageSkeleton />
       </div>
     );
   }

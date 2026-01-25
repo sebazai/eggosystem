@@ -18,6 +18,7 @@ import { ServerSidePagination } from "../../tables/ServerSidePagination";
 import type { FailedParseMessage, CustomColumnMeta } from "@eggosystem/types";
 import { useMatchDetailsByGameId } from "@/hooks/data/useMatchDetailsByGameId";
 import Link from "next/link";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface MatchGameIdLinkProps {
   matchGameId: number;
@@ -31,11 +32,7 @@ const MatchGameIdLink = ({ matchGameId }: MatchGameIdLinkProps) => {
   } = useMatchDetailsByGameId(matchGameId);
 
   if (isLoading) {
-    return (
-      <span className="font-mono text-sm text-muted-foreground">
-        Loading...
-      </span>
-    );
+    return <Skeleton className="h-4 w-16 inline-block" />;
   }
 
   if (error || !matchDetails) {

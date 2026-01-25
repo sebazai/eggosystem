@@ -8,6 +8,7 @@ import { useSeasonDetails } from "@/hooks/data/useSeasonDetails";
 import { convertTimeToLocalTimeWithoutSeconds } from "@/lib/date-utils";
 import { createNextUrl } from "@/lib/utils";
 import Link from "next/link";
+import { CardSkeleton } from "@/components/loading";
 
 interface SignupWelcomeProps {
   seasonId: string;
@@ -52,7 +53,13 @@ export const SignupWelcome = ({ seasonId }: SignupWelcomeProps) => {
   const { user } = useAuth();
 
   if (isLoading || isValidating) {
-    return <ContentContainer>Loading...</ContentContainer>;
+    return (
+      <div className="space-y-6">
+        <CardSkeleton showHeader={true} contentLines={5} />
+        <CardSkeleton showHeader={true} contentLines={3} />
+        <CardSkeleton showHeader={true} contentLines={4} />
+      </div>
+    );
   }
   if (isError || !seasonDetails) {
     return (

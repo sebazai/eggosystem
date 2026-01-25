@@ -85,7 +85,7 @@ describe("FlaggedMatchesTable", () => {
   });
 
   describe("Loading State", () => {
-    it("displays loading state with spinner and message", () => {
+    it("displays loading state with table skeleton", () => {
       mockUseFlaggedMatches.mockReturnValue({
         flaggedMatches: undefined,
         isLoading: true,
@@ -96,10 +96,9 @@ describe("FlaggedMatchesTable", () => {
       render(<FlaggedMatchesTable />);
 
       expect(screen.getByText("Flagged Matches")).toBeInTheDocument();
-      expect(
-        screen.getByText("Loading flagged matches...")
-      ).toBeInTheDocument();
-      expect(document.querySelector(".animate-spin")).toBeInTheDocument(); // spinner
+      // TableSkeleton is used for loading state
+      const skeleton = document.querySelector('[class*="animate-pulse"]');
+      expect(skeleton).toBeInTheDocument();
     });
   });
 

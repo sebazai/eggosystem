@@ -3,6 +3,7 @@ import { ContentContainer } from "../layout/ContentContainer";
 import { createTeamLogoUrl, type FilterParamsQuery } from "@/lib/utils";
 import { useRecentMatches } from "@/hooks/data/filtered/useRecentMatches";
 import { NextImageFallback } from "../layout/NextImageFallback";
+import { MatchListSkeleton } from "@/components/loading";
 
 interface FilteredMatchesListProps {
   filterQueryParams: FilterParamsQuery;
@@ -14,13 +15,14 @@ export const FilteredMatchesList = ({
   const { matches, isError, isLoading, isValidating } =
     useRecentMatches(filterQueryParams);
 
+  if (isLoading || isValidating) {
+    return <MatchListSkeleton />;
+  }
+
   if (isError) {
     return <ContentContainer>Error loading Matches</ContentContainer>;
   }
 
-  if (isLoading || isValidating) {
-    return <ContentContainer>Loading...</ContentContainer>;
-  }
   if (!matches) {
     return <ContentContainer>No matches found</ContentContainer>;
   }
