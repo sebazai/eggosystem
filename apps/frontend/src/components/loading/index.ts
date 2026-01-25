@@ -3,6 +3,7 @@ export { PageSkeleton } from "./PageSkeleton";
 export { TableSkeleton } from "./TableSkeleton";
 export { CardSkeleton } from "./CardSkeleton";
 export { RowSkeleton } from "./RowSkeleton";
+export { RoundRowsSkeleton } from "./RoundRowsSkeleton";
 export { MatchListSkeleton } from "./MatchListSkeleton";
 export { StatsGridSkeleton } from "./StatsGridSkeleton";
 export { TeamCardSkeleton } from "./TeamCardSkeleton";

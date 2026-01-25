@@ -1,6 +1,7 @@
 "use client";
 import { MultiFilters } from "@/components/filters/MultiFilters";
 import { CardContainer } from "@/components/layout/CardContainer";
+import { PageSkeleton } from "@/components/loading";
 import { PlayerDetailsHeader } from "@/components/players/PlayerDetailsHeader";
 import { useFilters } from "@/context/FilterContext";
 import { FilterProvider } from "@/context/FilterContext";
@@ -35,7 +36,7 @@ function PlayerTabLayoutContent({
   const searchParams = useSearchParams();
 
   if (isLoading || !filterParams || isValidating) {
-    return <div>Loading...</div>;
+    return <PageSkeleton showFilters={true} />;
   }
 
   if (error) {

@@ -31,6 +31,8 @@ import {
 } from "@/components/ui/select";
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { TableSkeleton } from "@/components/loading";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface PriceHistoryEntry {
   player_id: string;
@@ -92,12 +94,29 @@ export default function FantasyPriceHistoryPage() {
       <>
         <AutoBreadcrumbs />
         <div className="fantasy-content-scale">
-          <div className="container mx-auto py-8">
+          <div className="container mx-auto py-8 space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Fantasy Price History</CardTitle>
-                <CardDescription>Loading...</CardDescription>
+                <CardTitle className="text-3xl font-bold">
+                  Fantasy Price History
+                </CardTitle>
+                <CardDescription>
+                  Track player value changes throughout the season
+                </CardDescription>
               </CardHeader>
+              <CardContent>
+                <div className="flex gap-4 mb-6">
+                  <div className="flex-1">
+                    <Skeleton className="h-4 w-16 mb-2" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                  <div className="flex-1">
+                    <Skeleton className="h-4 w-20 mb-2" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                </div>
+                <TableSkeleton rows={10} columns={7} showHeader={false} />
+              </CardContent>
             </Card>
           </div>
         </div>

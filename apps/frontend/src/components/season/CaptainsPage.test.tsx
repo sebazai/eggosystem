@@ -196,7 +196,11 @@ describe("CaptainsPage", () => {
 
     render(<CaptainsPage {...defaultProps} />);
 
-    expect(screen.getByText("Loading team captains...")).toBeInTheDocument();
+    // TableSkeleton is used for loading state
+    const skeleton = document.querySelector('[class*="animate-pulse"]');
+    expect(skeleton).toBeInTheDocument();
+    // Verify the page structure is preserved
+    expect(screen.getByText("Team Captains - Season 14")).toBeInTheDocument();
   });
 
   it("should show empty state when no captains found", async () => {
