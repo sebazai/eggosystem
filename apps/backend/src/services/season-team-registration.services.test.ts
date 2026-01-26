@@ -1325,6 +1325,100 @@ describe("Season team registration services", () => {
         );
       }
     });
+    it("should create SeasonPlayerRank entry for newly added player", async () => {
+      // Set up a new player that will be added to the team
+      const newPlayerSteamId = "11111111111111111"; // This Steam ID has mocked rank/hours data in MSW
+      const newPlayerAccountId = 9999111;
+      const newPlayerNickname = "New Player";
+
+      // Clean up if exists
+      await clearTestUserAndRanks(
+        newPlayerAccountId,
+        newPlayerSteamId,
+        seasonDetails.id
+      );
+
+      // Insert the new player
+      await insertOneTestUser(
+        newPlayerAccountId,
+        newPlayerSteamId,
+        newPlayerNickname
+      );
+
+      // Create form data with existing players plus the new player
+      const formData = _.cloneDeep(validSignupData);
+      formData.players.push({
+        steamId: newPlayerSteamId,
+        accountId: newPlayerAccountId,
+        nickname: newPlayerNickname,
+        captain: false,
+        coCaptain: false,
+        discordLinked: false,
+        hasValidData: true,
+        hasValidWorkEmail: true,
+        isEmailVerified: true,
+        hours: 112,
+        rank: 22000,
+        externalRank: 750
+      });
+
+      // Verify the new player does NOT have a rank entry before update
+      const rankBefore = await runQuery<SeasonPlayerRank[]>(
+        "SELECT * FROM SeasonPlayerRanks WHERE steam_id = ? AND season_id = ?",
+        [newPlayerSteamId, seasonDetails.id]
+      );
+      expect(rankBefore.length).toEqual(0);
+
+      // Update the team registration with the new player
+      await registrationServices.handleSignupFormForSeasonUpdate(
+        seasonDetails.id,
+        validSignupData.teamId,
+        formData
+      );
+
+      // Verify the new player was added to SeasonTeamRegistrationPlayers
+      const [registrationPlayer] = await runQuery<Array<{ steam_id: string }>>(
+        "SELECT * FROM SeasonTeamRegistrationPlayers WHERE season_id = ? AND team_id = ? AND steam_id = ?",
+        [seasonDetails.id, validSignupData.teamId, newPlayerSteamId]
+      );
+      expect(registrationPlayer).toBeDefined();
+      expect(registrationPlayer.steam_id).toEqual(newPlayerSteamId);
+
+      // Verify that SeasonPlayerRank entry was created for the new player
+      const [rankAfter] = await runQuery<SeasonPlayerRank[]>(
+        "SELECT * FROM SeasonPlayerRanks WHERE steam_id = ? AND season_id = ?",
+        [newPlayerSteamId, seasonDetails.id]
+      );
+      expect(rankAfter).toBeDefined();
+      expect(rankAfter.steam_id).toEqual(newPlayerSteamId);
+      expect(rankAfter.season_id).toEqual(seasonDetails.id);
+      // Mocked MSW handlers return: rank: 22000, hours: 112, faceit_elo: 750
+      expect(rankAfter.cs2_rank).toBeDefined();
+      expect(rankAfter.cs2_rank).not.toBeNull();
+      expect(rankAfter.cs2_rank).not.toEqual(-1);
+      expect(rankAfter.cs_hours).toBeDefined();
+      expect(rankAfter.cs_hours).not.toBeNull();
+      expect(rankAfter.cs_hours).not.toEqual(-1);
+      if (seasonDetails.platform === SeasonPlatform.FACEIT) {
+        expect(rankAfter.faceit_elo).toBeDefined();
+        expect(rankAfter.faceit_elo).not.toBeNull();
+        expect(rankAfter.faceit_elo).not.toEqual(-1);
+        expect(rankAfter.faceit_level).toBeDefined();
+        expect(rankAfter.faceit_level).not.toBeNull();
+      }
+
+      // Clean up
+      await runQuery(
+        "DELETE FROM SeasonTeamRegistrationPlayers WHERE season_id = ? AND team_id = ? AND steam_id = ?",
+        [seasonDetails.id, validSignupData.teamId, newPlayerSteamId]
+      );
+      await clearTestUserAndRanks(
+        newPlayerAccountId,
+        newPlayerSteamId,
+        seasonDetails.id
+      );
+      await cleanUpTestUser(newPlayerAccountId);
+    });
   });
   describe("updatePlayersForSeasonTeamRegistration", () => {
     beforeEach(async () => {
