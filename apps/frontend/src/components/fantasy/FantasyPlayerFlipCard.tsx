@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import React, { useState, useRef } from "react";
 import { cn, createTeamLogoUrl } from "@/lib/utils";
 import { NextImageFallback } from "../layout/NextImageFallback";
 import type { FantasyPlayer } from "./FantasyLeague";
@@ -62,7 +62,7 @@ const tierStatHighlight = {
   bronze: "text-[#E09E5C]"
 } as const;
 
-export default function FantasyPlayerFlipCard({
+function FantasyPlayerFlipCard({
   player,
   onAdd,
   disabled,
@@ -99,8 +99,10 @@ export default function FantasyPlayerFlipCard({
     <div
       ref={cardRef}
       className={cn(
-        "group relative w-full h-[320px] sm:h-[380px] lg:h-[420px] perspective cursor-pointer",
-        isDisabled && !isExistingTeamPlayer && "opacity-60" // Don't fade existing team cards
+        "group relative w-full h-[320px] sm:h-[380px] lg:h-[420px] perspective cursor-pointer transition-transform duration-200",
+        isDisabled && !isExistingTeamPlayer && "opacity-60", // Don't fade existing team cards
+        isExistingTeamPlayer &&
+          "hover:scale-[1.02] hover:shadow-lg hover:shadow-primary/20"
       )}
       onClick={handleCardClick}
     >
@@ -132,7 +134,9 @@ export default function FantasyPlayerFlipCard({
               tierFrameGradients[player.tier],
               tierCardShadow[player.tier],
               tierInnerGlow[player.tier],
-              "transition-all duration-300"
+              "transition-all duration-300",
+              isExistingTeamPlayer &&
+                "group-hover:ring-2 group-hover:ring-primary/50 group-hover:ring-offset-2 group-hover:ring-offset-neutral-900"
             )}
           >
             {/* Inner Border for Depth */}
@@ -638,3 +642,15 @@ export default function FantasyPlayerFlipCard({
     </div>
   );
 }
+
+export default React.memo(FantasyPlayerFlipCard, (prev, next) => {
+  return (
+    prev.player.id === next.player.id &&
+    prev.player.steam_id === next.player.steam_id &&
+    prev.player.value === next.player.value &&
+    prev.player.tier === next.player.tier &&
+    prev.disabled === next.disabled &&
+    prev.budgetRemaining === next.budgetRemaining &&
+    prev.isExistingTeamPlayer === next.isExistingTeamPlayer
+  );
+});

@@ -91,16 +91,20 @@ export default function TopPlayersPage() {
 
   if (error) {
     return (
-      <div className="container mx-auto py-8">
+      <>
         <AutoBreadcrumbs />
-        <Card>
-          <CardContent className="py-8">
-            <p className="text-center text-destructive">
-              Error loading top players: {error.message}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+        <div className="fantasy-content-scale">
+          <div className="py-8">
+            <Card>
+              <CardContent className="py-8">
+                <p className="text-center text-destructive">
+                  Error loading top players: {error.message}
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </>
     );
   }
 
@@ -108,7 +112,7 @@ export default function TopPlayersPage() {
     <>
       <AutoBreadcrumbs />
       <div className="fantasy-content-scale">
-        <div className="container mx-auto py-8 space-y-6">
+        <div className="space-y-6">
           {/* Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
