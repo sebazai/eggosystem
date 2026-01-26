@@ -15,6 +15,8 @@ import { useGameTopPlayers } from "@/hooks/data/useGameTopPlayers";
 import _ from "lodash";
 import { MatchMapsHeader } from "../stats/MatchMapsHeader";
 import { useGameClip } from "@/hooks/data/useGameClip";
+import { PlayerStatisticsSkeleton } from "@/components/loading";
+import { TopPlayersSkeleton } from "@/components/loading";
 
 interface MatchStatsProps {
   matchId: number;
@@ -53,8 +55,12 @@ export const GameStats = ({
     router.push(newUrl, { scroll: false });
   };
 
-  const { playerStats } = useGamePlayerStats(matchGameId, selectedStat);
-  const { topPlayers } = useGameTopPlayers(matchGameId);
+  const { playerStats, isLoading: isLoadingPlayerStats } = useGamePlayerStats(
+    matchGameId,
+    selectedStat
+  );
+  const { topPlayers, isLoading: isLoadingTopPlayers } =
+    useGameTopPlayers(matchGameId);
   const { clip } = useGameClip(matchGameId);
 
   const baseFilter = {
@@ -95,7 +101,8 @@ export const GameStats = ({
         setIsModalOpen={setIs2DViewerOpen}
       />
 
-      {playerStats && playerStats.length > 0 && (
+      {isLoadingPlayerStats && <PlayerStatisticsSkeleton />}
+      {!isLoadingPlayerStats && playerStats && playerStats.length > 0 && (
         <PlayerStatisticsForTeam
           playerStats={playerStats}
           teams={matchInfo.teams}
@@ -105,7 +112,8 @@ export const GameStats = ({
         />
       )}
 
-      {topPlayers && !_.isEmpty(topPlayers) && (
+      {isLoadingTopPlayers && <TopPlayersSkeleton />}
+      {!isLoadingTopPlayers && topPlayers && !_.isEmpty(topPlayers) && (
         <TopPlayers
           topPlayers={topPlayers}
           teams={matchInfo.teams}

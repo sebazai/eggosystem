@@ -3,6 +3,7 @@ import { createNextUrl, mapToReadableName } from "@/lib/utils";
 import { SeasonPlatform } from "@eggosystem/types";
 import Link from "next/link";
 import Image from "next/image";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface MatchMapsHeaderProps {
   matchId: number;
@@ -34,7 +35,24 @@ export const MatchMapsHeader = ({
   externalMatchRoomUrl,
   handleMapSelect
 }: MatchMapsHeaderProps) => {
-  const { maps } = useMatchMaps(matchId);
+  const { maps, isLoading } = useMatchMaps(matchId);
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col sm:flex-row justify-between">
+        <div className="flex flex-row gap-2 mb-5 sm:mb-0">
+          <Skeleton className="h-7 w-32" />
+          {externalMatchRoomUrl && <Skeleton className="h-5 w-20" />}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Skeleton className="h-8 w-20" />
+          <Skeleton className="h-8 w-24" />
+          <Skeleton className="h-8 w-24" />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
       <div className="flex flex-col sm:flex-row justify-between">

@@ -13,6 +13,7 @@ import { NextImageFallback } from "@/components/layout/NextImageFallback";
 import { useGetMatchGamesByExternalMatchRoomId } from "@/hooks/data/useGetMatchGamesByExternalMatchRoomId";
 import { useMemo } from "react";
 import { useParams } from "next/navigation";
+import { MatchMapPicksSkeleton } from "@/components/loading";
 
 interface MatchMapPicksProps {
   matchId: number;
@@ -27,15 +28,17 @@ export const MatchMapPicks = ({
 }: MatchMapPicksProps) => {
   const params = useParams();
   const matchGameId = parseInt(params.match_game_id as string, 10);
-  const { maps } = useMatchMaps(matchId);
-  const { vetoes } = useMatchMapVetoes(matchId);
+  const { maps, isLoading: isLoadingMaps } = useMatchMaps(matchId);
+  const { vetoes, isLoading: isLoadingVetoes } = useMatchMapVetoes(matchId);
   const { matchInfo } = useMatchInfo(String(matchId));
-  const { games } = useGetMatchGamesByExternalMatchRoomId(
-    externalMatchRoomId,
-    vetoes?.filter((veto) => veto.action !== "drop").length === 2
-  );
+  const { games, isLoading: isLoadingGames } =
+    useGetMatchGamesByExternalMatchRoomId(
+      externalMatchRoomId,
+      vetoes?.filter((veto) => veto.action !== "drop").length === 2
+    );
   const theOtherGame = games?.find((game) => game.match_id !== matchId);
-  const { maps: theOtherGameMaps } = useMatchMaps(theOtherGame?.match_id);
+  const { maps: theOtherGameMaps, isLoading: isLoadingOtherGameMaps } =
+    useMatchMaps(theOtherGame?.match_id);
 
   // Helper to get team info by id
   const getTeam = (teamId: number) =>
@@ -47,6 +50,16 @@ export const MatchMapPicks = ({
   const allMatchGameMaps = useMemo(() => {
     return [...(maps || []), ...(theOtherGameMaps || [])];
   }, [maps, theOtherGameMaps]);
+
+  const isLoading =
+    isLoadingMaps ||
+    isLoadingVetoes ||
+    isLoadingGames ||
+    (theOtherGame?.match_id !== undefined && isLoadingOtherGameMaps);
+
+  if (isLoading) {
+    return <MatchMapPicksSkeleton />;
+  }
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-4">

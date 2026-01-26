@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { ProcessingSpinner } from "@/components/ui/icons";
 import { useAuth } from "@/context/AuthContext";
 import Image from "next/image";
+import { TeamStatisticsSkeleton } from "@/components/loading";
 
 export interface TeamStatsFilters {
   seasons: string;
@@ -28,8 +29,17 @@ export const TeamStatistics = ({
   const auth = useAuth();
 
   // Fetch team stats based on whether we have matchId or matchGameId
-  const { teamStats } = useTeamStats({ matchId, matchGameId });
+  const { teamStats, isLoading } = useTeamStats({ matchId, matchGameId });
   const { teamsRoundBreakdown } = useGameTeamRoundBreakdowns(matchGameId);
+
+  // Show skeleton while loading
+  if (isLoading) {
+    return (
+      <TeamStatisticsSkeleton
+        showVideo={!!clip && clip.clip_status !== "Error"}
+      />
+    );
+  }
 
   // Early return if no stats available yet
   if (!teamStats || teamStats.length === 0) {
