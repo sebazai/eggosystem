@@ -37,12 +37,14 @@ import * as organizationModels from "../models/organization.models";
 import * as registrationModels from "../models/season-team-registration.models";
 import * as teamModels from "../models/team.models";
 import * as playerRanksServices from "./player-ranks.services";
+import * as emailServices from "./email.services";
 import _ from "lodash";
 import { validSignupData } from "@eggosystem/shared-msw";
 import { BadRequestError } from "../utils/errors";
 import { runQuery } from "../db/mysqlRunQuery";
 import { redisClient } from "../utils/redisClient";
 import { faceitEloToLevel } from "../utils/faceit-utils";
+import { getConnection } from "../db/mysqlConnection";
 
 describe("Season team registration services", () => {
   process.env.PRIVACY_POLICY_VERSION = "1";
@@ -492,6 +494,80 @@ describe("Season team registration services", () => {
         undefined
       );
       // Captain permissions are now handled automatically by database triggers
+    });
+
+    it("should retrieve correct team name when using transaction connection for new team", async () => {
+      const formData = _.cloneDeep(validSignupData);
+      const mockSendEmail = jest
+        .spyOn(emailServices, "sendSeasonCaptainWelcomeEmail")
+        .mockResolvedValue();
+
+      // Mock the validation and player addition to avoid actual database operations
+      jest
+        .spyOn(registrationServices, "validatePlayersFromDBForSignup")
+        .mockResolvedValue();
+      jest
+        .spyOn(registrationModels, "insertSeasonTeamRegistration")
+        .mockResolvedValue({ insertId: 1 });
+      jest
+        .spyOn(registrationServices, "addPlayersForTeamInSeason")
+        .mockResolvedValue();
+
+      // Get a transaction connection
+      const connection = await getConnection();
+      await connection.beginTransaction();
+
+      try {
+        // Create a new team within the transaction
+        const newTeamName = "Test New Team Name";
+        const newTeam = await teamModels.insertTeam(
+          {
+            name: newTeamName,
+            organization_id: formData.organizationId,
+            org_approved: false
+          },
+          connection
+        );
+
+        const newTeamId = newTeam.insertId;
+
+        // Call handleSeasonTeamRegistration with the transaction connection
+        await registrationServices.handleSeasonTeamRegistration(
+          seasonDetails.id,
+          seasonDetails.platform,
+          seasonDetails.app_id,
+          newTeamId,
+          formData.organizationId,
+          {
+            external_platform_id: formData.teamExternalId,
+            terms_and_conditions_approved:
+              formData.captainHasReadTermAndConditions
+          } satisfies InsertSeasonTeamRegistration,
+          formData.players.map((player) => ({
+            steam_id: player.steamId,
+            is_captain: Boolean(player.captain),
+            is_co_captain: Boolean(player.coCaptain)
+          })),
+          connection
+        );
+
+        // Verify that sendSeasonCaptainWelcomeEmail was called with the correct team name
+        expect(mockSendEmail).toHaveBeenCalledWith(
+          expect.any(String), // captainEmail
+          seasonDetails.id,
+          expect.any(Array), // players
+          newTeamName // teamName - this should be the actual team name, not "Your Team"
+        );
+
+        // Verify the team name is not the fallback value
+        const callArgs = mockSendEmail.mock.calls[0];
+        expect(callArgs[3]).toBe(newTeamName);
+        expect(callArgs[3]).not.toBe("Your Team");
+      } finally {
+        // Rollback the transaction to clean up
+        await connection.rollback();
+        connection.release();
+      }
     });
   });
   describe("validatePlayersFromDBForSignup", () => {
