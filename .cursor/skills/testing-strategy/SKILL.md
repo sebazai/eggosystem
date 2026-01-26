@@ -1,6 +1,6 @@
 ---
+name: testing-strategy
 description: Testing strategy constraints and patterns
-alwaysApply: false
 ---
 
 # Testing Strategy Constraints

@@ -1,6 +1,6 @@
 ---
+name: type-safety
 description: Type safety constraints and patterns for TypeScript code
-alwaysApply: false
 ---
 
 # Type Safety Constraints
@@ -62,8 +62,10 @@ export interface TeamSortterValues {
 }
 
 // For raw database results (pre-transformation)
-export interface TeamSortterValuesRaw
-  extends Omit<TeamSortterValues, "top5_values"> {
+export interface TeamSortterValuesRaw extends Omit<
+  TeamSortterValues,
+  "top5_values"
+> {
   top5_values: string; // Typed as string from database
 }
 ```

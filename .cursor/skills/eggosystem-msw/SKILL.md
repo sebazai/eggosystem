@@ -1,6 +1,6 @@
 ---
+name: eggosystem-msw
 description: MSW testing patterns using @eggosystem/shared-msw for external API mocking
-alwaysApply: false
 ---
 
 # @eggosystem/shared-msw Testing Strategy

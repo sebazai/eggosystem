@@ -1,6 +1,6 @@
 ---
+name: documentation-organization
 description: Documentation organization and maintenance patterns
-alwaysApply: false
 ---
 
 # Documentation Organization Constraints
