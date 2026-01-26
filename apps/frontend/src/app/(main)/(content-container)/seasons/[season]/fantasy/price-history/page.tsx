@@ -94,7 +94,7 @@ export default function FantasyPriceHistoryPage() {
       <>
         <AutoBreadcrumbs />
         <div className="fantasy-content-scale">
-          <div className="container mx-auto py-8 space-y-6">
+          <div className="space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle className="text-3xl font-bold">
@@ -129,7 +129,7 @@ export default function FantasyPriceHistoryPage() {
       <>
         <AutoBreadcrumbs />
         <div className="fantasy-content-scale">
-          <div className="container mx-auto py-8">
+          <div className="py-8">
             <Card>
               <CardHeader>
                 <CardTitle>Fantasy Price History</CardTitle>
@@ -172,7 +172,7 @@ export default function FantasyPriceHistoryPage() {
     <>
       <AutoBreadcrumbs />
       <div className="fantasy-content-scale">
-        <div className="container mx-auto py-8 space-y-6">
+        <div className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle className="text-3xl font-bold">
