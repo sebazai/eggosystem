@@ -22,9 +22,11 @@ description: Documentation organization and maintenance patterns
 
 ## Cross-Reference Format
 
+Use standard markdown links to reference other documentation:
+
 ```markdown
-See [Database Schema](mdc:database.md) for table relationships.
-For API patterns, refer to [API Documentation](mdc:api-documentation.md).
+See [Database Schema](README.database.md) for table relationships.
+For API patterns, refer to [API Documentation](README.api.md).
 ```
 
 ## Documentation Maintenance Requirements

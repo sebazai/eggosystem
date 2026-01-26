@@ -65,7 +65,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 
-export default function MyComponent() {
+export const MyComponent = () => {
   return (
     <Card>
       <CardHeader>
@@ -77,12 +77,13 @@ export default function MyComponent() {
       </CardContent>
     </Card>
   );
-}
+};
 ```
 
 ## Component Structure
 
 - Use functional components with TypeScript
+- **Prefer `export const`** over `export function` for component definitions
 - Define props interfaces at the top of the file
 - Use named exports for components
 - Follow existing component patterns in the codebase
