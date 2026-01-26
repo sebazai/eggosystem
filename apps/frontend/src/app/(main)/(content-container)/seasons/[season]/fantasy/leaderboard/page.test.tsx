@@ -10,8 +10,15 @@ jest.mock("swr");
 
 // Mock Next.js navigation
 const mockUseParams = useParams as jest.MockedFunction<typeof useParams>;
+const mockUseRouter = jest.fn();
+const mockUsePathname = jest.fn();
+const mockUseSearchParams = jest.fn();
+
 jest.mock("next/navigation", () => ({
-  useParams: jest.fn()
+  useParams: jest.fn(),
+  useRouter: jest.fn(),
+  usePathname: jest.fn(),
+  useSearchParams: jest.fn()
 }));
 
 const mockUseSeasonLeagues = useSeasonLeagues as jest.MockedFunction<
