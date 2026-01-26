@@ -25,10 +25,14 @@ export const getTeams = async () => {
   );
 };
 
-export const getTeamById = async (teamId: number) => {
+export const getTeamById = async (
+  teamId: number,
+  connection?: PoolConnection
+) => {
   return runQuery<[Team | undefined]>(
     "SELECT id, organization_id, name, team_logo FROM Teams WHERE id = ? LIMIT 1",
-    [teamId]
+    [teamId],
+    connection
   );
 };
 

@@ -455,7 +455,7 @@ export const handleSeasonTeamRegistration = async (
       connection
     );
     if (captainEmail) {
-      const team = await getTeamById(teamId);
+      const team = await getTeamById(teamId, connection);
       const teamName = team[0]?.name || "Your Team";
       sendSeasonCaptainWelcomeEmail(
         captainEmail,
