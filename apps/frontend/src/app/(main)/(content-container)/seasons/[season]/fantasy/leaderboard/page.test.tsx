@@ -9,7 +9,7 @@ jest.mock("@/hooks/data/useSeasonLeagues");
 jest.mock("swr");
 
 // Mock Next.js navigation
-const mockUseParams = useParams as jest.MockedFunction<typeof useParams>;
+const mockUseParams = jest.fn();
 const mockUseRouter = jest.fn();
 const mockUsePathname = jest.fn();
 const mockUseSearchParams = jest.fn();
@@ -39,7 +39,39 @@ jest.mock("@/components/fantasy/TeamViewDialog", () => ({
 describe("FantasyLeaderboardPage - Default League Selection", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+
+    // Setup Next.js navigation mocks
+    const {
+      useParams,
+      useRouter,
+      usePathname,
+      useSearchParams
+    } = require("next/navigation");
+    (useParams as jest.Mock).mockImplementation(() => mockUseParams());
+    (useRouter as jest.Mock).mockImplementation(() => mockUseRouter());
+    (usePathname as jest.Mock).mockImplementation(() => mockUsePathname());
+    (useSearchParams as jest.Mock).mockImplementation(() =>
+      mockUseSearchParams()
+    );
+
     mockUseParams.mockReturnValue({ season: "1" } as any);
+
+    // Mock router
+    mockUseRouter.mockReturnValue({
+      replace: jest.fn(),
+      push: jest.fn(),
+      refresh: jest.fn(),
+      back: jest.fn(),
+      forward: jest.fn(),
+      prefetch: jest.fn()
+    });
+
+    // Mock pathname
+    mockUsePathname.mockReturnValue("/seasons/1/fantasy/leaderboard");
+
+    // Mock search params - return a URLSearchParams object
+    const mockSearchParams = new URLSearchParams();
+    mockUseSearchParams.mockReturnValue(mockSearchParams);
 
     mockUseSeasonLeagues.mockReturnValue({
       seasonLeagues: [
