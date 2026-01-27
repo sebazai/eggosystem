@@ -3,6 +3,34 @@ import { runQuery } from "../db/mysqlRunQuery";
 import { generateQueryWithFilters } from "../utils/queryFilter";
 
 /**
+ * Get all maps from the active map pool for the filtered seasons
+ * @param seasonIds Array of season IDs to get active map pool for
+ * @returns Promise resolving to an array of { map_id, map_name } objects
+ */
+const getActiveMapPoolMaps = async (
+  seasonIds?: number[] | null
+): Promise<Array<{ map_id: number; map_name: string }>> => {
+  if (!seasonIds || seasonIds.length === 0) {
+    // If no seasons specified, return empty array (won't complement data)
+    return [];
+  }
+
+  const placeholders = seasonIds.map(() => "?").join(", ");
+  const query = `
+    SELECT DISTINCT m.id as map_id, m.name as map_name
+    FROM SeasonActiveMapPool samp
+    JOIN Maps m ON samp.map_id = m.id
+    WHERE samp.season_id IN (${placeholders})
+    ORDER BY m.name ASC
+  `;
+
+  return runQuery<Array<{ map_id: number; map_name: string }>>(
+    query,
+    seasonIds
+  );
+};
+
+/**
  * Get enhanced map statistics for a team including CT and T side performance
  * @param teamId The ID of the team to get stats for
  * @param filters Filters to apply to the query (season, league, map, stage)
@@ -23,7 +51,89 @@ export const getTeamEnhancedMapStats = async (
   ]);
 
   // Get map statistics including CT/T side data
-  return getMapStatsWithSides(teamId, query, queryParams);
+  const stats = await getMapStatsWithSides(teamId, query, queryParams);
+
+  // Only complement with map pool if:
+  // 1. Seasons are specified (to know which pool to use)
+  // 2. No specific maps are filtered (user wants to see all maps)
+  // 3. Team has at least some activity (not a non-existent team)
+  const shouldComplement =
+    season_ids &&
+    season_ids.length > 0 &&
+    (!map_ids || map_ids.length === 0) &&
+    stats.length > 0;
+
+  if (shouldComplement) {
+    const activeMapPool = await getActiveMapPoolMaps(season_ids);
+    if (activeMapPool.length > 0) {
+      return complementStatsWithMapPool(stats, activeMapPool);
+    }
+  }
+
+  return stats;
+};
+
+/**
+ * Complement stats with complete map pool, filling in zeros for unplayed maps
+ * @param stats Existing stats from database
+ * @param mapPool Complete map pool from SeasonActiveMapPool
+ * @returns Complete stats array with all maps from pool in alphabetical order
+ */
+const complementStatsWithMapPool = (
+  stats: TeamMapStats[],
+  mapPool: Array<{ map_id: number; map_name: string }>
+): TeamMapStats[] => {
+  // Create a map for quick lookup of existing stats
+  const statsMap = new Map(stats.map((s) => [s.map_id, s]));
+
+  // Create stats for all maps in the pool
+  const completeStats = mapPool.map((poolMap) => {
+    const existingStat = statsMap.get(poolMap.map_id);
+    if (existingStat) {
+      return existingStat;
+    }
+
+    // Return zero values for unplayed maps
+    return {
+      map_id: poolMap.map_id,
+      map_name: poolMap.map_name,
+      maps_played: 0,
+      wins: 0,
+      losses: 0,
+      win_percentage: 0,
+      avg_score: "0.0",
+      avg_opponent_score: "0.0",
+      ct_win_percentage: 50,
+      t_win_percentage: 50,
+      ct_kd: "0.00",
+      t_kd: "0.00",
+      kills_ct: 0,
+      deaths_ct: 0,
+      kills_t: 0,
+      deaths_t: 0,
+      first_kills: 0,
+      first_deaths: 0,
+      first_kills_t: 0,
+      first_deaths_t: 0,
+      first_kills_ct: 0,
+      first_deaths_ct: 0,
+      fk_5v4_won: 0,
+      fk_5v4_total: 0,
+      fk_4v5_won: 0,
+      fk_4v5_total: 0,
+      fk_5v4_won_ct: 0,
+      fk_5v4_total_ct: 0,
+      fk_5v4_won_t: 0,
+      fk_5v4_total_t: 0,
+      fk_4v5_won_ct: 0,
+      fk_4v5_total_ct: 0,
+      fk_4v5_won_t: 0,
+      fk_4v5_total_t: 0
+    } satisfies TeamMapStats;
+  });
+
+  // Sort by map name alphabetically (already sorted from query, but ensure)
+  return completeStats.sort((a, b) => a.map_name.localeCompare(b.map_name));
 };
 
 /**

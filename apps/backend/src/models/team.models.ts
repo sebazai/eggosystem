@@ -373,6 +373,71 @@ export const insertTeam = async (
   );
 };
 
+/**
+ * Get all maps from the active map pool for the filtered seasons
+ * @param seasonIds Array of season IDs to get active map pool for
+ * @returns Promise resolving to an array of { map_id, map_name } objects
+ */
+const getActiveMapPoolMaps = async (
+  seasonIds?: number[] | null
+): Promise<Array<{ map_id: number; map_name: string }>> => {
+  if (!seasonIds || seasonIds.length === 0) {
+    // If no seasons specified, return empty array (won't complement data)
+    return [];
+  }
+
+  const placeholders = seasonIds.map(() => "?").join(", ");
+  const query = `
+    SELECT DISTINCT m.id as map_id, m.name as map_name
+    FROM SeasonActiveMapPool samp
+    JOIN Maps m ON samp.map_id = m.id
+    WHERE samp.season_id IN (${placeholders})
+    ORDER BY m.name ASC
+  `;
+
+  return runQuery<Array<{ map_id: number; map_name: string }>>(
+    query,
+    seasonIds
+  );
+};
+
+/**
+ * Complement basic map stats with complete map pool
+ * @param stats Existing stats from database
+ * @param mapPool Complete map pool from SeasonActiveMapPool
+ * @returns Complete stats array with all maps from pool in alphabetical order
+ */
+const complementBasicMapStats = (
+  stats: TeamMapStats[],
+  mapPool: Array<{ map_id: number; map_name: string }>
+): TeamMapStats[] => {
+  // Create a map for quick lookup of existing stats
+  const statsMap = new Map(stats.map((s) => [s.map_id, s]));
+
+  // Create stats for all maps in the pool
+  const completeStats = mapPool.map((poolMap) => {
+    const existingStat = statsMap.get(poolMap.map_id);
+    if (existingStat) {
+      return existingStat;
+    }
+
+    // Return zero values for unplayed maps (basic stats only)
+    return {
+      map_id: poolMap.map_id,
+      map_name: poolMap.map_name,
+      maps_played: 0,
+      wins: 0,
+      losses: 0,
+      win_percentage: 0,
+      avg_score: "0.0",
+      avg_opponent_score: "0.0"
+    } as TeamMapStats;
+  });
+
+  // Sort by map name alphabetically (already sorted from query, but ensure)
+  return completeStats.sort((a, b) => a.map_name.localeCompare(b.map_name));
+};
+
 export const getTeamMapStats = async (
   teamId: number,
   { season_ids, league_ids, map_ids, stages }: ParsedParams
@@ -418,7 +483,60 @@ export const getTeamMapStats = async (
 
   const params = [teamId, ...queryParams];
 
-  return runQuery<TeamMapStats[]>(baseQuery, params);
+  const stats = await runQuery<TeamMapStats[]>(baseQuery, params);
+
+  // Only complement with map pool if:
+  // 1. Seasons are specified (to know which pool to use)
+  // 2. No specific maps are filtered (user wants to see all maps)
+  // 3. Team has at least some activity (not a non-existent team)
+  const shouldComplement =
+    season_ids &&
+    season_ids.length > 0 &&
+    (!map_ids || map_ids.length === 0) &&
+    stats.length > 0;
+
+  if (shouldComplement) {
+    const activeMapPool = await getActiveMapPoolMaps(season_ids);
+    if (activeMapPool.length > 0) {
+      return complementBasicMapStats(stats, activeMapPool);
+    }
+  }
+
+  return stats;
+};
+
+/**
+ * Complement trade map stats with complete map pool
+ * @param stats Existing stats from database
+ * @param mapPool Complete map pool from SeasonActiveMapPool
+ * @returns Complete stats array with all maps from pool in alphabetical order
+ */
+const complementTradeMapStats = (
+  stats: TeamTradeMapStats[],
+  mapPool: Array<{ map_id: number; map_name: string }>
+): TeamTradeMapStats[] => {
+  // Create a map for quick lookup of existing stats
+  const statsMap = new Map(stats.map((s) => [s.map_id, s]));
+
+  // Create stats for all maps in the pool
+  const completeStats = mapPool.map((poolMap) => {
+    const existingStat = statsMap.get(poolMap.map_id);
+    if (existingStat) {
+      return existingStat;
+    }
+
+    // Return zero values for unplayed maps
+    return {
+      map_id: poolMap.map_id,
+      map_name: poolMap.map_name,
+      trades: 0,
+      trade_attempts: 0,
+      trade_opportunities: 0
+    } satisfies TeamTradeMapStats;
+  });
+
+  // Sort by map name alphabetically (already sorted from query, but ensure)
+  return completeStats.sort((a, b) => a.map_name.localeCompare(b.map_name));
 };
 
 /**
@@ -465,7 +583,26 @@ export const getTeamTradeMapStats = async (
 
   const params = [teamId, ...queryParams];
 
-  return runQuery<TeamTradeMapStats[]>(baseQuery, params);
+  const stats = await runQuery<TeamTradeMapStats[]>(baseQuery, params);
+
+  // Only complement with map pool if:
+  // 1. Seasons are specified (to know which pool to use)
+  // 2. No specific maps are filtered (user wants to see all maps)
+  // 3. Team has at least some activity (not a non-existent team)
+  const shouldComplement =
+    season_ids &&
+    season_ids.length > 0 &&
+    (!map_ids || map_ids.length === 0) &&
+    stats.length > 0;
+
+  if (shouldComplement) {
+    const activeMapPool = await getActiveMapPoolMaps(season_ids);
+    if (activeMapPool.length > 0) {
+      return complementTradeMapStats(stats, activeMapPool);
+    }
+  }
+
+  return stats;
 };
 
 export const getFilteredTopTeams = async ({
