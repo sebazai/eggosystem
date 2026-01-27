@@ -1,368 +1,216 @@
-# Database Schema and Operations
+# Database Schema Documentation
 
-This document provides comprehensive information about the Kanaliiga database schema, including relationships, triggers, functions, and procedures. The database is designed to support a corporate esports league with sophisticated tournament management, player ranking, and multi-platform integration.
+This document explains the Kanaliiga database architecture and design decisions. The database supports a corporate esports league with tournament management, player ranking, and multi-platform integration.
 
-## Database Reference
+## Getting Started
 
-**Primary Schema File**: `apps/backend/dbdump/kanaliiga.sql`
+**Schema File**: The complete database schema is in `apps/backend/dbdump/kanaliiga.sql`
 
-This file contains the complete database schema including:
+**Visual Diagram**: [https://csdb.kanaliiga.fi/](https://csdb.kanaliiga.fi/) - Interactive entity-relationship diagram showing all tables, relationships, and constraints
 
-- Table structures and relationships
-- Triggers and their business logic
-- Functions and procedures
-- Indexes and constraints
-- Foreign key relationships
+**For Practical Queries**: See the [Database Operations Guide](docs/database-operations.md) for common queries, troubleshooting, and migration patterns
 
-**Visual Database Architecture**: [https://csdb.kanaliiga.fi/](https://csdb.kanaliiga.fi/)
+## Key Design Decisions
 
-Interactive entity-relationship diagram showing:
+### Why Two Roster Tables?
 
-- All tables and their columns with data types
-- Foreign key relationships and constraints
-- Visual representation of the database architecture
-- Navigable diagram with pan and zoom functionality
+The system uses a **dual-roster architecture** that separates registration from competition:
 
-## Querying the Database
+1. **`SeasonTeamRegistrationPlayers`** - Where teams initially register their players
+2. **`SeasonTeamPlayers`** - The active roster used during matches
 
-**Primary Method**: Use the **MariaDB MCP server** for database queries and exploration.
+**Why?** This separation allows the "Sortter" algorithm to process registrations and create balanced leagues, then copy final rosters to the competition table. Active rosters can be modified during the season without affecting the original registration data.
 
-When working with the database for data exploration, ad-hoc queries, schema investigation, or troubleshooting, use the MariaDB MCP server tools instead of writing code. The MCP server provides read-only access with these capabilities:
+### Why Steam ID Everywhere?
 
-- `execute_sql` - Execute SQL queries against the `kanaliiga` database
-- `list_databases` - List available databases
-- `list_tables` - List tables in a database
-- `get_table_schema` - Get schema information for a table
-- `get_table_schema_with_relations` - Get schema with foreign key relationships
+Steam ID is used as the primary player identifier throughout the system:
 
-**Example**: When asked about database information (e.g., "How many kills did player X have in season Y?"), use the MCP server to query the database directly rather than writing application code.
+- Steam is how players authenticate
+- Creates a direct link between login and player identity
+- Avoids maintaining separate internal ID mappings
+- The `get_account_id_from_steam_id()` function bridges to the internal account system when needed
 
-**Note**: For application code, migrations, and production queries, continue using Knex.js as documented in the [Database Operations Guide](docs/database-operations.md).
+### Why Duplicate Data in MatchTeams?
 
-## Core Design Principles
-
-### Dual-Roster Architecture
-
-The system implements a sophisticated **registration-to-competition pipeline**:
-
-1. **Registration Phase**: Teams register players in `SeasonTeamRegistrationPlayers`
-2. **Sorting Phase**: "Sortter" algorithm processes registrations to create balanced leagues
-3. **Competition Phase**: Final rosters copied to `SeasonTeamPlayers` for active tournament play
-4. **Runtime Flexibility**: Active rosters can be modified without affecting original registration data
-
-### Steam ID as Primary Identity
-
-Steam ID is the primary player identifier throughout the system because:
-
-- Steam is the primary authentication method
-- Creates natural 1:1 mapping between authentication and player identity
-- Eliminates complexity of maintaining separate internal IDs
-- Database function `get_account_id_from_steam_id` bridges to internal account system
-
-### Intentional Denormalization for Data Integrity
-
-The database uses **controlled denormalization** in specific cases where database-level constraints provide significant integrity benefits:
-
-#### MatchTeams Table
-
-**Structure:**
-
-```sql
-CREATE TABLE MatchTeams (
-  match_id INT UNSIGNED,
-  team_id INT UNSIGNED,
-  season_id INT UNSIGNED,  -- Redundant with Matches.season_id
-  league_id INT UNSIGNED,  -- Redundant with Matches.league_id
-  PRIMARY KEY (match_id, team_id),
-  FOREIGN KEY (season_id, team_id, league_id)
-    REFERENCES SeasonLeagueTeams(season_id, team_id, league_id)
-);
-```
-
-**Why Denormalize:**
-
-The `season_id` and `league_id` columns duplicate data from the `Matches` table, but they enable a **critical composite foreign key constraint** to `SeasonLeagueTeams` that ensures:
-
-- Teams can only participate in matches for seasons/leagues they're registered in
-- Database-level validation prevents invalid match assignments
-- Protection works even if application code has bugs
-- Fail-fast behavior at the database layer
-
-### Business Logic in Database
-
-Critical business rules are enforced via database triggers for:
-
-- **Data Consistency**: Automatic permission management
-- **Simplicity**: Reduces application code complexity
-- **Reliability**: Works regardless of how data is modified
-- **Low Risk**: Captain permissions don't have high security implications
-
-## Data Validation Constraints
-
-The database enforces data quality through CHECK constraints:
-
-- **Email Format**: Work emails must be valid RFC-compliant format
-- **Date Ordering**: Season and match dates must be logically ordered
-- **Budget Limits**: Fantasy team budgets cannot be negative
-- **Stats Validity**: Player statistics must be within reasonable ranges (non-negative kills/deaths/assists, ADR 0-500)
-- **Points Consistency**: Aggregated fantasy points must match their breakdown components
-
-These constraints provide defense-in-depth validation at the database level, catching data quality issues even if application validation is bypassed. See [`docs/database-operations.md`](docs/database-operations.md) for troubleshooting constraint violations.
-
-## Key Database Features
-
-### Functions
-
-#### `get_account_id_from_steam_id(steam_id_param BIGINT)`
-
-**Purpose**: Bridges between Steam IDs (used in backend) and internal account IDs (used in permission system).
-
-**Usage**: Essential for triggers that need to convert Steam IDs to account IDs for permission management.
-
-```sql
-SELECT get_account_id_from_steam_id(76561198000000000);
-```
-
-**Why Database Function**: Triggers need account_id for permission management, but backend primarily works with steam_id from authentication and match data.
-
-### Triggers
-
-#### Captain Permission Validation
-
-**Tables**: `AccountPermissionScopes`, `SeasonTeamRegistrationPlayers`
-
-**Purpose**: Ensures captain permissions are only assigned to actual captains/co-captains.
-
-**Triggers**:
-
-- `validate_captain_permission_on_insert`
-- `validate_captain_permission_on_update`
-
-**Business Logic**: Prevents assignment of captain-related permissions (`edit-registration`, `manage-team`, `captain-permissions`) to non-captain players.
-
-**Why Database-Level**: Ensures data consistency regardless of how captain status is modified (application, admin tools, direct DB changes).
-
-#### Captain Permission Management
-
-**Table**: `SeasonTeamRegistrationPlayers`
-
-**Purpose**: Automatically manages captain permissions when captain status changes.
-
-**Triggers**:
-
-- `add_captain_permissions_on_insert` - Adds permissions when captain status is set
-- `add_captain_permissions_on_update` - Adds permissions when captain status is added
-- `cleanup_captain_permissions_on_delete` - Removes permissions when captain is removed
-- `cleanup_captain_permissions_on_update` - Removes permissions when captain status is removed
-
-**Benefits**:
-
-- Automatic permission synchronization
-- Reduces application code complexity
-- Works for all data modification methods
-- Low security risk (captain permissions are not high-privilege)
-
-#### Unique Constraints
-
-**Table**: `SeasonTeamRegistrationPlayers`
-
-**Triggers**:
-
-- `unique_captain_per_team_season` - Ensures only one captain per team per season
-- `unique_co_captain_per_team_season` - Ensures only one co-captain per team per season
-
-**Business Logic**: Maintains clear team hierarchy and prevents permission conflicts.
-
-#### Primary Player Validation
-
-**Table**: `SeasonTeamPlayers`
-
-**Triggers**:
-
-- `before_insert_primary_check` - Prevents players from being primary on multiple teams
-- `before_update_primary_check` - Prevents players from being primary on multiple teams
-
-**Business Logic**: Ensures players can only be primary roster members on one team per season, preventing conflicts in match participation.
-
-#### Team Registration Validation
-
-**Table**: `SeasonTeamRegistrations`
-
-**Triggers**:
-
-- `before_insert_team_registration` - Prevents duplicate team registrations
-- `before_update_team_registration` - Prevents duplicate team registrations
-- `before_insert_unique_external_platform` - Ensures unique external platform IDs
-- `before_update_unique_external_platform` - Ensures unique external platform IDs
-- `cleanup_captain_permissions_on_registration_delete` - Cleans up permissions when registration is deleted
-
-**Business Logic**:
-
-- Prevents teams from registering multiple times per season
-- Ensures external platform IDs (FaceIT, Esportal, etc.) are unique per season
-- Maintains data integrity when registrations are deleted
-
-#### Player Approval Validation
-
-**Table**: `SeasonPlayerApprovals`
-
-**Triggers**:
-
-- `check_team_or_organization` - Ensures either team_id or organization_id is provided
-- `check_team_or_organization_update` - Ensures either team_id or organization_id is provided on update
-
-**Business Logic**: Supports flexible approval workflow where players without work emails need employment verification at either organization level (unknown team assignment) or team level (known team assignment).
-
-## Database Relationships
-
-### Core Entities
-
-#### Accounts and Authentication
-
-- `Accounts` - User accounts with work email and profile information
-- `LinkedAccounts` - Links accounts to external providers (Steam, Discord)
-- `SteamPlayers` - Steam player information linked to accounts
-- `UserPolicyAcceptances` - GDPR compliance tracking for privacy policy consent
-
-**Key Design**: Steam ID is primary identity, with internal account system for permissions and GDPR compliance.
-
-#### Teams and Organizations
-
-- `Teams` - Team information with optional organization association
-- `Organizations` - Organization/company information
-- `TeamRosters` - Future feature for persistent roster management across seasons
-
-**Key Design**: Organization membership is optional to support both corporate teams and scramble/pick-up teams.
-
-#### Seasons and Leagues
-
-- `Seasons` - Tournament seasons with game and organizer information
-- `Leagues` - League/tier information
-- `SeasonLeagues` - Links seasons to leagues with tier information
-- `SeasonLeagueTeams` - Team participation in season leagues
-- `SeasonLeagueExternalIds` - Maps external platform IDs to internal league structure
-
-**Key Design**: Season-centric architecture with multi-platform support for external tournament platforms.
-
-#### Player Management
-
-- `SeasonTeamPlayers` - Active team rosters for matches (competition phase)
-- `SeasonTeamRegistrationPlayers` - Team registration rosters (registration phase)
-- `SeasonPlayerApprovals` - Employment verification workflow for players without work emails
-- `SeasonPlayerRanks` - Player ranking information from multiple platforms
-- `SteamPlayerKanaElo` - Global, persistent ELO system (not season-specific)
-
-**Key Design**: Dual-roster system separates registration from competition, with sophisticated ranking integration.
-
-#### Matches and Games
-
-- `Matches` - Match information with season/league context (nullable for standalone matches)
-- `MatchGames` - Individual games within matches (BO1, BO3, BO5 support)
-- `MatchTeams` - Teams participating in matches
-- `PlayerStats` - Detailed CS2 player statistics per game (parsed from demos)
-- `TeamGameScores` - Team scores per game
-- `MapRoundStats` - Round-by-round statistics for CS2 matches
-- `PlayerTrades` - Detailed trade statistics for advanced analytics
-- `MatchGameClips` - Clip metadata from Allstar partnership
-- `MatchTeamMapVetoes` - Map veto data from FaceIT integration
-
-**Key Design**: Three-level hierarchy (Matches → MatchGames → PlayerStats) with comprehensive CS2-specific analytics.
-
-#### Permissions and Roles
-
-- `Roles` - System roles (captain, admin, etc.)
-- `Permissions` - Individual permissions
-- `RolePermissions` - Role-permission mappings
-- `AccountRoles` - User role assignments
-- `AccountPermissionScopes` - Scoped permissions (season/team specific)
-
-**Key Design**: Sophisticated permission system with automatic captain permission management via triggers.
-
-#### External Integrations
-
-- `FaceitWebhooks` - Webhook processing for FaceIT integration
-- `KanahautomoRegistrations` - Discord bot service for role management
-- `Reservations` - Stream slot reservations for casters
-- `AccountCasterUrls` - Multiple streaming platform URLs for casters
-
-## Important Constraints
-
-### Foreign Key Relationships
-
-All foreign key constraints are defined in the schema with appropriate CASCADE behaviors:
-
-- Most relationships use `ON DELETE CASCADE` for data integrity
-- Some use `ON DELETE SET NULL` for optional references (e.g., account references in audit logs)
-- Account references typically use `ON DELETE CASCADE`
-
-**Safety**: Daily backups with 7-day retention provide protection against accidental cascade deletions.
-
-#### Composite Foreign Keys for Data Integrity
-
-Several tables use composite foreign keys that span multiple columns to enforce complex business rules:
-
-**MatchTeams → SeasonLeagueTeams:**
+The `MatchTeams` table includes `season_id` and `league_id` even though they're already in the `Matches` table. This intentional duplication enables a critical database constraint:
 
 ```sql
 FOREIGN KEY (season_id, team_id, league_id)
-REFERENCES SeasonLeagueTeams(season_id, team_id, league_id)
+  REFERENCES SeasonLeagueTeams(season_id, team_id, league_id)
 ```
 
-**Purpose**: Ensures teams can only participate in matches for seasons/leagues they are registered in.
+**What this prevents:** Teams can only participate in matches for seasons/leagues they're actually registered in. The database will reject invalid match assignments even if application code has bugs.
 
-**Why Important**: Prevents invalid scenarios like:
+### Why Business Logic in Triggers?
 
-- Team A registered for Season 1, League 1
-- Match created in Season 2, League 2 with Team A
-- Without this FK, database would accept invalid assignment
-- With this FK, database rejects at INSERT time
+Many business rules are enforced by database triggers rather than application code:
 
-**Note**: While `season_id` and `league_id` in `MatchTeams` are redundant with the `Matches` table, this denormalization is intentional to enable this critical validation constraint. See "Intentional Denormalization" section above.
+- **Automatic**: Captain permissions are managed automatically when captain status changes
+- **Reliable**: Works regardless of how data is modified (app, admin tools, direct DB access)
+- **Simple**: Reduces application code complexity
+- **Safe**: Captain permissions are low-privilege, so the risk is minimal
+
+## Data Validation
+
+The database enforces data quality at multiple levels:
+
+- **Email Format**: Work emails must be valid
+- **Date Logic**: Season and match dates must be in the correct order
+- **Budget Limits**: Fantasy team budgets can't be negative
+- **Stats Ranges**: Player statistics must be reasonable (kills/deaths/assists ≥ 0, ADR between 0-500)
+- **Points Math**: Fantasy points must add up correctly
+
+These checks catch data quality issues even if application validation is bypassed. See the [Database Operations Guide](docs/database-operations.md) for troubleshooting constraint violations.
+
+## Database Functions and Triggers
+
+### Functions
+
+**`get_account_id_from_steam_id(steam_id)`** - Converts Steam IDs to internal account IDs. Used by triggers that manage permissions, since the backend works with Steam IDs but the permission system uses account IDs.
+
+### Triggers Overview
+
+The database uses triggers to automatically enforce business rules:
+
+**Captain Permissions** - Automatically adds/removes captain permissions when someone becomes or stops being a captain. Also prevents non-captains from having captain permissions.
+
+**Team Hierarchy** - Ensures only one captain and one co-captain per team per season.
+
+**Primary Players** - Prevents players from being primary roster members on multiple teams in the same season.
+
+**Team Registration** - Prevents duplicate registrations and ensures external platform IDs (FaceIT, Esportal) are unique per season.
+
+**Player Approvals** - Ensures player approval records specify either a team or organization (for employment verification workflow).
+
+All triggers are defined in the schema file and work automatically regardless of how data is modified.
+
+## Database Structure
+
+### Accounts and Authentication
+
+- **`Accounts`** - User accounts with work email and profile info
+- **`LinkedAccounts`** - Links accounts to Steam, Discord, etc.
+- **`SteamPlayers`** - Steam player information
+- **`UserPolicyAcceptances`** - GDPR compliance tracking
+
+Steam ID is the primary identity, with an internal account system for permissions and compliance.
+
+### Teams and Organizations
+
+- **`Teams`** - Team information (can optionally belong to an organization)
+- **`Organizations`** - Company/organization information
+- **`TeamRosters`** - Future feature for persistent rosters across seasons
+
+Organization membership is optional to support both corporate teams and pick-up teams.
+
+### Seasons and Leagues
+
+- **`Seasons`** - Tournament seasons
+- **`Leagues`** - League tiers/divisions
+- **`SeasonLeagues`** - Links seasons to leagues
+- **`SeasonLeagueTeams`** - Which teams participate in which season/league
+- **`SeasonLeagueExternalIds`** - Maps external platform IDs (FaceIT, etc.) to internal structure
+
+The system is season-centric with support for multiple external tournament platforms.
+
+### Player Management
+
+- **`SeasonTeamRegistrationPlayers`** - Initial team registrations
+- **`SeasonTeamPlayers`** - Active rosters during competition
+- **`SeasonPlayerApprovals`** - Employment verification for players without work emails
+- **`SeasonPlayerRanks`** - Player rankings from multiple platforms
+- **`SteamPlayerKanaElo`** - Global ELO system (not season-specific)
+
+Uses a dual-roster system: registration → sorting → competition.
+
+### Matches and Games
+
+- **`Matches`** - Match information (can be standalone or part of a season)
+- **`MatchGames`** - Individual games within a match (BO1, BO3, BO5)
+- **`MatchTeams`** - Which teams are in the match
+- **`PlayerStats`** - Detailed CS2 stats per game (from demo parsing)
+- **`TeamGameScores`** - Team scores per game
+- **`MapRoundStats`** - Round-by-round CS2 statistics
+- **`PlayerTrades`** - Trade statistics for analytics
+- **`MatchGameClips`** - Clip metadata from Allstar partnership
+- **`MatchTeamMapVetoes`** - Map veto data from FaceIT
+
+Three-level hierarchy: Matches → MatchGames → PlayerStats.
+
+### Permissions and Roles
+
+- **`Roles`** - System roles (captain, admin, etc.)
+- **`Permissions`** - Individual permissions
+- **`RolePermissions`** - Which permissions each role has
+- **`AccountRoles`** - User role assignments
+- **`AccountPermissionScopes`** - Scoped permissions (season/team specific)
+
+Captain permissions are automatically managed by triggers.
+
+### External Integrations
+
+- **`FaceitWebhooks`** - FaceIT webhook processing
+- **`KanahautomoRegistrations`** - Discord bot role management
+- **`Reservations`** - Stream slot reservations for casters
+- **`AccountCasterUrls`** - Caster streaming platform URLs
+
+## Data Integrity Rules
+
+### Foreign Keys
+
+Most relationships use `ON DELETE CASCADE` to maintain data integrity. Some optional references use `ON DELETE SET NULL` (like account references in audit logs).
+
+**Safety**: Daily backups with 7-day retention protect against accidental deletions.
+
+### Composite Foreign Keys
+
+The `MatchTeams` table uses a composite foreign key to ensure teams can only participate in matches for seasons/leagues they're registered in:
+
+```sql
+FOREIGN KEY (season_id, team_id, league_id)
+  REFERENCES SeasonLeagueTeams(season_id, team_id, league_id)
+```
+
+This prevents invalid scenarios like assigning Team A to a match in Season 2 when they're only registered for Season 1.
 
 ### Unique Constraints
 
-- Steam IDs are unique across the system (primary identity)
-- Team names are unique
-- Organization codes are unique
-- External platform IDs are unique per season
+- Steam IDs (primary identity)
+- Team names
+- Organization codes
+- External platform IDs per season
 - One captain and one co-captain per team per season
-- Work emails are unique (for corporate verification)
+- Work emails (for corporate verification)
 
-### Business Rules Enforced by Triggers
+### Business Rules (Enforced by Triggers)
 
-1. **Captain Permissions**: Only actual captains can have captain permissions
-2. **Primary Players**: Players can only be primary on one team per season
-3. **Team Registration**: Teams can only register once per season
-4. **External IDs**: External platform IDs must be unique per season
-5. **Player Approvals**: Must specify either team or organization
-6. **Permission Cleanup**: Automatic cleanup when captain status changes or registrations are deleted
+1. Only actual captains can have captain permissions
+2. Players can only be primary on one team per season
+3. Teams can only register once per season
+4. External platform IDs must be unique per season
+5. Player approvals must specify either team or organization
+6. Permissions are automatically cleaned up when captain status changes
 
-### Error Handling
+### Error Messages
 
-Database constraint violations are propagated to the frontend via RFC 7807 Problem Details format through Express error handling middleware, ensuring user-friendly error messages.
+Constraint violations are returned to the frontend in RFC 7807 Problem Details format, providing clear error messages to users.
 
-## Schema Evolution & Future Considerations
+## Future Improvements
 
-### Planned Improvements
+- **Standalone Matches**: Support for exhibition matches outside of seasons
+- **Persistent Rosters**: Cross-season roster management (TeamRosters table)
+- **Multi-Platform**: Support for more external platforms beyond FaceIT
+- **Performance**: Continuous monitoring and optimization
 
-- **Flexible Match System**: Support nullable season_id/league_id for standalone/exhibition matches
-- **TeamRosters**: Persistent roster management across seasons (currently unused table)
-- **Multi-Platform Support**: Ongoing work to support multiple external platforms beyond FaceIT
-- **Performance Optimization**: Continuous monitoring with Grafana Alloy and OpenTelemetry
+## Working with the Database
 
-### Schema Governance
+**Schema Source**: `apps/backend/dbdump/kanaliiga.sql` is the source of truth
 
-- The `kanaliiga.sql` file serves as the source of truth
-- All migrations must be tested against the full schema including triggers
-- Triggers and functions are version controlled
-- Business rule changes require corresponding trigger updates
-- Use Knex.js for all schema migrations
+**Migrations**: Use Knex.js for all schema changes. Test against the full schema including triggers.
 
-## Operational Documentation
+**Related Documentation**:
 
-For practical information on working with the database, see:
-
-- **[Database Operations Guide](docs/database-operations.md)**: Common queries, troubleshooting, performance optimization
-- **[Migration Files](apps/backend/migrations/)**: Historical schema changes
-- **[Type Definitions](packages/types/src/db/)**: TypeScript interfaces for database tables
-- **[Visual ERD](https://csdb.kanaliiga.fi/)**: Interactive entity-relationship diagram
+- [Database Operations Guide](docs/database-operations.md) - Common queries and troubleshooting
+- [Migration Files](apps/backend/migrations/) - Historical schema changes
+- [Type Definitions](packages/types/src/db/) - TypeScript interfaces
+- [Visual ERD](https://csdb.kanaliiga.fi/) - Interactive diagram

@@ -1,5 +1,5 @@
 FROM mcr.microsoft.com/devcontainers/javascript-node:24-bullseye
-ENV TBLS_VERSION=1.86.1
+ENV TBLS_VERSION=1.92.3
 WORKDIR /workspace
 
 RUN npm install -g typescript
