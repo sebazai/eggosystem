@@ -2,6 +2,35 @@ import { runQuery } from "../db/mysqlRunQuery";
 import { type PoolConnection } from "mysql2/promise";
 
 /**
+ * Get all maps from the active map pool for the given seasons (id + name).
+ * Use when complementing stats with the full map pool, e.g. for team map stats or veto stats.
+ *
+ * @param seasonIds - Array of season IDs to get active map pool for
+ * @returns Promise resolving to an array of { map_id, map_name } objects
+ */
+export const getActiveMapPoolMaps = async (
+  seasonIds?: number[] | null
+): Promise<Array<{ map_id: number; map_name: string }>> => {
+  if (!seasonIds || seasonIds.length === 0) {
+    return [];
+  }
+
+  const placeholders = seasonIds.map(() => "?").join(", ");
+  const query = `
+    SELECT DISTINCT m.id as map_id, m.name as map_name
+    FROM SeasonActiveMapPool samp
+    JOIN Maps m ON samp.map_id = m.id
+    WHERE samp.season_id IN (${placeholders})
+    ORDER BY m.name ASC
+  `;
+
+  return runQuery<Array<{ map_id: number; map_name: string }>>(
+    query,
+    seasonIds
+  );
+};
+
+/**
  * Get the active map pool for a season
  * @param seasonId - The season ID
  * @param connection - Optional database connection for transactions

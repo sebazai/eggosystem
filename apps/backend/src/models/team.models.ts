@@ -18,6 +18,7 @@ import { type PoolConnection } from "mysql2/promise";
 import { buildInsertQueryParts } from "../db/utils";
 import { generateQueryWithFilters } from "../utils/queryFilter";
 import { BadRequestError } from "../utils/errors";
+import { getActiveMapPoolMaps } from "./season-active-map-pool.models";
 
 export const getTeams = async () => {
   return runQuery<Team[]>(
@@ -370,34 +371,6 @@ export const insertTeam = async (
     `INSERT INTO Teams (${columns.join(", ")}) VALUES (${placeholders})`,
     values,
     connection
-  );
-};
-
-/**
- * Get all maps from the active map pool for the filtered seasons
- * @param seasonIds Array of season IDs to get active map pool for
- * @returns Promise resolving to an array of { map_id, map_name } objects
- */
-const getActiveMapPoolMaps = async (
-  seasonIds?: number[] | null
-): Promise<Array<{ map_id: number; map_name: string }>> => {
-  if (!seasonIds || seasonIds.length === 0) {
-    // If no seasons specified, return empty array (won't complement data)
-    return [];
-  }
-
-  const placeholders = seasonIds.map(() => "?").join(", ");
-  const query = `
-    SELECT DISTINCT m.id as map_id, m.name as map_name
-    FROM SeasonActiveMapPool samp
-    JOIN Maps m ON samp.map_id = m.id
-    WHERE samp.season_id IN (${placeholders})
-    ORDER BY m.name ASC
-  `;
-
-  return runQuery<Array<{ map_id: number; map_name: string }>>(
-    query,
-    seasonIds
   );
 };
 

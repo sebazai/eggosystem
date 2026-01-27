@@ -16,3 +16,4 @@ alwaysApply: true
 - **Match Existing Style**: Follow established code style and conventions
 - **Technology Stack**: Node.js, TypeScript, PNPM monorepo with `apps/backend` and `apps/frontend`
 - **Development Environment**: DevContainer environment as described in README.md
+- **Reuse by exporting**: Export functions that other modules can reuse; import shared logic instead of duplicating it (DRY).

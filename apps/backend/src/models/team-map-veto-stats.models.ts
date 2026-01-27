@@ -1,6 +1,7 @@
 import { type TeamMapVetoStats, type ParsedParams } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
 import { generateQueryWithFilters } from "../utils/queryFilter";
+import { getActiveMapPoolMaps } from "./season-active-map-pool.models";
 
 /**
  * Raw database query result type for map veto statistics
@@ -11,34 +12,6 @@ interface MapVetoStatsRaw {
   picks: number;
   bans: number;
 }
-
-/**
- * Get all maps from the active map pool for the filtered seasons
- * @param seasonIds Array of season IDs to get active map pool for
- * @returns Promise resolving to an array of { map_id, map_name } objects
- */
-const getActiveMapPoolMaps = async (
-  seasonIds?: number[] | null
-): Promise<Array<{ map_id: number; map_name: string }>> => {
-  if (!seasonIds || seasonIds.length === 0) {
-    // If no seasons specified, return empty array (won't complement data)
-    return [];
-  }
-
-  const placeholders = seasonIds.map(() => "?").join(", ");
-  const query = `
-    SELECT DISTINCT m.id as map_id, m.name as map_name
-    FROM SeasonActiveMapPool samp
-    JOIN Maps m ON samp.map_id = m.id
-    WHERE samp.season_id IN (${placeholders})
-    ORDER BY m.name ASC
-  `;
-
-  return runQuery<Array<{ map_id: number; map_name: string }>>(
-    query,
-    seasonIds
-  );
-};
 
 /**
  * Complement veto stats with complete map pool

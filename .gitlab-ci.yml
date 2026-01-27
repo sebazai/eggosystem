@@ -333,7 +333,7 @@ test:frontend:
     - pnpm install --frozen-lockfile
     - pnpm --filter=@eggosystem/types build
   script:
-    - pnpm --filter=frontend test
+    - pnpm --filter=frontend test -- --runInBand
   coverage: '/Statements\s+:\s+([\d.]+)%/'
   artifacts:
     expire_in: 7 days
