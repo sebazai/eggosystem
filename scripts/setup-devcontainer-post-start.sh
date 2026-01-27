@@ -16,11 +16,7 @@ fi
 echo "Setting up MCP readonly database user..."
 /workspace/scripts/setup-mcp-readonly-user.sh
 
-# Setup MariaDB MCP Server (synchronous - must complete before Cursor tries to start MCP server)
-echo ""
-echo "Setting up MariaDB MCP Server (this may take several minutes on first run)..."
-echo "This must complete before Cursor can start the MCP server."
-/workspace/scripts/setup-mariadb-mcp-server.sh
+# MariaDB MCP server is baked into the image at /usr/local/mariadb-mcp during Docker build
 
 echo ""
 echo "Starting background setup tasks..."
