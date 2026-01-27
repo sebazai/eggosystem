@@ -113,6 +113,7 @@ services:
       - MARIADB_USER=kanadbuser
       - MARIADB_PASSWORD=dev-pass
       - MARIADB_DATABASE=kanaliiga
+      - MCP_READONLY_PASSWORD=dev-pass
     healthcheck:
       test:
         [
@@ -129,6 +130,7 @@ services:
       retries: 10
     volumes:
       - ./conf/mariadb/my.cnf:/etc/mysql/conf.d/my.cnf
+      - ./conf/mariadb/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
 
   migrations:
     image: eggo-migrations
