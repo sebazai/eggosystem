@@ -35,7 +35,7 @@
     "seed:reset": "pnpm reseed",
     "reseed": "pnpm --filter=backend reseed",
     "quality": "pnpm knip && pnpm typecheck && pnpm format:check && pnpm lint",
-    "fresh": "pnpm clean && rm -rf node_modules apps/*/node_modules packages/*/node_modules .turbo .pnpm-store && pnpm install && pnpm build && pnpm reseed",
+    "fresh": "pnpm clean && rm -rf node_modules apps/*/node_modules packages/*/node_modules apps/*/.turbo packages/*/.turbo .turbo .pnpm-store && pnpm install && pnpm build && pnpm reseed",
     "setup:dev": "pnpm install && pnpm install:playwright && pnpm build && pnpm migrate && pnpm seed"
   },
   "keywords": [
