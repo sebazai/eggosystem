@@ -16,6 +16,12 @@ fi
 echo "Setting up MCP readonly database user..."
 /workspace/scripts/setup-mcp-readonly-user.sh
 
+# Setup MariaDB MCP Server (synchronous - must complete before Cursor tries to start MCP server)
+echo ""
+echo "Setting up MariaDB MCP Server (this may take several minutes on first run)..."
+echo "This must complete before Cursor can start the MCP server."
+/workspace/scripts/setup-mariadb-mcp-server.sh
+
 echo ""
 echo "Starting background setup tasks..."
 
@@ -32,10 +38,6 @@ touch /tmp/playwright-setup.log
   echo "Playwright installation failed. Check the log for details." >> /tmp/playwright-setup.log 2>&1
 ) &
 
-# Start MariaDB MCP Server setup in background
-echo "Starting MariaDB MCP Server setup (this may take several minutes on first run)..."
-(/workspace/scripts/setup-mariadb-mcp-server.sh >> /tmp/mcp-setup.log 2>&1 &)
-
 # Give background processes a moment to start
 sleep 2
 
@@ -43,5 +45,4 @@ echo ""
 echo "Background setup tasks started."
 echo "Check progress with:"
 echo "  tail -f /tmp/playwright-setup.log"
-echo "  tail -f /tmp/mcp-setup.log"
 echo "========================================="
