@@ -18,6 +18,11 @@
         "DB_NAME": "kanaliiga",
         "MCP_READ_ONLY": "true"
       }
+    },
+    "Playwright": {
+      "command": "npx -y @playwright/mcp@latest",
+      "env": {},
+      "args": []
     }
   }
 }
