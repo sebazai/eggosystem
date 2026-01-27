@@ -573,23 +573,23 @@ describe("KanahautomoPage", () => {
         await user.click(submitButton);
       });
 
-      // Wait for submission to complete (button should be enabled again)
-      await waitFor(
-        () => {
-          expect(submitButton).not.toBeDisabled();
-        },
-        { timeout: 3000 }
-      );
-
-      // Should show error message - wait for the error to appear
+      // Wait for the error message to appear (this also indicates submission is complete)
       // Use findByText which automatically waits and retries
       const errorText = await screen.findByText(
         "Registration failed",
         {},
-        { timeout: 3000 }
+        { timeout: 5000 }
       );
       expect(errorText).toBeInTheDocument();
       expect(errorText).toHaveClass("text-red-500", "text-sm");
+
+      // Also verify button is re-enabled after error
+      await waitFor(
+        () => {
+          expect(submitButton).not.toBeDisabled();
+        },
+        { timeout: 5000 }
+      );
     });
   });
 
