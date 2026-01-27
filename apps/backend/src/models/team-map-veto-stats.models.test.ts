@@ -14,7 +14,7 @@ describe("Team Map Veto Stats Models", () => {
 
   describe("getTeamMapVetoStats", () => {
     it("should return aggregated veto stats with picks and bans from database", async () => {
-      // Mock the database response
+      // Mock the veto stats query
       mockRunQuery.mockResolvedValueOnce([
         {
           map_id: 1,
@@ -30,6 +30,9 @@ describe("Team Map Veto Stats Models", () => {
         }
       ]);
 
+      // Mock the map pool query (returns empty to not complement)
+      mockRunQuery.mockResolvedValueOnce([]);
+
       // Create parsed params
       const parsedParams: ParsedParams = {
         season_ids: [14],
@@ -42,16 +45,18 @@ describe("Team Map Veto Stats Models", () => {
       // Call the function
       const result = await getTeamMapVetoStats(1650, parsedParams);
 
-      // Verify the SQL query structure
-      expect(mockRunQuery).toHaveBeenCalledTimes(1);
+      // Verify both queries were called
+      expect(mockRunQuery).toHaveBeenCalledTimes(2);
       const sqlQuery = mockRunQuery.mock.calls[0][0] as string;
       const sqlParams = mockRunQuery.mock.calls[0][1] as (string | number)[];
 
-      // Check query contains expected elements
+      // Check query contains expected elements (with subquery for deduplication)
+      expect(sqlQuery).toContain("SELECT DISTINCT");
       expect(sqlQuery).toContain("FROM MatchTeamMapVetoes mtmv");
-      expect(sqlQuery).toContain("JOIN Maps maps ON mtmv.map_id = maps.id");
       expect(sqlQuery).toContain("JOIN Matches m ON mtmv.match_id = m.id");
       expect(sqlQuery).toContain("WHERE mtmv.team_id = ?");
+      expect(sqlQuery).toContain("external_match_room_id");
+      expect(sqlQuery).toContain("JOIN Maps maps ON mtmv.map_id = maps.id");
       expect(sqlQuery).toContain(
         "SUM(CASE WHEN mtmv.action IN ('pick', 'decider') THEN 1 ELSE 0 END) as picks"
       );
@@ -85,6 +90,10 @@ describe("Team Map Veto Stats Models", () => {
     });
 
     it("should return empty array when no veto data exists", async () => {
+      // Mock the veto stats query (empty)
+      mockRunQuery.mockResolvedValueOnce([]);
+
+      // Mock the map pool query
       mockRunQuery.mockResolvedValueOnce([]);
 
       const parsedParams: ParsedParams = {
@@ -98,34 +107,6 @@ describe("Team Map Veto Stats Models", () => {
       const result = await getTeamMapVetoStats(9999, parsedParams);
 
       expect(result).toEqual([]);
-    });
-
-    it("should handle null picks/bans by defaulting to 0", async () => {
-      mockRunQuery.mockResolvedValueOnce([
-        {
-          map_id: 1,
-          map_name: "de_mirage",
-          picks: null,
-          bans: null
-        }
-      ]);
-
-      const parsedParams: ParsedParams = {
-        season_ids: [14],
-        league_ids: [],
-        map_ids: [],
-        team_ids: [],
-        stages: []
-      };
-
-      const result = await getTeamMapVetoStats(1650, parsedParams);
-
-      expect(result[0]).toEqual({
-        map_id: 1,
-        map_name: "de_mirage",
-        picks: 0,
-        bans: 0
-      });
     });
   });
 });

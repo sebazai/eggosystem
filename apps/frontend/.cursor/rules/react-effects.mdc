@@ -1,6 +1,7 @@
 ---
 description: React Effects best practices - avoid unnecessary Effects by calculating during render
-alwaysApply: true
+alwaysApply: false
+globs: ["apps/frontend/**/*.tsx", "apps/frontend/**/*.jsx"]
 ---
 
 # React Effects Best Practices
@@ -23,7 +24,7 @@ alwaysApply: true
 // 🔴 Bad: Redundant state and unnecessary Effect
 const [fullName, setFullName] = useState("");
 useEffect(() => {
-  setFullName(firstName + " " + lastName);
+ setFullName(firstName + " " + lastName);
 }, [firstName, lastName]);
 ```
 
@@ -42,7 +43,7 @@ const fullName = firstName + " " + lastName;
 // 🔴 Bad: Unnecessary state and Effect
 const [visibleTodos, setVisibleTodos] = useState([]);
 useEffect(() => {
-  setVisibleTodos(getFilteredTodos(todos, filter));
+ setVisibleTodos(getFilteredTodos(todos, filter));
 }, [todos, filter]);
 ```
 
@@ -51,7 +52,7 @@ useEffect(() => {
 ```typescript
 // ✅ Good: Cached with useMemo
 const visibleTodos = useMemo(() => {
-  return getFilteredTodos(todos, filter);
+ return getFilteredTodos(todos, filter);
 }, [todos, filter]);
 ```
 
@@ -62,7 +63,7 @@ const visibleTodos = useMemo(() => {
 ```typescript
 // 🔴 Bad: Effect to reset state
 useEffect(() => {
-  setFormData(initialData);
+ setFormData(initialData);
 }, [initialData]);
 ```
 
@@ -84,9 +85,9 @@ const formData = userFormData ?? initialData;
 // 🔴 Bad: Syncing state in Effect
 const [selectedId, setSelectedId] = useState(propId);
 useEffect(() => {
-  if (propId !== selectedId) {
-    setSelectedId(propId);
-  }
+ if (propId !== selectedId) {
+ setSelectedId(propId);
+ }
 }, [propId, selectedId]);
 ```
 
@@ -105,9 +106,9 @@ const selectedId = userSelectedId ?? propId;
 ```typescript
 // 🔴 Bad: Effect for user action
 useEffect(() => {
-  if (shouldSubmit) {
-    submitForm();
-  }
+ if (shouldSubmit) {
+ submitForm();
+ }
 }, [shouldSubmit]);
 ```
 
@@ -116,7 +117,7 @@ useEffect(() => {
 ```typescript
 // ✅ Good: Handle in event handler
 const handleSubmit = () => {
-  submitForm();
+ submitForm();
 };
 ```
 
@@ -131,22 +132,22 @@ Effects are appropriate for:
 ```typescript
 // ✅ Good: Syncing with external system (browser API)
 useEffect(() => {
-  const handleResize = () => setWindowWidth(window.innerWidth);
-  window.addEventListener("resize", handleResize);
-  return () => window.removeEventListener("resize", handleResize);
+ const handleResize = () => setWindowWidth(window.innerWidth);
+ window.addEventListener("resize", handleResize);
+ return () => window.removeEventListener("resize", handleResize);
 }, []);
 
 // ✅ Good: Data fetching (with cleanup for race conditions)
 useEffect(() => {
-  let ignore = false;
-  fetchData(query).then((data) => {
-    if (!ignore) {
-      setData(data);
-    }
-  });
-  return () => {
-    ignore = true;
-  };
+ let ignore = false;
+ fetchData(query).then((data) => {
+ if (!ignore) {
+ setData(data);
+ }
+ });
+ return () => {
+ ignore = true;
+ };
 }, [query]);
 ```
 
@@ -160,7 +161,7 @@ Instead of syncing state, calculate during render:
 // ❌ Bad
 const [effectiveValue, setEffectiveValue] = useState(defaultValue);
 useEffect(() => {
-  setEffectiveValue(userValue ?? defaultValue);
+ setEffectiveValue(userValue ?? defaultValue);
 }, [userValue, defaultValue]);
 
 // ✅ Good
@@ -175,9 +176,9 @@ Instead of setting defaults in Effects, use nullish coalescing:
 // ❌ Bad
 const [selectedItem, setSelectedItem] = useState(null);
 useEffect(() => {
-  if (!selectedItem && defaultItem) {
-    setSelectedItem(defaultItem);
-  }
+ if (!selectedItem && defaultItem) {
+ setSelectedItem(defaultItem);
+ }
 }, [defaultItem, selectedItem]);
 
 // ✅ Good
@@ -197,14 +198,14 @@ const searchValue = pendingInput ?? urlValue;
 
 // Only use Effect to clear stale pending input when URL changes externally
 useEffect(() => {
-  if (
-    !isUpdatingUrlRef.current &&
-    urlValue !== pendingInput &&
-    pendingInput !== null
-  ) {
-    setPendingInput(null);
-  }
-  isUpdatingUrlRef.current = false;
+ if (
+ !isUpdatingUrlRef.current &&
+ urlValue !== pendingInput &&
+ pendingInput !== null
+ ) {
+ setPendingInput(null);
+ }
+ isUpdatingUrlRef.current = false;
 }, [urlValue, pendingInput]);
 ```
 

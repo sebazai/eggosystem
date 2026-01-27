@@ -1,6 +1,6 @@
 ---
+name: error-handling
 description: General error handling patterns and RFC 7807 compliance
-alwaysApply: false
 ---
 
 # Error Handling Constraints

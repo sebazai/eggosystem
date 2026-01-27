@@ -21,6 +21,28 @@ globs: ["apps/backend/migrations/**/*.ts"]
 - Include both `up` and `down` migrations
 - Test migrations in development before applying to production
 
+## Table Comments
+
+**Always add a comment describing the table's purpose when creating new tables.**
+
+Use `knex.raw()` to add table comments after creating the table:
+
+```typescript
+await knex.schema.createTable("NewTable", (table) => {
+  // table definition
+});
+
+await knex.raw(
+  `ALTER TABLE NewTable COMMENT = 'Clear description of what this table stores and its purpose'`
+);
+```
+
+**Guidelines:**
+- Be concise but descriptive (1-2 sentences)
+- Explain the table's role in the system
+- Mention relationships or special behaviors if relevant
+- Follow the pattern used in existing table comments (see `20260127023723_add_table_comments.ts`)
+
 ## Type Safety
 
 - After schema changes, update types in `@eggosystem/types` package

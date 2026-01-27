@@ -19,6 +19,7 @@
     "migrate:down": "knex migrate:down",
     "migrate:up": "knex migrate:up",
     "migrate:make": "knex migrate:make",
+    "migrate:status": "knex migrate:status",
     "seed": "knex seed:run --specific=dev_seed.ts ",
     "reseed": "knex seed:run --specific=reset_seed.ts && pnpm seed && pnpm migrate",
     "reseed:e2e": "knex seed:run --specific=reset_seed.ts && pnpm seed && pnpm migrate && pnpm seed:e2e",

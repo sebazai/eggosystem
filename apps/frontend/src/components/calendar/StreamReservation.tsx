@@ -53,7 +53,7 @@ export function StreamReservation({
 
   useEffect(() => {
     if (reservation) {
-      setStreamUrl(reservation.stream_url);
+      setStreamUrl(reservation.stream_url ?? "");
     }
   }, [reservation]);
 
@@ -83,7 +83,7 @@ export function StreamReservation({
   };
 
   const handleReserve = async () => {
-    if (!streamUrl.trim()) {
+    if (!streamUrl?.trim()) {
       toast.error("Please enter a stream URL");
       return;
     }
@@ -208,7 +208,7 @@ export function StreamReservation({
           <div className="flex gap-2">
             <Button
               onClick={handleReserve}
-              disabled={isLoading || !streamUrl.trim()}
+              disabled={isLoading || !streamUrl?.trim()}
               className="flex-1"
             >
               {isLoading

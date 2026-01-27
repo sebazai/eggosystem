@@ -1,6 +1,6 @@
 ---
+name: eggosystem-types
 description: Usage patterns for @eggosystem/types package including build requirements and type composition
-alwaysApply: false
 ---
 
 # @eggosystem/types Package

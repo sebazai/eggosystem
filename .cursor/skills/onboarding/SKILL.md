@@ -1,6 +1,6 @@
 ---
+name: onboarding
 description: Onboarding guidance for reading project documentation
-alwaysApply: false
 ---
 
 # Onboarding for AI Coding Agents

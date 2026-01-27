@@ -1,6 +1,6 @@
 ---
+name: tdd-workflow
 description: TDD workflow constraints and patterns
-alwaysApply: false
 ---
 
 # Test-Driven Development (TDD) Workflow Rule
