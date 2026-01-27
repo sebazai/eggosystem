@@ -23,6 +23,22 @@ Interactive entity-relationship diagram showing:
 - Visual representation of the database architecture
 - Navigable diagram with pan and zoom functionality
 
+## Querying the Database
+
+**Primary Method**: Use the **MariaDB MCP server** for database queries and exploration.
+
+When working with the database for data exploration, ad-hoc queries, schema investigation, or troubleshooting, use the MariaDB MCP server tools instead of writing code. The MCP server provides read-only access with these capabilities:
+
+- `execute_sql` - Execute SQL queries against the `kanaliiga` database
+- `list_databases` - List available databases
+- `list_tables` - List tables in a database
+- `get_table_schema` - Get schema information for a table
+- `get_table_schema_with_relations` - Get schema with foreign key relationships
+
+**Example**: When asked about database information (e.g., "How many kills did player X have in season Y?"), use the MCP server to query the database directly rather than writing application code.
+
+**Note**: For application code, migrations, and production queries, continue using Knex.js as documented in the [Database Operations Guide](docs/database-operations.md).
+
 ## Core Design Principles
 
 ### Dual-Roster Architecture

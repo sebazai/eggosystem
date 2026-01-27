@@ -21,7 +21,16 @@ echo "Starting background setup tasks..."
 
 # Start Playwright installation in background
 echo "Starting Playwright installation (this may take several minutes on first run)..."
-(npx playwright install && npx playwright install-deps >> /tmp/playwright-setup.log 2>&1 &)
+# Create log file immediately so it can be tailed
+touch /tmp/playwright-setup.log
+(
+  echo "Starting Playwright browser installation..." >> /tmp/playwright-setup.log 2>&1
+  npx playwright install >> /tmp/playwright-setup.log 2>&1 && \
+  echo "Starting Playwright system dependencies installation..." >> /tmp/playwright-setup.log 2>&1 && \
+  npx playwright install-deps >> /tmp/playwright-setup.log 2>&1 && \
+  echo "Playwright installation completed successfully!" >> /tmp/playwright-setup.log 2>&1 || \
+  echo "Playwright installation failed. Check the log for details." >> /tmp/playwright-setup.log 2>&1
+) &
 
 # Start MariaDB MCP Server setup in background
 echo "Starting MariaDB MCP Server setup (this may take several minutes on first run)..."

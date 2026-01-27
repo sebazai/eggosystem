@@ -14,13 +14,15 @@ if ! command -v python3.11 &> /dev/null; then
 fi
 
 # Check if already fully installed
-if [ -d "/workspace/mariadb-mcp" ] && command -v uv &> /dev/null && [ -f "/workspace/mariadb-mcp/.venv/bin/python" ]; then
+# Use python3.11 -m uv to check if uv is available (works even if not in PATH)
+if [ -d "/workspace/mariadb-mcp" ] && (command -v uv &> /dev/null || python3.11 -m uv --version &> /dev/null) && [ -f "/workspace/mariadb-mcp/.venv/bin/python" ]; then
   echo "MariaDB MCP Server already installed and ready!"
   exit 0
 fi
 
 # Install uv if not available (Python feature may not include it)
-if ! command -v uv &> /dev/null; then
+# Check both direct command and python module
+if ! command -v uv &> /dev/null && ! python3.11 -m uv --version &> /dev/null; then
   echo "Installing uv package manager..."
   echo "This may take a few minutes on first run..."
   # Use timeout to prevent hanging, and show output for debugging
@@ -29,18 +31,7 @@ if ! command -v uv &> /dev/null; then
     echo "You can try installing manually with: python3.11 -m pip install --break-system-packages uv"
     exit 0
   }
-  # Add uv to PATH (it installs to ~/.local/bin by default)
-  export PATH="$HOME/.local/bin:$PATH"
-  # Verify uv is now available
-  if command -v uv &> /dev/null; then
-    echo "uv installed successfully: $(uv --version 2>&1 || echo 'version check failed')"
-  else
-    echo "Warning: uv installed but not found in PATH. Trying to locate..."
-    if [ -f "$HOME/.local/bin/uv" ]; then
-      export PATH="$HOME/.local/bin:$PATH"
-      echo "Added ~/.local/bin to PATH"
-    fi
-  fi
+  echo "uv installed successfully"
 fi
 
 # Clone MariaDB MCP Server if not exists
