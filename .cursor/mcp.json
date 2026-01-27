@@ -20,9 +20,14 @@
       }
     },
     "Playwright": {
-      "command": "npx -y @playwright/mcp@latest",
-      "env": {},
-      "args": []
+      "command": "pnpm",
+      "args": ["-C", "/workspace", "exec", "@playwright/mcp"],
+      "env": {}
+    },
+    "shadcn/ui": {
+      "command": "pnpm",
+      "args": ["-C", "/workspace/apps/frontend", "exec", "shadcn", "mcp"],
+      "env": {}
     }
   }
 }
