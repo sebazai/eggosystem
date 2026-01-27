@@ -4,6 +4,12 @@
   "service": "devcontainer",
   "workspaceFolder": "/workspace",
   "shutdownAction": "stopCompose",
+  "features": {
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.11",
+      "installTools": true
+    }
+  },
   "customizations": {
     // Configure properties specific to VS Code.
     "vscode": {
@@ -72,7 +78,7 @@
   "hostRequirements": {
     "cli": ["xhost"]
   },
-  "postStartCommand": "[ \"$(uname)\" = \"Darwin\" ] && (xhost + 127.0.0.1 || true) || true",
+  "postStartCommand": "/workspace/scripts/setup-devcontainer-post-start.sh",
   "runServices": [
     "devcontainer",
     "eggo-devdb",

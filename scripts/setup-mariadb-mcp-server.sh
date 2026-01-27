@@ -1,0 +1,68 @@
+#!/bin/bash
+# Don't use set -e - we want to handle errors gracefully
+
+echo "========================================="
+echo "Setting up MariaDB MCP Server..."
+echo "========================================="
+
+# Python 3.11 is installed via devcontainer feature (ghcr.io/devcontainers/features/python:1)
+# Check if Python 3.11 is available
+if ! command -v python3.11 &> /dev/null; then
+  echo "Error: Python 3.11 not found. It should be installed by the devcontainer Python feature."
+  echo "Please rebuild the devcontainer to ensure Python 3.11 is installed."
+  exit 0
+fi
+
+# Check if already fully installed
+if [ -d "/workspace/mariadb-mcp" ] && command -v uv &> /dev/null && [ -f "/workspace/mariadb-mcp/.venv/bin/python" ]; then
+  echo "MariaDB MCP Server already installed and ready!"
+  exit 0
+fi
+
+# Install uv if not available (Python feature may not include it)
+if ! command -v uv &> /dev/null; then
+  echo "Installing uv package manager..."
+  echo "This may take a few minutes on first run..."
+  # Use timeout to prevent hanging, and show output for debugging
+  timeout 300 python3.11 -m pip install --break-system-packages uv 2>&1 || {
+    echo "Warning: Failed to install uv (timeout or error). MariaDB MCP Server setup skipped."
+    echo "You can try installing manually with: python3.11 -m pip install --break-system-packages uv"
+    exit 0
+  }
+  # Add uv to PATH (it installs to ~/.local/bin by default)
+  export PATH="$HOME/.local/bin:$PATH"
+  # Verify uv is now available
+  if command -v uv &> /dev/null; then
+    echo "uv installed successfully: $(uv --version 2>&1 || echo 'version check failed')"
+  else
+    echo "Warning: uv installed but not found in PATH. Trying to locate..."
+    if [ -f "$HOME/.local/bin/uv" ]; then
+      export PATH="$HOME/.local/bin:$PATH"
+      echo "Added ~/.local/bin to PATH"
+    fi
+  fi
+fi
+
+# Clone MariaDB MCP Server if not exists
+if [ ! -d "/workspace/mariadb-mcp" ]; then
+  echo "Cloning MariaDB MCP Server repository..."
+  git clone --quiet https://github.com/MariaDB/mcp.git /workspace/mariadb-mcp || {
+    echo "Warning: Failed to clone MariaDB MCP Server repository."
+    exit 0
+  }
+fi
+
+# Install dependencies
+if [ ! -f "/workspace/mariadb-mcp/.venv/bin/python" ]; then
+  echo "Installing MariaDB MCP Server dependencies..."
+  cd /workspace/mariadb-mcp && \
+  python3.11 -m uv lock && \
+  python3.11 -m uv sync || {
+    echo "Warning: Failed to install MariaDB MCP Server dependencies."
+    exit 0
+  }
+fi
+
+echo "========================================="
+echo "MariaDB MCP Server setup completed!"
+echo "========================================="

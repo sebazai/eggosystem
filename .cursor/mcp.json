@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "mariadb": {
+      "command": "bash",
+      "args": [
+        "-c",
+        "cd /workspace/mariadb-mcp && /usr/local/bin/python3.11 -m uv run server.py 2>/dev/null || python3.11 -m uv run server.py 2>/dev/null || (echo 'MariaDB MCP Server not ready yet. Run: /workspace/scripts/setup-mariadb-mcp-server.sh' && exit 1)"
+      ],
+      "env": {
+        "DB_HOST": "eggo-devdb",
+        "DB_PORT": "3306",
+        "DB_USER": "mcp_readonly",
+        "DB_PASSWORD": "dev-pass",
+        "DB_NAME": "kanaliiga",
+        "MCP_READ_ONLY": "true"
+      }
+    }
+  }
+}
