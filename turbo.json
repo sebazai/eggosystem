@@ -124,6 +124,9 @@
     "shadcn:add": {
       "cache": false
     },
+    "clean": {
+      "cache": false
+    },
     "migrate": {
       "env": ["NODE_ENV", "DB_HOST", "DB_USER", "DB_PASSWORD", "DB_NAME"],
       "cache": false
@@ -138,6 +141,10 @@
       "cache": false
     },
     "migrate:make": {
+      "cache": false
+    },
+    "migrate:status": {
+      "env": ["NODE_ENV", "DB_HOST", "DB_USER", "DB_PASSWORD", "DB_NAME"],
       "cache": false
     },
     "seed": {
