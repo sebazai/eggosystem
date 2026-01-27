@@ -43,12 +43,16 @@ if [ ! -d "/workspace/mariadb-mcp" ]; then
   }
 fi
 
+# Prefer uv binary (from Dockerfile) when available; fall back to python3.11 -m uv
+UV_CMD="python3.11 -m uv"
+if command -v uv &> /dev/null; then UV_CMD="uv"; fi
+
 # Install dependencies
 if [ ! -f "/workspace/mariadb-mcp/.venv/bin/python" ]; then
   echo "Installing MariaDB MCP Server dependencies..."
   cd /workspace/mariadb-mcp && \
-  python3.11 -m uv lock && \
-  python3.11 -m uv sync || {
+  $UV_CMD lock && \
+  $UV_CMD sync || {
     echo "Warning: Failed to install MariaDB MCP Server dependencies."
     exit 0
   }

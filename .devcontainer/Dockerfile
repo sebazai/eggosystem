@@ -13,6 +13,9 @@ RUN ARCH=$(dpkg --print-architecture) && \
 # Installed in background
 # RUN npx playwright install && npx playwright install-deps
 
+# Install uv (standalone) so MariaDB MCP server can start before postCreateCommand/postStartCommand run
+RUN curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR="/usr/local/bin" UV_NO_MODIFY_PATH=1 sh
+
 # Install MariaDB client for database setup scripts
 # Check if packages are needed before installing
 RUN if ! command -v mysql &> /dev/null; then \

@@ -55,7 +55,7 @@
       ]
     }
   },
-  "postCreateCommand": "pnpm install && python3.11 -m pip install --break-system-packages uv",
+  "postCreateCommand": "pnpm install",
   // Use 'forwardPorts' to make a list of ports inside the container available locally.
   "forwardPorts": [3000, 3001],
   // Use 'portsAttributes' to set default properties for specific forwarded ports.
