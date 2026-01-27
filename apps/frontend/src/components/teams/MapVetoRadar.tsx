@@ -110,41 +110,39 @@ export const MapVetoRadar: React.FC<MapVetoRadarProps> = ({ vetoStats }) => {
               stroke="transparent"
             />
 
+            {/* Bans - Orange dashed (render first so picks overlays) */}
+            <Radar
+              name="Bans"
+              dataKey="bansNormalized"
+              stroke="#f97316"
+              fill="rgba(249, 115, 22, 0.2)"
+              fillOpacity={0.3}
+              strokeWidth={2.5}
+              strokeDasharray="5 5"
+              dot={{ fill: "#f97316", strokeWidth: 0, r: 3 }}
+              activeDot={{ fill: "#f97316", strokeWidth: 2, r: 6 }}
+              isAnimationActive={false}
+            />
+
             {/* Picks - Blue solid */}
             <Radar
               name="Picks"
               dataKey="picksNormalized"
-              stroke="rgba(59, 130, 246, 0.9)"
-              fill="rgba(59, 130, 246, 0.3)"
-              fillOpacity={0.5}
-              strokeWidth={2}
-              dot={true}
-              activeDot={{ strokeWidth: 2, r: 6 }}
-            />
-
-            {/* Bans - Orange dashed */}
-            <Radar
-              name="Bans"
-              dataKey="bansNormalized"
-              stroke="rgba(249, 115, 22, 0.9)"
-              fill="rgba(249, 115, 22, 0.25)"
+              stroke="#3b82f6"
+              fill="rgba(59, 130, 246, 0.25)"
               fillOpacity={0.4}
-              strokeWidth={2}
-              strokeDasharray="6 4"
-              dot={true}
-              activeDot={{ strokeWidth: 2, r: 6 }}
+              strokeWidth={2.5}
+              dot={{ fill: "#3b82f6", strokeWidth: 0, r: 3 }}
+              activeDot={{ fill: "#3b82f6", strokeWidth: 2, r: 6 }}
+              isAnimationActive={false}
             />
 
             <Tooltip content={<CustomTooltip />} />
             <Legend
               wrapperStyle={{ paddingTop: "10px" }}
-              formatter={(value, entry) => (
-                <span
-                  className="text-sm font-medium"
-                  style={{ color: entry.color }}
-                >
-                  {value}
-                </span>
+              iconType="line"
+              formatter={(value) => (
+                <span className="text-sm font-medium">{value}</span>
               )}
             />
           </RadarChart>
