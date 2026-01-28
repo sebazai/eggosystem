@@ -5,11 +5,15 @@
 
 import {
   AabeSteamId,
+  ApprovalOnlySubmitSteamId,
+  DraftReturnUserSteamId,
   EligiblePlayerForValidationSteamId,
   heppajpgSteamId,
   HoolyzSteamId,
   IncompleteDetailsPlayerSteamId,
   InsufficientHoursPlayerSteamId,
+  ManualApprovalTargetSteamId,
+  ManualRankTargetSteamId,
   NoFaceitRankPlayerSteamId,
   PrivateProfilePlayerSteamId,
   QuattraSteamId,
@@ -180,6 +184,42 @@ export const e2eSteamPlayerData: E2ESteamPlayerData[] = [
     work_email: null, // Missing work email
     work_email_verified: 0, // Not verified
     discord: null // Missing discord
+  },
+  // E2E critical-workflow IDs (S2, S3, A1, A2)
+  {
+    account_id: 15022,
+    steam_id: DraftReturnUserSteamId,
+    nickname: "DraftReturnUser",
+    work_email: "test+15022@kanaliiga.fi",
+    work_email_verified: 1,
+    is_work_email_personal_email: false,
+    discord: "draftreturn#1234"
+  },
+  {
+    account_id: 15023,
+    steam_id: ApprovalOnlySubmitSteamId,
+    nickname: "ApprovalOnlySubmit",
+    work_email: null,
+    work_email_verified: 0,
+    discord: "approvalonly#1234"
+  },
+  {
+    account_id: 15024,
+    steam_id: ManualApprovalTargetSteamId,
+    nickname: "ManualApprovalTarget",
+    work_email: "test+15024@kanaliiga.fi",
+    work_email_verified: 1,
+    is_work_email_personal_email: false,
+    discord: "manualapproval#1234"
+  },
+  {
+    account_id: 15025,
+    steam_id: ManualRankTargetSteamId,
+    nickname: "ManualRankTarget",
+    work_email: "test+15025@kanaliiga.fi",
+    work_email_verified: 1,
+    is_work_email_personal_email: false,
+    discord: "manualrank#1234"
   }
 ];
 

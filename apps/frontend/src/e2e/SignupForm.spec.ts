@@ -8,6 +8,8 @@ import {
 } from "./utils";
 import {
   AabeSteamId,
+  ApprovalOnlySubmitSteamId,
+  DraftReturnUserSteamId,
   heppajpgSteamId,
   HoolyzSteamId,
   InsufficientHoursPlayerSteamId,
@@ -66,10 +68,7 @@ async function assignCaptain(page: Page) {
     }
   }
 
-  // Wait for validation error to clear (it might take a moment)
-  await page.waitForTimeout(1000);
-
-  // Check that validation error is not visible
+  // Wait for captain/co-captain validation error to disappear
   const validationError = page.getByText(
     "There must be exactly one captain and one co-captain"
   );
@@ -129,6 +128,11 @@ async function setupFormToPlayersSectionWithTeam999(page: Page) {
   // Navigate to the form
   await page.goto("/seasons/16/signup/registration");
 
+  // Wait for form to be ready (org dropdown visible; matches setupCompleteRegistrationForm)
+  await page
+    .locator('[data-testid="organizations-dropdown-toggle"]')
+    .waitFor({ state: "visible", timeout: 60000 });
+
   // Complete organization selection - select existing organization 999
   await page.locator('[data-testid="organizations-dropdown-toggle"]').click();
   await page.locator('[data-testid="organizations-option-999"]').click();
@@ -156,6 +160,11 @@ async function setupCompleteRegistrationForm(
 ) {
   // Navigate to the registration form
   await page.goto("/seasons/16/signup/registration");
+
+  // Wait for signup status check and form to be ready (org dropdown is the first interactive element)
+  await page
+    .locator('[data-testid="organizations-dropdown-toggle"]')
+    .waitFor({ state: "visible", timeout: 60000 });
 
   // Complete organization selection
   await page.locator('[data-testid="organizations-dropdown-toggle"]').click();
@@ -752,6 +761,149 @@ test.describe("Signup Form", () => {
 
       expect(captainCheckedCount).toBe(1);
       expect(coCaptainCheckedCount).toBe(1);
+    });
+
+    test("should keep submit disabled and show email verification message for player in SeasonPlayerApprovals who has not verified email (approval-only)", async ({
+      page
+    }) => {
+      // S3: ApprovalOnlySubmitSteamId is in SeasonPlayerApprovals (season 16, team 999) but has work_email null,
+      // work_email_verified 0. Email verification is required even when organizer-approved, so submit stays disabled.
+      await setupFormToPlayersSectionWithTeam999(page);
+
+      await page
+        .locator('[data-testid="steam-id-input-0"]')
+        .waitFor({ state: "visible", timeout: 10000 });
+
+      const approvalOnlyLineup = [
+        ApprovalOnlySubmitSteamId,
+        heppajpgSteamId,
+        ValidWorkEmail1SteamId,
+        ValidWorkEmail2SteamId,
+        ValidWorkEmail3SteamId
+      ];
+      for (let i = 0; i < 5; i++) {
+        const steamIdInput = page.locator(
+          `[data-testid="steam-id-input-${i}"]`
+        );
+        await expect(steamIdInput).toBeVisible();
+        await steamIdInput.fill(approvalOnlyLineup[i]!);
+        await page.keyboard.press("Tab");
+      }
+
+      await expect(
+        page.locator('[data-testid="steam-id-input-4"]')
+      ).toHaveClass(/border-green-500/, { timeout: 20000 });
+
+      await assignCaptain(page);
+
+      const finalTermsCheckbox = page.locator(
+        '[data-testid="terms-conditions-checkbox"]'
+      );
+      await finalTermsCheckbox.waitFor({ state: "visible", timeout: 5000 });
+      if (!(await finalTermsCheckbox.isChecked().catch(() => false))) {
+        await finalTermsCheckbox.click();
+      }
+
+      // Approval-only player has no verified email; we require isEmailVerified for everyone
+      await expect(
+        page.locator('[data-testid="email-verification-error-0"]')
+      ).toBeVisible({ timeout: 5000 });
+      await expect(
+        page.locator('[data-testid="email-verification-error-0"]')
+      ).toContainText("Player has not verified their email");
+
+      const submitButton = page
+        .getByTestId("signup-submit-button")
+        .or(
+          page.locator('button[type="submit"]').filter({ hasText: /Submit/i })
+        );
+      await expect(submitButton).toBeVisible({ timeout: 5000 });
+      await expect(submitButton).toBeDisabled();
+    });
+
+    test("should save draft, re-open registration, and see form prefilled from draft (S2 draft-return)", async ({
+      page
+    }) => {
+      // S2: Use DraftReturnUserSteamId so draft is keyed by this user; save draft, re-open, assert prefilled, save again
+      await setupAuthForUser(
+        page,
+        15022,
+        DraftReturnUserSteamId,
+        "DraftReturnUser"
+      );
+
+      const orgName = generateUniqueOrgName("Draft Return Org");
+      const teamName = generateUniqueTeamName("Draft Return Team");
+      await setupCompleteRegistrationForm(page, orgName, teamName);
+
+      await fillValidPlayers(page, DraftReturnUserSteamId);
+      await page.waitForTimeout(3000);
+
+      for (let i = 0; i < 5; i++) {
+        const steamIdInput = page.locator(
+          `[data-testid="steam-id-input-${i}"]`
+        );
+        await expect(steamIdInput).toHaveClass(/border-green-500/);
+      }
+
+      const saveDraftButton = page.locator(
+        '[data-testid="save-as-draft-button"]'
+      );
+      await expect(saveDraftButton).toBeVisible();
+      const draftSavePromise = page.waitForResponse(
+        (response) =>
+          response.url().includes("/api/v1/registrations/season/") &&
+          response.url().includes("/draft") &&
+          response.request().method() === "POST"
+      );
+      await saveDraftButton.click();
+      const draftSaveResponse = await draftSavePromise;
+      expect(draftSaveResponse.status()).toBeGreaterThanOrEqual(200);
+      expect(draftSaveResponse.status()).toBeLessThan(300);
+
+      await page.goto("/seasons/16/signup");
+      await page.goto("/seasons/16/signup/registration");
+
+      await page
+        .locator('[data-testid="organizations-dropdown-toggle"]')
+        .waitFor({ state: "visible", timeout: 15000 });
+      await page.locator('[data-testid="team-selection-button"]').click();
+      await page.locator('[data-testid="go-to-lineup-button"]').click();
+
+      const expectedSteamIds = [
+        ValidWorkEmail1SteamId,
+        ValidWorkEmail2SteamId,
+        ValidWorkEmail3SteamId,
+        ValidWorkEmail4SteamId,
+        DraftReturnUserSteamId
+      ];
+      const steamIdInput0 = page.locator('[data-testid="steam-id-input-0"]');
+      await steamIdInput0.waitFor({ state: "visible", timeout: 10000 });
+      await expect(steamIdInput0).toHaveValue(expectedSteamIds[0]!, {
+        timeout: 10000
+      });
+
+      for (let i = 0; i < 5; i++) {
+        const steamIdInput = page.locator(
+          `[data-testid="steam-id-input-${i}"]`
+        );
+        await expect(steamIdInput).toHaveValue(expectedSteamIds[i]!);
+      }
+
+      const saveDraftAgain = page.locator(
+        '[data-testid="save-as-draft-button"]'
+      );
+      await expect(saveDraftAgain).toBeVisible();
+      const draftSaveAgainPromise = page.waitForResponse(
+        (response) =>
+          response.url().includes("/api/v1/registrations/season/") &&
+          response.url().includes("/draft") &&
+          response.request().method() === "POST"
+      );
+      await saveDraftAgain.click();
+      const draftSaveAgainResponse = await draftSaveAgainPromise;
+      expect(draftSaveAgainResponse.status()).toBeGreaterThanOrEqual(200);
+      expect(draftSaveAgainResponse.status()).toBeLessThan(300);
     });
   });
 

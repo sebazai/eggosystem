@@ -269,12 +269,19 @@ export const TabPlayers = ({
           setValue(`players.${index}.hasValidWorkEmail`, isValidWorkEmail);
 
           if (!isValidWorkEmail) {
-            // Check if organizer has approved manually
-            if (watchTeamId) {
+            // Check if organizer has approved manually (need team and/or org for the API)
+            const hasTeamOrOrg =
+              watchTeamId != null || watchOrganizationId != null;
+            if (hasTeamOrOrg) {
+              const params = new URLSearchParams();
+              if (watchTeamId != null)
+                params.set("team_id", String(watchTeamId));
+              if (watchOrganizationId != null)
+                params.set("organization_id", String(watchOrganizationId));
               const approvedByOrganizer = await clientApiFetch<{
                 approved_by_organizer: boolean;
               }>(
-                `/api/v1/registrations/season/${seasonId}/player/${steam_id}/approved-manually?team_id=${watchTeamId}&organization_id=${watchOrganizationId}`
+                `/api/v1/registrations/season/${seasonId}/player/${steam_id}/approved-manually?${params.toString()}`
               );
 
               setValue(

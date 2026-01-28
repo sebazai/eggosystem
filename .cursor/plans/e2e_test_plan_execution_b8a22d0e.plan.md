@@ -4,49 +4,49 @@ overview: "Step-by-step execution plan for the E2E critical-workflows plan: uniq
 todos:
   - id: types-fixtures
     content: Add 4 Steam ID constants (DraftReturnUserSteamId, ApprovalOnlySubmitSteamId, ManualApprovalTargetSteamId, ManualRankTargetSteamId) to packages/types/src/test/fixtures.ts using range 66561198999999925–66561198999999928
-    status: pending
+    status: completed
   - id: types-e2e-data
     content: Add 4 entries to e2eSteamPlayerData in packages/types/src/test/e2e-test-data.ts with correct account_id (15022–15025), work_email/work_email_verified per workflow (S2/S3/A1/A2)
-    status: pending
+    status: completed
   - id: types-export
     content: Ensure new Steam ID constants are exported from packages/types so shared-msw and e2e can import them
-    status: pending
+    status: completed
   - id: checkpoint-e2e-baseline
     content: Run pnpm test:e2e from repo root (or apps/frontend) and fix any failures; establishes baseline before seed/MSW changes
-    status: pending
+    status: completed
   - id: msw-game-rank
     content: In packages/shared-msw/src/faceit/GameRank-handlers.ts add if (gamePlayerId === X) branches for DraftReturnUserSteamId, ApprovalOnlySubmitSteamId, ManualApprovalTargetSteamId, ManualRankTargetSteamId returning createFaceitRank(..., 1500, 10)
-    status: pending
+    status: completed
   - id: msw-metadata
     content: In packages/shared-msw/src/faceit/Metadata-handlers.ts add branches for the 4 new Steam IDs if signup/dashboard calls FACEIT metadata for them (or defer)
-    status: pending
+    status: completed
   - id: msw-owned-games
     content: In packages/shared-msw/src/steam/GetOwnedGames-handlers.ts add special cases only if any new ID needs no-hours or different hours; else rely on e2eSteamPlayerData
-    status: pending
+    status: completed
   - id: checkpoint-build
     content: Run pnpm typecheck and backend unit tests that use MSW to ensure types and shared-msw build and existing tests still pass
-    status: pending
+    status: completed
   - id: seed-accounts
     content: Add the 4 new Steam IDs to e2eSteamPlayerData in packages/types so the e2e seed's existing loop (apps/backend/seeds/e2e_test_seed.ts) creates Account, SteamPlayer, and LinkedAccount for them
-    status: pending
+    status: completed
   - id: seed-approval-s3
     content: In e2e_test_seed add SeasonPlayerApprovals row for ApprovalOnlySubmitSteamId (season_id=16, team_id=999); ensure that account has work_email null / work_email_verified 0
-    status: pending
+    status: completed
   - id: seed-no-approval-a1
     content: Ensure ManualApprovalTargetSteamId has no SeasonPlayerApprovals row in seed (test adds it via admin form)
-    status: pending
+    status: completed
   - id: seed-no-rank-a2
     content: Ensure ManualRankTargetSteamId has no SeasonPlayerRanks row for season 16 in seed (test adds it via admin rank form)
-    status: pending
+    status: completed
   - id: checkpoint-e2e-after-seed
     content: Run pnpm test:e2e again after seed changes; fix any failures before adding new specs
-    status: pending
+    status: completed
   - id: e2e-s3-approval-only
     content: In SignupForm.spec add test that fills lineup including ApprovalOnlySubmitSteamId, assigns captain/co-captain, accepts terms, submits, asserts success
-    status: pending
+    status: completed
   - id: checkpoint-e2e-s3
     content: Run pnpm test:e2e (e.g. SignupForm.spec or full) and fix failures after S3 test
-    status: pending
+    status: in_progress
   - id: e2e-s2-draft-return
     content: In SignupForm.spec add test that saves draft as DraftReturnUserSteamId (or heppajpg), re-opens registration, asserts form prefilled from draft, then submits or saves again
     status: pending

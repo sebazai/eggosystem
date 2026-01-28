@@ -19,3 +19,8 @@ export const InsufficientHoursPlayerSteamId = "66561198999999910";
 export const ValidationFailurePlayerSteamId = "66561198999999914";
 export const IncompleteDetailsPlayerSteamId = "66561198999999911";
 export const RaceConditionPlayerSteamId = "66561198999999912";
+// E2E critical-workflow IDs (plan range 66561198999999925–66561198999999928)
+export const DraftReturnUserSteamId = "66561198999999925";
+export const ApprovalOnlySubmitSteamId = "66561198999999926";
+export const ManualApprovalTargetSteamId = "66561198999999927";
+export const ManualRankTargetSteamId = "66561198999999928";

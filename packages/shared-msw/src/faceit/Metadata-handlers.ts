@@ -21,7 +21,11 @@ import {
   ValidWorkEmail3SteamId,
   ValidWorkEmail4SteamId,
   ValidWorkEmail5SteamId,
-  EligiblePlayerForValidationSteamId
+  EligiblePlayerForValidationSteamId,
+  DraftReturnUserSteamId,
+  ApprovalOnlySubmitSteamId,
+  ManualApprovalTargetSteamId,
+  ManualRankTargetSteamId
 } from "@eggosystem/types";
 
 const createFaceitMetadataPlayerStatsGame = (
@@ -180,6 +184,20 @@ export const faceitMetadataHandlers = [
         return HttpResponse.json(createFaceitMetadataLastGame(recentMatchTime));
       }
 
+      // E2E critical-workflow IDs (S2, S3, A1, A2)
+      if (faceit_player_id === DraftReturnUserSteamId) {
+        return HttpResponse.json(createFaceitMetadataLastGame(recentMatchTime));
+      }
+      if (faceit_player_id === ApprovalOnlySubmitSteamId) {
+        return HttpResponse.json(createFaceitMetadataLastGame(recentMatchTime));
+      }
+      if (faceit_player_id === ManualApprovalTargetSteamId) {
+        return HttpResponse.json(createFaceitMetadataLastGame(recentMatchTime));
+      }
+      if (faceit_player_id === ManualRankTargetSteamId) {
+        return HttpResponse.json(createFaceitMetadataLastGame(recentMatchTime));
+      }
+
       // Test Steam ID for partial data bug test (AppIdRank in DB, hours and FaceIT rank from API)
       if (faceit_player_id === "88888888888888888" && game === "cs2") {
         // Return a recent match date (7 days ago)
@@ -333,6 +351,28 @@ export const faceitMetadataHandlers = [
       if (faceit_player_id === EligiblePlayerForValidationSteamId) {
         return HttpResponse.json(
           createFaceitMetadataPlayerStatsGame("1.5", "300")
+        );
+      }
+
+      // E2E critical-workflow IDs (S2, S3, A1, A2)
+      if (faceit_player_id === DraftReturnUserSteamId) {
+        return HttpResponse.json(
+          createFaceitMetadataPlayerStatsGame("1.2", "150")
+        );
+      }
+      if (faceit_player_id === ApprovalOnlySubmitSteamId) {
+        return HttpResponse.json(
+          createFaceitMetadataPlayerStatsGame("1.2", "150")
+        );
+      }
+      if (faceit_player_id === ManualApprovalTargetSteamId) {
+        return HttpResponse.json(
+          createFaceitMetadataPlayerStatsGame("1.2", "150")
+        );
+      }
+      if (faceit_player_id === ManualRankTargetSteamId) {
+        return HttpResponse.json(
+          createFaceitMetadataPlayerStatsGame("1.2", "150")
         );
       }
 
