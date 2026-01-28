@@ -12,7 +12,7 @@ todos:
     content: Ensure new Steam ID constants are exported from packages/types so shared-msw and e2e can import them
     status: completed
   - id: checkpoint-e2e-baseline
-    content: Run pnpm test:e2e from repo root (or apps/frontend) and fix any failures; establishes baseline before seed/MSW changes
+    content: Run pnpm test:e2e from workspace root and fix any failures; establishes baseline before seed/MSW changes
     status: completed
   - id: msw-game-rank
     content: In packages/shared-msw/src/faceit/GameRank-handlers.ts add if (gamePlayerId === X) branches for DraftReturnUserSteamId, ApprovalOnlySubmitSteamId, ManualApprovalTargetSteamId, ManualRankTargetSteamId returning createFaceitRank(..., 1500, 10)
@@ -46,43 +46,43 @@ todos:
     status: completed
   - id: checkpoint-e2e-s3
     content: Run pnpm test:e2e (e.g. SignupForm.spec or full) and fix failures after S3 test
-    status: in_progress
+    status: completed
   - id: e2e-s2-draft-return
     content: In SignupForm.spec add test that saves draft as DraftReturnUserSteamId (or heppajpg), re-opens registration, asserts form prefilled from draft, then submits or saves again
-    status: pending
+    status: completed
   - id: checkpoint-e2e-s2
     content: Run pnpm test:e2e and fix failures after S2 test
-    status: pending
+    status: completed
   - id: e2e-a1-spec
     content: Create DashboardRegistration.spec (or new describe in existing spec); add A1 test – as admin (generateTestJWTForUser with heppajpg/admin or see playwright-mcp-admin-auth.mdc), add manual approval for org/team + ManualApprovalTargetSteamId, then as user complete signup with that ID, assert submit succeeds
-    status: pending
+    status: completed
   - id: e2e-a1-mocks
     content: Add Playwright page.route mocks for Steam/FACEIT for ManualApprovalTargetSteamId in A1 test so responses match shared-msw contract
-    status: pending
+    status: cancelled
   - id: checkpoint-e2e-a1
     content: Run pnpm test:e2e and fix failures after A1 test
-    status: pending
+    status: completed
   - id: e2e-a2-spec
     content: Add A2 test – as admin (generateTestJWTForUser with heppajpg/admin or see playwright-mcp-admin-auth.mdc), add manual rank for ManualRankTargetSteamId (season 16), then as user add that ID in registration, complete form, submit, assert success
-    status: pending
+    status: completed
   - id: e2e-a2-mocks
     content: Add Playwright page.route mocks for ManualRankTargetSteamId in A2 test (Steam profile/hours, FACEIT rank) to match shared-msw
-    status: pending
+    status: cancelled
   - id: checkpoint-e2e-a2
     content: Run pnpm test:e2e and fix failures after A2 test
-    status: pending
+    status: completed
   - id: e2e-a3-a4-spec
     content: Add A3/A4 tests – open /dashboard/registration/registered, select season, assert teams/drafts load; bulk-approve (A3) and set manual validity (A4), assert UI/state; use existing seed (team 999, season 16)
-    status: pending
+    status: completed
   - id: checkpoint-e2e-a3a4
     content: Run pnpm test:e2e and fix failures after A3/A4 tests
-    status: pending
+    status: completed
   - id: e2e-a5-spec
     content: Add A5 test – open /dashboard/registration/add-team, select season, fill SignupForm (org/team/5 players/captains), submit, assert POST to admin signup and success; reuse ValidWorkEmail/heppajpg or dedicated IDs
-    status: pending
+    status: completed
   - id: checkpoint-e2e-full
     content: Run full pnpm test:e2e and fix any remaining failures; verify S2, S3, A1, A2, A3, A4, A5 all pass
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -90,7 +90,7 @@ isProject: false
 
 This plan answers: **How do we execute the critical-workflows e2e plan?** It covers (1) which e2e seeds we need, (2) unique Steam IDs per major test and why, (3) how to keep shared-msw in sync when adding new users, and (4) a strict implementation order so nothing is missed.
 
-**Execution order for agents:** Complete the frontmatter `todos` in list order. Each todo with id `checkpoint-*` means run `pnpm test:e2e` (from repo root or `cd $(git rev-parse --show-toplevel)/apps/frontend && pnpm test:e2e` when running from frontend, per directory-execution rules) and fix any failures before continuing. Do not skip checkpoints.
+**Execution order for agents:** Complete the frontmatter `todos` in list order. Each todo with id `checkpoint-*` means run `pnpm test:e2e` **from workspace root** (`cd $(git rev-parse --show-toplevel) && pnpm test:e2e`) and fix any failures before continuing. Do not skip checkpoints. See [.cursor/rules/development/e2e-playwright.mdc](.cursor/rules/development/e2e-playwright.mdc).
 
 **Prerequisites:** For local runs, ensure the backend is running with `cd $(git rev-parse --show-toplevel)/apps/backend && pnpm dev:e2e` (or rely on CI to start it), so API calls during E2E succeed.
 

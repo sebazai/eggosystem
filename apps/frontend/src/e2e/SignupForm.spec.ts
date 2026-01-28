@@ -13,6 +13,8 @@ import {
   heppajpgSteamId,
   HoolyzSteamId,
   InsufficientHoursPlayerSteamId,
+  ManualApprovalTargetSteamId,
+  ManualRankTargetSteamId,
   NoFaceitRankPlayerSteamId,
   QuattraSteamId,
   RealPlayer1SteamId,
@@ -73,6 +75,15 @@ async function assignCaptain(page: Page) {
     "There must be exactly one captain and one co-captain"
   );
   await expect(validationError).not.toBeVisible({ timeout: 5000 });
+}
+
+async function ensurePlayerAccordionOpen(page: Page, index: number) {
+  const trigger = page
+    .locator('[data-testid="player-accordion-triggers"]')
+    .nth(index);
+  if ((await trigger.getAttribute("data-state")) === "closed") {
+    await trigger.click();
+  }
 }
 
 // Helper function to set up the form to the team FACEIT ID input stage
@@ -1071,6 +1082,330 @@ test.describe("Signup Form", () => {
 
       await expect(steamIdInput0).toHaveClass(/border-red-500/);
       await expect(steamIdInput1).toHaveClass(/border-red-500/);
+    });
+  });
+
+  test.describe("Admin registration", () => {
+    test("A1: admin adds manual approval for org/team + ManualApprovalTargetSteamId, then user completes signup with that ID and submit succeeds", async ({
+      page
+    }) => {
+      // Step 1: as admin (heppajpg from beforeEach), add manual approval for org 999 + ManualApprovalTargetSteamId
+      await page.goto("/dashboard/registration/approval?season=16");
+
+      await page
+        .locator('[data-testid="manual-approval-organization-trigger"]')
+        .waitFor({ state: "visible", timeout: 15000 });
+      await page
+        .locator('[data-testid="manual-approval-organization-trigger"]')
+        .click();
+      await page.getByRole("option", { name: "E2E Test Organization" }).click();
+
+      await page.locator('[data-testid="manual-approval-add-player"]').click();
+      await page
+        .locator('[data-testid="player-steam-id-0"]')
+        .fill(ManualApprovalTargetSteamId);
+      await page.keyboard.press("Tab");
+
+      const approvalResponsePromise = page.waitForResponse(
+        (res) =>
+          res.url().includes("/api/v1/dashboard/registration/approved") &&
+          res.request().method() === "POST"
+      );
+      await page.locator('[data-testid="manual-approval-submit"]').click();
+      const approvalResponse = await approvalResponsePromise;
+      expect(approvalResponse.status()).toBeGreaterThanOrEqual(200);
+      expect(approvalResponse.status()).toBeLessThan(300);
+
+      // Step 2: as user (ValidWorkEmail1), complete signup with lineup including ManualApprovalTargetSteamId
+      await setupAuthForUser(
+        page,
+        15007,
+        ValidWorkEmail1SteamId,
+        "ValidWorkEmail1"
+      );
+
+      await setupFormToPlayersSectionWithTeam999(page);
+      await page
+        .locator('[data-testid="steam-id-input-0"]')
+        .waitFor({ state: "visible", timeout: 10000 });
+
+      const a1Lineup = [
+        ManualApprovalTargetSteamId,
+        heppajpgSteamId,
+        ValidWorkEmail2SteamId,
+        ValidWorkEmail3SteamId,
+        ValidWorkEmail4SteamId
+      ];
+      for (let i = 0; i < 5; i++) {
+        const input = page.locator(`[data-testid="steam-id-input-${i}"]`);
+        await expect(input).toBeVisible();
+        await input.fill(a1Lineup[i]!);
+        await page.keyboard.press("Tab");
+      }
+
+      await expect(
+        page.locator('[data-testid="steam-id-input-4"]')
+      ).toHaveClass(/border-green-500/, { timeout: 20000 });
+
+      await assignCaptain(page);
+
+      const termsCheckbox = page.locator(
+        '[data-testid="terms-conditions-checkbox"]'
+      );
+      await termsCheckbox.waitFor({ state: "visible", timeout: 5000 });
+      if (!(await termsCheckbox.isChecked().catch(() => false))) {
+        await termsCheckbox.click();
+      }
+
+      const submitButton = page
+        .getByTestId("signup-submit-button")
+        .or(
+          page.locator('button[type="submit"]').filter({ hasText: /Submit/i })
+        );
+      await expect(submitButton).toBeVisible({ timeout: 5000 });
+      await expect(submitButton).toBeEnabled({ timeout: 15000 });
+
+      const signupResponsePromise = page.waitForResponse(
+        (res) =>
+          res.url().includes("/api/v1/registrations/season/") &&
+          res.request().method() === "POST" &&
+          !res.url().includes("/draft")
+      );
+      await submitButton.click();
+      const signupResponse = await signupResponsePromise;
+      expect(signupResponse.status()).toBeGreaterThanOrEqual(200);
+      expect(signupResponse.status()).toBeLessThan(300);
+    });
+
+    test("A2: admin adds manual rank for ManualRankTargetSteamId (season 16), then user completes signup with that ID and submit succeeds", async ({
+      page
+    }) => {
+      // Step 1: as admin (heppajpg from beforeEach), add manual rank for ManualRankTargetSteamId, season 16
+      await page.goto("/dashboard/registration/rank?season=16");
+
+      await page
+        .locator('[data-testid="manual-rank-steam-id"]')
+        .waitFor({ state: "visible", timeout: 15000 });
+      await page
+        .locator('[data-testid="manual-rank-steam-id"]')
+        .fill(ManualRankTargetSteamId);
+      await page.keyboard.press("Tab");
+
+      await page
+        .locator('[data-testid="manual-rank-external-elo"]')
+        .fill("1500");
+      await page.locator('[data-testid="manual-rank-cs-hours"]').fill("90");
+
+      const rankResponsePromise = page.waitForResponse(
+        (res) =>
+          res.url().includes("/api/v1/dashboard/registration/rank") &&
+          res.request().method() === "POST"
+      );
+      await page.locator('[data-testid="manual-rank-submit"]').click();
+      const rankResponse = await rankResponsePromise;
+      expect(rankResponse.status()).toBeGreaterThanOrEqual(200);
+      expect(rankResponse.status()).toBeLessThan(300);
+
+      // Step 2: as user (ValidWorkEmail2 – distinct from A1 to avoid shared draft when tests run in parallel)
+      await setupAuthForUser(
+        page,
+        15015,
+        ValidWorkEmail2SteamId,
+        "ValidWorkEmail2"
+      );
+
+      await setupFormToPlayersSectionWithTeam999(page);
+      await page
+        .locator('[data-testid="steam-id-input-0"]')
+        .waitFor({ state: "visible", timeout: 10000 });
+
+      const a2Lineup = [
+        ManualRankTargetSteamId,
+        heppajpgSteamId,
+        ValidWorkEmail2SteamId,
+        ValidWorkEmail3SteamId,
+        ValidWorkEmail4SteamId
+      ];
+      for (let i = 0; i < 5; i++) {
+        const input = page.locator(`[data-testid="steam-id-input-${i}"]`);
+        await expect(input).toBeVisible();
+        await input.fill(a2Lineup[i]!);
+        await page.keyboard.press("Tab");
+      }
+
+      await expect(
+        page.locator('[data-testid="steam-id-input-4"]')
+      ).toHaveClass(/border-green-500/, { timeout: 20000 });
+
+      await assignCaptain(page);
+
+      const termsCheckbox = page.locator(
+        '[data-testid="terms-conditions-checkbox"]'
+      );
+      await termsCheckbox.waitFor({ state: "visible", timeout: 5000 });
+      if (!(await termsCheckbox.isChecked().catch(() => false))) {
+        await termsCheckbox.click();
+      }
+
+      const submitButton = page
+        .getByTestId("signup-submit-button")
+        .or(
+          page.locator('button[type="submit"]').filter({ hasText: /Submit/i })
+        );
+      await expect(submitButton).toBeVisible({ timeout: 5000 });
+      await expect(submitButton).toBeEnabled({ timeout: 15000 });
+
+      const signupResponsePromise = page.waitForResponse(
+        (res) =>
+          res.url().includes("/api/v1/registrations/season/") &&
+          res.request().method() === "POST" &&
+          !res.url().includes("/draft")
+      );
+      await submitButton.click();
+      const signupResponse = await signupResponsePromise;
+      expect(signupResponse.status()).toBeGreaterThanOrEqual(200);
+      expect(signupResponse.status()).toBeLessThan(300);
+    });
+
+    test("A3: open /dashboard/registration/registered, select season 16, assert teams load, bulk-approve selected team", async ({
+      page
+    }) => {
+      await page.goto("/dashboard/registration/registered?season=16");
+
+      await page
+        .locator('[data-testid="registered-teams-list"]')
+        .waitFor({ state: "visible", timeout: 15000 });
+      await expect(page.getByText(/Total teams:/)).toBeVisible({
+        timeout: 5000
+      });
+
+      // Select first team row (first data row checkbox; index 0 may be header, 1 is first row)
+      const rowCheckbox = page.getByRole("checkbox").nth(1);
+      await rowCheckbox.waitFor({ state: "visible", timeout: 5000 });
+      await rowCheckbox.click();
+
+      await expect(page.getByText(/team\(s\) selected/)).toBeVisible({
+        timeout: 3000
+      });
+
+      const bulkApprovePromise = page.waitForResponse(
+        (res) =>
+          res.url().includes("/api/v1/dashboard/registration/season/") &&
+          res.url().includes("/bulk-approve") &&
+          res.request().method() === "POST"
+      );
+      await page.locator('[data-testid="bulk-approve-selected"]').click();
+      const bulkResponse = await bulkApprovePromise;
+      expect(bulkResponse.status()).toBeGreaterThanOrEqual(200);
+      expect(bulkResponse.status()).toBeLessThan(300);
+    });
+
+    test("A4: open /dashboard/registration/registered, select season 16, select team, set manual validity (Validate Selected)", async ({
+      page
+    }) => {
+      await page.goto("/dashboard/registration/registered?season=16");
+
+      await page
+        .locator('[data-testid="registered-teams-list"]')
+        .waitFor({ state: "visible", timeout: 15000 });
+      await expect(page.getByText(/Total teams:/)).toBeVisible({
+        timeout: 5000
+      });
+
+      const rowCheckbox = page.getByRole("checkbox").nth(1);
+      await rowCheckbox.waitFor({ state: "visible", timeout: 5000 });
+      await rowCheckbox.click();
+
+      await expect(page.getByText(/team\(s\) selected/)).toBeVisible({
+        timeout: 3000
+      });
+
+      const manualValidityPromise = page.waitForResponse(
+        (res) =>
+          res.url().includes("/api/v1/dashboard/registration/season/") &&
+          res.url().includes("/manual-validity-check") &&
+          res.request().method() === "POST"
+      );
+      await page.locator('[data-testid="manual-validity-selected"]').click();
+      const validityResponse = await manualValidityPromise;
+      expect(validityResponse.status()).toBeGreaterThanOrEqual(200);
+      expect(validityResponse.status()).toBeLessThan(300);
+    });
+
+    test("A5: open /dashboard/registration/add-team, select season 16, fill SignupForm (org/team/5 players/captains), submit, assert POST to admin signup and success", async ({
+      page
+    }) => {
+      await page.goto("/dashboard/registration/add-team");
+
+      await expect(
+        page.getByRole("heading", { name: "Select Season" })
+      ).toBeVisible({ timeout: 15000 });
+      await page.getByRole("button", { name: /CS2 Season 4|Season 4/ }).click();
+
+      await page
+        .locator('[data-testid="organizations-dropdown-toggle"]')
+        .waitFor({ state: "visible", timeout: 15000 });
+
+      const orgName = generateUniqueOrgName("A5 Admin Org");
+      const teamName = generateUniqueTeamName("A5 Admin Team");
+      await page
+        .locator('[data-testid="organizations-dropdown-toggle"]')
+        .click();
+      await page.locator('[data-testid="organizations-add-new"]').click();
+      await page
+        .locator('[data-testid="organization-name-input"]')
+        .fill(orgName);
+      await page
+        .locator('[data-testid="organization-business-id-input"]')
+        .fill(generateUniqueOrgCode());
+      await page
+        .locator('[data-testid="organization-website-input"]')
+        .fill("https://kanaliiga.fi/");
+      await page.locator('[data-testid="terms-conditions-checkbox"]').click();
+      await page.locator('[data-testid="team-selection-button"]').click();
+      await page.locator('[data-testid="teams-dropdown-toggle"]').click();
+      await page.locator('[data-testid="teams-add-new"]').click();
+      await page.locator('[data-testid="team-name-input"]').fill(teamName);
+      await page
+        .locator('[data-testid="team-external-id-input"]')
+        .fill(generateUniqueFaceitTeamId());
+      await page.locator('[data-testid="go-to-lineup-button"]').click();
+
+      await page
+        .locator('[data-testid="steam-id-input-0"]')
+        .waitFor({ state: "visible", timeout: 10000 });
+      await fillValidPlayers(page, heppajpgSteamId);
+
+      await expect(
+        page.locator('[data-testid="steam-id-input-4"]')
+      ).toHaveClass(/border-green-500/, { timeout: 20000 });
+      await assignCaptain(page);
+
+      const termsCheckbox = page.locator(
+        '[data-testid="terms-conditions-checkbox"]'
+      );
+      await termsCheckbox.waitFor({ state: "visible", timeout: 5000 });
+      if (!(await termsCheckbox.isChecked().catch(() => false))) {
+        await termsCheckbox.click();
+      }
+
+      const adminSignupPromise = page.waitForResponse(
+        (res) =>
+          res
+            .url()
+            .includes("/api/v1/dashboard/registration/season/16/signup") &&
+          res.request().method() === "POST"
+      );
+      const submitButton = page
+        .getByTestId("signup-submit-button")
+        .or(
+          page.locator('button[type="submit"]').filter({ hasText: /Submit/i })
+        );
+      await expect(submitButton).toBeEnabled({ timeout: 15000 });
+      await submitButton.click();
+      const adminResponse = await adminSignupPromise;
+      expect(adminResponse.status()).toBeGreaterThanOrEqual(200);
+      expect(adminResponse.status()).toBeLessThan(300);
     });
   });
 });

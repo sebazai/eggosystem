@@ -7,6 +7,8 @@ alwaysApply: false
 
 When using the **Playwright MCP server** for dashboard/admin or authenticated user flows, inject the same E2E session pattern the frontend E2E tests use. The user does not log in manually.
 
+**E2E tests:** Always run Playwright/E2E from workspace root with `pnpm test:e2e` (see [e2e-playwright.mdc](e2e-playwright.mdc)).
+
 ## Prerequisites
 
 - **Frontend** serving `http://localhost:3000` (e.g. `pnpm dev` from repo root or `apps/frontend`).

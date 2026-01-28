@@ -457,7 +457,7 @@ export const ListRegisteredTeams = () => {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" data-testid="registered-teams-list">
       {/* Bulk Actions */}
       {hasSelectedRows && (
         <div className="bg-card rounded-md p-4 border">
@@ -470,6 +470,7 @@ export const ListRegisteredTeams = () => {
                 onClick={handleBulkApprove}
                 disabled={isPerformingAction}
                 variant="default"
+                data-testid="bulk-approve-selected"
               >
                 {isPerformingAction ? (
                   <>
@@ -487,6 +488,7 @@ export const ListRegisteredTeams = () => {
                 onClick={handleManualValidityCheck}
                 disabled={isPerformingAction}
                 variant="default"
+                data-testid="manual-validity-selected"
               >
                 {isPerformingAction ? (
                   <>

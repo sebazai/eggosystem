@@ -85,12 +85,21 @@ E2E does **not** systematically cover:
 
 ## Running E2E
 
+Always run E2E from workspace root:
+
 ```bash
-# Backend (accepts E2E JWT)
+# Full run (build + reseed + Playwright)
+cd $(git rev-parse --show-toplevel) && pnpm test:e2e
+```
+
+When developing, start the backend first, then from workspace root run Playwright only (skips reseed):
+
+```bash
+# Terminal 1: Backend (accepts E2E JWT)
 cd $(git rev-parse --show-toplevel)/apps/backend && pnpm dev:e2e
 
-# Frontend e2e (starts standalone server if needed)
-cd $(git rev-parse --show-toplevel)/apps/frontend && pnpm test:e2e
+# Terminal 2: From workspace root, run Playwright only
+cd $(git rev-parse --show-toplevel) && pnpm build && pnpm test:e2e:run
 ```
 
 See `playwright.config.ts` for `webServer`, timeouts, and reporters.
