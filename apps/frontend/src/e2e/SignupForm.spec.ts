@@ -1009,10 +1009,9 @@ test.describe("Signup Form", () => {
       expect(draftSaveAgainResponse.status()).toBeLessThan(300);
     });
 
-    test("should show backend error when player has invalid profile data (is_valid_full_name false)", async ({
+    test("should show Kanahub signup message when player has invalid profile (is_valid_full_name false), then after fixing profile submit is enabled", async ({
       page
     }) => {
-      // Use ValidWorkEmail3 to avoid loading another test's draft/registration (isolation)
       await setupAuthForUser(
         page,
         15016,
@@ -1026,9 +1025,8 @@ test.describe("Signup Form", () => {
         generateUniqueTeamName("Profile Data Test Team")
       );
 
-      // Fill lineup with IncompleteDetailsPlayerSteamId (has invalid full_name)
       const lineupWithInvalidProfile = [
-        IncompleteDetailsPlayerSteamId, // Invalid full_name
+        IncompleteDetailsPlayerSteamId, // Seed: invalid full_name
         ValidWorkEmail1SteamId,
         ValidWorkEmail2SteamId,
         ValidWorkEmail3SteamId,
@@ -1053,37 +1051,56 @@ test.describe("Signup Form", () => {
         await termsCheckbox.click();
       }
 
-      // Attempt submission - should fail with backend error
+      // Check: frontend shows error and submit is disabled
+      const kanahubMessage = page
+        .locator('[data-testid="policy-acceptance-error-0"]')
+        .or(page.locator("text=Ask the player to sign up for Kanahub"));
+      await expect(kanahubMessage).toBeVisible({ timeout: 10000 });
+
       const submitButton = page
         .locator('button[type="submit"]')
         .filter({ hasText: /Submit/i });
-      await expect(submitButton).toBeEnabled({ timeout: 15000 });
+      await expect(submitButton).toBeDisabled();
 
-      const submissionPromise = page.waitForResponse(
-        (response) =>
-          response.url().includes("/api/v1/registrations/season/") &&
-          response.request().method() === "POST" &&
-          !response.url().includes("/draft")
+      // Act: fix profile as IncompleteDetailsPlayer (account 15012) via account update API
+      await setupAuthForUser(
+        page,
+        15012,
+        IncompleteDetailsPlayerSteamId,
+        "IncompleteDetailsPlayer"
       );
+      const updateResponse = await page.request.post(
+        "/api/v1/accounts/update",
+        {
+          headers: { "Content-Type": "application/json" },
+          data: {
+            nickname: "IncompleteDetailsPlayer",
+            full_name: "Incomplete Details Player",
+            work_email: "test+15012@kanaliiga.fi",
+            acceptPrivacyPolicy: true
+          }
+        }
+      );
+      expect(updateResponse.ok()).toBeTruthy();
 
-      await submitButton.click();
-      const submissionResponse = await submissionPromise;
+      // Switch back to form user and trigger re-fetch of player 0
+      await setupAuthForUser(
+        page,
+        15016,
+        ValidWorkEmail3SteamId,
+        "ValidWorkEmail3"
+      );
+      const steamIdInput0 = page.locator('[data-testid="steam-id-input-0"]');
+      await steamIdInput0.fill("");
+      await page.keyboard.press("Tab");
+      await page.waitForTimeout(500);
+      await steamIdInput0.fill(IncompleteDetailsPlayerSteamId);
+      await page.keyboard.press("Tab");
+      await page.waitForTimeout(3000);
 
-      // Backend should return 400 with error message
-      expect(submissionResponse.status()).toBe(400);
-
-      const responseBody = await submissionResponse.json();
-      expect(
-        responseBody.message ||
-          responseBody.error ||
-          JSON.stringify(responseBody)
-      ).toContain("profile data missing");
-
-      // Verify error message is displayed in UI
-      const errorMessage = page
-        .locator('[data-testid="error-message"]')
-        .or(page.locator("text=/profile data missing/i"));
-      await expect(errorMessage).toBeVisible({ timeout: 5000 });
+      // Check: error gone and submit enabled
+      await expect(kanahubMessage).not.toBeVisible({ timeout: 10000 });
+      await expect(submitButton).toBeEnabled({ timeout: 10000 });
     });
   });
 
