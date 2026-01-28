@@ -5,6 +5,11 @@
 
 import {
   AabeSteamId,
+  AddTeamSignupSteamId1,
+  AddTeamSignupSteamId2,
+  AddTeamSignupSteamId3,
+  AddTeamSignupSteamId4,
+  AddTeamSignupSteamId5,
   ApprovalOnlySubmitSteamId,
   DraftReturnUserSteamId,
   EligiblePlayerForValidationSteamId,
@@ -220,6 +225,52 @@ export const e2eSteamPlayerData: E2ESteamPlayerData[] = [
     work_email_verified: 1,
     is_work_email_personal_email: false,
     discord: "manualrank#1234"
+  },
+  // A5 add-team signup only – dedicated IDs to avoid SeasonPlayerRanks race with other tests
+  {
+    account_id: 15026,
+    steam_id: AddTeamSignupSteamId1,
+    nickname: "AddTeam One",
+    work_email: "test+15026@kanaliiga.fi",
+    work_email_verified: 1,
+    is_work_email_personal_email: false,
+    discord: "a5signup1#1234"
+  },
+  {
+    account_id: 15027,
+    steam_id: AddTeamSignupSteamId2,
+    nickname: "AddTeam Two",
+    work_email: "test+15027@kanaliiga.fi",
+    work_email_verified: 1,
+    is_work_email_personal_email: false,
+    discord: "a5signup2#1234"
+  },
+  {
+    account_id: 15028,
+    steam_id: AddTeamSignupSteamId3,
+    nickname: "AddTeam Three",
+    work_email: "test+15028@kanaliiga.fi",
+    work_email_verified: 1,
+    is_work_email_personal_email: false,
+    discord: "a5signup3#1234"
+  },
+  {
+    account_id: 15029,
+    steam_id: AddTeamSignupSteamId4,
+    nickname: "AddTeam Four",
+    work_email: "test+15029@kanaliiga.fi",
+    work_email_verified: 1,
+    is_work_email_personal_email: false,
+    discord: "a5signup4#1234"
+  },
+  {
+    account_id: 15030,
+    steam_id: AddTeamSignupSteamId5,
+    nickname: "AddTeam Five",
+    work_email: "test+15030@kanaliiga.fi",
+    work_email_verified: 1,
+    is_work_email_personal_email: false,
+    discord: "a5signup5#1234"
   }
 ];
 

@@ -8,10 +8,16 @@ import {
 } from "./utils";
 import {
   AabeSteamId,
+  AddTeamSignupSteamId1,
+  AddTeamSignupSteamId2,
+  AddTeamSignupSteamId3,
+  AddTeamSignupSteamId4,
+  AddTeamSignupSteamId5,
   ApprovalOnlySubmitSteamId,
   DraftReturnUserSteamId,
   heppajpgSteamId,
   HoolyzSteamId,
+  IncompleteDetailsPlayerSteamId,
   InsufficientHoursPlayerSteamId,
   ManualApprovalTargetSteamId,
   ManualRankTargetSteamId,
@@ -777,6 +783,90 @@ test.describe("Signup Form", () => {
       expect(coCaptainCheckedCount).toBe(1);
     });
 
+    test("should show duplicate Steam ID warning and disable submit when same Steam ID is used for multiple players", async ({
+      page
+    }) => {
+      await setupFormToPlayersSectionWithTeam999(page);
+      await page
+        .locator('[data-testid="steam-id-input-0"]')
+        .waitFor({ state: "visible", timeout: 10000 });
+
+      const duplicateSteamId = ValidWorkEmail1SteamId;
+      await page
+        .locator('[data-testid="steam-id-input-0"]')
+        .fill(duplicateSteamId);
+      await page.keyboard.press("Tab");
+      await page.waitForTimeout(2000);
+      await page
+        .locator('[data-testid="steam-id-input-1"]')
+        .fill(duplicateSteamId);
+      await page.keyboard.press("Tab");
+      await page.waitForTimeout(2000);
+
+      const duplicateWarning = page
+        .locator("text=Duplicate steam id detected")
+        .first();
+      await expect(duplicateWarning).toBeVisible({ timeout: 5000 });
+
+      const submitButton = page
+        .locator('button[type="submit"]')
+        .filter({ hasText: /Submit/i });
+      await expect(submitButton).toBeDisabled();
+    });
+
+    test("should show Discord link error and disable submit when captain or co-captain has no Discord linked", async ({
+      page
+    }) => {
+      // InsufficientHoursPlayerSteamId has no Discord in e2e-test-data
+      await setupFormToPlayersSectionWithTeam999(page);
+      await page
+        .locator('[data-testid="steam-id-input-0"]')
+        .waitFor({ state: "visible", timeout: 10000 });
+
+      const lineupWithNoDiscord = [
+        InsufficientHoursPlayerSteamId,
+        ValidWorkEmail1SteamId,
+        ValidWorkEmail2SteamId,
+        ValidWorkEmail3SteamId,
+        ValidWorkEmail4SteamId
+      ];
+
+      for (let i = 0; i < 5; i++) {
+        const input = page.locator(`[data-testid="steam-id-input-${i}"]`);
+        await expect(input).toBeVisible();
+        await input.fill(lineupWithNoDiscord[i]!);
+        await page.keyboard.press("Tab");
+      }
+
+      await page.waitForTimeout(3000);
+
+      const accordionTriggers = page.locator(
+        `[data-testid="player-accordion-triggers"]`
+      );
+      const accordionTrigger0 = accordionTriggers.nth(0);
+      if ((await accordionTrigger0.getAttribute("data-state")) === "closed") {
+        await accordionTrigger0.click();
+      }
+      const captainCheckbox0 = page.locator(
+        '[data-testid="captain-checkbox-0"]'
+      );
+      if (await captainCheckbox0.isVisible()) {
+        const isAlreadyCaptain =
+          await captainCheckbox0.getAttribute("aria-checked");
+        if (isAlreadyCaptain !== "true") {
+          await captainCheckbox0.click();
+        }
+      }
+
+      const discordError = page.locator("text=User needs to link Discord");
+      await expect(discordError).toBeVisible({ timeout: 5000 });
+
+      const submitButton = page
+        .locator('button[type="submit"]')
+        .filter({ hasText: /Submit/i });
+      await expect(submitButton).toBeDisabled();
+    });
+
     test("when player in SeasonPlayerApprovals has unverified email, manual approval bypasses it; submit is enabled when captain/co-captain have discord linked (approval-only)", async ({
       page
     }) => {
@@ -917,6 +1007,83 @@ test.describe("Signup Form", () => {
       const draftSaveAgainResponse = await draftSaveAgainPromise;
       expect(draftSaveAgainResponse.status()).toBeGreaterThanOrEqual(200);
       expect(draftSaveAgainResponse.status()).toBeLessThan(300);
+    });
+
+    test("should show backend error when player has invalid profile data (is_valid_full_name false)", async ({
+      page
+    }) => {
+      // Use ValidWorkEmail3 to avoid loading another test's draft/registration (isolation)
+      await setupAuthForUser(
+        page,
+        15016,
+        ValidWorkEmail3SteamId,
+        "ValidWorkEmail3"
+      );
+
+      await setupCompleteRegistrationForm(
+        page,
+        generateUniqueOrgName("Profile Data Test Org"),
+        generateUniqueTeamName("Profile Data Test Team")
+      );
+
+      // Fill lineup with IncompleteDetailsPlayerSteamId (has invalid full_name)
+      const lineupWithInvalidProfile = [
+        IncompleteDetailsPlayerSteamId, // Invalid full_name
+        ValidWorkEmail1SteamId,
+        ValidWorkEmail2SteamId,
+        ValidWorkEmail3SteamId,
+        ValidWorkEmail4SteamId
+      ];
+
+      for (let i = 0; i < 5; i++) {
+        const input = page.locator(`[data-testid="steam-id-input-${i}"]`);
+        await expect(input).toBeVisible();
+        await input.fill(lineupWithInvalidProfile[i]!);
+        await page.keyboard.press("Tab");
+      }
+
+      await page.waitForTimeout(3000);
+      await assignCaptain(page);
+
+      const termsCheckbox = page.locator(
+        '[data-testid="terms-conditions-checkbox"]'
+      );
+      await termsCheckbox.waitFor({ state: "visible", timeout: 5000 });
+      if (!(await termsCheckbox.isChecked().catch(() => false))) {
+        await termsCheckbox.click();
+      }
+
+      // Attempt submission - should fail with backend error
+      const submitButton = page
+        .locator('button[type="submit"]')
+        .filter({ hasText: /Submit/i });
+      await expect(submitButton).toBeEnabled({ timeout: 15000 });
+
+      const submissionPromise = page.waitForResponse(
+        (response) =>
+          response.url().includes("/api/v1/registrations/season/") &&
+          response.request().method() === "POST" &&
+          !response.url().includes("/draft")
+      );
+
+      await submitButton.click();
+      const submissionResponse = await submissionPromise;
+
+      // Backend should return 400 with error message
+      expect(submissionResponse.status()).toBe(400);
+
+      const responseBody = await submissionResponse.json();
+      expect(
+        responseBody.message ||
+          responseBody.error ||
+          JSON.stringify(responseBody)
+      ).toContain("profile data missing");
+
+      // Verify error message is displayed in UI
+      const errorMessage = page
+        .locator('[data-testid="error-message"]')
+        .or(page.locator("text=/profile data missing/i"));
+      await expect(errorMessage).toBeVisible({ timeout: 5000 });
     });
   });
 
@@ -1448,7 +1615,20 @@ test.describe("Signup Form", () => {
       await page
         .locator('[data-testid="steam-id-input-0"]')
         .waitFor({ state: "visible", timeout: 10000 });
-      await fillValidPlayers(page, heppajpgSteamId);
+      // Use dedicated A5 Steam IDs only – avoids SeasonPlayerRanks race with other tests
+      const a5Lineup = [
+        AddTeamSignupSteamId1,
+        AddTeamSignupSteamId2,
+        AddTeamSignupSteamId3,
+        AddTeamSignupSteamId4,
+        AddTeamSignupSteamId5
+      ];
+      for (let i = 0; i < 5; i++) {
+        const input = page.locator(`[data-testid="steam-id-input-${i}"]`);
+        await expect(input).toBeVisible();
+        await input.fill(a5Lineup[i]!);
+        await page.keyboard.press("Tab");
+      }
 
       await expect(
         page.locator('[data-testid="steam-id-input-4"]')

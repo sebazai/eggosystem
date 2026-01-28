@@ -29,7 +29,12 @@ import {
   DraftReturnUserSteamId,
   ApprovalOnlySubmitSteamId,
   ManualApprovalTargetSteamId,
-  ManualRankTargetSteamId
+  ManualRankTargetSteamId,
+  AddTeamSignupSteamId1,
+  AddTeamSignupSteamId2,
+  AddTeamSignupSteamId3,
+  AddTeamSignupSteamId4,
+  AddTeamSignupSteamId5
 } from "@eggosystem/types";
 
 const createFaceitRank = (
@@ -180,6 +185,22 @@ export const faceitPlayerGameRankHandlers = [
       return HttpResponse.json(createFaceitRank(gamePlayerId, "cs2", 1500, 10));
     }
     if (gamePlayerId === ManualRankTargetSteamId) {
+      return HttpResponse.json(createFaceitRank(gamePlayerId, "cs2", 1500, 10));
+    }
+    // A5 add-team signup only
+    if (gamePlayerId === AddTeamSignupSteamId1) {
+      return HttpResponse.json(createFaceitRank(gamePlayerId, "cs2", 1500, 10));
+    }
+    if (gamePlayerId === AddTeamSignupSteamId2) {
+      return HttpResponse.json(createFaceitRank(gamePlayerId, "cs2", 1500, 10));
+    }
+    if (gamePlayerId === AddTeamSignupSteamId3) {
+      return HttpResponse.json(createFaceitRank(gamePlayerId, "cs2", 1500, 10));
+    }
+    if (gamePlayerId === AddTeamSignupSteamId4) {
+      return HttpResponse.json(createFaceitRank(gamePlayerId, "cs2", 1500, 10));
+    }
+    if (gamePlayerId === AddTeamSignupSteamId5) {
       return HttpResponse.json(createFaceitRank(gamePlayerId, "cs2", 1500, 10));
     }
 

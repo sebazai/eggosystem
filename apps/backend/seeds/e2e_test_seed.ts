@@ -586,7 +586,12 @@ export async function seed(knex: Knex): Promise<void> {
     { account_id: 15020, username: "eligibleplayer" }, // EligiblePlayerForValidation
     { account_id: 15023, username: "approvalonlysubmit" }, // ApprovalOnlySubmit - captain in approval-only test
     { account_id: 15024, username: "manualapprovaltarget" }, // ManualApprovalTarget - captain in A1 test
-    { account_id: 15025, username: "manualranktarget" } // ManualRankTarget - captain in A2 test
+    { account_id: 15025, username: "manualranktarget" }, // ManualRankTarget - captain in A2 test
+    { account_id: 15026, username: "a5signup1" }, // A5 add-team signup only
+    { account_id: 15027, username: "a5signup2" },
+    { account_id: 15028, username: "a5signup3" },
+    { account_id: 15029, username: "a5signup4" },
+    { account_id: 15030, username: "a5signup5" }
   ];
 
   for (const player of playersWithDiscord) {
