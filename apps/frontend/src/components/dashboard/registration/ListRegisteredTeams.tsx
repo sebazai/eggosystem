@@ -91,9 +91,7 @@ export const ListRegisteredTeams = () => {
   const seasonId = selectedSeasonId ? Number(selectedSeasonId) : null;
 
   // Only call the hook if we have a valid season ID
-  const { registeredTeams, isLoading, error } = useRegisteredTeams(
-    seasonId ?? 0
-  );
+  const { registeredTeams, isLoading, error } = useRegisteredTeams(seasonId);
   const { bulkApprove } = useBulkApproveTeams(seasonId);
   const { manualValidityCheck } = useManualValidityCheck(seasonId);
 
@@ -424,137 +422,140 @@ export const ListRegisteredTeams = () => {
     }
   };
 
-  if (!seasonId) {
-    return (
-      <div className="text-center py-8 text-muted-foreground">
-        Please select a season from the sidebar to view registered teams.
-      </div>
-    );
-  }
-
-  if (isLoading) {
-    return (
-      <div className="bg-card rounded-md overflow-hidden">
-        <TableSkeleton rows={10} columns={8} showHeader={false} />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="text-red-500 text-center py-8">
-        Failed to load registered teams.
-      </div>
-    );
-  }
-
-  if (!registeredTeams || registeredTeams.length === 0) {
-    return (
-      <div className="text-center py-8 text-muted-foreground">
-        No registered teams found.
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-4" data-testid="registered-teams-list">
-      {/* Bulk Actions */}
-      {hasSelectedRows && (
-        <div className="bg-card rounded-md p-4 border">
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-muted-foreground">
-              {selectedRows.length} team(s) selected
-            </div>
-            <div className="flex gap-2">
-              <Button
-                onClick={handleBulkApprove}
-                disabled={isPerformingAction}
-                variant="default"
-                data-testid="bulk-approve-selected"
-              >
-                {isPerformingAction ? (
-                  <>
-                    <Spinner className="w-4 h-4 mr-2" />
-                    Approving...
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle className="w-4 h-4 mr-2" />
-                    Approve Selected
-                  </>
-                )}
-              </Button>
-              <Button
-                onClick={handleManualValidityCheck}
-                disabled={isPerformingAction}
-                variant="default"
-                data-testid="manual-validity-selected"
-              >
-                {isPerformingAction ? (
-                  <>
-                    <Spinner className="w-4 h-4 mr-2" />
-                    Validating...
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle className="w-4 h-4 mr-2" />
-                    Validate Selected
-                  </>
-                )}
-              </Button>
-            </div>
-          </div>
+      {!seasonId && (
+        <div className="text-center py-8 text-muted-foreground">
+          Please select a season from the sidebar to view registered teams.
         </div>
       )}
 
-      {/* Table */}
-      <div className="bg-card rounded-md overflow-hidden">
-        <div className="flex items-center justify-between p-2">
-          <div className="text-sm text-muted-foreground">
-            Total teams: {registeredTeams.length}
-          </div>
-          <Button
-            onClick={handleToggleAllRows}
-            variant="outline"
-            size="sm"
-            className="flex items-center gap-2"
-          >
-            {isAllRowsExpanded ? (
-              <>
-                <ChevronsUp className="w-4 h-4" />
-                Collapse All
-              </>
-            ) : (
-              <>
-                <ChevronsDown className="w-4 h-4" />
-                Expand All
-              </>
-            )}
-          </Button>
+      {seasonId && isLoading && (
+        <div className="bg-card rounded-md overflow-hidden">
+          <TableSkeleton rows={10} columns={8} showHeader={false} />
         </div>
-        <TanStackTableWrapper
-          data={registeredTeams ?? []}
-          columns={columns}
-          getExpandedRowModel={getExpandedRowModel()}
-          getSortedRowModel={getSortedRowModel()}
-          getFilteredRowModel={getFilteredRowModel()}
-          sorting={sorting}
-          onSortingChange={setSorting}
-          rowSelection={rowSelection}
-          onRowSelectionChange={setRowSelection}
-          getRowCanExpand={() => true}
-          enableRowSelection={true}
-          debugTable={false}
-          onTableReady={(table) => {
-            tableRef.current = table;
-            // Sync initial state
-            setIsAllRowsExpanded(table.getIsAllRowsExpanded());
-          }}
-          showPagination={false}
-          enableRowExpansion={true}
-          renderExpandedRow={renderExpandedRow}
-        />
-      </div>
+      )}
+
+      {seasonId && error && (
+        <div className="text-red-500 text-center py-8">
+          Failed to load registered teams.
+        </div>
+      )}
+
+      {seasonId &&
+        !isLoading &&
+        !error &&
+        (!registeredTeams || registeredTeams.length === 0) && (
+          <div className="text-center py-8 text-muted-foreground">
+            No registered teams found.
+          </div>
+        )}
+
+      {seasonId &&
+        !isLoading &&
+        !error &&
+        registeredTeams &&
+        registeredTeams.length > 0 && (
+          <>
+            {/* Bulk Actions */}
+            {hasSelectedRows && (
+              <div className="bg-card rounded-md p-4 border">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-muted-foreground">
+                    {selectedRows.length} team(s) selected
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={handleBulkApprove}
+                      disabled={isPerformingAction}
+                      variant="default"
+                      data-testid="bulk-approve-selected"
+                    >
+                      {isPerformingAction ? (
+                        <>
+                          <Spinner className="w-4 h-4 mr-2" />
+                          Approving...
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle className="w-4 h-4 mr-2" />
+                          Approve Selected
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      onClick={handleManualValidityCheck}
+                      disabled={isPerformingAction}
+                      variant="default"
+                      data-testid="manual-validity-selected"
+                    >
+                      {isPerformingAction ? (
+                        <>
+                          <Spinner className="w-4 h-4 mr-2" />
+                          Validating...
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle className="w-4 h-4 mr-2" />
+                          Validate Selected
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Table */}
+            <div className="bg-card rounded-md overflow-hidden">
+              <div className="flex items-center justify-between p-2">
+                <div className="text-sm text-muted-foreground">
+                  Total teams: {registeredTeams.length}
+                </div>
+                <Button
+                  onClick={handleToggleAllRows}
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-2"
+                >
+                  {isAllRowsExpanded ? (
+                    <>
+                      <ChevronsUp className="w-4 h-4" />
+                      Collapse All
+                    </>
+                  ) : (
+                    <>
+                      <ChevronsDown className="w-4 h-4" />
+                      Expand All
+                    </>
+                  )}
+                </Button>
+              </div>
+              <TanStackTableWrapper
+                data={registeredTeams ?? []}
+                columns={columns}
+                getExpandedRowModel={getExpandedRowModel()}
+                getSortedRowModel={getSortedRowModel()}
+                getFilteredRowModel={getFilteredRowModel()}
+                sorting={sorting}
+                onSortingChange={setSorting}
+                rowSelection={rowSelection}
+                onRowSelectionChange={setRowSelection}
+                getRowCanExpand={() => true}
+                enableRowSelection={true}
+                debugTable={false}
+                onTableReady={(table) => {
+                  tableRef.current = table;
+                  // Sync initial state
+                  setIsAllRowsExpanded(table.getIsAllRowsExpanded());
+                }}
+                showPagination={false}
+                enableRowExpansion={true}
+                renderExpandedRow={renderExpandedRow}
+              />
+            </div>
+          </>
+        )}
     </div>
   );
 };
