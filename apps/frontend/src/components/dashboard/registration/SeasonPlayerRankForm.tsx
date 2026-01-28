@@ -187,6 +187,7 @@ export function SeasonPlayerRankForm() {
                     const val = e.target.value;
                     field.onChange(val === "" ? undefined : Number(val));
                   }}
+                  data-testid="manual-rank-cs2-rank"
                 />
               </FormControl>
               <FormMessage />

@@ -1088,7 +1088,16 @@ test.describe("Signup Form", () => {
   });
 
   test.describe("Admin registration", () => {
-    test("A1: admin adds manual approval for org/team + ManualApprovalTargetSteamId, then user completes signup with that ID and submit succeeds", async ({
+    // Design: wrongful data (seed) → user opens signup → we assert the error is visible and submit disabled
+    //        → we fix (admin panel OR DB injection) → user opens signup again → we assert error gone and submit succeeds.
+    // When admin act is enough: the dashboard writes the same state the backend validation reads (e.g. manual approval
+    // writes SeasonPlayerApprovals; manual rank writes SeasonPlayerRanks). No extra DB injection needed.
+    // When we need DB injection: the fix isn’t available in the UI, or the UI doesn’t set all fields validation needs,
+    // or we’re testing an edge case the UI can’t create. Then we’d inject (e.g. via seed or a test DB helper) mid-test.
+    // A1: fix = admin manual approval → writes SeasonPlayerApprovals → backend checks isPlayerApprovedForSeasonManually → admin act is enough.
+    // A2: fix = admin manual rank → writes SeasonPlayerRanks (cs2_rank + faceit etc.) → backend reads that for internal (premier) rank → admin act is enough. Uses internal rank error (no FaceIT fallback).
+
+    test("A1: user sees work-email error for ManualApprovalTarget, admin adds approval, then user can submit", async ({
       page
     }) => {
       const a1Lineup = [
@@ -1099,13 +1108,45 @@ test.describe("Signup Form", () => {
         ValidWorkEmail4SteamId
       ];
 
-      // Optional future enhancement: have user fill form first, assert work-email-validation-error-0
-      // ("approved by organizer") is visible, then admin adds approval, then user submits. That
-      // requires E2E seed to give ManualApprovalTarget invalid work email so the error appears.
+      // Step 0: as user (ValidWorkEmail4), fill form with ManualApprovalTarget first – seed gives him no work email so we see the error
+      await setupAuthForUser(
+        page,
+        15017,
+        ValidWorkEmail4SteamId,
+        "ValidWorkEmail4"
+      );
+      await setupFormToPlayersSectionWithTeam(page, 998, 998);
+      await page
+        .locator('[data-testid="steam-id-input-0"]')
+        .waitFor({ state: "visible", timeout: 10000 });
+      for (let i = 0; i < 5; i++) {
+        const input = page.locator(`[data-testid="steam-id-input-${i}"]`);
+        await expect(input).toBeVisible();
+        await input.fill(a1Lineup[i]!);
+        await page.keyboard.press("Tab");
+      }
+      await expect(
+        page.locator('[data-testid="steam-id-input-4"]')
+      ).toHaveClass(/border-green-500/, { timeout: 20000 });
+      await assignCaptain(page);
 
-      // Step 1: as admin (heppajpg from beforeEach), add manual approval for org 998 + ManualApprovalTargetSteamId (team 998 is unregistered so submit will succeed)
+      const workEmailError = page.locator(
+        '[data-testid="work-email-validation-error-0"]'
+      );
+      await expect(workEmailError).toBeVisible({ timeout: 10000 });
+      await expect(workEmailError).toContainText(
+        /valid work email|approved by organizer/i
+      );
+      const submitButtonBefore = page
+        .getByTestId("signup-submit-button")
+        .or(
+          page.locator('button[type="submit"]').filter({ hasText: /Submit/i })
+        );
+      await expect(submitButtonBefore).toBeDisabled();
+
+      // Step 1: as admin (heppajpg), add manual approval for org 998 + ManualApprovalTargetSteamId
+      await setupAuthForUser(page, 15004, heppajpgSteamId, "heppajpg");
       await page.goto("/dashboard/registration/approval?season=16");
-
       await page
         .locator('[data-testid="manual-approval-organization-trigger"]')
         .waitFor({ state: "visible", timeout: 15000 });
@@ -1113,13 +1154,11 @@ test.describe("Signup Form", () => {
         .locator('[data-testid="manual-approval-organization-trigger"]')
         .click();
       await page.getByRole("option", { name: "E2E Test Org 998" }).click();
-
       await page.locator('[data-testid="manual-approval-add-player"]').click();
       await page
         .locator('[data-testid="player-steam-id-0"]')
         .fill(ManualApprovalTargetSteamId);
       await page.keyboard.press("Tab");
-
       const approvalResponsePromise = page.waitForResponse(
         (res) =>
           res.url().includes("/api/v1/dashboard/registration/approved") &&
@@ -1130,31 +1169,36 @@ test.describe("Signup Form", () => {
       expect(approvalResponse.status()).toBeGreaterThanOrEqual(200);
       expect(approvalResponse.status()).toBeLessThan(300);
 
-      // Step 2: as user (ValidWorkEmail4 – isolated from other tests to avoid draft collision when run in parallel)
+      // Step 2: as user again, fill form – approval is now in place so error is gone and submit succeeds
       await setupAuthForUser(
         page,
         15017,
         ValidWorkEmail4SteamId,
         "ValidWorkEmail4"
       );
-
       await setupFormToPlayersSectionWithTeam(page, 998, 998);
       await page
         .locator('[data-testid="steam-id-input-0"]')
         .waitFor({ state: "visible", timeout: 10000 });
-
       for (let i = 0; i < 5; i++) {
         const input = page.locator(`[data-testid="steam-id-input-${i}"]`);
         await expect(input).toBeVisible();
         await input.fill(a1Lineup[i]!);
         await page.keyboard.press("Tab");
       }
-
       await expect(
         page.locator('[data-testid="steam-id-input-4"]')
       ).toHaveClass(/border-green-500/, { timeout: 20000 });
-
       await assignCaptain(page);
+
+      await expect(workEmailError).not.toBeVisible({ timeout: 10000 });
+      const submitButton = page
+        .getByTestId("signup-submit-button")
+        .or(
+          page.locator('button[type="submit"]').filter({ hasText: /Submit/i })
+        );
+      await expect(submitButton).toBeVisible({ timeout: 5000 });
+      await expect(submitButton).toBeEnabled({ timeout: 15000 });
 
       const termsCheckbox = page.locator(
         '[data-testid="terms-conditions-checkbox"]'
@@ -1163,14 +1207,6 @@ test.describe("Signup Form", () => {
       if (!(await termsCheckbox.isChecked().catch(() => false))) {
         await termsCheckbox.click();
       }
-
-      const submitButton = page
-        .getByTestId("signup-submit-button")
-        .or(
-          page.locator('button[type="submit"]').filter({ hasText: /Submit/i })
-        );
-      await expect(submitButton).toBeVisible({ timeout: 5000 });
-      await expect(submitButton).toBeEnabled({ timeout: 15000 });
 
       const signupResponsePromise = page.waitForResponse(
         (res) =>
@@ -1184,7 +1220,7 @@ test.describe("Signup Form", () => {
       expect(signupResponse.status()).toBeLessThan(300);
     });
 
-    test("A2: admin adds manual rank for ManualRankTargetSteamId (season 16), then user completes signup with that ID and submit succeeds", async ({
+    test("A2: user sees internal (premier) rank error for ManualRankTarget, admin adds manual rank (writes rank to DB), then user can submit", async ({
       page
     }) => {
       const a2Lineup = [
@@ -1195,14 +1231,43 @@ test.describe("Signup Form", () => {
         ValidWorkEmail5SteamId
       ];
 
-      // Optional future enhancement: have user fill form first, assert external-rank-error-0
-      // ("Could not detect external FACEIT rank for the player") is visible, then admin adds
-      // manual rank, then user submits. Requires E2E seed to ensure ManualRankTarget has no
-      // external rank for season 16 before the admin step.
+      // Step 0: as user (ValidWorkEmail5), fill form with ManualRankTarget first – no SeasonPlayerRanks for season 16 so we see internal rank error
+      await setupAuthForUser(
+        page,
+        15018,
+        ValidWorkEmail5SteamId,
+        "ValidWorkEmail5"
+      );
+      await setupFormToPlayersSectionWithTeam(page, 997, 997);
+      await page
+        .locator('[data-testid="steam-id-input-0"]')
+        .waitFor({ state: "visible", timeout: 10000 });
+      for (let i = 0; i < 5; i++) {
+        const input = page.locator(`[data-testid="steam-id-input-${i}"]`);
+        await expect(input).toBeVisible();
+        await input.fill(a2Lineup[i]!);
+        await page.keyboard.press("Tab");
+      }
+      await expect(
+        page.locator('[data-testid="steam-id-input-4"]')
+      ).toHaveClass(/border-green-500/, { timeout: 20000 });
+      await assignCaptain(page);
 
-      // Step 1: as admin (heppajpg from beforeEach), add manual rank for ManualRankTargetSteamId, season 16
+      const rankError = page.locator('[data-testid="rank-error-0"]');
+      await expect(rankError).toBeVisible({ timeout: 10000 });
+      await expect(rankError).toContainText(
+        "Could not detect internal game rank for the player"
+      );
+      const submitButtonBefore = page
+        .getByTestId("signup-submit-button")
+        .or(
+          page.locator('button[type="submit"]').filter({ hasText: /Submit/i })
+        );
+      await expect(submitButtonBefore).toBeDisabled();
+
+      // Step 1: as admin (heppajpg), add manual rank for ManualRankTargetSteamId, season 16 (writes cs2_rank + external rank to SeasonPlayerRanks)
+      await setupAuthForUser(page, 15004, heppajpgSteamId, "heppajpg");
       await page.goto("/dashboard/registration/rank?season=16");
-
       await page
         .locator('[data-testid="manual-rank-steam-id"]')
         .waitFor({ state: "visible", timeout: 15000 });
@@ -1210,12 +1275,11 @@ test.describe("Signup Form", () => {
         .locator('[data-testid="manual-rank-steam-id"]')
         .fill(ManualRankTargetSteamId);
       await page.keyboard.press("Tab");
-
+      await page.locator('[data-testid="manual-rank-cs2-rank"]').fill("15000");
       await page
         .locator('[data-testid="manual-rank-external-elo"]')
         .fill("1500");
       await page.locator('[data-testid="manual-rank-cs-hours"]').fill("90");
-
       const rankResponsePromise = page.waitForResponse(
         (res) =>
           res.url().includes("/api/v1/dashboard/registration/rank") &&
@@ -1226,31 +1290,36 @@ test.describe("Signup Form", () => {
       expect(rankResponse.status()).toBeGreaterThanOrEqual(200);
       expect(rankResponse.status()).toBeLessThan(300);
 
-      // Step 2: as user (ValidWorkEmail5 – distinct from A1 and from Captain test to avoid landing on edit when that test has already submitted)
+      // Step 2: as user again, fill form – manual rank in DB (cs2_rank etc.) so internal rank is present, error gone, submit succeeds
       await setupAuthForUser(
         page,
         15018,
         ValidWorkEmail5SteamId,
         "ValidWorkEmail5"
       );
-
       await setupFormToPlayersSectionWithTeam(page, 997, 997);
       await page
         .locator('[data-testid="steam-id-input-0"]')
         .waitFor({ state: "visible", timeout: 10000 });
-
       for (let i = 0; i < 5; i++) {
         const input = page.locator(`[data-testid="steam-id-input-${i}"]`);
         await expect(input).toBeVisible();
         await input.fill(a2Lineup[i]!);
         await page.keyboard.press("Tab");
       }
-
       await expect(
         page.locator('[data-testid="steam-id-input-4"]')
       ).toHaveClass(/border-green-500/, { timeout: 20000 });
-
       await assignCaptain(page);
+
+      await expect(rankError).not.toBeVisible({ timeout: 10000 });
+      const submitButton = page
+        .getByTestId("signup-submit-button")
+        .or(
+          page.locator('button[type="submit"]').filter({ hasText: /Submit/i })
+        );
+      await expect(submitButton).toBeVisible({ timeout: 5000 });
+      await expect(submitButton).toBeEnabled({ timeout: 15000 });
 
       const termsCheckbox = page.locator(
         '[data-testid="terms-conditions-checkbox"]'
@@ -1259,14 +1328,6 @@ test.describe("Signup Form", () => {
       if (!(await termsCheckbox.isChecked().catch(() => false))) {
         await termsCheckbox.click();
       }
-
-      const submitButton = page
-        .getByTestId("signup-submit-button")
-        .or(
-          page.locator('button[type="submit"]').filter({ hasText: /Submit/i })
-        );
-      await expect(submitButton).toBeVisible({ timeout: 5000 });
-      await expect(submitButton).toBeEnabled({ timeout: 15000 });
 
       const signupResponsePromise = page.waitForResponse(
         (res) =>

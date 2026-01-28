@@ -369,7 +369,10 @@ export async function seed(knex: Knex): Promise<void> {
     );
   }
 
-  // ManualApprovalTarget and ManualRankTarget need full_name with a space so is_valid_full_name is true
+  // Wrongful-data-for-test: we inject initial state so E2E can assert "see error → fix (admin or DB) → see green".
+  // We set work_email, work_email_verified, full_name, etc. here; we do not simulate full profile flows.
+  // The fix step is done in the test: A1/A2 use the admin panel (manual approval, manual rank), which writes
+  // SeasonPlayerApprovals / SeasonPlayerRanks – that is enough for backend validation, so no mid-test DB injection.
   const manualApprovalAccountId = getE2ESteamPlayerBySteamId(
     ManualApprovalTargetSteamId
   )?.account_id;
@@ -377,15 +380,18 @@ export async function seed(knex: Knex): Promise<void> {
     ManualRankTargetSteamId
   )?.account_id;
   if (manualApprovalAccountId) {
-    await knex("Accounts")
-      .where({ id: manualApprovalAccountId })
-      .update({ full_name: "Manual Approval Target" });
+    await knex("Accounts").where({ id: manualApprovalAccountId }).update({
+      full_name: "Manual Approval Target",
+      work_email: null,
+      work_email_verified: 0
+    });
   }
   if (manualRankAccountId) {
     await knex("Accounts")
       .where({ id: manualRankAccountId })
       .update({ full_name: "Manual Rank Target" });
   }
+  // ManualRankTarget has no SeasonPlayerRanks for season 16 here; internal rank is -1 until admin adds manual rank in A2
 
   // Ensure all E2E steam player accounts have UserPolicyAcceptances so signup/registration
   // tests are not redirected to profile for missing policy. Skip accounts used for incomplete-policy tests.
