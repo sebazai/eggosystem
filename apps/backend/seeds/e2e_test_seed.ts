@@ -21,7 +21,9 @@ import {
   ValidWorkEmail4SteamId,
   ValidWorkEmail5SteamId,
   ValidWorkEmail1SteamId,
-  ApprovalOnlySubmitSteamId
+  ApprovalOnlySubmitSteamId,
+  ManualApprovalTargetSteamId,
+  ManualRankTargetSteamId
 } from "@eggosystem/types";
 import { type Knex } from "knex";
 
@@ -56,14 +58,15 @@ export async function seed(knex: Knex): Promise<void> {
 
   // Clean up existing E2E test data
   await knex("AccountPermissionScopes")
-    .where({ season_id: 16, team_id: 999 })
+    .where({ season_id: 16 })
+    .whereIn("team_id", [999, 998, 997])
     .del();
   await knex("AccountRoles").where({ account_id: 15003, game_id: 1 }).del();
   await knex("SeasonTeamPlayers").where({ season_id: 16 }).del();
   await knex("SeasonTeamRegistrationPlayers").where({ season_id: 16 }).del();
   await knex("SeasonTeamRegistrations").where({ season_id: 16 }).del();
-  await knex("Teams").where({ id: 999 }).del();
-  await knex("Organizations").where({ id: 999 }).del();
+  await knex("Teams").whereIn("id", [999, 998, 997]).del();
+  await knex("Organizations").whereIn("id", [999, 998, 997]).del();
   await knex("Seasons").where({ id: 16 }).del();
 
   // Clean up NEW test accounts and related data if they exist
@@ -79,6 +82,8 @@ export async function seed(knex: Knex): Promise<void> {
   // This prevents "Duplicate entry 'Success Message Test Org' for key 'organizations_name_unique'" errors
   const testOrgNames = [
     "E2E Test Organization",
+    "E2E Test Org 998",
+    "E2E Test Org 997",
     "Success Message Test Org",
     "Submission Test Org",
     "Test Organization",
@@ -364,6 +369,24 @@ export async function seed(knex: Knex): Promise<void> {
     );
   }
 
+  // ManualApprovalTarget and ManualRankTarget need full_name with a space so is_valid_full_name is true
+  const manualApprovalAccountId = getE2ESteamPlayerBySteamId(
+    ManualApprovalTargetSteamId
+  )?.account_id;
+  const manualRankAccountId = getE2ESteamPlayerBySteamId(
+    ManualRankTargetSteamId
+  )?.account_id;
+  if (manualApprovalAccountId) {
+    await knex("Accounts")
+      .where({ id: manualApprovalAccountId })
+      .update({ full_name: "Manual Approval Target" });
+  }
+  if (manualRankAccountId) {
+    await knex("Accounts")
+      .where({ id: manualRankAccountId })
+      .update({ full_name: "Manual Rank Target" });
+  }
+
   // Ensure all E2E steam player accounts have UserPolicyAcceptances so signup/registration
   // tests are not redirected to profile for missing policy. Skip accounts used for incomplete-policy tests.
   const incompletePolicyAccountIds = [
@@ -400,6 +423,36 @@ export async function seed(knex: Knex): Promise<void> {
     organization_id: 999,
     org_approved: true
   });
+
+  // A1/A2: org+team with no registration so admin tests can submit without 409
+  await knex("Organizations").insert([
+    {
+      id: 998,
+      name: "E2E Test Org 998",
+      organization_code: "2992559-3",
+      website: "https://kanaliiga.fi"
+    },
+    {
+      id: 997,
+      name: "E2E Test Org 997",
+      organization_code: "2992559-4",
+      website: "https://kanaliiga.fi"
+    }
+  ]);
+  await knex("Teams").insert([
+    {
+      id: 998,
+      name: "E2E Test Team 998",
+      organization_id: 998,
+      org_approved: true
+    },
+    {
+      id: 997,
+      name: "E2E Test Team 997",
+      organization_id: 997,
+      org_approved: true
+    }
+  ]);
 
   // Set up SeasonPlayerApprovals for employment/organizer approval testing
   const seasonTeamPlayers = [
@@ -524,7 +577,10 @@ export async function seed(knex: Knex): Promise<void> {
     { account_id: 15016, username: "validworkemail3" }, // ValidWorkEmail3
     { account_id: 15017, username: "validworkemail4" }, // ValidWorkEmail4
     { account_id: 15018, username: "validworkemail5" }, // ValidWorkEmail5
-    { account_id: 15020, username: "eligibleplayer" } // EligiblePlayerForValidation
+    { account_id: 15020, username: "eligibleplayer" }, // EligiblePlayerForValidation
+    { account_id: 15023, username: "approvalonlysubmit" }, // ApprovalOnlySubmit - captain in approval-only test
+    { account_id: 15024, username: "manualapprovaltarget" }, // ManualApprovalTarget - captain in A1 test
+    { account_id: 15025, username: "manualranktarget" } // ManualRankTarget - captain in A2 test
   ];
 
   for (const player of playersWithDiscord) {
