@@ -12,10 +12,6 @@ if [ "$(uname)" = "Darwin" ]; then
   xhost + 127.0.0.1 2>/dev/null || true
 fi
 
-# Setup MCP readonly user (synchronous - must complete before MCP server starts)
-echo "Setting up MCP readonly database user..."
-/workspace/scripts/setup-mcp-readonly-user.sh
-
 # MariaDB MCP server is baked into the image at /usr/local/mariadb-mcp during Docker build
 
 echo ""

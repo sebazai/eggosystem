@@ -27,11 +27,3 @@ RUN apt-get update && apt-get install -y --no-install-recommends git && rm -rf /
 USER node
 RUN cd /usr/local/mariadb-mcp && uv sync
 USER root
-
-# Install MariaDB client for database setup scripts
-# Check if packages are needed before installing
-RUN if ! command -v mysql &> /dev/null; then \
-        apt-get update && \
-        apt-get install -y default-mysql-client && \
-        rm -rf /var/lib/apt/lists/*; \
-    fi
