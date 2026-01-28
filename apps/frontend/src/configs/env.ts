@@ -7,5 +7,5 @@ export const envConfig = {
   BASE_URL: process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000",
   BASE_PATH: process.env.NEXT_PUBLIC_BASE_PATH ?? "",
   IMAGE_SERVICE_URL:
-    process.env.NEXT_PUBLIC_IMAGE_SERVICE_URL ?? "https://imgdev.kanaliiga.fi"
+    process.env.NEXT_PUBLIC_IMAGE_SERVICE_URL ?? "https://img.kanaliiga.fi"
 };

@@ -130,9 +130,9 @@ pnpm --filter=backend test -- leaderboards
 ### End-to-End Tests
 
 ```bash
-# Install Playwright dependencies
-pnpm exec playwright install
-pnpm exec playwright install-deps
+# Install Playwright dependencies (chromium only)
+pnpm exec playwright install chromium
+pnpm exec playwright install-deps chromium
 
 # Start E2E backend
 pnpm --filter=backend dev:e2e

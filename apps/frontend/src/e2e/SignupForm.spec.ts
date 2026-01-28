@@ -33,48 +33,50 @@ import {
   ValidWorkEmail5SteamId
 } from "@eggosystem/types";
 
-async function assignCaptain(page: Page) {
-  // Try to expand accordions and assign captain/co-captain roles
-
+/**
+ * Assigns a captain or co-captain role to a specific player
+ * @param page - Playwright page object
+ * @param playerIndex - Zero-based index of the player (0-4)
+ * @param role - Either 'captain' or 'co-captain'
+ */
+async function assignPlayerRole(
+  page: Page,
+  playerIndex: number,
+  role: "captain" | "co-captain"
+) {
   const accordionTriggers = page.locator(
     `[data-testid="player-accordion-triggers"]`
   );
 
-  // Always assign player 0 as captain
-  const trigger0 = accordionTriggers.nth(0);
-  if (await trigger0.isVisible()) {
-    const isOpen = await trigger0.getAttribute("data-state");
+  const trigger = accordionTriggers.nth(playerIndex);
+  if (await trigger.isVisible()) {
+    const isOpen = await trigger.getAttribute("data-state");
     if (isOpen === "closed") {
-      await trigger0.click();
+      await trigger.click();
     }
-    const captainCheckbox = page.locator(`[data-testid="captain-checkbox-0"]`);
-    if (await captainCheckbox.isVisible()) {
-      const isAlreadyCaptain =
-        await captainCheckbox.getAttribute("aria-checked");
-      if (isAlreadyCaptain !== "true") {
-        await captainCheckbox.click();
-      }
-    }
-  }
 
-  // Assign player 1 as co-captain
-  const trigger1 = accordionTriggers.nth(1);
-  if (await trigger1.isVisible()) {
-    const isOpen = await trigger1.getAttribute("data-state");
-    if (isOpen === "closed") {
-      await trigger1.click();
-    }
-    const coCaptainCheckbox = page.locator(
-      `[data-testid="co-captain-checkbox-1"]`
-    );
-    if (await coCaptainCheckbox.isVisible()) {
-      const isAlreadyCoCaptain =
-        await coCaptainCheckbox.getAttribute("aria-checked");
-      if (isAlreadyCoCaptain !== "true") {
-        await coCaptainCheckbox.click();
+    const checkboxSelector =
+      role === "captain"
+        ? `[data-testid="captain-checkbox-${playerIndex}"]`
+        : `[data-testid="co-captain-checkbox-${playerIndex}"]`;
+
+    const checkbox = page.locator(checkboxSelector);
+    if (await checkbox.isVisible()) {
+      const isAlreadyAssigned = await checkbox.getAttribute("aria-checked");
+      if (isAlreadyAssigned !== "true") {
+        await checkbox.click();
       }
     }
   }
+}
+
+/**
+ * Assigns player 0 as captain and player 1 as co-captain
+ * This is a convenience function that maintains backward compatibility
+ */
+async function assignCaptain(page: Page) {
+  await assignPlayerRole(page, 0, "captain");
+  await assignPlayerRole(page, 1, "co-captain");
 
   // Wait for captain/co-captain validation error to disappear
   const validationError = page.getByText(
@@ -1010,7 +1012,8 @@ test.describe("Signup Form", () => {
     });
 
     test("should show Kanahub signup message when player has invalid profile (is_valid_full_name false), then after fixing profile submit is enabled", async ({
-      page
+      page,
+      request
     }) => {
       await setupAuthForUser(
         page,
@@ -1041,7 +1044,11 @@ test.describe("Signup Form", () => {
       }
 
       await page.waitForTimeout(3000);
-      await assignCaptain(page);
+
+      // Assign player 1 (ValidWorkEmail1) as captain instead of player 0
+      // since player 0 (IncompleteDetailsPlayer) doesn't have Discord linked
+      await assignPlayerRole(page, 1, "captain");
+      await assignPlayerRole(page, 2, "co-captain");
 
       const termsCheckbox = page.locator(
         '[data-testid="terms-conditions-checkbox"]'
@@ -1069,10 +1076,19 @@ test.describe("Signup Form", () => {
         IncompleteDetailsPlayerSteamId,
         "IncompleteDetailsPlayer"
       );
-      const updateResponse = await page.request.post(
-        "/api/v1/accounts/update",
+      const apiBaseUrl = "http://localhost:3001";
+      const jwt = generateTestJWTForUser(
+        15012,
+        IncompleteDetailsPlayerSteamId,
+        "IncompleteDetailsPlayer"
+      );
+      const updateResponse = await request.post(
+        `${apiBaseUrl}/api/v1/accounts/update`,
         {
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${jwt}`
+          },
           data: {
             nickname: "IncompleteDetailsPlayer",
             full_name: "Incomplete Details Player",

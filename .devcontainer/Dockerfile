@@ -11,7 +11,7 @@ RUN ARCH=$(dpkg --print-architecture) && \
     dpkg -i tbls.deb
 
 # Installed in background
-# RUN npx playwright install && npx playwright install-deps
+# RUN npx playwright install chromium && npx playwright install-deps chromium
 
 # Install uv (standalone) so MariaDB MCP server can start before postCreateCommand/postStartCommand run
 RUN curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR="/usr/local/bin" UV_NO_MODIFY_PATH=1 sh

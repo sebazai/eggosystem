@@ -10,7 +10,7 @@
     "dev": "turbo dev",
     "start": "turbo start",
     "test": "turbo test",
-    "install:playwright": "pnpm exec playwright install && pnpm exec playwright install-deps",
+    "install:playwright": "pnpm exec playwright install chromium && pnpm exec playwright install-deps chromium",
     "test:watch": "pnpm --filter=frontend test:watch & pnpm --filter=backend test:watch",
     "test:e2e": "pnpm build && pnpm --filter=backend reseed:e2e && pnpm --filter=frontend test:e2e --",
     "test:e2e:run": "pnpm --filter=frontend test:e2e --",
