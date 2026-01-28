@@ -22,6 +22,7 @@ import discordRouter from "./v1/discord.routes";
 import eloRouter from "./v1/elo.routes";
 import { checkDiscordHealth } from "../services/discord.services";
 import { queueConsumerManager } from "../services/queue-consumer-manager";
+import { getPoolStats } from "../db/mysqlConnection";
 import {
   verifyEmailController,
   unsubscribeNewsletterController
@@ -156,6 +157,37 @@ v1Router.get("/health/rabbitmq", async (req, res) => {
       service: "rabbitmq",
       message: "RabbitMQ consumers are not connected or unhealthy",
       consumerCount: healthStatus.consumerCount
+    });
+  }
+});
+
+v1Router.get("/health/database", async (req, res) => {
+  try {
+    const poolStats = getPoolStats();
+    const isHealthy =
+      poolStats.utilizationPercent < 95 && poolStats.queued === 0;
+
+    if (isHealthy) {
+      res.status(200).json({
+        status: "healthy",
+        service: "database",
+        message: "Database connection pool is healthy",
+        pool: poolStats
+      });
+    } else {
+      res.status(503).json({
+        status: "unhealthy",
+        service: "database",
+        message: "Database connection pool is under high load",
+        pool: poolStats
+      });
+    }
+  } catch (error) {
+    res.status(503).json({
+      status: "error",
+      service: "database",
+      message: "Failed to check database pool health",
+      error: error instanceof Error ? error.message : "Unknown error"
     });
   }
 });
