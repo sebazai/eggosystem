@@ -210,7 +210,7 @@ services:
     restart: no
 
   eggo-stage-rabbitmq:
-    image: rabbitmq:4.2.2-management
+    image: rabbitmq:4.2.3-management
     container_name: eggo-stage-rabbitmq
     restart: always
     environment:
