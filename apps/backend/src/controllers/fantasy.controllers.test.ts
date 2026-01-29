@@ -1368,6 +1368,7 @@ describe("Fantasy Controllers", () => {
 
       expect(mockFantasyModels.getPlayerPointHistory).toHaveBeenCalledWith(
         "12345",
+        1,
         1
       );
       expect(mockResponse.json).toHaveBeenCalledWith(mockHistory);

@@ -478,7 +478,7 @@ export const getPlayerPointHistoryController = async (
     return next(new BadRequestError("Player not in your fantasy team"));
   }
 
-  const history = await getPlayerPointHistory(playerSteamId, seasonId);
+  const history = await getPlayerPointHistory(playerSteamId, seasonId, team.id);
 
   res.json(history);
 };
