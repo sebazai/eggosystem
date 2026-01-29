@@ -19,7 +19,7 @@ import { upsertTeamGameScore } from "./team-game-score.models";
 import { upsertPlayerStatsForGame } from "./player-stats.models";
 import { upsertPlayerTradesForGame } from "./player-trades.models";
 import { upsertMapRoundStats } from "./map-round-stat.models";
-import { upsertKillLogsForGame } from "./kill-log.models";
+import { upsertPlayerKillLogsForGame } from "./player-kill-logs.models";
 import { upsertPlayerClutchesForGame } from "./player-clutches.models";
 import { upsertPlayerRoundImpactsForGame } from "./player-round-impacts.models";
 
@@ -377,7 +377,7 @@ export const saveParsedDemoDataForGame = async (
       // Save kill logs if present (new field from parser)
       ...(KillLog && KillLog.length > 0
         ? [
-            upsertKillLogsForGame({
+            upsertPlayerKillLogsForGame({
               matchGameId,
               killLogs: KillLog,
               connection

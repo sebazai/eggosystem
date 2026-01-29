@@ -16,6 +16,7 @@ jest.mock("./player-stats.models");
 jest.mock("./player-trades.models");
 jest.mock("./player-clutches.models");
 jest.mock("./player-round-impacts.models");
+jest.mock("./player-kill-logs.models");
 jest.mock("./map-round-stat.models");
 
 // Import the mocked functions
@@ -24,6 +25,7 @@ import { upsertPlayerStatsForGame } from "./player-stats.models";
 import { upsertPlayerTradesForGame } from "./player-trades.models";
 import { upsertPlayerClutchesForGame } from "./player-clutches.models";
 import { upsertPlayerRoundImpactsForGame } from "./player-round-impacts.models";
+import { upsertPlayerKillLogsForGame } from "./player-kill-logs.models";
 import { upsertMapRoundStats } from "./map-round-stat.models";
 
 const mockUpsertTeamGameScore = upsertTeamGameScore as jest.MockedFunction<
@@ -44,6 +46,10 @@ const mockUpsertPlayerClutchesForGame =
 const mockUpsertPlayerRoundImpactsForGame =
   upsertPlayerRoundImpactsForGame as jest.MockedFunction<
     typeof upsertPlayerRoundImpactsForGame
+  >;
+const mockUpsertPlayerKillLogsForGame =
+  upsertPlayerKillLogsForGame as jest.MockedFunction<
+    typeof upsertPlayerKillLogsForGame
   >;
 const mockUpsertMapRoundStats = upsertMapRoundStats as jest.MockedFunction<
   typeof upsertMapRoundStats
@@ -100,6 +106,7 @@ describe("saveParsedDemoDataForGame", () => {
     mockUpsertPlayerTradesForGame.mockResolvedValue(undefined);
     mockUpsertPlayerClutchesForGame.mockResolvedValue(undefined);
     mockUpsertPlayerRoundImpactsForGame.mockResolvedValue(undefined);
+    mockUpsertPlayerKillLogsForGame.mockResolvedValue(undefined);
     mockUpsertMapRoundStats.mockResolvedValue(undefined);
   });
 
