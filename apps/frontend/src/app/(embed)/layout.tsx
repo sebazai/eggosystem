@@ -70,8 +70,13 @@ export default function EmbedLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className="embed-page" suppressHydrationWarning>
       <head>
+        <style
+          dangerouslySetInnerHTML={{
+            __html: `.embed-page, .embed-page body { height: 100%; margin: 0; }`
+          }}
+        />
         <script
           dangerouslySetInnerHTML={{
             __html: `
@@ -86,7 +91,7 @@ export default function EmbedLayout({
       </head>
       <body
         className={cn(
-          `antialiased bg-background`,
+          "embed-page antialiased bg-background",
           kanaFonts.variable,
           kanaHeadingFonts.variable
         )}
