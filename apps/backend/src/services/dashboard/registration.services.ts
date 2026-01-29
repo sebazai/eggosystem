@@ -285,10 +285,13 @@ export const getTeamsSignupApprovalState = async (
       teamValidationResult.invalid_players.push(...playersWithUnverifiedEmails);
     }
 
-    // Find the most common work email ending (only for non-personal emails)
+    // Find the most common work email ending (only for non-personal emails; skip null work_email)
     const workEmailEndings = players
-      .filter((player) => !player.is_work_email_personal_email)
-      .map((player) => player.work_email.split("@")[1]);
+      .filter(
+        (player) =>
+          !player.is_work_email_personal_email && player.work_email != null
+      )
+      .map((player) => player.work_email!.split("@")[1]);
 
     // If all players have personal emails (marked as personal), they all need approval
     if (workEmailEndings.length === 0) {
@@ -334,7 +337,9 @@ export const getTeamsSignupApprovalState = async (
 
     // Check if all players have the same email domain and all marked as non-personal
     const allPlayersHaveSameDomain = players.every(
-      (player) => player.work_email.split("@")[1] === mostCommonEmailEnding
+      (player) =>
+        player.work_email != null &&
+        player.work_email.split("@")[1] === mostCommonEmailEnding
     );
     const allPlayersMarkedAsNonPersonal = players.every(
       (player) => !player.is_work_email_personal_email
@@ -356,6 +361,10 @@ export const getTeamsSignupApprovalState = async (
 
     // Find players that need approval checks
     const playersNeedingApproval = players.filter((player) => {
+      // Players with missing work_email need approval
+      if (player.work_email === null) {
+        return true;
+      }
       // Players with personal emails always need approval
       if (player.is_work_email_personal_email) {
         return true;
