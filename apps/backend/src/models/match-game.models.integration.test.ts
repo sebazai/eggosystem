@@ -174,6 +174,7 @@ interface MapRoundStat {
   ct_team_id: number;
   round_end_reason_info: number;
   winner: string;
+  round_type: string | null;
 }
 
 interface CountResult {
@@ -525,6 +526,9 @@ describe("saveParsedDemoDataForGame Integration Tests", () => {
         t_team_id: 20000,
         ct_team_id: 20001
       });
+      // NewRoundInfo fields persisted from parser (round 1 in mock: Winner "CT", RoundType "CT:eco-T:eco")
+      expect(mapRoundStats[0].winner).toBe("CT");
+      expect(mapRoundStats[0].round_type).toBe("CT:eco-T:eco");
     });
   });
 
