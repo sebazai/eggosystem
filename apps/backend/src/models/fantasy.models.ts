@@ -1579,11 +1579,13 @@ export const getTopPerformingPlayers = async (
 
 /**
  * Get point history for a specific fantasy team player
- * Shows detailed breakdown of points earned per match
+ * Shows detailed breakdown of points earned per match for that team only.
+ * Filters by fantasyTeamId so the same player in multiple teams only shows points from the requested team.
  */
 export const getPlayerPointHistory = async (
   steamId: string,
   seasonId: number,
+  fantasyTeamId: number,
   connection?: PoolConnection
 ): Promise<
   Array<{
@@ -1660,6 +1662,7 @@ export const getPlayerPointHistory = async (
     LEFT JOIN Teams opponent_team ON opponent_team.id = opponent_match_team.team_id
     WHERE ftp.steam_id = ?
       AND ft.season_id = ?
+      AND ft.id = ?
       AND ftp.is_active = TRUE
     ORDER BY m.start_timestamp DESC, fpl.match_game_id DESC
   `;
@@ -1678,7 +1681,7 @@ export const getPlayerPointHistory = async (
       stats_breakdown: string; // JSON string
       points_breakdown: string; // JSON string
     }>
-  >(query, [seasonId, steamId, seasonId], connection);
+  >(query, [seasonId, steamId, seasonId, fantasyTeamId], connection);
 
   return results.map((row) => ({
     match_game_id: row.match_game_id,

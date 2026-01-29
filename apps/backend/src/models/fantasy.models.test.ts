@@ -796,11 +796,16 @@ describe("Fantasy Models", () => {
       mockRunQuery.mockReset();
       mockRunQuery.mockResolvedValueOnce(mockHistory);
 
-      const result = await getPlayerPointHistory("12345", 1);
+      const result = await getPlayerPointHistory("12345", 1, 1);
 
       expect(result).toHaveLength(1);
       expect(result[0]).toHaveProperty("points_earned");
       expect(result[0]).toHaveProperty("stats_breakdown");
+      expect(mockRunQuery).toHaveBeenCalledWith(
+        expect.stringContaining("ft.id = ?"),
+        [expect.anything(), "12345", expect.anything(), 1],
+        undefined
+      );
     });
 
     it("should handle player with no matches", async () => {
@@ -808,9 +813,36 @@ describe("Fantasy Models", () => {
       mockRunQuery.mockReset();
       mockRunQuery.mockResolvedValueOnce([]);
 
-      const result = await getPlayerPointHistory("12345", 1);
+      const result = await getPlayerPointHistory("12345", 1, 1);
 
       expect(result).toEqual([]);
+    });
+
+    it("should filter point history by fantasy team id so same player in multiple teams returns only that team's rows", async () => {
+      mockRunQuery.mockReset();
+      mockRunQuery.mockResolvedValueOnce([
+        {
+          match_game_id: 1,
+          match_date: "2024-01-01",
+          map_name: "de_overpass",
+          opponent: "AirTap",
+          opponent_logo: null,
+          points_earned: -7,
+          individual_points: -5,
+          team_points: -1,
+          role_points: -1,
+          stats_breakdown: JSON.stringify({ kills: 10, deaths: 15 }),
+          points_breakdown: JSON.stringify({ kills: 5, deaths: -10 })
+        }
+      ]);
+
+      const result = await getPlayerPointHistory("76561198001857963", 1, 42);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].points_earned).toBe(-7);
+      expect(mockRunQuery).toHaveBeenCalledTimes(1);
+      const [, params] = mockRunQuery.mock.calls[0];
+      expect(params).toEqual([1, "76561198001857963", 1, 42]);
     });
   });
 });
