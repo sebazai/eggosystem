@@ -86,7 +86,7 @@ export default function EmbedLayout({
       </head>
       <body
         className={cn(
-          `min-h-svh antialiased bg-background`,
+          `antialiased bg-background`,
           kanaFonts.variable,
           kanaHeadingFonts.variable
         )}

@@ -10,20 +10,22 @@ export default function EmbedCalendarClient() {
   const organizerId = searchParams.get("organizer_id") || "";
   const appId = searchParams.get("app_id") || "";
   const leagueId = searchParams.get("league_id") || undefined;
-  const height = searchParams.get("height") || "600px";
-  const width = searchParams.get("width") || "100%";
+  const height = searchParams.get("height") || undefined;
+  const width = searchParams.get("width") || undefined;
   const view = (searchParams.get("view") as "month" | "week") || "month";
   const theme = (searchParams.get("theme") as "dark" | "light") || "light";
 
   return (
-    <EmbedCalendar
-      organizerId={organizerId}
-      appId={appId}
-      leagueId={leagueId}
-      height={height}
-      width={width}
-      view={view}
-      theme={theme}
-    />
+    <div style={{ height: "50%", width: "100%" }}>
+      <EmbedCalendar
+        organizerId={organizerId}
+        appId={appId}
+        leagueId={leagueId}
+        height={height}
+        width={width}
+        view={view}
+        theme={theme}
+      />
+    </div>
   );
 }
