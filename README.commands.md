@@ -260,11 +260,11 @@ openssl rsa -pubout -in apps/backend/private_refresh_token.pem -out apps/backend
 ## Playwright Setup
 
 ```bash
-# Install Playwright browsers
-pnpm exec playwright install
+# Install Playwright browsers (chromium only)
+pnpm exec playwright install chromium
 
-# Install system dependencies
-pnpm exec playwright install-deps
+# Install system dependencies (chromium only)
+pnpm exec playwright install-deps chromium
 
 # For macOS with devcontainer (XQuartz setup)
 xhost localhost

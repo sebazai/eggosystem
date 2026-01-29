@@ -16,7 +16,8 @@ import {
   ValidWorkEmail3SteamId,
   ValidWorkEmail4SteamId,
   ValidWorkEmail5SteamId,
-  EligiblePlayerForValidationSteamId
+  EligiblePlayerForValidationSteamId,
+  ManualRankTargetSteamId
 } from "@eggosystem/types";
 
 const createLeetifyResponse = (
@@ -68,7 +69,10 @@ export const getLeetifyHandlers = [
         return HttpResponse.text("Invalid JSON");
       }
 
-      if (steamId === leetifyNoPremierRankSteamId) {
+      if (
+        steamId === leetifyNoPremierRankSteamId ||
+        steamId === ManualRankTargetSteamId
+      ) {
         return HttpResponse.json({
           games: []
         } satisfies LeetifyResponse);

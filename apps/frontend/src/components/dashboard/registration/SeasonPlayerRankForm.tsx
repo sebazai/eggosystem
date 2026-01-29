@@ -115,7 +115,7 @@ export function SeasonPlayerRankForm() {
                   {...field}
                   placeholder="Enter Steam ID"
                   convertOnBlur={true}
-                  data-testid="steam-id-input"
+                  data-testid="manual-rank-steam-id"
                 />
               </FormControl>
               <FormMessage />
@@ -138,6 +138,7 @@ export function SeasonPlayerRankForm() {
                     const val = e.target.value;
                     field.onChange(val === "" ? undefined : Number(val));
                   }}
+                  data-testid="manual-rank-external-elo"
                 />
               </FormControl>
               <FormMessage />
@@ -186,6 +187,7 @@ export function SeasonPlayerRankForm() {
                     const val = e.target.value;
                     field.onChange(val === "" ? undefined : Number(val));
                   }}
+                  data-testid="manual-rank-cs2-rank"
                 />
               </FormControl>
               <FormMessage />
@@ -208,6 +210,7 @@ export function SeasonPlayerRankForm() {
                     const val = e.target.value;
                     field.onChange(val === "" ? undefined : Number(val));
                   }}
+                  data-testid="manual-rank-cs-hours"
                 />
               </FormControl>
               <FormMessage />
@@ -228,7 +231,11 @@ export function SeasonPlayerRankForm() {
           )}
         />
 
-        <Button type="submit" disabled={loading || !selectedSeasonId}>
+        <Button
+          type="submit"
+          disabled={loading || !selectedSeasonId}
+          data-testid="manual-rank-submit"
+        >
           {loading ? "Submitting..." : "Submit"}
         </Button>
       </form>

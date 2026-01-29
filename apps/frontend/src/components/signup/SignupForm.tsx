@@ -261,8 +261,8 @@ export const SignupForm = ({
     watchPlayers.every(
       (p) =>
         p.hasValidData &&
-        p.hasValidWorkEmail &&
-        p.isEmailVerified &&
+        p.hasValidWorkEmail === true &&
+        p.isEmailVerified === true &&
         p.rank !== -1 &&
         (p.externalRank !== -1 ||
           seasonDetails?.platform === SeasonPlatform.Kanaliiga) &&
@@ -636,6 +636,7 @@ export const SignupForm = ({
               variant="outline"
               className="w-full"
               disabled={isSubmittingOrHasSubmitted || !canSubmit}
+              data-testid="signup-submit-button"
             >
               {form.formState.isSubmitting
                 ? "Processing submission..."

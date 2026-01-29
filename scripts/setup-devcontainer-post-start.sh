@@ -12,24 +12,18 @@ if [ "$(uname)" = "Darwin" ]; then
   xhost + 127.0.0.1 2>/dev/null || true
 fi
 
-# Setup MCP readonly user (synchronous - must complete before MCP server starts)
-echo "Setting up MCP readonly database user..."
-/workspace/scripts/setup-mcp-readonly-user.sh
-
 # MariaDB MCP server is baked into the image at /usr/local/mariadb-mcp during Docker build
 
 echo ""
 echo "Starting background setup tasks..."
 
-# Start Playwright installation in background
+# Start Playwright installation in background (uses workspace pnpm script for correct deps)
 echo "Starting Playwright installation (this may take several minutes on first run)..."
 # Create log file immediately so it can be tailed
 touch /tmp/playwright-setup.log
 (
-  echo "Starting Playwright browser installation..." >> /tmp/playwright-setup.log 2>&1
-  npx playwright install >> /tmp/playwright-setup.log 2>&1 && \
-  echo "Starting Playwright system dependencies installation..." >> /tmp/playwright-setup.log 2>&1 && \
-  npx playwright install-deps >> /tmp/playwright-setup.log 2>&1 && \
+  echo "Starting Playwright installation (pnpm install:playwright)..." >> /tmp/playwright-setup.log 2>&1
+  cd /workspace && pnpm install:playwright >> /tmp/playwright-setup.log 2>&1 && \
   echo "Playwright installation completed successfully!" >> /tmp/playwright-setup.log 2>&1 || \
   echo "Playwright installation failed. Check the log for details." >> /tmp/playwright-setup.log 2>&1
 ) &

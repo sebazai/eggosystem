@@ -150,8 +150,8 @@ export default function EmbedCalendar({
   organizerId,
   appId,
   leagueId,
-  height = "600px",
-  width = "100%",
+  height = undefined,
+  width = undefined,
   view: defaultView = "month",
   theme = "light"
 }: EmbedCalendarProps) {
@@ -226,17 +226,15 @@ export default function EmbedCalendar({
           </div>
         );
       },
-      dayMaxEvents: 3,
+      dayMaxEvents: height ? 2 : 3,
       moreLinkClick: "popover",
       moreLinkContent: (arg: MoreLinkContentArg) => `+${arg.num} more`,
       slotMinTime: timeRange.minTime,
       slotMaxTime: timeRange.maxTime,
       allDaySlot: false,
-      slotDuration: "00:30:00",
-      expandRows: true,
-      height: "auto",
-      eventMaxStack: 3,
-      slotEventOverlap: false,
+      height: height || "auto",
+      eventMaxStack: height ? 2 : 3,
+      slotEventOverlap: true,
       selectable: false,
       selectMirror: false,
       weekends: true,
@@ -250,16 +248,9 @@ export default function EmbedCalendar({
       },
       eventOrder: "displayOrder,start,-allDay",
       editable: false,
-      droppable: false,
-      eventResizableFromStart: false,
-      handleWindowResize: true,
-      windowResizeDelay: 100,
-      longPressDelay: 500,
-      eventLongPressDelay: 500,
-      selectLongPressDelay: 500,
       dayMaxEventRows: 3
     }),
-    [view, matches, timeRange.minTime, timeRange.maxTime]
+    [view, matches, timeRange.minTime, timeRange.maxTime, height]
   );
 
   // Apply theme class to document
@@ -303,7 +294,7 @@ export default function EmbedCalendar({
   return (
     <div
       className={`embed-calendar-container bg-background text-foreground ${theme}`}
-      style={{ height, width, overflow: "auto" }}
+      style={{ height, width }}
     >
       <style>{`
         .embed-calendar-container .fc {

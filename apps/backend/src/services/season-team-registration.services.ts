@@ -325,9 +325,18 @@ export const validatePlayersFromDBForSignup = async (
 
   for (const playerData of filteredData) {
     if (!playerData.work_email_verified) {
-      throw new BadRequestError(
-        `Player ${playerData.steam_id} has not verified e-mail their e-mail.`
+      const manuallyApprovedPlayer = await isPlayerApprovedForSeasonManually(
+        seasonId,
+        playerData.steam_id,
+        teamId,
+        organizationId,
+        connection
       );
+      if (!manuallyApprovedPlayer.approved_by_organizer) {
+        throw new BadRequestError(
+          `Player ${playerData.steam_id} has not verified e-mail their e-mail.`
+        );
+      }
     }
     if (!playerData.is_valid_full_name) {
       throw new BadRequestError(

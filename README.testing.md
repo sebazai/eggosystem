@@ -22,11 +22,13 @@ Follow the Red-Green-Refactor cycle:
 
 ### Primary Commands
 
+Run from workspace root (`cd $(git rev-parse --show-toplevel)`):
+
 ```bash
 # Fast unit tests (development feedback)
 pnpm test
 
-# E2E tests (complete workflows)
+# E2E tests (complete workflows) — always from workspace root
 pnpm test:e2e
 
 # Comprehensive testing (all tests)
@@ -39,7 +41,7 @@ pnpm test:watch
 ### Command Hierarchy
 
 - **`pnpm test`**: Fast Jest-based unit tests only
-- **`pnpm test:e2e`**: E2E tests with database setup
+- **`pnpm test:e2e`**: E2E (Playwright) tests with reseed and build — **run from workspace root only**
 - **`pnpm test:all`**: Both unit and E2E tests
 - **`pnpm test:watch`**: TDD watch mode
 

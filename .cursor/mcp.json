@@ -13,9 +13,16 @@
       }
     },
     "Playwright": {
-      "command": "npx -y @playwright/mcp@latest",
-      "env": {},
-      "args": []
+      "command": "npx",
+      "args": [
+        "-y",
+        "@playwright/mcp@latest",
+        "--browser",
+        "chromium",
+        "--headless",
+        "--no-sandbox"
+      ],
+      "env": {}
     },
     "shadcn/ui": {
       "command": "pnpm",

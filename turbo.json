@@ -57,7 +57,8 @@
         "IMAGE_SERVICE_URL",
         "IMAGE_SERVICE_API_KEY",
         "IMAGE_SERVICE_BASE_URL",
-        "EMAIL_SEND_DELAY_MS"
+        "EMAIL_SEND_DELAY_MS",
+        "DB_CONNECTION_LIMIT"
       ],
       "dependsOn": ["^build"],
       "inputs": [

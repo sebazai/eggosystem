@@ -5,11 +5,20 @@
 
 import {
   AabeSteamId,
+  AddTeamSignupSteamId1,
+  AddTeamSignupSteamId2,
+  AddTeamSignupSteamId3,
+  AddTeamSignupSteamId4,
+  AddTeamSignupSteamId5,
+  ApprovalOnlySubmitSteamId,
+  DraftReturnUserSteamId,
   EligiblePlayerForValidationSteamId,
   heppajpgSteamId,
   HoolyzSteamId,
   IncompleteDetailsPlayerSteamId,
   InsufficientHoursPlayerSteamId,
+  ManualApprovalTargetSteamId,
+  ManualRankTargetSteamId,
   NoFaceitRankPlayerSteamId,
   PrivateProfilePlayerSteamId,
   QuattraSteamId,
@@ -180,6 +189,88 @@ export const e2eSteamPlayerData: E2ESteamPlayerData[] = [
     work_email: null, // Missing work email
     work_email_verified: 0, // Not verified
     discord: null // Missing discord
+  },
+  // E2E critical-workflow IDs (S2, S3, A1, A2)
+  {
+    account_id: 15022,
+    steam_id: DraftReturnUserSteamId,
+    nickname: "DraftReturnUser",
+    work_email: "test+15022@kanaliiga.fi",
+    work_email_verified: 1,
+    is_work_email_personal_email: false,
+    discord: "draftreturn#1234"
+  },
+  {
+    account_id: 15023,
+    steam_id: ApprovalOnlySubmitSteamId,
+    nickname: "ApprovalOnlySubmit",
+    work_email: null,
+    work_email_verified: 0,
+    discord: "approvalonly#1234"
+  },
+  {
+    account_id: 15024,
+    steam_id: ManualApprovalTargetSteamId,
+    nickname: "ManualApprovalTarget",
+    work_email: "test+15024@kanaliiga.fi",
+    work_email_verified: 1,
+    is_work_email_personal_email: false,
+    discord: "manualapproval#1234"
+  },
+  {
+    account_id: 15025,
+    steam_id: ManualRankTargetSteamId,
+    nickname: "ManualRankTarget",
+    work_email: "test+15025@kanaliiga.fi",
+    work_email_verified: 1,
+    is_work_email_personal_email: false,
+    discord: "manualrank#1234"
+  },
+  // A5 add-team signup only – dedicated IDs to avoid SeasonPlayerRanks race with other tests
+  {
+    account_id: 15026,
+    steam_id: AddTeamSignupSteamId1,
+    nickname: "AddTeam One",
+    work_email: "test+15026@kanaliiga.fi",
+    work_email_verified: 1,
+    is_work_email_personal_email: false,
+    discord: "a5signup1#1234"
+  },
+  {
+    account_id: 15027,
+    steam_id: AddTeamSignupSteamId2,
+    nickname: "AddTeam Two",
+    work_email: "test+15027@kanaliiga.fi",
+    work_email_verified: 1,
+    is_work_email_personal_email: false,
+    discord: "a5signup2#1234"
+  },
+  {
+    account_id: 15028,
+    steam_id: AddTeamSignupSteamId3,
+    nickname: "AddTeam Three",
+    work_email: "test+15028@kanaliiga.fi",
+    work_email_verified: 1,
+    is_work_email_personal_email: false,
+    discord: "a5signup3#1234"
+  },
+  {
+    account_id: 15029,
+    steam_id: AddTeamSignupSteamId4,
+    nickname: "AddTeam Four",
+    work_email: "test+15029@kanaliiga.fi",
+    work_email_verified: 1,
+    is_work_email_personal_email: false,
+    discord: "a5signup4#1234"
+  },
+  {
+    account_id: 15030,
+    steam_id: AddTeamSignupSteamId5,
+    nickname: "AddTeam Five",
+    work_email: "test+15030@kanaliiga.fi",
+    work_email_verified: 1,
+    is_work_email_personal_email: false,
+    discord: "a5signup5#1234"
   }
 ];
 

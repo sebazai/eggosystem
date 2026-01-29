@@ -1,5 +1,5 @@
 # Base image
-FROM node:25-slim@sha256:f9e63fcfea470fdfd6ffeb0d6a4307ecf99f7b3292707897f82ba9088aa181e5 AS base
+FROM node:25-slim@sha256:ec5e27581e578ec3d25b81f4d9f9088fc2efa3087a78d1bf278f051db67c5b5b AS base
 RUN apt update && apt upgrade -y
 WORKDIR /usr/src/app
 # Install pnpm globally - do this first as it changes least often
@@ -37,7 +37,7 @@ ARG NEXT_PUBLIC_VIEWER_API_URL=https://cs2d.kanaliiga.fi
 ARG NEXT_PUBLIC_CLIENT_API_URL=https://hub.kanaliiga.fi
 ARG NEXT_PUBLIC_BASE_PATH
 ARG NEXT_PUBLIC_BASE_URL=https://hub.kanaliiga.fi
-ARG NEXT_PUBLIC_IMAGE_SERVICE_URL=https://imgdev.kanaliiga.fi
+ARG NEXT_PUBLIC_IMAGE_SERVICE_URL=https://img.kanaliiga.fi
 ARG NEXT_PUBLIC_GIT_SHA
 ARG NEXT_PUBLIC_GITLAB_URL
 ENV NEXT_PUBLIC_VIEWER_API_URL=${NEXT_PUBLIC_VIEWER_API_URL}

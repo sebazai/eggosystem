@@ -254,7 +254,10 @@ export function ManualPlayerApprovalForm() {
                     }}
                     value={field.value || ""}
                   >
-                    <SelectTrigger value={field.value ?? undefined}>
+                    <SelectTrigger
+                      value={field.value ?? undefined}
+                      data-testid="manual-approval-organization-trigger"
+                    >
                       <SelectValue placeholder="Select an organization" />
                     </SelectTrigger>
                     <SelectContent>
@@ -365,6 +368,7 @@ export function ManualPlayerApprovalForm() {
           type="button"
           onClick={() => append({ steamId: "" })}
           variant="outline"
+          data-testid="manual-approval-add-player"
         >
           <PlusIcon /> Add player
         </Button>
@@ -413,6 +417,7 @@ export function ManualPlayerApprovalForm() {
           <Button
             type="submit"
             disabled={methods.formState.isSubmitting || !selectedSeasonId}
+            data-testid="manual-approval-submit"
           >
             {methods.formState.isSubmitting ? "Submitting..." : "Submit"}
           </Button>

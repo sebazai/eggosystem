@@ -268,19 +268,27 @@ export const TabPlayers = ({
           const isValidWorkEmail = Boolean(data.is_valid_work_email);
           setValue(`players.${index}.hasValidWorkEmail`, isValidWorkEmail);
 
-          if (!isValidWorkEmail) {
-            // Check if organizer has approved manually
-            if (watchTeamId) {
-              const approvedByOrganizer = await clientApiFetch<{
-                approved_by_organizer: boolean;
-              }>(
-                `/api/v1/registrations/season/${seasonId}/player/${steam_id}/approved-manually?team_id=${watchTeamId}&organization_id=${watchOrganizationId}`
-              );
-
-              setValue(
-                `players.${index}.hasValidWorkEmail`,
-                approvedByOrganizer.approved_by_organizer
-              );
+          // Backend allows manual approval to bypass both unverified email and invalid work email
+          const needsApprovalCheck =
+            !isValidWorkEmail || !data.work_email_verified;
+          const hasTeamOrOrg =
+            watchTeamId != null || watchOrganizationId != null;
+          if (needsApprovalCheck && hasTeamOrOrg) {
+            const params = new URLSearchParams();
+            if (watchTeamId != null) params.set("team_id", String(watchTeamId));
+            if (watchOrganizationId != null)
+              params.set("organization_id", String(watchOrganizationId));
+            const approvedByOrganizer = await clientApiFetch<{
+              approved_by_organizer: boolean;
+            }>(
+              `/api/v1/registrations/season/${seasonId}/player/${steam_id}/approved-manually?${params.toString()}`
+            );
+            const approved = approvedByOrganizer.approved_by_organizer;
+            if (!isValidWorkEmail) {
+              setValue(`players.${index}.hasValidWorkEmail`, approved);
+            }
+            if (!data.work_email_verified) {
+              setValue(`players.${index}.isEmailVerified`, approved);
             }
           }
 
