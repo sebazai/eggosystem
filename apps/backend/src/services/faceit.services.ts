@@ -16,7 +16,10 @@ import {
   expireIn30Days,
   expireInOneDay
 } from "../utils/redisClient";
-import { getPlayerExternalRankForSeason } from "../models/season-player-ranks.models";
+import {
+  getPlayerExternalRankForSeason,
+  getLatestSeasonForPlayer
+} from "../models/season-player-ranks.models";
 import { logger } from "../utils/app-logger";
 import { createAbortController } from "../utils/fetch-utils";
 import {
@@ -375,25 +378,36 @@ const getFaceITCSGORank = async (steam_id: string) => {
   return returnData;
 };
 
+export interface FaceITRankOptions {
+  skipExternalCheck?: boolean;
+}
+
 /**
  * Used by signup to ensure that the rank is not old rank
+ * When skipExternalCheck is true: Redis then DB (season_id or latest season only); never calls FaceIT API; returns faceitErrorRank if no rank.
  * @param steam_id
  * @param season_id
+ * @param options
  * @returns
  */
 export const getFaceITCS2Rank = async (
   steam_id: string,
-  season_id?: number
+  season_id?: number,
+  options?: FaceITRankOptions
 ): Promise<FaceITCSRank> => {
-  // If someone added the rank to database for season, we use that one
-  if (season_id) {
+  const skipExternalCheck = options?.skipExternalCheck === true;
+
+  const tryDbRank = async (sid: number): Promise<FaceITCSRank | null> => {
     const rankFromDb = await getPlayerExternalRankForSeason(
       steam_id,
-      season_id,
+      sid,
       SeasonPlatform.FACEIT
     );
-    // Ensure that the rank is in database
-    if (rankFromDb && rankFromDb.faceit_level && rankFromDb.faceit_elo) {
+    if (
+      rankFromDb &&
+      rankFromDb.faceit_level != null &&
+      rankFromDb.faceit_elo != null
+    ) {
       return {
         faceit_level: rankFromDb.faceit_level,
         faceit_elo: rankFromDb.faceit_elo,
@@ -408,6 +422,13 @@ export const getFaceITCS2Rank = async (
         }
       } satisfies FaceITCSRank;
     }
+    return null;
+  };
+
+  // If someone added the rank to database for season, we use that one
+  if (season_id) {
+    const dbRank = await tryDbRank(season_id);
+    if (dbRank) return dbRank;
   }
 
   const redisKey = `730-${steam_id}-faceit-cs2-rank`;
@@ -415,6 +436,16 @@ export const getFaceITCS2Rank = async (
   if (fromRedis) {
     logger.info(`[FaceIT] Using Redis cache for steam_id: ${steam_id}`);
     return JSON.parse(fromRedis) as FaceITCSRank;
+  }
+
+  if (skipExternalCheck) {
+    const effectiveSeasonId =
+      season_id ?? (await getLatestSeasonForPlayer(steam_id));
+    if (effectiveSeasonId) {
+      const dbRank = await tryDbRank(effectiveSeasonId);
+      if (dbRank) return dbRank;
+    }
+    return faceitErrorRank;
   }
 
   try {

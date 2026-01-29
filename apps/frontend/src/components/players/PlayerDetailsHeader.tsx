@@ -24,8 +24,10 @@ export const PlayerDetailsHeader = ({ steamId }: { steamId: string }) => {
     ...filterParams
   });
   const { steamPlayer } = useSteamPlayer(steamId);
-  const faceItRank = useFaceITRank(steamId);
-  const cs2PremierRank = useCS2PremierRank(steamId);
+  const faceItRank = useFaceITRank(steamId, { skipExternalCheck: true });
+  const cs2PremierRank = useCS2PremierRank(steamId, {
+    skipExternalCheck: true
+  });
   const faceitPlayerData = useFaceitPlayerData(steamId);
 
   if (isLoading) {

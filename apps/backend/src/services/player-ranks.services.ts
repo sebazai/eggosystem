@@ -13,7 +13,8 @@ import {
   getPlayerRankForSeason,
   getPlayerKanaElo,
   getTopXPlayersKanaElo,
-  insertPlayerRankForSeason
+  insertPlayerRankForSeason,
+  getLatestSeasonForPlayer
 } from "../models/season-player-ranks.models";
 import { getCS2RankFromLeetify } from "./leetify.services";
 import { getFaceITCS2Rank } from "./faceit.services";
@@ -82,14 +83,19 @@ export const getPlayerHoursForSteamAppId = async (
   }
 };
 
+interface RankOptions {
+  skipExternalCheck?: boolean;
+}
+
 export const getPlayerAppIdRank = async (
   steam_id: string,
   app_id: number,
-  season_id?: number
+  season_id?: number,
+  options?: RankOptions
 ) => {
   switch (app_id) {
     case 730: // CS
-      return getCSRank(steam_id, season_id);
+      return getCSRank(steam_id, season_id, options);
     default:
       throw new BadRequestError("Unknown app_id");
   }
@@ -245,11 +251,15 @@ const getRankFromDatabaseFallback = async (
 /**
  * Main function to get CS2 rank for a player
  * Tries multiple sources in order: Database -> Cache -> External API -> Database Fallback
+ * When skipExternalCheck is true: Redis then DB (season_id or latest season only); never calls Leetify; returns -1 shape if no rank.
  */
 export const getCSRank = async (
   steam_id: string,
-  season_id?: number
+  season_id?: number,
+  options?: RankOptions
 ): Promise<CS2LeetifyAvgRank> => {
+  const skipExternalCheck = options?.skipExternalCheck === true;
+
   try {
     // 1. Try database first if season_id is provided
     if (season_id) {
@@ -262,6 +272,22 @@ export const getCSRank = async (
     const cachedRank = await getRankFromCache(steam_id);
     if (cachedRank) {
       return cachedRank;
+    }
+
+    if (skipExternalCheck) {
+      // Redis + DB only: use season_id or latest season, then return -1 if nothing
+      const effectiveSeasonId =
+        season_id ?? (await getLatestSeasonForPlayer(steam_id));
+      if (effectiveSeasonId) {
+        const dbRank = await getRankFromDatabase(steam_id, effectiveSeasonId);
+        if (dbRank) {
+          return dbRank;
+        }
+      }
+      return {
+        average_rank: -1,
+        rank_updated_at: null
+      } satisfies CS2LeetifyAvgRank;
     }
 
     // 3. Try external sources (Leetify)
@@ -307,14 +333,15 @@ export const getCSRank = async (
 export const getPlayerRankForPlatform = async (
   steam_id: string,
   platform: SeasonPlatform | null,
-  season_id?: number
+  season_id?: number,
+  options?: RankOptions
 ): Promise<FaceITCSRank | { kana_elo: number } | null> => {
   if (!platform) {
     return null;
   }
   switch (platform) {
     case SeasonPlatform.FACEIT:
-      return getFaceITCS2Rank(steam_id, season_id);
+      return getFaceITCS2Rank(steam_id, season_id, options);
     case SeasonPlatform.Kanaliiga: {
       const kanaElo = await getPlayerKanaElo(steam_id);
       if (kanaElo) {
