@@ -26,8 +26,12 @@ export const upsertPlayerTradesForGame = async ({
     attempted, 
     time, 
     trade_time, 
-    death_time) 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    death_time,
+    trade_denied,
+    trade_timeout,
+    denial_time,
+    trade_window) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON DUPLICATE KEY UPDATE
       trader_steam_id = VALUES(trader_steam_id),
       killer_steam_id = VALUES(killer_steam_id),
@@ -37,7 +41,11 @@ export const upsertPlayerTradesForGame = async ({
       attempted = VALUES(attempted),
       time = VALUES(time),
       trade_time = VALUES(trade_time),
-      death_time = VALUES(death_time)`;
+      death_time = VALUES(death_time),
+      trade_denied = VALUES(trade_denied),
+      trade_timeout = VALUES(trade_timeout),
+      denial_time = VALUES(denial_time),
+      trade_window = VALUES(trade_window)`;
 
   await Promise.all(
     tradesToBeAdded.map((trade) => {
@@ -54,7 +62,11 @@ export const upsertPlayerTradesForGame = async ({
           trade.Attempted,
           trade.Time,
           trade.TradeTime,
-          trade.DeathTime
+          trade.DeathTime,
+          trade.TradeDenied === true ? 1 : 0,
+          trade.TradeTimeout === true ? 1 : 0,
+          trade.DenialTime ?? null,
+          trade.TradeWindow ?? null
         ],
         connection
       );

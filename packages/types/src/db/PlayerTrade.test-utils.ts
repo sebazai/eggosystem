@@ -36,6 +36,10 @@ export const createMockPlayerTrade = (
     time: null,
     trade_time: null,
     death_time: null,
+    trade_denied: false,
+    trade_timeout: false,
+    denial_time: null,
+    trade_window: null,
     ...overrides
   };
 };
