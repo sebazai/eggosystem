@@ -68,7 +68,7 @@ erDiagram
 "KanahautomoRegistrationGameTypes" }o--|| "KanahautomoRegistrations" : ""
 "KanahautomoRegistrations" }o--|| "Organizations" : ""
 "KanahautomoRegistrations" }o--|| "SteamPlayers" : ""
-"KillLogs" }o--|| "MatchGames" : ""
+"PlayerKillLogs" }o--|| "MatchGames" : ""
 "LinkedAccounts" }o--|| "Accounts" : ""
 "MapRoundStats" }o--|| "Teams" : ""
 "MapRoundStats" }o--|| "MatchGames" : ""
@@ -218,7 +218,7 @@ erDiagram
   bigint_20_ steam_id FK
   int_10__unsigned organization_id FK
 }
-"KillLogs" {
+"PlayerKillLogs" {
   int_10__unsigned id PK
   int_10__unsigned match_game_id FK
 }

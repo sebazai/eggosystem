@@ -201,7 +201,7 @@ interface DemoClutchRoundInfo {
   EndInfo: string; // Won or Lost
 }
 
-interface DemoClutches {
+export interface DemoClutches {
   Infos: DemoClutchRoundInfo[];
 }
 
@@ -246,9 +246,9 @@ interface DemoNewRoundInfo {
   Rounds: DemoRoundInfo[];
 }
 
-interface DemoRoundImpacts {
+export interface DemoRoundImpact {
   RoundNumber: number;
-  SteamID: string;
+  SteamID: string | number;
   Kills: number;
   Assists: number;
   FirstKill: boolean;
@@ -264,6 +264,9 @@ interface DemoRoundImpacts {
   BombExploded: boolean;
   KillOpponentValue: string | number;
   WinProbImpact: string | number;
+  TradeDenials?: number;
+  FailedTrades?: number;
+  TradeEfficiency?: number;
 }
 
 /**
@@ -294,6 +297,6 @@ export interface ParsedPayload {
   Clutches: DemoClutches;
   RoundInfo: number[];
   NewRoundInfo: DemoNewRoundInfo;
-  RoundImpacts: DemoRoundImpacts[];
+  RoundImpacts: DemoRoundImpact[];
   KillLog?: KillEvent[]; // Optional - new field from parser
 }

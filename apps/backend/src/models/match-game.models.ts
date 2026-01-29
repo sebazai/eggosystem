@@ -19,7 +19,9 @@ import { upsertTeamGameScore } from "./team-game-score.models";
 import { upsertPlayerStatsForGame } from "./player-stats.models";
 import { upsertPlayerTradesForGame } from "./player-trades.models";
 import { upsertMapRoundStats } from "./map-round-stat.models";
-import { upsertKillLogsForGame } from "./kill-log.models";
+import { upsertPlayerKillLogsForGame } from "./player-kill-logs.models";
+import { upsertPlayerClutchesForGame } from "./player-clutches.models";
+import { upsertPlayerRoundImpactsForGame } from "./player-round-impacts.models";
 
 export const getGameTeamRoundBreakdown = async (match_game_id: number) => {
   const query = `
@@ -279,8 +281,8 @@ export const saveParsedDemoDataForGame = async (
     Players,
     NewRoundInfo: RoundInfo,
     Trades,
-    Clutches: _Clutches,
-    RoundImpacts: _RoundImpacts,
+    Clutches,
+    RoundImpacts,
     KillLog
   } = parsed_payload;
 
@@ -355,6 +357,16 @@ export const saveParsedDemoDataForGame = async (
         playerTrades: Trades,
         connection
       }),
+      upsertPlayerClutchesForGame({
+        matchGameId,
+        clutches: Clutches,
+        connection
+      }),
+      upsertPlayerRoundImpactsForGame({
+        matchGameId,
+        roundImpacts: RoundImpacts,
+        connection
+      }),
       upsertMapRoundStats({
         matchGameId,
         tTeamIdTeam1: terroristTeam.team_id,
@@ -365,7 +377,7 @@ export const saveParsedDemoDataForGame = async (
       // Save kill logs if present (new field from parser)
       ...(KillLog && KillLog.length > 0
         ? [
-            upsertKillLogsForGame({
+            upsertPlayerKillLogsForGame({
               matchGameId,
               killLogs: KillLog,
               connection
