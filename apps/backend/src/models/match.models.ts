@@ -532,12 +532,32 @@ export const getHubMatchesByExternalMatchRoomId = async (
  */
 export const updateMatchStartTimestamp = async (
   matchId: number,
-  timestamp: string | Date
+  timestamp: string | Date,
+  connection?: PoolConnection
 ): Promise<void> => {
-  await runQuery("UPDATE Matches SET start_timestamp = ? WHERE id = ?", [
-    formatDateForDatabase(timestamp),
-    matchId
-  ]);
+  await runQuery(
+    "UPDATE Matches SET start_timestamp = ? WHERE id = ?",
+    [formatDateForDatabase(timestamp), matchId],
+    connection
+  );
+};
+
+/**
+ * Updates a single match's end timestamp (for 2xBO1: only the second game on match_status_finished).
+ *
+ * @param matchId - The match ID to update
+ * @param timestamp - ISO 8601 timestamp string (UTC) or Date object
+ */
+export const updateMatchEndTimestamp = async (
+  matchId: number,
+  timestamp: string | Date,
+  connection?: PoolConnection
+): Promise<void> => {
+  await runQuery(
+    "UPDATE Matches SET end_timestamp = ? WHERE id = ?",
+    [formatDateForDatabase(timestamp), matchId],
+    connection
+  );
 };
 
 export const getMatchesByExternalId = async (
@@ -817,7 +837,7 @@ export const updateMatchEndTime = async (
   );
 };
 
-export const updateMatchStatus = async (
+export const updateMatchStatusByExternalMatchroomId = async (
   externalMatchRoomId: string,
   status: keyof typeof MatchStatus,
   connection?: PoolConnection
@@ -825,6 +845,18 @@ export const updateMatchStatus = async (
   await runQuery(
     "UPDATE Matches SET status = ? WHERE external_match_room_id = ?",
     [status, externalMatchRoomId],
+    connection
+  );
+};
+
+export const updateMatchStatusByMatchId = async (
+  matchId: number,
+  status: keyof typeof MatchStatus,
+  connection?: PoolConnection
+) => {
+  await runQuery(
+    "UPDATE Matches SET status = ? WHERE id = ?",
+    [status, matchId],
     connection
   );
 };

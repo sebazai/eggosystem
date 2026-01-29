@@ -26,12 +26,17 @@ import {
 } from "../../models/organizer.models";
 import {
   addMatchToDatabase,
-  updateMatchStatus,
+  getHubMatchesByExternalMatchRoomId,
+  getMatchesByExternalId,
+  updateMatchEndTime,
+  updateMatchEndTimestamp,
   updateMatchFinished,
-  updateMatchEndTime
+  updateMatchStartTimestamp,
+  updateMatchStatusByExternalMatchroomId
 } from "../../models/match.models";
 import { saveWebhookData } from "../../models/faceit.models";
 import { addMatchTeamMapVetoes } from "../../models/match-team-map-veto.models";
+import { getMatchGamesByExternalMatchRoomId } from "../../models/match-game.models";
 import { validatePlayersInTeams } from "../../models/season-team-players.models";
 import { expressErrorHandler } from "../../middlewares/express-error-handler";
 import * as seasonLeagueExternalIdServices from "../../services/season-league-external-id.services";
@@ -48,6 +53,7 @@ import {
   getSeasonLeagueExternalIdByExternalIdWithSeasonSettings
 } from "../../models/season-league-external-id.models";
 import {
+  type Match,
   type MatchObjectCreatedWebhook,
   type MatchDemoReadyWebhook,
   type MatchStatusReadyWebhook,
@@ -71,15 +77,34 @@ const mockGetOrganizerActiveSeasonForApp =
 const mockAddMatchToDatabase = addMatchToDatabase as jest.MockedFunction<
   typeof addMatchToDatabase
 >;
-const mockUpdateMatchStatus = updateMatchStatus as jest.MockedFunction<
-  typeof updateMatchStatus
->;
+const mockUpdateMatchStatus =
+  updateMatchStatusByExternalMatchroomId as jest.MockedFunction<
+    typeof updateMatchStatusByExternalMatchroomId
+  >;
 const mockUpdateMatchFinished = updateMatchFinished as jest.MockedFunction<
   typeof updateMatchFinished
 >;
 const mockUpdateMatchEndTime = updateMatchEndTime as jest.MockedFunction<
   typeof updateMatchEndTime
 >;
+const mockGetHubMatchesByExternalMatchRoomId =
+  getHubMatchesByExternalMatchRoomId as jest.MockedFunction<
+    typeof getHubMatchesByExternalMatchRoomId
+  >;
+const mockGetMatchesByExternalId =
+  getMatchesByExternalId as jest.MockedFunction<typeof getMatchesByExternalId>;
+const mockUpdateMatchEndTimestamp =
+  updateMatchEndTimestamp as jest.MockedFunction<
+    typeof updateMatchEndTimestamp
+  >;
+const mockUpdateMatchStartTimestamp =
+  updateMatchStartTimestamp as jest.MockedFunction<
+    typeof updateMatchStartTimestamp
+  >;
+const mockGetMatchGamesByExternalMatchRoomId =
+  getMatchGamesByExternalMatchRoomId as jest.MockedFunction<
+    typeof getMatchGamesByExternalMatchRoomId
+  >;
 const mockSaveWebhookData = saveWebhookData as jest.MockedFunction<
   typeof saveWebhookData
 >;
@@ -1948,6 +1973,90 @@ describe("FaceIT Routes - Webhook", () => {
       });
     });
 
+    describe("2xBO1 setup", () => {
+      let mockAddFaceitMatchGameToDatabase: jest.SpyInstance;
+
+      beforeEach(() => {
+        jest.clearAllMocks();
+        mockGetOrganizerByFaceitIdAndGameAppId.mockResolvedValue(mockOrganizer);
+        mockSaveWebhookData.mockResolvedValue({ insertId: 1 });
+        mockValidatePlayersInTeams.mockResolvedValue(undefined);
+        mockGetSeasonLeagueExternalIdByExternalIdWithSeasonSettings.mockResolvedValue(
+          {
+            ...createMockSeasonLeagueExternalId({
+              external_id: "2a40fbe5-f71b-471e-b25d-7837c1b441bc",
+              external_league_name: "Test League",
+              type: "doubleElimination"
+            }),
+            is_round_robin_bo2_as_2xbo1: true
+          }
+        );
+        mockAddFaceitMatchGameToDatabase = jest
+          .spyOn(faceitServices, "addFaceitMatchGameToDatabase")
+          .mockResolvedValue(123);
+        mockSendDemoForAllStarPOTGClip.mockResolvedValue({
+          success: true,
+          message: "Demo sent for AllStar"
+        });
+        mockPublishDemoProcessingRequest.mockResolvedValue(undefined);
+      });
+
+      afterEach(() => {
+        mockAddFaceitMatchGameToDatabase.mockRestore();
+      });
+
+      it("should set first game end and second game start on first match_demo_ready", async () => {
+        mockGetHubMatchesByExternalMatchRoomId.mockResolvedValue([
+          { id: 101 },
+          { id: 102 }
+        ]);
+        mockGetMatchGamesByExternalMatchRoomId.mockResolvedValue([
+          { id: 1, match_id: 101, map_order: 1 } as never
+        ]);
+
+        const response = await request(app)
+          .post("/api/v1/faceit/webhook")
+          .set("X-API-KEY", TEST_WEBHOOK_API_KEY)
+          .send(validWebhookMatchDemoReady);
+
+        expect(response.status).toBe(200);
+        expect(response.text).toBe("Webhook received");
+
+        expect(mockUpdateMatchEndTimestamp).toHaveBeenCalledWith(
+          101,
+          validWebhookMatchDemoReady.payload.updated_at,
+          expect.any(Object)
+        );
+        expect(mockUpdateMatchStartTimestamp).toHaveBeenCalledWith(
+          102,
+          validWebhookMatchDemoReady.payload.updated_at,
+          expect.any(Object)
+        );
+      });
+
+      it("should not update match timestamps on second match_demo_ready", async () => {
+        mockGetHubMatchesByExternalMatchRoomId.mockResolvedValue([
+          { id: 101 },
+          { id: 102 }
+        ]);
+        mockGetMatchGamesByExternalMatchRoomId.mockResolvedValue([
+          { id: 1, match_id: 101, map_order: 1 } as never,
+          { id: 2, match_id: 102, map_order: 2 } as never
+        ]);
+
+        const response = await request(app)
+          .post("/api/v1/faceit/webhook")
+          .set("X-API-KEY", TEST_WEBHOOK_API_KEY)
+          .send(validWebhookMatchDemoReady);
+
+        expect(response.status).toBe(200);
+        expect(response.text).toBe("Webhook received");
+
+        expect(mockUpdateMatchEndTimestamp).not.toHaveBeenCalled();
+        expect(mockUpdateMatchStartTimestamp).not.toHaveBeenCalled();
+      });
+    });
+
     describe("Error Cases", () => {
       let mockAddFaceitMatchGameToDatabase: jest.SpyInstance;
 
@@ -1997,12 +2106,22 @@ describe("FaceIT Routes - Webhook", () => {
 
   describe("POST /webhook - match_status_finished", () => {
     describe("Success Cases", () => {
+      let mockGetFaceITMatchDetails: jest.SpyInstance;
+
       beforeEach(() => {
         jest.clearAllMocks();
         mockGetOrganizerByFaceitIdAndGameAppId.mockResolvedValue(mockOrganizer);
         mockSaveWebhookData.mockResolvedValue({ insertId: 1 });
         mockUpdateMatchStatus.mockResolvedValue(undefined);
         mockUpdateMatchFinished.mockResolvedValue(undefined);
+        mockGetMatchesByExternalId.mockResolvedValue([{ id: 1 } as Match]);
+        mockGetFaceITMatchDetails = jest
+          .spyOn(faceitServices, "getFaceITMatchDetails")
+          .mockResolvedValue({} as never);
+      });
+
+      afterEach(() => {
+        mockGetFaceITMatchDetails.mockRestore();
       });
 
       it("should successfully process match_status_finished webhook", async () => {
@@ -2071,6 +2190,42 @@ describe("FaceIT Routes - Webhook", () => {
 
         // Verify updateMatchFinished was NOT called (AFK abort case)
         expect(mockUpdateMatchFinished).not.toHaveBeenCalled();
+      });
+
+      it("should for 2xBO1 only update second match end time and set both FINISHED", async () => {
+        mockGetSeasonLeagueExternalIdByExternalIdWithSeasonSettings.mockResolvedValue(
+          {
+            ...createMockSeasonLeagueExternalId({
+              external_id:
+                validWebhookPayloadMatchStatusFinished.payload.entity.id,
+              external_league_name: "Test League",
+              type: "roundRobin"
+            }),
+            is_round_robin_bo2_as_2xbo1: true
+          }
+        );
+        mockGetMatchesByExternalId.mockResolvedValue([
+          { id: 101 } as Match,
+          { id: 102 } as Match
+        ]);
+
+        const response = await request(app)
+          .post("/api/v1/faceit/webhook")
+          .set("X-API-KEY", TEST_WEBHOOK_API_KEY)
+          .send(validWebhookPayloadMatchStatusFinished);
+
+        expect(response.status).toBe(200);
+        expect(response.text).toBe("Webhook received");
+
+        expect(mockUpdateMatchEndTimestamp).toHaveBeenCalledWith(
+          102,
+          "2025-07-26T01:05:18Z"
+        );
+        expect(mockUpdateMatchFinished).not.toHaveBeenCalled();
+        expect(mockUpdateMatchStatus).toHaveBeenCalledWith(
+          "1-dba8981d-5647-466a-be32-12a06fb8fc31",
+          "FINISHED"
+        );
       });
     });
   });

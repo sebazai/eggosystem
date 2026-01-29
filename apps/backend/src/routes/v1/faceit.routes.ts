@@ -60,10 +60,15 @@ import {
 import {
   addMatchToDatabase,
   getMatchesByExternalId,
+  getHubMatchesByExternalMatchRoomId,
   updateMatchEndTime,
+  updateMatchEndTimestamp,
   updateMatchFinished,
-  updateMatchStatus
+  updateMatchStartTimestamp,
+  updateMatchStatusByExternalMatchroomId,
+  updateMatchStatusByMatchId
 } from "../../models/match.models";
+import { getMatchGamesByExternalMatchRoomId } from "../../models/match-game.models";
 import { createApiKeyValidator } from "../../middlewares/api-key-auth.middleware";
 import {
   getOrganizerByFaceitIdAndGameAppId,
@@ -86,6 +91,7 @@ import {
 import { sendDemoForAllStarPOTGClip } from "../../services/allstar.services";
 import { publishDemoProcessingRequest } from "../../services/match-game.services";
 import { validateNumericParams } from "../../middlewares/validate-numeric-params";
+import { getConnection } from "../../db/mysqlConnection";
 
 const router = Router();
 
@@ -361,7 +367,10 @@ router.post(
             )
           ) {
             // The match was restarted, so we need to update the status to ONGOING
-            await updateMatchStatus(externalMatchRoomId, "ONGOING");
+            await updateMatchStatusByExternalMatchroomId(
+              externalMatchRoomId,
+              "ONGOING"
+            );
           }
         }
 
@@ -383,7 +392,10 @@ router.post(
           webhookData.event,
           manualReprocess
         );
-        await updateMatchStatus(validatedWebhook.payload.id, "ONGOING");
+        await updateMatchStatusByExternalMatchroomId(
+          validatedWebhook.payload.id,
+          "ONGOING"
+        );
         res.status(200).send("Webhook received");
         return;
       }
@@ -406,7 +418,10 @@ router.post(
           validatedWebhook.payload.entity.id
         );
 
-        await updateMatchStatus(validatedWebhook.payload.id, "ONGOING");
+        await updateMatchStatusByExternalMatchroomId(
+          validatedWebhook.payload.id,
+          "ONGOING"
+        );
 
         res.status(200).send("Webhook received");
         return;
@@ -455,13 +470,36 @@ router.post(
               matchDetails,
               manualReprocess
             );
-            await updateMatchStatus(externalMatchRoomId, "FORFEIT");
+            await updateMatchStatusByExternalMatchroomId(
+              externalMatchRoomId,
+              "FORFEIT"
+            );
             res.status(200).send("Webhook received");
             return;
           }
 
           const endTime = webhookData.payload.finished_at;
-          await updateMatchFinished(webhookData.payload.id, startTime, endTime);
+          const externalLeagueId = webhookData.payload.entity.id;
+          const seasonLeague =
+            await getSeasonLeagueExternalIdByExternalIdWithSeasonSettings(
+              externalLeagueId
+            );
+          const matchesByRoom =
+            await getMatchesByExternalId(externalMatchRoomId);
+
+          if (
+            seasonLeague?.is_round_robin_bo2_as_2xbo1 &&
+            matchesByRoom.length === 2
+          ) {
+            // 2xBO1: only update second game end time; first game already set at first match_demo_ready
+            await updateMatchEndTimestamp(matchesByRoom[1].id, endTime);
+          } else {
+            await updateMatchFinished(
+              webhookData.payload.id,
+              startTime,
+              endTime
+            );
+          }
           await saveWebhookData(
             externalMatchRoomId,
             webhookData.retry_count,
@@ -470,7 +508,10 @@ router.post(
             matchDetails,
             manualReprocess
           );
-          await updateMatchStatus(externalMatchRoomId, "FINISHED");
+          await updateMatchStatusByExternalMatchroomId(
+            externalMatchRoomId,
+            "FINISHED"
+          );
           res.status(200).send("Webhook received");
           return;
         }
@@ -542,6 +583,48 @@ router.post(
           )
         ]);
 
+        // 2xBO1: first game end = when first demo is ready; second game start = same time
+        if (seasonLeague.is_round_robin_bo2_as_2xbo1) {
+          const connection = await getConnection();
+          try {
+            await connection.beginTransaction();
+            const hubMatches = await getHubMatchesByExternalMatchRoomId(
+              validatedWebhook.payload.id,
+              connection
+            );
+            const games = await getMatchGamesByExternalMatchRoomId(
+              validatedWebhook.payload.id,
+              connection
+            );
+            if (hubMatches && hubMatches.length === 2 && games.length === 1) {
+              const firstGameEndTime = validatedWebhook.payload.updated_at;
+              await updateMatchEndTimestamp(
+                hubMatches[0].id,
+                firstGameEndTime,
+                connection
+              );
+              await updateMatchStatusByMatchId(
+                hubMatches[0].id,
+                "FINISHED",
+                connection
+              );
+              await updateMatchStartTimestamp(
+                hubMatches[1].id,
+                firstGameEndTime,
+                connection
+              );
+            }
+          } catch (error) {
+            logger.error(
+              `Error updating match status for match ${validatedWebhook.payload.id}: ${error}`
+            );
+            await connection.rollback();
+            throw error;
+          } finally {
+            connection.release();
+          }
+        }
+
         res.status(200).send("Webhook received");
         return;
       }
@@ -557,7 +640,10 @@ router.post(
         matchDetails,
         manualReprocess
       );
-      await updateMatchStatus(webhookData.payload.id, "ABORTED");
+      await updateMatchStatusByExternalMatchroomId(
+        webhookData.payload.id,
+        "ABORTED"
+      );
       res.status(200).send("Webhook received");
       return;
     }
@@ -572,7 +658,10 @@ router.post(
         matchDetails,
         manualReprocess
       );
-      await updateMatchStatus(webhookData.payload.id, "CANCELLED");
+      await updateMatchStatusByExternalMatchroomId(
+        webhookData.payload.id,
+        "CANCELLED"
+      );
       res.status(200).send("Webhook received");
       return;
     }
