@@ -186,6 +186,93 @@ describe("Player Ranks Services", () => {
       });
     });
 
+    describe("skipExternalCheck: true (Redis + DB only, no Leetify)", () => {
+      beforeEach(() => {
+        mockSeasonPlayerRanksModels.getPlayerRankForSeason.mockResolvedValue(
+          undefined
+        );
+      });
+
+      it("should return cached rank when Redis has data and never call Leetify", async () => {
+        const validRankResponse = {
+          average_rank: 15000,
+          rank_updated_at: new Date().toISOString()
+        };
+        mockRedisClient.get.mockResolvedValue(
+          JSON.stringify(validRankResponse)
+        );
+
+        const result = await getCSRank(testSteamId, undefined, {
+          skipExternalCheck: true
+        });
+
+        expect(result).toEqual(validRankResponse);
+        expect(mockLeetifyService.getCS2RankFromLeetify).not.toHaveBeenCalled();
+        expect(mockRunQuery).not.toHaveBeenCalled();
+      });
+
+      it("should return rank from DB (latest season) when Redis miss and never call Leetify", async () => {
+        mockRedisClient.get.mockResolvedValue(null);
+        mockSeasonPlayerRanksModels.getLatestSeasonForPlayer.mockResolvedValue(
+          testSeasonId
+        );
+        mockSeasonPlayerRanksModels.getPlayerRankForSeason.mockResolvedValue({
+          average_rank: 12000,
+          rank_updated_at: "2024-01-01T00:00:00Z"
+        });
+
+        const result = await getCSRank(testSteamId, undefined, {
+          skipExternalCheck: true
+        });
+
+        expect(result.average_rank).toEqual(12000);
+        expect(
+          mockSeasonPlayerRanksModels.getLatestSeasonForPlayer
+        ).toHaveBeenCalledWith(testSteamId);
+        expect(
+          mockSeasonPlayerRanksModels.getPlayerRankForSeason
+        ).toHaveBeenCalledWith(testSteamId, testSeasonId);
+        expect(mockLeetifyService.getCS2RankFromLeetify).not.toHaveBeenCalled();
+      });
+
+      it("should return -1 shape when Redis miss and no DB rank, never call Leetify", async () => {
+        mockRedisClient.get.mockResolvedValue(null);
+        mockSeasonPlayerRanksModels.getLatestSeasonForPlayer.mockResolvedValue(
+          testSeasonId
+        );
+        mockSeasonPlayerRanksModels.getPlayerRankForSeason.mockResolvedValue(
+          undefined
+        );
+
+        const result = await getCSRank(testSteamId, undefined, {
+          skipExternalCheck: true
+        });
+
+        expect(result).toEqual({
+          average_rank: -1,
+          rank_updated_at: null
+        });
+        expect(mockLeetifyService.getCS2RankFromLeetify).not.toHaveBeenCalled();
+      });
+
+      it("should return -1 when no latest season for player", async () => {
+        mockRedisClient.get.mockResolvedValue(null);
+        mockSeasonPlayerRanksModels.getLatestSeasonForPlayer.mockResolvedValue(
+          null
+        );
+
+        const result = await getCSRank(testSteamId, undefined, {
+          skipExternalCheck: true
+        });
+
+        expect(result).toEqual({
+          average_rank: -1,
+          rank_updated_at: null
+        });
+        expect(mockLeetifyService.getCS2RankFromLeetify).not.toHaveBeenCalled();
+      });
+    });
+
     describe("Error handling", () => {
       beforeEach(() => {
         mockRedisClient.get.mockResolvedValue(null);
@@ -399,7 +486,8 @@ describe("Player Ranks Services", () => {
         expect(mockGetPlayerKanaElo).not.toHaveBeenCalled();
         expect(mockGetFaceITCS2Rank).toHaveBeenCalledWith(
           mockSteamId,
-          mockSeasonId
+          mockSeasonId,
+          undefined
         );
         expect(result).toEqual(mockFaceitData);
       });
@@ -532,7 +620,8 @@ describe("Player Ranks Services", () => {
         expect(mockGetFaceITCS2Rank).toHaveBeenCalledTimes(1);
         expect(mockGetFaceITCS2Rank).toHaveBeenCalledWith(
           mockSteamId,
-          mockSeasonId
+          mockSeasonId,
+          undefined
         );
 
         expect(result1).toEqual(mockFaceitData);

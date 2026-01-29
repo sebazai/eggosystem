@@ -29,7 +29,7 @@ The MariaDB MCP server provides read-only access to the database with these tool
 
 ```typescript
 // ❌ Don't write code to query database
-const kills = await db.query("SELECT COUNT(*) FROM KillLogs...");
+const kills = await db.query("SELECT COUNT(*) FROM PlayerKillLogs...");
 
 // ✅ Use MCP server instead
 call_mcp_tool({
@@ -37,7 +37,7 @@ call_mcp_tool({
   toolName: "execute_sql",
   arguments: {
     database_name: "kanaliiga",
-    sql_query: "SELECT COUNT(*) FROM KillLogs..."
+    sql_query: "SELECT COUNT(*) FROM PlayerKillLogs..."
   }
 });
 ```

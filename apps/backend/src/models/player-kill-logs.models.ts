@@ -2,21 +2,21 @@ import { type PoolConnection } from "mysql2/promise";
 import { runQuery } from "../db/mysqlRunQuery";
 import { type KillEvent } from "../types/parse-queue.types";
 
-interface UpsertKillLogsParams {
+interface UpsertPlayerKillLogsParams {
   matchGameId: number;
   killLogs: KillEvent[];
   connection: PoolConnection;
 }
 
 /**
- * Upserts kill logs for a match game
+ * Upserts player kill logs for a match game
  * Uses INSERT ... ON DUPLICATE KEY UPDATE to handle re-parsing
  */
-export const upsertKillLogsForGame = async ({
+export const upsertPlayerKillLogsForGame = async ({
   matchGameId,
   killLogs,
   connection
-}: UpsertKillLogsParams): Promise<void> => {
+}: UpsertPlayerKillLogsParams): Promise<void> => {
   if (!killLogs || killLogs.length === 0) {
     return;
   }
@@ -46,7 +46,7 @@ export const upsertKillLogsForGame = async ({
     .join(", ");
 
   const query = `
-    INSERT INTO KillLogs (
+    INSERT INTO PlayerKillLogs (
       match_game_id,
       round_number,
       time_in_round,

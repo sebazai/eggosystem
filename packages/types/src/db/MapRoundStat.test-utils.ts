@@ -34,6 +34,20 @@ export const createMockMapRoundStat = (
     ct_t: null,
     first_kill: null,
     plant_site: null,
+    winner: null,
+    round_type: null,
+    ct_avg_bank: null,
+    t_avg_bank: null,
+    ct_total_bank: null,
+    t_total_bank: null,
+    ct_pre_buy_eq_value: null,
+    t_pre_buy_eq_value: null,
+    ct_end_bank: null,
+    t_end_bank: null,
+    ct_end_eq_value: null,
+    t_end_eq_value: null,
+    ct_buy_strategy: null,
+    t_buy_strategy: null,
     ...overrides
   };
 };
