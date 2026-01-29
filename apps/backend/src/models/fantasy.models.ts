@@ -850,11 +850,17 @@ export const substitutePlayer = async (
       throw new BadRequestError("Fantasy team not found");
     }
 
+    // Use server-side current week so counts match getFantasyTeamByUser / getRemainingSubstitutions
+    const weekNumber = await getCurrentWeekNumberForSeason(
+      team.season_id,
+      connection
+    );
+
     // Check substitution limit (2 per week)
     const [subsCount] = await runQuery<Array<{ count: number }>>(
       `SELECT COUNT(*) as count FROM FantasyPlayerHistory 
        WHERE fantasy_team_id = ? AND action = 'removed' AND week_number = ?`,
-      [fantasyTeamId, data.week_number],
+      [fantasyTeamId, weekNumber],
       connection
     );
 
@@ -879,7 +885,7 @@ export const substitutePlayer = async (
     const hasPlayed = await hasPlayerPlayedInWeek(
       data.remove_steam_id,
       team.season_id,
-      data.week_number,
+      weekNumber,
       connection
     );
 
@@ -931,7 +937,7 @@ export const substitutePlayer = async (
       connection
     );
 
-    // Log to history
+    // Log to history (use server week so getRemainingSubstitutions counts match)
     await runQuery(
       `INSERT INTO FantasyPlayerHistory 
        (fantasy_team_id, steam_id, action, old_value, week_number)
@@ -940,7 +946,7 @@ export const substitutePlayer = async (
         fantasyTeamId,
         data.remove_steam_id,
         JSON.stringify({ value: removedPlayer.player_value }),
-        data.week_number
+        weekNumber
       ],
       connection
     );
@@ -953,16 +959,16 @@ export const substitutePlayer = async (
         fantasyTeamId,
         data.add_steam_id,
         JSON.stringify({ value: data.new_player_value, role: newPlayerRole }),
-        data.week_number
+        weekNumber
       ],
       connection
     );
 
-    // Calculate remaining substitutions
+    // Calculate remaining substitutions (same week used for insert)
     const [finalSubsCount] = await runQuery<Array<{ count: number }>>(
       `SELECT COUNT(*) as count FROM FantasyPlayerHistory 
        WHERE fantasy_team_id = ? AND action = 'removed' AND week_number = ?`,
-      [fantasyTeamId, data.week_number],
+      [fantasyTeamId, weekNumber],
       connection
     );
 
@@ -1087,8 +1093,9 @@ export const updatePlayerRoles = async (
       );
 
       // Only log to history if it's an actual role change (not initial assignment)
-      // Initial assignments have currentRole === null
-      if (currentRole !== null) {
+      // and we're not skipping the swap limit (e.g. post-substitution role set shouldn't count)
+      // Initial assignments have currentRole === null; skipSwapLimit is used when assigning role to a newly substituted player
+      if (currentRole !== null && !skipSwapLimit) {
         await runQuery(
           `INSERT INTO FantasyPlayerHistory 
            (fantasy_team_id, steam_id, action, old_value, new_value, week_number)
@@ -1579,11 +1586,13 @@ export const getTopPerformingPlayers = async (
 
 /**
  * Get point history for a specific fantasy team player
- * Shows detailed breakdown of points earned per match
+ * Shows detailed breakdown of points earned per match for that team only.
+ * Filters by fantasyTeamId so the same player in multiple teams only shows points from the requested team.
  */
 export const getPlayerPointHistory = async (
   steamId: string,
   seasonId: number,
+  fantasyTeamId: number,
   connection?: PoolConnection
 ): Promise<
   Array<{
@@ -1660,6 +1669,7 @@ export const getPlayerPointHistory = async (
     LEFT JOIN Teams opponent_team ON opponent_team.id = opponent_match_team.team_id
     WHERE ftp.steam_id = ?
       AND ft.season_id = ?
+      AND ft.id = ?
       AND ftp.is_active = TRUE
     ORDER BY m.start_timestamp DESC, fpl.match_game_id DESC
   `;
@@ -1678,7 +1688,7 @@ export const getPlayerPointHistory = async (
       stats_breakdown: string; // JSON string
       points_breakdown: string; // JSON string
     }>
-  >(query, [seasonId, steamId, seasonId], connection);
+  >(query, [seasonId, steamId, seasonId, fantasyTeamId], connection);
 
   return results.map((row) => ({
     match_game_id: row.match_game_id,

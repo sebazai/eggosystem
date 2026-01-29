@@ -33,7 +33,7 @@ export function FantasyTeamStatCard({
     >
       <div className="relative">
         {icon && (
-          <div className="flex items-center gap-1.5 mb-0.5">
+          <div className="flex items-center gap-1.5 mb-4">
             {icon}
             <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
               {label}
@@ -41,7 +41,7 @@ export function FantasyTeamStatCard({
           </div>
         )}
         {!icon && (
-          <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-0.5 block">
+          <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-4 block">
             {label}
           </span>
         )}
