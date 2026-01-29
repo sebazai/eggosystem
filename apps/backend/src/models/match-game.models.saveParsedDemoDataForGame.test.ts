@@ -14,12 +14,14 @@ jest.mock("../db/mysqlConnection");
 jest.mock("./team-game-score.models");
 jest.mock("./player-stats.models");
 jest.mock("./player-trades.models");
+jest.mock("./player-clutches.models");
 jest.mock("./map-round-stat.models");
 
 // Import the mocked functions
 import { upsertTeamGameScore } from "./team-game-score.models";
 import { upsertPlayerStatsForGame } from "./player-stats.models";
 import { upsertPlayerTradesForGame } from "./player-trades.models";
+import { upsertPlayerClutchesForGame } from "./player-clutches.models";
 import { upsertMapRoundStats } from "./map-round-stat.models";
 
 const mockUpsertTeamGameScore = upsertTeamGameScore as jest.MockedFunction<
@@ -32,6 +34,10 @@ const mockUpsertPlayerStatsForGame =
 const mockUpsertPlayerTradesForGame =
   upsertPlayerTradesForGame as jest.MockedFunction<
     typeof upsertPlayerTradesForGame
+  >;
+const mockUpsertPlayerClutchesForGame =
+  upsertPlayerClutchesForGame as jest.MockedFunction<
+    typeof upsertPlayerClutchesForGame
   >;
 const mockUpsertMapRoundStats = upsertMapRoundStats as jest.MockedFunction<
   typeof upsertMapRoundStats
@@ -86,6 +92,7 @@ describe("saveParsedDemoDataForGame", () => {
     mockUpsertTeamGameScore.mockResolvedValue({ insertId: 1 });
     mockUpsertPlayerStatsForGame.mockResolvedValue(undefined);
     mockUpsertPlayerTradesForGame.mockResolvedValue(undefined);
+    mockUpsertPlayerClutchesForGame.mockResolvedValue(undefined);
     mockUpsertMapRoundStats.mockResolvedValue(undefined);
   });
 
@@ -378,6 +385,7 @@ describe("saveParsedDemoDataForGame", () => {
       // Verify that the function completed successfully
       expect(mockConnection.commit).toHaveBeenCalledTimes(1);
       expect(mockUpsertPlayerTradesForGame).toHaveBeenCalled();
+      expect(mockUpsertPlayerClutchesForGame).toHaveBeenCalled();
     });
 
     it("should handle round stats data correctly", async () => {

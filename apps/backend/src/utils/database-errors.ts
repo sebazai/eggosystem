@@ -96,6 +96,7 @@ function getUserFriendlyMessage(
     TeamGameScores: "Team scores for this game already exist",
     PlayerTrades: "This trade record already exists",
     KillLogs: "This kill log entry already exists",
+    PlayerClutches: "This clutch record already exists",
     FantasyPlayerValues: "Fantasy player values already exist for this season",
     FantasyPlayerHistory:
       "Fantasy player history already exists for this match",

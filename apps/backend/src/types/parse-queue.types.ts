@@ -201,7 +201,7 @@ interface DemoClutchRoundInfo {
   EndInfo: string; // Won or Lost
 }
 
-interface DemoClutches {
+export interface DemoClutches {
   Infos: DemoClutchRoundInfo[];
 }
 

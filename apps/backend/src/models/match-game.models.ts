@@ -20,6 +20,7 @@ import { upsertPlayerStatsForGame } from "./player-stats.models";
 import { upsertPlayerTradesForGame } from "./player-trades.models";
 import { upsertMapRoundStats } from "./map-round-stat.models";
 import { upsertKillLogsForGame } from "./kill-log.models";
+import { upsertPlayerClutchesForGame } from "./player-clutches.models";
 
 export const getGameTeamRoundBreakdown = async (match_game_id: number) => {
   const query = `
@@ -279,7 +280,7 @@ export const saveParsedDemoDataForGame = async (
     Players,
     NewRoundInfo: RoundInfo,
     Trades,
-    Clutches: _Clutches,
+    Clutches,
     RoundImpacts: _RoundImpacts,
     KillLog
   } = parsed_payload;
@@ -353,6 +354,11 @@ export const saveParsedDemoDataForGame = async (
       upsertPlayerTradesForGame({
         matchGameId,
         playerTrades: Trades,
+        connection
+      }),
+      upsertPlayerClutchesForGame({
+        matchGameId,
+        clutches: Clutches,
         connection
       }),
       upsertMapRoundStats({
