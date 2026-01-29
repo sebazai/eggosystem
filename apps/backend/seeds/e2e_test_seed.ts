@@ -20,7 +20,10 @@ import {
   ValidWorkEmail3SteamId,
   ValidWorkEmail4SteamId,
   ValidWorkEmail5SteamId,
-  ValidWorkEmail1SteamId
+  ValidWorkEmail1SteamId,
+  ApprovalOnlySubmitSteamId,
+  ManualApprovalTargetSteamId,
+  ManualRankTargetSteamId
 } from "@eggosystem/types";
 import { type Knex } from "knex";
 
@@ -55,14 +58,15 @@ export async function seed(knex: Knex): Promise<void> {
 
   // Clean up existing E2E test data
   await knex("AccountPermissionScopes")
-    .where({ season_id: 16, team_id: 999 })
+    .where({ season_id: 16 })
+    .whereIn("team_id", [999, 998, 997])
     .del();
   await knex("AccountRoles").where({ account_id: 15003, game_id: 1 }).del();
   await knex("SeasonTeamPlayers").where({ season_id: 16 }).del();
   await knex("SeasonTeamRegistrationPlayers").where({ season_id: 16 }).del();
   await knex("SeasonTeamRegistrations").where({ season_id: 16 }).del();
-  await knex("Teams").where({ id: 999 }).del();
-  await knex("Organizations").where({ id: 999 }).del();
+  await knex("Teams").whereIn("id", [999, 998, 997]).del();
+  await knex("Organizations").whereIn("id", [999, 998, 997]).del();
   await knex("Seasons").where({ id: 16 }).del();
 
   // Clean up NEW test accounts and related data if they exist
@@ -78,6 +82,8 @@ export async function seed(knex: Knex): Promise<void> {
   // This prevents "Duplicate entry 'Success Message Test Org' for key 'organizations_name_unique'" errors
   const testOrgNames = [
     "E2E Test Organization",
+    "E2E Test Org 998",
+    "E2E Test Org 997",
     "Success Message Test Org",
     "Submission Test Org",
     "Test Organization",
@@ -363,6 +369,52 @@ export async function seed(knex: Knex): Promise<void> {
     );
   }
 
+  // Wrongful-data-for-test: we inject initial state so E2E can assert "see error → fix (admin or DB) → see green".
+  // We set work_email, work_email_verified, full_name, etc. here; we do not simulate full profile flows.
+  // The fix step is done in the test: A1/A2 use the admin panel (manual approval, manual rank), which writes
+  // SeasonPlayerApprovals / SeasonPlayerRanks – that is enough for backend validation, so no mid-test DB injection.
+  const manualApprovalAccountId = getE2ESteamPlayerBySteamId(
+    ManualApprovalTargetSteamId
+  )?.account_id;
+  const manualRankAccountId = getE2ESteamPlayerBySteamId(
+    ManualRankTargetSteamId
+  )?.account_id;
+  if (manualApprovalAccountId) {
+    await knex("Accounts").where({ id: manualApprovalAccountId }).update({
+      full_name: "Manual Approval Target",
+      work_email: null,
+      work_email_verified: 0
+    });
+  }
+  if (manualRankAccountId) {
+    await knex("Accounts")
+      .where({ id: manualRankAccountId })
+      .update({ full_name: "Manual Rank Target" });
+  }
+  // ManualRankTarget has no SeasonPlayerRanks for season 16 here; internal rank is -1 until admin adds manual rank in A2
+
+  // Ensure all E2E steam player accounts have UserPolicyAcceptances so signup/registration
+  // tests are not redirected to profile for missing policy. Skip accounts used for incomplete-policy tests.
+  const incompletePolicyAccountIds = [
+    getE2ESteamPlayerBySteamId(IncompleteDetailsPlayerSteamId)?.account_id,
+    getE2ESteamPlayerBySteamId(ValidationFailurePlayerSteamId)?.account_id
+  ].filter((id): id is number => id != null);
+  for (const player of e2eSteamPlayerData) {
+    if (incompletePolicyAccountIds.includes(player.account_id)) continue;
+    await knex.raw(
+      `
+      INSERT INTO UserPolicyAcceptances 
+        (account_id, accepted_privacy_policy, accepted_marketing, accepted_tournament_newsletter, privacy_policy_version)
+      VALUES 
+        (?, 1, 0, 1, ?)
+      ON DUPLICATE KEY UPDATE 
+        accepted_privacy_policy = 1,
+        privacy_policy_version = VALUES(privacy_policy_version)
+    `,
+      [player.account_id, privacyPolicyVersion]
+    );
+  }
+
   // Create a test team for registration testing
   await knex("Organizations").insert({
     id: 999,
@@ -378,13 +430,49 @@ export async function seed(knex: Knex): Promise<void> {
     org_approved: true
   });
 
-  // Set up SeasonTeamPlayers for employment approval testing
+  // A1/A2: org+team with no registration so admin tests can submit without 409
+  await knex("Organizations").insert([
+    {
+      id: 998,
+      name: "E2E Test Org 998",
+      organization_code: "2992559-3",
+      website: "https://kanaliiga.fi"
+    },
+    {
+      id: 997,
+      name: "E2E Test Org 997",
+      organization_code: "2992559-4",
+      website: "https://kanaliiga.fi"
+    }
+  ]);
+  await knex("Teams").insert([
+    {
+      id: 998,
+      name: "E2E Test Team 998",
+      organization_id: 998,
+      org_approved: true
+    },
+    {
+      id: 997,
+      name: "E2E Test Team 997",
+      organization_id: 997,
+      org_approved: true
+    }
+  ]);
+
+  // Set up SeasonPlayerApprovals for employment/organizer approval testing
   const seasonTeamPlayers = [
     // account_id 15005 (QuattraSteamId) - approve manually for testing organizer approval
     {
       season_id: 16,
       team_id: 999,
-      steam_id: QuattraSteamId // Updated to use imported constant
+      steam_id: QuattraSteamId
+    },
+    // account_id 15023 (ApprovalOnlySubmitSteamId) - S3: no work email but in SeasonPlayerApprovals so submit succeeds
+    {
+      season_id: 16,
+      team_id: 999,
+      steam_id: ApprovalOnlySubmitSteamId
     }
   ];
 
@@ -402,6 +490,16 @@ export async function seed(knex: Knex): Promise<void> {
       [player.season_id, player.steam_id, player.team_id]
     );
   }
+
+  // S3: ApprovalOnlySubmit (15023) needs is_valid_full_name true — seed uses nickname as full_name; "ApprovalOnlySubmit" has no space
+  await knex("Accounts").where({ id: 15023 }).update({
+    full_name: "Approval OnlySubmit"
+  });
+
+  // S2: DraftReturnUser (15022) needs is_valid_full_name true for draft-return test (form prefilled from draft)
+  await knex("Accounts").where({ id: 15022 }).update({
+    full_name: "Draft Return User"
+  });
 
   // Set account_id 15006 to have personal email to test organizer approval workflow
   await knex("Accounts").where({ id: 15006 }).update({
@@ -485,7 +583,15 @@ export async function seed(knex: Knex): Promise<void> {
     { account_id: 15016, username: "validworkemail3" }, // ValidWorkEmail3
     { account_id: 15017, username: "validworkemail4" }, // ValidWorkEmail4
     { account_id: 15018, username: "validworkemail5" }, // ValidWorkEmail5
-    { account_id: 15020, username: "eligibleplayer" } // EligiblePlayerForValidation
+    { account_id: 15020, username: "eligibleplayer" }, // EligiblePlayerForValidation
+    { account_id: 15023, username: "approvalonlysubmit" }, // ApprovalOnlySubmit - captain in approval-only test
+    { account_id: 15024, username: "manualapprovaltarget" }, // ManualApprovalTarget - captain in A1 test
+    { account_id: 15025, username: "manualranktarget" }, // ManualRankTarget - captain in A2 test
+    { account_id: 15026, username: "a5signup1" }, // A5 add-team signup only
+    { account_id: 15027, username: "a5signup2" },
+    { account_id: 15028, username: "a5signup3" },
+    { account_id: 15029, username: "a5signup4" },
+    { account_id: 15030, username: "a5signup5" }
   ];
 
   for (const player of playersWithDiscord) {

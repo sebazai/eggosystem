@@ -2,6 +2,8 @@
 
 This guide covers how to run Playwright tests, view traces, and debug failed E2E tests in the DevContainer environment.
 
+**Rule:** Always run E2E (Playwright) tests from the **workspace root** with `pnpm test:e2e`. Do not run from `apps/frontend` as the primary way to validate E2E; that skips reseed and build.
+
 ## Table of Contents
 
 - [Running Tests](#running-tests)
@@ -30,19 +32,31 @@ This starts the backend in E2E mode with:
 
 ### Run All E2E Tests
 
-From workspace root (in a separate terminal):
+**Always run from workspace root:**
 
 ```bash
-pnpm test:e2e
+cd $(git rev-parse --show-toplevel) && pnpm test:e2e
 ```
 
 This command will:
 
-1. Reseed the E2E database
-2. Build the frontend and backend
+1. Build the frontend and backend (so `@eggosystem/types` and other deps exist for seeds)
+2. Reseed the E2E database
 3. Run all Playwright tests
 
-**Important**: The `pnpm test:e2e` command from the root will handle the backend automatically. However, if you're running frontend tests directly or developing tests, you need to manually start `dev:e2e` first.
+**If Playwright never starts**: `test:e2e` can fail during reseed (e.g. DB privilege errors). Start the backend, then from workspace root:
+
+```bash
+# Terminal 1: start backend E2E server
+cd $(git rev-parse --show-toplevel)/apps/backend && pnpm dev:e2e
+
+# Terminal 2: from workspace root, ensure build exists, then run Playwright only (skips reseed)
+cd $(git rev-parse --show-toplevel) && pnpm build && pnpm test:e2e:run
+```
+
+**Clear caches and retry**: from workspace root, use `pnpm test:e2e:clean` to clear turbo, `.next`, and Playwright artifacts, then run `pnpm test:e2e`.
+
+**Developing tests**: When iterating on a single spec, keep `dev:e2e` running and use `pnpm test:e2e:run` from workspace root (or `pnpm test:e2e:ui`) so Playwright runs without waiting on reseed/build. For validation and CI, always use `pnpm test:e2e` from workspace root.
 
 ### Run Tests in UI Mode
 
@@ -52,18 +66,28 @@ For interactive test development and debugging:
 # Terminal 1: Start backend E2E server
 cd $(git rev-parse --show-toplevel)/apps/backend && pnpm dev:e2e
 
-# Terminal 2: Run Playwright UI
-pnpm test:e2e:ui
+# Terminal 2: From workspace root, run Playwright UI
+cd $(git rev-parse --show-toplevel) && pnpm test:e2e:ui
 ```
+
+**In DevContainer**: There is no real display, so `pnpm test:e2e:ui` fails with “headed browser without having a XServer running”. Use the xvfb-backed script instead:
+
+```bash
+pnpm test:e2e:ui:container
+```
+
+This runs Playwright UI under a virtual framebuffer (`xvfb-run`), so the headed browser works inside the container. Rebuild the devcontainer once after xvfb was added to the Dockerfile (e.g. “Rebuild Container” in VS Code).
 
 ### Run Specific Tests
 
+From workspace root (run reseed + build + tests, or only Playwright if backend is already up):
+
 ```bash
-# Terminal 1: Start backend E2E server
+# Terminal 1: Start backend E2E server (when developing)
 cd $(git rev-parse --show-toplevel)/apps/backend && pnpm dev:e2e
 
-# Terminal 2: Run specific test
-cd $(git rev-parse --show-toplevel)/apps/frontend && pnpm test:e2e -- --grep "Signup Form"
+# Terminal 2: From workspace root, run specific test
+cd $(git rev-parse --show-toplevel) && pnpm test:e2e -- --grep "Signup Form"
 ```
 
 ## Viewing Traces Locally
@@ -271,11 +295,20 @@ pnpm install:playwright
 # Start backend E2E server (keep running in separate terminal)
 cd $(git rev-parse --show-toplevel)/apps/backend && pnpm dev:e2e
 
-# Run E2E tests (from root - handles backend automatically)
+# Run E2E tests (from root - build, reseed, then Playwright)
 pnpm test:e2e
+
+# Run Playwright only (requires backend dev:e2e + prior pnpm build)
+pnpm test:e2e:run
+
+# Clear caches and run full test:e2e
+pnpm test:e2e:clean
 
 # Run E2E tests in UI mode (requires backend dev:e2e running separately)
 pnpm test:e2e:ui
+
+# Run Playwright UI in DevContainer (uses xvfb; no host X server needed)
+pnpm test:e2e:ui:container
 
 # View trace file
 pnpm playwright-trace apps/frontend/test-results/<test-name>/trace.zip
