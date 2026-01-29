@@ -171,42 +171,28 @@ export function FantasyTeamView({
             <FantasyTeamStatCard
               label="Swaps & Subs"
               value={
-                <div className="space-y-0.5">
-                  <div>
-                    <p
-                      className={cn(
-                        "text-lg font-black",
-                        roleChangesRemaining > 0 && substitutionsRemaining > 0
-                          ? "text-white"
-                          : "text-white"
-                      )}
-                    >
+                <div className="space-y-4">
+                  <div className="flex flex-col gap-1">
+                    <p className="text-lg font-black text-white">
                       {roleChangesRemaining}
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-xs text-muted-foreground font-normal">
                         {" "}
                         / 2
                       </span>
                     </p>
-                    <p className="text-[9px] text-muted-foreground">
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wide">
                       Role Swaps
                     </p>
                   </div>
-                  <div>
-                    <p
-                      className={cn(
-                        "text-lg font-black",
-                        roleChangesRemaining > 0 && substitutionsRemaining > 0
-                          ? "text-white"
-                          : "text-white"
-                      )}
-                    >
+                  <div className="flex flex-col gap-1 border-t border-white/10 pt-4">
+                    <p className="text-lg font-black text-white">
                       {substitutionsRemaining}
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-xs text-muted-foreground font-normal">
                         {" "}
                         / 2
                       </span>
                     </p>
-                    <p className="text-[9px] text-muted-foreground">
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wide">
                       Substitutions
                     </p>
                   </div>

@@ -418,7 +418,9 @@ describe("Fantasy Models", () => {
       mockRunQuery.mockReset();
 
       mockRunQuery
-        .mockResolvedValueOnce([{ id: 1, budget_remaining: 500000 }]) // Get team
+        .mockResolvedValueOnce([
+          { id: 1, season_id: 1, budget_remaining: 500000 }
+        ]) // Get team
         .mockResolvedValueOnce([{ count: 0 }]) // Check substitution limit
         .mockResolvedValueOnce([{ player_value: 190000, role: "rifler" }]) // Get old player
         .mockResolvedValueOnce([{ count: 0 }]) // Check played this week
@@ -431,8 +433,47 @@ describe("Fantasy Models", () => {
 
       const result = await substitutePlayer(1, substitutionData);
 
-      expect(result.remaining_substitutions).toBeGreaterThanOrEqual(0);
+      expect(result.remaining_substitutions).toBe(1);
       expect(mockConnection.commit).toHaveBeenCalled();
+    });
+
+    it("should use server-side week for history so remaining count matches getFantasyTeamByUser", async () => {
+      const substitutionData = {
+        remove_steam_id: "1",
+        add_steam_id: "2",
+        new_player_value: 200000,
+        week_number: 99
+      };
+
+      mockGetCurrentWeekNumberForSeason.mockResolvedValue(3);
+
+      mockRunQuery.mockReset();
+      mockRunQuery
+        .mockResolvedValueOnce([
+          { id: 1, season_id: 1, budget_remaining: 500000 }
+        ])
+        .mockResolvedValueOnce([{ count: 0 }])
+        .mockResolvedValueOnce([{ player_value: 190000, role: "rifler" }])
+        .mockResolvedValueOnce([{ count: 0 }])
+        .mockResolvedValueOnce(undefined)
+        .mockResolvedValueOnce({ insertId: 2 })
+        .mockResolvedValueOnce(undefined)
+        .mockResolvedValueOnce(undefined)
+        .mockResolvedValueOnce(undefined)
+        .mockResolvedValueOnce([{ count: 1 }]);
+
+      await substitutePlayer(1, substitutionData);
+
+      const historyInsertCalls = mockRunQuery.mock.calls.filter(
+        (call) =>
+          Array.isArray(call[0]) === false &&
+          String(call[0]).includes("INSERT INTO FantasyPlayerHistory")
+      );
+      expect(historyInsertCalls.length).toBe(2);
+      const firstInsertParams = historyInsertCalls[0][1] as unknown[];
+      const secondInsertParams = historyInsertCalls[1][1] as unknown[];
+      expect(firstInsertParams[firstInsertParams.length - 1]).toBe(3);
+      expect(secondInsertParams[secondInsertParams.length - 1]).toBe(3);
     });
 
     it("should enforce substitution limit (2 per week)", async () => {
@@ -443,16 +484,13 @@ describe("Fantasy Models", () => {
         week_number: 1
       };
 
-      // Mock getCurrentWeekNumberForSeason
       mockGetCurrentWeekNumberForSeason.mockResolvedValue(1);
-      // Mock getSeasonStartDate
-      mockGetSeasonStartDate.mockResolvedValue(new Date("2024-01-01"));
 
-      // Reset mocks for this test
       mockRunQuery.mockReset();
-
       mockRunQuery
-        .mockResolvedValueOnce([{ id: 1, budget_remaining: 500000 }]) // Get team
+        .mockResolvedValueOnce([
+          { id: 1, season_id: 1, budget_remaining: 500000 }
+        ])
         .mockResolvedValueOnce([{ count: 2 }]); // Already used 2 substitutions
 
       await expect(substitutePlayer(1, substitutionData)).rejects.toThrow(
@@ -593,6 +631,28 @@ describe("Fantasy Models", () => {
       expect(error.name).toBe("Bad Request");
       expect(error.status).toBe(400);
       expect(mockConnection.rollback).toHaveBeenCalled();
+    });
+
+    it("should not insert role_changed into history when skipSwapLimit is true (e.g. post-substitution role assign)", async () => {
+      const roleUpdates = [{ steam_id: "1", role: "main_awp" as PlayerRole }];
+
+      mockRunQuery.mockReset();
+      mockRunQuery
+        .mockResolvedValueOnce([{ steam_id: "1", role: "support" }]) // current role (would count as swap if we logged)
+        .mockResolvedValueOnce([]) // all team roles
+        .mockResolvedValueOnce(undefined) // UPDATE role
+        .mockResolvedValueOnce(undefined) // UPDATE team updated_at
+        .mockResolvedValueOnce([{ count: 0 }]); // final swap count (unchanged)
+
+      const result = await updatePlayerRoles(1, roleUpdates, 1, true);
+
+      expect(result.remaining_swaps).toBe(2);
+      const historyInserts = mockRunQuery.mock.calls.filter(
+        (call) =>
+          typeof call[0] === "string" &&
+          String(call[0]).includes("INSERT INTO FantasyPlayerHistory")
+      );
+      expect(historyInserts.length).toBe(0);
     });
   });
 
