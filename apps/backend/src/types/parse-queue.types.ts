@@ -181,6 +181,10 @@ interface DemoTradeRoundInfo {
   Time: number;
   TradeTime: number;
   DeathTime: number;
+  TradeDenied?: boolean;
+  TradeTimeout?: boolean;
+  DenialTime?: number;
+  TradeWindow?: number;
 }
 
 export interface DemoTrades {
