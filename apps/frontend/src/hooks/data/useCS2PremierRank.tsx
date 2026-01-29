@@ -4,11 +4,24 @@ import { expressFetcher } from "@/lib/utils";
 import type { CS2LeetifyAvgRank } from "@eggosystem/types";
 import useSWR from "swr";
 
-export const useCS2PremierRank = (steamId?: string) => {
+interface UseCS2PremierRankOptions {
+  skipExternalCheck?: boolean;
+}
+
+export const useCS2PremierRank = (
+  steamId?: string,
+  options?: UseCS2PremierRankOptions
+) => {
+  const skipExternalCheck = options?.skipExternalCheck === true;
+  const query = skipExternalCheck ? "?skipExternalCheck" : "";
+  const key = steamId
+    ? `/api/v1/players/${steamId}/app/730/rank${query}`
+    : null;
+
   const { data, error, isValidating, isLoading } = useSWR<
     CS2LeetifyAvgRank,
     Error
-  >(`/api/v1/players/${steamId}/app/730/rank`, expressFetcher, {
+  >(key, expressFetcher, {
     revalidateOnFocus: false
   });
 

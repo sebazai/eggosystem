@@ -196,6 +196,7 @@ export const getPlayerSteamAppIdHours = async (req: Request, res: Response) => {
 
 /**
  * @param res Return cs2_rank = -1 if rank cannot be determined
+ * @param query skipExternalCheck to use only Redis + DB (no Leetify)
  */
 export const getPlayerSteamAppIdRank = async (req: Request, res: Response) => {
   const steam_id = req.params.steam_id;
@@ -203,11 +204,14 @@ export const getPlayerSteamAppIdRank = async (req: Request, res: Response) => {
   const season_id = req.query.season_id?.toString()
     ? parseInt(req.query.season_id.toString(), 10)
     : undefined;
+  const skipExternalCheck = req.query.skipExternalCheck !== undefined;
 
   if (season_id && isNaN(season_id)) {
     throw new Error("Season id query param is not a number.");
   }
-  const rank = await getPlayerAppIdRank(steam_id, app_id, season_id);
+  const rank = await getPlayerAppIdRank(steam_id, app_id, season_id, {
+    skipExternalCheck
+  });
   res.status(200).json(rank);
 };
 
@@ -221,13 +225,15 @@ export const getPlayerPlatformRank = async (
   const season_id = req.query.season_id?.toString()
     ? parseInt(req.query.season_id.toString(), 10)
     : undefined;
+  const skipExternalCheck = req.query.skipExternalCheck !== undefined;
 
   const isSeasonPlatformEnum = isSeasonPlatform(platform);
   if (isSeasonPlatformEnum) {
     const platform_rank = await getPlayerRankForPlatform(
       steam_id,
       platform,
-      season_id
+      season_id,
+      { skipExternalCheck }
     );
     res.status(200).json(platform_rank);
     return;
