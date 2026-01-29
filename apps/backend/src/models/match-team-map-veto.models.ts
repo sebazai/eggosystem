@@ -2,7 +2,7 @@ import { type PoolConnection } from "mysql2/promise";
 import { runQuery } from "../db/mysqlRunQuery";
 import {
   getHubMatchesByExternalMatchRoomId,
-  updateMatchStatus
+  updateMatchStatusByExternalMatchroomId
 } from "./match.models";
 import {
   type ChampionshipDetailsReady,
@@ -218,7 +218,11 @@ export const addMatchTeamMapVetoes = async (
         )
       )
     );
-    await updateMatchStatus(match_id, "ONGOING", connection);
+    await updateMatchStatusByExternalMatchroomId(
+      match_id,
+      "ONGOING",
+      connection
+    );
     await connection.commit();
   } catch (error) {
     await connection.rollback();
