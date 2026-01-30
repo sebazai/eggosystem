@@ -2,6 +2,7 @@
 
 import ProfileForm from "@/components/profile/ProfileForm";
 import { CasterUrlSettings } from "@/components/profile/CasterUrlSettings";
+import { CasterApplicationForm } from "@/components/profile/CasterApplicationForm";
 import { DiscordSettings } from "@/components/profile/DiscordSettings";
 import { AvatarSettings } from "@/components/profile/AvatarSettings";
 import { useAuth } from "@/context/AuthContext";
@@ -47,6 +48,9 @@ export default function ProfilePage() {
         checkAuth={checkAuth}
       />
       <CasterUrlSettings canManageUrls={hasCasterAccess(user)} />
+      {!hasCasterAccess(user) && (
+        <CasterApplicationForm user={user} discordLinked={user.discordLinked} />
+      )}
     </div>
   );
 }

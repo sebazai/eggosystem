@@ -36,6 +36,7 @@ import stageRouter from "./v1/stage.routes";
 import standingsRouter from "./v1/standings.routes";
 import casterRouter from "./v1/caster.routes";
 import organizerRouter from "./v1/organizer.routes";
+import casterApplicationsRouter from "./v1/caster-applications.routes";
 import calendarRouter from "./v1/calendar.routes";
 import gameRouter from "./v1/game.routes";
 import hallOfFameRouter from "./v1/hall-of-fame.routes";
@@ -80,6 +81,12 @@ v1Router.use("/players", playerRouter);
 // Mount the routers
 v1Router.use("/calendar", calendarRouter);
 v1Router.use("/organizers", organizerRouter);
+v1Router.use(
+  "/caster-applications",
+  corsMiddleware,
+  authenticateJWT,
+  casterApplicationsRouter
+);
 v1Router.use("/matches", matchRouter);
 v1Router.use("/match-games", matchGameRouter);
 v1Router.use("/games", gameRouter);

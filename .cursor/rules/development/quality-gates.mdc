@@ -13,3 +13,14 @@ When writing code, the AI must not finish until all of these succeed:
 4. `pnpm lint` - ESLint code quality checks
 
 If any check fails, fix the issues and run checks again.
+
+## Constraint: Do Not Violate Other Rules
+
+Fixes for quality gate failures must **not** violate other project rules. Do not use workarounds that break architecture or style constraints just to make gates pass.
+
+**Bad (do not do):**
+
+- **Unsafe type casting**: Using `as` or `as unknown as SomeType` to satisfy the type checker (e.g. mocking in tests). Use `satisfies`, type guards, or properly typed mocks instead.
+- **Inline type-only imports**: Using `import("module").Type` inline instead of a named import and proper typing.
+
+Fix the underlying design or types so that quality gates pass **and** all other rules (e.g. no unsafe casting, no try/catch without cleanup) are respected.

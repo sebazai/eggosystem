@@ -4,58 +4,58 @@ overview: ""
 todos:
   - id: "1"
     content: "Migration: add discord_guild_id to Organizers; backfill organizer_id 1 with 468873146787954689"
-    status: pending
+    status: completed
   - id: 1b
     content: "Migration: create CasterApplications table (organizer_id, account_id, caster_url, approved_terms_and_conditions, approved_by, approved_at, rejected_by, rejected_at, rejection_reason, timestamps)"
-    status: pending
+    status: completed
   - id: 1c
     content: "Migration: add discord_caster_applications_channel_id and discord_caster_channel_id to Organizers; backfill organizer 1 (applications: 694834348893012018, caster channel: 612902579235586068)"
-    status: pending
+    status: completed
   - id: "2"
     content: "Backend: caster-applications models (create, get by account/organizer, get all, approve, reject, getPendingApplicationsCount, getOrganizersWithCasterApplications)"
-    status: pending
+    status: completed
   - id: 2a
     content: "Backend: Discord organizer service (client, getGuildById, assignCasterRoleInDiscord, notifyNewCasterApplicationInDiscord, notifyCasterApprovedInDiscord with approvedByAccountId, notifyCasterRejectedInDiscord with reason and rejectedByAccountId)"
-    status: pending
+    status: completed
   - id: 2b
     content: "Backend: Zod schemas for submit body and reject body (rejection_reason required); validation in controllers"
-    status: pending
+    status: completed
   - id: "3"
     content: "Backend: caster-applications controllers (submit with email-verified check, getMe, getByOrganizer, getAll, approve, reject with reason, getOrganizersWithCasterApplications)"
-    status: pending
+    status: completed
   - id: "4"
     content: "Backend: routes (organizers/:id/caster-applications, caster-applications/me, caster-applications, pending-count, approve, reject with body)"
-    status: pending
+    status: completed
   - id: "5"
     content: "Types: packages/types caster-applications (CasterApplication, submit body, reject body, response, OrganizerWithCasterApplications)"
-    status: pending
+    status: completed
   - id: "6"
     content: "Frontend: Zod form schema (caster-application-form-schema.ts) aligned with backend submit body"
-    status: pending
+    status: completed
   - id: "7"
     content: "Frontend: CasterApplicationForm (organizers list, prerequisites including email verified, rules, form per organizer, submit, post-submission states)"
-    status: pending
+    status: completed
   - id: "8"
     content: "Frontend: profile page integration (hasCasterAccess → CasterUrlSettings; else CasterApplicationForm with data)"
-    status: pending
+    status: completed
   - id: "9"
     content: "Frontend: API hooks (useOrganizersWithCasterApplications, useSubmitCasterApplication, useMyCasterApplications, useCasterApplications, useCasterApplicationsByOrganizer, usePendingCasterApplicationsCount)"
-    status: pending
+    status: completed
   - id: "10"
     content: "Dashboard: caster-applications page (WithRoleProtection, filter, table, empty/error/loading, approve/reject with confirm modal and reject-reason modal + toast + invalidate)"
-    status: pending
+    status: completed
   - id: "11"
     content: "Dashboard: CasterApplicationsTable component (columns, status badge pending/approved/rejected, reject with reason modal, actions, accessibility)"
-    status: pending
+    status: completed
   - id: "12"
     content: "Dashboard: sidebar menu item Caster Applications with pending count badge (route, roles, usePendingCasterApplicationsCount)"
-    status: pending
+    status: completed
   - id: 12a
     content: "Backend: pending count endpoint for dashboard; frontend usePendingCasterApplicationsCount + badge in DashboardAppSidebar"
-    status: pending
+    status: completed
   - id: "13"
     content: "Tests: backend models + controllers; frontend form + dashboard table; E2E apply → approve → role visible; rejection + re-apply"
-    status: pending
+    status: completed
   - id: 14
     content: "Notifications: approval email (short + Discord channel link); rejection email (reason); Discord on new application; Discord on approval (admin channel, include approved_by account_id); Discord on rejection (admin channel, reason + rejected_by account_id)"
     status: pending
@@ -179,7 +179,6 @@ Design principle: Put **organizer in the path** for organizer-scoped resources s
 
 Summary:
 
-
 | Purpose                             | Path                                                                                                     | Future permission (when we add organizer roles)                 |
 | ----------------------------------- | -------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
 | List organizers with caster apps    | `GET /organizers/with-caster-applications`                                                               | Optional: filter by organizers user can access                  |
@@ -189,7 +188,6 @@ Summary:
 | List all (dashboard)                | `GET /caster-applications`                                                                               | Require "helpdesk for each application's organizer" (or global) |
 | Pending count (sidebar)             | `GET /caster-applications/pending-count`                                                                 | Require admin/helpdesk                                          |
 | Approve / Reject                    | `POST /caster-applications/:id/approve`, `POST /caster-applications/:id/reject` (body: rejection_reason) | Require "helpdesk for application.organizer_id" or global       |
-
 
 Add dashboard routes under `apps/backend/src/routes/v1/dashboard/index.ts` if caster applications are mounted there (e.g. `/dashboard/caster-applications` as a prefix); public/organizer routes stay under `/api/v1/organizers` and `/api/v1/caster-applications`.
 
@@ -403,14 +401,12 @@ Rejection path: Admin rejects with reason → rejection email to applicant with 
 
 ## End-to-end flow (Solution Architect view)
 
-
 | Layer        | Apply (user)                                                                                                                                                                                                      | View status (user)                                                                                    | List (admin)                                                                                                                 | Approve (admin)                                                                                                                                 |
 | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
 | **DB**       | Insert row in CasterApplications (organizer_id, account_id, caster_url, approved_terms_and_conditions).                                                                                                           | Read CasterApplications by account_id (and optional organizer_id).                                    | Read CasterApplications (+ join Organizers, account/Discord/Steam info), filter by organizer_id.                             | Update CasterApplications (approved_by, approved_at); insert AccountRoles (caster); call Discord service.                                       |
 | **Backend**  | POST body validated with Zod (caster_url, approved_terms_and_conditions); check organizer exists + has discord_guild_id; check Discord/Steam linked, no existing application, no caster role; create application. | GET /caster-applications/me?organizer_id=; return list of applications.                               | GET /caster-applications?organizer_id= or GET /organizers/:id/caster-applications; return list with organizer/Discord/Steam. | POST /caster-applications/:id/approve; load application + organizer; transaction (AccountRoles + CasterApplications); then assign Discord role. |
 | **Frontend** | CasterApplicationForm: organizers list → pick organizer → form (URL + terms) → submit mutation → toast + invalidate.                                                                                              | Same form/section: useMyCasterApplications() → show status per organizer (pending/approved/rejected). | Dashboard page: useCasterApplications(organizerId?) → CasterApplicationsTable with filter.                                   | Table row: Approve → confirm modal → approve mutation → toast + invalidate.                                                                     |
 | **Types**    | Submit body: CasterApplicationSubmitBody (frontend Zod aligns with backend Zod). Response: application + status.                                                                                                  | My applications: array of CasterApplication (or DTO with organizer name, status).                     | Dashboard list: CasterApplication + organizer name, discord_username, steam_id.                                              | Approve: no body; response success/error.                                                                                                       |
-
 
 **Data flow summary**
 
@@ -440,13 +436,11 @@ This section records who is informed, when, and what is left for later. The code
 
 ### Who is informed (decided)
 
-
 | Event                        | User (applicant)                                                                                                                                                                                                                                                                                     | Admin / helpdesk                                                                                                                                                                                                                                                                                        |
 | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **User submits application** | In-app: success toast + status text on profile ("Under review" + Discord ticket reminder).                                                                                                                                                                                                           | **Discord**: Message posted to organizer's `discord_caster_applications_channel_id` (e.g. "New caster application from [Discord username] for [Organizer]. Review: [dashboard link]."). **Sidebar**: Pending count badge (e.g. "Caster Applications (3)") so they see there are applications to review. |
 | **Admin approves**           | **Email**: Short approval email to work email: "Your caster application has been approved. More info on this Discord channel: [link]." Link = `https://discord.com/channels/{guild_id}/{discord_caster_channel_id}` from organizer. In-app: on next visit, "You are approved" and CasterUrlSettings. | **Discord**: Message posted to admin channel: e.g. "Caster application approved: [Discord username] is now a caster. Approved by account_id [X]." In-app: success toast after Approve; table refetches; sidebar count updates.                                                                          |
 | **Admin rejects**            | **Email**: Sent to account work email with the **rejection reason**. In-app: on next visit, rejection message (reason) + "You may re-apply if you wish." Re-apply: user can submit again; backend updates the same row to pending.                                                                   | **Discord**: Message posted to admin channel with rejection reason and rejected_by account_id (e.g. "Caster application rejected: [Discord username]. Reason: [reason]. Rejected by account_id [X]."). In-app: toast after Reject; table refetches; sidebar count updates.                              |
-
 
 ### Implementation notes
 
@@ -481,4 +475,3 @@ This section records who is informed, when, and what is left for later. The code
 - The caster role should be created in Discord if it doesn't exist, or found if it already exists
 - AccountRoles caster role is global (one caster role in DB per account); Discord role is per-organizer server. If you need per-organizer caster role in DB later, that would be a separate extension (e.g. scope by organizer or game).
 - **Organizer-scoped permissions (future)**: REST is designed with organizer in path for organizer-scoped resources (`POST/GET /organizers/:organizer_id/caster-applications`) so that when we add organizer-scoped roles (e.g. `AccountOrganizerRoles`), we can enforce "access to this organizer" in one place without changing URLs.
-

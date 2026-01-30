@@ -530,3 +530,65 @@ export const enqueueSeasonFinalizationWelcomeEmails = async (
     );
   }
 };
+
+export const sendCasterApprovalEmail = async (
+  to: string,
+  casterChannelLink: string | null
+) => {
+  const transporter = createTransporter();
+  const moreInfo = casterChannelLink
+    ? `<p>More info on this Discord channel: <a href="${casterChannelLink}">${casterChannelLink}</a></p>`
+    : "";
+  const mailOptions = {
+    from: "Kanahub by Kanaliiga <cs@kanaliiga.fi>",
+    to,
+    subject: "Your caster application has been approved",
+    html: `
+        <div style="font-family: Arial, sans-serif; color: #333; font-size: 16px; line-height: 1.5; max-width: 600px; margin: 0 auto;">
+          <h1 style="color: hsl(35, 93%, 49%); font-size: 24px;">Caster application approved</h1>
+          <p>Hello,</p>
+          <p>Your caster application has been approved. You can now set your default stream URL in your profile and reserve matches for streaming.</p>
+          ${moreInfo}
+          <p style="font-size: 14px; color: #777;">&copy; ${new Date().getFullYear()} Kanaliiga – All rights reserved.</p>
+        </div>
+      `,
+    headers: {
+      Date: new Date().toUTCString(),
+      "Message-ID": `<${Date.now()}.${Math.random().toString(36).substring(2)}@kanaliiga.fi>`,
+      "Content-Type": "text/html; charset=UTF-8"
+    }
+  };
+  await transporter?.sendMail(mailOptions).catch((err) => {
+    logger.error("Failed to send caster approval email", { to, err });
+  });
+};
+
+export const sendCasterRejectionEmail = async (
+  to: string,
+  rejectionReason: string
+) => {
+  const transporter = createTransporter();
+  const mailOptions = {
+    from: "Kanahub by Kanaliiga <cs@kanaliiga.fi>",
+    to,
+    subject: "Update on your caster application",
+    html: `
+        <div style="font-family: Arial, sans-serif; color: #333; font-size: 16px; line-height: 1.5; max-width: 600px; margin: 0 auto;">
+          <h1 style="color: hsl(35, 93%, 49%); font-size: 24px;">Caster application update</h1>
+          <p>Hello,</p>
+          <p>Your caster application was not approved at this time.</p>
+          <p><strong>Reason:</strong> ${rejectionReason.replace(/</g, "&lt;")}</p>
+          <p>You may re-apply from your profile page if you wish.</p>
+          <p style="font-size: 14px; color: #777;">&copy; ${new Date().getFullYear()} Kanaliiga – All rights reserved.</p>
+        </div>
+      `,
+    headers: {
+      Date: new Date().toUTCString(),
+      "Message-ID": `<${Date.now()}.${Math.random().toString(36).substring(2)}@kanaliiga.fi>`,
+      "Content-Type": "text/html; charset=UTF-8"
+    }
+  };
+  await transporter?.sendMail(mailOptions).catch((err) => {
+    logger.error("Failed to send caster rejection email", { to, err });
+  });
+};

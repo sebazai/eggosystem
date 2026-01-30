@@ -124,6 +124,10 @@ export const updateAccount = async (
   }
 };
 
+/**
+ * Updates SteamPlayers nickname and Accounts profile fields.
+ * @public Exported for tests (jest.spyOn in account.controllers.test).
+ */
 export const updateAccountData = async (
   accountId: Account["id"],
   updatedUser: UpdateUserProfile,
@@ -155,21 +159,6 @@ export const updateAccountData = async (
     ],
     connection
   );
-};
-
-export const getAccountIdBySteamId = async (
-  steamId: string,
-  connection?: PoolConnection
-) => {
-  const [result] = await runQuery<{ account_id: number }[]>(
-    `SELECT id as account_id FROM Accounts a JOIN SteamPlayers sp ON a.id = sp.account_id WHERE sp.steam_id = ?`,
-    [steamId],
-    connection
-  );
-  if (!result) {
-    throw new Error(`Could not find account id for steam id ${steamId}`);
-  }
-  return result;
 };
 
 /**
@@ -204,6 +193,21 @@ export const getAccountMatchReservations = async (
 };
 
 /**
+ * Check if the account has Steam linked (LinkedAccounts where provider = 'steam').
+ */
+export const hasSteamLinked = async (
+  accountId: number,
+  connection?: PoolConnection
+): Promise<boolean> => {
+  const [row] = await runQuery<Array<{ account_id: number }>>(
+    "SELECT account_id FROM LinkedAccounts WHERE account_id = ? AND provider = 'steam' LIMIT 1",
+    [accountId],
+    connection
+  );
+  return Boolean(row);
+};
+
+/**
  * Get account_id and nickname from Steam ID
  * Queries LinkedAccounts and SteamPlayers tables
  */
@@ -221,4 +225,20 @@ export const getUserInfoBySteamId = async (
   );
 
   return users && users.length > 0 ? users[0] : null;
+};
+
+/**
+ * Get SteamPlayers nickname for an account (HUB nickname).
+ * Returns null if account has no SteamPlayers row.
+ */
+export const getNicknameByAccountId = async (
+  accountId: number,
+  connection?: PoolConnection
+): Promise<string | null> => {
+  const [row] = await runQuery<Array<{ nickname: string }>>(
+    "SELECT nickname FROM SteamPlayers WHERE account_id = ? LIMIT 1",
+    [accountId],
+    connection
+  );
+  return row?.nickname ?? null;
 };
