@@ -41,6 +41,10 @@ erDiagram
 "AccountRoles" }o--|| "Games" : ""
 "AccountRoles" }o--|| "Roles" : ""
 "AuditLog" }o--o| "Accounts" : ""
+"CasterApplications" }o--|| "Accounts" : ""
+"CasterApplications" }o--o| "Accounts" : ""
+"CasterApplications" }o--|| "Organizers" : ""
+"CasterApplications" }o--o| "Accounts" : ""
 "FantasyLeaderboard" }o--|| "FantasyTeams" : ""
 "FantasyLeaderboard" }o--|| "Leagues" : ""
 "FantasyLeaderboard" }o--|| "Seasons" : ""
@@ -59,7 +63,6 @@ erDiagram
 "KanahautomoRegistrationGameTypes" }o--|| "KanahautomoRegistrations" : ""
 "KanahautomoRegistrations" }o--|| "Organizations" : ""
 "KanahautomoRegistrations" }o--|| "SteamPlayers" : ""
-"PlayerKillLogs" }o--|| "MatchGames" : ""
 "LinkedAccounts" }o--|| "Accounts" : ""
 "MapRoundStats" }o--|| "Teams" : ""
 "MapRoundStats" }o--|| "MatchGames" : ""
@@ -77,6 +80,9 @@ erDiagram
 "MatchTeams" }o--|| "SeasonLeagueTeams" : ""
 "OrganizerGames" }o--|| "Games" : ""
 "OrganizerGames" }o--|| "Organizers" : ""
+"PlayerClutches" }o--|| "MatchGames" : ""
+"PlayerKillLogs" }o--|| "MatchGames" : ""
+"PlayerRoundImpacts" }o--|| "MatchGames" : ""
 "PlayerStats" }o--|| "MatchGames" : ""
 "PlayerStats" }o--|| "SteamPlayers" : ""
 "PlayerTrades" }o--|| "MatchGames" : ""
@@ -153,6 +159,13 @@ erDiagram
   bigint_20__unsigned id PK
   int_10__unsigned user_id FK
 }
+"CasterApplications" {
+  int_10__unsigned id PK
+  int_10__unsigned organizer_id FK
+  int_10__unsigned account_id FK
+  int_10__unsigned approved_by FK
+  int_10__unsigned rejected_by FK
+}
 "FaceitWebhooks" {
   int_10__unsigned id PK
 }
@@ -208,10 +221,6 @@ erDiagram
   int_10__unsigned id PK
   bigint_20_ steam_id FK
   int_10__unsigned organization_id FK
-}
-"PlayerKillLogs" {
-  int_10__unsigned id PK
-  int_10__unsigned match_game_id FK
 }
 "knex_migrations" {
   int_10__unsigned id PK
@@ -277,6 +286,18 @@ erDiagram
 }
 "Permissions" {
   int_10__unsigned id PK
+}
+"PlayerClutches" {
+  int_10__unsigned id PK
+  int_10__unsigned match_game_id FK
+}
+"PlayerKillLogs" {
+  int_10__unsigned id PK
+  int_10__unsigned match_game_id FK
+}
+"PlayerRoundImpacts" {
+  int_10__unsigned id PK
+  int_10__unsigned match_game_id FK
 }
 "PlayerStats" {
   int_10__unsigned id PK
