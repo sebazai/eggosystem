@@ -197,7 +197,7 @@ Add dashboard routes under `apps/backend/src/routes/v1/dashboard/index.ts` if ca
 
 Use a single bot that can be invited to multiple organizer Discord servers. Guild ID comes from **Organizers.discord_guild_id**, not from env.
 
-- `DISCORD_KANALIIGA_BOT_TOKEN` (or generic `DISCORD_ORGANIZER_BOT_TOKEN`): Bot token — one bot can be in multiple guilds
+- `DISCORD_KANABOT_BOT_TOKEN` (or generic `DISCORD_ORGANIZER_BOT_TOKEN`): Bot token — one bot can be in multiple guilds
 
 Functions needed:
 
@@ -235,7 +235,7 @@ When `approveCasterApplication` is called:
 
 **Environment Variables**:
 
-- `DISCORD_KANALIIGA_BOT_TOKEN` (or `DISCORD_ORGANIZER_BOT_TOKEN`): Bot token for the organizer Discord bot(s). Same bot can be invited to multiple organizer servers; guild ID is read from Organizers.discord_guild_id per organizer.
+- `DISCORD_KANABOT_BOT_TOKEN` (or `DISCORD_ORGANIZER_BOT_TOKEN`): Bot token for the organizer Discord bot(s). Same bot can be invited to multiple organizer servers; guild ID is read from Organizers.discord_guild_id per organizer.
 
 **Organizers table**:
 
@@ -470,7 +470,7 @@ This section records who is informed, when, and what is left for later. The code
 - The Discord ticket reminder is informational only - actual ticket creation is manual
 - Rejection: persist rejected_by, rejected_at, rejection_reason; show rejection message to applicant; send email with reason. User can re-apply (submit again updates the same row to pending).
 - Discord guild ID is stored per organizer (`Organizers.discord_guild_id`), so multiple organizers can each have their own Discord server and caster flow
-- One bot token (`DISCORD_KANALIIGA_BOT_TOKEN` or `DISCORD_ORGANIZER_BOT_TOKEN`) is used; the same bot can be in multiple guilds — guild ID is taken from the organizer when approving
+- One bot token (`DISCORD_KANABOT_BOT_TOKEN` or `DISCORD_ORGANIZER_BOT_TOKEN`) is used; the same bot can be in multiple guilds — guild ID is taken from the organizer when approving
 - If Discord role assignment fails (e.g., user not in server, bot not in that guild, permissions), the approval still succeeds in the database - errors are logged but don't block the approval process
 - The caster role should be created in Discord if it doesn't exist, or found if it already exists
 - AccountRoles caster role is global (one caster role in DB per account); Discord role is per-organizer server. If you need per-organizer caster role in DB later, that would be a separate extension (e.g. scope by organizer or game).

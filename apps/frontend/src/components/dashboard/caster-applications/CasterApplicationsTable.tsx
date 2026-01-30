@@ -158,14 +158,12 @@ export function CasterApplicationsTable({
         cell: ({ getValue }) => {
           const raw = getValue<string>();
           if (!raw) return "—";
-          try {
-            return new Date(raw).toLocaleDateString(undefined, {
-              dateStyle: "short",
-              timeStyle: "short"
-            });
-          } catch {
-            return raw;
-          }
+          const date = new Date(raw);
+          if (Number.isNaN(date.getTime())) return "—";
+          return date.toLocaleString(undefined, {
+            dateStyle: "short",
+            timeStyle: "short"
+          });
         },
         meta: { responsive: "table-cell", sortable: true }
       },

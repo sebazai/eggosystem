@@ -28,7 +28,7 @@ const initializeOrganizerDiscordClient = async (): Promise<Client> => {
 
   if (!ORGANIZER_BOT_TOKEN) {
     throw new Error(
-      "DISCORD_KANALIIGA_BOT_TOKEN or DISCORD_ORGANIZER_BOT_TOKEN environment variable is required"
+      "DISCORD_KANABOT_BOT_TOKEN environment variable is required"
     );
   }
 

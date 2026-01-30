@@ -23,6 +23,10 @@ import {
 } from "../models/discord.models";
 import { userHasRole } from "../models/account-roles.models";
 import {
+  getCasterDefaultUrl,
+  setCasterDefaultUrl
+} from "../models/caster-urls.models";
+import {
   assignCasterRoleInDiscord,
   notifyNewCasterApplicationInDiscord,
   notifyCasterApprovedInDiscord,
@@ -313,6 +317,16 @@ export const approveCasterApplicationController = async (
       sendCasterApprovalEmail(account.work_email, casterChannelLink).catch(
         () => {}
       );
+    }
+
+    if (application.caster_url?.trim()) {
+      const existingUrl = await getCasterDefaultUrl(application.account_id);
+      if (existingUrl === null) {
+        setCasterDefaultUrl(
+          application.account_id,
+          application.caster_url.trim()
+        ).catch(() => {});
+      }
     }
 
     res.json({
