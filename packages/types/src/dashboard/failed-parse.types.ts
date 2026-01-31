@@ -56,7 +56,8 @@ export interface FailedParseStatsResponse {
 }
 
 export interface ReparseRequest {
-  message_ids: number[];
+  /** Match game IDs to requeue for reparse. Only messages with these IDs are acked and requeued. */
+  match_game_ids: number[];
   priority?: number;
 }
 

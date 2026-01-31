@@ -319,15 +319,17 @@ export const getFailedParseMessageById = async (
 };
 
 /**
- * Reparse failed messages by consuming from error queues
+ * Reparse failed messages by consuming from error queues.
+ * Only messages whose match_game_id is in the request are requeued and acked;
+ * others are nack'd with requeue so they remain in the error queue.
  */
 export const reparseFailedMessages = async (
   request: ReparseRequest
 ): Promise<ReparseResponse> => {
-  const { message_ids, priority = 5 } = request;
-  const messagesToProcess = message_ids.length;
+  const { match_game_ids, priority = 5 } = request;
+  const requestedIds = new Set(match_game_ids);
 
-  if (messagesToProcess === 0) {
+  if (requestedIds.size === 0) {
     return {
       success: true,
       requeued_count: 0,
@@ -336,7 +338,7 @@ export const reparseFailedMessages = async (
   }
 
   logger.info("Starting reparse of failed messages from RabbitMQ", {
-    messageCount: messagesToProcess,
+    matchGameIds: match_game_ids,
     priority
   });
 
@@ -347,24 +349,14 @@ export const reparseFailedMessages = async (
     const errors: string[] = [];
 
     for (const queueName of errorQueues) {
+      if (requestedIds.size === 0) break;
+
       try {
         await channel.assertQueue(queueName, { durable: true });
 
-        // Process up to the requested number of messages
-        let processedFromThisQueue = 0;
-        const maxToProcessFromQueue = Math.ceil(
-          messagesToProcess / errorQueues.length
-        );
-
-        while (
-          processedFromThisQueue < maxToProcessFromQueue &&
-          requeuedCount + failedCount < messagesToProcess
-        ) {
+        while (true) {
           const msg = await channel.get(queueName, { noAck: false });
-
-          if (!msg) {
-            break; // No more messages in this queue
-          }
+          if (!msg) break;
 
           try {
             const messageContent = JSON.parse(msg.content.toString());
@@ -430,52 +422,74 @@ export const reparseFailedMessages = async (
               }
             }
 
+            const matchGameIdNum = parseInt(matchGameId, 10);
+            const isRequested = requestedIds.has(matchGameIdNum);
+
+            if (!isRequested) {
+              channel.nack(msg, false, true);
+              continue;
+            }
+
             if (!matchGameId || !downloadUrl) {
               failedCount++;
+              requestedIds.delete(matchGameIdNum);
               errors.push(
-                `Message from ${queueName}: Missing match_game_id or download_url`
+                `match_game_id ${matchGameId}: Missing match_game_id or download_url`
               );
               channel.ack(msg);
-              processedFromThisQueue++;
               continue;
             }
 
             // Create a new parse request with original source preserved
             const parseRequest = createDemoProcessingRequest(
-              parseInt(matchGameId),
+              matchGameIdNum,
               downloadUrl,
               priority,
-              originalSource, // Use original source from failed message
-              true // Set reparse flag
+              originalSource,
+              true
             );
 
-            // Submit to parse queue
             await publishToParseQueue(parseRequest);
-
-            // Acknowledge the original message to remove it from error queue
             channel.ack(msg);
-
+            requestedIds.delete(matchGameIdNum);
             requeuedCount++;
-            processedFromThisQueue++;
 
             logger.info("Successfully requeued failed message from RabbitMQ", {
               queueName,
-              matchGameId: matchGameId,
+              matchGameId,
               downloadUrl: downloadUrl.substring(0, 50) + "...",
               originalSource,
               reparse: true
             });
           } catch (processingError) {
-            failedCount++;
-            const errorMsg = `Message from ${queueName}: ${processingError instanceof Error ? processingError.message : String(processingError)}`;
-            errors.push(errorMsg);
-
-            channel.ack(msg);
-            processedFromThisQueue++;
-
+            const matchGameId = (() => {
+              try {
+                const c = JSON.parse(msg.content.toString());
+                if (queueName === "parse_queue_failed")
+                  return c.original_message?.match_game_id;
+                if (queueName === "parsed_save_failed")
+                  return c.match_game_id ?? c.originalMessage?.match_game_id;
+                return c.match_game_id;
+              } catch {
+                return null;
+              }
+            })();
+            const matchGameIdNum =
+              matchGameId != null ? parseInt(String(matchGameId), 10) : null;
+            if (matchGameIdNum != null && requestedIds.has(matchGameIdNum)) {
+              failedCount++;
+              requestedIds.delete(matchGameIdNum);
+              errors.push(
+                `match_game_id ${matchGameIdNum}: ${processingError instanceof Error ? processingError.message : String(processingError)}`
+              );
+            }
+            channel.nack(msg, false, true);
             logger.error("Failed to process message from RabbitMQ", {
               queueName,
-              error: errorMsg
+              error:
+                processingError instanceof Error
+                  ? processingError.message
+                  : String(processingError)
             });
           }
         }
@@ -504,7 +518,7 @@ export const reparseFailedMessages = async (
     return {
       success: false,
       requeued_count: 0,
-      failed_count: messagesToProcess,
+      failed_count: match_game_ids.length,
       errors: ["Failed to connect to RabbitMQ"]
     };
   }
