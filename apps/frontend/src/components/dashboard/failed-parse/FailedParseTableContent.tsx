@@ -162,11 +162,14 @@ export const FailedParseTableContent = ({
         accessorKey: "final_error",
         header: "ERROR",
         cell: ({ getValue }) => {
-          const error = getValue<string>();
+          const error = getValue<string>() ?? "";
           const truncatedError =
-            error.length > 80 ? error.substring(0, 80) + "..." : error;
+            error.length > 80 ? error.substring(0, 80) + "..." : error || "—";
           return (
-            <span className="text-sm text-muted-foreground" title={error}>
+            <span
+              className="text-sm text-muted-foreground"
+              title={error || undefined}
+            >
               {truncatedError}
             </span>
           );
@@ -182,10 +185,17 @@ export const FailedParseTableContent = ({
         accessorKey: "failed_at",
         header: "FAILED AT",
         cell: ({ getValue }) => {
-          const date = new Date(getValue<string>());
+          const raw = getValue<string>();
+          if (!raw || raw.trim() === "") {
+            return <span className="text-sm text-muted-foreground">—</span>;
+          }
+          const date = new Date(raw);
+          const label = Number.isNaN(date.getTime())
+            ? "—"
+            : date.toLocaleString();
           return (
-            <span className="text-sm text-muted-foreground">
-              {date.toLocaleString()}
+            <span className="text-sm text-muted-foreground" title={raw}>
+              {label}
             </span>
           );
         },
