@@ -7,7 +7,7 @@ import {
   createTeamLogoUrl,
   filterParamsToSearchParams
 } from "@/lib/utils";
-import type { MatchTeamInfo } from "@eggosystem/types";
+import type { Match, MatchTeamInfo } from "@eggosystem/types";
 import Link from "next/link";
 
 interface MatchHeaderProps {
@@ -19,6 +19,7 @@ interface MatchHeaderProps {
   seasonId: number;
   leagueName: string;
   leagueId: number;
+  status: Match["status"];
   className?: string;
 }
 
@@ -27,11 +28,11 @@ export function MatchHeader({
   team2,
   matchStartTime,
   matchEndTime,
-
   seasonName,
   seasonId,
   leagueName,
   leagueId,
+  status,
   className
 }: MatchHeaderProps) {
   const getScoreTextColor = (score1: number, score2: number) => {
@@ -42,6 +43,10 @@ export function MatchHeader({
 
   const team1ScoreColor = getScoreTextColor(team1.score, team2.score);
   const team2ScoreColor = getScoreTextColor(team2.score, team1.score);
+
+  const statusLabel = status.replace(/_/g, " ").toLowerCase();
+  const statusLabelCapitalized =
+    statusLabel.charAt(0).toUpperCase() + statusLabel.slice(1);
 
   return (
     <div
@@ -115,6 +120,9 @@ export function MatchHeader({
               <span>
                 {seasonName} {leagueName}
               </span>
+              <span className="mt-1 text-[10px] opacity-80">
+                {statusLabelCapitalized}
+              </span>
             </div>
             <div className="xs:hidden">-</div>
             {/* Score 2 */}
@@ -131,6 +139,9 @@ export function MatchHeader({
           </div>
           <div className="block xs:hidden text-xxs md:text-xs text-muted-foreground">
             {seasonName} {leagueName}
+            <span className="ml-1.5 text-[10px] opacity-80">
+              · {statusLabelCapitalized}
+            </span>
           </div>
         </div>
 
