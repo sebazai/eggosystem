@@ -1,4 +1,4 @@
-import type { MatchWithStreamUrls } from "@eggosystem/types";
+import { MatchStatus, type MatchWithStreamUrls } from "@eggosystem/types";
 
 // Division definitions with darker, more readable colors
 export const DIVISIONS: Record<number, { color: string; borderColor: string }> =
@@ -84,6 +84,9 @@ const filterUpcomingMatches = (
   const futureDate = new Date(now.getTime() + daysAhead * 24 * 60 * 60 * 1000);
 
   return matches.filter((match) => {
+    if (match.match_status === MatchStatus.ONGOING) {
+      return true;
+    }
     const matchDate = new Date(match.match_start);
     return matchDate >= now && matchDate <= futureDate;
   });
