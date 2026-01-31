@@ -1015,6 +1015,7 @@ export const syncMatchSchedule = async (
         `Updated single match ${databaseMatches[0].id} schedule: ${faceitScheduleTimestamp}`
       );
     }
+    await connection.commit();
   } catch (error) {
     logger.error(`Error syncing match ${faceitMatch.match_id}:`, error);
     await connection.rollback();
