@@ -8,6 +8,7 @@ export default [
       ".next/**",
       "out/**",
       "build/**",
+      "playwright-report/**",
       "next-env.d.ts",
       "**/*.test.{js,jsx,ts,tsx}",
       "**/*.spec.{js,jsx,ts,tsx}",

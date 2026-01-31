@@ -649,6 +649,7 @@ router.post(
                 connection
               );
             }
+            await connection.commit();
           } catch (error) {
             logger.error(
               `Error updating match status for match ${validatedWebhook.payload.id}: ${error}`

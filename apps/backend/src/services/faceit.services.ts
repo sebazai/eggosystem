@@ -35,7 +35,8 @@ import {
 import {
   getHubMatchesByExternalMatchRoomId,
   getMatchesByExternalId,
-  updateMatchStartTimestamp
+  updateMatchStartAndEndTimestamp,
+  updateMatchStatusByMatchId
 } from "../models/match.models";
 import { fetchAllItemsWithPagination } from "../utils/pagination-utils";
 import {
@@ -878,108 +879,156 @@ export const syncMatchSchedule = async (
   faceitMatch: FaceitMatch,
   is_round_robin_bo2_as_2xbo1: boolean
 ): Promise<void> => {
-  const databaseMatches = await getMatchesByExternalId(faceitMatch.match_id);
-
-  if (databaseMatches.length === 0) {
-    logger.warn(
-      `No database matches found for external_match_room_id: ${faceitMatch.match_id}`
+  const notifyOfMatches: {
+    matchId: number;
+    oldTimestamp: string;
+    newTimestamp: string;
+  }[] = [];
+  const connection = await getConnection();
+  try {
+    await connection.beginTransaction();
+    const databaseMatches = await getMatchesByExternalId(
+      faceitMatch.match_id,
+      connection
     );
-    return;
-  }
 
-  // Convert FACEIT scheduled_at (Unix timestamp in seconds) to UTC ISO string
-  // FACEIT timestamps are Unix seconds since epoch (UTC)
-  const faceitScheduleTimestamp = getFaceitMatchDateTime(
-    faceitMatch.scheduled_at
-  );
+    if (databaseMatches.length === 0) {
+      logger.warn(
+        `No database matches found for external_match_room_id: ${faceitMatch.match_id}`
+      );
+      return;
+    }
 
-  const firstMatch = databaseMatches[0];
-  // Convert database timestamp to ISO string for comparison
-  const firstMatchTimestamp = new Date(
-    firstMatch.start_timestamp
-  ).toISOString();
+    // Convert FACEIT scheduled_at (Unix timestamp in seconds) to UTC ISO string
+    // FACEIT timestamps are Unix seconds since epoch (UTC)
+    const faceitScheduleTimestamp = getFaceitMatchDateTime(
+      faceitMatch.scheduled_at
+    );
 
-  if (is_round_robin_bo2_as_2xbo1 && databaseMatches.length === 2) {
-    const secondMatch = databaseMatches[1];
-    const secondMatchTimestamp = new Date(
-      secondMatch.start_timestamp
+    const firstMatch = databaseMatches[0];
+    // Convert database timestamp to ISO string for comparison
+    const firstMatchTimestamp = new Date(
+      firstMatch.start_timestamp
     ).toISOString();
 
-    const faceitSecondAssumedScheduledTimestamp = adjustMatchDateTime(
-      faceitScheduleTimestamp,
-      { hours: 1 }
-    );
+    if (is_round_robin_bo2_as_2xbo1 && databaseMatches.length === 2) {
+      const secondMatch = databaseMatches[1];
+      const secondMatchTimestamp = new Date(
+        secondMatch.start_timestamp
+      ).toISOString();
 
-    if (
-      firstMatchTimestamp === faceitScheduleTimestamp &&
-      secondMatchTimestamp === faceitSecondAssumedScheduledTimestamp
-    ) {
-      return;
+      const faceitSecondAssumedScheduledTimestamp = adjustMatchDateTime(
+        faceitScheduleTimestamp,
+        { hours: 1 }
+      );
+
+      if (
+        firstMatchTimestamp === faceitScheduleTimestamp &&
+        secondMatchTimestamp === faceitSecondAssumedScheduledTimestamp
+      ) {
+        return;
+      }
+
+      logger.info(
+        `[FACEIT] New time for match ${faceitMatch.match_id}: new ${faceitScheduleTimestamp} or ${faceitSecondAssumedScheduledTimestamp} vs. old ${firstMatchTimestamp} or ${secondMatchTimestamp} (2xBO1 as BO2)`
+      );
+
+      // Handle BO2 matches stored as 2 BO1 matches
+      // First match gets the FACEIT schedule
+      await updateMatchStartAndEndTimestamp(
+        databaseMatches[0].id,
+        faceitScheduleTimestamp,
+        null,
+        connection
+      );
+
+      await updateMatchStatusByMatchId(
+        databaseMatches[0].id,
+        "SCHEDULED",
+        connection
+      );
+
+      notifyOfMatches.push({
+        matchId: databaseMatches[0].id,
+        oldTimestamp: firstMatchTimestamp,
+        newTimestamp: faceitScheduleTimestamp
+      });
+
+      // Second match gets +1 hour from the first match
+      const secondMatchScheduleTimestamp = adjustMatchDateTime(
+        faceitScheduleTimestamp,
+        { hours: 1 }
+      );
+
+      await updateMatchStartAndEndTimestamp(
+        databaseMatches[1].id,
+        secondMatchScheduleTimestamp,
+        null,
+        connection
+      );
+
+      await updateMatchStatusByMatchId(
+        databaseMatches[1].id,
+        "SCHEDULED",
+        connection
+      );
+
+      notifyOfMatches.push({
+        matchId: databaseMatches[1].id,
+        oldTimestamp: secondMatchTimestamp,
+        newTimestamp: secondMatchScheduleTimestamp
+      });
+
+      logger.info(
+        `Updated BO2 match schedules: First match at ${faceitScheduleTimestamp}, Second match at ${secondMatchScheduleTimestamp}`
+      );
+    } else {
+      if (firstMatchTimestamp === faceitScheduleTimestamp) {
+        return;
+      }
+
+      logger.info(
+        `[FACEIT] New time for match ${faceitMatch.match_id}: new ${faceitScheduleTimestamp} vs. old ${firstMatchTimestamp}`
+      );
+
+      await updateMatchStartAndEndTimestamp(
+        databaseMatches[0].id,
+        faceitScheduleTimestamp,
+        null,
+        connection
+      );
+
+      await updateMatchStatusByMatchId(
+        databaseMatches[0].id,
+        "SCHEDULED",
+        connection
+      );
+
+      // Notify reservations
+      notifyOfMatches.push({
+        matchId: databaseMatches[0].id,
+        oldTimestamp: firstMatchTimestamp,
+        newTimestamp: faceitScheduleTimestamp
+      });
+
+      logger.info(
+        `Updated single match ${databaseMatches[0].id} schedule: ${faceitScheduleTimestamp}`
+      );
     }
-
-    logger.info(
-      `[FACEIT] New time for match ${faceitMatch.match_id}: new ${faceitScheduleTimestamp} or ${faceitSecondAssumedScheduledTimestamp} vs. old ${firstMatchTimestamp} or ${secondMatchTimestamp} (2xBO1 as BO2)`
-    );
-
-    // Handle BO2 matches stored as 2 BO1 matches
-    // First match gets the FACEIT schedule
-    await updateMatchStartTimestamp(
-      databaseMatches[0].id,
-      faceitScheduleTimestamp
-    );
-
-    // Notify reservations for first match
-    await notifyReservationsOfScheduleChange(
-      databaseMatches[0].id,
-      firstMatchTimestamp,
-      faceitScheduleTimestamp
-    );
-
-    // Second match gets +1 hour from the first match
-    const secondMatchScheduleTimestamp = adjustMatchDateTime(
-      faceitScheduleTimestamp,
-      { hours: 1 }
-    );
-
-    await updateMatchStartTimestamp(
-      databaseMatches[1].id,
-      secondMatchScheduleTimestamp
-    );
-
-    // Notify reservations for second match
-    await notifyReservationsOfScheduleChange(
-      databaseMatches[1].id,
-      secondMatchTimestamp,
-      secondMatchScheduleTimestamp
-    );
-
-    logger.info(
-      `Updated BO2 match schedules: First match at ${faceitScheduleTimestamp}, Second match at ${secondMatchScheduleTimestamp}`
-    );
-  } else {
-    if (firstMatchTimestamp === faceitScheduleTimestamp) {
-      return;
-    }
-
-    logger.info(
-      `[FACEIT] New time for match ${faceitMatch.match_id}: new ${faceitScheduleTimestamp} vs. old ${firstMatchTimestamp}`
-    );
-
-    await updateMatchStartTimestamp(
-      databaseMatches[0].id,
-      faceitScheduleTimestamp
-    );
-
-    // Notify reservations
-    await notifyReservationsOfScheduleChange(
-      databaseMatches[0].id,
-      firstMatchTimestamp,
-      faceitScheduleTimestamp
-    );
-
-    logger.info(
-      `Updated single match ${databaseMatches[0].id} schedule: ${faceitScheduleTimestamp}`
-    );
+    await connection.commit();
+  } catch (error) {
+    logger.error(`Error syncing match ${faceitMatch.match_id}:`, error);
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+    notifyOfMatches.forEach((match) => {
+      void notifyReservationsOfScheduleChange(
+        match.matchId,
+        match.oldTimestamp,
+        match.newTimestamp
+      );
+    });
   }
 };
 
