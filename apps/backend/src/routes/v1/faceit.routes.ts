@@ -94,6 +94,7 @@ import { sendDemoForAllStarPOTGClip } from "../../services/allstar.services";
 import { publishDemoProcessingRequest } from "../../services/match-game.services";
 import { validateNumericParams } from "../../middlewares/validate-numeric-params";
 import { getConnection } from "../../db/mysqlConnection";
+import { parseFaceitDemoUrl } from "../../utils/faceit-demo-url-parser";
 
 const router = Router();
 
@@ -611,41 +612,40 @@ router.post(
               validatedWebhook.payload.id,
               connection
             );
-            const games = await getMatchGamesByExternalMatchRoomId(
-              validatedWebhook.payload.id,
+
+            if (!hubMatches || hubMatches.length !== 2) {
+              throw new Error(
+                `Expected 2 hub matches for 2xBO1, got ${hubMatches?.length}`
+              );
+            }
+
+            const demoUrl = validatedWebhook.payload.demo_url;
+            const parsedDemoUrl = parseFaceitDemoUrl(demoUrl);
+            if (!parsedDemoUrl) {
+              throw new Error(`Invalid faceit demo url: ${demoUrl}`);
+            }
+            const { mapNumber } = parsedDemoUrl;
+            const firstGameEndTime = validatedWebhook.payload.updated_at;
+
+            // Assuming first game is the first match in the hub
+            const matchIndex = mapNumber - 1;
+            await updateMatchEndTimestamp(
+              hubMatches[matchIndex].id,
+              firstGameEndTime,
               connection
             );
-            if (hubMatches && hubMatches.length === 2 && games.length === 1) {
-              const firstGameEndTime = validatedWebhook.payload.updated_at;
-              await updateMatchEndTimestamp(
-                hubMatches[0].id,
-                firstGameEndTime,
-                connection
-              );
-              await updateMatchStatusByMatchId(
-                hubMatches[0].id,
-                "FINISHED",
-                connection
-              );
+
+            await updateMatchStatusByMatchId(
+              hubMatches[matchIndex].id,
+              "FINISHED",
+              connection
+            );
+
+            // Start the second game at the same time as the first game ended
+            if (mapNumber === 1) {
               await updateMatchStartTimestamp(
                 hubMatches[1].id,
                 firstGameEndTime,
-                connection
-              );
-            } else if (
-              hubMatches &&
-              hubMatches.length === 2 &&
-              games.length === 2
-            ) {
-              const secondGameEndTime = validatedWebhook.payload.updated_at;
-              await updateMatchEndTimestamp(
-                hubMatches[1].id,
-                secondGameEndTime,
-                connection
-              );
-              await updateMatchStatusByMatchId(
-                hubMatches[1].id,
-                "FINISHED",
                 connection
               );
             }
