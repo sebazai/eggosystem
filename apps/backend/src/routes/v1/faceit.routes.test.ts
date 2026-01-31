@@ -178,7 +178,7 @@ export const validWebhookMatchDemoReady = {
     updated_at: "2025-07-26T17:30:38Z",
     version: 149,
     demo_url:
-      "https://demos-europe-central.backblaze.faceit-cdn.net/cs2/1-ffb4225f-ff51-42ed-acb5-af6714175934-3-1.dem.zst",
+      "https://demos-europe-central.backblaze.faceit-cdn.net/cs2/1-ffb4225f-ff51-42ed-acb5-af6714175934-1-1.dem.zst",
     teams: [
       {
         id: "f0eb455e-aadf-4029-9dea-b7806612e668",
@@ -2059,10 +2059,19 @@ describe("FaceIT Routes - Webhook", () => {
           { id: 2, match_id: 102, map_order: 2 } as never
         ]);
 
+        const secondDemoWebhook = {
+          ...validWebhookMatchDemoReady,
+          payload: {
+            ...validWebhookMatchDemoReady.payload,
+            demo_url:
+              "https://demos-europe-central.backblaze.faceit-cdn.net/cs2/1-ffb4225f-ff51-42ed-acb5-af6714175934-2-1.dem.zst"
+          }
+        };
+
         const response = await request(app)
           .post("/api/v1/faceit/webhook")
           .set("X-API-KEY", TEST_WEBHOOK_API_KEY)
-          .send(validWebhookMatchDemoReady);
+          .send(secondDemoWebhook);
 
         expect(response.status).toBe(200);
         expect(response.text).toBe("Webhook received");
