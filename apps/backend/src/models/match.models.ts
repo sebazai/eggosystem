@@ -545,14 +545,14 @@ export const updateMatchStartTimestamp = async (
 export const updateMatchStartAndEndTimestamp = async (
   matchId: number,
   startTimestamp: string | Date,
-  endTimestamp: string | Date,
+  endTimestamp: string | Date | null,
   connection?: PoolConnection
 ): Promise<void> => {
   await runQuery(
     "UPDATE Matches SET start_timestamp = ?, end_timestamp = ? WHERE id = ?",
     [
       formatDateForDatabase(startTimestamp),
-      formatDateForDatabase(endTimestamp),
+      endTimestamp ? formatDateForDatabase(endTimestamp) : null,
       matchId
     ],
     connection
@@ -578,7 +578,8 @@ export const updateMatchEndTimestamp = async (
 };
 
 export const getMatchesByExternalId = async (
-  externalMatchRoomId: string
+  externalMatchRoomId: string,
+  connection?: PoolConnection
 ): Promise<Match[]> => {
   const query = `
     SELECT *
@@ -587,7 +588,11 @@ export const getMatchesByExternalId = async (
     ORDER BY id, start_timestamp ASC
   `;
 
-  const matches = await runQuery<Match[]>(query, [externalMatchRoomId]);
+  const matches = await runQuery<Match[]>(
+    query,
+    [externalMatchRoomId],
+    connection
+  );
   return matches;
 };
 
