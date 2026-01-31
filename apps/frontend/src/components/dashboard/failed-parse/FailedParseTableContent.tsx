@@ -16,38 +16,17 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { TanStackTableWrapper } from "../../tables/TanStackTableWrapper";
 import { ServerSidePagination } from "../../tables/ServerSidePagination";
 import type { FailedParseMessage, CustomColumnMeta } from "@eggosystem/types";
-import { useMatchDetailsByGameId } from "@/hooks/data/useMatchDetailsByGameId";
 import Link from "next/link";
-import { Skeleton } from "@/components/ui/skeleton";
 
-interface MatchGameIdLinkProps {
-  matchGameId: number;
-}
-
-const MatchGameIdLink = ({ matchGameId }: MatchGameIdLinkProps) => {
-  const {
-    data: matchDetails,
-    isLoading,
-    error
-  } = useMatchDetailsByGameId(matchGameId);
-
-  if (isLoading) {
-    return <Skeleton className="h-4 w-16 inline-block" />;
-  }
-
-  if (error || !matchDetails) {
-    return <span className="font-mono text-sm">{matchGameId}</span>;
-  }
-
-  return (
-    <Link
-      href={`/matches/${matchDetails.match_id}/games/${matchGameId}`}
-      className="font-mono text-sm text-blue-600 hover:text-blue-800 hover:underline"
-    >
-      {matchGameId}
-    </Link>
-  );
-};
+/** Links to match game page via /match-games/[id] which redirects to /matches/[match_id]/games/[id] */
+const MatchGameIdLink = ({ matchGameId }: { matchGameId: string | number }) => (
+  <Link
+    href={`/match-games/${matchGameId}`}
+    className="font-mono text-sm text-blue-600 hover:text-blue-800 hover:underline"
+  >
+    {matchGameId}
+  </Link>
+);
 
 interface FailedParseTableContentProps {
   failedMessages: FailedParseMessage[];
@@ -112,7 +91,7 @@ export const FailedParseTableContent = ({
         accessorKey: "match_game_id",
         header: "GAME ID",
         cell: ({ getValue }) => {
-          const matchGameId = getValue<number>();
+          const matchGameId = getValue<string>();
           return <MatchGameIdLink matchGameId={matchGameId} />;
         },
         meta: {
@@ -162,11 +141,14 @@ export const FailedParseTableContent = ({
         accessorKey: "final_error",
         header: "ERROR",
         cell: ({ getValue }) => {
-          const error = getValue<string>();
+          const error = getValue<string>() ?? "";
           const truncatedError =
-            error.length > 80 ? error.substring(0, 80) + "..." : error;
+            error.length > 80 ? error.substring(0, 80) + "..." : error || "—";
           return (
-            <span className="text-sm text-muted-foreground" title={error}>
+            <span
+              className="text-sm text-muted-foreground"
+              title={error || undefined}
+            >
               {truncatedError}
             </span>
           );
@@ -182,10 +164,17 @@ export const FailedParseTableContent = ({
         accessorKey: "failed_at",
         header: "FAILED AT",
         cell: ({ getValue }) => {
-          const date = new Date(getValue<string>());
+          const raw = getValue<string>();
+          if (!raw || raw.trim() === "") {
+            return <span className="text-sm text-muted-foreground">—</span>;
+          }
+          const date = new Date(raw);
+          const label = Number.isNaN(date.getTime())
+            ? "—"
+            : date.toLocaleString();
           return (
-            <span className="text-sm text-muted-foreground">
-              {date.toLocaleString()}
+            <span className="text-sm text-muted-foreground" title={raw}>
+              {label}
             </span>
           );
         },

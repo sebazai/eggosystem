@@ -9,6 +9,8 @@ import type {
   ReparseResponse
 } from "@eggosystem/types";
 import { logger } from "../utils/app-logger";
+import { getMatchIdByGameId } from "./match-game.models";
+import { getMatchGame } from "./match.models";
 
 /**
  * RabbitMQ connection configuration
@@ -188,6 +190,9 @@ export const getFailedParseMessages = async (
           const { msg, content } = tempMessages[i];
 
           if (content) {
+            const parseError = content.parse_error as
+              | Record<string, unknown>
+              | undefined;
             const failedMessage: FailedParseMessage = {
               id: parseInt(
                 `${queueName.charCodeAt(0)}${queueName.charCodeAt(queueName.length - 1)}${String(i + 1).padStart(3, "0")}`
@@ -195,10 +200,13 @@ export const getFailedParseMessages = async (
               queue_name: queueName,
               match_game_id: extractGameId(content, queueName),
               failed_at:
+                (parseError?.failed_at as string) ||
                 (content.failed_at as string) ||
                 (content.timestamp as string) ||
-                (content.created_at as string),
+                (content.created_at as string) ||
+                "",
               final_error:
+                (parseError?.final_error as string) ||
                 (content.final_error as string) ||
                 (content.error as string) ||
                 "Unknown error",
@@ -208,17 +216,29 @@ export const getFailedParseMessages = async (
               error_details:
                 (content.error_details as Record<string, unknown>) ||
                 (content.error_history as Record<string, unknown>) ||
+                (parseError?.error_history as Record<string, unknown>) ||
                 {},
-              worker_id: content.worker_id as string | undefined,
-              message_type: (content.message_type as string) || queueName,
+              worker_id:
+                (parseError?.worker_id as string) ??
+                (content.worker_id as string | undefined),
+              message_type:
+                (parseError?.message_type as string) ||
+                (content.message_type as string) ||
+                queueName,
               source:
                 (content.source as string) ||
                 ((content.original_message as Record<string, unknown>)
                   ?.source as string) ||
                 "unknown",
               status: "failed",
-              created_at: content.created_at as string,
-              updated_at: content.updated_at as string,
+              created_at:
+                (content.created_at as string) ??
+                (parseError?.failed_at as string) ??
+                "",
+              updated_at:
+                (content.updated_at as string) ??
+                (parseError?.failed_at as string) ??
+                "",
               _rabbitMQMessage: msg // Store reference for later requeuing
             };
 
@@ -376,6 +396,38 @@ export const reparseFailedMessages = async (
               downloadUrl =
                 messageContent.download_url || messageContent.demo_file || "";
               originalSource = messageContent.source || "faceit";
+
+              // work_queue_failed may have demo_file as worker path; resolve URL from DB if needed
+              const matchGameIdNum = parseInt(matchGameId, 10);
+              if (
+                queueName === "work_queue_failed" &&
+                matchGameId &&
+                (!downloadUrl || downloadUrl.startsWith("/"))
+              ) {
+                try {
+                  const [matchIdRow] = await getMatchIdByGameId(matchGameIdNum);
+                  if (matchIdRow) {
+                    const [game] = await getMatchGame(
+                      matchIdRow.match_id,
+                      matchGameIdNum
+                    );
+                    if (game?.demofile && game.demofile.startsWith("http")) {
+                      downloadUrl = game.demofile;
+                    }
+                  }
+                } catch (lookupError) {
+                  logger.warn(
+                    "Failed to resolve demo URL from DB for reparse",
+                    {
+                      matchGameId,
+                      error:
+                        lookupError instanceof Error
+                          ? lookupError.message
+                          : String(lookupError)
+                    }
+                  );
+                }
+              }
             }
 
             if (!matchGameId || !downloadUrl) {
