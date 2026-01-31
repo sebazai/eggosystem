@@ -99,22 +99,33 @@ export const FailedParseTable = ({
     setCurrentPage(0);
   }, []);
 
-  // Reparse handler
+  // Reparse handler: send match_game_ids so backend only acks/requeues those messages
   const handleReparse = useCallback(async () => {
-    const selectedRows = Object.keys(rowSelection).filter(
+    const selectedKeys = Object.keys(rowSelection).filter(
       (key) => rowSelection[key]
     );
-
-    if (selectedRows.length === 0) {
+    if (selectedKeys.length === 0) {
       toast.error("No messages selected for reparse");
       return;
     }
 
-    const messageIds = selectedRows.map((id) => parseInt(id));
+    const matchGameIds = selectedKeys
+      .map(
+        (key) =>
+          filteredMessages.find((m) => m.id.toString() === key)?.match_game_id
+      )
+      .filter((id): id is string => id != null && id !== "")
+      .map((id) => parseInt(id, 10))
+      .filter((n) => !Number.isNaN(n));
+
+    if (matchGameIds.length === 0) {
+      toast.error("Could not resolve match game IDs for selected rows");
+      return;
+    }
 
     try {
       const result = await submitReparse({
-        message_ids: messageIds,
+        match_game_ids: matchGameIds,
         priority: 5
       });
 
@@ -136,7 +147,7 @@ export const FailedParseTable = ({
       toast.error("Failed to submit reparse request");
       console.error("Reparse error:", error);
     }
-  }, [rowSelection, submitReparse, mutate]);
+  }, [rowSelection, filteredMessages, submitReparse, mutate]);
 
   // Refresh handler
   const handleRefresh = useCallback(() => {

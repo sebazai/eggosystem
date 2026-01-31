@@ -24,7 +24,7 @@ const listQuerySchema = z.object({
 
 // Schema for reparse request
 const reparseRequestSchema = z.object({
-  message_ids: z.array(z.number().int().positive()).min(1).max(50),
+  match_game_ids: z.array(z.number().int().positive()).min(1).max(50),
   priority: z.number().int().min(1).max(10).optional().default(5)
 });
 
