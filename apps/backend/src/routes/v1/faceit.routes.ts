@@ -66,7 +66,9 @@ import {
   updateMatchFinished,
   updateMatchStartTimestamp,
   updateMatchStatusByExternalMatchroomId,
-  updateMatchStatusByMatchId
+  updateMatchStatusByMatchId,
+  updateMatchStartAndEndTimestamp,
+  getMatchesStatusByExternalMatchroomId
 } from "../../models/match.models";
 import { getMatchGamesByExternalMatchRoomId } from "../../models/match-game.models";
 import { createApiKeyValidator } from "../../middlewares/api-key-auth.middleware";
@@ -459,6 +461,18 @@ router.post(
             logger.info(
               `Match ${externalMatchRoomId} was aborted due to AFK? ${startTime}`
             );
+
+            // If any of the matches in the external match room is finished at any point, we do not want to update it to forfeit.
+            const existingMatchStatus =
+              await getMatchesStatusByExternalMatchroomId(externalMatchRoomId);
+            if (existingMatchStatus.includes("FINISHED")) {
+              logger.info(
+                `Match ${externalMatchRoomId} is already finished, skipping`
+              );
+              res.status(200).send("Webhook received");
+              return;
+            }
+
             const endTime = webhookData.payload.finished_at;
             // We do not want to change the match status, as this means it was aborted due to AFK.
             await updateMatchEndTime(webhookData.payload.id, endTime);
@@ -492,7 +506,12 @@ router.post(
             matchesByRoom.length === 2
           ) {
             // 2xBO1: only update second game end time; first game already set at first match_demo_ready
-            await updateMatchEndTimestamp(matchesByRoom[1].id, endTime);
+            // For some reason the start time will be the second games start time in 1xBO2 in faceit, no idea why.
+            await updateMatchStartAndEndTimestamp(
+              matchesByRoom[1].id,
+              startTime,
+              endTime
+            );
           } else {
             await updateMatchFinished(
               webhookData.payload.id,
@@ -611,6 +630,22 @@ router.post(
               await updateMatchStartTimestamp(
                 hubMatches[1].id,
                 firstGameEndTime,
+                connection
+              );
+            } else if (
+              hubMatches &&
+              hubMatches.length === 2 &&
+              games.length === 2
+            ) {
+              const secondGameEndTime = validatedWebhook.payload.updated_at;
+              await updateMatchEndTimestamp(
+                hubMatches[1].id,
+                secondGameEndTime,
+                connection
+              );
+              await updateMatchStatusByMatchId(
+                hubMatches[1].id,
+                "FINISHED",
                 connection
               );
             }

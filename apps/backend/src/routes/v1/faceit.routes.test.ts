@@ -28,11 +28,14 @@ import {
   addMatchToDatabase,
   getHubMatchesByExternalMatchRoomId,
   getMatchesByExternalId,
+  getMatchesStatusByExternalMatchroomId,
   updateMatchEndTime,
   updateMatchEndTimestamp,
   updateMatchFinished,
+  updateMatchStartAndEndTimestamp,
   updateMatchStartTimestamp,
-  updateMatchStatusByExternalMatchroomId
+  updateMatchStatusByExternalMatchroomId,
+  updateMatchStatusByMatchId
 } from "../../models/match.models";
 import { saveWebhookData } from "../../models/faceit.models";
 import { addMatchTeamMapVetoes } from "../../models/match-team-map-veto.models";
@@ -93,9 +96,21 @@ const mockGetHubMatchesByExternalMatchRoomId =
   >;
 const mockGetMatchesByExternalId =
   getMatchesByExternalId as jest.MockedFunction<typeof getMatchesByExternalId>;
+const mockGetMatchesStatusByExternalMatchroomId =
+  getMatchesStatusByExternalMatchroomId as jest.MockedFunction<
+    typeof getMatchesStatusByExternalMatchroomId
+  >;
 const mockUpdateMatchEndTimestamp =
   updateMatchEndTimestamp as jest.MockedFunction<
     typeof updateMatchEndTimestamp
+  >;
+const mockUpdateMatchStartAndEndTimestamp =
+  updateMatchStartAndEndTimestamp as jest.MockedFunction<
+    typeof updateMatchStartAndEndTimestamp
+  >;
+const mockUpdateMatchStatusByMatchId =
+  updateMatchStatusByMatchId as jest.MockedFunction<
+    typeof updateMatchStatusByMatchId
   >;
 const mockUpdateMatchStartTimestamp =
   updateMatchStartTimestamp as jest.MockedFunction<
@@ -2034,7 +2049,7 @@ describe("FaceIT Routes - Webhook", () => {
         );
       });
 
-      it("should not update match timestamps on second match_demo_ready", async () => {
+      it("should update match end timestamps and status to FINISHED on second match_demo_ready", async () => {
         mockGetHubMatchesByExternalMatchRoomId.mockResolvedValue([
           { id: 101 },
           { id: 102 }
@@ -2052,7 +2067,16 @@ describe("FaceIT Routes - Webhook", () => {
         expect(response.status).toBe(200);
         expect(response.text).toBe("Webhook received");
 
-        expect(mockUpdateMatchEndTimestamp).not.toHaveBeenCalled();
+        expect(mockUpdateMatchEndTimestamp).toHaveBeenCalledWith(
+          102,
+          validWebhookMatchDemoReady.payload.updated_at,
+          expect.any(Object)
+        );
+        expect(mockUpdateMatchStatusByMatchId).toHaveBeenCalledWith(
+          102,
+          "FINISHED",
+          expect.any(Object)
+        );
         expect(mockUpdateMatchStartTimestamp).not.toHaveBeenCalled();
       });
     });
@@ -2115,6 +2139,7 @@ describe("FaceIT Routes - Webhook", () => {
         mockUpdateMatchStatus.mockResolvedValue(undefined);
         mockUpdateMatchFinished.mockResolvedValue(undefined);
         mockGetMatchesByExternalId.mockResolvedValue([{ id: 1 } as Match]);
+        mockGetMatchesStatusByExternalMatchroomId.mockResolvedValue([]);
         mockGetFaceITMatchDetails = jest
           .spyOn(faceitServices, "getFaceITMatchDetails")
           .mockResolvedValue({} as never);
@@ -2192,7 +2217,7 @@ describe("FaceIT Routes - Webhook", () => {
         expect(mockUpdateMatchFinished).not.toHaveBeenCalled();
       });
 
-      it("should for 2xBO1 only update second match end time and set both FINISHED", async () => {
+      it("should for 2xBO1 only update second match start and end time and set both FINISHED", async () => {
         mockGetSeasonLeagueExternalIdByExternalIdWithSeasonSettings.mockResolvedValue(
           {
             ...createMockSeasonLeagueExternalId({
@@ -2217,8 +2242,9 @@ describe("FaceIT Routes - Webhook", () => {
         expect(response.status).toBe(200);
         expect(response.text).toBe("Webhook received");
 
-        expect(mockUpdateMatchEndTimestamp).toHaveBeenCalledWith(
+        expect(mockUpdateMatchStartAndEndTimestamp).toHaveBeenCalledWith(
           102,
+          "2025-07-26T00:25:51Z",
           "2025-07-26T01:05:18Z"
         );
         expect(mockUpdateMatchFinished).not.toHaveBeenCalled();

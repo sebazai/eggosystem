@@ -67,7 +67,7 @@ export const MatchMapPicks = ({
       <div className="w-full">
         <h2 className="text-lg font-bold mb-3">MAPS PLAYED</h2>
         {allMatchGameMaps
-          .sort((a, b) => (b.map_order ?? 0) - (a.map_order ?? 0))
+          .sort((a, b) => (a.map_order ?? 0) - (b.map_order ?? 0))
           .map((mapMatchGame, index) => {
             return (
               <div

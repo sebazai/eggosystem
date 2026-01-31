@@ -542,6 +542,23 @@ export const updateMatchStartTimestamp = async (
   );
 };
 
+export const updateMatchStartAndEndTimestamp = async (
+  matchId: number,
+  startTimestamp: string | Date,
+  endTimestamp: string | Date,
+  connection?: PoolConnection
+): Promise<void> => {
+  await runQuery(
+    "UPDATE Matches SET start_timestamp = ?, end_timestamp = ? WHERE id = ?",
+    [
+      formatDateForDatabase(startTimestamp),
+      formatDateForDatabase(endTimestamp),
+      matchId
+    ],
+    connection
+  );
+};
+
 /**
  * Updates a single match's end timestamp (for 2xBO1: only the second game on match_status_finished).
  *
@@ -835,6 +852,16 @@ export const updateMatchEndTime = async (
   logger.info(
     `Updated end_timestamp to ${endTimestamp} for ${matches.length} match(es) with external_match_room_id: ${externalMatchRoomId}`
   );
+};
+
+export const getMatchesStatusByExternalMatchroomId = async (
+  externalMatchRoomId: string
+): Promise<Match["status"][]> => {
+  const matches = await runQuery<Array<{ status: Match["status"] }>>(
+    "SELECT status FROM Matches WHERE external_match_room_id = ?",
+    [externalMatchRoomId]
+  );
+  return matches.map((match) => match.status);
 };
 
 export const updateMatchStatusByExternalMatchroomId = async (

@@ -331,7 +331,7 @@ export default function HeroSection({ device: _device }: HeroSectionProps) {
   const allUpcomingMatches = getUpcomingMatchesSorted(
     calendarMatches || [],
     10,
-    100
+    25
   );
 
   const allUpcomingStreamedMatches = getUpcomingStreamedMatchesSorted(
