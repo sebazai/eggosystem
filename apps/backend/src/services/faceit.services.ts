@@ -34,6 +34,7 @@ import {
 } from "../utils/date-utils";
 import {
   getHubMatchesByExternalMatchRoomId,
+  getMatch,
   getMatchesByExternalId,
   updateMatchStartAndEndTimestamp,
   updateMatchStatusByMatchId
@@ -1058,8 +1059,13 @@ const notifyReservationsOfScheduleChange = async (
       return;
     }
 
-    // Get team names for the match
+    // Get team names and match links for the match
     const teamNames = await getMatchTeamNames(matchId);
+    const [matchRow] = await getMatch(matchId);
+    const matchPageUrl = `${process.env.FRONTEND_URL}/matches/${matchId}`;
+    const matchroomUrl = matchRow?.external_match_room_id
+      ? `https://www.faceit.com/en/cs2/room/${matchRow.external_match_room_id}`
+      : null;
 
     // Send email to each caster
     for (const reservation of reservations) {
@@ -1075,7 +1081,9 @@ const notifyReservationsOfScheduleChange = async (
           teamNames,
           oldTimestamp,
           newTimestamp,
-          reservationHash: reservation.hash
+          reservationHash: reservation.hash,
+          matchPageUrl,
+          matchroomUrl
         });
 
         logger.info(

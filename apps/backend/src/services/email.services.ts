@@ -383,13 +383,24 @@ export const sendMatchScheduleChangeEmail = async (
     oldTimestamp: string; // ISO 8601 timestamp string (UTC)
     newTimestamp: string; // ISO 8601 timestamp string (UTC)
     reservationHash: string;
+    matchPageUrl: string;
+    matchroomUrl?: string | null;
   }
 ) => {
   const transporter = createTransporter();
-  const removalUrl = `${process.env.FRONTEND_URL}/api/v1/reservations/remove/${matchDetails.reservationHash}`;
+  const removalUrl = `${process.env.FRONTEND_URL}/remove-reservation/${matchDetails.reservationHash}`;
 
   const oldTimeFormatted = formatTimestampForEmail(matchDetails.oldTimestamp);
   const newTimeFormatted = formatTimestampForEmail(matchDetails.newTimestamp);
+
+  const matchroomSection =
+    matchDetails.matchroomUrl && matchDetails.matchroomUrl.trim() !== ""
+      ? `
+          <p style="margin-top: 20px;">View the matchroom:</p>
+          <p style="word-break: break-all;">
+            <a href="${matchDetails.matchroomUrl}" style="color: hsl(35, 93%, 49%); text-decoration: underline;">${matchDetails.matchroomUrl}</a>
+          </p>`
+      : "";
 
   const mailOptions = {
     from: "Kanahub by Kanaliiga <cs@kanaliiga.fi>",
@@ -420,8 +431,11 @@ export const sendMatchScheduleChangeEmail = async (
               <td style="padding: 12px; font-weight: bold; color: hsl(35, 93%, 49%);">${newTimeFormatted}</td>
             </tr>
           </table>
+
+          <p><a href="${matchDetails.matchPageUrl}" style="color: hsl(35, 93%, 49%); text-decoration: underline; font-weight: bold;">View match page</a></p>
+          ${matchroomSection}
   
-          <p>If the new time doesn't work for you, you can easily remove your reservation by clicking the button below:</p>
+          <p style="margin-top: 24px;">If the new time doesn't work for you, you can easily remove your reservation by clicking the button below:</p>
   
           <table width="100%" cellpadding="0" cellspacing="0" style="margin: 30px 0;">
             <tr>
