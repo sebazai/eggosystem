@@ -40,7 +40,11 @@ import {
   casterApplicationSubmitBodySchema,
   casterApplicationRejectBodySchema
 } from "../schemas/caster-applications.schemas";
-import { BadRequestError, NotFoundError } from "../utils/errors";
+import {
+  BadRequestError,
+  NotFoundError,
+  UnauthorizedError
+} from "../utils/errors";
 
 export const submitCasterApplicationController = async (
   req: RequestWithParams<{ organizer_id: string }> & Request,
@@ -145,7 +149,7 @@ export const getMyCasterApplicationsController = async (
 ): Promise<void> => {
   const accountId = req.auth?.account_id;
   if (!accountId) {
-    next(new BadRequestError("Unauthorized"));
+    next(new UnauthorizedError("Unauthorized"));
     return;
   }
   const organizerIdParam = req.query.organizer_id;

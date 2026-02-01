@@ -199,6 +199,19 @@ describe("Dashboard Routes Authentication Tests", () => {
         detail: "Forbidden: Requires authentication"
       });
     });
+
+    it("should return 401 for caster-applications routes without authentication", async () => {
+      const response = await request(app)
+        .get("/api/v1/dashboard/caster-applications")
+        .expect(401);
+
+      expect(response.body).toMatchObject({
+        type: "about:blank",
+        title: "Unauthorized",
+        status: 401,
+        detail: "Forbidden: Requires authentication"
+      });
+    });
   });
 
   describe("Authenticated but Insufficient Permissions", () => {
@@ -347,6 +360,20 @@ describe("Dashboard Routes Authentication Tests", () => {
         detail: "Forbidden: Insufficient permissions"
       });
     });
+
+    it("should return 403 for caster-applications routes with no admin/helpdesk role", async () => {
+      const response = await request(app)
+        .get("/api/v1/dashboard/caster-applications")
+        .set("Authorization", "Bearer valid-token")
+        .expect(403);
+
+      expect(response.body).toMatchObject({
+        type: "about:blank",
+        title: "Forbidden",
+        status: 403,
+        detail: "Forbidden: Insufficient permissions"
+      });
+    });
   });
 
   describe("Authenticated with Admin Role", () => {
@@ -433,6 +460,14 @@ describe("Dashboard Routes Authentication Tests", () => {
     it("should allow access to redis routes with admin role", async () => {
       const response = await request(app)
         .get("/api/v1/dashboard/redis/keys")
+        .set("Authorization", "Bearer valid-token");
+
+      expect(response.status).not.toBe(403);
+    });
+
+    it("should allow access to caster-applications routes with admin role", async () => {
+      const response = await request(app)
+        .get("/api/v1/dashboard/caster-applications")
         .set("Authorization", "Bearer valid-token");
 
       expect(response.status).not.toBe(403);
@@ -536,6 +571,14 @@ describe("Dashboard Routes Authentication Tests", () => {
         .set("Authorization", "Bearer valid-token");
 
       expect(response.status).toBe(403);
+    });
+
+    it("should allow access to caster-applications routes with helpdesk role", async () => {
+      const response = await request(app)
+        .get("/api/v1/dashboard/caster-applications")
+        .set("Authorization", "Bearer valid-token");
+
+      expect(response.status).not.toBe(403);
     });
   });
 

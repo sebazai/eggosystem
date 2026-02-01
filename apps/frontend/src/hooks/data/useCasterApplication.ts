@@ -15,11 +15,12 @@ import type { CasterApplicationFormValues } from "@/components/profile/caster-ap
 const ORGANIZERS_WITH_CASTER_KEY =
   "/api/v1/organizers/with-caster-applications";
 const CASTER_ME_KEY = "/api/v1/caster-applications/me";
-const CASTER_PENDING_COUNT_KEY = "/api/v1/caster-applications/pending-count";
+const CASTER_PENDING_COUNT_KEY =
+  "/api/v1/dashboard/caster-applications/pending-count";
 
 function casterApplicationsKey(organizerId?: number | null) {
-  if (organizerId == null) return "/api/v1/caster-applications";
-  return `/api/v1/caster-applications?organizer_id=${organizerId}`;
+  if (organizerId == null) return "/api/v1/dashboard/caster-applications";
+  return `/api/v1/dashboard/caster-applications?organizer_id=${organizerId}`;
 }
 
 export function useOrganizersWithCasterApplications(): {
@@ -191,13 +192,15 @@ export function useApproveCasterApplication() {
     setIsApproving(true);
     try {
       await clientApiFetch(
-        `/api/v1/caster-applications/${applicationId}/approve`,
+        `/api/v1/dashboard/caster-applications/${applicationId}/approve`,
         { method: "POST" }
       );
       await mutate(CASTER_PENDING_COUNT_KEY);
       await mutate(
         (k) =>
-          typeof k === "string" && k.startsWith("/api/v1/caster-applications")
+          typeof k === "string" &&
+          (k.startsWith("/api/v1/caster-applications") ||
+            k.startsWith("/api/v1/dashboard/caster-applications"))
       );
       await mutate(
         (k) =>
@@ -229,7 +232,7 @@ export function useRejectCasterApplication() {
       setIsRejecting(true);
       try {
         await clientApiFetch(
-          `/api/v1/caster-applications/${applicationId}/reject`,
+          `/api/v1/dashboard/caster-applications/${applicationId}/reject`,
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -239,7 +242,9 @@ export function useRejectCasterApplication() {
         await mutate(CASTER_PENDING_COUNT_KEY);
         await mutate(
           (k) =>
-            typeof k === "string" && k.startsWith("/api/v1/caster-applications")
+            typeof k === "string" &&
+            (k.startsWith("/api/v1/caster-applications") ||
+              k.startsWith("/api/v1/dashboard/caster-applications"))
         );
         await mutate(
           (k) =>
