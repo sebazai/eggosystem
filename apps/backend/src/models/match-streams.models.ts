@@ -1,5 +1,5 @@
 import { runQuery } from "../db/mysqlRunQuery";
-import type { Reservation } from "@eggosystem/types";
+import type { Account, Reservation } from "@eggosystem/types";
 import * as crypto from "crypto";
 import { ConflictError, NotFoundError } from "../utils/errors";
 
@@ -107,10 +107,8 @@ export const deleteReservationByHash = async (
   return result.affectedRows > 0;
 };
 
-export const getReservationsWithEmailForMatch = async (
-  matchId: number
-): Promise<Array<Reservation & { email: string | null }>> => {
-  return await runQuery<Array<Reservation & { email: string | null }>>(
+export const getReservationsWithEmailForMatch = async (matchId: number) => {
+  return await runQuery<Array<Reservation & Pick<Account, "work_email">>>(
     `SELECT r.*, a.work_email 
      FROM Reservations r 
      LEFT JOIN Accounts a ON r.account_id = a.id 
