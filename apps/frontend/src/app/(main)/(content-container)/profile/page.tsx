@@ -17,6 +17,11 @@ export default function ProfilePage() {
   }, []);
   const { user, loading, checkAuth } = useAuth();
 
+  // Refresh token and user when landing on this page so roles (e.g. after approval) are up to date
+  useEffect(() => {
+    void checkAuth();
+  }, [checkAuth]);
+
   if (loading) {
     return <AuthLoading />;
   }

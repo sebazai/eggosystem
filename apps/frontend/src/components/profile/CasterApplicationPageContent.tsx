@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { ContentContainer } from "@/components/layout/ContentContainer";
 import { SteamLoginButton } from "@/components/profile/SteamLoginButton";
@@ -38,7 +39,7 @@ function organizerToBlockFormat(o: {
 export function CasterApplicationPageContent({
   organizer
 }: CasterApplicationPageContentProps) {
-  const { user, loading } = useAuth();
+  const { user, loading, checkAuth } = useAuth();
   const { applications, mutate: mutateApps } = useMyCasterApplications(
     user ? organizer.id : null
   );
@@ -49,6 +50,11 @@ export function CasterApplicationPageContent({
   const application = applications?.find(
     (a) => a.organizer_id === organizer.id
   );
+
+  // Refresh token and user when landing on this page so roles (e.g. after approval) are up to date
+  useEffect(() => {
+    void checkAuth();
+  }, [checkAuth]);
 
   const onMutate = () => {
     void mutateApps();

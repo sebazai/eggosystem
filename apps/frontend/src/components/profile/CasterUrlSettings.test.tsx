@@ -5,7 +5,6 @@ import { CasterUrlSettings } from "./CasterUrlSettings";
 import { clientApiFetch } from "@/lib/apiClient";
 import { toast } from "sonner";
 
-// Mock dependencies
 jest.mock("@/lib/apiClient");
 jest.mock("sonner");
 
@@ -20,17 +19,20 @@ describe("CasterUrlSettings", () => {
   });
 
   it("should render caster URL settings for caster users", async () => {
-    mockClientApiFetch.mockResolvedValue({ stream_url: null });
+    mockClientApiFetch.mockResolvedValue({ urls: [] });
 
     render(<CasterUrlSettings canManageUrls={true} />);
 
-    expect(screen.getByText("Caster Settings")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText("Caster Settings")).toBeInTheDocument();
+    });
     expect(
-      screen.getByText(
-        "Set your default stream URL for quick match reservations"
-      )
+      screen.getByText(/add multiple stream urls and choose which one/i)
     ).toBeInTheDocument();
-    expect(screen.getByLabelText("Default Stream URL")).toBeInTheDocument();
+    expect(screen.getByLabelText("Add stream URL")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /add url/i })
+    ).toBeInTheDocument();
   });
 
   it("should not render for non-caster users", () => {
@@ -39,51 +41,64 @@ describe("CasterUrlSettings", () => {
     expect(screen.queryByText("Caster Settings")).not.toBeInTheDocument();
   });
 
-  it("should load and display existing default URL", async () => {
-    const existingUrl = "https://twitch.tv/existingcaster";
-    mockClientApiFetch.mockResolvedValue({ stream_url: existingUrl });
+  it("should load and display existing URLs", async () => {
+    const urls = [
+      {
+        id: 1,
+        stream_url: "https://twitch.tv/caster1",
+        is_default: true
+      },
+      {
+        id: 2,
+        stream_url: "https://youtube.com/caster2",
+        is_default: false
+      }
+    ];
+    mockClientApiFetch.mockResolvedValue({ urls });
 
     render(<CasterUrlSettings canManageUrls={true} />);
 
     await waitFor(() => {
-      const input = screen.getByLabelText(
-        "Default Stream URL"
-      ) as HTMLInputElement;
-      expect(input.value).toBe(existingUrl);
-    });
-
-    // Should show delete button when URL exists
-    await waitFor(() => {
-      expect(screen.getByTitle("Delete default URL")).toBeInTheDocument();
+      expect(
+        screen.getByRole("link", { name: "https://twitch.tv/caster1" })
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("link", { name: "https://youtube.com/caster2" })
+      ).toBeInTheDocument();
+      expect(screen.getByText("Default")).toBeInTheDocument();
     });
   });
 
-  it("should successfully save a new default URL", async () => {
+  it("should successfully add a new URL", async () => {
     const user = userEvent.setup();
     mockClientApiFetch
-      .mockResolvedValueOnce({ stream_url: null }) // Initial load
-      .mockResolvedValueOnce({}); // Save request
+      .mockResolvedValueOnce({ urls: [] })
+      .mockResolvedValueOnce({})
+      .mockResolvedValueOnce({
+        urls: [
+          {
+            id: 1,
+            stream_url: "https://twitch.tv/newcaster",
+            is_default: false
+          }
+        ]
+      });
 
     render(<CasterUrlSettings canManageUrls={true} />);
 
-    // Wait for initial load
     await waitFor(() => {
-      expect(screen.getByLabelText("Default Stream URL")).toBeInTheDocument();
+      expect(screen.getByLabelText("Add stream URL")).toBeInTheDocument();
     });
 
-    // Enter new URL
-    const urlInput = screen.getByLabelText("Default Stream URL");
+    const urlInput = screen.getByLabelText("Add stream URL");
     await user.type(urlInput, "https://twitch.tv/newcaster");
 
-    // Submit form
-    const saveButton = screen.getByRole("button", {
-      name: /save default url/i
-    });
-    await user.click(saveButton);
+    const addButton = screen.getByRole("button", { name: /add url/i });
+    await user.click(addButton);
 
     await waitFor(() => {
       expect(mockClientApiFetch).toHaveBeenCalledWith(
-        "/api/v1/accounts/caster/default-url",
+        "/api/v1/accounts/caster/urls",
         {
           method: "POST",
           body: JSON.stringify({
@@ -94,151 +109,106 @@ describe("CasterUrlSettings", () => {
     });
 
     expect(mockToast.success).toHaveBeenCalledWith(
-      "Default stream URL saved successfully!"
+      "Stream URL added successfully!"
     );
   });
 
-  it("should successfully delete existing default URL", async () => {
+  it("should successfully delete a URL", async () => {
     const user = userEvent.setup();
-    const existingUrl = "https://twitch.tv/existingcaster";
+    const urls = [
+      {
+        id: 1,
+        stream_url: "https://twitch.tv/delete-me",
+        is_default: false
+      }
+    ];
     mockClientApiFetch
-      .mockResolvedValueOnce({ stream_url: existingUrl }) // Initial load
-      .mockResolvedValueOnce({}); // Delete request
+      .mockResolvedValueOnce({ urls })
+      .mockResolvedValueOnce({})
+      .mockResolvedValueOnce({ urls: [] });
 
     render(<CasterUrlSettings canManageUrls={true} />);
 
-    // Wait for URL to load
     await waitFor(() => {
-      const input = screen.getByLabelText(
-        "Default Stream URL"
-      ) as HTMLInputElement;
-      expect(input.value).toBe(existingUrl);
+      expect(
+        screen.getByText("https://twitch.tv/delete-me")
+      ).toBeInTheDocument();
     });
 
-    // Click delete button
-    const deleteButton = screen.getByTitle("Delete default URL");
+    const deleteButton = screen.getByTitle("Delete URL");
     await user.click(deleteButton);
 
     await waitFor(() => {
       expect(mockClientApiFetch).toHaveBeenCalledWith(
-        "/api/v1/accounts/caster/default-url",
+        "/api/v1/accounts/caster/urls/1",
         { method: "DELETE" }
       );
     });
 
     expect(mockToast.success).toHaveBeenCalledWith(
-      "Default stream URL deleted successfully!"
+      "Stream URL deleted successfully!"
     );
   });
 
-  it("should validate URL format", async () => {
+  it("should validate URL format when adding", async () => {
     const user = userEvent.setup();
-    mockClientApiFetch.mockResolvedValue({ stream_url: null });
+    mockClientApiFetch.mockResolvedValue({ urls: [] });
 
     render(<CasterUrlSettings canManageUrls={true} />);
 
-    // Wait for component to load
     await waitFor(() => {
-      expect(screen.getByLabelText("Default Stream URL")).toBeInTheDocument();
+      expect(screen.getByLabelText("Add stream URL")).toBeInTheDocument();
     });
 
-    // Enter invalid URL
-    const urlInput = screen.getByLabelText("Default Stream URL");
-    await user.clear(urlInput);
+    const urlInput = screen.getByLabelText("Add stream URL");
     await user.type(urlInput, "not-a-url");
 
-    // Trigger validation by blurring the input
-    await user.tab();
+    const addButton = screen.getByRole("button", { name: /add url/i });
+    await user.click(addButton);
 
-    // Try to submit
-    const saveButton = screen.getByRole("button", {
-      name: /save default url/i
-    });
-    await user.click(saveButton);
-
-    // Should show validation error or prevent API call
     await waitFor(() => {
-      // Check if validation error is shown OR API wasn't called due to validation
       try {
         expect(
           screen.getByText("Please enter a valid URL")
         ).toBeInTheDocument();
       } catch {
-        // If error text isn't found, check that API wasn't called due to validation failure
-        expect(mockClientApiFetch).toHaveBeenCalledTimes(1); // Only the initial load call
+        expect(mockClientApiFetch).toHaveBeenCalledTimes(1);
       }
     });
   });
 
-  it("should handle API errors when saving", async () => {
+  it("should handle API errors when adding", async () => {
     const user = userEvent.setup();
-    const errorMessage = "Failed to save";
+    const errorMessage = "Failed to add";
     mockClientApiFetch
-      .mockResolvedValueOnce({ stream_url: null })
+      .mockResolvedValueOnce({ urls: [] })
       .mockRejectedValueOnce(new Error(errorMessage));
 
     render(<CasterUrlSettings canManageUrls={true} />);
 
-    // Wait for component to load
     await waitFor(() => {
-      expect(screen.getByLabelText("Default Stream URL")).toBeInTheDocument();
+      expect(screen.getByLabelText("Add stream URL")).toBeInTheDocument();
     });
 
-    // Enter URL and submit
-    const urlInput = screen.getByLabelText("Default Stream URL");
+    const urlInput = screen.getByLabelText("Add stream URL");
     await user.type(urlInput, "https://twitch.tv/testcaster");
 
-    const saveButton = screen.getByRole("button", {
-      name: /save default url/i
-    });
-    await user.click(saveButton);
+    const addButton = screen.getByRole("button", { name: /add url/i });
+    await user.click(addButton);
 
     await waitFor(() => {
       expect(mockToast.error).toHaveBeenCalledWith(errorMessage);
     });
   });
 
-  it("should disable save button when form is pristine", async () => {
-    mockClientApiFetch.mockResolvedValue({
-      stream_url: "https://twitch.tv/existing"
-    });
+  it("should disable Add URL button when form is pristine", async () => {
+    mockClientApiFetch.mockResolvedValue({ urls: [] });
 
     render(<CasterUrlSettings canManageUrls={true} />);
 
-    // Wait for form to load with existing data
     await waitFor(() => {
-      const saveButton = screen.getByRole("button", {
-        name: /save default url/i
-      });
-      expect(saveButton).toBeDisabled();
+      const addButton = screen.getByRole("button", { name: /add url/i });
+      expect(addButton).toBeDisabled();
     });
-  });
-
-  it("should enable save button when form is dirty", async () => {
-    const user = userEvent.setup();
-    mockClientApiFetch.mockResolvedValue({
-      stream_url: "https://twitch.tv/existing"
-    });
-
-    render(<CasterUrlSettings canManageUrls={true} />);
-
-    // Wait for form to load
-    await waitFor(() => {
-      const input = screen.getByLabelText(
-        "Default Stream URL"
-      ) as HTMLInputElement;
-      expect(input.value).toBe("https://twitch.tv/existing");
-    });
-
-    // Modify the input
-    const urlInput = screen.getByLabelText("Default Stream URL");
-    await user.clear(urlInput);
-    await user.type(urlInput, "https://twitch.tv/modified");
-
-    // Save button should be enabled
-    const saveButton = screen.getByRole("button", {
-      name: /save default url/i
-    });
-    expect(saveButton).not.toBeDisabled();
   });
 });

@@ -80,6 +80,46 @@ export const createCasterApplication = async (
   }
 };
 
+/**
+ * Reopen an approved caster application for re-approval (e.g. when caster role was removed).
+ * Sets approved_at and approved_by to null and updates caster_url and terms.
+ */
+export const reopenCasterApplicationForReApproval = async (
+  applicationId: number,
+  casterUrl: string,
+  approvedTerms: boolean,
+  connection?: PoolConnection
+): Promise<CasterApplication> => {
+  const conn = connection ?? (await getConnection());
+  try {
+    const [app] = await runQuery<CasterApplication[]>(
+      "SELECT * FROM CasterApplications WHERE id = ?",
+      [applicationId],
+      conn
+    );
+    if (!app) throw new Error("Application not found");
+    if (app.approved_at === null)
+      throw new Error("Application is not approved");
+
+    await runQuery(
+      `UPDATE CasterApplications
+       SET approved_by = NULL, approved_at = NULL, caster_url = ?, approved_terms_and_conditions = ?, updated_at = NOW()
+       WHERE id = ?`,
+      [casterUrl, approvedTerms, applicationId],
+      conn
+    );
+    const [updated] = await runQuery<CasterApplication[]>(
+      "SELECT * FROM CasterApplications WHERE id = ?",
+      [applicationId],
+      conn
+    );
+    if (!updated) throw new Error("Failed to fetch updated application");
+    return updated;
+  } finally {
+    if (!connection) conn.release();
+  }
+};
+
 export const getCasterApplicationByAccountAndOrganizer = async (
   accountId: number,
   organizerId: number,

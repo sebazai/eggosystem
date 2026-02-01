@@ -5,6 +5,7 @@ import {
   getAllCasterApplications,
   approveCasterApplication,
   rejectCasterApplication,
+  reopenCasterApplicationForReApproval,
   getPendingApplicationsCount,
   getOrganizersWithCasterApplications,
   getCasterApplicationById
@@ -142,6 +143,72 @@ describe("caster-applications models", () => {
       await expect(
         createCasterApplication(1, 10, "https://twitch.tv/foo", true)
       ).rejects.toThrow("Application already approved");
+    });
+  });
+
+  describe("reopenCasterApplicationForReApproval", () => {
+    it("should reopen approved application and return updated row", async () => {
+      const existing = {
+        id: 5,
+        organizer_id: 1,
+        account_id: 10,
+        caster_url: "https://twitch.tv/old",
+        approved_terms_and_conditions: true,
+        approved_by: 1,
+        approved_at: "2024-01-01T00:00:00.000Z",
+        rejected_by: null,
+        rejected_at: null,
+        rejection_reason: null,
+        created_at: "2024-01-01T00:00:00.000Z",
+        updated_at: "2024-01-01T00:00:00.000Z"
+      };
+      const updated = {
+        ...existing,
+        approved_by: null,
+        approved_at: null,
+        caster_url: "https://twitch.tv/new",
+        approved_terms_and_conditions: true
+      };
+      mockRunQuery
+        .mockResolvedValueOnce([existing])
+        .mockResolvedValueOnce({ affectedRows: 1 })
+        .mockResolvedValueOnce([updated]);
+
+      const result = await reopenCasterApplicationForReApproval(
+        5,
+        "https://twitch.tv/new",
+        true
+      );
+
+      expect(result).toEqual(updated);
+      expect(mockRunQuery).toHaveBeenNthCalledWith(
+        2,
+        expect.stringContaining("UPDATE CasterApplications"),
+        ["https://twitch.tv/new", true, 5],
+        expect.anything()
+      );
+    });
+
+    it("should throw when application not found", async () => {
+      mockRunQuery.mockResolvedValueOnce([]);
+
+      await expect(
+        reopenCasterApplicationForReApproval(99, "https://twitch.tv/foo", true)
+      ).rejects.toThrow("Application not found");
+    });
+
+    it("should throw when application is not approved", async () => {
+      mockRunQuery.mockResolvedValueOnce([
+        {
+          id: 5,
+          approved_at: null,
+          rejected_at: null
+        }
+      ]);
+
+      await expect(
+        reopenCasterApplicationForReApproval(5, "https://twitch.tv/foo", true)
+      ).rejects.toThrow("Application is not approved");
     });
   });
 

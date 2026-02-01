@@ -7,6 +7,7 @@ import {
   getAllCasterApplications,
   approveCasterApplication,
   rejectCasterApplication,
+  reopenCasterApplicationForReApproval,
   getPendingApplicationsCount,
   getOrganizersWithCasterApplications,
   getCasterApplicationById
@@ -104,7 +105,34 @@ export const submitCasterApplicationController = async (
       organizerId
     );
     if (existing && existing.approved_at !== null) {
-      next(new BadRequestError("Application already approved"));
+      if (hasCaster) {
+        next(new BadRequestError("Application already approved"));
+        return;
+      }
+      // Approved but caster role was removed: reopen for re-approval
+      const application = await reopenCasterApplicationForReApproval(
+        existing.id,
+        caster_url,
+        approved_terms_and_conditions === true
+      );
+      const dashboardUrl = process.env.FRONTEND_URL
+        ? `${process.env.FRONTEND_URL}/dashboard/caster-applications`
+        : undefined;
+      notifyNewCasterApplicationInDiscord(
+        organizerId,
+        discordInfo.discordUsername,
+        dashboardUrl
+      ).catch(() => {});
+
+      res.status(200).json({
+        message: "Application reopened for re-approval",
+        application: {
+          id: application.id,
+          organizer_id: application.organizer_id,
+          account_id: application.account_id,
+          status: "pending"
+        }
+      });
       return;
     }
     if (existing && existing.rejected_at === null) {

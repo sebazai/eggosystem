@@ -66,12 +66,16 @@ export const refreshToken = async (
       return next(new ForbiddenError("Invalid refresh token"));
     }
 
-    // Refresh permissions.
-    const permissions = await getPermissionsForAccountId(decoded.account_id);
+    // Refresh permissions and roles from DB so tokens reflect current state.
+    const [permissions, roles] = await Promise.all([
+      getPermissionsForAccountId(decoded.account_id),
+      getRolesForAccountId(decoded.account_id)
+    ]);
 
     const { accessToken, refreshToken: newRefreshToken } = generateTokens({
       ...decoded,
-      permissions
+      permissions,
+      roles
     });
 
     await redisClient.set(

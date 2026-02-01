@@ -61,7 +61,7 @@ function applicationStatus(
 export function OrganizerApplicationBlock({
   organizer,
   application,
-  user: _user,
+  user,
   emailsVerified: _emailsVerified,
   discordLinked: _discordLinked,
   onMutate
@@ -89,9 +89,13 @@ export function OrganizerApplicationBlock({
     onMutate();
   };
 
-  const canApply = status === null || status === "rejected";
+  const hasCasterRole = user.roles?.includes("caster");
+  const isApprovedWithRole = status === "approved" && hasCasterRole;
+  const canApply =
+    status === null ||
+    status === "rejected" ||
+    (status === "approved" && !hasCasterRole);
   const isPending = status === "pending";
-  const isApproved = status === "approved";
   const isRejected = status === "rejected";
 
   return (
@@ -109,7 +113,7 @@ export function OrganizerApplicationBlock({
             </AlertDescription>
           </Alert>
         )}
-        {isApproved && (
+        {isApprovedWithRole && (
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
