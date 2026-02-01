@@ -58,7 +58,8 @@
         "IMAGE_SERVICE_API_KEY",
         "IMAGE_SERVICE_BASE_URL",
         "EMAIL_SEND_DELAY_MS",
-        "DB_CONNECTION_LIMIT"
+        "DB_CONNECTION_LIMIT",
+        "DISCORD_KANABOT_BOT_TOKEN"
       ],
       "dependsOn": ["^build"],
       "inputs": [

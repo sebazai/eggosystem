@@ -3,7 +3,8 @@ import { validateNumericParams } from "../../middlewares/validate-numeric-params
 import {
   getActiveSeasonForApp,
   getActiveSignupOrActiveSeasonForAppController,
-  getActiveSignupSeasonForApp
+  getActiveSignupSeasonForApp,
+  getOrganizerByIdPublic
 } from "../../controllers/organizer.controllers";
 import {
   getOrganizersWithCasterApplicationsController,
@@ -21,6 +22,12 @@ router.get(
   "/with-caster-applications",
   authenticateJWT,
   getOrganizersWithCasterApplicationsController
+);
+
+router.get(
+  "/:organizer_id",
+  validateNumericParams(["organizer_id"]),
+  getOrganizerByIdPublic
 );
 
 router.post(
