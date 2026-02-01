@@ -406,15 +406,12 @@ describe("addPlayerToTeamController", () => {
       undefined
     );
 
-    // Mock queries for checkPlayerAdditionEligibility -> ensureSeasonMaxPlayersForTeam -> getSeasonById -> getActiveMapPoolBySeasonId
+    // ensureSeasonMaxPlayersForTeam -> getPrimaryPlayersForTeam runs first (consumes first runQuery)
     mockRunQuery.mockResolvedValueOnce([{ steam_id: "76561198000000001" }]);
-    mockRunQuery.mockResolvedValueOnce([{ id: 14, max_players: 9 }]);
-    mockRunQuery.mockResolvedValueOnce([
-      { map_id: 1 },
-      { map_id: 2 },
-      { map_id: 3 }
-    ]);
-    mockRunQuery.mockResolvedValueOnce([{ league_id: 1 }]);
+    // getPlayerDetailsForDashboardBySteamId (profile validation) must return valid profile so flow reaches "not eligible" path
+    mockRunQuery.mockResolvedValueOnce(createMockPlayerProfile());
+    // Tier query (controller runs after profile check)
+    mockRunQuery.mockResolvedValueOnce([{ tier: 2 }]);
 
     setupEligibilityMock({
       canAddPlayer: false,

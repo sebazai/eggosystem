@@ -69,64 +69,47 @@ export const addPlayerToTeamController = async (
   // Don't require calculus anymore - it's optional
   const calculusData = calculus || {};
 
-  const connection = await getConnection();
-  try {
-    await connection.beginTransaction();
+  const seasonData = await getSeasonPlatformAndAppId(seasonId);
+  if (!seasonData) {
+    return next(new BadRequestError(`Season with ID ${seasonId} not found`));
+  }
+  const { platform, app_id: appId } = seasonData;
 
-    // For registration context, simplified flow
-    if (context === "registration") {
-      // 1. Verify player has valid profile
-      const playerProfile =
-        await getPlayerDetailsForDashboardBySteamId(steamId);
-      if (
-        !playerProfile ||
-        !playerProfile.account_id ||
-        !playerProfile.nickname ||
-        !playerProfile.work_email_verified ||
-        !playerProfile.is_valid_full_name ||
-        !playerProfile.is_valid_work_email
-      ) {
-        return next(
-          new BadRequestError(
-            "Cannot add player: Profile validation is required. The player must have a verified Kanahub profile with valid email and full name before being added to a team."
-          )
-        );
-      }
+  // Ensure player rank data exists (external calls: Leetify, Steam, FACEIT – run without tx)
+  await ensurePlayerRankDataExists(steamId, seasonId, appId, platform);
 
-      // 2. Get season details to fetch platform and app_id
-      const seasonData = await getSeasonPlatformAndAppId(seasonId, connection);
+  // Eligibility check calls CSRankker HTTP API (up to 30s) – must run outside tx
+  const eligibility = await checkPlayerAdditionEligibility(
+    seasonId,
+    teamId,
+    steamId,
+    { context }
+  );
 
-      if (!seasonData) {
-        return next(
-          new BadRequestError(`Season with ID ${seasonId} not found`)
-        );
-      }
+  // Profile validation (read-only)
+  const playerProfile = await getPlayerDetailsForDashboardBySteamId(steamId);
+  if (
+    !playerProfile ||
+    !playerProfile.account_id ||
+    !playerProfile.nickname ||
+    !playerProfile.work_email_verified ||
+    !playerProfile.is_valid_full_name ||
+    !playerProfile.is_valid_work_email
+  ) {
+    return next(
+      new BadRequestError(
+        "Cannot add player: Profile validation is required. The player must have a verified Kanahub profile with valid email and full name before being added to a team."
+      )
+    );
+  }
 
-      const { platform, app_id: appId } = seasonData;
+  if (context === "registration") {
+    const calculusString = eligibility.selectedTeam.csrankker_calculus || "{}";
+    const offeredElo = eligibility.selectedTeam.csrankker_original_kanaelo;
 
-      // 3. Ensure player rank data exists (same logic as signup)
-      await ensurePlayerRankDataExists(
-        steamId,
-        seasonId,
-        appId,
-        platform,
-        connection
-      );
-
-      // 5. Check eligibility (mainly for kana_elo calculation)
-      const eligibility = await checkPlayerAdditionEligibility(
-        seasonId,
-        teamId,
-        steamId,
-        { connection, context: "registration" }
-      );
-
-      // 6. Set the player's kana_elo from the eligibility check
-      // Use csrankker_calculus from CSRankker API response
-      const calculusString =
-        eligibility.selectedTeam.csrankker_calculus || "{}";
-      const offeredElo = eligibility.selectedTeam.csrankker_original_kanaelo;
-
+    const connection = await getConnection();
+    try {
+      await connection.beginTransaction();
       await setPlayerKanaElo(
         steamId,
         eligibility.selectedTeam.new_player_kana_elo,
@@ -135,8 +118,6 @@ export const addPlayerToTeamController = async (
         offeredElo,
         connection
       );
-
-      // 7. Add player to SeasonTeamRegistrationPlayers (not captain, not co-captain)
       await insertSeasonTeamRegistrationPlayer(
         seasonId,
         teamId,
@@ -147,9 +128,7 @@ export const addPlayerToTeamController = async (
         },
         connection
       );
-
       await connection.commit();
-
       res.status(200).json({
         message: "Player successfully added to the registration",
         steam_id: steamId,
@@ -157,85 +136,45 @@ export const addPlayerToTeamController = async (
         season_id: seasonId,
         context: "registration"
       });
-      return;
+    } catch (error) {
+      await connection.rollback();
+      return next(error);
+    } finally {
+      connection.release();
     }
+    return;
+  }
 
-    // Finalized season context - original logic
-    // 1. Get season details to fetch platform and app_id
-    const seasonData = await getSeasonPlatformAndAppId(seasonId, connection);
+  // Finalized context: tier check and eligibility enforcement
+  const tierQuery = `
+    SELECT sl.tier
+    FROM SeasonLeagueTeams slt
+    JOIN SeasonLeagues sl ON sl.season_id = slt.season_id AND sl.league_id = slt.league_id
+    WHERE slt.team_id = ? AND slt.season_id = ?
+    LIMIT 1
+  `;
+  const tierResults = await runQuery<Array<{ tier: number }>>(tierQuery, [
+    teamId,
+    seasonId
+  ]);
+  const isTier1 = tierResults.length > 0 && tierResults[0].tier === 1;
 
-    if (!seasonData) {
-      return next(new BadRequestError(`Season with ID ${seasonId} not found`));
-    }
-
-    const { platform, app_id: appId } = seasonData;
-
-    // 2. Ensure player rank data exists (same logic as signup)
-    await ensurePlayerRankDataExists(
-      steamId,
-      seasonId,
-      appId,
-      platform,
-      connection
+  if (!isTier1 && !eligibility.canAddPlayer) {
+    return next(
+      new BadRequestError("Player is not eligible to be added to this team")
     );
+  }
 
-    // 3. Check if team is in tier 1 league
-    const tierQuery = `
-      SELECT sl.tier
-      FROM SeasonLeagueTeams slt
-      JOIN SeasonLeagues sl ON sl.season_id = slt.season_id AND sl.league_id = slt.league_id
-      WHERE slt.team_id = ? AND slt.season_id = ?
-      LIMIT 1
-    `;
-    const tierResults = await runQuery<Array<{ tier: number }>>(
-      tierQuery,
-      [teamId, seasonId],
-      connection
-    );
-    const isTier1 = tierResults.length > 0 && tierResults[0].tier === 1;
+  const calculusString =
+    eligibility.selectedTeam.csrankker_calculus ||
+    (typeof calculusData === "object"
+      ? JSON.stringify(calculusData)
+      : String(calculusData || "{}"));
+  const offeredElo = eligibility.selectedTeam.csrankker_original_kanaelo;
 
-    // 4. Now that we have player data, check eligibility
-    const eligibility = await checkPlayerAdditionEligibility(
-      seasonId,
-      teamId,
-      steamId,
-      { connection, context: "finalized" }
-    );
-
-    // 5. Verify player is eligible (skip check for tier 1 teams)
-    if (!isTier1 && !eligibility.canAddPlayer) {
-      return next(
-        new BadRequestError("Player is not eligible to be added to this team")
-      );
-    }
-
-    // 6. Verify player has valid profile (required for all teams)
-    const playerProfile = await getPlayerDetailsForDashboardBySteamId(steamId);
-    if (
-      !playerProfile ||
-      !playerProfile.account_id ||
-      !playerProfile.nickname ||
-      !playerProfile.work_email_verified ||
-      !playerProfile.is_valid_full_name ||
-      !playerProfile.is_valid_work_email
-    ) {
-      return next(
-        new BadRequestError(
-          "Cannot add player: Profile validation is required. The player must have a verified Kanahub profile with valid email and full name before being added to a team."
-        )
-      );
-    }
-
-    // 7. Set the player's kana_elo from the eligibility check
-    // Use csrankker_calculus if available, otherwise fall back to request body calculus
-    const calculusString =
-      eligibility.selectedTeam.csrankker_calculus ||
-      (typeof calculusData === "object"
-        ? JSON.stringify(calculusData)
-        : String(calculusData || "{}"));
-    // Use originalKanaelo as offered_elo if available
-    const offeredElo = eligibility.selectedTeam.csrankker_original_kanaelo;
-
+  const connection = await getConnection();
+  try {
+    await connection.beginTransaction();
     await setPlayerKanaElo(
       steamId,
       eligibility.selectedTeam.new_player_kana_elo,
@@ -244,17 +183,13 @@ export const addPlayerToTeamController = async (
       offeredElo,
       connection
     );
-
-    // 8. Finally add the player to the team in SeasonTeamPlayers
     await insertSeasonTeamPlayer(
       seasonId,
       teamId,
       { steam_id: steamId } satisfies InsertSeasonTeamPlayer,
       connection
     );
-
     await connection.commit();
-
     res.status(200).json({
       message: "Player successfully added to the team",
       steam_id: steamId,
