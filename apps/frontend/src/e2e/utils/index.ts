@@ -18,11 +18,13 @@ export function generateTestJWT(): string {
  * @param accountId - The account ID from the E2E seed data
  * @param steamId - The Steam ID for the user
  * @param nickname - The nickname for the user
+ * @param roles - Optional roles (defaults to ["admin"])
  */
 export function generateTestJWTForUser(
   accountId: number,
   steamId: string,
-  nickname: string
+  nickname: string,
+  roles: string[] = ["admin"]
 ): string {
   try {
     // Read the private key that the E2E backend uses
@@ -39,7 +41,7 @@ export function generateTestJWTForUser(
       account_id: accountId,
       provider_id: steamId,
       permissions: [],
-      roles: ["admin"], // Add admin role for e2e tests
+      roles,
       nickname: nickname,
       provider: "steam" as const,
       game_id: 1 // CS2 game_id to ensure admin permissions work for the game

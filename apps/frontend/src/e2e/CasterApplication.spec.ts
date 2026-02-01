@@ -37,7 +37,10 @@ test.describe("Caster Application", () => {
     page,
     context
   }) => {
-    const token = generateTestJWTForUser(15004, heppajpgSteamId, "heppajpg");
+    const token = generateTestJWTForUser(15004, heppajpgSteamId, "heppajpg", [
+      "admin",
+      "caster"
+    ]);
     await context.addCookies([
       {
         name: "access_token",
