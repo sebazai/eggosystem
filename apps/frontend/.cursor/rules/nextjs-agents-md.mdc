@@ -1,0 +1,16 @@
+---
+description: Use AGENTS.md and local Next.js docs when answering Next.js questions
+alwaysApply: false
+globs: ["apps/frontend/**"]
+---
+
+# Next.js: Use AGENTS.md
+
+When the user asks about **Next.js** (features, APIs, routing, config, App Router, data fetching, etc.):
+
+1. **Read `apps/frontend/AGENTS.md`** first. It is the project’s Next.js docs index.
+2. **Follow the instruction in AGENTS.md**: do not rely on general knowledge for Next.js; search the indexed docs and read the relevant pages before answering.
+3. **Doc root**: AGENTS.md points to local docs under `apps/frontend/.next-docs`. Use that index to find and read the correct MDX files for the question.
+4. If the indexed docs are missing, run: `npx @next/codemod agents-md --output AGENTS.md` (from the frontend app directory).
+
+This ensures answers match the **exact Next.js version and APIs** used in this project.
