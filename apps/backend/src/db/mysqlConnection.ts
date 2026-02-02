@@ -28,6 +28,24 @@ const dbPool = createPool({
     if (field.type === "DATE") {
       return field.string();
     }
+
+    // CRITICAL FIX: Convert steam_id columns to strings to preserve precision
+    // Steam IDs (17-digit numbers) exceed Number.MAX_SAFE_INTEGER (16 digits)
+    // causing precision loss when stored as JavaScript numbers
+    //
+    // IMPORTANT: We use field.string() to get the raw string value directly from
+    // the MySQL buffer BEFORE any Number conversion. This preserves full precision.
+    // Do NOT use next() as it would apply bigNumberStrings:false conversion first.
+    if (
+      field.type === "LONGLONG" &&
+      (field.name === "steam_id" ||
+        field.name === "provider_id" ||
+        field.orgName === "steam_id" ||
+        field.orgName === "provider_id")
+    ) {
+      return field.string(); // Returns null for NULL values, string otherwise
+    }
+
     return next();
   }
 } satisfies PoolOptions);
