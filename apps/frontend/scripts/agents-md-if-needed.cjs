@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
+/* eslint-disable no-undef */
 /**
  * Runs `npx @next/codemod@canary agents-md --output AGENTS.md` only when the
  * Next.js version in package.json has changed since the last run. This keeps
@@ -34,6 +36,6 @@ if (lastVersion === nextVersion) {
 
 execSync("npx @next/codemod@canary agents-md --output AGENTS.md", {
   cwd: appDir,
-  stdio: "inherit",
+  stdio: "inherit"
 });
 fs.writeFileSync(versionPath, nextVersion, "utf8");
