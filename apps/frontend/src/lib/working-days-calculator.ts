@@ -4,7 +4,8 @@
  * 25 unmarked holidays (weekdays only), and 2 travelling days.
  */
 
-const END_DATE = { year: 2026, month: 7, day: 31 }; // 31 August (month 0-based: 7)
+/** Default end date: 31.8.2026 (YYYY-MM-DD). */
+export const DEFAULT_END_DATE = "2026-08-31";
 
 const VACATION_START = { year: 2026, month: 1, day: 9 }; // 9 Feb
 const VACATION_END = { year: 2026, month: 1, day: 25 }; // 25 Feb
@@ -16,6 +17,7 @@ const FIJI_PUBLIC_HOLIDAYS_2026: Array<{
   day: number;
 }> = [
   { year: 2026, month: 0, day: 1 }, // New Year's Day, Thu
+  { year: 2026, month: 3, day: 2 }, // Extra holiday, Thu
   { year: 2026, month: 3, day: 3 }, // Good Friday, Fri
   { year: 2026, month: 3, day: 6 }, // Easter Monday, Mon
   { year: 2026, month: 4, day: 15 }, // Girmit Day, Fri
@@ -68,7 +70,7 @@ function isFijiHoliday(date: Date): boolean {
 export interface WorkingDaysResult {
   /** Start date used */
   startDate: string;
-  /** End date (31.8.2026) */
+  /** End date used (default 31.8.2026) */
   endDate: string;
   /** Weekdays in range before any deductions */
   weekdaysInRange: number;
@@ -82,14 +84,29 @@ export interface WorkingDaysResult {
   travellingDays: number;
   /** Final working days */
   workingDays: number;
+  /** Complete work weeks (floor of workingDays / 5) */
+  completeWorkWeeks: number;
 }
 
 /**
- * Compute working days from startDate (YYYY-MM-DD) to 31.8.2026.
+ * Resolve end date: use given string if valid YYYY-MM-DD, otherwise default 31.8.2026.
+ */
+function resolveEndDate(endDateStr: string | undefined): string {
+  if (endDateStr && /^\d{4}-\d{2}-\d{2}$/.test(endDateStr)) return endDateStr;
+  return DEFAULT_END_DATE;
+}
+
+/**
+ * Compute working days from startDate (YYYY-MM-DD) to endDate (inclusive).
+ * If endDate is not provided or invalid, uses 31.8.2026.
  * Excludes: weekends, vacation 9.2.–25.2., Fiji public holidays (weekdays),
  * 25 unmarked holidays, 2 travelling days.
  */
-export function calculateWorkingDays(startDateStr: string): WorkingDaysResult {
+export function calculateWorkingDays(
+  startDateStr: string,
+  endDateStr?: string
+): WorkingDaysResult {
+  const endDate = resolveEndDate(endDateStr);
   const parts = startDateStr.split("-").map(Number);
   const y = parts[0];
   const m = parts[1];
@@ -104,28 +121,54 @@ export function calculateWorkingDays(startDateStr: string): WorkingDaysResult {
   ) {
     return {
       startDate: startDateStr,
-      endDate: "2026-08-31",
+      endDate,
       weekdaysInRange: 0,
       vacationDaysExcluded: 0,
       fijiHolidaysExcluded: 0,
       unmarkedHolidays: UNMARKED_HOLIDAYS,
       travellingDays: TRAVELLING_DAYS,
-      workingDays: 0
+      workingDays: 0,
+      completeWorkWeeks: 0
+    };
+  }
+  const endParts = endDate.split("-").map(Number);
+  const ey = endParts[0];
+  const em = endParts[1];
+  const ed = endParts[2];
+  if (
+    ey === undefined ||
+    em === undefined ||
+    ed === undefined ||
+    isNaN(ey) ||
+    isNaN(em) ||
+    isNaN(ed)
+  ) {
+    return {
+      startDate: startDateStr,
+      endDate,
+      weekdaysInRange: 0,
+      vacationDaysExcluded: 0,
+      fijiHolidaysExcluded: 0,
+      unmarkedHolidays: UNMARKED_HOLIDAYS,
+      travellingDays: TRAVELLING_DAYS,
+      workingDays: 0,
+      completeWorkWeeks: 0
     };
   }
   const start = dateFromYMD(y, m - 1, d);
-  const end = dateFromYMD(END_DATE.year, END_DATE.month, END_DATE.day);
+  const end = dateFromYMD(ey, em - 1, ed);
 
   if (start.getTime() > end.getTime()) {
     return {
       startDate: startDateStr,
-      endDate: "2026-08-31",
+      endDate,
       weekdaysInRange: 0,
       vacationDaysExcluded: 0,
       fijiHolidaysExcluded: 0,
       unmarkedHolidays: UNMARKED_HOLIDAYS,
       travellingDays: TRAVELLING_DAYS,
-      workingDays: 0
+      workingDays: 0,
+      completeWorkWeeks: 0
     };
   }
 
@@ -156,15 +199,18 @@ export function calculateWorkingDays(startDateStr: string): WorkingDaysResult {
       TRAVELLING_DAYS
   );
 
+  const completeWorkWeeks = Math.floor(workingDays / 5);
+
   return {
     startDate: startDateStr,
-    endDate: "2026-08-31",
+    endDate,
     weekdaysInRange,
     vacationDaysExcluded,
     fijiHolidaysExcluded,
     unmarkedHolidays: UNMARKED_HOLIDAYS,
     travellingDays: TRAVELLING_DAYS,
-    workingDays
+    workingDays,
+    completeWorkWeeks
   };
 }
 

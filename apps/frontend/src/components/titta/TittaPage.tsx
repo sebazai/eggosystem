@@ -6,16 +6,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   calculateWorkingDays,
+  DEFAULT_END_DATE,
   getDefaultStartDate,
   type WorkingDaysResult
 } from "@/lib/working-days-calculator";
 
 export default function TittaPage() {
   const [startDate, setStartDate] = useState(getDefaultStartDate);
+  const [endDate, setEndDate] = useState(DEFAULT_END_DATE);
   const result = useMemo<WorkingDaysResult | null>(() => {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate)) return null;
-    return calculateWorkingDays(startDate);
-  }, [startDate]);
+    return calculateWorkingDays(startDate, endDate);
+  }, [startDate, endDate]);
 
   return (
     <div className="space-y-6">
@@ -24,9 +26,9 @@ export default function TittaPage() {
           Working days calculator
         </h1>
         <p className="text-muted-foreground mt-1">
-          From start date to 31.8.2026. Excludes vacation 9.2.–25.2., Fiji
-          public holidays, 25 unmarked holidays (Mon–Fri), and 2 travelling
-          days.
+          From start date to end date (default 31.8.2026). Excludes vacation
+          9.2.–25.2., Fiji public holidays, 25 unmarked holidays (Mon–Fri), and
+          2 travelling days.
         </p>
       </div>
 
@@ -35,17 +37,28 @@ export default function TittaPage() {
           <h2 className="text-lg font-medium">Period</h2>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid gap-2 max-w-xs">
-            <Label htmlFor="titta-start">Start date</Label>
-            <Input
-              id="titta-start"
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-            />
+          <div className="grid gap-4 sm:grid-cols-2 max-w-md">
+            <div className="grid gap-2">
+              <Label htmlFor="titta-start">Start date</Label>
+              <Input
+                id="titta-start"
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="titta-end">End date</Label>
+              <Input
+                id="titta-end"
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+              />
+            </div>
           </div>
           <p className="text-sm text-muted-foreground">
-            End date: 31.8.2026 (fixed)
+            Default end date: 31.8.2026
           </p>
         </CardContent>
       </Card>
@@ -61,6 +74,12 @@ export default function TittaPage() {
                 {result.workingDays}
               </span>
               <span className="text-muted-foreground">working days</span>
+            </div>
+            <div className="flex items-baseline gap-2 text-muted-foreground">
+              <span className="text-xl font-semibold text-foreground">
+                {result.completeWorkWeeks}
+              </span>
+              <span>complete work weeks</span>
             </div>
             <dl className="grid gap-1 text-sm">
               <div className="flex justify-between gap-4">
