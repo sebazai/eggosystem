@@ -9,7 +9,8 @@ import {
   type FaceitMatchStatsResponse,
   type FaceitPlayerDetails,
   type MatchDemoReadyWebhook,
-  type ChampionshipDetailsDemoReady
+  type ChampionshipDetailsDemoReady,
+  MatchStatus
 } from "@eggosystem/types";
 import {
   redisClient,
@@ -922,9 +923,14 @@ export const syncMatchSchedule = async (
         { hours: 1 }
       );
 
+      const isForfeitInDb =
+        firstMatch.status === MatchStatus.FORFEIT ||
+        secondMatch.status === MatchStatus.FORFEIT;
+
       if (
         firstMatchTimestamp === faceitScheduleTimestamp &&
-        secondMatchTimestamp === faceitSecondAssumedScheduledTimestamp
+        secondMatchTimestamp === faceitSecondAssumedScheduledTimestamp &&
+        !isForfeitInDb
       ) {
         return;
       }
