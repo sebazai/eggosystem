@@ -2142,6 +2142,35 @@ describe("FaceIT Routes - Webhook", () => {
           getDetailsSpy.mockRestore();
         }
       });
+
+      it("when 2xBO1 demo_url has map number 3, throws and returns 400", async () => {
+        jest
+          .spyOn(faceitServices, "getFaceITMatchDetails")
+          .mockResolvedValue(validMatchDetailsMatchDemoReady as never);
+        mockGetHubMatchesByExternalMatchRoomId.mockResolvedValue([
+          { id: 101 },
+          { id: 102 }
+        ]);
+        const demoUrlWithMap3 =
+          "https://demos-europe-central.backblaze.faceit-cdn.net/cs2/1-ffb4225f-ff51-42ed-acb5-af6714175934-3-1.dem.zst";
+        const payload = {
+          ...validWebhookMatchDemoReady,
+          payload: {
+            ...validWebhookMatchDemoReady.payload,
+            demo_url: demoUrlWithMap3
+          }
+        };
+
+        const response = await request(app)
+          .post("/api/v1/faceit/webhook")
+          .set("X-API-KEY", TEST_WEBHOOK_API_KEY)
+          .send(payload);
+
+        expect(response.status).toBe(400);
+        expect(response.body.detail).toContain(
+          "2xBO1 demo url must have map number 1 or 2, got 3"
+        );
+      });
     });
 
     describe("Error Cases", () => {
@@ -2413,6 +2442,7 @@ describe("FaceIT Routes - Webhook", () => {
         mockSaveWebhookData.mockResolvedValue({ insertId: 1 });
         mockUpdateMatchStatus.mockResolvedValue(undefined);
         mockUpdateMatchEndTime.mockResolvedValue(undefined);
+        mockUpdateMatchFinished.mockResolvedValue(undefined);
         mockUpdateMatchEndTimestamp.mockResolvedValue(undefined);
         mockUpdateMatchStatusByMatchId.mockResolvedValue(undefined);
         mockUpdateMatchStartAndEndTimestamp.mockResolvedValue(undefined);
@@ -2624,6 +2654,48 @@ describe("FaceIT Routes - Webhook", () => {
           202,
           "FORFEIT"
         );
+      });
+
+      it("forfeit with gameIndex >= 2 (targetMatch undefined): no DB update, 200 OK", async () => {
+        mockGetMatchStatusFinishedCountAfterLastConfiguring.mockResolvedValue(
+          2
+        );
+
+        const response = await request(app)
+          .post("/api/v1/faceit/webhook")
+          .set("X-API-KEY", TEST_WEBHOOK_API_KEY)
+          .send(expectedFaceitWebhookPayloadForfeit);
+
+        expect(response.status).toBe(200);
+        expect(mockUpdateMatchStatusByMatchId).not.toHaveBeenCalled();
+        expect(mockUpdateMatchEndTimestamp).not.toHaveBeenCalled();
+        expect(mockUpdateMatchStatus).not.toHaveBeenCalled();
+      });
+
+      it("when 2xBO1 league but matchesByRoom.length === 1, uses non-2xBO1 branch (room-wide FINISHED)", async () => {
+        mockGetMatchesByExternalId.mockResolvedValue([
+          { id: 201, status: "ONGOING" } as Match
+        ]);
+        mockGetMatchStatusFinishedCountAfterLastConfiguring.mockResolvedValue(
+          0
+        );
+
+        const response = await request(app)
+          .post("/api/v1/faceit/webhook")
+          .set("X-API-KEY", TEST_WEBHOOK_API_KEY)
+          .send(expectedFaceitWebhookPayloadPlayed);
+
+        expect(response.status).toBe(200);
+        expect(mockUpdateMatchFinished).toHaveBeenCalledWith(
+          externalMatchRoomId,
+          "2025-09-17T17:48:48Z",
+          "2025-09-17T18:37:35Z"
+        );
+        expect(mockUpdateMatchStatus).toHaveBeenCalledWith(
+          externalMatchRoomId,
+          "FINISHED"
+        );
+        expect(mockUpdateMatchStatusByMatchId).not.toHaveBeenCalled();
       });
     });
   });

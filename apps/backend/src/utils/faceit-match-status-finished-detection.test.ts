@@ -52,5 +52,13 @@ describe("faceit-match-status-finished-detection", () => {
       };
       expect(isForfeitPayload(webhookPayloadLikeDb)).toBe(true);
     });
+
+    it("returns false when started_at is undefined (treat as non-forfeit)", () => {
+      expect(isForfeitPayload({ started_at: undefined })).toBe(false);
+    });
+
+    it("returns false when started_at is empty string", () => {
+      expect(isForfeitPayload({ started_at: "" })).toBe(false);
+    });
   });
 });

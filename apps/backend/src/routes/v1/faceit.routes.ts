@@ -672,6 +672,11 @@ router.post(
               throw new Error(`Invalid faceit demo url: ${demoUrl}`);
             }
             const { mapNumber } = parsedDemoUrl;
+            if (mapNumber < 1 || mapNumber > 2) {
+              throw new Error(
+                `2xBO1 demo url must have map number 1 or 2, got ${mapNumber}: ${demoUrl}`
+              );
+            }
             const firstGameEndTime = validatedWebhook.payload.updated_at;
 
             // Assuming first game is the first match in the hub
