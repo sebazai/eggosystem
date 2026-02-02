@@ -853,8 +853,12 @@ export const getFantasyTeamByUser = async (
   );
 
   return {
-    ...team, // Includes steam_id from FantasyTeam interface
-    players: playersWithCurrentValues,
+    ...team,
+    steam_id: String(team.steam_id),
+    players: playersWithCurrentValues.map((p) => ({
+      ...p,
+      steam_id: String(p.steam_id)
+    })),
     remaining_role_swaps: remainingRoleSwaps,
     remaining_substitutions: remainingSubstitutions,
     current_week_number: weekNumber
@@ -944,12 +948,15 @@ export const substitutePlayer = async (
       throw new BadRequestError("Maximum 2 substitutions per week allowed");
     }
 
+    const removeSteamId = String(data.remove_steam_id);
+    const addSteamId = String(data.add_steam_id);
+
     // Get player being removed
     const [removedPlayer] = await runQuery<
       Array<{ player_value: number; role: PlayerRole | null }>
     >(
       "SELECT player_value, role FROM FantasyTeamPlayers WHERE fantasy_team_id = ? AND steam_id = ? AND is_active = TRUE",
-      [fantasyTeamId, data.remove_steam_id],
+      [fantasyTeamId, removeSteamId],
       connection
     );
 
@@ -959,7 +966,7 @@ export const substitutePlayer = async (
 
     // Check if the player being removed has already played in the current week
     const hasPlayed = await hasPlayerPlayedInWeek(
-      data.remove_steam_id,
+      removeSteamId,
       team.season_id,
       weekNumber,
       connection
@@ -984,7 +991,7 @@ export const substitutePlayer = async (
       `UPDATE FantasyTeamPlayers 
        SET is_active = FALSE, removed_at = NOW()
        WHERE fantasy_team_id = ? AND steam_id = ?`,
-      [fantasyTeamId, data.remove_steam_id],
+      [fantasyTeamId, removeSteamId],
       connection
     );
 
@@ -997,12 +1004,7 @@ export const substitutePlayer = async (
       `INSERT INTO FantasyTeamPlayers 
        (fantasy_team_id, steam_id, role, player_value, is_active)
        VALUES (?, ?, ?, ?, TRUE)`,
-      [
-        fantasyTeamId,
-        data.add_steam_id,
-        newPlayerRole || null,
-        data.new_player_value
-      ],
+      [fantasyTeamId, addSteamId, newPlayerRole || null, data.new_player_value],
       connection
     );
 
@@ -1020,7 +1022,7 @@ export const substitutePlayer = async (
        VALUES (?, ?, 'removed', ?, ?)`,
       [
         fantasyTeamId,
-        data.remove_steam_id,
+        removeSteamId,
         JSON.stringify({ value: removedPlayer.player_value }),
         weekNumber
       ],
@@ -1033,7 +1035,7 @@ export const substitutePlayer = async (
        VALUES (?, ?, 'added', ?, ?)`,
       [
         fantasyTeamId,
-        data.add_steam_id,
+        addSteamId,
         JSON.stringify({ value: data.new_player_value, role: newPlayerRole }),
         weekNumber
       ],

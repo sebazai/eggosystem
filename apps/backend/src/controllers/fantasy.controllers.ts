@@ -197,12 +197,14 @@ export const substitutePlayerController = async (
     role?: PlayerRole | null;
   };
 
-  const remove_steam_id = body.remove_steam_id || body.remove_player_id;
-  const add_steam_id = body.add_steam_id || body.add_player_id;
+  const remove_steam_id = body.remove_steam_id ?? body.remove_player_id;
+  const add_steam_id = body.add_steam_id ?? body.add_player_id;
 
   if (
-    !remove_steam_id ||
-    !add_steam_id ||
+    remove_steam_id === undefined ||
+    remove_steam_id === null ||
+    add_steam_id === undefined ||
+    add_steam_id === null ||
     !body.new_player_value ||
     body.week_number === undefined ||
     body.week_number === null
@@ -223,8 +225,8 @@ export const substitutePlayerController = async (
   }
 
   const substitutionData: SubstitutionData = {
-    remove_steam_id,
-    add_steam_id,
+    remove_steam_id: String(remove_steam_id),
+    add_steam_id: String(add_steam_id),
     new_player_value: body.new_player_value,
     week_number: body.week_number,
     role: body.role
@@ -265,16 +267,16 @@ export const updatePlayerRolesController = async (
     return next(new BadRequestError("Invalid request body"));
   }
 
-  // Map role_updates to use steam_id
+  // Map role_updates to use steam_id (always string to avoid JS number precision issues)
   const role_updates = body.role_updates.map((update) => {
-    const steamId = update.steam_id || update.player_id;
-    if (!steamId) {
+    const steamId = update.steam_id ?? update.player_id;
+    if (steamId === undefined || steamId === null) {
       throw new BadRequestError(
         "Each role update must have steam_id or player_id"
       );
     }
     return {
-      steam_id: steamId,
+      steam_id: String(steamId),
       role: update.role
     };
   });

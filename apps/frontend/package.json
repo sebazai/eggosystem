@@ -3,6 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "agents-md": "npx @next/codemod@canary agents-md --output AGENTS.md",
+    "postinstall": "node scripts/agents-md-if-needed.cjs",
     "shadcn:add": "pnpm dlx shadcn@latest add",
     "dev": "next dev",
     "build": "next build",
