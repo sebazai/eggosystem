@@ -17,46 +17,46 @@ function getCheerMessage(workingDays: number): {
 } {
   if (workingDays <= 0)
     return {
-      message: "You did it! Time to celebrate.",
+      message: "You made it! So much to look forward to.",
       emoji: "🎉"
     };
   if (workingDays <= 4)
     return {
-      message: "So close! Just a few more days — you've got this!",
+      message: "Almost there! Just a few more days until something wonderful.",
       emoji: "💪"
     };
   if (workingDays <= 14)
     return {
-      message: "Final stretch! Two weeks or less — you're almost there.",
+      message: "The finish line is in sight. You're almost there.",
       emoji: "🌟"
     };
   if (workingDays <= 30)
     return {
-      message: "Making great progress! One day at a time.",
+      message: "Every day is bringing you closer. Good things are ahead.",
       emoji: "✨"
     };
   if (workingDays <= 50)
     return {
-      message: "You're on track. One week at a time — you can do this!",
+      message: "You're right where you need to be. The best is yet to come.",
       emoji: "🌈"
     };
   if (workingDays <= 60)
     return {
-      message: "Under 60 working days left. You're doing great, Titta!",
+      message: "You're doing great — and the best is yet to come.",
       emoji: "☀️"
     };
   if (workingDays <= 75)
     return {
-      message: "Roughly 3 months of work days to go. Steady progress!",
+      message: "So much good ahead. Trust the journey.",
       emoji: "🌺"
     };
   if (workingDays <= 100)
     return {
-      message: "About 4 months of work days — you've got a solid plan.",
+      message: "The road ahead is full of possibility. You've got this!",
       emoji: "🏝️"
     };
   return {
-    message: "Plenty of time. You've got this, Titta!",
+    message: "So much to look forward to. You've got this, Titta!",
     emoji: "🌴"
   };
 }
