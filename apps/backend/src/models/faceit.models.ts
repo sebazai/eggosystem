@@ -38,6 +38,28 @@ export const saveWebhookData = async (
   );
 };
 
+/**
+ * Count of match_status_finished after the last match_status_configuring for this room.
+ * Resets the effective game index after a restart (configuring sets matches to ONGOING).
+ * Excludes retries and manual reprocess.
+ */
+export const getMatchStatusFinishedCountAfterLastConfiguring = async (
+  externalPayloadId: string
+): Promise<number> => {
+  const result = await runQuery<Array<{ count: number }>>(
+    `SELECT COUNT(*) as count FROM FaceitWebhooks fw
+     WHERE fw.external_payload_id = ? AND fw.event = 'match_status_finished'
+     AND fw.retry_count = 0 AND COALESCE(fw.manual_reprocess, 0) = 0
+     AND fw.received_at > COALESCE(
+       (SELECT MAX(received_at) FROM FaceitWebhooks
+        WHERE external_payload_id = ? AND event = 'match_status_configuring'),
+       '1970-01-01 00:00:00'
+     )`,
+    [externalPayloadId, externalPayloadId]
+  );
+  return result[0]?.count ?? 0;
+};
+
 export const getFaceitLinksForSeason = async (
   seasonId: number,
   connection?: PoolConnection

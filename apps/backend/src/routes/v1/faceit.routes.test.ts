@@ -37,7 +37,10 @@ import {
   updateMatchStatusByExternalMatchroomId,
   updateMatchStatusByMatchId
 } from "../../models/match.models";
-import { saveWebhookData } from "../../models/faceit.models";
+import {
+  getMatchStatusFinishedCountAfterLastConfiguring,
+  saveWebhookData
+} from "../../models/faceit.models";
 import { addMatchTeamMapVetoes } from "../../models/match-team-map-veto.models";
 import { getMatchGamesByExternalMatchRoomId } from "../../models/match-game.models";
 import { validatePlayersInTeams } from "../../models/season-team-players.models";
@@ -68,6 +71,7 @@ import {
   createMockOrganizer,
   createMockSeasonLeagueExternalId
 } from "@eggosystem/types";
+import { isForfeitPayload } from "../../utils/faceit-match-status-finished-detection";
 
 const mockGetOrganizerByFaceitIdAndGameAppId =
   getOrganizerByFaceitIdAndGameAppId as jest.MockedFunction<
@@ -119,6 +123,10 @@ const mockUpdateMatchStartTimestamp =
 const mockGetMatchGamesByExternalMatchRoomId =
   getMatchGamesByExternalMatchRoomId as jest.MockedFunction<
     typeof getMatchGamesByExternalMatchRoomId
+  >;
+const mockGetMatchStatusFinishedCountAfterLastConfiguring =
+  getMatchStatusFinishedCountAfterLastConfiguring as jest.MockedFunction<
+    typeof getMatchStatusFinishedCountAfterLastConfiguring
   >;
 const mockSaveWebhookData = saveWebhookData as jest.MockedFunction<
   typeof saveWebhookData
@@ -2088,6 +2096,52 @@ describe("FaceIT Routes - Webhook", () => {
         );
         expect(mockUpdateMatchStartTimestamp).not.toHaveBeenCalled();
       });
+
+      it("when 2xBO1 has one forfeit and one played (e.g. room 1-3e047cf2), match_demo_ready for map 2 sets second match to FINISHED", async () => {
+        const externalMatchRoomId = "1-3e047cf2-6b8f-479b-8a47-7ca122a2116d";
+        mockGetHubMatchesByExternalMatchRoomId.mockResolvedValue([
+          { id: 12141 },
+          { id: 12142 }
+        ]);
+        const matchDetailsForRoom = {
+          ...validMatchDetailsMatchDemoReady,
+          match_id: externalMatchRoomId
+        };
+        const demoReadyForMap2 = {
+          ...validWebhookMatchDemoReady,
+          payload: {
+            ...validWebhookMatchDemoReady.payload,
+            id: externalMatchRoomId,
+            demo_url: `https://demos-europe-central.backblaze.faceit-cdn.net/cs2/${externalMatchRoomId}-2-1.dem.zst`
+          }
+        };
+        const getDetailsSpy = jest
+          .spyOn(faceitServices, "getFaceITMatchDetails")
+          .mockResolvedValue(matchDetailsForRoom as never);
+
+        try {
+          const response = await request(app)
+            .post("/api/v1/faceit/webhook")
+            .set("X-API-KEY", TEST_WEBHOOK_API_KEY)
+            .send(demoReadyForMap2);
+
+          expect(response.status).toBe(200);
+          expect(response.text).toBe("Webhook received");
+
+          expect(mockUpdateMatchEndTimestamp).toHaveBeenCalledWith(
+            12142,
+            demoReadyForMap2.payload.updated_at,
+            expect.any(Object)
+          );
+          expect(mockUpdateMatchStatusByMatchId).toHaveBeenCalledWith(
+            12142,
+            "FINISHED",
+            expect.any(Object)
+          );
+        } finally {
+          getDetailsSpy.mockRestore();
+        }
+      });
     });
 
     describe("Error Cases", () => {
@@ -2149,6 +2203,9 @@ describe("FaceIT Routes - Webhook", () => {
         mockUpdateMatchFinished.mockResolvedValue(undefined);
         mockGetMatchesByExternalId.mockResolvedValue([{ id: 1 } as Match]);
         mockGetMatchesStatusByExternalMatchroomId.mockResolvedValue([]);
+        mockGetMatchStatusFinishedCountAfterLastConfiguring.mockResolvedValue(
+          0
+        );
         mockGetFaceITMatchDetails = jest
           .spyOn(faceitServices, "getFaceITMatchDetails")
           .mockResolvedValue({} as never);
@@ -2242,6 +2299,9 @@ describe("FaceIT Routes - Webhook", () => {
           { id: 101 } as Match,
           { id: 102 } as Match
         ]);
+        mockGetMatchStatusFinishedCountAfterLastConfiguring.mockResolvedValue(
+          0
+        );
 
         const response = await request(app)
           .post("/api/v1/faceit/webhook")
@@ -2260,6 +2320,309 @@ describe("FaceIT Routes - Webhook", () => {
         expect(mockUpdateMatchStatus).toHaveBeenCalledWith(
           "1-dba8981d-5647-466a-be32-12a06fb8fc31",
           "FINISHED"
+        );
+      });
+    });
+
+    describe("2xBO1 mixed forfeit/finished – detection and expected payloads", () => {
+      const externalMatchRoomId = "1-mixed-forfeit-finished-room";
+      const entityId = "ec39d65c-4069-4c0c-b2e1-5f957e7787f1";
+
+      /** Expected FACEIT webhook payload for a forfeit/abort (started_at = epoch). */
+      const expectedFaceitWebhookPayloadForfeit = {
+        ...validWebhookPayloadMatchStatusFinishedAFKAbort,
+        payload: {
+          ...validWebhookPayloadMatchStatusFinishedAFKAbort.payload,
+          id: externalMatchRoomId,
+          started_at: "1970-01-01T00:00:00Z" as const,
+          finished_at: "2025-09-17T18:10:00Z",
+          entity: {
+            id: entityId,
+            name: "Div4 S5 Lohko A",
+            type: "championship" as const
+          }
+        }
+      };
+
+      /** Expected FACEIT webhook payload for a played game (real started_at). */
+      const expectedFaceitWebhookPayloadPlayed = {
+        ...validWebhookPayloadMatchStatusFinished,
+        payload: {
+          ...validWebhookPayloadMatchStatusFinished.payload,
+          id: externalMatchRoomId,
+          started_at: "2025-09-17T17:48:48Z",
+          finished_at: "2025-09-17T18:37:35Z",
+          entity: {
+            id: entityId,
+            name: "Div4 S5 Lohko A",
+            type: "championship" as const
+          }
+        }
+      };
+
+      /** Mock FACEIT match details API response (ChampionshipDetailsFinished shape). */
+      const expectedChampionshipDetailsFinished = {
+        match_id: externalMatchRoomId,
+        competition_type: "championship" as const,
+        status: "FINISHED" as const,
+        best_of: 2,
+        results: {
+          winner: "faction1" as const,
+          score: { faction1: 1, faction2: 1 }
+        },
+        detailed_results: [
+          {
+            asc_score: false,
+            winner: "faction1" as const,
+            factions: {
+              faction1: { score: 1 },
+              faction2: { score: 0 }
+            }
+          },
+          {
+            asc_score: false,
+            winner: "faction2" as const,
+            factions: {
+              faction1: { score: 0 },
+              faction2: { score: 1 }
+            }
+          }
+        ],
+        round: 1,
+        group: 1,
+        teams: validMatchDetailsMatchCreated?.teams ?? {},
+        voting: {
+          map: { pick: [], entities: [] },
+          voted_entity_types: [],
+          location: { pick: [], entities: [] }
+        },
+        calculate_elo: true,
+        configured_at: 1,
+        finished_at: 1,
+        started_at: 1,
+        demo_url: [],
+        chat_room_id: "",
+        faceit_url: ""
+      };
+
+      let mockGetFaceITMatchDetails: jest.SpyInstance;
+
+      beforeEach(() => {
+        jest.clearAllMocks();
+        mockGetOrganizerByFaceitIdAndGameAppId.mockResolvedValue(mockOrganizer);
+        mockSaveWebhookData.mockResolvedValue({ insertId: 1 });
+        mockUpdateMatchStatus.mockResolvedValue(undefined);
+        mockUpdateMatchEndTime.mockResolvedValue(undefined);
+        mockUpdateMatchEndTimestamp.mockResolvedValue(undefined);
+        mockUpdateMatchStatusByMatchId.mockResolvedValue(undefined);
+        mockUpdateMatchStartAndEndTimestamp.mockResolvedValue(undefined);
+        mockGetMatchesByExternalId.mockResolvedValue([
+          { id: 201, status: "ONGOING" } as Match,
+          { id: 202, status: "ONGOING" } as Match
+        ]);
+        mockGetMatchesStatusByExternalMatchroomId.mockResolvedValue([
+          "ONGOING",
+          "ONGOING"
+        ]);
+        mockGetSeasonLeagueExternalIdByExternalIdWithSeasonSettings.mockResolvedValue(
+          {
+            ...createMockSeasonLeagueExternalId({
+              external_id: entityId,
+              external_league_name: "Test League",
+              type: "roundRobin"
+            }),
+            is_round_robin_bo2_as_2xbo1: true
+          }
+        );
+        mockGetFaceITMatchDetails = jest
+          .spyOn(faceitServices, "getFaceITMatchDetails")
+          .mockResolvedValue(expectedChampionshipDetailsFinished as never);
+      });
+
+      afterEach(() => {
+        mockGetFaceITMatchDetails.mockRestore();
+      });
+
+      it("detection: forfeit payload has started_at epoch, played payload has real started_at", () => {
+        expect(
+          isForfeitPayload(expectedFaceitWebhookPayloadForfeit.payload)
+        ).toBe(true);
+        expect(
+          isForfeitPayload(expectedFaceitWebhookPayloadPlayed.payload)
+        ).toBe(false);
+      });
+
+      it("calls details API with match id and receives ChampionshipDetailsFinished shape", async () => {
+        mockGetMatchStatusFinishedCountAfterLastConfiguring.mockResolvedValue(
+          0
+        );
+
+        await request(app)
+          .post("/api/v1/faceit/webhook")
+          .set("X-API-KEY", TEST_WEBHOOK_API_KEY)
+          .send(expectedFaceitWebhookPayloadPlayed);
+
+        expect(mockGetFaceITMatchDetails).toHaveBeenCalledWith(
+          externalMatchRoomId
+        );
+        expect(mockGetFaceITMatchDetails).toHaveBeenCalledTimes(1);
+      });
+
+      it("when 2xBO1 and first event is forfeit (gameIndex 0), updates only first match to FORFEIT", async () => {
+        mockGetMatchStatusFinishedCountAfterLastConfiguring.mockResolvedValue(
+          0
+        );
+
+        const response = await request(app)
+          .post("/api/v1/faceit/webhook")
+          .set("X-API-KEY", TEST_WEBHOOK_API_KEY)
+          .send(expectedFaceitWebhookPayloadForfeit);
+
+        expect(response.status).toBe(200);
+        expect(mockUpdateMatchEndTimestamp).toHaveBeenCalledWith(
+          201,
+          "2025-09-17T18:10:00Z"
+        );
+        expect(mockUpdateMatchStatusByMatchId).toHaveBeenCalledWith(
+          201,
+          "FORFEIT"
+        );
+        expect(mockUpdateMatchStatusByMatchId).toHaveBeenCalledTimes(1);
+        expect(mockUpdateMatchStatus).not.toHaveBeenCalled();
+        expect(mockUpdateMatchEndTime).not.toHaveBeenCalled();
+      });
+
+      it("when 2xBO1 and second event is played (gameIndex 1), updates only second match to FINISHED", async () => {
+        mockGetMatchStatusFinishedCountAfterLastConfiguring.mockResolvedValue(
+          1
+        );
+
+        const response = await request(app)
+          .post("/api/v1/faceit/webhook")
+          .set("X-API-KEY", TEST_WEBHOOK_API_KEY)
+          .send(expectedFaceitWebhookPayloadPlayed);
+
+        expect(response.status).toBe(200);
+        expect(mockUpdateMatchStartAndEndTimestamp).toHaveBeenCalledWith(
+          202,
+          "2025-09-17T17:48:48Z",
+          "2025-09-17T18:37:35Z"
+        );
+        expect(mockUpdateMatchStatusByMatchId).toHaveBeenCalledWith(
+          202,
+          "FINISHED"
+        );
+        expect(mockUpdateMatchStatusByMatchId).toHaveBeenCalledTimes(1);
+        expect(mockUpdateMatchStatus).not.toHaveBeenCalled();
+      });
+
+      it("when 2xBO1 forfeit and target match already FINISHED, skips status update", async () => {
+        mockGetMatchStatusFinishedCountAfterLastConfiguring.mockResolvedValue(
+          0
+        );
+        mockGetMatchesByExternalId.mockResolvedValue([
+          { id: 201, status: "FINISHED" } as Match,
+          { id: 202, status: "ONGOING" } as Match
+        ]);
+
+        const response = await request(app)
+          .post("/api/v1/faceit/webhook")
+          .set("X-API-KEY", TEST_WEBHOOK_API_KEY)
+          .send(expectedFaceitWebhookPayloadForfeit);
+
+        expect(response.status).toBe(200);
+        expect(mockUpdateMatchStatusByMatchId).not.toHaveBeenCalled();
+        expect(mockUpdateMatchEndTimestamp).not.toHaveBeenCalled();
+      });
+
+      it("restart after forfeit: first played event after configuring has count 0, sets both FINISHED", async () => {
+        mockGetMatchStatusFinishedCountAfterLastConfiguring.mockResolvedValue(
+          0
+        );
+
+        const response = await request(app)
+          .post("/api/v1/faceit/webhook")
+          .set("X-API-KEY", TEST_WEBHOOK_API_KEY)
+          .send(expectedFaceitWebhookPayloadPlayed);
+
+        expect(response.status).toBe(200);
+        expect(mockUpdateMatchStatus).toHaveBeenCalledWith(
+          externalMatchRoomId,
+          "FINISHED"
+        );
+        expect(mockUpdateMatchStartAndEndTimestamp).toHaveBeenCalledWith(
+          202,
+          "2025-09-17T17:48:48Z",
+          "2025-09-17T18:37:35Z"
+        );
+      });
+
+      it("out-of-order: played then forfeit yields match 0 FINISHED, match 1 FORFEIT (forfeit only updates match 1)", async () => {
+        mockGetMatchStatusFinishedCountAfterLastConfiguring.mockResolvedValue(
+          1
+        );
+
+        const response = await request(app)
+          .post("/api/v1/faceit/webhook")
+          .set("X-API-KEY", TEST_WEBHOOK_API_KEY)
+          .send(expectedFaceitWebhookPayloadForfeit);
+
+        expect(response.status).toBe(200);
+        expect(mockUpdateMatchStatusByMatchId).toHaveBeenCalledWith(
+          202,
+          "FORFEIT"
+        );
+        expect(mockUpdateMatchStatus).not.toHaveBeenCalled();
+      });
+
+      it("gameIndex >= 2 (duplicate/extra event): only updates second match, does not set both FINISHED", async () => {
+        mockGetMatchStatusFinishedCountAfterLastConfiguring.mockResolvedValue(
+          2
+        );
+
+        const response = await request(app)
+          .post("/api/v1/faceit/webhook")
+          .set("X-API-KEY", TEST_WEBHOOK_API_KEY)
+          .send(expectedFaceitWebhookPayloadPlayed);
+
+        expect(response.status).toBe(200);
+        expect(mockUpdateMatchStartAndEndTimestamp).toHaveBeenCalledWith(
+          202,
+          "2025-09-17T17:48:48Z",
+          "2025-09-17T18:37:35Z"
+        );
+        expect(mockUpdateMatchStatusByMatchId).toHaveBeenCalledWith(
+          202,
+          "FINISHED"
+        );
+        expect(mockUpdateMatchStatus).not.toHaveBeenCalled();
+      });
+
+      it("two forfeits: first event sets match 0 FORFEIT, second event sets match 1 FORFEIT", async () => {
+        mockGetMatchStatusFinishedCountAfterLastConfiguring
+          .mockResolvedValueOnce(0)
+          .mockResolvedValueOnce(1);
+
+        const res1 = await request(app)
+          .post("/api/v1/faceit/webhook")
+          .set("X-API-KEY", TEST_WEBHOOK_API_KEY)
+          .send(expectedFaceitWebhookPayloadForfeit);
+        expect(res1.status).toBe(200);
+        expect(mockUpdateMatchStatusByMatchId).toHaveBeenNthCalledWith(
+          1,
+          201,
+          "FORFEIT"
+        );
+
+        const res2 = await request(app)
+          .post("/api/v1/faceit/webhook")
+          .set("X-API-KEY", TEST_WEBHOOK_API_KEY)
+          .send(expectedFaceitWebhookPayloadForfeit);
+        expect(res2.status).toBe(200);
+        expect(mockUpdateMatchStatusByMatchId).toHaveBeenNthCalledWith(
+          2,
+          202,
+          "FORFEIT"
         );
       });
     });

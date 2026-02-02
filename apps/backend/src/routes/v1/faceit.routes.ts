@@ -12,9 +12,11 @@ import {
   checkPermissions
 } from "../../middlewares/auth.middleware";
 import {
+  getMatchStatusFinishedCountAfterLastConfiguring,
   saveWebhookData,
   updateErrorForWebhook
 } from "../../models/faceit.models";
+import { isForfeitPayload } from "../../utils/faceit-match-status-finished-detection";
 import { logger } from "../../utils/app-logger";
 import {
   type MatchStatusReadyWebhook,
@@ -455,28 +457,52 @@ router.post(
           const startTime = webhookData.payload.started_at;
 
           if (
-            // Match was aborted due to AFK or forfeit.
-            startTime === "1970-01-01T00:00:00Z" &&
+            isForfeitPayload(webhookData.payload) &&
             validateMatchStatusFinishedAfterAbortWebhook(webhookData)
           ) {
             logger.info(
               `Match ${externalMatchRoomId} was aborted due to AFK? ${startTime}`
             );
 
-            // If any of the matches in the external match room is finished at any point, we do not want to update it to forfeit.
-            const existingMatchStatus =
-              await getMatchesStatusByExternalMatchroomId(externalMatchRoomId);
-            if (existingMatchStatus.includes("FINISHED")) {
-              logger.info(
-                `Match ${externalMatchRoomId} is already finished, skipping`
-              );
-              res.status(200).send("Webhook received");
-              return;
-            }
-
             const endTime = webhookData.payload.finished_at;
-            // We do not want to change the match status, as this means it was aborted due to AFK.
-            await updateMatchEndTime(webhookData.payload.id, endTime);
+            const seasonLeague =
+              await getSeasonLeagueExternalIdByExternalIdWithSeasonSettings(
+                webhookData.payload.entity.id
+              );
+            const matchesByRoom =
+              await getMatchesByExternalId(externalMatchRoomId);
+
+            if (
+              seasonLeague?.is_round_robin_bo2_as_2xbo1 &&
+              matchesByRoom.length === 2
+            ) {
+              const gameIndex =
+                await getMatchStatusFinishedCountAfterLastConfiguring(
+                  externalMatchRoomId
+                );
+              const targetMatch = matchesByRoom[gameIndex];
+              if (targetMatch && targetMatch.status !== "FINISHED") {
+                await updateMatchEndTimestamp(targetMatch.id, endTime);
+                await updateMatchStatusByMatchId(targetMatch.id, "FORFEIT");
+              }
+            } else {
+              const existingMatchStatus =
+                await getMatchesStatusByExternalMatchroomId(
+                  externalMatchRoomId
+                );
+              if (existingMatchStatus.includes("FINISHED")) {
+                logger.info(
+                  `Match ${externalMatchRoomId} is already finished, skipping`
+                );
+                res.status(200).send("Webhook received");
+                return;
+              }
+              await updateMatchEndTime(webhookData.payload.id, endTime);
+              await updateMatchStatusByExternalMatchroomId(
+                externalMatchRoomId,
+                "FORFEIT"
+              );
+            }
             await saveWebhookData(
               externalMatchRoomId,
               webhookData.retry_count,
@@ -484,10 +510,6 @@ router.post(
               webhookData,
               matchDetails,
               manualReprocess
-            );
-            await updateMatchStatusByExternalMatchroomId(
-              externalMatchRoomId,
-              "FORFEIT"
             );
             res.status(200).send("Webhook received");
             return;
@@ -506,18 +528,47 @@ router.post(
             seasonLeague?.is_round_robin_bo2_as_2xbo1 &&
             matchesByRoom.length === 2
           ) {
-            // 2xBO1: only update second game end time; first game already set at first match_demo_ready
-            // For some reason the start time will be the second games start time in 1xBO2 in faceit, no idea why.
-            await updateMatchStartAndEndTimestamp(
-              matchesByRoom[1].id,
-              startTime,
-              endTime
-            );
+            const gameIndex =
+              await getMatchStatusFinishedCountAfterLastConfiguring(
+                externalMatchRoomId
+              );
+            if (gameIndex === 1) {
+              // Second game finished; first was forfeited — update only second match.
+              await updateMatchStartAndEndTimestamp(
+                matchesByRoom[1].id,
+                startTime,
+                endTime
+              );
+              await updateMatchStatusByMatchId(matchesByRoom[1].id, "FINISHED");
+            } else if (gameIndex === 0) {
+              // BO2 fully finished (both games played), or first event after restart.
+              await updateMatchStartAndEndTimestamp(
+                matchesByRoom[1].id,
+                startTime,
+                endTime
+              );
+              await updateMatchStatusByExternalMatchroomId(
+                externalMatchRoomId,
+                "FINISHED"
+              );
+            } else {
+              // gameIndex >= 2: duplicate/extra events; only update second match, do not overwrite match 0.
+              await updateMatchStartAndEndTimestamp(
+                matchesByRoom[1].id,
+                startTime,
+                endTime
+              );
+              await updateMatchStatusByMatchId(matchesByRoom[1].id, "FINISHED");
+            }
           } else {
             await updateMatchFinished(
               webhookData.payload.id,
               startTime,
               endTime
+            );
+            await updateMatchStatusByExternalMatchroomId(
+              externalMatchRoomId,
+              "FINISHED"
             );
           }
           await saveWebhookData(
@@ -527,10 +578,6 @@ router.post(
             webhookData,
             matchDetails,
             manualReprocess
-          );
-          await updateMatchStatusByExternalMatchroomId(
-            externalMatchRoomId,
-            "FINISHED"
           );
           res.status(200).send("Webhook received");
           return;
