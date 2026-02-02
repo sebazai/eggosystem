@@ -14,6 +14,7 @@ import demoRouter from "./demo.routes";
 import seasonLeagueMapperRouter from "./season-league-mapper.routes";
 import faceitValidationRouter from "./faceit-validation.routes";
 import emailVerificationRouter from "./email-verification.routes";
+import casterApplicationsRouter from "./caster-applications.routes";
 
 const router = Router();
 
@@ -107,6 +108,13 @@ router.use(
     fallbackRoles: ["admin", "helpdesk"]
   }),
   emailVerificationRouter
+);
+router.use(
+  "/caster-applications",
+  checkPermissions({
+    fallbackRoles: ["admin", "helpdesk"]
+  }),
+  casterApplicationsRouter
 );
 router.get(
   "/",

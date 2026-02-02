@@ -607,11 +607,16 @@ export async function seed(knex: Knex): Promise<void> {
     );
   }
 
-  // Add admin role for heppajpg (account_id 15004) for e2e tests
-  // This is needed because the sortter page requires admin role
+  // Add admin and caster roles for heppajpg (account_id 15004) for e2e tests
+  // Admin is needed for dashboard/sortter; caster for profile Caster Settings visibility
   await knex.raw(`
     INSERT INTO AccountRoles (account_id, role_id, game_id) 
     SELECT 15004, id, 1 FROM Roles WHERE role_name = 'admin'
+    ON DUPLICATE KEY UPDATE account_id = account_id
+  `);
+  await knex.raw(`
+    INSERT INTO AccountRoles (account_id, role_id, game_id) 
+    SELECT 15004, id, 1 FROM Roles WHERE role_name = 'caster'
     ON DUPLICATE KEY UPDATE account_id = account_id
   `);
 }

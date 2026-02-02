@@ -4,8 +4,7 @@ import {
   deleteStreamReservation,
   getStreamReservationsByMatch,
   updateStreamReservation,
-  getReservationByHash,
-  deleteReservationByHash
+  removeReservationByHashWithSeasonId
 } from "../models/match-streams.models";
 import type {
   RequestWithParams,
@@ -164,20 +163,15 @@ export const removeReservationByHashController = async (
     throw new BadRequestError("Reservation hash is required");
   }
 
-  // Check if reservation exists
-  const reservation = await getReservationByHash(hash);
-  if (!reservation) {
+  const { deleted, season_id } =
+    await removeReservationByHashWithSeasonId(hash);
+
+  if (!deleted) {
     throw new NotFoundError("Reservation not found or already removed");
   }
 
-  // Delete the reservation
-  const deleted = await deleteReservationByHash(hash);
-
-  if (!deleted) {
-    throw new NotFoundError("Failed to remove reservation");
-  }
-
   res.json({
-    message: "Stream reservation removed successfully"
+    message: "Stream reservation removed successfully",
+    season_id
   });
 };

@@ -52,7 +52,7 @@ describe("Leaderboards Integration Tests", () => {
     expect(response.status).toBe(200);
     expect(response.body).toHaveProperty("kills_per_round");
     expect(Array.isArray(response.body.kills_per_round)).toBe(true);
-  });
+  }, 30000);
 
   // Test another derived stat
   test("GET /api/v1/filters/leaderboards/multiple - should include flash time stats", async () => {

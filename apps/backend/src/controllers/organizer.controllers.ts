@@ -4,6 +4,7 @@ import {
   getActiveSignupSeasonForAppId,
   getActiveSignupOrActiveSeasonForAppId
 } from "../models/season.models";
+import { getOrganizerByIdOrFail } from "../models/organizer.models";
 import { type RequestWithParams } from "@eggosystem/types";
 import _ from "lodash";
 import { expireInOneDay, redisClient } from "../utils/redisClient";
@@ -93,4 +94,25 @@ export const getActiveSignupOrActiveSeasonForAppController = async (
   const ActiveSignupOrActiveSeason =
     await getActiveSignupOrActiveSeasonForAppId(organizer_id, app_id);
   res.json(ActiveSignupOrActiveSeason);
+};
+
+/**
+ * Public GET organizer by id (name + whether it accepts caster applications).
+ * Used for caster-application page metadata and validation.
+ */
+export const getOrganizerByIdPublic = async (
+  req: RequestWithParams<{ organizer_id: string }>,
+  res: Response,
+  next: NextFunction
+) => {
+  const organizer_id = Number(req.params.organizer_id);
+  if (isNaN(organizer_id) || organizer_id <= 0) {
+    return next(new BadRequestError("Invalid organizer ID"));
+  }
+  const organizer = await getOrganizerByIdOrFail(organizer_id);
+  res.json({
+    id: organizer.id,
+    name: organizer.name,
+    accepts_caster_applications: Boolean(organizer.discord_guild_id)
+  });
 };
