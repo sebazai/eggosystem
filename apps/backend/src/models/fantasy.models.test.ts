@@ -137,17 +137,19 @@ describe("Fantasy Models", () => {
       // Mock all runQuery calls in order:
       // 1. Get team
       mockRunQuery.mockResolvedValueOnce(mockTeamData as never);
-      // 2. getRemainingRoleSwaps - returns count
+      // 2. Calculate total points (NEW - added for backward compatibility fix)
+      mockRunQuery.mockResolvedValueOnce([{ total_points: 100 }] as never);
+      // 3. getRemainingRoleSwaps - returns count
       mockRunQuery.mockResolvedValueOnce([{ count: 0 }] as never);
-      // 3. getRemainingSubstitutions - returns count
+      // 4. getRemainingSubstitutions - returns count
       mockRunQuery.mockResolvedValueOnce([{ count: 0 }] as never);
-      // 4. Get players
+      // 5. Get players
       mockRunQuery.mockResolvedValueOnce(mockPlayers as never);
-      // 5. Get role swaps history
+      // 6. Get role swaps history
       mockRunQuery.mockResolvedValueOnce([] as never);
-      // 6. Get substitutions history
+      // 7. Get substitutions history
       mockRunQuery.mockResolvedValueOnce([] as never);
-      // 7. Get player values (for each player) - this is a loop, so mock for each player
+      // 8. Get player values (for each player) - this is a loop, so mock for each player
       mockRunQuery.mockResolvedValueOnce([] as never);
 
       const result = await getFantasyTeamByUser("12345", 1);
