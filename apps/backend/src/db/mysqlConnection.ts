@@ -36,12 +36,13 @@ const dbPool = createPool({
     // IMPORTANT: We use field.string() to get the raw string value directly from
     // the MySQL buffer BEFORE any Number conversion. This preserves full precision.
     // Do NOT use next() as it would apply bigNumberStrings:false conversion first.
+    //
+    // Note: We check field.name which works for both direct columns and aliases.
+    // For aliased columns (e.g., SELECT steam_id as player_id), field.name contains
+    // the alias, so queries should avoid aliasing these critical ID columns.
     if (
       field.type === "LONGLONG" &&
-      (field.name === "steam_id" ||
-        field.name === "provider_id" ||
-        field.orgName === "steam_id" ||
-        field.orgName === "provider_id")
+      (field.name === "steam_id" || field.name === "provider_id")
     ) {
       return field.string(); // Returns null for NULL values, string otherwise
     }
