@@ -562,6 +562,31 @@ export const getFantasyTeamByUser = async (
     return null;
   }
 
+  // Calculate correct total points from ALL FantasyPointsLog entries (including removed players)
+  // Only count points where the match was played while the player was on the team
+  // (match.start_timestamp between added_at and removed_at)
+  const [totalPointsResult] = await runQuery<Array<{ total_points: number }>>(
+    `SELECT COALESCE(SUM(
+      CASE 
+        WHEN m.start_timestamp >= ftp.added_at 
+         AND (ftp.removed_at IS NULL OR m.start_timestamp <= ftp.removed_at)
+        THEN fpl.points_earned 
+        ELSE 0 
+      END
+    ), 0) as total_points
+     FROM FantasyPointsLog fpl
+     INNER JOIN FantasyTeamPlayers ftp ON ftp.id = fpl.fantasy_team_player_id
+     INNER JOIN MatchGames mg ON mg.id = fpl.match_game_id
+     INNER JOIN Matches m ON m.id = mg.match_id
+     WHERE ftp.fantasy_team_id = ?`,
+    [team.id],
+    connection
+  );
+
+  // Override team.total_points with the correctly calculated value
+  // This handles backward compatibility for teams that had players removed
+  team.total_points = totalPointsResult?.total_points || 0;
+
   // Calculate current week number and remaining swaps/substitutions
   const weekNumber = await getCurrentWeekNumberForSeason(seasonId, connection);
   const remainingRoleSwaps = await getRemainingRoleSwaps(
@@ -628,10 +653,62 @@ export const getFantasyTeamByUser = async (
        ftp.player_value,
        lv.value as current_value,
        lv.tier as current_tier,
-       ftp.points_earned,
-       ftp.individual_points,
-       ftp.team_points,
-       ftp.role_points,
+       COALESCE((
+         SELECT SUM(
+           CASE 
+             WHEN m_log.start_timestamp >= ftp.added_at 
+              AND (ftp.removed_at IS NULL OR m_log.start_timestamp <= ftp.removed_at)
+             THEN fpl.points_earned 
+             ELSE 0 
+           END
+         )
+         FROM FantasyPointsLog fpl
+         INNER JOIN MatchGames mg_log ON mg_log.id = fpl.match_game_id
+         INNER JOIN Matches m_log ON m_log.id = mg_log.match_id
+         WHERE fpl.fantasy_team_player_id = ftp.id
+       ), 0) as points_earned,
+       COALESCE((
+         SELECT SUM(
+           CASE 
+             WHEN m_log.start_timestamp >= ftp.added_at 
+              AND (ftp.removed_at IS NULL OR m_log.start_timestamp <= ftp.removed_at)
+             THEN fpl.individual_points 
+             ELSE 0 
+           END
+         )
+         FROM FantasyPointsLog fpl
+         INNER JOIN MatchGames mg_log ON mg_log.id = fpl.match_game_id
+         INNER JOIN Matches m_log ON m_log.id = mg_log.match_id
+         WHERE fpl.fantasy_team_player_id = ftp.id
+       ), 0) as individual_points,
+       COALESCE((
+         SELECT SUM(
+           CASE 
+             WHEN m_log.start_timestamp >= ftp.added_at 
+              AND (ftp.removed_at IS NULL OR m_log.start_timestamp <= ftp.removed_at)
+             THEN fpl.team_points 
+             ELSE 0 
+           END
+         )
+         FROM FantasyPointsLog fpl
+         INNER JOIN MatchGames mg_log ON mg_log.id = fpl.match_game_id
+         INNER JOIN Matches m_log ON m_log.id = mg_log.match_id
+         WHERE fpl.fantasy_team_player_id = ftp.id
+       ), 0) as team_points,
+       COALESCE((
+         SELECT SUM(
+           CASE 
+             WHEN m_log.start_timestamp >= ftp.added_at 
+              AND (ftp.removed_at IS NULL OR m_log.start_timestamp <= ftp.removed_at)
+             THEN fpl.role_points 
+             ELSE 0 
+           END
+         )
+         FROM FantasyPointsLog fpl
+         INNER JOIN MatchGames mg_log ON mg_log.id = fpl.match_game_id
+         INNER JOIN Matches m_log ON m_log.id = mg_log.match_id
+         WHERE fpl.fantasy_team_player_id = ftp.id
+       ), 0) as role_points,
        ftp.is_active,
        COALESCE((
          SELECT COUNT(*) > 0
@@ -687,8 +764,7 @@ export const getFantasyTeamByUser = async (
      ) lv ON lv.steam_id = ftp.steam_id
      WHERE ftp.fantasy_team_id = ? AND ftp.is_active = TRUE
      GROUP BY ftp.id, ftp.steam_id, sp.nickname, t.name, t.team_logo, ftp.role,
-              ftp.player_value, lv.value, lv.tier, ftp.points_earned, ftp.individual_points,
-              ftp.team_points, ftp.role_points, ftp.is_active
+              ftp.player_value, lv.value, lv.tier, ftp.is_active, ftp.added_at, ftp.removed_at
      ORDER BY ftp.added_at ASC`,
     [
       seasonId, // for week calculation
@@ -1152,19 +1228,39 @@ export const getFantasyOverallLeaderboard = async (
   leaderboard: Array<LeaderboardEntry & { league_name: string }>;
   currentUserRank: number | null;
 }> => {
+  // Calculate correct total points from ALL FantasyPointsLog entries (including removed players)
+  // Only count points where the match was played while the player was on the team
   const query = `
-    WITH ranked_teams AS (
+    WITH team_points AS (
+      SELECT 
+        ftp.fantasy_team_id,
+        COALESCE(SUM(
+          CASE 
+            WHEN m.start_timestamp >= ftp.added_at 
+             AND (ftp.removed_at IS NULL OR m.start_timestamp <= ftp.removed_at)
+            THEN fpl.points_earned 
+            ELSE 0 
+          END
+        ), 0) as total_points
+      FROM FantasyTeamPlayers ftp
+      LEFT JOIN FantasyPointsLog fpl ON fpl.fantasy_team_player_id = ftp.id
+      LEFT JOIN MatchGames mg ON mg.id = fpl.match_game_id
+      LEFT JOIN Matches m ON m.id = mg.match_id
+      GROUP BY ftp.fantasy_team_id
+    ),
+    ranked_teams AS (
       SELECT 
         ft.id as fantasy_team_id,
         ft.steam_id,
         ft.team_name,
         sp.nickname as owner_name,
-        ft.total_points,
+        COALESCE(tp.total_points, 0) as total_points,
         l.name as league_name,
-        RANK() OVER (ORDER BY ft.total_points DESC) as rank
+        RANK() OVER (ORDER BY COALESCE(tp.total_points, 0) DESC) as rank
       FROM FantasyTeams ft
       INNER JOIN SteamPlayers sp ON sp.steam_id = ft.steam_id
       INNER JOIN Leagues l ON l.id = ft.league_id
+      LEFT JOIN team_points tp ON tp.fantasy_team_id = ft.id
       WHERE ft.season_id = ?
     )
     SELECT * FROM ranked_teams
@@ -1203,11 +1299,29 @@ export const getFantasyOverallLeaderboard = async (
     const userInTop50 = leaderboard.find((entry) => entry.is_current_user);
     if (!userInTop50) {
       const [userTeam] = await runQuery<Array<{ rank: number }>>(
-        `WITH ranked_teams AS (
+        `WITH team_points AS (
+          SELECT 
+            ftp.fantasy_team_id,
+            COALESCE(SUM(
+              CASE 
+                WHEN m.start_timestamp >= ftp.added_at 
+                 AND (ftp.removed_at IS NULL OR m.start_timestamp <= ftp.removed_at)
+                THEN fpl.points_earned 
+                ELSE 0 
+              END
+            ), 0) as total_points
+          FROM FantasyTeamPlayers ftp
+          LEFT JOIN FantasyPointsLog fpl ON fpl.fantasy_team_player_id = ftp.id
+          LEFT JOIN MatchGames mg ON mg.id = fpl.match_game_id
+          LEFT JOIN Matches m ON m.id = mg.match_id
+          GROUP BY ftp.fantasy_team_id
+        ),
+        ranked_teams AS (
           SELECT 
             ft.steam_id,
-            RANK() OVER (ORDER BY ft.total_points DESC) as rank
+            RANK() OVER (ORDER BY COALESCE(tp.total_points, 0) DESC) as rank
           FROM FantasyTeams ft
+          LEFT JOIN team_points tp ON tp.fantasy_team_id = ft.id
           WHERE ft.season_id = ?
         )
         SELECT rank FROM ranked_teams
@@ -1234,17 +1348,37 @@ export const getFantasyLeaderboard = async (
   currentUserRank: number | null;
   totalTeams: number;
 }> => {
+  // Calculate correct total points from ALL FantasyPointsLog entries (including removed players)
+  // Only count points where the match was played while the player was on the team
   const query = `
-    WITH ranked_teams AS (
+    WITH team_points AS (
+      SELECT 
+        ftp.fantasy_team_id,
+        COALESCE(SUM(
+          CASE 
+            WHEN m.start_timestamp >= ftp.added_at 
+             AND (ftp.removed_at IS NULL OR m.start_timestamp <= ftp.removed_at)
+            THEN fpl.points_earned 
+            ELSE 0 
+          END
+        ), 0) as total_points
+      FROM FantasyTeamPlayers ftp
+      LEFT JOIN FantasyPointsLog fpl ON fpl.fantasy_team_player_id = ftp.id
+      LEFT JOIN MatchGames mg ON mg.id = fpl.match_game_id
+      LEFT JOIN Matches m ON m.id = mg.match_id
+      GROUP BY ftp.fantasy_team_id
+    ),
+    ranked_teams AS (
       SELECT 
         ft.id as fantasy_team_id,
         ft.steam_id,
         ft.team_name,
         sp.nickname as owner_name,
-        ft.total_points,
-        RANK() OVER (ORDER BY ft.total_points DESC) as rank
+        COALESCE(tp.total_points, 0) as total_points,
+        RANK() OVER (ORDER BY COALESCE(tp.total_points, 0) DESC) as rank
       FROM FantasyTeams ft
       INNER JOIN SteamPlayers sp ON sp.steam_id = ft.steam_id
+      LEFT JOIN team_points tp ON tp.fantasy_team_id = ft.id
       WHERE ft.season_id = ? AND ft.league_id = ?
     )
     SELECT * FROM ranked_teams
@@ -1282,10 +1416,28 @@ export const getFantasyLeaderboard = async (
 
     if (!userInTop50) {
       const [userTeam] = await runQuery<Array<{ rank: number }>>(
-        `SELECT 
-          RANK() OVER (ORDER BY ft.total_points DESC) as rank
-         FROM FantasyTeams ft
-         WHERE ft.season_id = ? AND ft.league_id = ? AND ft.steam_id = ?`,
+        `WITH team_points AS (
+          SELECT 
+            ftp.fantasy_team_id,
+            COALESCE(SUM(
+              CASE 
+                WHEN m.start_timestamp >= ftp.added_at 
+                 AND (ftp.removed_at IS NULL OR m.start_timestamp <= ftp.removed_at)
+                THEN fpl.points_earned 
+                ELSE 0 
+              END
+            ), 0) as total_points
+          FROM FantasyTeamPlayers ftp
+          LEFT JOIN FantasyPointsLog fpl ON fpl.fantasy_team_player_id = ftp.id
+          LEFT JOIN MatchGames mg ON mg.id = fpl.match_game_id
+          LEFT JOIN Matches m ON m.id = mg.match_id
+          GROUP BY ftp.fantasy_team_id
+        )
+        SELECT 
+          RANK() OVER (ORDER BY COALESCE(tp.total_points, 0) DESC) as rank
+        FROM FantasyTeams ft
+        LEFT JOIN team_points tp ON tp.fantasy_team_id = ft.id
+        WHERE ft.season_id = ? AND ft.league_id = ? AND ft.steam_id = ?`,
         [seasonId, leagueId, currentUserSteamId],
         connection
       );
