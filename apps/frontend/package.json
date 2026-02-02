@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "agents-md": "npx @next/codemod@canary agents-md --output AGENTS.md",
-    "postinstall": "node scripts/agents-md-if-needed.cjs",
+    "postinstall": "[ -f scripts/agents-md-if-needed.cjs ] && node scripts/agents-md-if-needed.cjs || true",
     "shadcn:add": "pnpm dlx shadcn@latest add",
     "dev": "next dev",
     "build": "next build",
