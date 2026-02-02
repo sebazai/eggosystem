@@ -592,18 +592,17 @@ push-dockerfile:migrations:
             -f apps/backend/Dockerfile.migrations.dev .
       fi
 
+# Single job: on main we run stage then latest (same Docker layer cache, second build is fast).
+# Separate jobs would duplicate work; one job with sequential builds reuses cache.
 push-dockerfile:frontend:
   <<: *common-docker-push
   stage: build-docker
   extends: [.main-frontend]
   variables:
     REGISTRY: $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem
-  parallel:
-    matrix:
-      - BUILD_TYPE: [dev, stage, latest]
   script:
     - |
-      if [ "$BUILD_TYPE" == "dev" ] && [ "$CI_COMMIT_BRANCH" == "development" ]; then
+      if [ "$CI_COMMIT_BRANCH" == "development" ]; then
         docker buildx build \
           --cache-from type=registry,ref=$REGISTRY/eggo-frontend:dev-cache \
           --cache-to type=registry,ref=$REGISTRY/eggo-frontend:dev-cache,mode=max,compression=zstd \
@@ -618,12 +617,14 @@ push-dockerfile:frontend:
           --push \
           -t $REGISTRY/eggo-frontend:dev \
           -f apps/frontend/Dockerfile.dev .
-      elif [ "$BUILD_TYPE" == "stage" ] && [ "$CI_COMMIT_BRANCH" == "main" ]; then
-        # Build a stage-specific image with stage URLs
+      elif [ "$CI_COMMIT_BRANCH" == "main" ]; then
+        # Stage image first (reuses generic cache; stage-cache stored for next run)
         docker buildx build \
           --cache-from type=registry,ref=$REGISTRY/eggo-frontend:stage \
           --cache-from type=registry,ref=$REGISTRY/eggo-frontend:stage-cache \
           --cache-from type=registry,ref=$REGISTRY/eggo-frontend:$CI_COMMIT_SHA-stage \
+          --cache-from type=registry,ref=$REGISTRY/eggo-frontend:latest \
+          --cache-from type=registry,ref=$REGISTRY/eggo-frontend:cache \
           --cache-to type=registry,ref=$REGISTRY/eggo-frontend:stage-cache,mode=max,compression=zstd \
           --build-arg NEXT_PUBLIC_VIEWER_API_URL=https://$CS2DSTAGE_PUBLIC_URL \
           --build-arg NEXT_PUBLIC_API_URL=https://$HUBSTAGE_PUBLIC_URL \
@@ -637,12 +638,12 @@ push-dockerfile:frontend:
           -t $REGISTRY/eggo-frontend:$CI_COMMIT_SHA-stage \
           -t $REGISTRY/eggo-frontend:stage \
           -f apps/frontend/Dockerfile .
-      elif [ "$BUILD_TYPE" == "latest" ] && [ "$CI_COMMIT_BRANCH" == "main" ]; then
-        # Build a production image with production URLs
+        # Production image second (reuses same layer cache; only env differs)
         docker buildx build \
           --cache-from type=registry,ref=$REGISTRY/eggo-frontend:latest \
           --cache-from type=registry,ref=$REGISTRY/eggo-frontend:cache \
           --cache-from type=registry,ref=$REGISTRY/eggo-frontend:$CI_COMMIT_SHA \
+          --cache-from type=registry,ref=$REGISTRY/eggo-frontend:stage-cache \
           --cache-to type=registry,ref=$REGISTRY/eggo-frontend:cache,mode=max,compression=zstd \
           --build-arg NEXT_PUBLIC_VIEWER_API_URL=https://$CS2D_PUBLIC_URL \
           --build-arg NEXT_PUBLIC_API_URL=https://$HUB_PUBLIC_URL \
