@@ -119,20 +119,33 @@ export default function TittaPage() {
             <h2 className="text-lg font-medium">Result</h2>
           </CardHeader>
           <CardContent className="space-y-3">
-            {(() => {
-              const { message, emoji } = getCheerMessage(result.workingDays);
-              return (
-                <div
-                  className="rounded-lg border border-primary/20 bg-primary/5 px-4 py-3 text-sm"
-                  role="status"
-                >
-                  <span className="mr-2 text-xl" aria-hidden>
-                    {emoji}
-                  </span>
-                  <span className="font-medium text-foreground">{message}</span>
-                </div>
-              );
-            })()}
+            {endDate === DEFAULT_END_DATE ? (
+              (() => {
+                const { message, emoji } = getCheerMessage(result.workingDays);
+                return (
+                  <div
+                    className="rounded-lg border border-primary/20 bg-primary/5 px-4 py-3 text-sm"
+                    role="status"
+                  >
+                    <span className="mr-2 text-xl" aria-hidden>
+                      {emoji}
+                    </span>
+                    <span className="font-medium text-foreground">
+                      {message}
+                    </span>
+                  </div>
+                );
+              })()
+            ) : (
+              <div
+                className="rounded-lg border border-primary/20 bg-primary/5 px-4 py-3 text-sm"
+                role="status"
+              >
+                <span className="font-medium italic text-foreground">
+                  Are you trying to sneak peek the upcoming messages?
+                </span>
+              </div>
+            )}
             <div className="flex items-baseline gap-2">
               <span className="text-3xl font-bold text-foreground">
                 {result.workingDays}
