@@ -119,7 +119,8 @@ export default function TittaPage() {
             <h2 className="text-lg font-medium">Result</h2>
           </CardHeader>
           <CardContent className="space-y-3">
-            {endDate === DEFAULT_END_DATE ? (
+            {endDate === DEFAULT_END_DATE &&
+            startDate === getDefaultStartDate() ? (
               (() => {
                 const { message, emoji } = getCheerMessage(result.workingDays);
                 return (
