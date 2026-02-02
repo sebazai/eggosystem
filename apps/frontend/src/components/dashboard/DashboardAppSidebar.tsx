@@ -17,10 +17,12 @@ import {
   SidebarMenuSubItem,
   SidebarRail
 } from "@/components/ui/sidebar";
+import { Badge } from "@/components/ui/badge";
 import { createBaseUrl, createDashboardNextUrl } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { Spinner } from "@/components/ui/spinner";
 import { DashboardSeasonSelector } from "@/components/dashboard/DashboardSeasonSelector";
+import { usePendingCasterApplicationsCount } from "@/hooks/data/useCasterApplication";
 interface SubMenuItem {
   title: string;
   url: string;
@@ -180,6 +182,12 @@ const data: { navMain: Array<MenuItem> } = {
       url: createDashboardNextUrl("email-verification"),
       requiredRoles: ["admin", "helpdesk"],
       items: [] satisfies Array<SubMenuItem>
+    },
+    {
+      title: "Caster Applications",
+      url: createDashboardNextUrl("caster-applications"),
+      requiredRoles: ["admin", "helpdesk"],
+      items: [] satisfies Array<SubMenuItem>
     }
   ]
 };
@@ -189,6 +197,12 @@ export function DashboardAppSidebar(
 ) {
   const auth = useAuth();
   const searchParams = useSearchParams();
+  const canAccessCasterApplications = auth.user?.roles.some(
+    (r) => r === "admin" || r === "helpdesk"
+  );
+  const { pendingCount } = usePendingCasterApplicationsCount(undefined, {
+    enabled: canAccessCasterApplications ?? false
+  });
 
   if (!auth.user) {
     return <Spinner />;
@@ -242,9 +256,15 @@ export function DashboardAppSidebar(
                   <SidebarMenuButton asChild>
                     <Link
                       href={createLinkWithSeason(item.url)}
-                      className="font-medium"
+                      className="font-medium flex items-center justify-between gap-2"
                     >
-                      {item.title}
+                      <span>{item.title}</span>
+                      {item.title === "Caster Applications" &&
+                        pendingCount > 0 && (
+                          <Badge variant="secondary" className="shrink-0">
+                            {pendingCount}
+                          </Badge>
+                        )}
                     </Link>
                   </SidebarMenuButton>
                   {item.items?.length ? (

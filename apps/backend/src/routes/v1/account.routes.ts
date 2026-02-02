@@ -7,6 +7,10 @@ import {
 } from "../../controllers/account.controllers";
 import {
   getCasterDefaultUrlController,
+  getCasterUrlsController,
+  addCasterUrlController,
+  deleteCasterUrlController,
+  setCasterUrlDefaultController,
   updateCasterDefaultUrlController,
   deleteCasterDefaultUrlController
 } from "../../controllers/caster-urls.controllers";
@@ -80,7 +84,33 @@ router.post(
   sendVerificationEmails
 );
 
-// Caster default URL routes (require caster role)
+// Caster URL routes (require caster role)
+router.get(
+  "/caster/urls",
+  authenticateJWT,
+  checkJWTPermissions({ fallbackRoles: ["caster"] }),
+  getCasterUrlsController
+);
+router.post(
+  "/caster/urls",
+  authenticateJWT,
+  checkJWTPermissions({ fallbackRoles: ["caster"] }),
+  addCasterUrlController
+);
+router.delete(
+  "/caster/urls/:id",
+  authenticateJWT,
+  checkJWTPermissions({ fallbackRoles: ["caster"] }),
+  validateNumericParams(["id"]),
+  deleteCasterUrlController
+);
+router.patch(
+  "/caster/urls/:id/default",
+  authenticateJWT,
+  checkJWTPermissions({ fallbackRoles: ["caster"] }),
+  validateNumericParams(["id"]),
+  setCasterUrlDefaultController
+);
 router.get(
   "/caster/default-url",
   authenticateJWT,

@@ -9,7 +9,8 @@ import {
   type FaceitMatchStatsResponse,
   type FaceitPlayerDetails,
   type MatchDemoReadyWebhook,
-  type ChampionshipDetailsDemoReady
+  type ChampionshipDetailsDemoReady,
+  MatchStatus
 } from "@eggosystem/types";
 import {
   redisClient,
@@ -34,6 +35,7 @@ import {
 } from "../utils/date-utils";
 import {
   getHubMatchesByExternalMatchRoomId,
+  getMatch,
   getMatchesByExternalId,
   updateMatchStartAndEndTimestamp,
   updateMatchStatusByMatchId
@@ -922,9 +924,14 @@ export const syncMatchSchedule = async (
         { hours: 1 }
       );
 
+      const isForfeitInDb =
+        firstMatch.status === MatchStatus.FORFEIT ||
+        secondMatch.status === MatchStatus.FORFEIT;
+
       if (
         firstMatchTimestamp === faceitScheduleTimestamp &&
-        secondMatchTimestamp === faceitSecondAssumedScheduledTimestamp
+        secondMatchTimestamp === faceitSecondAssumedScheduledTimestamp &&
+        !isForfeitInDb
       ) {
         return;
       }
@@ -1023,6 +1030,12 @@ export const syncMatchSchedule = async (
   } finally {
     connection.release();
     notifyOfMatches.forEach((match) => {
+      if (match.oldTimestamp === match.newTimestamp) {
+        return;
+      }
+      logger.info(
+        `Notifying reservations of schedule change for match ${match.matchId}: ${match.oldTimestamp} -> ${match.newTimestamp}`
+      );
       void notifyReservationsOfScheduleChange(
         match.matchId,
         match.oldTimestamp,
@@ -1052,12 +1065,17 @@ const notifyReservationsOfScheduleChange = async (
       return;
     }
 
-    // Get team names for the match
+    // Get team names and match links for the match
     const teamNames = await getMatchTeamNames(matchId);
+    const [matchRow] = await getMatch(matchId);
+    const matchPageUrl = `${process.env.FRONTEND_URL}/matches/${matchId}`;
+    const matchroomUrl = matchRow?.external_match_room_id
+      ? `https://www.faceit.com/en/cs2/room/${matchRow.external_match_room_id}`
+      : null;
 
     // Send email to each caster
     for (const reservation of reservations) {
-      if (!reservation.email) {
+      if (!reservation.work_email) {
         logger.warn(
           `No email found for reservation ${reservation.id}, skipping notification`
         );
@@ -1065,19 +1083,21 @@ const notifyReservationsOfScheduleChange = async (
       }
 
       try {
-        await sendMatchScheduleChangeEmail(reservation.email, {
+        await sendMatchScheduleChangeEmail(reservation.work_email, {
           teamNames,
           oldTimestamp,
           newTimestamp,
-          reservationHash: reservation.hash
+          reservationHash: reservation.hash,
+          matchPageUrl,
+          matchroomUrl
         });
 
         logger.info(
-          `Sent schedule change notification to ${reservation.email} for match ${matchId}`
+          `Sent schedule change notification to ${reservation.work_email} for match ${matchId}`
         );
       } catch (emailError) {
         logger.error(
-          `Failed to send schedule change email to ${reservation.email}:`,
+          `Failed to send schedule change email to ${reservation.work_email}:`,
           emailError
         );
       }

@@ -1,5 +1,6 @@
 import { runQuery } from "../db/mysqlRunQuery";
-import type { Reservation } from "@eggosystem/types";
+import { getConnection } from "../db/mysqlConnection";
+import type { Account, Reservation } from "@eggosystem/types";
 import * as crypto from "crypto";
 import { ConflictError, NotFoundError } from "../utils/errors";
 
@@ -87,30 +88,49 @@ export const getStreamReservationsByMatch = async (
   );
 };
 
-export const getReservationByHash = async (
+/**
+ * Removes a reservation by hash and returns season_id for the calendar link.
+ * Runs in a single transaction to avoid lock wait timeouts.
+ */
+export const removeReservationByHashWithSeasonId = async (
   hash: string
-): Promise<Reservation | null> => {
-  const [reservation] = await runQuery<Reservation[]>(
-    `SELECT * FROM Reservations WHERE hash = ?`,
-    [hash]
-  );
-  return reservation || null;
+): Promise<{ deleted: boolean; season_id: number | null }> => {
+  const connection = await getConnection();
+  try {
+    await connection.beginTransaction();
+    const [reservation] = await runQuery<Reservation[]>(
+      `SELECT * FROM Reservations WHERE hash = ?`,
+      [hash],
+      connection
+    );
+    if (!reservation) {
+      await connection.rollback();
+      return { deleted: false, season_id: null };
+    }
+    const [matchRow] = await runQuery<Array<{ season_id: number }>>(
+      `SELECT season_id FROM Matches WHERE id = ?`,
+      [reservation.match_id],
+      connection
+    );
+    const season_id = matchRow?.season_id ?? null;
+    const deleteResult = await runQuery<{ affectedRows: number }>(
+      `DELETE FROM Reservations WHERE hash = ?`,
+      [hash],
+      connection
+    );
+    const deleted = (deleteResult as { affectedRows: number }).affectedRows > 0;
+    await connection.commit();
+    return { deleted, season_id };
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
 };
 
-export const deleteReservationByHash = async (
-  hash: string
-): Promise<boolean> => {
-  const result = await runQuery<{ affectedRows: number }>(
-    `DELETE FROM Reservations WHERE hash = ?`,
-    [hash]
-  );
-  return result.affectedRows > 0;
-};
-
-export const getReservationsWithEmailForMatch = async (
-  matchId: number
-): Promise<Array<Reservation & { email: string | null }>> => {
-  return await runQuery<Array<Reservation & { email: string | null }>>(
+export const getReservationsWithEmailForMatch = async (matchId: number) => {
+  return await runQuery<Array<Reservation & Pick<Account, "work_email">>>(
     `SELECT r.*, a.work_email 
      FROM Reservations r 
      LEFT JOIN Accounts a ON r.account_id = a.id 

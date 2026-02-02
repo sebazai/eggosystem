@@ -78,7 +78,7 @@ describe("StreamReservation", () => {
 
   it("should open dialog when button is clicked", async () => {
     const user = userEvent.setup();
-    mockClientApiFetch.mockResolvedValue({ stream_url: null });
+    mockClientApiFetch.mockResolvedValue({ urls: [] });
 
     render(<StreamReservation {...defaultProps} />);
 
@@ -91,10 +91,12 @@ describe("StreamReservation", () => {
     expect(screen.getByLabelText("Stream URL")).toBeInTheDocument();
   });
 
-  it("should load and populate default stream URL", async () => {
+  it("should load and populate default stream URL when user has one caster URL", async () => {
     const user = userEvent.setup();
     const defaultUrl = "https://twitch.tv/defaultcaster";
-    mockClientApiFetch.mockResolvedValue({ stream_url: defaultUrl });
+    mockClientApiFetch.mockResolvedValue({
+      urls: [{ id: 1, stream_url: defaultUrl, is_default: true }]
+    });
 
     render(<StreamReservation {...defaultProps} />);
 
@@ -109,10 +111,39 @@ describe("StreamReservation", () => {
     });
   });
 
+  it("should show dropdown when user has two or more caster URLs", async () => {
+    const user = userEvent.setup();
+    const url1 = "https://twitch.tv/caster1";
+    const url2 = "https://twitch.tv/caster2";
+    mockClientApiFetch.mockResolvedValue({
+      urls: [
+        { id: 1, stream_url: url1, is_default: true },
+        { id: 2, stream_url: url2, is_default: false }
+      ]
+    });
+
+    render(<StreamReservation {...defaultProps} />);
+
+    const reserveButton = screen.getByRole("button", {
+      name: /reserve for streaming/i
+    });
+    await user.click(reserveButton);
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("combobox", { name: /stream url/i })
+      ).toBeInTheDocument();
+    });
+    expect(screen.getByRole("combobox")).toHaveTextContent(url1);
+    expect(
+      screen.queryByPlaceholderText(/twitch\.tv\/your-channel/)
+    ).not.toBeInTheDocument();
+  });
+
   it("should successfully reserve a stream", async () => {
     const user = userEvent.setup();
     mockClientApiFetch
-      .mockResolvedValueOnce({ stream_url: null }) // Load default URL
+      .mockResolvedValueOnce({ urls: [] }) // Load caster URLs
       .mockResolvedValueOnce({}); // Reserve stream
 
     render(<StreamReservation {...defaultProps} />);
@@ -151,7 +182,7 @@ describe("StreamReservation", () => {
 
   it("should disable reserve button when URL is empty", async () => {
     const user = userEvent.setup();
-    mockClientApiFetch.mockResolvedValue({ stream_url: null });
+    mockClientApiFetch.mockResolvedValue({ urls: [] });
 
     render(<StreamReservation {...defaultProps} />);
 
@@ -182,8 +213,9 @@ describe("StreamReservation", () => {
     const user = userEvent.setup();
     const errorMessage = "Already reserved";
     mockClientApiFetch
-      .mockResolvedValueOnce({ stream_url: null })
-      .mockRejectedValueOnce(new Error(errorMessage));
+      .mockResolvedValueOnce({ urls: [] }) // Load caster URLs
+      .mockResolvedValueOnce({ stream_url: null }) // Load default URL (0 urls case)
+      .mockRejectedValueOnce(new Error(errorMessage)); // Reserve stream
 
     render(<StreamReservation {...defaultProps} />);
 
@@ -208,7 +240,7 @@ describe("StreamReservation", () => {
 
   it("should disable submit button when URL is empty", async () => {
     const user = userEvent.setup();
-    mockClientApiFetch.mockResolvedValue({ stream_url: null });
+    mockClientApiFetch.mockResolvedValue({ urls: [] });
 
     render(<StreamReservation {...defaultProps} />);
 

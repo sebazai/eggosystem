@@ -28,6 +28,10 @@ export const createMockOrganizer = (
     name: "Test Organizer",
     faceit_id: "test-faceit-id",
     discord_link: null,
+    discord_guild_id: null,
+    discord_caster_applications_channel_id: null,
+    discord_caster_channel_id: null,
+    discord_caster_role_id: null,
     ...overrides
   };
 };

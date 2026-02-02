@@ -367,13 +367,99 @@ export const sendSeasonCaptainWelcomeEmail = async (
 /**
  * Formats an ISO 8601 timestamp string to a human-readable date and time with UTC indicator
  * @param timestamp - ISO 8601 timestamp string (UTC)
- * @returns Formatted string like "2024-01-15 at 18:30:00 (UTC +00:00)"
+ * @returns Formatted string like "Tue, Feb 6, 2026 at 14:30 UTC" (Gmail-friendly: detectable, clickable, converts to recipient timezone)
  */
 const formatTimestampForEmail = (timestamp: string): string => {
   const date = new Date(timestamp);
-  const dateStr = date.toISOString().slice(0, 10); // YYYY-MM-DD
-  const timeStr = date.toISOString().slice(11, 19); // HH:mm:ss
-  return `${dateStr} at ${timeStr} (UTC +00:00)`;
+  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const monthNames = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec"
+  ];
+  const dayName = dayNames[date.getUTCDay()];
+  const month = monthNames[date.getUTCMonth()];
+  const day = date.getUTCDate();
+  const year = date.getUTCFullYear();
+  const hours = date.getUTCHours();
+  const minutes = date.getUTCMinutes();
+  const timeStr = `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
+  return `${dayName}, ${month} ${day}, ${year} at ${timeStr} UTC`;
+};
+
+/**
+ * Builds a timeanddate.com fixed-time URL so the recipient can see the UTC time in their timezone.
+ * @param timestamp - ISO 8601 timestamp string (UTC)
+ * @returns URL to worldclock fixed time page
+ */
+const getTimeInTimezoneLink = (timestamp: string): string => {
+  const date = new Date(timestamp);
+  const year = date.getUTCFullYear();
+  const month = date.getUTCMonth() + 1;
+  const day = date.getUTCDate();
+  const hour = date.getUTCHours();
+  const minute = date.getUTCMinutes();
+  const sec = date.getUTCSeconds();
+  const params = new URLSearchParams({
+    year: String(year),
+    month: String(month),
+    day: String(day),
+    hour: String(hour),
+    min: String(minute),
+    sec: String(sec)
+  });
+  return `https://www.timeanddate.com/worldclock/fixedtime.html?${params.toString()}`;
+};
+
+/**
+ * Builds iCalendar (.ics) content for the new match time (UTC).
+ * When the user adds to calendar, their client displays it in their local timezone.
+ */
+const buildMatchScheduleChangeIcs = (
+  teamNames: string,
+  newTimestamp: string,
+  matchPageUrl: string
+): string => {
+  const date = new Date(newTimestamp);
+  const formatIcsUtc = (d: Date) =>
+    d
+      .toISOString()
+      .replace(/[-:]/g, "")
+      .replace(/\.\d{3}/, "") + "Z";
+  const dtStart = formatIcsUtc(date);
+  const endDate = new Date(date.getTime() + 2 * 60 * 60 * 1000);
+  const dtEnd = formatIcsUtc(endDate);
+  const uid = `match-${date.getTime()}-${matchPageUrl.length}@kanaliiga.fi`;
+  const summary = `Match: ${teamNames}`.replace(/,/g, "\\,");
+  const description = `Stream reservation - ${matchPageUrl}`.replace(
+    /[,;\\]/g,
+    (ch) => (ch === "\\" ? "\\\\" : `\\${ch}`)
+  );
+
+  return [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//Kanaliiga//Match Schedule//EN",
+    "CALSCALE:GREGORIAN",
+    "BEGIN:VEVENT",
+    `UID:${uid}`,
+    `DTSTAMP:${formatIcsUtc(new Date())}`,
+    `DTSTART:${dtStart}`,
+    `DTEND:${dtEnd}`,
+    `SUMMARY:${summary}`,
+    `DESCRIPTION:${description}`,
+    "END:VEVENT",
+    "END:VCALENDAR"
+  ].join("\r\n");
 };
 
 export const sendMatchScheduleChangeEmail = async (
@@ -383,13 +469,30 @@ export const sendMatchScheduleChangeEmail = async (
     oldTimestamp: string; // ISO 8601 timestamp string (UTC)
     newTimestamp: string; // ISO 8601 timestamp string (UTC)
     reservationHash: string;
+    matchPageUrl: string;
+    matchroomUrl?: string | null;
   }
 ) => {
   const transporter = createTransporter();
-  const removalUrl = `${process.env.FRONTEND_URL}/api/v1/reservations/remove/${matchDetails.reservationHash}`;
+  const removalUrl = `${process.env.FRONTEND_URL}/remove-reservation/${matchDetails.reservationHash}`;
 
   const oldTimeFormatted = formatTimestampForEmail(matchDetails.oldTimestamp);
   const newTimeFormatted = formatTimestampForEmail(matchDetails.newTimestamp);
+  const timeInTimezoneUrl = getTimeInTimezoneLink(matchDetails.newTimestamp);
+  const icsContent = buildMatchScheduleChangeIcs(
+    matchDetails.teamNames,
+    matchDetails.newTimestamp,
+    matchDetails.matchPageUrl
+  );
+
+  const matchroomSection =
+    matchDetails.matchroomUrl && matchDetails.matchroomUrl.trim() !== ""
+      ? `
+          <p style="margin-top: 20px;">View the matchroom:</p>
+          <p style="word-break: break-all;">
+            <a href="${matchDetails.matchroomUrl}" style="color: hsl(35, 93%, 49%); text-decoration: underline;">${matchDetails.matchroomUrl}</a>
+          </p>`
+      : "";
 
   const mailOptions = {
     from: "Kanahub by Kanaliiga <cs@kanaliiga.fi>",
@@ -420,8 +523,25 @@ export const sendMatchScheduleChangeEmail = async (
               <td style="padding: 12px; font-weight: bold; color: hsl(35, 93%, 49%);">${newTimeFormatted}</td>
             </tr>
           </table>
+
+          <p style="margin-top: 0; font-size: 14px;">
+            <a href="${timeInTimezoneUrl}" style="color: hsl(35, 93%, 49%); text-decoration: underline;">See this time in your timezone</a>
+            — or add the event to your calendar using the attached .ics file (it will show in your local time).
+          </p>
+
+          <p><a href="${matchDetails.matchPageUrl}" style="color: hsl(35, 93%, 49%); text-decoration: underline; font-weight: bold;">View match page</a></p>
+          ${matchroomSection}
+
+          <table width="100%" cellpadding="16" cellspacing="0" style="margin: 24px 0; background-color: #d4edda; border: 1px solid #c3e6cb; border-radius: 6px;">
+            <tr>
+              <td style="padding: 16px;">
+                <strong style="color: #155724;">No action needed if the new time works for you.</strong>
+                <p style="margin: 8px 0 0 0; color: #155724;">Your reservation remains active. Only use the button below if you cannot stream at the new time.</p>
+              </td>
+            </tr>
+          </table>
   
-          <p>If the new time doesn't work for you, you can easily remove your reservation by clicking the button below:</p>
+          <p style="margin-top: 24px;">If the new time doesn't work for you, you can easily remove your reservation by clicking the button below:</p>
   
           <table width="100%" cellpadding="0" cellspacing="0" style="margin: 30px 0;">
             <tr>
@@ -457,10 +577,18 @@ export const sendMatchScheduleChangeEmail = async (
           </p>
         </div>
       `,
+    attachments: [
+      {
+        filename: "match-time.ics",
+        content: icsContent,
+        contentType: "text/calendar; method=PUBLISH"
+      }
+    ],
     headers: {
       Date: new Date().toUTCString(),
-      "Message-ID": `<${Date.now()}.${Math.random().toString(36).substring(2)}@kanaliiga.fi>`,
-      "Content-Type": "text/html; charset=UTF-8"
+      "Message-ID": `<${Date.now()}.${Math.random().toString(36).substring(2)}@kanaliiga.fi>`
+      // Do not set Content-Type here: with attachments Nodemailer must use multipart/mixed
+      // so the client renders the HTML part and shows the .ics as a downloadable attachment.
     }
   };
 
@@ -529,4 +657,66 @@ export const enqueueSeasonFinalizationWelcomeEmails = async (
       error
     );
   }
+};
+
+export const sendCasterApprovalEmail = async (
+  to: string,
+  casterChannelLink: string | null
+) => {
+  const transporter = createTransporter();
+  const moreInfo = casterChannelLink
+    ? `<p>More info on this Discord channel: <a href="${casterChannelLink}">${casterChannelLink}</a></p>`
+    : "";
+  const mailOptions = {
+    from: "Kanahub by Kanaliiga <cs@kanaliiga.fi>",
+    to,
+    subject: "Your caster application has been approved",
+    html: `
+        <div style="font-family: Arial, sans-serif; color: #333; font-size: 16px; line-height: 1.5; max-width: 600px; margin: 0 auto;">
+          <h1 style="color: hsl(35, 93%, 49%); font-size: 24px;">Caster application approved</h1>
+          <p>Hello,</p>
+          <p>Your caster application has been approved. You can now set your default stream URL in your profile and reserve matches for streaming.</p>
+          ${moreInfo}
+          <p style="font-size: 14px; color: #777;">&copy; ${new Date().getFullYear()} Kanaliiga – All rights reserved.</p>
+        </div>
+      `,
+    headers: {
+      Date: new Date().toUTCString(),
+      "Message-ID": `<${Date.now()}.${Math.random().toString(36).substring(2)}@kanaliiga.fi>`,
+      "Content-Type": "text/html; charset=UTF-8"
+    }
+  };
+  await transporter?.sendMail(mailOptions).catch((err) => {
+    logger.error("Failed to send caster approval email", { to, err });
+  });
+};
+
+export const sendCasterRejectionEmail = async (
+  to: string,
+  rejectionReason: string
+) => {
+  const transporter = createTransporter();
+  const mailOptions = {
+    from: "Kanahub by Kanaliiga <cs@kanaliiga.fi>",
+    to,
+    subject: "Update on your caster application",
+    html: `
+        <div style="font-family: Arial, sans-serif; color: #333; font-size: 16px; line-height: 1.5; max-width: 600px; margin: 0 auto;">
+          <h1 style="color: hsl(35, 93%, 49%); font-size: 24px;">Caster application update</h1>
+          <p>Hello,</p>
+          <p>Your caster application was not approved at this time.</p>
+          <p><strong>Reason:</strong> ${rejectionReason.replace(/</g, "&lt;")}</p>
+          <p>You may re-apply from your profile page if you wish.</p>
+          <p style="font-size: 14px; color: #777;">&copy; ${new Date().getFullYear()} Kanaliiga – All rights reserved.</p>
+        </div>
+      `,
+    headers: {
+      Date: new Date().toUTCString(),
+      "Message-ID": `<${Date.now()}.${Math.random().toString(36).substring(2)}@kanaliiga.fi>`,
+      "Content-Type": "text/html; charset=UTF-8"
+    }
+  };
+  await transporter?.sendMail(mailOptions).catch((err) => {
+    logger.error("Failed to send caster rejection email", { to, err });
+  });
 };

@@ -13,6 +13,13 @@ import {
   DialogTitle,
   DialogTrigger
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select";
 import { Tv } from "lucide-react";
 import { clientApiFetch } from "@/lib/apiClient";
 import { toast } from "sonner";
@@ -31,6 +38,16 @@ interface CasterDefaultUrl {
   stream_url: string | null;
 }
 
+interface CasterUrlItem {
+  id: number;
+  stream_url: string;
+  is_default: boolean;
+}
+
+interface CasterUrlsResponse {
+  urls: CasterUrlItem[];
+}
+
 export function StreamReservation({
   matchId,
   onReservationChange
@@ -38,6 +55,7 @@ export function StreamReservation({
   const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [streamUrl, setStreamUrl] = useState("");
+  const [casterUrls, setCasterUrls] = useState<CasterUrlItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingDefault, setIsLoadingDefault] = useState(false);
   const [reserveBothGames, setReserveBothGames] = useState(true);
@@ -61,17 +79,30 @@ export function StreamReservation({
     return null; // Don't show button if user doesn't have caster role
   }
 
-  const loadDefaultStreamUrl = async () => {
+  const loadCasterUrlsAndDefault = async () => {
     setIsLoadingDefault(true);
     try {
-      const response = await clientApiFetch<CasterDefaultUrl>(
-        "/api/v1/accounts/caster/default-url"
+      const listResponse = await clientApiFetch<CasterUrlsResponse>(
+        "/api/v1/accounts/caster/urls"
       );
-      if (response.stream_url && !reservation && streamUrl === "") {
-        setStreamUrl(response.stream_url);
+      const urls = listResponse.urls ?? [];
+      setCasterUrls(urls);
+
+      if (urls.length >= 1 && !reservation && streamUrl === "") {
+        const defaultOrFirst = urls.find((u) => u.is_default) ?? urls[0];
+        if (defaultOrFirst) {
+          setStreamUrl(defaultOrFirst.stream_url);
+        }
+      } else if (urls.length === 0) {
+        const defaultResponse = await clientApiFetch<CasterDefaultUrl>(
+          "/api/v1/accounts/caster/default-url"
+        );
+        if (defaultResponse.stream_url && !reservation && streamUrl === "") {
+          setStreamUrl(defaultResponse.stream_url);
+        }
       }
     } catch (_error) {
-      // No default URL found, which is fine
+      setCasterUrls([]);
     } finally {
       setIsLoadingDefault(false);
     }
@@ -79,7 +110,7 @@ export function StreamReservation({
 
   const handleOpen = () => {
     setIsOpen(true);
-    loadDefaultStreamUrl(); // Auto-load default URL when opening
+    loadCasterUrlsAndDefault();
   };
 
   const handleReserve = async () => {
@@ -171,17 +202,39 @@ export function StreamReservation({
         <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="streamUrl">Stream URL</Label>
-            <Input
-              id="streamUrl"
-              type="url"
-              placeholder="https://twitch.tv/your-channel"
-              value={streamUrl}
-              onChange={(e) => setStreamUrl(e.target.value)}
-              disabled={isLoading || isLoadingDefault}
-            />
+            {casterUrls.length >= 2 ? (
+              <Select
+                value={streamUrl || undefined}
+                onValueChange={setStreamUrl}
+              >
+                <SelectTrigger
+                  id="streamUrl"
+                  className="w-full"
+                  disabled={isLoading || isLoadingDefault}
+                >
+                  <SelectValue placeholder="Choose a stream URL" />
+                </SelectTrigger>
+                <SelectContent>
+                  {casterUrls.map((item) => (
+                    <SelectItem key={item.id} value={item.stream_url}>
+                      {item.stream_url}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <Input
+                id="streamUrl"
+                type="url"
+                placeholder="https://twitch.tv/your-channel"
+                value={streamUrl}
+                onChange={(e) => setStreamUrl(e.target.value)}
+                disabled={isLoading || isLoadingDefault}
+              />
+            )}
             {isLoadingDefault && (
               <p className="text-sm text-muted-foreground">
-                Loading your default URL...
+                Loading your URLs...
               </p>
             )}
           </div>

@@ -16,7 +16,8 @@ import {
 } from "@/components/ui/form";
 import { clientApiFetch } from "@/lib/apiClient";
 import { toast } from "sonner";
-import { Tv, Trash2 } from "lucide-react";
+import { Tv, Trash2, Star } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 const casterUrlSchema = z.object({
   stream_url: z.url("Please enter a valid URL").min(1, "Stream URL is required")
@@ -24,8 +25,14 @@ const casterUrlSchema = z.object({
 
 type CasterUrlForm = z.infer<typeof casterUrlSchema>;
 
-interface CasterDefaultUrl {
-  stream_url: string | null;
+interface CasterUrlItem {
+  id: number;
+  stream_url: string;
+  is_default: boolean;
+}
+
+interface CasterUrlsResponse {
+  urls: CasterUrlItem[];
 }
 
 export function CasterUrlSettings({
@@ -33,9 +40,10 @@ export function CasterUrlSettings({
 }: {
   canManageUrls: boolean;
 }) {
+  const [urls, setUrls] = useState<CasterUrlItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [currentUrl, setCurrentUrl] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [settingDefaultId, setSettingDefaultId] = useState<number | null>(null);
 
   const form = useForm<CasterUrlForm>({
     resolver: zodResolver(casterUrlSchema),
@@ -44,68 +52,96 @@ export function CasterUrlSettings({
     }
   });
 
-  const loadCurrentUrl = useCallback(async () => {
+  const loadUrls = useCallback(async () => {
+    if (!canManageUrls) return;
     try {
-      const response = await clientApiFetch<CasterDefaultUrl>(
-        "/api/v1/accounts/caster/default-url"
+      const response = await clientApiFetch<CasterUrlsResponse>(
+        "/api/v1/accounts/caster/urls"
       );
-      if (response.stream_url) {
-        setCurrentUrl(response.stream_url);
-        form.setValue("stream_url", response.stream_url);
-      }
+      setUrls(response.urls ?? []);
     } catch (_error) {
-      // No default URL found, which is fine
-      setCurrentUrl(null);
+      setUrls([]);
     }
-  }, [form]);
+  }, [canManageUrls]);
 
   useEffect(() => {
     if (canManageUrls) {
-      loadCurrentUrl();
+      loadUrls();
     }
-  }, [canManageUrls, loadCurrentUrl]);
+  }, [canManageUrls, loadUrls]);
 
   const onSubmit = async (data: CasterUrlForm) => {
     setIsLoading(true);
     try {
-      await clientApiFetch("/api/v1/accounts/caster/default-url", {
+      await clientApiFetch("/api/v1/accounts/caster/urls", {
         method: "POST",
         body: JSON.stringify(data)
       });
-
-      setCurrentUrl(data.stream_url);
-      toast.success("Default stream URL saved successfully!");
+      toast.success("Stream URL added successfully!");
+      form.reset({ stream_url: "" });
+      await loadUrls();
     } catch (error: unknown) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to save stream URL"
+        error instanceof Error ? error.message : "Failed to add stream URL"
       );
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleDelete = async () => {
-    setIsDeleting(true);
+  const handleDelete = async (id: number) => {
+    setDeletingId(id);
     try {
-      await clientApiFetch("/api/v1/accounts/caster/default-url", {
+      await clientApiFetch(`/api/v1/accounts/caster/urls/${id}`, {
         method: "DELETE"
       });
-
-      setCurrentUrl(null);
-      form.setValue("stream_url", "");
-      toast.success("Default stream URL deleted successfully!");
+      toast.success("Stream URL deleted successfully!");
+      await loadUrls();
     } catch (error: unknown) {
       toast.error(
         error instanceof Error ? error.message : "Failed to delete stream URL"
       );
     } finally {
-      setIsDeleting(false);
+      setDeletingId(null);
+    }
+  };
+
+  const handleSetDefault = async (id: number) => {
+    setSettingDefaultId(id);
+    try {
+      await clientApiFetch(`/api/v1/accounts/caster/urls/${id}/default`, {
+        method: "PATCH"
+      });
+      toast.success("Default stream URL updated!");
+      await loadUrls();
+    } catch (error: unknown) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to set default URL"
+      );
+    } finally {
+      setSettingDefaultId(null);
+    }
+  };
+
+  const handleClearDefault = async () => {
+    try {
+      await clientApiFetch("/api/v1/accounts/caster/default-url", {
+        method: "DELETE"
+      });
+      toast.success("Default cleared.");
+      await loadUrls();
+    } catch (error: unknown) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to clear default"
+      );
     }
   };
 
   if (!canManageUrls) {
-    return null; // Don't show this section if user doesn't have caster role
+    return null;
   }
+
+  const defaultUrl = urls.find((u) => u.is_default);
 
   return (
     <div className="space-y-4 pt-6 border-t">
@@ -115,9 +151,75 @@ export function CasterUrlSettings({
           Caster Settings
         </h2>
         <p className="text-sm text-muted-foreground">
-          Set your default stream URL for quick match reservations
+          Add multiple stream URLs and choose which one is used when you reserve
+          matches for streaming.
         </p>
       </div>
+
+      {urls.length > 0 && (
+        <div className="space-y-2">
+          <h3 className="text-sm font-medium">Your stream URLs</h3>
+          <ul className="space-y-2">
+            {urls.map((item) => (
+              <li
+                key={item.id}
+                className="flex flex-wrap items-center gap-2 rounded-md border bg-muted/30 px-3 py-2"
+              >
+                <a
+                  href={item.stream_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm font-medium text-primary underline-offset-4 hover:underline truncate min-w-0 flex-1"
+                >
+                  {item.stream_url}
+                </a>
+                {item.is_default ? (
+                  <>
+                    <Badge variant="secondary" className="shrink-0">
+                      Default
+                    </Badge>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleClearDefault}
+                      className="shrink-0 text-muted-foreground"
+                    >
+                      Clear default
+                    </Button>
+                  </>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleSetDefault(item.id)}
+                    disabled={settingDefaultId === item.id}
+                    className="shrink-0"
+                    title="Set as default"
+                    aria-label={`Set ${item.stream_url} as default`}
+                  >
+                    <Star className="h-4 w-4" />
+                  </Button>
+                )}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => handleDelete(item.id)}
+                  disabled={deletingId === item.id}
+                  title="Delete URL"
+                  className="shrink-0"
+                  aria-label={`Delete ${item.stream_url}`}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
@@ -128,47 +230,39 @@ export function CasterUrlSettings({
             name="stream_url"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Default Stream URL</FormLabel>
+                <FormLabel>Add stream URL</FormLabel>
                 <div className="flex gap-2">
                   <FormControl>
                     <Input
                       type="url"
                       placeholder="https://twitch.tv/your-channel"
                       {...field}
-                      disabled={isLoading || isDeleting}
+                      disabled={isLoading}
                     />
                   </FormControl>
-                  {currentUrl && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      onClick={handleDelete}
-                      disabled={isLoading || isDeleting}
-                      title="Delete default URL"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  )}
+                  <Button
+                    type="submit"
+                    disabled={isLoading || !form.formState.isDirty}
+                  >
+                    {isLoading ? "Adding..." : "Add URL"}
+                  </Button>
                 </div>
                 <FormMessage />
-                {currentUrl && (
-                  <p className="text-sm text-muted-foreground">
-                    This URL will be auto-filled when you reserve matches for
-                    streaming.
-                  </p>
-                )}
               </FormItem>
             )}
           />
-          <Button
-            type="submit"
-            disabled={isLoading || isDeleting || !form.formState.isDirty}
-          >
-            {isLoading ? "Saving..." : "Save Default URL"}
-          </Button>
         </form>
       </Form>
+
+      {defaultUrl && (
+        <p className="text-sm text-muted-foreground">
+          The default URL (
+          <span className="font-medium text-foreground">
+            {defaultUrl.stream_url}
+          </span>
+          ) will be auto-filled when you reserve matches for streaming.
+        </p>
+      )}
     </div>
   );
 }
