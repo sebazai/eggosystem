@@ -12,9 +12,11 @@ import {
   checkPermissions
 } from "../../middlewares/auth.middleware";
 import {
+  getMatchStatusFinishedCountAfterLastConfiguring,
   saveWebhookData,
   updateErrorForWebhook
 } from "../../models/faceit.models";
+import { isForfeitPayload } from "../../utils/faceit-match-status-finished-detection";
 import { logger } from "../../utils/app-logger";
 import {
   type MatchStatusReadyWebhook,
@@ -70,7 +72,10 @@ import {
   updateMatchStartAndEndTimestamp,
   getMatchesStatusByExternalMatchroomId
 } from "../../models/match.models";
-import { getMatchGamesByExternalMatchRoomId } from "../../models/match-game.models";
+import {
+  getMatchGamesByExternalMatchRoomId,
+  hasMatchGameWithDemo
+} from "../../models/match-game.models";
 import { createApiKeyValidator } from "../../middlewares/api-key-auth.middleware";
 import {
   getOrganizerByFaceitIdAndGameAppId,
@@ -421,10 +426,15 @@ router.post(
           validatedWebhook.payload.entity.id
         );
 
-        await updateMatchStatusByExternalMatchroomId(
-          validatedWebhook.payload.id,
-          "ONGOING"
+        // Only set matches to ONGOING if not already FINISHED (e.g. 2xBO1 first game with demo)
+        const matchesByRoom = await getMatchesByExternalId(
+          validatedWebhook.payload.id
         );
+        for (const match of matchesByRoom) {
+          if (match.status !== "FINISHED") {
+            await updateMatchStatusByMatchId(match.id, "ONGOING");
+          }
+        }
 
         res.status(200).send("Webhook received");
         return;
@@ -455,28 +465,59 @@ router.post(
           const startTime = webhookData.payload.started_at;
 
           if (
-            // Match was aborted due to AFK or forfeit.
-            startTime === "1970-01-01T00:00:00Z" &&
+            isForfeitPayload(webhookData.payload) &&
             validateMatchStatusFinishedAfterAbortWebhook(webhookData)
           ) {
             logger.info(
               `Match ${externalMatchRoomId} was aborted due to AFK? ${startTime}`
             );
 
-            // If any of the matches in the external match room is finished at any point, we do not want to update it to forfeit.
-            const existingMatchStatus =
-              await getMatchesStatusByExternalMatchroomId(externalMatchRoomId);
-            if (existingMatchStatus.includes("FINISHED")) {
-              logger.info(
-                `Match ${externalMatchRoomId} is already finished, skipping`
-              );
-              res.status(200).send("Webhook received");
-              return;
-            }
-
             const endTime = webhookData.payload.finished_at;
-            // We do not want to change the match status, as this means it was aborted due to AFK.
-            await updateMatchEndTime(webhookData.payload.id, endTime);
+            const seasonLeague =
+              await getSeasonLeagueExternalIdByExternalIdWithSeasonSettings(
+                webhookData.payload.entity.id
+              );
+            const matchesByRoom =
+              await getMatchesByExternalId(externalMatchRoomId);
+
+            if (
+              seasonLeague?.is_round_robin_bo2_as_2xbo1 &&
+              matchesByRoom.length === 2
+            ) {
+              const gameIndex =
+                await getMatchStatusFinishedCountAfterLastConfiguring(
+                  externalMatchRoomId
+                );
+              const targetMatch = matchesByRoom[gameIndex];
+              const hasDemo = targetMatch
+                ? await hasMatchGameWithDemo(targetMatch.id)
+                : false;
+              if (
+                targetMatch &&
+                targetMatch.status !== "FINISHED" &&
+                !hasDemo
+              ) {
+                await updateMatchEndTimestamp(targetMatch.id, endTime);
+                await updateMatchStatusByMatchId(targetMatch.id, "FORFEIT");
+              }
+            } else {
+              const existingMatchStatus =
+                await getMatchesStatusByExternalMatchroomId(
+                  externalMatchRoomId
+                );
+              if (existingMatchStatus.includes("FINISHED")) {
+                logger.info(
+                  `Match ${externalMatchRoomId} is already finished, skipping`
+                );
+                res.status(200).send("Webhook received");
+                return;
+              }
+              await updateMatchEndTime(webhookData.payload.id, endTime);
+              await updateMatchStatusByExternalMatchroomId(
+                externalMatchRoomId,
+                "FORFEIT"
+              );
+            }
             await saveWebhookData(
               externalMatchRoomId,
               webhookData.retry_count,
@@ -484,10 +525,6 @@ router.post(
               webhookData,
               matchDetails,
               manualReprocess
-            );
-            await updateMatchStatusByExternalMatchroomId(
-              externalMatchRoomId,
-              "FORFEIT"
             );
             res.status(200).send("Webhook received");
             return;
@@ -506,18 +543,47 @@ router.post(
             seasonLeague?.is_round_robin_bo2_as_2xbo1 &&
             matchesByRoom.length === 2
           ) {
-            // 2xBO1: only update second game end time; first game already set at first match_demo_ready
-            // For some reason the start time will be the second games start time in 1xBO2 in faceit, no idea why.
-            await updateMatchStartAndEndTimestamp(
-              matchesByRoom[1].id,
-              startTime,
-              endTime
-            );
+            const gameIndex =
+              await getMatchStatusFinishedCountAfterLastConfiguring(
+                externalMatchRoomId
+              );
+            if (gameIndex === 1) {
+              // Second game finished; first was forfeited — update only second match.
+              await updateMatchStartAndEndTimestamp(
+                matchesByRoom[1].id,
+                startTime,
+                endTime
+              );
+              await updateMatchStatusByMatchId(matchesByRoom[1].id, "FINISHED");
+            } else if (gameIndex === 0) {
+              // BO2 fully finished (both games played), or first event after restart.
+              await updateMatchStartAndEndTimestamp(
+                matchesByRoom[1].id,
+                startTime,
+                endTime
+              );
+              await updateMatchStatusByExternalMatchroomId(
+                externalMatchRoomId,
+                "FINISHED"
+              );
+            } else {
+              // gameIndex >= 2: duplicate/extra events; only update second match, do not overwrite match 0.
+              await updateMatchStartAndEndTimestamp(
+                matchesByRoom[1].id,
+                startTime,
+                endTime
+              );
+              await updateMatchStatusByMatchId(matchesByRoom[1].id, "FINISHED");
+            }
           } else {
             await updateMatchFinished(
               webhookData.payload.id,
               startTime,
               endTime
+            );
+            await updateMatchStatusByExternalMatchroomId(
+              externalMatchRoomId,
+              "FINISHED"
             );
           }
           await saveWebhookData(
@@ -527,10 +593,6 @@ router.post(
             webhookData,
             matchDetails,
             manualReprocess
-          );
-          await updateMatchStatusByExternalMatchroomId(
-            externalMatchRoomId,
-            "FINISHED"
           );
           res.status(200).send("Webhook received");
           return;
@@ -588,6 +650,61 @@ router.post(
           validatedMatchDetails.match_id
         );
 
+        // 2xBO1: validate map number then set match to FINISHED when demo is ready (before adding MatchGame)
+        if (seasonLeague.is_round_robin_bo2_as_2xbo1) {
+          const demoUrl = validatedWebhook.payload.demo_url;
+          const parsedDemoUrl = parseFaceitDemoUrl(demoUrl);
+          if (!parsedDemoUrl) {
+            throw new Error(`Invalid faceit demo url: ${demoUrl}`);
+          }
+          const { mapNumber } = parsedDemoUrl;
+          if (mapNumber < 1 || mapNumber > 2) {
+            throw new Error(
+              `2xBO1 demo url must have map number 1 or 2, got ${mapNumber}: ${demoUrl}`
+            );
+          }
+
+          const connection = await getConnection();
+          try {
+            await connection.beginTransaction();
+            const hubMatches = await getHubMatchesByExternalMatchRoomId(
+              validatedWebhook.payload.id,
+              connection
+            );
+
+            if (hubMatches && hubMatches.length === 2) {
+              const firstGameEndTime = validatedWebhook.payload.updated_at;
+              const matchIndex = mapNumber - 1;
+              await updateMatchEndTimestamp(
+                hubMatches[matchIndex].id,
+                firstGameEndTime,
+                connection
+              );
+              await updateMatchStatusByMatchId(
+                hubMatches[matchIndex].id,
+                "FINISHED",
+                connection
+              );
+              if (mapNumber === 1) {
+                await updateMatchStartTimestamp(
+                  hubMatches[1].id,
+                  firstGameEndTime,
+                  connection
+                );
+              }
+            }
+            await connection.commit();
+          } catch (error) {
+            logger.error(
+              `Error updating match status for match ${validatedWebhook.payload.id}: ${error}`
+            );
+            await connection.rollback();
+            throw error;
+          } finally {
+            connection.release();
+          }
+        }
+
         const matchGameId = await addFaceitMatchGameToDatabase(
           validatedWebhook,
           validatedMatchDetails,
@@ -602,64 +719,6 @@ router.post(
             manualReprocess
           )
         ]);
-
-        // 2xBO1: first game end = when first demo is ready; second game start = same time
-        if (seasonLeague.is_round_robin_bo2_as_2xbo1) {
-          const connection = await getConnection();
-          try {
-            await connection.beginTransaction();
-            const hubMatches = await getHubMatchesByExternalMatchRoomId(
-              validatedWebhook.payload.id,
-              connection
-            );
-
-            if (!hubMatches || hubMatches.length !== 2) {
-              throw new Error(
-                `Expected 2 hub matches for 2xBO1, got ${hubMatches?.length}`
-              );
-            }
-
-            const demoUrl = validatedWebhook.payload.demo_url;
-            const parsedDemoUrl = parseFaceitDemoUrl(demoUrl);
-            if (!parsedDemoUrl) {
-              throw new Error(`Invalid faceit demo url: ${demoUrl}`);
-            }
-            const { mapNumber } = parsedDemoUrl;
-            const firstGameEndTime = validatedWebhook.payload.updated_at;
-
-            // Assuming first game is the first match in the hub
-            const matchIndex = mapNumber - 1;
-            await updateMatchEndTimestamp(
-              hubMatches[matchIndex].id,
-              firstGameEndTime,
-              connection
-            );
-
-            await updateMatchStatusByMatchId(
-              hubMatches[matchIndex].id,
-              "FINISHED",
-              connection
-            );
-
-            // Start the second game at the same time as the first game ended
-            if (mapNumber === 1) {
-              await updateMatchStartTimestamp(
-                hubMatches[1].id,
-                firstGameEndTime,
-                connection
-              );
-            }
-            await connection.commit();
-          } catch (error) {
-            logger.error(
-              `Error updating match status for match ${validatedWebhook.payload.id}: ${error}`
-            );
-            await connection.rollback();
-            throw error;
-          } finally {
-            connection.release();
-          }
-        }
 
         res.status(200).send("Webhook received");
         return;
