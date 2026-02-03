@@ -16,8 +16,6 @@ import faceitRouter from "./faceit.routes";
 import { expressErrorHandler } from "../../middlewares/express-error-handler";
 import { runFaceitWebhookIntegrationSeed } from "./faceit-webhook-integration-seed";
 import { runQuery } from "../../db/mysqlRunQuery";
-import { http, HttpResponse } from "@eggosystem/shared-msw";
-import { mswServer } from "@eggosystem/shared-msw";
 import * as faceitServices from "../../services/faceit.services";
 import * as seasonTeamPlayersModels from "../../models/season-team-players.models";
 
@@ -70,44 +68,6 @@ describe("FACEIT webhook integration (replay from fixtures)", () => {
     jest
       .spyOn(seasonTeamPlayersModels, "validatePlayersInTeams")
       .mockResolvedValue(undefined);
-  });
-
-  beforeAll(() => {
-    // Mock FACEIT match history API so addMatchTeamMapVetoes can insert vetoes (required for 2xBO1 match_demo_ready)
-    mswServer.use(
-      http.get(
-        "https://www.faceit.com/api/democracy/v1/match/*/history",
-        () => {
-          return HttpResponse.json({
-            payload: {
-              match_id: "1-f55c14a9-b708-4abc-8ffb-be4993e469c1",
-              tickets: [
-                {
-                  entity_type: "map",
-                  vote_type: "drop_pick",
-                  entities: [
-                    {
-                      guid: "3070290240",
-                      status: "pick",
-                      random: false,
-                      round: 1,
-                      selected_by: "faction1"
-                    },
-                    {
-                      guid: "3414036782",
-                      status: "pick",
-                      random: false,
-                      round: 2,
-                      selected_by: "faction2"
-                    }
-                  ]
-                }
-              ]
-            }
-          });
-        }
-      )
-    );
   });
 
   describe("room 1-3e047cf2-6b8f-479b-8a47-7ca122a2116d", () => {
@@ -417,12 +377,17 @@ describe("FACEIT webhook integration (replay from fixtures)", () => {
           return Promise.resolve(row.details);
         });
 
-      for (const row of rows) {
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
         const res = await request(app)
           .post("/api/v1/faceit/webhook")
           .set("X-API-KEY", TEST_WEBHOOK_API_KEY)
           .send(row.data);
-        expect(res.status).toBe(200);
+        if (res.status !== 200) {
+          throw new Error(
+            `BO1 row ${i} event=${row.event} status=${res.status} body=${JSON.stringify(res.body)}`
+          );
+        }
       }
 
       const matches = await runQuery<
@@ -484,12 +449,17 @@ describe("FACEIT webhook integration (replay from fixtures)", () => {
           return Promise.resolve(row.details);
         });
 
-      for (const row of rows) {
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
         const res = await request(app)
           .post("/api/v1/faceit/webhook")
           .set("X-API-KEY", TEST_WEBHOOK_API_KEY)
           .send(row.data);
-        expect(res.status).toBe(200);
+        if (res.status !== 200) {
+          throw new Error(
+            `BO3 row ${i} event=${row.event} status=${res.status} body=${JSON.stringify(res.body)}`
+          );
+        }
       }
 
       const matches = await runQuery<
