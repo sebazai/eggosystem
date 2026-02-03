@@ -393,4 +393,141 @@ describe("FACEIT webhook integration (replay from fixtures)", () => {
       }
     });
   });
+
+  describe("room 1-00000001-0001-4000-8000-000000000001 (normal BO1, single Match)", () => {
+    const roomId = "1-00000001-0001-4000-8000-000000000001";
+
+    it("replays webhooks and asserts single Match, one MatchGame, FINISHED", async () => {
+      const rows = loadFixtureRows(roomId);
+      const callIndexByRoom = new Map<string, number>();
+
+      jest
+        .spyOn(faceitServices, "getFaceITMatchDetails")
+        .mockImplementation((externalMatchRoomId: string) => {
+          const idx = callIndexByRoom.get(externalMatchRoomId) ?? 0;
+          callIndexByRoom.set(externalMatchRoomId, idx + 1);
+          const row = rows[idx];
+          if (!row?.details) {
+            return Promise.reject(
+              new Error(
+                `No details for room ${externalMatchRoomId} call ${idx}`
+              )
+            );
+          }
+          return Promise.resolve(row.details);
+        });
+
+      for (const row of rows) {
+        const res = await request(app)
+          .post("/api/v1/faceit/webhook")
+          .set("X-API-KEY", TEST_WEBHOOK_API_KEY)
+          .send(row.data);
+        expect(res.status).toBe(200);
+      }
+
+      const matches = await runQuery<
+        Array<{
+          id: number;
+          status: string;
+          best_of: number;
+          start_timestamp: Date | null;
+          end_timestamp: Date | null;
+        }>
+      >(
+        "SELECT id, status, best_of, start_timestamp, end_timestamp FROM Matches WHERE external_match_room_id = ? ORDER BY id",
+        [roomId]
+      );
+      expect(matches).toHaveLength(1);
+      const [match] = matches;
+      expect(match?.status).toBe("FINISHED");
+      expect(match?.best_of).toBe(1);
+      expect(match?.start_timestamp).toBeTruthy();
+      expect(match?.end_timestamp).toBeTruthy();
+
+      const matchGames = await runQuery<
+        Array<{
+          match_id: number;
+          id: number;
+          map_order: number | null;
+          demofile: string;
+        }>
+      >(
+        "SELECT mg.match_id, mg.id, mg.map_order, mg.demofile FROM Matches m JOIN MatchGames mg ON mg.match_id = m.id WHERE m.external_match_room_id = ? ORDER BY mg.map_order",
+        [roomId]
+      );
+      expect(matchGames).toHaveLength(1);
+      expect(matchGames[0].map_order).toBe(1);
+      expect(matchGames[0].demofile).toBeTruthy();
+    });
+  });
+
+  describe("room 1-00000002-0002-4000-8000-000000000002 (BO3 single Match)", () => {
+    const roomId = "1-00000002-0002-4000-8000-000000000002";
+
+    it("replays webhooks and asserts single Match, two MatchGames, FINISHED", async () => {
+      const rows = loadFixtureRows(roomId);
+      const callIndexByRoom = new Map<string, number>();
+
+      jest
+        .spyOn(faceitServices, "getFaceITMatchDetails")
+        .mockImplementation((externalMatchRoomId: string) => {
+          const idx = callIndexByRoom.get(externalMatchRoomId) ?? 0;
+          callIndexByRoom.set(externalMatchRoomId, idx + 1);
+          const row = rows[idx];
+          if (!row?.details) {
+            return Promise.reject(
+              new Error(
+                `No details for room ${externalMatchRoomId} call ${idx}`
+              )
+            );
+          }
+          return Promise.resolve(row.details);
+        });
+
+      for (const row of rows) {
+        const res = await request(app)
+          .post("/api/v1/faceit/webhook")
+          .set("X-API-KEY", TEST_WEBHOOK_API_KEY)
+          .send(row.data);
+        expect(res.status).toBe(200);
+      }
+
+      const matches = await runQuery<
+        Array<{
+          id: number;
+          status: string;
+          best_of: number;
+          start_timestamp: Date | null;
+          end_timestamp: Date | null;
+        }>
+      >(
+        "SELECT id, status, best_of, start_timestamp, end_timestamp FROM Matches WHERE external_match_room_id = ? ORDER BY id",
+        [roomId]
+      );
+      expect(matches).toHaveLength(1);
+      const [match] = matches;
+      expect(match?.status).toBe("FINISHED");
+      expect(match?.best_of).toBe(3);
+      expect(match?.start_timestamp).toBeTruthy();
+      expect(match?.end_timestamp).toBeTruthy();
+
+      const matchGames = await runQuery<
+        Array<{
+          match_id: number;
+          id: number;
+          map_order: number | null;
+          demofile: string;
+        }>
+      >(
+        "SELECT mg.match_id, mg.id, mg.map_order, mg.demofile FROM Matches m JOIN MatchGames mg ON mg.match_id = m.id WHERE m.external_match_room_id = ? ORDER BY mg.map_order",
+        [roomId]
+      );
+      expect(matchGames).toHaveLength(2);
+      expect(matchGames.map((g) => g.map_order)).toEqual([1, 2]);
+      matchGames.forEach((mg) => {
+        expect(mg.demofile).toBeTruthy();
+        expect(mg.demofile).not.toBe("");
+      });
+    });
+  });
 });

@@ -31,11 +31,19 @@ const ROOM_IDS = [
   "1-f55c14a9-b708-4abc-8ffb-be4993e469c1"
 ] as const;
 
+/** Normal / BO3 single-Match rooms (one Match row per room, league has is_round_robin_bo2_as_2xbo1 = 0). */
+const NORMAL_ROOM_IDS = [
+  "1-00000001-0001-4000-8000-000000000001",
+  "1-00000002-0002-4000-8000-000000000002"
+] as const;
+
 const ORGANIZER_FACEIT_ID = "d2372a88-623d-4ca3-9248-a480b6dfbe1a";
 const ENTITY_IDS = [
   "7464ba95-996a-43bc-88c2-ccce3d6127ec",
   "32ea3ab1-d916-4701-b545-5c76b19d9c64"
 ] as const;
+
+const NORMAL_ENTITY_ID = "a1b2c3d4-e5f6-4078-8000-000000000001";
 const CS2_APP_ID = 730;
 
 interface FactionInfo {
@@ -43,9 +51,11 @@ interface FactionInfo {
   name: string;
 }
 
-function loadFactionIdsFromFixtures(): Map<string, FactionInfo[]> {
+function loadFactionIdsFromFixtures(
+  roomIds: readonly string[]
+): Map<string, FactionInfo[]> {
   const byRoom = new Map<string, FactionInfo[]>();
-  for (const roomId of ROOM_IDS) {
+  for (const roomId of roomIds) {
     const p = path.join(FIXTURES_DIR, `${roomId}.json`);
     if (!fs.existsSync(p)) continue;
     const raw = fs.readFileSync(p, "utf8");
@@ -79,12 +89,19 @@ export async function runFaceitWebhookIntegrationSeed(): Promise<void> {
   const trx = connection;
   try {
     await trx.beginTransaction();
-
-    const byRoom = loadFactionIdsFromFixtures();
+    const byRoom2xBO1 = loadFactionIdsFromFixtures(ROOM_IDS);
+    const byRoomNormal = loadFactionIdsFromFixtures(NORMAL_ROOM_IDS);
     const allFactions = new Map<string, string>();
-    for (const [, pairs] of byRoom) {
+    for (const [, pairs] of byRoom2xBO1) {
       for (const { faction_id, name } of pairs) {
         if (!allFactions.has(faction_id)) allFactions.set(faction_id, name);
+      }
+    }
+    const normalFactionIds = new Set<string>();
+    for (const [, pairs] of byRoomNormal) {
+      for (const { faction_id, name } of pairs) {
+        if (!allFactions.has(faction_id)) allFactions.set(faction_id, name);
+        normalFactionIds.add(faction_id);
       }
     }
 
@@ -208,7 +225,7 @@ export async function runFaceitWebhookIntegrationSeed(): Promise<void> {
       );
     }
 
-    // 9. Teams (unique on name) and SeasonLeagueTeams
+    // 9. Teams (unique on name) and SeasonLeagueTeams (2xBO1 season/league)
     for (const [factionId, _teamName] of allFactions) {
       const safeName = `faceit-fixture-${factionId}`.slice(0, 255);
       await runQuery(
@@ -227,6 +244,82 @@ export async function runFaceitWebhookIntegrationSeed(): Promise<void> {
       await runQuery(
         `INSERT IGNORE INTO SeasonLeagueTeams (season_id, team_id, league_id, external_team_id) VALUES (?, ?, ?, ?)`,
         [seasonId, teamId, leagueId, factionId],
+        trx
+      );
+    }
+
+    // 10. Normal league (single Match per room: BO1 or BO3, is_round_robin_bo2_as_2xbo1 = 0)
+    const [normalSeasonRow] = await runQuery<Array<{ id: number }>>(
+      "SELECT id FROM Seasons WHERE organizer_id = ? AND platform = 'faceit' AND is_round_robin_bo2_as_2xbo1 = 0 LIMIT 1",
+      [organizerId],
+      trx
+    );
+    let normalSeasonId: number;
+    if (normalSeasonRow?.id != null) {
+      normalSeasonId = normalSeasonRow.id;
+    } else {
+      const ins = await runQuery<{ insertId: number }>(
+        `INSERT INTO Seasons (game_id, organizer_id, name, full_name, start_date, platform, is_round_robin_bo2_as_2xbo1)
+         VALUES (?, ?, ?, ?, ?, 'faceit', 0)`,
+        [
+          gameId,
+          organizerId,
+          "FACEIT Integration Normal Season",
+          "FACEIT Integration Normal Season",
+          "2025-01-01"
+        ],
+        trx
+      );
+      normalSeasonId = ins.insertId as number;
+    }
+
+    const [normalLeagueRow] = await runQuery<Array<{ id: number }>>(
+      "SELECT id FROM Leagues WHERE name = ? LIMIT 1",
+      ["FACEIT Integration Normal League"],
+      trx
+    );
+    const normalLeagueId =
+      normalLeagueRow?.id ??
+      ((
+        (await runQuery<{ insertId: number }>(
+          "INSERT INTO Leagues (name, sort_priority) VALUES (?, ?)",
+          ["FACEIT Integration Normal League", 98],
+          trx
+        )) as { insertId: number }
+      ).insertId as number);
+
+    await runQuery(
+      `INSERT IGNORE INTO SeasonLeagues (season_id, league_id, tier) VALUES (?, ?, ?)`,
+      [normalSeasonId, normalLeagueId, 1],
+      trx
+    );
+
+    await runQuery(
+      `INSERT INTO SeasonLeagueExternalIds (external_id, external_league_name, season_id, league_id, stage_id, type)
+       VALUES (?, ?, ?, ?, ?, 'roundRobin')
+       ON DUPLICATE KEY UPDATE updated_at = CURRENT_TIMESTAMP`,
+      [
+        NORMAL_ENTITY_ID,
+        "Normal League",
+        normalSeasonId,
+        normalLeagueId,
+        stageId
+      ],
+      trx
+    );
+
+    for (const factionId of normalFactionIds) {
+      const safeName = `faceit-fixture-${factionId}`.slice(0, 255);
+      const [tRow] = await runQuery<Array<{ id: number }>>(
+        "SELECT id FROM Teams WHERE name = ? LIMIT 1",
+        [safeName],
+        trx
+      );
+      const teamId = tRow?.id;
+      if (teamId == null) throw new Error(`Team not found: ${safeName}`);
+      await runQuery(
+        `INSERT IGNORE INTO SeasonLeagueTeams (season_id, team_id, league_id, external_team_id) VALUES (?, ?, ?, ?)`,
+        [normalSeasonId, teamId, normalLeagueId, factionId],
         trx
       );
     }
