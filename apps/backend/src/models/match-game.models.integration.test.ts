@@ -181,215 +181,106 @@ interface CountResult {
   count: number;
 }
 
+async function cleanupMatchGameIntegrationTestData(): Promise<void> {
+  await runQuery("DELETE FROM MatchGames WHERE id = ?", [123123]);
+  await runQuery("DELETE FROM MatchTeams WHERE team_id IN (20000, 20001)", []);
+  await runQuery("DELETE FROM Matches WHERE id = ?", [5]);
+  await runQuery("DELETE FROM SeasonLeagueTeams WHERE season_id = ?", [9999]);
+  await runQuery("DELETE FROM SeasonLeagues WHERE season_id = ?", [9999]);
+  await runQuery("DELETE FROM Seasons WHERE id = ?", [9999]);
+  await runQuery("DELETE FROM Leagues WHERE id = ?", [9999]);
+  await runQuery("DELETE FROM Teams WHERE id IN (20000, 20001)", []);
+  await runQuery(
+    "DELETE FROM SeasonTeamPlayers WHERE team_id IN (20000, 20001)",
+    []
+  );
+}
+
+async function seedMatchGameIntegrationTestData(): Promise<void> {
+  await runQuery(
+    `INSERT INTO Seasons (id, game_id, name, full_name, start_date, end_date)
+     VALUES (9999, 1, 'Test Season', 'Test Season Full Name', '2024-01-01', '2024-12-31')`,
+    []
+  );
+  await runQuery(
+    `INSERT INTO Teams (id, organization_id, name, team_logo)
+     VALUES (20000, ?, 'Team A', 'team_a.png'), (20001, ?, 'Team B', 'team_b.png')`,
+    [null, null]
+  );
+  await runQuery(
+    `INSERT INTO Leagues (id, name, sort_priority) VALUES (9999, 'Test League', 1)`,
+    []
+  );
+  await runQuery(
+    `INSERT INTO SeasonLeagues (tier, season_id, league_id) VALUES (1, 9999, 9999)`,
+    []
+  );
+  await runQuery(
+    `INSERT INTO SeasonLeagueTeams (season_id, team_id, league_id)
+     VALUES (9999, 20000, 9999), (9999, 20001, 9999)`,
+    []
+  );
+  await runQuery(
+    `INSERT INTO Matches (id, league_id, season_id, stage, best_of, start_timestamp, end_timestamp, status)
+     VALUES (5, 9999, 9999, 1, 3, '2024-01-01 18:00:00', '2024-01-01 20:00:00', 'FINISHED')`,
+    []
+  );
+  await runQuery(
+    `INSERT INTO MatchTeams (match_id, team_id, season_id, league_id)
+     VALUES (5, 20000, 9999, 9999), (5, 20001, 9999, 9999)`,
+    []
+  );
+  await runQuery(
+    `INSERT INTO MatchGames (id, match_id, map_id, map_order, demofile, regulation_rounds)
+     VALUES (123123, 5, 3, 1, 'test.dem', 24)`,
+    []
+  );
+  await runQuery(
+    `INSERT IGNORE INTO SteamPlayers (steam_id, nickname)
+     VALUES ('76561197979955992', 'Player 1'), ('76561198129692076', 'Player 2'),
+     ('76561198282583074', 'Player 3'), ('76561198367129350', 'Player 4'),
+     ('76561198437815468', 'Player 5'), ('76561198074105343', 'Player 6'),
+     ('76561198160889809', 'Player 7'), ('76561198969706496', 'Player 8'),
+     ('76561199070598421', 'Player 9'), ('76561199549505672', 'Player 10')`,
+    []
+  );
+  await runQuery(
+    `INSERT INTO SeasonTeamPlayers (season_id, team_id, steam_id, role, is_captain, is_co_captain)
+     VALUES (9999, 20000, '76561197979955992', 'primary', 1, 0),
+     (9999, 20000, '76561198129692076', 'primary', 0, 1),
+     (9999, 20000, '76561198282583074', 'primary', 0, 0),
+     (9999, 20000, '76561198367129350', 'primary', 0, 0),
+     (9999, 20000, '76561198437815468', 'primary', 0, 0),
+     (9999, 20001, '76561198074105343', 'primary', 1, 0),
+     (9999, 20001, '76561198160889809', 'primary', 0, 1),
+     (9999, 20001, '76561198969706496', 'primary', 0, 0),
+     (9999, 20001, '76561199070598421', 'primary', 0, 0),
+     (9999, 20001, '76561199549505672', 'primary', 0, 0)`,
+    []
+  );
+}
+
 describe("saveParsedDemoDataForGame Integration Tests", () => {
   beforeAll(async () => {
-    // Seed test data
-    await cleanupTestData();
-    await seedTestData();
+    await cleanupMatchGameIntegrationTestData();
+    await seedMatchGameIntegrationTestData();
   });
 
   afterEach(async () => {
-    // Clean up data after each test to prevent duplicate entry errors
     await runQuery(
-      `
-      DELETE FROM MapRoundStats WHERE match_game_id = ?
-      `,
+      "DELETE FROM MapRoundStats WHERE match_game_id = ?",
       [123123]
     );
     await runQuery(
-      `
-      DELETE FROM PlayerTrades WHERE match_game_id = ?
-      `,
+      "DELETE FROM PlayerTrades WHERE match_game_id = ?",
       [123123]
     );
+    await runQuery("DELETE FROM PlayerStats WHERE match_game_id = ?", [123123]);
     await runQuery(
-      `
-      DELETE FROM PlayerStats WHERE match_game_id = ?
-      `,
-      [123123]
-    );
-    await runQuery(
-      `
-      DELETE FROM TeamGameScores WHERE match_game_id = ?
-      `,
+      "DELETE FROM TeamGameScores WHERE match_game_id = ?",
       [123123]
     );
   });
-
-  const cleanupTestData = async () => {
-    await runQuery(
-      `
-      DELETE FROM MatchGames WHERE id = ?
-      `,
-      [123123]
-    );
-    await runQuery(
-      `
-      DELETE FROM MatchTeams WHERE team_id IN (20000, 20001)
-      `,
-      []
-    );
-    await runQuery(
-      `
-      DELETE FROM Matches WHERE id = ?
-      `,
-      [5]
-    );
-    await runQuery(
-      `
-      DELETE FROM SeasonLeagueTeams WHERE season_id = ?
-      `,
-      [9999]
-    );
-    await runQuery(
-      `
-      DELETE FROM SeasonLeagues WHERE season_id = ?
-      `,
-      [9999]
-    );
-    await runQuery(
-      `
-      DELETE FROM Seasons WHERE id = ?
-      `,
-      [9999]
-    );
-    await runQuery(
-      `
-      DELETE FROM Leagues WHERE id = ?
-      `,
-      [9999]
-    );
-    await runQuery(
-      `
-      DELETE FROM Teams WHERE id IN (20000, 20001)
-      `,
-      []
-    );
-    await runQuery(
-      `
-      DELETE FROM SeasonTeamPlayers WHERE team_id IN (20000, 20001)
-      `,
-      []
-    );
-  };
-
-  const seedTestData = async () => {
-    // Insert test season
-    await runQuery(
-      `
-      INSERT INTO Seasons (id, game_id, name, full_name, start_date, end_date)
-      VALUES (9999, 1, 'Test Season', 'Test Season Full Name', '2024-01-01', '2024-12-31')
-    `,
-      []
-    );
-
-    // Insert test teams
-    await runQuery(
-      `
-      INSERT INTO Teams (id, organization_id, name, team_logo)
-      VALUES 
-        (20000, ?, 'Team A', 'team_a.png'),
-        (20001, ?, 'Team B', 'team_b.png')
-    `,
-      [null, null]
-    );
-
-    // Insert test league
-    await runQuery(
-      `
-      INSERT INTO Leagues (id, name, sort_priority)
-      VALUES (9999, 'Test League', 1)
-    `,
-      []
-    );
-
-    // Insert SeasonLeagues record (required for Matches table)
-    await runQuery(
-      `
-      INSERT INTO SeasonLeagues (tier, season_id, league_id)
-      VALUES (1, 9999, 9999)
-    `,
-      []
-    );
-
-    // Insert SeasonLeagueTeams records (required for MatchTeams table)
-    await runQuery(
-      `
-      INSERT INTO SeasonLeagueTeams (season_id, team_id, league_id)
-      VALUES 
-        (9999, 20000, 9999),
-        (9999, 20001, 9999)
-    `,
-      []
-    );
-
-    // Insert test match
-    await runQuery(
-      `
-      INSERT INTO Matches (id, league_id, season_id, stage, best_of, start_timestamp, end_timestamp, status)
-      VALUES (5, 9999, 9999, 1, 3, '2024-01-01 18:00:00', '2024-01-01 20:00:00', 'FINISHED')
-    `,
-      []
-    );
-
-    // Link teams to match
-    await runQuery(
-      `
-      INSERT INTO MatchTeams (match_id, team_id, season_id, league_id)
-      VALUES 
-        (5, 20000, 9999, 9999),
-        (5, 20001, 9999, 9999)
-    `,
-      []
-    );
-
-    // Insert test game
-    await runQuery(
-      `
-      INSERT INTO MatchGames (id, match_id, map_id, map_order, demofile, regulation_rounds)
-      VALUES (123123, 5, 3, 1, 'test.dem', 24)
-    `,
-      []
-    );
-
-    // Insert test players
-    await runQuery(
-      `
-      INSERT IGNORE INTO SteamPlayers (steam_id, nickname)
-      VALUES 
-        ('76561197979955992', 'Player 1'),
-        ('76561198129692076', 'Player 2'),
-        ('76561198282583074', 'Player 3'),
-        ('76561198367129350', 'Player 4'),
-        ('76561198437815468', 'Player 5'),
-        ('76561198074105343', 'Player 6'),
-        ('76561198160889809', 'Player 7'),
-        ('76561198969706496', 'Player 8'),
-        ('76561199070598421', 'Player 9'),
-        ('76561199549505672', 'Player 10')
-      `,
-      []
-    );
-
-    // Insert test players
-    await runQuery(
-      `
-      INSERT INTO SeasonTeamPlayers (season_id, team_id, steam_id, role, is_captain, is_co_captain)
-      VALUES 
-        (9999, 20000, '76561197979955992', 'primary', 1, 0),
-        (9999, 20000, '76561198129692076', 'primary', 0, 1),
-        (9999, 20000, '76561198282583074', 'primary', 0, 0),
-        (9999, 20000, '76561198367129350', 'primary', 0, 0),
-        (9999, 20000, '76561198437815468', 'primary', 0, 0),
-        (9999, 20001, '76561198074105343', 'primary', 1, 0),
-        (9999, 20001, '76561198160889809', 'primary', 0, 1),
-        (9999, 20001, '76561198969706496', 'primary', 0, 0),
-        (9999, 20001, '76561199070598421', 'primary', 0, 0),
-        (9999, 20001, '76561199549505672', 'primary', 0, 0)
-    `,
-      []
-    );
-  };
 
   describe("successful integration tests", () => {
     it("should successfully save parsed demo data to database", async () => {
@@ -721,11 +612,16 @@ describe("saveParsedDemoDataForGame Integration Tests", () => {
   });
 
   describe("upsertMatchGameForMatch Integration Tests", () => {
-    const testMatchId = 5; // Using the existing test match
+    const testMatchId = 5; // From seedMatchGameIntegrationTestData
     const testMapId = 3;
     const testMapOrder = 1;
     const testDemoFile = "test-upsert-demo.dem";
     const testRegulationRounds = 24;
+
+    beforeAll(async () => {
+      await cleanupMatchGameIntegrationTestData();
+      await seedMatchGameIntegrationTestData();
+    });
 
     beforeEach(async () => {
       // Clean up any existing test data

@@ -1850,7 +1850,11 @@ describe("FaceIT Routes - Webhook", () => {
         mockGetOrganizerByFaceitIdAndGameAppId.mockResolvedValue(mockOrganizer);
         mockSaveWebhookData.mockResolvedValue({ insertId: 1 });
         mockAddMatchTeamMapVetoes.mockResolvedValue(undefined);
-        mockUpdateMatchStatus.mockResolvedValue(undefined);
+        mockGetMatchesByExternalId.mockResolvedValue([
+          { id: 1, status: "ONGOING" } as Match,
+          { id: 2, status: "ONGOING" } as Match
+        ]);
+        mockUpdateMatchStatusByMatchId.mockResolvedValue(undefined);
       });
 
       it("should set manualProcessed to true when reprocess=true for match_status_ready", async () => {
@@ -1880,7 +1884,11 @@ describe("FaceIT Routes - Webhook", () => {
         mockGetOrganizerByFaceitIdAndGameAppId.mockResolvedValue(mockOrganizer);
         mockSaveWebhookData.mockResolvedValue({ insertId: 1 });
         mockAddMatchTeamMapVetoes.mockResolvedValue(undefined);
-        mockUpdateMatchStatus.mockResolvedValue(undefined);
+        mockGetMatchesByExternalId.mockResolvedValue([
+          { id: 1, status: "ONGOING" } as Match,
+          { id: 2, status: "ONGOING" } as Match
+        ]);
+        mockUpdateMatchStatusByMatchId.mockResolvedValue(undefined);
       });
 
       it("should successfully process championship match_status_ready webhook", async () => {
@@ -1908,9 +1916,19 @@ describe("FaceIT Routes - Webhook", () => {
           "5227a49c-f172-485e-a19b-a666ddeb3140"
         );
 
-        // Note: updateMatchStatus is called for championship match_status_ready
-        // Only addMatchTeamMapVetoes is called
-        expect(mockUpdateMatchStatus).toHaveBeenCalled();
+        // Route sets non-FINISHED matches to ONGOING via updateMatchStatusByMatchId (not updateMatchStatusByExternalMatchroomId)
+        expect(mockGetMatchesByExternalId).toHaveBeenCalledWith(
+          "1-32a13dfb-e5e7-4b0e-89ef-ab952e6d8191"
+        );
+        expect(mockUpdateMatchStatusByMatchId).toHaveBeenCalledWith(
+          1,
+          "ONGOING"
+        );
+        expect(mockUpdateMatchStatusByMatchId).toHaveBeenCalledWith(
+          2,
+          "ONGOING"
+        );
+        expect(mockUpdateMatchStatus).not.toHaveBeenCalled();
       });
     });
   });

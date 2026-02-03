@@ -203,6 +203,23 @@ export const getMatchGamesByExternalMatchRoomId = async (
   return games;
 };
 
+/**
+ * True if the match has at least one MatchGame with a non-empty demofile (demo was ready).
+ * Used to avoid overwriting a played game with FORFEIT when match_status_finished (forfeit) arrives after match_demo_ready.
+ */
+export const hasMatchGameWithDemo = async (
+  matchId: number,
+  connection?: PoolConnection
+): Promise<boolean> => {
+  const query = `SELECT 1 FROM MatchGames WHERE match_id = ? AND demofile IS NOT NULL AND demofile != '' LIMIT 1`;
+  const rows = await runQuery<Array<{ "1": number }>>(
+    query,
+    [matchId],
+    connection
+  );
+  return Array.isArray(rows) && rows.length > 0;
+};
+
 export const getMatchIdByGameId = async (
   matchGameId: number,
   connection?: PoolConnection
