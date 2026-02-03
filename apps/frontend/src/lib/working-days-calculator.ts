@@ -4,8 +4,8 @@
  * 25 unmarked holidays (weekdays only), and 2 travelling days.
  */
 
-/** Default end date: 31.8.2026 (YYYY-MM-DD). */
-export const DEFAULT_END_DATE = "2026-08-31";
+/** Default end date: 26.8.2026 (YYYY-MM-DD). */
+export const DEFAULT_END_DATE = "2026-08-26";
 
 const VACATION_START = { year: 2026, month: 1, day: 9 }; // 9 Feb
 const VACATION_END = { year: 2026, month: 1, day: 25 }; // 25 Feb
@@ -70,7 +70,7 @@ function isFijiHoliday(date: Date): boolean {
 export interface WorkingDaysResult {
   /** Start date used */
   startDate: string;
-  /** End date used (default 31.8.2026) */
+  /** End date used (default 26.8.2026) */
   endDate: string;
   /** Weekdays in range before any deductions */
   weekdaysInRange: number;
@@ -89,7 +89,7 @@ export interface WorkingDaysResult {
 }
 
 /**
- * Resolve end date: use given string if valid YYYY-MM-DD, otherwise default 31.8.2026.
+ * Resolve end date: use given string if valid YYYY-MM-DD, otherwise default 26.8.2026.
  */
 function resolveEndDate(endDateStr: string | undefined): string {
   if (endDateStr && /^\d{4}-\d{2}-\d{2}$/.test(endDateStr)) return endDateStr;
@@ -98,7 +98,7 @@ function resolveEndDate(endDateStr: string | undefined): string {
 
 /**
  * Compute working days from startDate (YYYY-MM-DD) to endDate (inclusive).
- * If endDate is not provided or invalid, uses 31.8.2026.
+ * If endDate is not provided or invalid, uses 26.8.2026.
  * Excludes: weekends, vacation 9.2.–25.2., Fiji public holidays (weekdays),
  * 25 unmarked holidays, 2 travelling days.
  */

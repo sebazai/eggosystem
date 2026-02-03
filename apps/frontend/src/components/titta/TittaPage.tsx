@@ -76,7 +76,7 @@ export default function TittaPage() {
           Working days calculator
         </h1>
         <p className="text-muted-foreground mt-1">
-          From start date to end date (default 31.8.2026). Excludes vacation
+          From start date to end date (default 26.8.2026). Excludes vacation
           9.2.–25.2., Fiji public holidays, 25 unmarked holidays (Mon–Fri), and
           2 travelling days.
         </p>
@@ -108,7 +108,7 @@ export default function TittaPage() {
             </div>
           </div>
           <p className="text-sm text-muted-foreground">
-            Default end date: 31.8.2026
+            Default end date: 26.8.2026
           </p>
         </CardContent>
       </Card>
