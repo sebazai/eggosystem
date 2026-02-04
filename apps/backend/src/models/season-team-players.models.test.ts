@@ -5,6 +5,7 @@ import {
 } from "./season-team-players.models";
 import { getSeasonLeagueTeamByExternalId } from "./season-league-team.models";
 import { getHubMatchesByExternalMatchRoomId } from "./match.models";
+import { notifyFlaggedMatchInDiscord } from "../services/discord-organizer.services";
 import { redisClient } from "../utils/redisClient";
 import type { FaceitMatchTeams, SeasonTeamPlayer } from "@eggosystem/types";
 import {
@@ -18,6 +19,9 @@ jest.mock("./season-league-team.models");
 jest.mock("./match.models");
 jest.mock("../utils/redisClient");
 jest.mock("../db/mysqlRunQuery");
+jest.mock("../services/discord-organizer.services", () => ({
+  notifyFlaggedMatchInDiscord: jest.fn().mockResolvedValue(undefined)
+}));
 
 const mockGetSeasonLeagueTeamByExternalId =
   getSeasonLeagueTeamByExternalId as jest.MockedFunction<
@@ -28,6 +32,10 @@ const mockGetHubMatchesByExternalMatchRoomId =
     typeof getHubMatchesByExternalMatchRoomId
   >;
 const mockRedisClient = redisClient as jest.Mocked<typeof redisClient>;
+const mockNotifyFlaggedMatchInDiscord =
+  notifyFlaggedMatchInDiscord as jest.MockedFunction<
+    typeof notifyFlaggedMatchInDiscord
+  >;
 
 describe("season-team-players.models", () => {
   describe("validatePlayersInTeams", () => {
@@ -256,7 +264,8 @@ describe("season-team-players.models", () => {
               team_id: 101,
               steam_id: "steam123"
             })
-          ]) // Only one player found
+          ]) // Only one player found (team 1)
+          .mockResolvedValueOnce([{ organizer_id: 1 }]) // getOrganizerIdBySeasonId after flag
           .mockResolvedValueOnce([
             createMockSeasonTeamPlayer({
               season_id: 1,
@@ -284,6 +293,15 @@ describe("season-team-players.models", () => {
             players_added_for_this_match: []
           })
         );
+        expect(mockNotifyFlaggedMatchInDiscord).toHaveBeenCalledTimes(1);
+        expect(mockNotifyFlaggedMatchInDiscord).toHaveBeenCalledWith(1, {
+          external_match_id: "match123",
+          steam_ids: ["steam123", "steam456"],
+          players_in_season_team_players: ["steam123"],
+          team_id: 101,
+          match_ids: [1001, 1002],
+          players_added_for_this_match: []
+        });
       });
 
       it("should flag invalid players for both teams when both have unregistered players", async () => {
@@ -296,7 +314,9 @@ describe("season-team-players.models", () => {
         const mockRunQuery = jest.requireMock("../db/mysqlRunQuery").runQuery;
         mockRunQuery
           .mockResolvedValueOnce([]) // No players found for team 1
-          .mockResolvedValueOnce([]); // No players found for team 2
+          .mockResolvedValueOnce([{ organizer_id: 1 }]) // getOrganizerIdBySeasonId after first flag
+          .mockResolvedValueOnce([]) // No players found for team 2
+          .mockResolvedValueOnce([{ organizer_id: 1 }]); // getOrganizerIdBySeasonId after second flag
 
         // Act
         await validatePlayersInTeams(seasonId, mockTeams, "match123");
@@ -432,6 +452,7 @@ describe("season-team-players.models", () => {
               match_id: null
             })
           ])
+          .mockResolvedValueOnce([{ organizer_id: 1 }]) // getOrganizerIdBySeasonId after flag
           .mockResolvedValueOnce([
             createMockSeasonTeamPlayer({
               season_id: 1,
@@ -479,6 +500,7 @@ describe("season-team-players.models", () => {
             })
             // Missing steam456 - only 1 player found when 2 expected
           ])
+          .mockResolvedValueOnce([{ organizer_id: 1 }]) // getOrganizerIdBySeasonId after flag
           .mockResolvedValueOnce([
             createMockSeasonTeamPlayer({
               season_id: 1,

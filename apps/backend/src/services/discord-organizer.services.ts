@@ -7,6 +7,7 @@ import {
 } from "discord.js";
 import { logger } from "../utils/app-logger";
 import { retryWithBackoff } from "../utils/retry-utils";
+import type { FlaggedMatches } from "@eggosystem/types";
 import { getOrganizerByIdOrFail } from "../models/organizer.models";
 
 const ORGANIZER_BOT_TOKEN = process.env.DISCORD_KANABOT_BOT_TOKEN;
@@ -151,6 +152,67 @@ async function sendToOrganizerApplicationsChannel(
     );
   }
 }
+
+async function sendToOrganizerFlaggedMatchChannel(
+  organizerId: number,
+  content: string
+): Promise<void> {
+  if (!isOrganizerDiscordConfigured()) return;
+  try {
+    const organizer = await getOrganizerByIdOrFail(organizerId);
+    const channelId =
+      organizer.organizer_notify_flagged_match_discord_channel_id;
+    if (!channelId) return;
+    const guild = await getGuildById(organizer.discord_guild_id ?? "");
+    if (!guild) return;
+    const channel = await guild.channels.fetch(channelId).catch(() => null);
+    if (!channel || channel.type !== ChannelType.GuildText) return;
+    await channel.send(content);
+  } catch (error) {
+    logger.error(
+      `Failed to send message to organizer ${organizerId} flagged match channel`,
+      error
+    );
+  }
+}
+
+export function buildFlaggedMatchDiscordContent(
+  payload: FlaggedMatches,
+  baseUrl: string
+): string {
+  const missingSteamIds = (payload.steam_ids ?? []).filter(
+    (id) => !(payload.players_in_season_team_players ?? []).includes(id)
+  );
+  const matchLinks =
+    payload.match_ids && payload.match_ids.length > 0
+      ? payload.match_ids
+          .map((matchId) => `${baseUrl}/matches/${matchId}`)
+          .join(", ")
+      : "—";
+  const missingPlayersLine =
+    missingSteamIds.length > 0
+      ? missingSteamIds.join(", ")
+      : "— (see dashboard for details)";
+  const dashboardUrl = `${baseUrl}/dashboard/matches/flagged`;
+
+  return [
+    `**Flagged match** — invalid players / roster mismatch. **Team subject to ban hammer (Team ID ${payload.team_id}).**`,
+    `**External match:** \`${payload.external_match_id}\``,
+    `**Team ID:** ${payload.team_id}`,
+    `**Match links:** ${matchLinks}`,
+    `**Player(s) not in season roster:** ${missingPlayersLine}`,
+    `**Dashboard:** ${dashboardUrl}`
+  ].join("\n");
+}
+
+export const notifyFlaggedMatchInDiscord = async (
+  organizerId: number,
+  payload: FlaggedMatches
+): Promise<void> => {
+  const baseUrl = process.env.FRONTEND_URL ?? "";
+  const content = buildFlaggedMatchDiscordContent(payload, baseUrl);
+  await sendToOrganizerFlaggedMatchChannel(organizerId, content);
+};
 
 export const notifyNewCasterApplicationInDiscord = async (
   organizerId: number,
