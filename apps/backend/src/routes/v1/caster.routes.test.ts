@@ -73,10 +73,10 @@ describe("Caster Routes Integration Tests", () => {
     });
   });
 
-  describe("GET /seasons/:season_id/active-map-pool", () => {
+  describe("GET /seasons/:season_id/map-pool", () => {
     it("should validate numeric params", async () => {
       const res = await request(app).get(
-        "/api/v1/casters/seasons/invalid/active-map-pool"
+        "/api/v1/casters/seasons/invalid/map-pool"
       );
 
       expect(res.status).toBe(400);
@@ -84,9 +84,7 @@ describe("Caster Routes Integration Tests", () => {
     });
 
     it("should return active map pool for season", async () => {
-      const res = await request(app).get(
-        "/api/v1/casters/seasons/1/active-map-pool"
-      );
+      const res = await request(app).get("/api/v1/casters/seasons/1/map-pool");
 
       expect(res.status).toBe(200);
       expect(mockGetSeasonActiveMapPoolController).toHaveBeenCalled();

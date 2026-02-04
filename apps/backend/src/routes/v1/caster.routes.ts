@@ -23,7 +23,7 @@ router.get(
   getLeaguesBySeasonController
 );
 router.get(
-  "/seasons/:season_id/active-map-pool",
+  "/seasons/:season_id/map-pool",
   validateNumericParams(),
   getSeasonActiveMapPoolController
 );
