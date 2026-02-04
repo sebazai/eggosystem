@@ -8,6 +8,7 @@ import {
   getTeamsByLeague
 } from "../models/team.models";
 import { getPlayerStatsWithAllFilters } from "../models/player.models";
+import { getActiveMapPoolMaps } from "../models/season-active-map-pool.models";
 
 export const getMatchGamesByTeamController = async (
   req: RequestWithParams<{ team_id: string; season_id: string }>,
@@ -26,6 +27,15 @@ export const getLeaguesBySeasonController = async (
   const seasonIdNumber = Number(req.params.season_id);
   const leagues = await getLeaguesBySeason(seasonIdNumber);
   res.json(leagues);
+};
+
+export const getSeasonActiveMapPoolController = async (
+  req: RequestWithParams<{ season_id: string }>,
+  res: Response
+) => {
+  const seasonId = Number(req.params.season_id);
+  const activeMapPool = await getActiveMapPoolMaps([seasonId]);
+  res.json(activeMapPool);
 };
 
 export const getTeamsByLeagueController = async (

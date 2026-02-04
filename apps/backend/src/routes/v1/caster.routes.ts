@@ -2,6 +2,7 @@ import { Router } from "express";
 import { validateNumericParams } from "../../middlewares/validate-numeric-params";
 import {
   getLeaguesBySeasonController,
+  getSeasonActiveMapPoolController,
   getMatchGamesByTeamController,
   getTeamsByLeagueController,
   getTeamKeyPlayersController,
@@ -20,6 +21,11 @@ router.get(
   "/seasons/:season_id/leagues",
   validateNumericParams(),
   getLeaguesBySeasonController
+);
+router.get(
+  "/seasons/:season_id/active-map-pool",
+  validateNumericParams(),
+  getSeasonActiveMapPoolController
 );
 router.get(
   "/seasons/:season_id/league/:league_id/teams",

@@ -13,6 +13,10 @@ const mockGetLeaguesBySeasonController =
   casterControllers.getLeaguesBySeasonController as jest.MockedFunction<
     typeof casterControllers.getLeaguesBySeasonController
   >;
+const mockGetSeasonActiveMapPoolController =
+  casterControllers.getSeasonActiveMapPoolController as jest.MockedFunction<
+    typeof casterControllers.getSeasonActiveMapPoolController
+  >;
 
 describe("Caster Routes Integration Tests", () => {
   let app: express.Application;
@@ -34,6 +38,11 @@ describe("Caster Routes Integration Tests", () => {
     mockGetLeaguesBySeasonController.mockImplementation(async (req, res) => {
       res.status(200).json({ leagues: [] });
     });
+    mockGetSeasonActiveMapPoolController.mockImplementation(
+      async (req, res) => {
+        res.status(200).json([]);
+      }
+    );
   });
 
   afterEach(() => {
@@ -61,6 +70,27 @@ describe("Caster Routes Integration Tests", () => {
       const res = await request(app).get("/api/v1/casters/seasons/1/leagues");
 
       expect(res.status).toBe(200);
+    });
+  });
+
+  describe("GET /seasons/:season_id/active-map-pool", () => {
+    it("should validate numeric params", async () => {
+      const res = await request(app).get(
+        "/api/v1/casters/seasons/invalid/active-map-pool"
+      );
+
+      expect(res.status).toBe(400);
+      expect(res.body.detail).toContain("Invalid numeric param");
+    });
+
+    it("should return active map pool for season", async () => {
+      const res = await request(app).get(
+        "/api/v1/casters/seasons/1/active-map-pool"
+      );
+
+      expect(res.status).toBe(200);
+      expect(mockGetSeasonActiveMapPoolController).toHaveBeenCalled();
+      expect(Array.isArray(res.body)).toBe(true);
     });
   });
 
