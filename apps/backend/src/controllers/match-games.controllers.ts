@@ -17,7 +17,9 @@ export const getGameTeamRoundBreakdownController = async (
   const match_game_id = parseInt(req.params.match_game_id, 10);
   const teamBreakdown = await getGameTeamRoundBreakdown(match_game_id);
   if (teamBreakdown.length !== 2) {
-    throw new Error("Did not find exactly two teams for game round breakdown");
+    throw new Error(
+      `Did not find exactly two teams for game round breakdown: ${match_game_id}`
+    );
   }
   res.json(teamBreakdown);
 };
