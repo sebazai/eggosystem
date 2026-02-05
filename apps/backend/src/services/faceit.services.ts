@@ -15,7 +15,8 @@ import {
 import {
   redisClient,
   expireIn30Days,
-  expireInOneDay
+  expireInOneDay,
+  expireIn7Days
 } from "../utils/redisClient";
 import {
   getPlayerExternalRankForSeason,
@@ -1203,7 +1204,7 @@ export const getFaceitMatchStats = async (match_id: string) => {
     data.rounds &&
     data.rounds.some((round) => round.best_of === round.played)
   ) {
-    await redisClient.set(redisKey, JSON.stringify(data), "EX", expireIn30Days);
+    await redisClient.set(redisKey, JSON.stringify(data), "EX", expireIn7Days);
   }
   return data;
 };
