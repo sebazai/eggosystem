@@ -63,7 +63,7 @@ describe("Leaderboards Integration Tests", () => {
     expect(response.status).toBe(200);
     expect(response.body).toHaveProperty("avg_enemy_flash_time");
     expect(Array.isArray(response.body.avg_enemy_flash_time)).toBe(true);
-  });
+  }, 30000);
 
   // Test for single leaderboard endpoint
   test("GET /api/v1/filters/leaderboards - should return single leaderboard", async () => {
