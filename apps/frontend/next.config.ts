@@ -26,6 +26,10 @@ const nextConfig: NextConfig = {
       {
         protocol: "https",
         hostname: "imgstage.kanaliiga.fi"
+      },
+      {
+        protocol: "https",
+        hostname: "media.licdn.com"
       }
     ]
   }

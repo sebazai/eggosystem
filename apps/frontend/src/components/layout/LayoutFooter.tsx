@@ -1,5 +1,8 @@
 import Link from "next/link";
+import Image from "next/image";
 import { FooterPartners } from "../sponsors/FooterPartners";
+import { createNextUrl } from "@/lib/utils";
+import { Separator } from "../ui/separator";
 
 const Footer = () => {
   // Get Git SHA from environment variables
@@ -64,7 +67,7 @@ const Footer = () => {
           <div>
             <h2>Credits</h2>
             <div className="mt-4">
-              <p>Created by:</p>
+              <b>Created by:</b>
               <div>
                 <Link href="https://www.linkedin.com/in/jari-haikonen/">
                   enzoj
@@ -84,12 +87,43 @@ const Footer = () => {
                   </Link>
                 </div>
               </div>
-
-              <div className="mt-4">
-                <p>Data mining by:</p>
+              <div className="my-3">
+                <b>Data mining by:</b>{" "}
                 <Link href="https://www.linkedin.com/in/jari-haikonen/">
                   enzoj
                 </Link>
+              </div>
+              <Separator />
+              <div className="mt-2 flex flex-row items-center gap-3">
+                <Link
+                  href="https://www.wunderdog.io"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="shrink-0"
+                >
+                  <Image
+                    src={createNextUrl(
+                      "/images/sponsors/wunderdog_oy_logo.jpeg"
+                    )}
+                    alt="Wunderdog"
+                    width={100}
+                    height={100}
+                    className="dark:invert-0 invert"
+                    unoptimized
+                  />
+                </Link>
+                <p className="text-sm text-muted-foreground">
+                  Developed with support from{" "}
+                  <Link
+                    href="https://www.wunderdog.io/blog/open-source-benefit"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline"
+                  >
+                    Wunderdog&apos;s open-source program
+                  </Link>
+                  .
+                </p>
               </div>
             </div>
           </div>

@@ -7,24 +7,6 @@ export const FooterPartners = () => {
     <div>
       <h2>Partners</h2>
       <div className="mt-4 space-y-6 sm:space-y-8 flex flex-col items-start dark:invert-0 invert">
-        <Link href={"https://elisaesports.com/"} target="_blank">
-          <Image
-            src={createNextUrl("/images/sponsors/elisa-esports-footer.png")}
-            alt="Elisa Esports"
-            width={200}
-            height={119}
-          />
-        </Link>
-
-        <Link href={"https://www.visma.com/"} target="_blank">
-          <Image
-            src={createNextUrl("/images/sponsors/visma_logo_footer.png")}
-            alt="Visma"
-            width={181}
-            height={34}
-          />
-        </Link>
-
         <Link href={"https://atflow.fi/"} target="_blank">
           <Image
             src={createNextUrl("/images/sponsors/atflow-footer.png")}
