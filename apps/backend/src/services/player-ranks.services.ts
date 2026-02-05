@@ -406,7 +406,7 @@ export const getPlayerKanaRank = async (steam_id: string) => {
   const topPlayers = await getTopXPlayersKanaElo(TOP_PLAYERS_COUNT);
 
   const playerPosition = topPlayers.findIndex(
-    (player) => player.steam_id === steam_id
+    (player) => String(player.steam_id) === steam_id
   );
 
   const position = playerPosition + 1;

@@ -22,13 +22,18 @@ export const usePlayerTeamEligibility = (
       ? `${baseUrl}?excludeSteamId=${excludeSteamId}`
       : baseUrl;
 
-  const { data, error, isValidating, isLoading, mutate } =
-    useSWR<TeamEligibilityResult>(key, clientApiFetch, {
+  const { data, error, isValidating, mutate } = useSWR<TeamEligibilityResult>(
+    key,
+    clientApiFetch,
+    {
       revalidateOnFocus: false,
       // Don't fetch automatically - we'll trigger with mutate
       revalidateOnMount: false,
-      revalidateOnReconnect: false
-    });
+      revalidateOnReconnect: false,
+      // Don't keep previous data when key changes
+      keepPreviousData: false
+    }
+  );
 
   const checkEligibility = async () => {
     if (!key) {
@@ -40,12 +45,14 @@ export const usePlayerTeamEligibility = (
   };
 
   const clearResult = () => {
-    mutate(undefined, false); // Clear data without revalidation
+    mutate(undefined, { revalidate: false }); // Clear data without revalidation
   };
 
   return {
     eligibilityResult: data,
-    isLoading: isValidating || isLoading,
+    // Only show loading if we're validating AND (have data OR actively fetching)
+    // This prevents false loading state when key changes but no fetch happens
+    isLoading: isValidating,
     isError: error,
     checkEligibility,
     clearResult
