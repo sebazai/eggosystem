@@ -542,7 +542,7 @@ describe("Fantasy Models", () => {
         .mockResolvedValueOnce(undefined) // Update team updated_at
         .mockResolvedValueOnce([{ count: 2 }]); // Final swap count
 
-      const result = await updatePlayerRoles(1, roleUpdates, 1, false);
+      const result = await updatePlayerRoles(1, roleUpdates, 1);
 
       expect(result.remaining_swaps).toBeGreaterThanOrEqual(0);
       expect(mockConnection.commit).toHaveBeenCalled();
@@ -559,7 +559,7 @@ describe("Fantasy Models", () => {
         .mockResolvedValueOnce([]) // Get all team roles
         .mockResolvedValueOnce([{ count: 2 }]); // Already used 2 swaps
 
-      await expect(updatePlayerRoles(1, roleUpdates, 1, false)).rejects.toThrow(
+      await expect(updatePlayerRoles(1, roleUpdates, 1)).rejects.toThrow(
         "Maximum 2 role swaps per week allowed"
       );
     });
@@ -575,9 +575,7 @@ describe("Fantasy Models", () => {
       // Mock that the player is NOT in the team (empty result)
       mockRunQuery.mockResolvedValueOnce([]); // Get current players - empty means player not found
 
-      const error = await updatePlayerRoles(1, roleUpdates, 1, false).catch(
-        (e) => e
-      );
+      const error = await updatePlayerRoles(1, roleUpdates, 1).catch((e) => e);
 
       expect(error).toBeInstanceOf(Error);
       expect(error.message).toBe("Player 76561197992956290 not found in team");
@@ -598,9 +596,7 @@ describe("Fantasy Models", () => {
       // Mock that only player "1" is in the team, player "76561197992956290" is not
       mockRunQuery.mockResolvedValueOnce([{ steam_id: "1", role: "support" }]); // Get current players
 
-      const error = await updatePlayerRoles(1, roleUpdates, 1, false).catch(
-        (e) => e
-      );
+      const error = await updatePlayerRoles(1, roleUpdates, 1).catch((e) => e);
 
       expect(error).toBeInstanceOf(Error);
       expect(error.message).toBe("Player 76561197992956290 not found in team");
@@ -622,9 +618,7 @@ describe("Fantasy Models", () => {
           { steam_id: "3", role: "leader" }
         ]); // Get all team roles
 
-      const error = await updatePlayerRoles(1, roleUpdates, 1, false).catch(
-        (e) => e
-      );
+      const error = await updatePlayerRoles(1, roleUpdates, 1).catch((e) => e);
 
       expect(error).toBeInstanceOf(Error);
       expect(error.message).toBe(
@@ -633,28 +627,6 @@ describe("Fantasy Models", () => {
       expect(error.name).toBe("Bad Request");
       expect(error.status).toBe(400);
       expect(mockConnection.rollback).toHaveBeenCalled();
-    });
-
-    it("should not insert role_changed into history when skipSwapLimit is true (e.g. post-substitution role assign)", async () => {
-      const roleUpdates = [{ steam_id: "1", role: "main_awp" as PlayerRole }];
-
-      mockRunQuery.mockReset();
-      mockRunQuery
-        .mockResolvedValueOnce([{ steam_id: "1", role: "support" }]) // current role (would count as swap if we logged)
-        .mockResolvedValueOnce([]) // all team roles
-        .mockResolvedValueOnce(undefined) // UPDATE role
-        .mockResolvedValueOnce(undefined) // UPDATE team updated_at
-        .mockResolvedValueOnce([{ count: 0 }]); // final swap count (unchanged)
-
-      const result = await updatePlayerRoles(1, roleUpdates, 1, true);
-
-      expect(result.remaining_swaps).toBe(2);
-      const historyInserts = mockRunQuery.mock.calls.filter(
-        (call) =>
-          typeof call[0] === "string" &&
-          String(call[0]).includes("INSERT INTO FantasyPlayerHistory")
-      );
-      expect(historyInserts.length).toBe(0);
     });
   });
 

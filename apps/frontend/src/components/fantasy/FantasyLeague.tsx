@@ -330,6 +330,7 @@ export default function FantasyLeague({ seasonId }: Props) {
       setIsSubmitting(true);
 
       try {
+        // Server determines if it's a swap or initial assignment
         const response = await clientApiFetch<{
           success: boolean;
           remaining_swaps: number;
@@ -341,8 +342,7 @@ export default function FantasyLeague({ seasonId }: Props) {
                 player_id: playerId,
                 role: role || null
               }
-            ],
-            skip_swap_limit: !isSwap // Skip limit check if it's an initial assignment
+            ]
           })
         });
 
@@ -399,6 +399,7 @@ export default function FantasyLeague({ seasonId }: Props) {
         // If role is provided, assign it (this doesn't count as a role swap since it's a new player)
         if (role) {
           try {
+            // Server automatically determines this is an initial assignment (not a swap)
             await clientApiFetch(
               `/api/v1/seasons/${seasonId}/fantasy/teams/me/roles`,
               {
@@ -409,8 +410,7 @@ export default function FantasyLeague({ seasonId }: Props) {
                       player_id: newPlayerSteamId,
                       role: role
                     }
-                  ],
-                  skip_swap_limit: true
+                  ]
                 })
               }
             );

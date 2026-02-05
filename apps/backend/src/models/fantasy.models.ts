@@ -1068,8 +1068,7 @@ export const substitutePlayer = async (
 export const updatePlayerRoles = async (
   fantasyTeamId: number,
   roleUpdates: Array<{ steam_id: string; role: PlayerRole | null }>,
-  weekNumber: number,
-  skipSwapLimit: boolean = false
+  weekNumber: number
 ): Promise<{ success: boolean; remaining_swaps: number }> => {
   const connection = await getConnection();
 
@@ -1136,8 +1135,16 @@ export const updatePlayerRoles = async (
       }
     }
 
-    // Check role swap limit (2 per week) unless skipping
-    if (!skipSwapLimit) {
+    // Check role swap limit (2 per week)
+    // Count actual swaps (where player already has a role) - determined SERVER-SIDE
+    const actualSwaps = roleUpdates.filter((update) => {
+      const currentRole = currentRolesMap.get(update.steam_id);
+      // It's a swap if player currently has a role (not null/undefined)
+      return currentRole !== null && currentRole !== undefined;
+    });
+
+    if (actualSwaps.length > 0) {
+      // Check current swap count for the week
       const [swapCount] = await runQuery<Array<{ count: number }>>(
         `SELECT COUNT(*) as count FROM FantasyPlayerHistory 
          WHERE fantasy_team_id = ? AND action = 'role_changed' AND week_number = ?`,
@@ -1147,13 +1154,7 @@ export const updatePlayerRoles = async (
 
       const currentSwaps = swapCount?.count || 0;
 
-      // Count how many are actual swaps (player already has a role)
-      const actualSwaps = roleUpdates.filter((update) => {
-        const currentRole = currentRolesMap.get(update.steam_id);
-        return currentRole !== null && currentRole !== undefined;
-      }).length;
-
-      if (currentSwaps + actualSwaps > 2) {
+      if (currentSwaps + actualSwaps.length > 2) {
         throw new BadRequestError(
           `Maximum 2 role swaps per week allowed. You have ${2 - currentSwaps} remaining.`
         );
@@ -1171,9 +1172,9 @@ export const updatePlayerRoles = async (
       );
 
       // Only log to history if it's an actual role change (not initial assignment)
-      // and we're not skipping the swap limit (e.g. post-substitution role set shouldn't count)
-      // Initial assignments have currentRole === null; skipSwapLimit is used when assigning role to a newly substituted player
-      if (currentRole !== null && !skipSwapLimit) {
+      // Initial assignments have currentRole === null
+      // We determine this SERVER-SIDE, not from client
+      if (currentRole !== null) {
         await runQuery(
           `INSERT INTO FantasyPlayerHistory 
            (fantasy_team_id, steam_id, action, old_value, new_value, week_number)

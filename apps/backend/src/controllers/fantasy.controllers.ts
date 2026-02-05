@@ -260,7 +260,7 @@ export const updatePlayerRolesController = async (
       player_id?: string; // Support both for backward compatibility
       role: PlayerRole | null;
     }>;
-    skip_swap_limit?: boolean;
+    // skip_swap_limit removed - server determines this automatically
   };
 
   if (!body.role_updates || !Array.isArray(body.role_updates)) {
@@ -291,12 +291,8 @@ export const updatePlayerRolesController = async (
   // Calculate current week number
   const weekNumber = await getCurrentWeekNumberForSeason(seasonId);
 
-  const result = await updatePlayerRoles(
-    team.id,
-    role_updates,
-    weekNumber,
-    body.skip_swap_limit || false
-  );
+  // Server determines if it's a swap or initial assignment
+  const result = await updatePlayerRoles(team.id, role_updates, weekNumber);
 
   res.json({
     success: true,
