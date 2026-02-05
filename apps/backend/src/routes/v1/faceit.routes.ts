@@ -680,11 +680,13 @@ router.post(
                 firstGameEndTime,
                 connection
               );
-              await updateMatchStatusByMatchId(
-                hubMatches[matchIndex].id,
-                "FINISHED",
-                connection
-              );
+              if (hubMatches[matchIndex].status !== MatchStatus.FORFEIT) {
+                await updateMatchStatusByMatchId(
+                  hubMatches[matchIndex].id,
+                  "FINISHED",
+                  connection
+                );
+              }
               if (mapNumber === 1) {
                 await updateMatchStartTimestamp(
                   hubMatches[1].id,
