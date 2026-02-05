@@ -370,7 +370,7 @@ export default function FantasyLeague({ seasonId }: Props) {
   const handleConfirmSubstitution = useCallback(
     async (
       newPlayerSteamId: string,
-      newPlayerValue: number,
+      newPlayerValue: number, // Keep for UI display but don't send to server
       role?: string,
       removePlayerId?: string
     ) => {
@@ -379,9 +379,7 @@ export default function FantasyLeague({ seasonId }: Props) {
       setIsSubmitting(true);
 
       try {
-        // Use current week number from backend, fallback to week 1
-        const weekNumber = existingTeam.current_week_number || 1;
-
+        // Server calculates week number and fetches actual player value
         const response = await clientApiFetch<{
           success: boolean;
           remaining_substitutions: number;
@@ -390,9 +388,9 @@ export default function FantasyLeague({ seasonId }: Props) {
           body: JSON.stringify({
             remove_player_id: removePlayerId || "",
             add_player_id: newPlayerSteamId,
-            new_player_value: newPlayerValue,
-            week_number: weekNumber,
             role: role
+            // new_player_value removed - server fetches from database
+            // week_number removed - server calculates current week
           })
         });
 

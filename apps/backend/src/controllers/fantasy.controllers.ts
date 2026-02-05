@@ -72,7 +72,7 @@ export const createFantasyTeamController = async (
       steam_id?: string;
       player_id?: string; // Support both for backward compatibility
       role: PlayerRole | null;
-      player_value: number;
+      player_value?: number; // Optional, server will fetch actual value
     }>;
   };
 
@@ -95,6 +95,7 @@ export const createFantasyTeamController = async (
   }
 
   // Validate and map players (support both steam_id and player_id)
+  // Note: player_value from client is ignored, server fetches actual value
   const mappedPlayers = players.map((p) => {
     const steamId = p.steam_id || p.player_id;
     if (!steamId) {
@@ -103,7 +104,7 @@ export const createFantasyTeamController = async (
     return {
       steam_id: steamId,
       role: p.role,
-      player_value: p.player_value
+      player_value: 0 // Placeholder, server will fetch actual value
     };
   });
 
@@ -192,9 +193,9 @@ export const substitutePlayerController = async (
     remove_player_id?: string; // Support both for backward compatibility
     add_steam_id?: string;
     add_player_id?: string; // Support both for backward compatibility
-    new_player_value: number;
-    week_number: number;
     role?: PlayerRole | null;
+    // new_player_value removed - server fetches from database
+    // week_number removed - server calculates current week
   };
 
   const remove_steam_id = body.remove_steam_id ?? body.remove_player_id;
@@ -204,17 +205,9 @@ export const substitutePlayerController = async (
     remove_steam_id === undefined ||
     remove_steam_id === null ||
     add_steam_id === undefined ||
-    add_steam_id === null ||
-    !body.new_player_value ||
-    body.week_number === undefined ||
-    body.week_number === null
+    add_steam_id === null
   ) {
     return next(new BadRequestError("Invalid request body"));
-  }
-
-  // Validate week_number is a positive integer
-  if (!Number.isInteger(body.week_number) || body.week_number < 1) {
-    return next(new BadRequestError("week_number must be a positive integer"));
   }
 
   const steamId = await getSteamIdFromAuth(req.auth.account_id);
@@ -227,9 +220,8 @@ export const substitutePlayerController = async (
   const substitutionData: SubstitutionData = {
     remove_steam_id: String(remove_steam_id),
     add_steam_id: String(add_steam_id),
-    new_player_value: body.new_player_value,
-    week_number: body.week_number,
     role: body.role
+    // Server fetches actual player value and calculates week number
   };
 
   const result = await substitutePlayer(team.id, substitutionData);
