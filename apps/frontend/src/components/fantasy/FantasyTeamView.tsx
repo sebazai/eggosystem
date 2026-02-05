@@ -270,6 +270,10 @@ export function FantasyTeamView({
         }
         availablePlayers={fantasyPlayers}
         existingTeamPlayerIds={existingTeam.players.map((p) => p.steam_id)}
+        existingTeamRoles={existingTeam.players.map((p) => ({
+          steam_id: p.steam_id,
+          role: p.role
+        }))}
         currentBudget={existingTeam.budget_remaining}
         substitutionsRemaining={substitutionsRemaining}
         onConfirmSubstitution={handleConfirmSubstitutionWrapper}
@@ -301,6 +305,9 @@ export function FantasyTeamView({
           }
         }}
         autoAdvance={true}
+        assignedRoles={existingTeam.players
+          .filter((p) => p.role !== null)
+          .map((p) => p.role as string)}
       />
 
       {/* Player Point History Dialog */}

@@ -330,6 +330,7 @@ export default function FantasyLeague({ seasonId }: Props) {
       setIsSubmitting(true);
 
       try {
+        // Server determines if it's a swap or initial assignment
         const response = await clientApiFetch<{
           success: boolean;
           remaining_swaps: number;
@@ -341,8 +342,7 @@ export default function FantasyLeague({ seasonId }: Props) {
                 player_id: playerId,
                 role: role || null
               }
-            ],
-            skip_swap_limit: !isSwap // Skip limit check if it's an initial assignment
+            ]
           })
         });
 
@@ -370,7 +370,7 @@ export default function FantasyLeague({ seasonId }: Props) {
   const handleConfirmSubstitution = useCallback(
     async (
       newPlayerSteamId: string,
-      newPlayerValue: number,
+      newPlayerValue: number, // Keep for UI display but don't send to server
       role?: string,
       removePlayerId?: string
     ) => {
@@ -379,9 +379,7 @@ export default function FantasyLeague({ seasonId }: Props) {
       setIsSubmitting(true);
 
       try {
-        // Use current week number from backend, fallback to week 1
-        const weekNumber = existingTeam.current_week_number || 1;
-
+        // Server calculates week number and fetches actual player value
         const response = await clientApiFetch<{
           success: boolean;
           remaining_substitutions: number;
@@ -390,15 +388,16 @@ export default function FantasyLeague({ seasonId }: Props) {
           body: JSON.stringify({
             remove_player_id: removePlayerId || "",
             add_player_id: newPlayerSteamId,
-            new_player_value: newPlayerValue,
-            week_number: weekNumber,
             role: role
+            // new_player_value removed - server fetches from database
+            // week_number removed - server calculates current week
           })
         });
 
         // If role is provided, assign it (this doesn't count as a role swap since it's a new player)
         if (role) {
           try {
+            // Server automatically determines this is an initial assignment (not a swap)
             await clientApiFetch(
               `/api/v1/seasons/${seasonId}/fantasy/teams/me/roles`,
               {
@@ -409,8 +408,7 @@ export default function FantasyLeague({ seasonId }: Props) {
                       player_id: newPlayerSteamId,
                       role: role
                     }
-                  ],
-                  skip_swap_limit: true
+                  ]
                 })
               }
             );
