@@ -141,17 +141,17 @@ export default async function Home() {
 
             <SponsorContainer
               classNames="mt-10 sm:mt-20"
-              secondary={true}
-              header="Supporting our tournaments"
+              header="Main Partners"
             >
-              <CsSupportingOrgs />
+              <KanaMainPartners />
             </SponsorContainer>
 
             <SponsorContainer
               classNames="mt-10 sm:mt-20"
-              header="Main Partners"
+              secondary={true}
+              header="Supporting our tournaments"
             >
-              <KanaMainPartners />
+              <CsSupportingOrgs />
             </SponsorContainer>
           </div>
         </div>

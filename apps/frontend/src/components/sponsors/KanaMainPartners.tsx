@@ -5,7 +5,7 @@ import { createNextUrl } from "@/lib/utils";
 export const KanaMainPartners = () => {
   return (
     <>
-      <Link href={"https://elisaesports.com/"} target="_blank">
+      {/* <Link href={"https://elisaesports.com/"} target="_blank">
         <Image
           src={createNextUrl("/images/sponsors/elisa-esports-black.png")}
           className="w-[75px] h-[44px] mobile-landscape:w-[75px] mobile-landscape:h-[44px] sm:w-[150px] sm:h-[89px]"
@@ -22,7 +22,7 @@ export const KanaMainPartners = () => {
           width={220}
           height={41}
         />
-      </Link>
+      </Link> */}
 
       <Link href={"https://atflow.fi/"} target="_blank">
         <Image
