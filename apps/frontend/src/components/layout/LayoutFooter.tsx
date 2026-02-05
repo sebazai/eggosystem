@@ -1,6 +1,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import { FooterPartners } from "../sponsors/FooterPartners";
+import { createNextUrl } from "@/lib/utils";
+import { Separator } from "../ui/separator";
 
 const Footer = () => {
   // Get Git SHA from environment variables
@@ -91,18 +93,18 @@ const Footer = () => {
                   enzoj
                 </Link>
               </div>
-              <div className="mt-2">
-                <b>
-                  <i>Special thanks to:</i>
-                </b>
+              <Separator />
+              <div className="mt-2 flex flex-row items-center gap-3">
                 <Link
                   href="https://www.wunderdog.io"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="block mt-2"
+                  className="shrink-0"
                 >
                   <Image
-                    src="https://media.licdn.com/dms/image/v2/C4E0BAQGlotwQM3QRXA/company-logo_200_200/company-logo_200_200/0/1630641680966/wunderdog_oy_logo?e=1769644800&v=beta&t=xwb6k1xapT2aRXFd5kpZoKBXFXLV7sXUbT6Vx1fNoZ0"
+                    src={createNextUrl(
+                      "/images/sponsors/wunderdog_oy_logo.jpeg"
+                    )}
                     alt="Wunderdog"
                     width={100}
                     height={100}
@@ -110,7 +112,7 @@ const Footer = () => {
                     unoptimized
                   />
                 </Link>
-                <p className="text-sm text-muted-foreground mt-2">
+                <p className="text-sm text-muted-foreground">
                   Developed with support from{" "}
                   <Link
                     href="https://www.wunderdog.io/blog/open-source-benefit"
