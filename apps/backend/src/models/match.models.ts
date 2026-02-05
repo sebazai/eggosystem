@@ -297,7 +297,7 @@ export const getMatchesByFilters = async ({
       JOIN Teams t1 ON tms1.team_id = t1.id
       JOIN TeamGameScores tms2 ON mmp.id = tms2.match_game_id AND tms1.team_id < tms2.team_id
       JOIN Teams t2 ON tms2.team_id = t2.id
-      WHERE ${query}
+      WHERE ${query} AND m.status = 'FINISHED'
       GROUP BY 
           ${!mapFilterPresent ? "m.id, DATE(m.start_timestamp), l.name, m.stage, t1.name, t1.team_logo, t2.name, t2.team_logo" : "mmp.id, l.name, m.stage, t1.name, t1.team_logo, t2.name, t2.team_logo"}
       ORDER BY 
@@ -508,12 +508,10 @@ export const getHubMatchesByExternalMatchRoomId = async (
   externalMatchRoomId: string,
   connection?: PoolConnection
 ) => {
-  const query = `SELECT id FROM Matches WHERE external_match_room_id = ? ORDER BY id ASC`;
-  const matches = await runQuery<Array<{ id: Match["id"] }> | undefined>(
-    query,
-    [externalMatchRoomId],
-    connection
-  );
+  const query = `SELECT id, status FROM Matches WHERE external_match_room_id = ? ORDER BY id ASC`;
+  const matches = await runQuery<
+    Array<{ id: Match["id"]; status: Match["status"] }> | undefined
+  >(query, [externalMatchRoomId], connection);
   if (!matches || matches.length === 0) {
     return null;
   }

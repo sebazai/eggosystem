@@ -102,7 +102,7 @@ export const getLeaderboard = async <K extends keyof LeaderboardResponse>({
       FROM TeamGameScores
       GROUP BY match_game_id
     ) AS game_rounds ON game_rounds.match_game_id = mg.id
-    WHERE ${query}
+    WHERE ${query} AND m.status = 'FINISHED'
     GROUP BY p.steam_id, p.nickname, t.name, t.team_logo
     HAVING COUNT(DISTINCT mg.id) > 2
     ORDER BY ${leaderboards} DESC, p.nickname ASC

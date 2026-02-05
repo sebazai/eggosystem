@@ -2048,8 +2048,8 @@ describe("FaceIT Routes - Webhook", () => {
 
       it("should set first game end and second game start on first match_demo_ready", async () => {
         mockGetHubMatchesByExternalMatchRoomId.mockResolvedValue([
-          { id: 101 },
-          { id: 102 }
+          { id: 101, status: "ONGOING" },
+          { id: 102, status: "ONGOING" }
         ]);
         mockGetMatchGamesByExternalMatchRoomId.mockResolvedValue([
           { id: 1, match_id: 101, map_order: 1 } as never
@@ -2077,8 +2077,8 @@ describe("FaceIT Routes - Webhook", () => {
 
       it("should update match end timestamps and status to FINISHED on second match_demo_ready", async () => {
         mockGetHubMatchesByExternalMatchRoomId.mockResolvedValue([
-          { id: 101 },
-          { id: 102 }
+          { id: 101, status: "FINISHED" },
+          { id: 102, status: "ONGOING" }
         ]);
         mockGetMatchGamesByExternalMatchRoomId.mockResolvedValue([
           { id: 1, match_id: 101, map_order: 1 } as never,
@@ -2118,8 +2118,8 @@ describe("FaceIT Routes - Webhook", () => {
       it("when 2xBO1 has one forfeit and one played (e.g. room 1-3e047cf2), match_demo_ready for map 2 sets second match to FINISHED", async () => {
         const externalMatchRoomId = "1-3e047cf2-6b8f-479b-8a47-7ca122a2116d";
         mockGetHubMatchesByExternalMatchRoomId.mockResolvedValue([
-          { id: 12141 },
-          { id: 12142 }
+          { id: 12141, status: "FINISHED" },
+          { id: 12142, status: "ONGOING" }
         ]);
         const matchDetailsForRoom = {
           ...validMatchDetailsMatchDemoReady,
@@ -2161,13 +2161,57 @@ describe("FaceIT Routes - Webhook", () => {
         }
       });
 
+      it("when 2xBO1 match_demo_ready and target match is FORFEIT, does not set status to FINISHED", async () => {
+        const externalMatchRoomId = "1-3e047cf2-6b8f-479b-8a47-7ca122a2116d";
+        mockGetHubMatchesByExternalMatchRoomId.mockResolvedValue([
+          { id: 12141, status: "FINISHED" },
+          { id: 12142, status: "FORFEIT" }
+        ]);
+        const matchDetailsForRoom = {
+          ...validMatchDetailsMatchDemoReady,
+          match_id: externalMatchRoomId
+        };
+        const demoReadyForMap2 = {
+          ...validWebhookMatchDemoReady,
+          payload: {
+            ...validWebhookMatchDemoReady.payload,
+            id: externalMatchRoomId,
+            demo_url: `https://demos-europe-central.backblaze.faceit-cdn.net/cs2/${externalMatchRoomId}-2-1.dem.zst`
+          }
+        };
+        const getDetailsSpy = jest
+          .spyOn(faceitServices, "getFaceITMatchDetails")
+          .mockResolvedValue(matchDetailsForRoom as never);
+
+        try {
+          const response = await request(app)
+            .post("/api/v1/faceit/webhook")
+            .set("X-API-KEY", TEST_WEBHOOK_API_KEY)
+            .send(demoReadyForMap2);
+
+          expect(response.status).toBe(200);
+          expect(mockUpdateMatchEndTimestamp).toHaveBeenCalledWith(
+            12142,
+            demoReadyForMap2.payload.updated_at,
+            expect.any(Object)
+          );
+          expect(mockUpdateMatchStatusByMatchId).not.toHaveBeenCalledWith(
+            12142,
+            "FINISHED",
+            expect.any(Object)
+          );
+        } finally {
+          getDetailsSpy.mockRestore();
+        }
+      });
+
       it("when 2xBO1 demo_url has map number 3, throws and returns 400", async () => {
         jest
           .spyOn(faceitServices, "getFaceITMatchDetails")
           .mockResolvedValue(validMatchDetailsMatchDemoReady as never);
         mockGetHubMatchesByExternalMatchRoomId.mockResolvedValue([
-          { id: 101 },
-          { id: 102 }
+          { id: 101, status: "ONGOING" },
+          { id: 102, status: "ONGOING" }
         ]);
         const demoUrlWithMap3 =
           "https://demos-europe-central.backblaze.faceit-cdn.net/cs2/1-ffb4225f-ff51-42ed-acb5-af6714175934-3-1.dem.zst";

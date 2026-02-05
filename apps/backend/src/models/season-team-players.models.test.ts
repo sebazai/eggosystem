@@ -117,7 +117,10 @@ describe("season-team-players.models", () => {
       })
     ];
 
-    const mockMatchIds = [{ id: 1001 }, { id: 1002 }];
+    const mockMatchIds = [
+      { id: 1001, status: "ONGOING" as const },
+      { id: 1002, status: "ONGOING" as const }
+    ];
     const seasonId = 1;
 
     beforeEach(() => {
@@ -613,7 +616,7 @@ describe("season-team-players.models", () => {
       it("should handle single match id in array", async () => {
         // Arrange
         mockGetHubMatchesByExternalMatchRoomId.mockResolvedValue([
-          { id: 1001 }
+          { id: 1001, status: "ONGOING" as const }
         ]);
         mockGetSeasonLeagueTeamByExternalId
           .mockResolvedValueOnce(mockSeasonLeagueTeam1)
