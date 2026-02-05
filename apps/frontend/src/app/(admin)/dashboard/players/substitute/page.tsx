@@ -552,13 +552,15 @@ export default function AddSubstitutePlayerPage() {
                   !steamId ||
                   isAdding ||
                   !validationResult ||
-                  !validationResult.overall_success ||
                   !matchId.trim() ||
                   !ticketNumber.trim() ||
+                  // If checking eligibility, must have result and it must allow adding
                   (checkEligibility && !eligibilityResult) ||
                   (checkEligibility &&
                     eligibilityResult &&
-                    !eligibilityResult.canAddPlayer)
+                    !eligibilityResult.canAddPlayer) ||
+                  // If not checking eligibility, basic validation must pass
+                  (!checkEligibility && !validationResult.overall_success)
                 }
                 className="w-full"
                 data-testid="add-substitute-player-button"
