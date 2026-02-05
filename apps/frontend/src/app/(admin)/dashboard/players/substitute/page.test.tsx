@@ -43,6 +43,22 @@ jest.mock("@/hooks/data/useAddSubstitutePlayer", () => ({
   useAddSubstitutePlayer: jest.fn()
 }));
 
+jest.mock("@/hooks/data/usePlayerTeamEligibility", () => ({
+  usePlayerTeamEligibility: jest.fn()
+}));
+
+jest.mock("@/hooks/data/dashboard/useTeamPlayersLive", () => ({
+  useTeamPlayersLive: jest.fn()
+}));
+
+jest.mock("@/components/dashboard/SelectedSeasonBadge", () => ({
+  SelectedSeasonBadge: () => <div data-testid="season-badge">Season 1</div>
+}));
+
+jest.mock("@/components/dashboard/LiveTeamPlayersPopup", () => ({
+  LiveTeamPlayersPopup: () => <div data-testid="live-roster-popup">Roster</div>
+}));
+
 // Mock the components
 jest.mock("@/components/dashboard/WithRoleProtection", () => ({
   WithRoleProtection: ({ children }: { children: React.ReactNode }) => (
@@ -100,6 +116,8 @@ import { useActiveSignupOrActiveSeasonForApp } from "@/hooks/data/useActiveSignu
 import { useDashboardSeasonTeams } from "@/hooks/data/useDashboardSeasonTeams";
 import { usePlayerValidation } from "@/hooks/data/dashboard/usePlayerValidation";
 import { useAddSubstitutePlayer } from "@/hooks/data/useAddSubstitutePlayer";
+import { usePlayerTeamEligibility } from "@/hooks/data/usePlayerTeamEligibility";
+import { useTeamPlayersLive } from "@/hooks/data/dashboard/useTeamPlayersLive";
 
 const mockUseAllSeasons = useAllSeasons as jest.MockedFunction<
   typeof useAllSeasons
@@ -117,11 +135,20 @@ const mockUsePlayerValidation = usePlayerValidation as jest.MockedFunction<
 >;
 const mockUseAddSubstitutePlayer =
   useAddSubstitutePlayer as jest.MockedFunction<typeof useAddSubstitutePlayer>;
+const mockUsePlayerTeamEligibility =
+  usePlayerTeamEligibility as jest.MockedFunction<
+    typeof usePlayerTeamEligibility
+  >;
+const mockUseTeamPlayersLive = useTeamPlayersLive as jest.MockedFunction<
+  typeof useTeamPlayersLive
+>;
 
 describe("AddSubstitutePlayerPage", () => {
   const mockAddSubstitutePlayer = jest.fn();
   const mockValidatePlayer = jest.fn();
   const mockClearResults = jest.fn();
+  const mockCheckEligibility = jest.fn();
+  const mockClearEligibilityResult = jest.fn();
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -196,6 +223,59 @@ describe("AddSubstitutePlayerPage", () => {
     mockUseAddSubstitutePlayer.mockReturnValue({
       addSubstitutePlayer: mockAddSubstitutePlayer
     });
+
+    mockUsePlayerTeamEligibility.mockReturnValue({
+      eligibilityResult: undefined,
+      isLoading: false,
+      isError: null,
+      checkEligibility: mockCheckEligibility,
+      clearResult: mockClearEligibilityResult
+    });
+
+    mockUseTeamPlayersLive.mockReturnValue({
+      players: [
+        {
+          steamid: "76561198000000002",
+          name: "Player One",
+          cs2_rank: 15000,
+          faceit_level: 5,
+          faceit_elo: 1500,
+          hours: 1000,
+          kanarating: 80,
+          fkd: 1.2,
+          kana_elo: 120,
+          offered_elo: null,
+          calculus: null,
+          role: "primary",
+          is_captain: false,
+          is_co_captain: false,
+          match_id: null,
+          match_info: null
+        },
+        {
+          steamid: "76561198000000003",
+          name: "Player Two",
+          cs2_rank: 18000,
+          faceit_level: 6,
+          faceit_elo: 1800,
+          hours: 1200,
+          kanarating: 90,
+          fkd: 1.4,
+          kana_elo: 130,
+          offered_elo: null,
+          calculus: null,
+          role: "primary",
+          is_captain: false,
+          is_co_captain: false,
+          match_id: null,
+          match_info: null
+        }
+      ],
+      isLoading: false,
+      isValidating: false,
+      isError: null,
+      mutate: jest.fn()
+    });
   });
 
   it("should render the page title and description", () => {
@@ -258,6 +338,29 @@ describe("AddSubstitutePlayerPage", () => {
       error: null,
       validatePlayer: mockValidatePlayer,
       clearResults: mockClearResults
+    });
+
+    // Mock successful eligibility check
+    mockUsePlayerTeamEligibility.mockReturnValue({
+      eligibilityResult: {
+        selectedTeam: {
+          team_id: 1,
+          team_name: "Team Alpha",
+          current_top4_avg: 120,
+          current_top5_avg: 115,
+          new_player_kana_elo: 100,
+          new_avg_with_player: 114
+        },
+        topTeamsInLeague: [
+          { team_id: 1, team_name: "Top Team", avg5: 125, rank: 1 }
+        ],
+        canAddPlayer: true,
+        league_name: "League 1"
+      },
+      isLoading: false,
+      isError: null,
+      checkEligibility: mockCheckEligibility,
+      clearResult: mockClearEligibilityResult
     });
 
     render(<AddSubstitutePlayerPage />);
@@ -350,6 +453,29 @@ describe("AddSubstitutePlayerPage", () => {
       clearResults: mockClearResults
     });
 
+    // Mock successful eligibility check
+    mockUsePlayerTeamEligibility.mockReturnValue({
+      eligibilityResult: {
+        selectedTeam: {
+          team_id: 1,
+          team_name: "Team Alpha",
+          current_top4_avg: 120,
+          current_top5_avg: 115,
+          new_player_kana_elo: 100,
+          new_avg_with_player: 114
+        },
+        topTeamsInLeague: [
+          { team_id: 1, team_name: "Top Team", avg5: 125, rank: 1 }
+        ],
+        canAddPlayer: true,
+        league_name: "League 1"
+      },
+      isLoading: false,
+      isError: null,
+      checkEligibility: mockCheckEligibility,
+      clearResult: mockClearEligibilityResult
+    });
+
     mockAddSubstitutePlayer.mockResolvedValue({
       message: "Substitute player successfully added to the team",
       steam_id: "76561198000000001",
@@ -412,6 +538,29 @@ describe("AddSubstitutePlayerPage", () => {
       error: null,
       validatePlayer: mockValidatePlayer,
       clearResults: mockClearResults
+    });
+
+    // Mock successful eligibility check
+    mockUsePlayerTeamEligibility.mockReturnValue({
+      eligibilityResult: {
+        selectedTeam: {
+          team_id: 1,
+          team_name: "Team Alpha",
+          current_top4_avg: 120,
+          current_top5_avg: 115,
+          new_player_kana_elo: 100,
+          new_avg_with_player: 114
+        },
+        topTeamsInLeague: [
+          { team_id: 1, team_name: "Top Team", avg5: 125, rank: 1 }
+        ],
+        canAddPlayer: true,
+        league_name: "League 1"
+      },
+      isLoading: false,
+      isError: null,
+      checkEligibility: mockCheckEligibility,
+      clearResult: mockClearEligibilityResult
     });
 
     mockAddSubstitutePlayer.mockResolvedValue({
@@ -498,6 +647,29 @@ describe("AddSubstitutePlayerPage", () => {
       clearResults: jest.fn()
     });
 
+    // Mock successful eligibility check
+    mockUsePlayerTeamEligibility.mockReturnValue({
+      eligibilityResult: {
+        selectedTeam: {
+          team_id: 1,
+          team_name: "Team Alpha",
+          current_top4_avg: 120,
+          current_top5_avg: 115,
+          new_player_kana_elo: 100,
+          new_avg_with_player: 114
+        },
+        topTeamsInLeague: [
+          { team_id: 1, team_name: "Top Team", avg5: 125, rank: 1 }
+        ],
+        canAddPlayer: true,
+        league_name: "League 1"
+      },
+      isLoading: false,
+      isError: null,
+      checkEligibility: mockCheckEligibility,
+      clearResult: mockClearEligibilityResult
+    });
+
     // Mock API error with RFC 7807 format
     const apiError = {
       detail:
@@ -559,6 +731,29 @@ describe("AddSubstitutePlayerPage", () => {
       error: null,
       validatePlayer: mockValidatePlayer,
       clearResults: mockClearResults
+    });
+
+    // Mock successful eligibility check
+    mockUsePlayerTeamEligibility.mockReturnValue({
+      eligibilityResult: {
+        selectedTeam: {
+          team_id: 1,
+          team_name: "Team Alpha",
+          current_top4_avg: 120,
+          current_top5_avg: 115,
+          new_player_kana_elo: 100,
+          new_avg_with_player: 114
+        },
+        topTeamsInLeague: [
+          { team_id: 1, team_name: "Top Team", avg5: 125, rank: 1 }
+        ],
+        canAddPlayer: true,
+        league_name: "League 1"
+      },
+      isLoading: false,
+      isError: null,
+      checkEligibility: mockCheckEligibility,
+      clearResult: mockClearEligibilityResult
     });
 
     // Mock backend validation error with RFC 7807 format

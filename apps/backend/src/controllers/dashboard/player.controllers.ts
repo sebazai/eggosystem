@@ -524,7 +524,11 @@ export const addSubstitutePlayerController = async (
         seasonId,
         teamId,
         steamId,
-        { connection, context: "finalized" }
+        {
+          connection,
+          context: "finalized",
+          excludeSteamId: replaces_steam_id
+        }
       );
 
       if (!eligibility.canAddPlayer) {
