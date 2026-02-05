@@ -12,7 +12,7 @@ const dbPool = createPool({
   // debug: process.env.NODE_ENV !== "production",
   decimalNumbers: true,
   supportBigNumbers: true,
-  bigNumberStrings: false,
+  bigNumberStrings: true, // Convert all BIGINTs to strings by default
   typeCast: function (field, next) {
     // Convert TINYINT(1) to boolean
     if (field.type === "TINY" && field.length === 1) {
@@ -29,22 +29,38 @@ const dbPool = createPool({
       return field.string();
     }
 
-    // CRITICAL FIX: Convert steam_id columns to strings to preserve precision
-    // Steam IDs (17-digit numbers) exceed Number.MAX_SAFE_INTEGER (16 digits)
-    // causing precision loss when stored as JavaScript numbers
+    // CRITICAL: Handle BIGINT columns
+    // With bigNumberStrings: true, all BIGINT columns come as strings from next().
+    // We want to keep player ID columns as strings (for precision),
+    // but convert other BIGINT columns (counts, entity_ids, timestamps) to numbers.
     //
-    // IMPORTANT: We use field.string() to get the raw string value directly from
-    // the MySQL buffer BEFORE any Number conversion. This preserves full precision.
-    // Do NOT use next() as it would apply bigNumberStrings:false conversion first.
-    //
-    // Note: We check field.name which works for both direct columns and aliases.
-    // For aliased columns (e.g., SELECT steam_id as player_id), field.name contains
-    // the alias, so queries should avoid aliasing these critical ID columns.
-    if (
-      field.type === "LONGLONG" &&
-      (field.name === "steam_id" || field.name === "provider_id")
-    ) {
-      return field.string(); // Returns null for NULL values, string otherwise
+    // Player ID columns that should remain as strings:
+    // - Columns containing "steam" or "steamid": steam_id, steamid, captain_steam_id, co_captain_steam_id,
+    //   replaces_steam_id, trader_steam_id, killer_steam_id, victim_steam_id,
+    //   player_steam_id, clip_steam_id, etc.
+    // - Columns containing "provider_id": provider_id
+    // - Player identifier columns: killer, victim, assister, trader
+    if (field.type === "LONGLONG") {
+      const fieldName = field.name.toLowerCase();
+
+      // Check if this is a player ID column that should stay as string
+      const isPlayerIdColumn =
+        fieldName.includes("steam") || // catches steam_id, steamid, captain_steam_id, etc.
+        fieldName.includes("provider") || // catches provider_id
+        fieldName === "killer" ||
+        fieldName === "victim" ||
+        fieldName === "assister" ||
+        fieldName === "trader";
+
+      if (isPlayerIdColumn) {
+        // Keep as string - let next() handle it (returns string due to bigNumberStrings: true)
+        return next();
+      } else {
+        // Convert to number for entity_id, counts, timestamps, etc.
+        // Get the string value from next() and convert to number
+        const stringValue = next();
+        return stringValue === null ? null : Number(stringValue);
+      }
     }
 
     return next();
