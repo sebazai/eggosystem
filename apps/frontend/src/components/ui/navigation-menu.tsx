@@ -45,6 +45,14 @@ function NavigationMenuList({
   );
 }
 
+function NavigationMenuSub(
+  props: React.ComponentProps<typeof NavigationMenuPrimitive.Sub>
+) {
+  return (
+    <NavigationMenuPrimitive.Sub data-slot="navigation-menu-sub" {...props} />
+  );
+}
+
 function NavigationMenuItem({
   className,
   ...props
@@ -65,8 +73,11 @@ const navigationMenuTriggerStyle = cva(
 function NavigationMenuTrigger({
   className,
   children,
+  hideChevron,
   ...props
-}: React.ComponentProps<typeof NavigationMenuPrimitive.Trigger>) {
+}: React.ComponentProps<typeof NavigationMenuPrimitive.Trigger> & {
+  hideChevron?: boolean;
+}) {
   return (
     <NavigationMenuPrimitive.Trigger
       data-slot="navigation-menu-trigger"
@@ -74,10 +85,12 @@ function NavigationMenuTrigger({
       {...props}
     >
       {children}{" "}
-      <ChevronDownIcon
-        className="relative top-[1px] ml-1 size-3 transition duration-300 group-data-[state=open]:rotate-180"
-        aria-hidden="true"
-      />
+      {!hideChevron && (
+        <ChevronDownIcon
+          className="relative top-[1px] ml-1 size-3 transition duration-300 group-data-[state=open]:rotate-180"
+          aria-hidden="true"
+        />
+      )}
     </NavigationMenuPrimitive.Trigger>
   );
 }
@@ -159,6 +172,7 @@ export {
   NavigationMenu,
   NavigationMenuList,
   NavigationMenuItem,
+  NavigationMenuSub,
   NavigationMenuContent,
   NavigationMenuTrigger,
   NavigationMenuLink,
