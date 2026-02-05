@@ -198,6 +198,7 @@ knip:
   extends: [.prepare-pnpm, .mr-all-app]
   script:
     - pnpm --filter=@eggosystem/types build
+    - pnpm --filter=@eggosystem/shared-msw build
     - pnpm knip
 
 format:check:
