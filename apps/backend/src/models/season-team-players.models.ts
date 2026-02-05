@@ -9,9 +9,12 @@ import type {
 } from "@eggosystem/types";
 import { buildInsertQueryParts } from "../db/utils";
 import { getSeasonLeagueTeamByExternalId } from "./season-league-team.models";
+import { getOrganizerIdBySeasonId } from "./season.models";
 import { redisClient } from "../utils/redisClient";
 import { getHubMatchesByExternalMatchRoomId } from "./match.models";
 import { BadRequestError } from "../utils/errors";
+import { notifyFlaggedMatchInDiscord } from "../services/discord-organizer.services";
+import { logger } from "../utils/app-logger";
 
 /**
  * Check if player exists in SeasonTeamPlayers
@@ -194,6 +197,16 @@ export const validatePlayersInTeams = async (
         )
       } satisfies FlaggedMatches;
       await redisClient.set(key, JSON.stringify(objectToSave));
+
+      const organizerId = await getOrganizerIdBySeasonId(seasonId);
+      if (organizerId !== undefined) {
+        notifyFlaggedMatchInDiscord(organizerId, objectToSave).catch((err) => {
+          logger.error(
+            `Failed to notify Discord of flagged match ${externalMatchId}`,
+            err
+          );
+        });
+      }
     }
   }
 };

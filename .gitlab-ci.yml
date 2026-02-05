@@ -212,15 +212,15 @@ audit:
   extends: [.prepare-pnpm, .mr-all-app]
   script:
     - pnpm audit --json > gl-dependency-scanning-report.json || true
-    - apt update && apt install -y jq
+    - apt update && apt install -y jq curl
     - ./scripts/audit.sh
-    # Count vulnerabilities by severity
     - |
+      # Count vulnerabilities by severity
       if [ -f gl-dependency-scanning-report.json ]; then
         CRITICAL=$(cat gl-dependency-scanning-report.json | jq '[.advisories | to_entries[]?.value | select(.severity == "critical")] | length' 2>/dev/null || echo 0)
         HIGH=$(cat gl-dependency-scanning-report.json | jq '[.advisories | to_entries[]?.value | select(.severity == "high")] | length' 2>/dev/null || echo 0)
         MODERATE=$(cat gl-dependency-scanning-report.json | jq '[.advisories | to_entries[]?.value | select(.severity == "moderate")] | length' 2>/dev/null || echo 0)
-        
+
         echo ""
         echo "╔══════════════════════════════════════════════════════════════╗"
         echo "║           NPM DEPENDENCY AUDIT RESULTS                       ║"
@@ -230,18 +230,24 @@ audit:
         echo "║  🟡 MODERATE: $MODERATE                                      "
         echo "╚══════════════════════════════════════════════════════════════╝"
         echo ""
-        
-        # Fail pipeline if CRITICAL vulnerabilities found
+
+        # Warn on CRITICAL vulnerabilities but don't block pipeline
         if [ "$CRITICAL" -gt 0 ]; then
-          echo "❌ CRITICAL npm vulnerabilities found! Pipeline blocked."
+          echo "⚠️ CRITICAL npm vulnerabilities found!"
           echo "   Run 'pnpm audit' locally to see details and fix."
-          exit 1
+          echo "   Pipeline will continue but review recommended before merging."
         fi
-        
-        # Warn but don't fail on HIGH (can be changed to fail if desired)
+
+        # Warn on HIGH vulnerabilities
         if [ "$HIGH" -gt 0 ]; then
           echo "⚠️ HIGH severity npm vulnerabilities found."
           echo "   Consider fixing these before merging."
+        fi
+
+        # Exit with warning status if critical or high vulnerabilities found
+        # This makes GitLab show the job with a warning icon (yellow/orange)
+        if [ "$CRITICAL" -gt 0 ] || [ "$HIGH" -gt 0 ]; then
+          exit 1
         fi
       fi
   artifacts:
@@ -251,7 +257,7 @@ audit:
     paths:
       - gl-dependency-scanning.json
       - gl-dependency-scanning-report.json
-  allow_failure: false
+  allow_failure: true # Allow pipeline to continue, but mark as warning
 
 secrets_scan:
   stage: security

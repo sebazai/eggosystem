@@ -3,7 +3,8 @@ import { redisClient } from "../../utils/redisClient";
 import {
   getRedisKeys,
   getRedisKeyData,
-  deleteRedisKey
+  deleteRedisKey,
+  flushStandingsCaches
 } from "./redis.controllers";
 
 // Mock Redis client
@@ -254,6 +255,48 @@ describe("Redis Controllers", () => {
       await expect(
         deleteRedisKey(mockReq as Request, mockRes as Response, mockNext)
       ).rejects.toThrow("Redis connection failed");
+    });
+  });
+
+  describe("flushStandingsCaches", () => {
+    it("should delete all faceit-match-stats-* keys and return count", async () => {
+      const mockKeys = [
+        "faceit-match-stats-abc-123",
+        "faceit-match-stats-def-456"
+      ];
+      mockRedisClient.keys.mockResolvedValue(mockKeys);
+      mockRedisClient.del.mockResolvedValue(2);
+
+      await flushStandingsCaches(
+        mockReq as Request,
+        mockRes as Response,
+        mockNext
+      );
+
+      expect(mockRedisClient.keys).toHaveBeenCalledWith("faceit-match-stats-*");
+      expect(mockRedisClient.del).toHaveBeenCalledWith(...mockKeys);
+      expect(mockRes.json).toHaveBeenCalledWith({
+        success: true,
+        deletedCount: 2,
+        message: "Flushed 2 Faceit standings cache key(s)."
+      });
+    });
+
+    it("should return zero when no keys found", async () => {
+      mockRedisClient.keys.mockResolvedValue([]);
+
+      await flushStandingsCaches(
+        mockReq as Request,
+        mockRes as Response,
+        mockNext
+      );
+
+      expect(mockRedisClient.del).not.toHaveBeenCalled();
+      expect(mockRes.json).toHaveBeenCalledWith({
+        success: true,
+        deletedCount: 0,
+        message: "No Faceit standings cache keys found."
+      });
     });
   });
 });

@@ -32,6 +32,7 @@ export const createMockOrganizer = (
     discord_caster_applications_channel_id: null,
     discord_caster_channel_id: null,
     discord_caster_role_id: null,
+    organizer_notify_flagged_match_discord_channel_id: null,
     ...overrides
   };
 };

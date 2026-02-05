@@ -54,6 +54,18 @@ export const getSeasonByIdOrThrow = async (
   return season;
 };
 
+export const getOrganizerIdBySeasonId = async (
+  seasonId: number,
+  connection?: PoolConnection
+): Promise<number | undefined> => {
+  const [row] = await runQuery<Array<{ organizer_id: number }>>(
+    "SELECT organizer_id FROM Seasons WHERE id = ?",
+    [seasonId],
+    connection
+  );
+  return row?.organizer_id;
+};
+
 export const getSeasonDetailsById = async (id: number) => {
   const [data] = await runQuery<Array<SeasonDetails | undefined>>(
     "SELECT s.*, g.app_id FROM Seasons s JOIN Games g ON s.game_id = g.id WHERE s.id = ?",
