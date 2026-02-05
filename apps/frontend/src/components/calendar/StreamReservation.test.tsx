@@ -13,6 +13,19 @@ jest.mock("sonner");
 jest.mock("@/lib/roleUtils", () => ({
   hasCasterAccess: jest.fn()
 }));
+jest.mock("@/hooks/data/useIsMatch2xBO1StreamReservation", () => ({
+  useIsMatch2xBO1StreamReservation: () => ({
+    is2xBO1: false,
+    isLoading: false
+  })
+}));
+jest.mock("@/hooks/data/user/useAccountMatchReservation", () => ({
+  useAccountMatchReservation: () => ({
+    data: null,
+    isLoading: false,
+    mutate: jest.fn()
+  })
+}));
 
 // Import the mocked modules
 import { hasCasterAccess } from "@/lib/roleUtils";
@@ -250,6 +263,11 @@ describe("StreamReservation", () => {
     });
     await user.click(reserveButton);
 
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: /^reserve stream$/i })
+      ).toBeInTheDocument();
+    });
     const reserveStreamButton = screen.getByRole("button", {
       name: /^reserve stream$/i
     });
