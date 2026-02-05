@@ -31,7 +31,7 @@ export const CsSupportingOrgs = () => {
           width={150}
           height={60}
         />
-      </Link>
+      </Link> */}
       <Link href={"https://caveentertainment.fi/"} target="_blank">
         <Image
           src={createNextUrl("/images/sponsors/cave.webp")}
@@ -41,7 +41,7 @@ export const CsSupportingOrgs = () => {
           height={27}
         />
       </Link>
-      <Link href={"https://autoklinikka.fi/"} target="_blank">
+      {/* <Link href={"https://autoklinikka.fi/"} target="_blank">
         <Image
           src={createNextUrl("/images/sponsors/autoklinikka.png")}
           className="w-[75px] h-[35px] sm:w-[150px] sm:h-[70px] mobile-landscape:w-[75px] mobile-landscape:h-[35px]"
