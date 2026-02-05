@@ -59,7 +59,7 @@
     "lodash": "4.17.23",
     "moment-timezone": "0.6.0",
     "morgan": "1.10.1",
-    "mysql2": "3.16.2",
+    "mysql2": "3.16.3",
     "node-cron": "4.2.1",
     "nodemailer": "7.0.13",
     "passport": "0.7.0",
@@ -71,8 +71,8 @@
     "zod": "4.3.6"
   },
   "devDependencies": {
-    "@babel/core": "7.28.6",
-    "@babel/preset-env": "7.28.6",
+    "@babel/core": "7.29.0",
+    "@babel/preset-env": "7.29.0",
     "@eggosystem/eslint": "workspace:*",
     "@eggosystem/shared-msw": "workspace:*",
     "@eggosystem/tsconfig": "workspace:*",
@@ -85,7 +85,7 @@
     "@types/jsonwebtoken": "9.0.10",
     "@types/lodash": "4.17.23",
     "@types/morgan": "1.9.10",
-    "@types/node": "25.0.10",
+    "@types/node": "25.2.0",
     "@types/node-cron": "3.0.11",
     "@types/nodemailer": "7.0.9",
     "@types/passport": "1.0.17",
