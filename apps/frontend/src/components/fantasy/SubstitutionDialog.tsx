@@ -27,9 +27,11 @@ interface SubstitutionDialogProps {
     nickname: string;
     team_name: string;
     player_value: number;
+    role?: string | null;
   } | null;
   availablePlayers: FantasyPlayer[];
   existingTeamPlayerIds?: string[];
+  existingTeamRoles?: Array<{ steam_id: string; role: string | null }>; // Add this to track existing roles
   currentBudget: number;
   substitutionsRemaining: number;
   onConfirmSubstitution: (
@@ -47,6 +49,7 @@ export default function SubstitutionDialog({
   playerToReplace,
   availablePlayers,
   existingTeamPlayerIds,
+  existingTeamRoles = [], // Default to empty array
   currentBudget,
   substitutionsRemaining,
   onConfirmSubstitution,
@@ -60,6 +63,13 @@ export default function SubstitutionDialog({
     undefined
   );
   const [roleDialogOpen, setRoleDialogOpen] = useState(false);
+
+  // Get roles that are already assigned (excluding the player being replaced)
+  const assignedRoles = existingTeamRoles
+    .filter(
+      (p) => p.role !== null && p.steam_id !== playerToReplace?.player_id // Exclude player being replaced
+    )
+    .map((p) => p.role as string);
 
   // Calculate budget after selling current player
   const budgetAfterSale = playerToReplace
@@ -354,6 +364,7 @@ export default function SubstitutionDialog({
           }}
           onNavigate={() => {}}
           autoAdvance={false}
+          assignedRoles={assignedRoles} // Pass existing roles to the dialog
         />
       )}
     </>

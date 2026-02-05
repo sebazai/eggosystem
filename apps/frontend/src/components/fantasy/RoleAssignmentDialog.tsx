@@ -1,5 +1,3 @@
-"use client";
-
 import { useState } from "react";
 import {
   Dialog,
@@ -29,6 +27,7 @@ import {
   X
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 export type PlayerRole =
   | "main_awp"
@@ -225,6 +224,7 @@ interface Props {
   ) => Promise<boolean>; // Returns true on success, false on error
   onNavigate: (direction: "prev" | "next") => void;
   autoAdvance?: boolean;
+  assignedRoles?: string[]; // Roles that are already assigned to other players
 }
 
 export default function RoleAssignmentDialog({
@@ -234,7 +234,8 @@ export default function RoleAssignmentDialog({
   currentPlayerIndex,
   onRoleSelect,
   onNavigate,
-  autoAdvance = true
+  autoAdvance = true,
+  assignedRoles = [] // Default to empty array
 }: Props) {
   const currentPlayer = players[currentPlayerIndex];
   const [selectedRole, setSelectedRole] = useState<PlayerRole | null>(null);
@@ -246,6 +247,17 @@ export default function RoleAssignmentDialog({
 
   const handleAssign = async () => {
     if (selectedRole && currentPlayer) {
+      // Check if role is already assigned to another player
+      if (assignedRoles.includes(selectedRole)) {
+        // Show error message
+        const roleLabel =
+          roles.find((r) => r.id === selectedRole)?.label || selectedRole;
+        toast.error(
+          `Role "${roleLabel}" is already assigned to another player. Please choose a different role.`
+        );
+        return; // Don't proceed with assignment
+      }
+
       const success = await onRoleSelect(currentPlayer.id, selectedRole);
       if (success) {
         setSelectedRole(null);
@@ -257,7 +269,7 @@ export default function RoleAssignmentDialog({
           }, 300);
         }
       }
-      // If error, keep the role selected so user can try again or choose different role
+      // If error (other than role taken), keep the role selected so user can try again or choose different role
     }
   };
 
@@ -348,43 +360,61 @@ export default function RoleAssignmentDialog({
           {/* Role Icons Grid */}
           <div className="flex-1 p-4 flex flex-col overflow-y-auto min-w-0 sm:max-w-[calc(100%-240px)]">
             <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-x-2 sm:gap-x-3 gap-y-2 sm:gap-y-2.5 mb-3">
-              {roles.map((role) => (
-                <button
-                  key={role.id}
-                  onClick={() => handleRoleClick(role.id)}
-                  className={cn(
-                    "flex flex-col items-center justify-center aspect-square p-1.5 sm:p-2 rounded-lg border-2 transition-all hover:scale-105 touch-manipulation",
-                    selectedRole === role.id
-                      ? "border-primary bg-primary/20 shadow-2xl shadow-primary/50"
-                      : currentPlayer.role === role.id
-                        ? "border-green-500 bg-green-500/10"
-                        : "border-neutral-800 bg-neutral-900/50 hover:border-neutral-600"
-                  )}
-                >
-                  <div
+              {roles.map((role) => {
+                const isAssignedToOther = assignedRoles.includes(role.id);
+                return (
+                  <button
+                    key={role.id}
+                    onClick={() => handleRoleClick(role.id)}
+                    disabled={isAssignedToOther}
                     className={cn(
-                      "mb-1 w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center",
-                      selectedRole === role.id
-                        ? "text-primary"
-                        : currentPlayer.role === role.id
-                          ? "text-green-400"
-                          : "text-neutral-400"
+                      "flex flex-col items-center justify-center aspect-square p-1.5 sm:p-2 rounded-lg border-2 transition-all hover:scale-105 touch-manipulation",
+                      isAssignedToOther
+                        ? "border-neutral-800 bg-neutral-900/30 opacity-40 cursor-not-allowed"
+                        : selectedRole === role.id
+                          ? "border-primary bg-primary/20 shadow-2xl shadow-primary/50"
+                          : currentPlayer.role === role.id
+                            ? "border-green-500 bg-green-500/10"
+                            : "border-neutral-800 bg-neutral-900/50 hover:border-neutral-600"
                     )}
+                    title={
+                      isAssignedToOther
+                        ? "This role is already assigned to another player"
+                        : undefined
+                    }
                   >
-                    <div className="scale-[0.9] sm:scale-[1]">{role.icon}</div>
-                  </div>
-                  <p
-                    className={cn(
-                      "text-[9px] sm:text-[10px] text-center font-semibold leading-tight px-0.5",
-                      selectedRole === role.id || currentPlayer.role === role.id
-                        ? "text-foreground"
-                        : "text-muted-foreground"
-                    )}
-                  >
-                    {role.label}
-                  </p>
-                </button>
-              ))}
+                    <div
+                      className={cn(
+                        "mb-1 w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center",
+                        isAssignedToOther
+                          ? "text-neutral-600"
+                          : selectedRole === role.id
+                            ? "text-primary"
+                            : currentPlayer.role === role.id
+                              ? "text-green-400"
+                              : "text-neutral-400"
+                      )}
+                    >
+                      <div className="scale-[0.9] sm:scale-[1]">
+                        {role.icon}
+                      </div>
+                    </div>
+                    <p
+                      className={cn(
+                        "text-[9px] sm:text-[10px] text-center font-semibold leading-tight px-0.5",
+                        isAssignedToOther
+                          ? "text-neutral-600"
+                          : selectedRole === role.id ||
+                              currentPlayer.role === role.id
+                            ? "text-foreground"
+                            : "text-muted-foreground"
+                      )}
+                    >
+                      {role.label}
+                    </p>
+                  </button>
+                );
+              })}
             </div>
 
             {/* No Role Button */}

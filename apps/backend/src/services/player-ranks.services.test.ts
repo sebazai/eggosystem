@@ -521,7 +521,7 @@ describe("Player Ranks Services", () => {
       });
 
       it("should return null when player has no kana_elo", async () => {
-        mockGetPlayerKanaElo.mockResolvedValue(undefined);
+        mockGetPlayerKanaElo.mockResolvedValue(null);
 
         const result = await getPlayerRankForPlatform(
           mockSteamId,

@@ -605,15 +605,8 @@ describe("Fantasy Controllers", () => {
       );
     });
 
-    it("should handle skip_swap_limit flag", async () => {
-      const requestWithSkipLimit = {
-        ...mockRequest,
-        body: {
-          role_updates: [{ steam_id: "1", role: "main_awp" as PlayerRole }],
-          skip_swap_limit: true
-        }
-      } as unknown as RequestWithParams<{ season_id: string }>;
-
+    it("should call updatePlayerRoles with server-calculated week (skip_swap_limit removed)", async () => {
+      // skip_swap_limit parameter removed - server determines swap vs initial assignment automatically
       const mockTeam = {
         id: 1,
         steam_id: "12345",
@@ -633,17 +626,13 @@ describe("Fantasy Controllers", () => {
         remaining_swaps: 1
       });
 
-      await updatePlayerRolesController(
-        requestWithSkipLimit,
-        mockResponse,
-        mockNext
-      );
+      await updatePlayerRolesController(mockRequest, mockResponse, mockNext);
 
+      // Verify server determines behavior (only 3 params now, no skip_swap_limit)
       expect(mockFantasyModels.updatePlayerRoles).toHaveBeenCalledWith(
         1,
         expect.any(Array),
-        1,
-        true
+        1
       );
     });
 
