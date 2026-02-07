@@ -16,9 +16,12 @@ const isMatchmakingRank = (game: GameRanks): game is MatchmakingRankType =>
   game.dataSource === "matchmaking";
 
 const getAverageRankForGames = (games: GameRanks[]) => {
+  const now = new Date();
   const oneAndHalfYearAgo = new Date();
   oneAndHalfYearAgo.setFullYear(oneAndHalfYearAgo.getFullYear() - 1);
   oneAndHalfYearAgo.setMonth(oneAndHalfYearAgo.getMonth() - 6);
+
+  const timeWindowMs = now.getTime() - oneAndHalfYearAgo.getTime();
 
   const gamesWithinOneAndAHalfYear = games
     .filter(
@@ -36,14 +39,20 @@ const getAverageRankForGames = (games: GameRanks[]) => {
     ); // Sort by gameFinishedAt descending
 
   if (gamesWithinOneAndAHalfYear.length > 0) {
-    const totalSkillLevel = gamesWithinOneAndAHalfYear.reduce(
-      (sum, g) => sum + g.skillLevel,
-      0
-    );
-    const averageSkillLevel =
-      totalSkillLevel / gamesWithinOneAndAHalfYear.length;
+    let weightedSum = 0;
+    let totalWeight = 0;
 
-    const roundedRank = Math.round(averageSkillLevel);
+    for (const game of gamesWithinOneAndAHalfYear) {
+      const ageMs = now.getTime() - new Date(game.gameFinishedAt).getTime();
+      // Quadratic decay: weight 1.0 for today, drops off aggressively for older games
+      const linearWeight = (timeWindowMs - ageMs) / timeWindowMs;
+      const weight = linearWeight * linearWeight;
+      weightedSum += game.skillLevel * weight;
+      totalWeight += weight;
+    }
+
+    const weightedAverage = weightedSum / totalWeight;
+    const roundedRank = Math.round(weightedAverage);
     if (!isValidRank(roundedRank)) {
       return undefined;
     }
@@ -54,7 +63,7 @@ const getAverageRankForGames = (games: GameRanks[]) => {
     } satisfies CS2LeetifyAvgRank;
   }
 
-  return undefined; // No games found within the last year
+  return undefined; // No games found within the last 1.5 years
 };
 
 export const getCS2RankFromLeetify = async (steam_id: string) => {

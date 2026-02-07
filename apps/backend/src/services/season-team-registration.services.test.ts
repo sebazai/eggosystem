@@ -1468,7 +1468,7 @@ describe("Season team registration services", () => {
       expect(rankAfter).toBeDefined();
       expect(rankAfter.steam_id).toEqual(newPlayerSteamId);
       expect(rankAfter.season_id).toEqual(seasonDetails.id);
-      // Mocked MSW handlers return: rank: 22000, hours: 112, faceit_elo: 750
+      // Mocked MSW handlers return: rank: 22000 (weighted avg), hours: 112, faceit_elo: 750
       expect(rankAfter.cs2_rank).toBeDefined();
       expect(rankAfter.cs2_rank).not.toBeNull();
       expect(rankAfter.cs2_rank).not.toEqual(-1);
