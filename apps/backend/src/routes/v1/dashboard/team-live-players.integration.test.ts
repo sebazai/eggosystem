@@ -33,7 +33,7 @@ jest.mock("ioredis", () => {
   }));
 });
 
-import sortterRouter from "./sortter.routes";
+import teamRouter from "./team.routes";
 
 // Mock all the authentication and permission middleware to allow access
 jest.mock("../../../middlewares/auth.middleware", () => ({
@@ -59,14 +59,14 @@ jest.mock("../../../middlewares/auth.middleware", () => ({
       next()
 }));
 
-describe("GET /api/v1/dashboard/sortter/season/:season_id/team/:team_id/players", () => {
+describe("GET /api/v1/dashboard/teams/season/:season_id/team/:team_id/players", () => {
   let app: express.Application;
   let cleanup: () => void;
 
   beforeEach(() => {
     const { app: testApp, cleanup: appCleanup } = createExpressTestApp(
-      sortterRouter,
-      "/api/v1/dashboard/sortter"
+      teamRouter,
+      "/api/v1/dashboard/teams"
     );
     app = testApp;
     cleanup = appCleanup;
@@ -81,7 +81,7 @@ describe("GET /api/v1/dashboard/sortter/season/:season_id/team/:team_id/players"
   it("should return live player values for a team", async () => {
     // Use season 14, team 2021 from the sortter test data
     const response = await request(app).get(
-      "/api/v1/dashboard/sortter/season/14/team/2021/players"
+      "/api/v1/dashboard/teams/season/14/team/2021/players"
     );
 
     expect(response.status).toBe(200);
@@ -121,7 +121,7 @@ describe("GET /api/v1/dashboard/sortter/season/:season_id/team/:team_id/players"
 
   it("should return 404 for non-existent team", async () => {
     const response = await request(app)
-      .get("/api/v1/dashboard/sortter/season/14/team/99999/players")
+      .get("/api/v1/dashboard/teams/season/14/team/99999/players")
       .expect(404);
 
     expect(response.body).toMatchObject({
@@ -129,26 +129,26 @@ describe("GET /api/v1/dashboard/sortter/season/:season_id/team/:team_id/players"
       title: "Not Found",
       status: 404,
       detail: "No players found for team 99999 in season 14",
-      instance: "/api/v1/dashboard/sortter/season/14/team/99999/players"
+      instance: "/api/v1/dashboard/teams/season/14/team/99999/players"
     });
   });
 
   it("should return 400 for invalid season_id", async () => {
     const response = await request(app)
-      .get("/api/v1/dashboard/sortter/season/invalid/team/2021/players")
+      .get("/api/v1/dashboard/teams/season/invalid/team/2021/players")
       .expect(400);
 
     expect(response.body).toMatchObject({
       type: "about:blank",
       title: "Bad Request",
       status: 400,
-      instance: "/api/v1/dashboard/sortter/season/invalid/team/2021/players"
+      instance: "/api/v1/dashboard/teams/season/invalid/team/2021/players"
     });
   });
 
   it("should order primary players before substitutes", async () => {
     const response = await request(app)
-      .get("/api/v1/dashboard/sortter/season/14/team/2021/players")
+      .get("/api/v1/dashboard/teams/season/14/team/2021/players")
       .expect(200);
 
     if (response.body.length > 1) {
@@ -167,7 +167,7 @@ describe("GET /api/v1/dashboard/sortter/season/:season_id/team/:team_id/players"
 
   it("should order players by kana_elo within each role group", async () => {
     const response = await request(app)
-      .get("/api/v1/dashboard/sortter/season/14/team/2021/players")
+      .get("/api/v1/dashboard/teams/season/14/team/2021/players")
       .expect(200);
 
     if (response.body.length > 1) {
