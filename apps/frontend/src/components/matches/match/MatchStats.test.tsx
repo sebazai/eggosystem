@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import { MatchStats } from "./MatchStats";
 import type { MatchInfo } from "@eggosystem/types";
-import { MatchStatus, SeasonPlatform } from "@eggosystem/types";
+import { SeasonPlatform } from "@eggosystem/types";
 import { useMatchPlayerStats } from "@/hooks/data/useMatchPlayerStats";
 import { useMatchTopPlayers } from "@/hooks/data/useMatchTopPlayers";
 
@@ -65,7 +65,7 @@ const mockMatchInfo: MatchInfo = {
   best_of: 3,
   stage: 1,
   match_game_ids: [1, 2, 3],
-  status: MatchStatus.FINISHED,
+  status: "FINISHED",
   teams: {
     1: {
       id: 1,
