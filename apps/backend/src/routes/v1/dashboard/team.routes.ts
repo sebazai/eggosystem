@@ -4,7 +4,10 @@ import {
   getTeamByIdController
 } from "../../../controllers/teams.controllers";
 import { validateNumericParams } from "../../../middlewares/validate-numeric-params";
-import { getTeamOrganizationController } from "../../../controllers/dashboard/teams.controllers";
+import {
+  getTeamOrganizationController,
+  getTeamPlayersController
+} from "../../../controllers/dashboard/teams.controllers";
 
 const router = Router();
 
@@ -13,6 +16,12 @@ router.get(
   "/:id/organization",
   validateNumericParams(),
   getTeamOrganizationController
+);
+// GET /api/v1/dashboard/teams/season/:season_id/team/:team_id/players
+router.get(
+  "/season/:season_id/team/:team_id/players",
+  validateNumericParams(),
+  getTeamPlayersController
 );
 router.get("/:team_id", getTeamByIdController);
 

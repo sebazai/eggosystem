@@ -1,7 +1,6 @@
 import {
   getTeamValuesForSortter,
-  getTeamPlayerValuesForSortter,
-  getTeamPlayerValuesLive
+  getTeamPlayerValuesForSortter
 } from "../../models/dashboard/sortter.models";
 import type { RequestWithParams, TeamSortterValues } from "@eggosystem/types";
 import { NotFoundError } from "../../utils/errors";
@@ -165,64 +164,4 @@ export const refreshTeamFlagsForSeasonController = async (
   } catch (error) {
     next(error);
   }
-};
-
-/**
- * Controller to get LIVE player values for a specific team in a season
- * Uses SeasonTeamPlayers (live data) instead of SeasonTeamRegistrationPlayers
- * This shows players who are currently on the team, including those added after sortter finalization
- *
- * Returns all players for a given team with their values:
- * - name
- * - steamid
- * - cs2 rank
- * - faceit level
- * - faceit elo
- * - hours
- * - kanarating (avg from all games player played)
- * - fkd (faceit k/d ratio)
- * - role (primary/substitute)
- * - is_captain
- * - is_co_captain
- *
- * Converts null values to 0 for numeric fields in the response
- */
-export const getTeamPlayerValuesLiveController = async (
-  req: RequestWithParams<{ season_id: string; team_id: string }>,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
-  const seasonId = Number(req.params.season_id);
-  const teamId = Number(req.params.team_id);
-
-  const playerValues = await getTeamPlayerValuesLive(seasonId, teamId);
-
-  if (playerValues.length === 0) {
-    return next(
-      new NotFoundError(
-        `No players found for team ${teamId} in season ${seasonId}`
-      )
-    );
-  }
-
-  // Convert null values to 0 for the response
-  const formattedPlayerValues = playerValues.map((player) => ({
-    name: player.name,
-    steamid: player.steamid,
-    cs2_rank: player.cs2_rank ?? 0,
-    faceit_level: player.faceit_level ?? 0,
-    faceit_elo: player.faceit_elo ?? 0,
-    hours: player.hours ?? 0,
-    kanarating: player.kanarating ?? 0,
-    fkd: player.fkd ?? 0,
-    kana_elo: player.kana_elo ?? 0,
-    calculus: player.calculus ?? null,
-    role: player.role,
-    is_captain: player.is_captain,
-    is_co_captain: player.is_co_captain,
-    match_id: player.match_id,
-    match_info: player.match_info
-  }));
-
-  res.json(formattedPlayerValues);
 };
