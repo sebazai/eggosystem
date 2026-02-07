@@ -22,36 +22,12 @@ import {
   updateUserDiscordId,
   getDiscordIdByAccountId
 } from "../../models/discord.models";
+import {
+  isValidReturnUrl,
+  getValidReturnUrl
+} from "../../utils/auth-url-utils";
 
 const router = Router();
-
-const isValidReturnUrl = (returnUrl: string) => {
-  try {
-    // If it's a relative path (e.g., "/dashboard"), allow it
-    if (returnUrl.startsWith("/")) return true;
-
-    // Otherwise, parse it as a full URL
-    const parsedUrl = new URL(returnUrl);
-    const allowedDomain = new URL(process.env.FRONTEND_URL ?? "").origin;
-
-    return parsedUrl.origin === allowedDomain;
-  } catch (_error) {
-    return false;
-  }
-};
-
-const getValidReturnUrl = (returnUrl?: string) => {
-  if (!returnUrl) {
-    return process.env.FRONTEND_URL + "/login-success";
-  }
-  if (isValidReturnUrl(returnUrl)) {
-    if (returnUrl.startsWith("/")) {
-      return process.env.FRONTEND_URL + returnUrl;
-    }
-    return returnUrl;
-  }
-  return process.env.FRONTEND_URL + "/login-success";
-};
 
 router.get(
   "/steam",
