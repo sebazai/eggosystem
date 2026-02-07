@@ -75,7 +75,7 @@ export const MatchStats = ({
 
       {/* Player Stats Grid */}
       {isLoadingPlayerStats && <PlayerStatisticsSkeleton />}
-      {isLoadingPlayerStats && playerStats && playerStats.length > 0 && (
+      {!isLoadingPlayerStats && playerStats && playerStats.length > 0 && (
         <PlayerStatisticsForTeam
           playerStats={playerStats}
           teams={matchInfo.teams}
