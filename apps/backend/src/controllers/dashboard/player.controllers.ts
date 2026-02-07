@@ -370,6 +370,7 @@ export const addSubstitutePlayerController = async (
 ): Promise<void> => {
   // Wrap the entire transaction in retry logic for transient database errors
   // (deadlocks and snapshot isolation conflicts - Error 1020)
+  // Using 5 attempts with longer delays for high-concurrency production environment
   try {
     await retryTransientDatabaseErrors(async () => {
       const connection = await getConnection();
@@ -543,22 +544,9 @@ export const addSubstitutePlayerController = async (
             );
           }
 
-          // Set the player's kana_elo from the eligibility check
-          // Use csrankker_calculus if available, otherwise fall back to empty string
-          const calculusString =
-            eligibility.selectedTeam.csrankker_calculus || "{}";
-          // Use originalKanaelo as offered_elo if available
-          const offeredElo =
-            eligibility.selectedTeam.csrankker_original_kanaelo;
-
-          await setPlayerKanaElo(
-            steamId,
-            eligibility.selectedTeam.new_player_kana_elo,
-            calculusString,
-            seasonId,
-            offeredElo,
-            connection
-          );
+          // Note: We do NOT update SeasonPlayerRanks here
+          // The player's kana_elo should already be set by the eligibility/stabilization process
+          // Updating it here causes race conditions with concurrent ELO stabilization requests
         }
 
         const insertData = {
