@@ -25,6 +25,8 @@ export const getMyTeamsController = async (
 
 /**
  * Controller to get upcoming matches for the logged-in user's teams
+ * Accepts optional steam_ids query parameter (comma-separated) to fetch matches for specific players
+ * If not provided, defaults to the authenticated user's steam_id
  */
 export const getMyTeamsUpcomingMatchesController = async (
   req: Request,
@@ -35,7 +37,13 @@ export const getMyTeamsUpcomingMatchesController = async (
     return next(new UnauthorizedError("Unauthorized"));
   }
 
-  const matches = await getMyTeamsUpcomingMatches(req.auth.provider_id);
+  // Get steam_ids from query parameter or default to authenticated user's steam_id
+  const steamIdsParam = req.query.steam_ids as string | undefined;
+  const steamIds = steamIdsParam
+    ? steamIdsParam.split(",").map((id) => id.trim())
+    : [req.auth.provider_id];
+
+  const matches = await getMyTeamsUpcomingMatches(steamIds);
   res.json({ matches });
 };
 

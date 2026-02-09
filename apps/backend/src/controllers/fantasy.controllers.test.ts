@@ -67,6 +67,7 @@ describe("Fantasy Controllers", () => {
         {
           steam_id: "12345",
           nickname: "Test Player",
+          avatar: null,
           team_id: 1,
           team_name: "Test Team",
           team_logo: null,
