@@ -210,6 +210,7 @@ export const getFantasyPlayersByLeague = async (
     SELECT 
       p.steam_id,
       p.nickname,
+      p.avatar,
       spr.kana_elo,
       stp.team_id,
       t.name as team_name,
@@ -246,7 +247,7 @@ export const getFantasyPlayersByLeague = async (
     LEFT JOIN previous_season_stats pss ON pss.steam_id = p.steam_id
     WHERE stp.season_id = ? 
       AND slt.league_id = ?
-    GROUP BY p.steam_id, p.nickname, spr.kana_elo, stp.team_id, t.name, t.team_logo, lv.value, lv.tier, pss.prev_kana_rating, pss.prev_kd, pss.prev_kills
+    GROUP BY p.steam_id, p.nickname, p.avatar, spr.kana_elo, stp.team_id, t.name, t.team_logo, lv.value, lv.tier, pss.prev_kana_rating, pss.prev_kd, pss.prev_kills
     ORDER BY t.name ASC, COALESCE(kana_rating, pss.prev_kana_rating, 0) DESC
   `;
 
@@ -254,6 +255,7 @@ export const getFantasyPlayersByLeague = async (
     Array<{
       steam_id: string;
       nickname: string;
+      avatar: string | null;
       kana_elo: number | null;
       team_id: number;
       team_name: string;
@@ -281,7 +283,7 @@ export const getFantasyPlayersByLeague = async (
   >(query, [seasonId, seasonId, seasonId, leagueId]);
 
   // Calculate values with Redis caching (same logic as top players)
-  const playersWithValues = await Promise.all(
+  const playersWithValues: FantasyPlayerStats[] = await Promise.all(
     results.map(async (row) => {
       // Determine which stats to use:
       // 1. Current season stats if maps_played > 0
@@ -326,6 +328,7 @@ export const getFantasyPlayersByLeague = async (
         return {
           steam_id: row.steam_id,
           nickname: row.nickname,
+          avatar: row.avatar,
           team_id: row.team_id,
           team_name: row.team_name,
           team_logo: row.team_logo,
@@ -364,6 +367,7 @@ export const getFantasyPlayersByLeague = async (
         return {
           steam_id: row.steam_id,
           nickname: row.nickname,
+          avatar: row.avatar,
           team_id: row.team_id,
           team_name: row.team_name,
           team_logo: row.team_logo,
@@ -414,6 +418,7 @@ export const getFantasyPlayersByLeague = async (
       return {
         steam_id: row.steam_id,
         nickname: row.nickname,
+        avatar: row.avatar,
         team_id: row.team_id,
         team_name: row.team_name,
         team_logo: row.team_logo,
@@ -690,6 +695,7 @@ export const getFantasyTeamByUser = async (
       id: number;
       steam_id: string;
       nickname: string;
+      avatar: string | null;
       team_name: string | null;
       team_logo: string | null;
       role: PlayerRole | null;
@@ -721,6 +727,7 @@ export const getFantasyTeamByUser = async (
        ftp.id,
        ftp.steam_id,
        sp.nickname,
+       sp.avatar,
        t.name as team_name,
        t.team_logo,
        ftp.role,
@@ -837,7 +844,7 @@ export const getFantasyTeamByUser = async (
        ) latest ON latest.steam_id = fpv.steam_id AND latest.max_created = fpv.created_at
      ) lv ON lv.steam_id = ftp.steam_id
      WHERE ftp.fantasy_team_id = ? AND ftp.is_active = TRUE
-     GROUP BY ftp.id, ftp.steam_id, sp.nickname, t.name, t.team_logo, ftp.role,
+     GROUP BY ftp.id, ftp.steam_id, sp.nickname, sp.avatar, t.name, t.team_logo, ftp.role,
               ftp.player_value, lv.value, lv.tier, ftp.is_active, ftp.added_at, ftp.removed_at
      ORDER BY ftp.added_at ASC`,
     [

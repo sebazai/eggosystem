@@ -143,20 +143,14 @@ export default function MyTeamPage() {
                   match.platform
                 );
                 return (
-                  <div
+                  <Link
                     key={match.match_id}
-                    className="border-border rounded-lg border p-4"
+                    href={createNextUrl(`/matches/${match.match_id}`)}
+                    className="block border-border rounded-lg border p-4 hover:bg-accent/50 transition-colors"
                   >
                     <div className="flex flex-col gap-3">
                       <div className="flex flex-wrap items-center gap-2">
-                        <Link
-                          href={createNextUrl(`/matches/${match.match_id}`)}
-                          className="hover:underline"
-                        >
-                          <span className="font-semibold">
-                            {match.team_name}
-                          </span>
-                        </Link>
+                        <span className="font-semibold">{match.team_name}</span>
                         <span className="text-muted-foreground">vs</span>
                         <span className="font-semibold">
                           {match.opponent_team_name}
@@ -175,8 +169,13 @@ export default function MyTeamPage() {
                         {match.season_name} - {match.league_name}
                       </div>
                       {faceitLink && (
-                        <div>
-                          <Button variant="ghost" size="sm" asChild>
+                        <div onClick={(e) => e.stopPropagation()}>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            asChild
+                            onClick={(e) => e.stopPropagation()}
+                          >
                             <a
                               href={faceitLink}
                               target="_blank"
@@ -189,7 +188,7 @@ export default function MyTeamPage() {
                         </div>
                       )}
                     </div>
-                  </div>
+                  </Link>
                 );
               })}
             </div>

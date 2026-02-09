@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +11,7 @@ import { FantasyTeamPlayerCard } from "./FantasyTeamPlayerCard";
 import SubstitutionDialog from "./SubstitutionDialog";
 import RoleAssignmentDialog, { type PlayerRole } from "./RoleAssignmentDialog";
 import PlayerPointHistory from "./PlayerPointHistory";
+import { useMyTeamsUpcomingMatches } from "@/hooks/data/user/useMyTeamsUpcomingMatches";
 import type { MyFantasyTeam } from "@/hooks/data/useMyFantasyTeam";
 import type { FantasyPlayer } from "./FantasyLeague";
 
@@ -59,6 +60,32 @@ export function FantasyTeamView({
   const [selectedPlayerForPoints, setSelectedPlayerForPoints] = useState<
     MyFantasyTeam["players"][number] | null
   >(null);
+
+  const { matches: upcomingMatches } = useMyTeamsUpcomingMatches(
+    existingTeam.players.map((p) => p.steam_id)
+  );
+
+  const nextMatchByTeam = useMemo(() => {
+    const map = new Map<string, { opponent: string; date: string }>();
+    for (const match of upcomingMatches) {
+      const date = new Date(match.start_timestamp);
+      const formatted = `${String(date.getDate()).padStart(2, "0")}.${String(date.getMonth() + 1).padStart(2, "0")}.${date.getFullYear()}`;
+
+      if (!map.has(match.team_name)) {
+        map.set(match.team_name, {
+          opponent: match.opponent_team_name,
+          date: formatted
+        });
+      }
+      if (!map.has(match.opponent_team_name)) {
+        map.set(match.opponent_team_name, {
+          opponent: match.team_name,
+          date: formatted
+        });
+      }
+    }
+    return map;
+  }, [upcomingMatches]);
 
   const handleSubstitutePlayer = useCallback(
     (player: MyFantasyTeam["players"][number]) => {
@@ -235,6 +262,11 @@ export function FantasyTeamView({
                     existingTeam={existingTeam}
                     roleChangesRemaining={roleChangesRemaining}
                     substitutionsRemaining={substitutionsRemaining}
+                    nextMatch={
+                      player.team_name
+                        ? nextMatchByTeam.get(player.team_name)
+                        : undefined
+                    }
                     onAssignRole={() => handleAssignRole(player)}
                     onSubstitute={() => handleSubstitutePlayer(player)}
                     onViewPoints={() => setSelectedPlayerForPoints(player)}

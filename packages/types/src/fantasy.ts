@@ -143,6 +143,7 @@ export interface PlayerValueData {
 export interface FantasyPlayerStats {
   steam_id: string;
   nickname: string;
+  avatar: string | null;
   team_id: number;
   team_name: string;
   team_logo: string | null;

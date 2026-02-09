@@ -38,7 +38,8 @@ describe("My Team Controllers", () => {
         account_id: 123,
         provider_id: "76561198000000001",
         nickname: "TestPlayer"
-      })
+      }),
+      query: {}
     };
 
     mockRes = {
@@ -166,9 +167,9 @@ describe("My Team Controllers", () => {
         mockNext
       );
 
-      expect(mockGetMyTeamsUpcomingMatches).toHaveBeenCalledWith(
+      expect(mockGetMyTeamsUpcomingMatches).toHaveBeenCalledWith([
         "76561198000000001"
-      );
+      ]);
       expect(mockJson).toHaveBeenCalledWith({ matches: mockMatches });
     });
 
