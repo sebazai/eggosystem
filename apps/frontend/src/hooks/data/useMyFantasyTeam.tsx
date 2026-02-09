@@ -17,6 +17,7 @@ export interface MyFantasyTeam {
     id: number; // fantasy_team_player_id
     steam_id: string;
     nickname: string;
+    avatar: string | null;
     team_name: string | null;
     team_logo: string | null;
     role: string | null;

@@ -7,7 +7,11 @@ import { FantasyDraftInterface } from "./FantasyDraftInterface";
 import { useSeasonLeagues } from "@/hooks/data/useSeasonLeagues";
 import { useFantasyPlayers } from "@/hooks/data/useFantasyPlayers";
 import { useMyFantasyTeam } from "@/hooks/data/useMyFantasyTeam";
-import { createTeamLogoUrl, expressFetcher } from "@/lib/utils";
+import {
+  createTeamLogoUrl,
+  createAvatarUrl,
+  expressFetcher
+} from "@/lib/utils";
 import { clientApiFetch } from "@/lib/apiClient";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
@@ -165,6 +169,7 @@ export default function FantasyLeague({ seasonId }: Props) {
           : "/team-images/nologo.png",
         value, // Use API value
         tier, // Use API tier
+        photo: p.avatar ? createAvatarUrl(p.avatar) : undefined,
         stats: {
           rating: p.kana_rating,
           kills: p.kills,

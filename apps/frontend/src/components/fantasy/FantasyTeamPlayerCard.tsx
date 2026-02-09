@@ -6,17 +6,24 @@ import {
   TooltipContent,
   TooltipTrigger
 } from "@/components/ui/tooltip";
+import { RefreshCw, UserX, TrendingUp } from "lucide-react";
 import FantasyPlayerFlipCard from "./FantasyPlayerFlipCard";
-import { createTeamLogoUrl } from "@/lib/utils";
+import { createTeamLogoUrl, createAvatarUrl } from "@/lib/utils";
 import type { FantasyPlayer } from "./FantasyLeague";
 import type { MyFantasyTeam } from "@/hooks/data/useMyFantasyTeam";
 import { calculatePlayerTier } from "@eggosystem/types";
+
+type NextMatchInfo = {
+  opponent: string;
+  date: string;
+};
 
 type FantasyTeamPlayerCardProps = {
   player: MyFantasyTeam["players"][number];
   existingTeam: MyFantasyTeam;
   roleChangesRemaining: number;
   substitutionsRemaining: number;
+  nextMatch?: NextMatchInfo;
   onAssignRole: () => void;
   onSubstitute: () => void;
   onViewPoints: () => void;
@@ -27,6 +34,7 @@ export function FantasyTeamPlayerCard({
   existingTeam,
   roleChangesRemaining,
   substitutionsRemaining,
+  nextMatch,
   onAssignRole,
   onSubstitute,
   onViewPoints
@@ -47,7 +55,7 @@ export function FantasyTeamPlayerCard({
     teamLogo: teamLogoForPlayer,
     value: player.player_value,
     tier: player.tier || calculatePlayerTier(player.player_value),
-    photo: undefined,
+    photo: player.avatar ? createAvatarUrl(player.avatar) : undefined,
     stats: {
       rating: player.kana_rating || 0,
       kills: player.kills || 0,
@@ -88,55 +96,92 @@ export function FantasyTeamPlayerCard({
 
       {/* Controls below the card */}
       <div className="space-y-2">
-        {/* Role Display */}
-        {player.role ? (
-          <div className="text-center p-2 bg-neutral-900/50 border border-neutral-800 rounded-lg">
-            <p className="text-xs text-green-400 font-medium">
-              {player.role.replace(/_/g, " ").toUpperCase()}
-            </p>
-          </div>
-        ) : (
-          <div className="text-center p-2 bg-neutral-900/50 border border-neutral-800 rounded-lg">
-            <p className="text-xs text-muted-foreground">NO ROLE ASSIGNED</p>
+        {/* Next Match */}
+        {nextMatch && (
+          <div className="text-center px-2 py-1.5 bg-neutral-900/50 border border-neutral-800 rounded-lg space-y-0">
+            <div className="text-xs text-muted-foreground truncate px-1 leading-tight">
+              next vs{" "}
+              <span className="text-white font-medium">
+                {nextMatch.opponent}
+              </span>
+            </div>
+            <div className="text-xs text-muted-foreground leading-tight">
+              {nextMatch.date}
+            </div>
           </div>
         )}
 
-        {/* Assign/Swap Role Button */}
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onAssignRole}
-          disabled={roleChangesRemaining <= 0}
-          className="w-full"
-        >
-          {player.role ? "Swap Role" : "Assign Role"}
-        </Button>
+        {/* Action Buttons Row */}
+        <div className="flex gap-1.5">
+          {/* Assign/Swap Role Button */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onAssignRole}
+                disabled={roleChangesRemaining <= 0}
+                className="flex-1 px-2"
+              >
+                <RefreshCw className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{player.role ? "Change Role" : "Assign Role"}</p>
+              {roleChangesRemaining <= 0 && (
+                <p className="text-xs text-muted-foreground">
+                  No role swaps remaining this week
+                </p>
+              )}
+            </TooltipContent>
+          </Tooltip>
 
-        {/* Replace Player Button */}
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onSubstitute}
-          disabled={substitutionsRemaining <= 0 || player.has_played_this_week}
-          className="w-full"
-          title={
-            player.has_played_this_week
-              ? "This player has already played this week and cannot be substituted"
-              : ""
-          }
-        >
-          {player.has_played_this_week ? "Locked (Played)" : "Replace Player"}
-        </Button>
+          {/* Replace Player Button */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onSubstitute}
+                disabled={
+                  substitutionsRemaining <= 0 || player.has_played_this_week
+                }
+                className="flex-1 px-2"
+              >
+                <UserX className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>
+                {player.has_played_this_week
+                  ? "Player Locked (Already Played)"
+                  : "Replace Player"}
+              </p>
+              {substitutionsRemaining <= 0 && !player.has_played_this_week && (
+                <p className="text-xs text-muted-foreground">
+                  No substitutions remaining this week
+                </p>
+              )}
+            </TooltipContent>
+          </Tooltip>
 
-        {/* View Points Button */}
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onViewPoints}
-          className="w-full"
-        >
-          View Points
-        </Button>
+          {/* View Points Button */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onViewPoints}
+                className="flex-1 px-2"
+              >
+                <TrendingUp className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>View Point History</p>
+            </TooltipContent>
+          </Tooltip>
+        </div>
       </div>
     </div>
   );

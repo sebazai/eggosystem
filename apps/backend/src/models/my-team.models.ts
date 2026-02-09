@@ -90,12 +90,18 @@ export const getMyTeams = async (
 };
 
 /**
- * Gets upcoming matches for all teams that a user (by steam_id) is a member of
+ * Gets upcoming matches for all teams that user(s) (by steam_id) are members of
  * Returns matches that are scheduled or in progress, ordered by date/time
  */
 export const getMyTeamsUpcomingMatches = async (
-  steam_id: string
+  steam_ids: string[]
 ): Promise<MyTeamUpcomingMatch[]> => {
+  if (steam_ids.length === 0) {
+    return [];
+  }
+
+  const placeholders = steam_ids.map(() => "?").join(",");
+
   const query = `
     SELECT 
       m.id as match_id,
@@ -121,18 +127,21 @@ export const getMyTeamsUpcomingMatches = async (
     -- Get opponent team
     JOIN MatchTeams mt_opp ON mt_opp.match_id = m.id AND mt_opp.team_id != mt.team_id
     JOIN Teams t_opp ON mt_opp.team_id = t_opp.id
-    WHERE stp.steam_id = ?
+    WHERE stp.steam_id IN (${placeholders})
       AND m.status IN ('SCHEDULED', 'CHECK_IN', 'VOTING', 'CONFIGURING', 'READY', 'ONGOING')
       AND (
         DATE(m.start_timestamp) > CURDATE()
         OR (DATE(m.start_timestamp) = CURDATE() AND TIME(m.start_timestamp) >= CURTIME())
         OR m.status IN ('ONGOING', 'READY', 'CONFIGURING', 'VOTING', 'CHECK_IN')
       )
+    GROUP BY m.id, mt.team_id, t.name, mt_opp.team_id, t_opp.name, m.start_timestamp, 
+             m.season_id, s.name, m.league_id, l.name, m.best_of, m.external_match_room_id, 
+             m.status, s.platform
     ORDER BY m.start_timestamp ASC
     LIMIT 50
   `;
 
-  const results = await runQuery<MyTeamUpcomingMatch[]>(query, [steam_id]);
+  const results = await runQuery<MyTeamUpcomingMatch[]>(query, steam_ids);
 
   return results;
 };
