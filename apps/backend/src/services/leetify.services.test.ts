@@ -56,7 +56,7 @@ describe("Leetify Services", () => {
       const result = await getCS2RankFromLeetify(leetifyMultipleGamesSteamId);
 
       expect(result).toEqual({
-        average_rank: 16000, // Average of 15000 and 17000
+        average_rank: 16000, // Weighted average of 15000 and 17000
         rank_updated_at: expect.any(String)
       });
     });
