@@ -86,7 +86,7 @@ services:
       - "traefik.docker.network=web"
 
   eggo-devdb-${ENV_ID}:
-    image: mariadb:12.1.2
+    image: mariadb:12.2.2
     restart: always
     container_name: eggo-devdb-${ENV_ID}
     environment:
