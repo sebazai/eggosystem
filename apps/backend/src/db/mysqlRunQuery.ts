@@ -22,7 +22,7 @@ export const runQuery = async <T>(
   const connection = trx ?? (await getConnection());
 
   try {
-    const [rows] = await connection.execute<dbQuery<T>>(query, queryParams);
+    const [rows] = await connection.query<dbQuery<T>>(query, queryParams);
     return rows;
   } finally {
     if (!trx) connection.release();
