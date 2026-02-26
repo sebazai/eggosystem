@@ -391,6 +391,7 @@ export class ParsedQueueConsumer {
           this.publishError(message, errors, {
             processingTime,
             retryCount,
+            maxRetryAttempts: this.maxRetryAttempts,
             errorDetails:
               error instanceof Error
                 ? {
