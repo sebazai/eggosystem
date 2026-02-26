@@ -202,7 +202,8 @@ export const resolveSteamIdVanityURL = async (
         `[Steam] Request timeout for vanity URL ${vanityUrl} (${duration}ms)`
       );
       throw new Error(
-        `Steam API request timed out. Please try again or use a different Steam ID format.`
+        `Steam API request timed out. Please try again or use a different Steam ID format.`,
+        { cause: error }
       );
     }
 

@@ -123,7 +123,7 @@ export const getMatchPlayerStats = async (
   `;
 
   // Fields that change based on stat parameter
-  let statFields = "";
+  let statFields: string;
   if (stat === "CT") {
     statFields = `
       SUM(ps.kills_ct) as kills,

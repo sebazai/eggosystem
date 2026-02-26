@@ -120,10 +120,8 @@ export const enqueueBulkSeasonWelcomeEmails = async (
   discordLink: string | null,
   mapNames: string[],
   queue?: Queue // Optional injection for testing
-): Promise<{ enqueued: number; failed: number }> => {
+): Promise<{ enqueued: number }> => {
   const emailQueue = queue ?? getWelcomeEmailQueue();
-  let enqueued = 0;
-  let failed = 0;
 
   logger.info(
     `Starting bulk enqueue of ${players.length} welcome emails for season ${seasonId}`
@@ -155,21 +153,19 @@ export const enqueueBulkSeasonWelcomeEmails = async (
   try {
     // Use BullMQ's bulk add for efficiency
     await emailQueue.addBulk(jobs);
-    enqueued = jobs.length;
+    const enqueued = jobs.length;
 
     logger.info(
       `Successfully enqueued ${enqueued} welcome email jobs for season ${seasonId}`
     );
+    return { enqueued };
   } catch (error) {
     logger.error(
       `Failed to bulk enqueue welcome emails for season ${seasonId}`,
       error
     );
-    failed = jobs.length;
     throw error;
   }
-
-  return { enqueued, failed };
 };
 
 /**
