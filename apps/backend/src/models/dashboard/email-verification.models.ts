@@ -26,8 +26,8 @@ export const getAccountByLookup = async (
   lookupType: LookupType,
   connection?: PoolConnection
 ): Promise<AccountLookupResult | null> => {
-  let query = "";
-  let params: string[] = [];
+  let query: string;
+  let params: string[];
 
   switch (lookupType) {
     case "steam_id":

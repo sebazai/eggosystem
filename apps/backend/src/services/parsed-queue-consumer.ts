@@ -3,6 +3,7 @@ import JSONBig from "json-bigint";
 import { logger } from "../utils/app-logger";
 import type { ParseResultMessage } from "../types/parse-queue.types";
 import { saveParsedDemoDataForGame } from "../models/match-game.models";
+import { retryTransientDatabaseErrors } from "../utils/retry-utils";
 import { calculateFantasyPointsForGame } from "./fantasy-points.service";
 // import * as fs from "fs";
 // import * as path from "path";
@@ -278,16 +279,21 @@ export class ParsedQueueConsumer {
     const errors: string[] = [];
     let message: ParseResultMessage | undefined;
 
-    // Get retry count for this match_game_id
-    const matchGameId = message?.match_game_id || "unknown";
-    const retryCount = this.retryCounts.get(matchGameId) || 0;
-
     try {
-      // Parse message
+      // Parse message first so we can key retries by match_game_id
       message = JSONBig({ storeAsString: true }).parse(
         msg.content.toString()
       ) as ParseResultMessage;
+    } catch (parseError) {
+      logger.error("Failed to parse message", { error: parseError });
+      this.channel.nack(msg, false, false);
+      return;
+    }
 
+    const matchGameId = message.match_game_id ?? "unknown";
+    const retryCount = this.retryCounts.get(matchGameId) || 0;
+
+    try {
       logger.info("Processing parsed demo data", {
         matchGameId: message.match_game_id,
         status: message.status,
@@ -385,6 +391,7 @@ export class ParsedQueueConsumer {
           this.publishError(message, errors, {
             processingTime,
             retryCount,
+            maxRetryAttempts: this.maxRetryAttempts,
             errorDetails:
               error instanceof Error
                 ? {
@@ -438,7 +445,9 @@ export class ParsedQueueConsumer {
     }
 
     try {
-      await saveParsedDemoDataForGame(match_game_id, parsed_payload);
+      await retryTransientDatabaseErrors(() =>
+        saveParsedDemoDataForGame(match_game_id, parsed_payload)
+      );
 
       // Calculate fantasy points after demo data is saved
       try {

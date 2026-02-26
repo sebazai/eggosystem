@@ -4,14 +4,14 @@ import { useState } from "react";
 import { clientApiFetch } from "@/lib/apiClient";
 import { convertSteamIdToSteamId64, isValidSteamId } from "@/lib/utils";
 
-export interface PreparePlayerForSignupResponse {
+interface PreparePlayerForSignupResponse {
   message: string;
   account_id: number;
   steam_id: string;
   changes_made: boolean;
 }
 
-export interface UsePreparePlayerForSignupReturn {
+interface UsePreparePlayerForSignupReturn {
   isPreparing: boolean;
   error: string | null;
   preparePlayer: (steamId: string) => Promise<PreparePlayerForSignupResponse>;

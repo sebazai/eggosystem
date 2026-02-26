@@ -649,7 +649,7 @@ export const enqueueSeasonFinalizationWelcomeEmails = async (
     );
 
     logger.info(
-      `Welcome email enqueueing completed for season ${seasonId}: ${result.enqueued} enqueued, ${result.failed} failed out of ${players.length} eligible players`
+      `Welcome email enqueueing completed for season ${seasonId}: ${result.enqueued} enqueued, failed out of ${players.length} eligible players`
     );
   } catch (error) {
     logger.error(

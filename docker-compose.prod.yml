@@ -103,7 +103,7 @@ services:
     restart: always
 
   eggo-prod-db:
-    image: mariadb:12.1.2
+    image: mariadb:12.2.2
     container_name: eggo-prod-db
     restart: always
     environment:
@@ -249,7 +249,7 @@ services:
       - web
 
   eggo-prod-rabbitmq:
-    image: rabbitmq:4.2.3-management
+    image: rabbitmq:4.2.4-management
     container_name: eggo-prod-rabbitmq
     restart: always
     environment:

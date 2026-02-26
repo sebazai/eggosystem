@@ -94,7 +94,7 @@ export const getGamePlayerStats = async (
   `;
 
   // Fields that change based on stat parameter
-  let statFields = "";
+  let statFields: string;
   if (stat === "CT") {
     statFields = `
       ps.kills_ct as kills,

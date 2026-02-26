@@ -1,3 +1,4 @@
+import { fixupPluginRules } from "@eslint/compat";
 import js from "@eslint/js";
 import pluginNext from "@next/eslint-plugin-next";
 import eslintConfigPrettier from "eslint-config-prettier";
@@ -32,9 +33,10 @@ export const config = [
     }
   },
   {
+    files: ["**/*.jsx", "**/*.tsx"],
     plugins: {
-      react: pluginReact,
-      "react-hooks": pluginReactHooks,
+      react: fixupPluginRules(pluginReact),
+      "react-hooks": fixupPluginRules(pluginReactHooks),
       "@next/next": pluginNext
     },
     settings: {
@@ -45,6 +47,7 @@ export const config = [
       ...pluginReactHooks.configs.recommended.rules,
       ...pluginNext.configs.recommended.rules,
       ...pluginNext.configs["core-web-vitals"].rules,
+      "@next/next/no-img-element": "error",
       // React scope no longer necessary with new JSX transform.
       "react/react-in-jsx-scope": "off",
       "react/prop-types": "off",
@@ -63,6 +66,20 @@ export const config = [
       ],
       // Allow variable redeclaration in some cases
       "no-redeclare": "warn"
+    }
+  },
+  {
+    files: ["**/*.ts", "**/*.js"],
+    rules: {
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+          ignoreRestSiblings: true
+        }
+      ]
     }
   },
   {

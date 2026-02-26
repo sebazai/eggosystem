@@ -287,12 +287,11 @@ describe("ParsedQueueConsumer", () => {
       const message = createValidMessage({ match_game_id: "retry-test" });
       const amqpMsg = createAmqpMessage(message);
 
-      // matchGameId resolves to "unknown" before message is parsed (line 282 in source),
-      // so retry tracking uses "unknown" as key
+      // Retry tracking is keyed by parsed message.match_game_id
       const retryCounts = (
         consumer as unknown as { retryCounts: Map<string, number> }
       ).retryCounts;
-      retryCounts.set("unknown", 2);
+      retryCounts.set("retry-test", 2);
 
       await (
         consumer as unknown as {
@@ -329,11 +328,11 @@ describe("ParsedQueueConsumer", () => {
       expect(mockChannel.nack).toHaveBeenCalledWith(amqpMsg, false, true);
       expect(consumer.getStats().errorCount).toBe(1);
 
-      // Retry count is tracked under "unknown" key (matchGameId resolves before parse)
+      // Retry count is keyed by parsed message.match_game_id
       const retryCounts = (
         consumer as unknown as { retryCounts: Map<string, number> }
       ).retryCounts;
-      expect(retryCounts.get("unknown")).toBe(1);
+      expect(retryCounts.get("nack-test")).toBe(1);
     });
   });
 

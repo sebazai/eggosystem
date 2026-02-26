@@ -5,7 +5,7 @@ import {
   type DatabaseError
 } from "./database-errors";
 
-export interface RetryOptions {
+interface RetryOptions {
   maxAttempts?: number;
   initialDelayMs?: number;
   maxDelayMs?: number;
