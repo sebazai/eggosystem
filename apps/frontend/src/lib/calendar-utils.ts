@@ -208,8 +208,8 @@ export const findMinMaxTimes = (matches: MatchWithStreamUrls[]) => {
   }
 
   // Format times as HH:mm:ss
-  let minTime = minDate.toTimeString().slice(0, 8);
-  let maxTime = maxDate.toTimeString().slice(0, 8);
+  let minTime: string;
+  let maxTime: string;
 
   // Convert times to hours for easier calculation
   const minHours =

@@ -9,7 +9,7 @@ import type {
 
 type LookupType = "steam_id" | "account_id" | "nickname" | "email";
 
-export interface UseLookupAccountReturn {
+interface UseLookupAccountReturn {
   accountData: EmailVerificationLookupResult | null;
   isLoading: boolean;
   error: string | null;
@@ -65,7 +65,7 @@ export function useLookupAccount(): UseLookupAccountReturn {
   };
 }
 
-export interface UseRegenerateTokenReturn {
+interface UseRegenerateTokenReturn {
   regeneratedData: EmailVerificationRegenerateResponse | null;
   isRegenerating: boolean;
   error: string | null;
