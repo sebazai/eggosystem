@@ -31,7 +31,7 @@ describe("addSignupForSeason - database transaction testing", () => {
     commit: jest.fn(),
     rollback: jest.fn(),
     release: jest.fn(),
-    execute: jest.fn().mockImplementation(() => {
+    query: jest.fn().mockImplementation(() => {
       return [[], []];
     })
   };
