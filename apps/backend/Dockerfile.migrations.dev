@@ -1,5 +1,5 @@
 # Base image
-FROM node:25-slim@sha256:3746b7c78e343062cbad1a1a9f22e582e2aaeda5b183b7050b5831e22f988730 AS base
+FROM node:25-slim@sha256:34d76bac75fba8eea764d3b79b05be7a77fa0651d7b956b011b4a55837fdbc02 AS base
 RUN apt-get update && apt-get install -y default-mysql-client
 
 ENV NODE_ENV=production
