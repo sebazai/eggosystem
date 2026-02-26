@@ -10,7 +10,6 @@ import {
 } from "@eggosystem/types";
 import { getSeasonLeagueTeamByExternalId } from "./season-league-team.models";
 import { getConnection } from "../db/mysqlConnection";
-import { logger } from "../utils/app-logger";
 import { getSeasonLeagueExternalIdByExternalIdWithSeasonSettings } from "./season-league-external-id.models";
 import { NotFoundError } from "../utils/errors";
 
@@ -123,7 +122,8 @@ const addMatchTeamMapVeto = async (
 
       const mapId = await mapFaceitGuidToMapId(entity.guid, connection);
 
-      const query = `INSERT INTO MatchTeamMapVetoes (match_id, team_id, map_id, action, veto_order) VALUES (?, ?, ?, ?, ?)`;
+      const query = `INSERT INTO MatchTeamMapVetoes (match_id, team_id, map_id, action, veto_order) VALUES (?, ?, ?, ?, ?)
+                      ON DUPLICATE KEY UPDATE action = VALUES(action)`;
       return runQuery<{ insertId: number }>(
         query,
         [matchId, teamId, mapId, action, vetoOrder],
@@ -133,31 +133,10 @@ const addMatchTeamMapVeto = async (
   await Promise.all(vetoPromises);
 };
 
-const getHubMatchMapVetoesByExternalMatchRoomId = async (
-  externalMatchRoomId: string,
-  connection?: PoolConnection
-) => {
-  const query = `SELECT * FROM MatchTeamMapVetoes mtmv JOIN Matches m ON m.id = mtmv.match_id WHERE m.external_match_room_id = ?`;
-  const mapVetoes = await runQuery<Array<MatchTeamMapVeto>>(
-    query,
-    [externalMatchRoomId],
-    connection
-  );
-  return mapVetoes;
-};
-
 export const addMatchTeamMapVetoes = async (
   details: ChampionshipDetailsReady,
   externalLeagueId: string
 ) => {
-  const hasAlreadyMapVetoesInDb =
-    await getHubMatchMapVetoesByExternalMatchRoomId(details.match_id);
-  if (hasAlreadyMapVetoesInDb && hasAlreadyMapVetoesInDb.length > 0) {
-    logger.info(
-      `Match ${details.match_id} already has map vetoes in db, skipping`
-    );
-    return;
-  }
   const connection = await getConnection();
   try {
     await connection.beginTransaction();
@@ -218,11 +197,13 @@ export const addMatchTeamMapVetoes = async (
         )
       )
     );
-    await updateMatchStatusByExternalMatchroomId(
-      match_id,
-      "ONGOING",
-      connection
-    );
+    if (!matches.some((m) => m.status === "FINISHED")) {
+      await updateMatchStatusByExternalMatchroomId(
+        match_id,
+        "ONGOING",
+        connection
+      );
+    }
     await connection.commit();
   } catch (error) {
     await connection.rollback();
