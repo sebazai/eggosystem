@@ -122,7 +122,8 @@ const addMatchTeamMapVeto = async (
 
       const mapId = await mapFaceitGuidToMapId(entity.guid, connection);
 
-      const query = `INSERT IGNORE INTO MatchTeamMapVetoes (match_id, team_id, map_id, action, veto_order) VALUES (?, ?, ?, ?, ?)`;
+      const query = `INSERT INTO MatchTeamMapVetoes (match_id, team_id, map_id, action, veto_order) VALUES (?, ?, ?, ?, ?)
+                      ON DUPLICATE KEY UPDATE action = VALUES(action)`;
       return runQuery<{ insertId: number }>(
         query,
         [matchId, teamId, mapId, action, vetoOrder],
