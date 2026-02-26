@@ -117,7 +117,7 @@ describe("Email Queue Services", () => {
         mockQueue
       );
 
-      expect(result).toEqual({ enqueued: 2, failed: 0 });
+      expect(result).toEqual({ enqueued: 2 });
       expect(mockQueue.addBulk).toHaveBeenCalledWith(
         expect.arrayContaining([
           expect.objectContaining({
