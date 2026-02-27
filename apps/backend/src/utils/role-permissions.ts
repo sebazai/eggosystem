@@ -13,7 +13,7 @@ const ROLE_HIERARCHY = {
   "co-captain": 10
 } as const;
 
-export type RoleName = keyof typeof ROLE_HIERARCHY;
+type RoleName = keyof typeof ROLE_HIERARCHY;
 
 /**
  * Check if a user with the given role can manage another role

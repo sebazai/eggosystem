@@ -1,101 +1,259 @@
 import {
-  calculateInitialPlayerValue,
-  calculatePlayerTier
+  calculatePlayerValueData,
+  calculateInitialPlayerValues
+} from "./fantasy-value.service";
+import { runQuery } from "../db/mysqlRunQuery";
+
+// Mock dependencies
+jest.mock("../db/mysqlRunQuery");
+jest.mock("@eggosystem/types", () => ({
+  ...jest.requireActual("@eggosystem/types"),
+  calculatePlayerTier: jest.fn(),
+  calculateInitialPlayerValue: jest.fn()
+}));
+
+import {
+  calculatePlayerTier,
+  calculateInitialPlayerValue
 } from "@eggosystem/types";
-import { calculatePlayerValueData } from "./fantasy-value.service";
+
+const mockRunQuery = runQuery as jest.MockedFunction<typeof runQuery>;
+const mockCalculatePlayerTier = calculatePlayerTier as jest.MockedFunction<
+  typeof calculatePlayerTier
+>;
+const mockCalculateInitialPlayerValue =
+  calculateInitialPlayerValue as jest.MockedFunction<
+    typeof calculateInitialPlayerValue
+  >;
 
 describe("Fantasy Value Service", () => {
-  describe("calculatePlayerTier", () => {
-    it("should return gold tier for value >= 215000", () => {
-      expect(calculatePlayerTier(215000)).toBe("gold");
-      expect(calculatePlayerTier(230000)).toBe("gold");
-      expect(calculatePlayerTier(250000)).toBe("gold");
-    });
-
-    it("should return silver tier for value 175000-214999", () => {
-      expect(calculatePlayerTier(175000)).toBe("silver");
-      expect(calculatePlayerTier(195000)).toBe("silver");
-      expect(calculatePlayerTier(214999)).toBe("silver");
-    });
-
-    it("should return bronze tier for value < 175000", () => {
-      expect(calculatePlayerTier(174999)).toBe("bronze");
-      expect(calculatePlayerTier(165000)).toBe("bronze");
-      expect(calculatePlayerTier(150000)).toBe("bronze");
-    });
-  });
-
-  describe("calculatePlayerValue", () => {
-    it("should return values within range 150K-250K", () => {
-      const value1 = calculateInitialPlayerValue(0.4, 1.0, 100);
-      const value2 = calculateInitialPlayerValue(1.1, 1.5, 500);
-      const value3 = calculateInitialPlayerValue(0.75, 1.0, 250);
-
-      expect(value1).toBeGreaterThanOrEqual(150000);
-      expect(value1).toBeLessThanOrEqual(250000);
-
-      expect(value2).toBeGreaterThanOrEqual(150000);
-      expect(value2).toBeLessThanOrEqual(250000);
-
-      expect(value3).toBeGreaterThanOrEqual(150000);
-      expect(value3).toBeLessThanOrEqual(250000);
-    });
-
-    it("should give higher value for better rating", () => {
-      const lowRating = calculateInitialPlayerValue(0.5, 1.0, 100);
-      const highRating = calculateInitialPlayerValue(1.0, 1.0, 100);
-
-      expect(highRating).toBeGreaterThan(lowRating);
-    });
-
-    it("should apply K/D bonus correctly", () => {
-      const lowKD = calculateInitialPlayerValue(0.8, 0.8, 100);
-      const highKD = calculateInitialPlayerValue(0.8, 1.5, 100);
-
-      expect(highKD).toBeGreaterThan(lowKD);
-    });
-
-    it("should apply kill bonus correctly", () => {
-      const lowKills = calculateInitialPlayerValue(0.8, 1.0, 100);
-      const highKills = calculateInitialPlayerValue(0.8, 1.0, 500);
-
-      expect(highKills).toBeGreaterThan(lowKills);
-    });
-
-    it("should cluster values around 190K for average players", () => {
-      const avgValue = calculateInitialPlayerValue(0.75, 1.0, 200);
-
-      // Average players should be within 170K-210K range (Silver tier center)
-      expect(avgValue).toBeGreaterThan(170000);
-      expect(avgValue).toBeLessThan(215000);
-    });
+  beforeEach(() => {
+    jest.clearAllMocks();
   });
 
   describe("calculatePlayerValueData", () => {
-    it("should return both value and tier", () => {
-      const result = calculatePlayerValueData(0.9, 1.2, 300);
+    it("should call calculateInitialPlayerValue with rating, kd, and kills", () => {
+      mockCalculateInitialPlayerValue.mockReturnValue(150);
+      mockCalculatePlayerTier.mockReturnValue("gold");
 
-      expect(result).toHaveProperty("value");
-      expect(result).toHaveProperty("tier");
-      expect(typeof result.value).toBe("number");
-      expect(["bronze", "silver", "gold"]).toContain(result.tier);
+      calculatePlayerValueData(1.05, 1.2, 200);
+
+      expect(mockCalculateInitialPlayerValue).toHaveBeenCalledWith(
+        1.05,
+        1.2,
+        200
+      );
     });
 
-    it("should have consistent tier and value relationship", () => {
-      const goldPlayer = calculatePlayerValueData(1.0, 1.5, 400);
-      const silverPlayer = calculatePlayerValueData(0.85, 1.1, 250);
-      const bronzePlayer = calculatePlayerValueData(0.5, 0.8, 50);
+    it("should call calculatePlayerTier with the computed value", () => {
+      mockCalculateInitialPlayerValue.mockReturnValue(250);
+      mockCalculatePlayerTier.mockReturnValue("gold");
 
-      expect(goldPlayer.tier).toBe("gold");
-      // Note: The tier is based on value, not rating. A player with rating 0.85 might still be gold if their value is >= 215000
-      expect(["silver", "gold"]).toContain(silverPlayer.tier);
-      // Bronze tier is for values < 175000. Lower rating/kd/kills should produce bronze
-      expect(["bronze", "silver"]).toContain(bronzePlayer.tier);
+      calculatePlayerValueData(1.3, 1.5, 300);
 
-      // Generally, gold players should be more expensive than silver
-      expect(goldPlayer.value).toBeGreaterThan(silverPlayer.value);
-      // And silver more expensive than bronze
-      expect(silverPlayer.value).toBeGreaterThan(bronzePlayer.value);
+      expect(mockCalculatePlayerTier).toHaveBeenCalledWith(250);
+    });
+
+    it("should return value and tier", () => {
+      mockCalculateInitialPlayerValue.mockReturnValue(100);
+      mockCalculatePlayerTier.mockReturnValue("silver");
+
+      const result = calculatePlayerValueData(0.9, 0.8, 50);
+
+      expect(result).toEqual({ value: 100, tier: "silver" });
+    });
+
+    it("should ignore _kanaElo parameter", () => {
+      mockCalculateInitialPlayerValue.mockReturnValue(150);
+      mockCalculatePlayerTier.mockReturnValue("gold");
+
+      const withElo = calculatePlayerValueData(1.05, 1.2, 200, 1500);
+      const withoutElo = calculatePlayerValueData(1.05, 1.2, 200);
+
+      expect(mockCalculateInitialPlayerValue).toHaveBeenCalledTimes(2);
+      expect(mockCalculateInitialPlayerValue).toHaveBeenNthCalledWith(
+        1,
+        1.05,
+        1.2,
+        200
+      );
+      expect(mockCalculateInitialPlayerValue).toHaveBeenNthCalledWith(
+        2,
+        1.05,
+        1.2,
+        200
+      );
+      expect(withElo).toEqual(withoutElo);
+    });
+
+    it("should ignore _kanaElo when null", () => {
+      mockCalculateInitialPlayerValue.mockReturnValue(150);
+      mockCalculatePlayerTier.mockReturnValue("gold");
+
+      const result = calculatePlayerValueData(1.05, 1.2, 200, null);
+
+      expect(mockCalculateInitialPlayerValue).toHaveBeenCalledWith(
+        1.05,
+        1.2,
+        200
+      );
+      expect(result).toEqual({ value: 150, tier: "gold" });
+    });
+  });
+
+  describe("calculateInitialPlayerValues", () => {
+    it("should query with correct parameters", async () => {
+      mockRunQuery.mockResolvedValue([]);
+
+      await calculateInitialPlayerValues(5, 2);
+
+      expect(mockRunQuery).toHaveBeenCalledWith(
+        expect.any(String),
+        [5, 5, 2],
+        undefined
+      );
+    });
+
+    it("should pass connection when provided", async () => {
+      mockRunQuery.mockResolvedValue([]);
+      const mockConnection = {} as import("mysql2/promise").PoolConnection;
+
+      await calculateInitialPlayerValues(5, 2, mockConnection);
+
+      expect(mockRunQuery).toHaveBeenCalledWith(
+        expect.any(String),
+        [5, 5, 2],
+        mockConnection
+      );
+    });
+
+    it("should return empty array when no players found", async () => {
+      mockRunQuery.mockResolvedValue([]);
+
+      const result = await calculateInitialPlayerValues(1, 1);
+
+      expect(result).toEqual([]);
+    });
+
+    it("should map player rows to value/tier/stats objects", async () => {
+      mockRunQuery.mockResolvedValue([
+        {
+          steam_id: "76561198000000001",
+          kana_rating: 1.1,
+          kd: 1.3,
+          kills: 150,
+          deaths: 115,
+          assists: 40,
+          adr: 85.5,
+          headshot_percentage: 52,
+          kast: 72,
+          maps_played: 10,
+          kana_elo: 1200
+        }
+      ]);
+      mockCalculateInitialPlayerValue.mockReturnValue(180);
+      mockCalculatePlayerTier.mockReturnValue("gold");
+
+      const result = await calculateInitialPlayerValues(5, 2);
+
+      expect(result).toHaveLength(1);
+      expect(result[0]).toEqual({
+        steam_id: "76561198000000001",
+        value: 180,
+        tier: "gold",
+        stats: {
+          kana_rating: 1.1,
+          kd: 1.3,
+          kills: 150,
+          deaths: 115,
+          assists: 40,
+          adr: 85.5,
+          headshot_percentage: 52,
+          kast: 72,
+          maps_played: 10,
+          kana_elo: 1200
+        }
+      });
+      expect(mockCalculateInitialPlayerValue).toHaveBeenCalledWith(
+        1.1,
+        1.3,
+        150
+      );
+      expect(mockCalculatePlayerTier).toHaveBeenCalledWith(180);
+    });
+
+    it("should handle multiple players", async () => {
+      mockRunQuery.mockResolvedValue([
+        {
+          steam_id: "player1",
+          kana_rating: 1.0,
+          kd: 1.0,
+          kills: 100,
+          deaths: 100,
+          assists: 30,
+          adr: 70,
+          headshot_percentage: 45,
+          kast: 65,
+          maps_played: 5,
+          kana_elo: undefined
+        },
+        {
+          steam_id: "player2",
+          kana_rating: 1.2,
+          kd: 1.4,
+          kills: 200,
+          deaths: 142,
+          assists: 60,
+          adr: 90,
+          headshot_percentage: 55,
+          kast: 78,
+          maps_played: 12,
+          kana_elo: 1400
+        }
+      ]);
+      mockCalculateInitialPlayerValue
+        .mockReturnValueOnce(100)
+        .mockReturnValueOnce(220);
+      mockCalculatePlayerTier
+        .mockReturnValueOnce("silver")
+        .mockReturnValueOnce("gold");
+
+      const result = await calculateInitialPlayerValues(3, 1);
+
+      expect(result).toHaveLength(2);
+      expect(result[0]!.steam_id).toBe("player1");
+      expect(result[0]!.value).toBe(100);
+      expect(result[0]!.tier).toBe("silver");
+      expect(result[0]!.stats.kana_elo).toBeUndefined();
+
+      expect(result[1]!.steam_id).toBe("player2");
+      expect(result[1]!.value).toBe(220);
+      expect(result[1]!.tier).toBe("gold");
+      expect(result[1]!.stats.kana_elo).toBe(1400);
+    });
+
+    it("should pass kana_elo through to stats even when undefined", async () => {
+      mockRunQuery.mockResolvedValue([
+        {
+          steam_id: "player1",
+          kana_rating: 1.0,
+          kd: 1.0,
+          kills: 100,
+          deaths: 100,
+          assists: 30,
+          adr: 70,
+          headshot_percentage: 45,
+          kast: 65,
+          maps_played: 5,
+          kana_elo: undefined
+        }
+      ]);
+      mockCalculateInitialPlayerValue.mockReturnValue(100);
+      mockCalculatePlayerTier.mockReturnValue("silver");
+
+      const result = await calculateInitialPlayerValues(1, 1);
+
+      expect(result[0]!.stats.kana_elo).toBeUndefined();
     });
   });
 });

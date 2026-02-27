@@ -126,6 +126,7 @@ describe("season-team-players.models", () => {
     beforeEach(() => {
       jest.clearAllMocks();
       mockRedisClient.set.mockResolvedValue("OK");
+      mockRedisClient.get.mockResolvedValue(null); // Not already in Redis → allow Discord notify
       mockGetHubMatchesByExternalMatchRoomId.mockResolvedValue(mockMatchIds);
     });
 
@@ -357,6 +358,49 @@ describe("season-team-players.models", () => {
             players_added_for_this_match: []
           })
         );
+      });
+
+      it("should not notify Discord when flagged match already exists in Redis", async () => {
+        // Arrange: same invalid players as first test, but Redis already has this match
+        mockGetSeasonLeagueTeamByExternalId
+          .mockResolvedValueOnce(mockSeasonLeagueTeam1)
+          .mockResolvedValueOnce(mockSeasonLeagueTeam2);
+
+        const mockRunQuery = jest.requireMock("../db/mysqlRunQuery").runQuery;
+        mockRunQuery
+          .mockResolvedValueOnce([
+            createMockSeasonTeamPlayer({
+              season_id: 1,
+              team_id: 101,
+              steam_id: "steam123"
+            })
+          ])
+          .mockResolvedValueOnce([{ organizer_id: 1 }])
+          .mockResolvedValueOnce([
+            createMockSeasonTeamPlayer({
+              season_id: 1,
+              team_id: 102,
+              steam_id: "steam789"
+            })
+          ]);
+
+        mockRedisClient.get.mockResolvedValue(
+          JSON.stringify({
+            external_match_id: "match123",
+            steam_ids: ["steam123", "steam456"],
+            players_in_season_team_players: ["steam123"],
+            team_id: 101,
+            match_ids: [1001, 1002],
+            players_added_for_this_match: []
+          })
+        );
+
+        // Act
+        await validatePlayersInTeams(seasonId, mockTeams, "match123");
+
+        // Assert: Redis is still updated, but Discord is not notified
+        expect(mockRedisClient.set).toHaveBeenCalledTimes(1);
+        expect(mockNotifyFlaggedMatchInDiscord).not.toHaveBeenCalled();
       });
 
       it("should not flag players when all players are registered with null match_id", async () => {

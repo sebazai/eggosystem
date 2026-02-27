@@ -184,6 +184,8 @@ export const validatePlayersInTeams = async (
     ) {
       // Add to redis as flag that players are not in SeasonTeamPlayers
       const key = `match:invalid_players:${externalMatchId}`;
+      const alreadyFlaggedInRedis = (await redisClient.get(key)) !== null;
+
       const objectToSave = {
         external_match_id: externalMatchId,
         steam_ids: playerSteamIds,
@@ -199,7 +201,7 @@ export const validatePlayersInTeams = async (
       await redisClient.set(key, JSON.stringify(objectToSave));
 
       const organizerId = await getOrganizerIdBySeasonId(seasonId);
-      if (organizerId !== undefined) {
+      if (organizerId !== undefined && !alreadyFlaggedInRedis) {
         notifyFlaggedMatchInDiscord(organizerId, objectToSave).catch((err) => {
           logger.error(
             `Failed to notify Discord of flagged match ${externalMatchId}`,

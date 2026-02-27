@@ -67,7 +67,8 @@ const processWelcomeEmailJob = async (
 
     // Re-throw to let BullMQ handle retry logic
     throw new Error(
-      `Failed to send welcome email to ${playerEmail}: ${errorMessage}`
+      `Failed to send welcome email to ${playerEmail}: ${errorMessage}`,
+      { cause: error }
     );
   }
 };

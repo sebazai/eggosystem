@@ -272,7 +272,7 @@ test:backend:
   stage: test
   extends: [.mr-backend]
   services:
-    - name: mariadb:12.1.2
+    - name: mariadb:12.2.2
       alias: eggo-devdb
     # - name: redis:8-alpine
     #   alias: eggo-redis
@@ -396,7 +396,7 @@ build:backend:
       - apps/backend/dist/
 
 test-e2e:frontend:
-  image: mcr.microsoft.com/playwright:v1.58.1-jammy
+  image: mcr.microsoft.com/playwright:v1.58.2-jammy
   stage: test-e2e
   dependencies:
     - build:backend
@@ -404,7 +404,7 @@ test-e2e:frontend:
     - build:types
     - build:shared-msw
   services:
-    - name: mariadb:12.1.2
+    - name: mariadb:12.2.2
       alias: eggo-devdb
     - name: redis:8-alpine
       alias: eggo-redis

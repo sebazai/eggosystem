@@ -57,7 +57,8 @@ export const calculateKanaElo = async (
       if (error.name === "AbortError") {
         logger.warn(`[CSRankker] Request timeout for steam_id: ${steamId}`);
         throw new Error(
-          "Failed to fetch stabilized kana_elo from CSRankker: Request timeout"
+          "Failed to fetch stabilized kana_elo from CSRankker: Request timeout",
+          { cause: error }
         );
       }
       // Handle other fetch errors (network errors, etc.)
@@ -66,7 +67,8 @@ export const calculateKanaElo = async (
         error
       );
       throw new Error(
-        `Failed to fetch stabilized kana_elo from CSRankker: ${error.message}`
+        `Failed to fetch stabilized kana_elo from CSRankker: ${error.message}`,
+        { cause: error }
       );
     }
     return null;

@@ -135,11 +135,13 @@ export async function uploadImageToService(
   let result: ImageServiceResponse;
   try {
     result = JSON.parse(responseText) as ImageServiceResponse;
-  } catch (_parseError) {
+  } catch (parseError) {
     logger.error(
       `Failed to parse image service response. Status: ${statusCode}, Response text: ${responseText}`
     );
-    throw new Error(`Invalid response from image service: ${responseText}`);
+    throw new Error(`Invalid response from image service: ${responseText}`, {
+      cause: parseError
+    });
   }
 
   // Validate that phash is present and not empty

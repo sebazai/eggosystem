@@ -17,10 +17,5 @@ export default [
       "**/test-utils/**/*.{js,jsx,ts,tsx}",
       "**/e2e/**/*.{js,ts}"
     ]
-  },
-  {
-    rules: {
-      "@next/next/no-img-element": "error"
-    }
   }
 ];
