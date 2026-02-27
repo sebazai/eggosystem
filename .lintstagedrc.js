@@ -7,9 +7,15 @@ const PACKAGE_PREFIXES = {
   "@eggosystem/eslint": "packages/eslint/"
 };
 
+/** Paths from lint-staged may be absolute; normalize to repo-relative for package matching. */
+const toRepoRelative = (file) => {
+  const cwd = process.cwd();
+  return file.startsWith(cwd) ? relative(cwd, file) : file;
+};
+
 const buildNextLint = (filenames) => {
-  // Make paths relative to apps/frontend
-  const rel = filenames
+  const normalized = filenames.map(toRepoRelative);
+  const rel = normalized
     .filter((f) => f.startsWith("apps/frontend/"))
     .map((f) => relative("apps/frontend", f));
   if (rel.length === 0) return 'echo "skip next lint"';
@@ -17,7 +23,8 @@ const buildNextLint = (filenames) => {
 };
 
 const buildLintFix = (filenames) => {
-  const tsFiles = filenames.filter((f) => /\.(ts|tsx|js|jsx)$/.test(f));
+  const normalized = filenames.map(toRepoRelative);
+  const tsFiles = normalized.filter((f) => /\.(ts|tsx|js|jsx)$/.test(f));
   if (tsFiles.length === 0) return 'echo "skip lint"';
 
   const byPackage = {};
@@ -50,12 +57,11 @@ const buildLintFix = (filenames) => {
 };
 
 const buildTypecheck = (filenames) => {
-  // Filter to TypeScript/JavaScript files
-  const tsFiles = filenames.filter((f) => /\.(ts|tsx|js|jsx)$/.test(f));
+  const normalized = filenames.map(toRepoRelative);
+  const tsFiles = normalized.filter((f) => /\.(ts|tsx|js|jsx)$/.test(f));
 
   if (tsFiles.length === 0) return 'echo "skip typecheck"';
 
-  // Determine which workspaces have staged files
   const workspaces = new Set();
   tsFiles.forEach((file) => {
     if (file.startsWith("apps/backend/")) {
