@@ -367,10 +367,20 @@ export const reparseFailedMessages = async (
             let originalSource: string;
 
             if (queueName === "parse_queue_failed") {
-              matchGameId = messageContent.original_message?.match_game_id;
-              downloadUrl = messageContent.original_message?.download_url;
+              // Support both wrapped (original_message) and flat message shapes
+              const orig = messageContent.original_message as
+                | Record<string, unknown>
+                | undefined;
+              matchGameId =
+                (orig?.match_game_id as string) ??
+                (messageContent.match_game_id as string);
+              downloadUrl =
+                (orig?.download_url as string) ??
+                (messageContent.download_url as string);
               originalSource =
-                messageContent.original_message?.source || "faceit";
+                (orig?.source as string) ??
+                (messageContent.source as string) ??
+                "faceit";
             } else if (queueName === "parsed_save_failed") {
               matchGameId =
                 messageContent.match_game_id ||
@@ -465,8 +475,12 @@ export const reparseFailedMessages = async (
             const matchGameId = (() => {
               try {
                 const c = JSON.parse(msg.content.toString());
-                if (queueName === "parse_queue_failed")
-                  return c.original_message?.match_game_id;
+                if (queueName === "parse_queue_failed") {
+                  const orig = c.original_message as
+                    | Record<string, unknown>
+                    | undefined;
+                  return orig?.match_game_id ?? c.match_game_id;
+                }
                 if (queueName === "parsed_save_failed")
                   return c.match_game_id ?? c.originalMessage?.match_game_id;
                 return c.match_game_id;
