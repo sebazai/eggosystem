@@ -4,7 +4,8 @@ import {
   type Match,
   type StandingsFaceitTeamStats,
   type StandingsLeagues,
-  type Season
+  type Season,
+  MatchStatus
 } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
 import { logger } from "../utils/app-logger";
@@ -121,30 +122,30 @@ export const getFaceitMatchesForFaceitLeague = async (
 };
 
 const getFaceitMatchInfoForForfeit = async (
-  faceitMatchId: string
+  faceitMatchId: string,
+  options?: { onlyFirstGame?: boolean }
 ): Promise<StandingsFaceitTeamStats[]> => {
   const matchDetails =
     await getFaceITMatchDetails<ChampionshipDetailsFinished>(faceitMatchId);
-  const data: StandingsFaceitTeamStats[] = Object.values(
-    matchDetails.detailed_results
-  ).flatMap((result) => {
+  const results =
+    options?.onlyFirstGame && matchDetails.detailed_results.length > 0
+      ? [matchDetails.detailed_results[0]]
+      : matchDetails.detailed_results;
+  const data: StandingsFaceitTeamStats[] = results.flatMap((result) => {
     const winnerFaction = result.winner;
     const winnerTeamName = matchDetails.teams[winnerFaction].name;
-    const data = Object.values(matchDetails.teams).map((team) => {
-      return {
-        team_name: team.name,
-        games_played: 1,
-        maps_won: winnerTeamName === team.name ? 1 : 0,
-        maps_won_ot: 0,
-        maps_lost: winnerTeamName === team.name ? 0 : 1,
-        maps_lost_ot: 0,
-        points: winnerTeamName === team.name ? 3 : 0,
-        rounds_won: winnerTeamName === team.name ? 6 : -6,
-        rounds_lost: 0,
-        rounds_diff: winnerTeamName === team.name ? 6 : -6
-      };
-    });
-    return data;
+    return Object.values(matchDetails.teams).map((team) => ({
+      team_name: team.name,
+      games_played: 1,
+      maps_won: winnerTeamName === team.name ? 1 : 0,
+      maps_won_ot: 0,
+      maps_lost: winnerTeamName === team.name ? 0 : 1,
+      maps_lost_ot: 0,
+      points: winnerTeamName === team.name ? 3 : 0,
+      rounds_won: winnerTeamName === team.name ? 6 : -6,
+      rounds_lost: 0,
+      rounds_diff: winnerTeamName === team.name ? 6 : -6
+    }));
   });
   return data;
 };
@@ -213,20 +214,35 @@ export const getDivStandings = async (
       match.external_match_room_id !== null
   );
 
-  const matchExternalIdParsed: Map<string, true> = new Map();
+  // For BO2-as-2xBO1: only skip when we already processed a FINISHED match for
+  // this room (SQL groups FINISHED by room, so at most one FINISHED row per
+  // room). We must always process FORFEIT matches and never skip a FINISHED
+  // match just because we already processed a FORFEIT for the same room.
+  const roomFinishedProcessed: Map<string, true> = new Map();
 
-  // Get stats for each match
   const teamStatsArray: StandingsFaceitTeamStats[][] = [];
   for (const match of matches) {
     if (
-      matchExternalIdParsed.has(match.external_match_room_id) &&
-      match.is_round_robin_bo2_as_2xbo1
+      match.is_round_robin_bo2_as_2xbo1 &&
+      match.status === MatchStatus.FINISHED
     ) {
-      continue;
+      if (roomFinishedProcessed.has(match.external_match_room_id)) {
+        continue;
+      }
+      roomFinishedProcessed.set(match.external_match_room_id, true);
     }
-    if (match.status === "FORFEIT") {
+
+    if (match.status === MatchStatus.FORFEIT) {
+      const roomAlsoHasFinished =
+        match.is_round_robin_bo2_as_2xbo1 &&
+        matches.some(
+          (m) =>
+            m.external_match_room_id === match.external_match_room_id &&
+            m.status === MatchStatus.FINISHED
+        );
       const stats = await getFaceitMatchInfoForForfeit(
-        match.external_match_room_id
+        match.external_match_room_id,
+        roomAlsoHasFinished ? { onlyFirstGame: true } : undefined
       );
       teamStatsArray.push(stats);
     } else {
@@ -236,10 +252,6 @@ export const getDivStandings = async (
       const stats =
         await extractPointsFromFaceitMatchStatsResponse(faceitMatchStats);
       teamStatsArray.push(stats);
-    }
-    if (match.is_round_robin_bo2_as_2xbo1) {
-      matchExternalIdParsed.set(match.external_match_room_id, true);
-      continue;
     }
   }
 
