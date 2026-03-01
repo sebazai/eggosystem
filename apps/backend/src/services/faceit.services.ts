@@ -382,7 +382,7 @@ const getFaceITCSGORank = async (steam_id: string) => {
   return returnData;
 };
 
-export interface FaceITRankOptions {
+interface FaceITRankOptions {
   skipExternalCheck?: boolean;
 }
 
@@ -549,23 +549,11 @@ export const getFaceITMatchDetails = async <T>(match_id: string) => {
 };
 
 /**
- * Gets player details from Faceit API by steam_id
- * @param steam_id The Steam ID of the player
- * @returns Player details from Faceit or null if not found
- */
-export const getFaceitPlayerDetailsBySteamId = async (
-  steam_id: string
-): Promise<FaceitPlayerDetails | null> => {
-  // Simply delegate to the base function with cs2 as the game
-  return fetchFaceitPlayerData(steam_id, "cs2");
-};
-
-/**
  * Gets player details from Faceit API by FaceIt user_id (player_id)
  * @param faceit_user_id The FaceIt user ID of the player
  * @returns Player details from Faceit or null if not found
  */
-export const getFaceitPlayerDetails = async (
+const getFaceitPlayerDetails = async (
   faceit_user_id: string
 ): Promise<FaceitPlayerDetails | null> => {
   const redisKey = `faceit-player-by-id-${faceit_user_id}`;
@@ -658,7 +646,7 @@ export const getFaceITChampionshipDetails = async <T>(
   return response.json() as Promise<T>;
 };
 
-export const getFaceITChampionshipSubscriptions = async (
+const getFaceITChampionshipSubscriptions = async (
   championship_id: string,
   offset: number = 0,
   limit: number = 10
@@ -715,13 +703,13 @@ export const getAllFaceITChampionshipSubscriptions = async (
   };
 };
 
-export interface ChampionshipTeamMember {
+interface ChampionshipTeamMember {
   faceit_user_id: string;
   nickname: string;
   steam_id: string | null;
 }
 
-export interface ChampionshipTeamWithMembers {
+interface ChampionshipTeamWithMembers {
   team_id: string;
   team_name: string;
   members: ChampionshipTeamMember[];
@@ -848,7 +836,7 @@ export const getDemoDownloadUrl = async (matchGameDemoUrl: string) => {
   return data.payload.download_url; // Return download URL from response
 };
 
-export const fetchFaceitChampionshipUpcomingMatches = async (
+const fetchFaceitChampionshipUpcomingMatches = async (
   championshipId: string
 ) => {
   const apiKey = process.env.FACEIT_API_KEY;
@@ -878,7 +866,7 @@ export const fetchFaceitChampionshipUpcomingMatches = async (
   return data.items;
 };
 
-export const syncMatchSchedule = async (
+const syncMatchSchedule = async (
   faceitMatch: FaceitMatch,
   is_round_robin_bo2_as_2xbo1: boolean
 ): Promise<void> => {
