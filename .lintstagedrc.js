@@ -13,13 +13,13 @@ const toRepoRelative = (file) => {
   return file.startsWith(cwd) ? relative(cwd, file) : file;
 };
 
-const buildNextLint = (filenames) => {
+const buildFrontendLint = (filenames) => {
   const normalized = filenames.map(toRepoRelative);
   const rel = normalized
     .filter((f) => f.startsWith("apps/frontend/"))
     .map((f) => relative("apps/frontend", f));
-  if (rel.length === 0) return 'echo "skip next lint"';
-  return `pnpm --filter=frontend exec next lint --fix --file ${rel.join(" --file ")}`;
+  if (rel.length === 0) return 'echo "skip frontend lint"';
+  return `pnpm --filter=frontend exec eslint . --fix -- ${rel.join(" ")}`;
 };
 
 const buildLintFix = (filenames) => {
@@ -41,7 +41,7 @@ const buildLintFix = (filenames) => {
       (byPackage["@eggosystem/eslint"] =
         byPackage["@eggosystem/eslint"] || []).push(file);
     }
-    // frontend: handled by buildNextLint
+    // frontend: handled by buildFrontendLint
   });
 
   const commands = Object.entries(byPackage).map(([pkg, files]) => {
@@ -84,8 +84,13 @@ const buildTypecheck = (filenames) => {
   return `pnpm ${filters} typecheck`;
 };
 
+const buildFormat = (filenames) => {
+  const quoted = filenames.map((f) => `"${f.replace(/"/g, '\\"')}"`).join(" ");
+  return `prettier --write ${quoted}`;
+};
+
 export default {
-  "**/*.{json,md,yml,js,ts,tsx,jsx}": "pnpm format",
+  "**/*.{json,md,yml,js,ts,tsx,jsx}": [buildFormat],
   "**/*.{js,ts,tsx,jsx}": [buildLintFix, buildTypecheck, () => "pnpm knip"],
-  "apps/frontend/**/*.{js,jsx,ts,tsx}": [buildNextLint]
+  "apps/frontend/**/*.{js,jsx,ts,tsx}": [buildFrontendLint]
 };

@@ -45,7 +45,8 @@ export async function generateMetadata({ params }: LayoutProps) {
   });
 
   return createPageMetadata({
-    title: `Match ${team1.name} vs ${team2.name} - ${formattedDate}`
+    title: `Match ${team1.name} vs ${team2.name} - ${formattedDate}`,
+    description: `${team1.name} vs ${team2.name} – Match room | Kanahub by Kanaliiga`
   });
 }
 

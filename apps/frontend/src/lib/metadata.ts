@@ -9,13 +9,17 @@ export function createPageMetadata({
 }: Partial<Metadata>) {
   return {
     title,
-    description: description ?? "Kanaliiga esports platform",
+    description:
+      description ??
+      "Corporate esports league – matches, teams, and stats | Kanahub",
     applicationName: "Kanahub by Kanaliiga",
     metadataBase: new URL(envConfig.BASE_URL),
     openGraph: {
       type: "website",
       title: title ?? "Kanahub",
-      description: description ?? "Kanaliiga esports platform",
+      description:
+        description ??
+        "Corporate esports league – matches, teams, and stats | Kanahub",
       url: new URL(envConfig.BASE_URL),
       images: [createNextUrl("/images/kanaliiga/opengraph-image.png")],
       siteName: "Kanahub by Kanaliiga",
