@@ -38,6 +38,26 @@ export const getTeamById = async (
 };
 
 /**
+ * Fetches team_logo for the given team IDs. Returns a map of team_id -> team_logo (null if missing).
+ */
+export const getTeamLogosByTeamIds = async (
+  teamIds: number[]
+): Promise<Map<number, string | null>> => {
+  const map = new Map<number, string | null>();
+  if (teamIds.length === 0) return map;
+  const unique = [...new Set(teamIds)];
+  const placeholders = unique.map(() => "?").join(",");
+  const rows = await runQuery<Pick<Team, "id" | "team_logo">[]>(
+    `SELECT id, team_logo FROM Teams WHERE id IN (${placeholders})`,
+    unique
+  );
+  for (const row of rows) {
+    map.set(row.id, row.team_logo ?? null);
+  }
+  return map;
+};
+
+/**
  * Fetches the team name, id, logo and the latest season/league based on filters.
  */
 export const getOneTeamByFilters = async (

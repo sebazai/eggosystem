@@ -16,6 +16,7 @@ import {
   saveWebhookData,
   updateErrorForWebhook
 } from "../../models/faceit.models";
+import { invalidateChampionshipMatchesCache } from "../../services/playoff-bracket.services";
 import { isForfeitPayload } from "../../utils/faceit-match-status-finished-detection";
 import { logger } from "../../utils/app-logger";
 import {
@@ -319,6 +320,9 @@ router.post(
         try {
           await addMatchToDatabase(
             validatedMatchDetails,
+            validatedWebhook.payload.entity.id
+          );
+          await invalidateChampionshipMatchesCache(
             validatedWebhook.payload.entity.id
           );
         } catch (error) {
