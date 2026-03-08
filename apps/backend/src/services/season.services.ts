@@ -38,7 +38,6 @@ export const ensureSeasonMaxPlayersForTeam = async (
   // @ts-expect-error
   const maxPlayersForSeason = season.max_players ?? maxPlayers;
 
-  // +1 for the new player
   if (primaryPlayers.length - (excludeSteamId ? 1 : 0) >= maxPlayersForSeason) {
     throw new BadRequestError(
       `Team ${teamId} already has the maximum number of players (${maxPlayersForSeason})`
