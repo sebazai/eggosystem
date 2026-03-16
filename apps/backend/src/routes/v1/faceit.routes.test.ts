@@ -22,7 +22,7 @@ jest.mock("../../services/match-game.services");
 // Import mocked functions
 import {
   getOrganizerByFaceitIdAndGameAppId,
-  getOrganizerFaceitActiveSeasonForApp
+  getOrganizerFaceitSeasonForApp
 } from "../../models/organizer.models";
 import {
   addMatchToDatabase,
@@ -78,8 +78,8 @@ const mockGetOrganizerByFaceitIdAndGameAppId =
     typeof getOrganizerByFaceitIdAndGameAppId
   >;
 const mockGetOrganizerActiveSeasonForApp =
-  getOrganizerFaceitActiveSeasonForApp as jest.MockedFunction<
-    typeof getOrganizerFaceitActiveSeasonForApp
+  getOrganizerFaceitSeasonForApp as jest.MockedFunction<
+    typeof getOrganizerFaceitSeasonForApp
   >;
 const mockAddMatchToDatabase = addMatchToDatabase as jest.MockedFunction<
   typeof addMatchToDatabase
@@ -2856,9 +2856,10 @@ describe("FaceIT Routes - Webhook", () => {
         expect(response.status).toBe(200);
         expect(response.text).toBe("Webhook received");
 
-        // Verify that getOrganizerFaceitActiveSeasonForApp was called
+        // Verify that getOrganizerFaceitSeasonForApp was called
         expect(mockGetOrganizerActiveSeasonForApp).toHaveBeenCalledWith(
           "08b06cfc-74d0-454b-9a51-feda4b6b18da",
+          "S54",
           730
         );
 
@@ -2914,9 +2915,10 @@ describe("FaceIT Routes - Webhook", () => {
         expect(response.status).toBe(200);
         expect(response.text).toBe("Webhook received");
 
-        // Verify that getOrganizerFaceitActiveSeasonForApp was called
+        // Verify that getOrganizerFaceitSeasonForApp was called
         expect(mockGetOrganizerActiveSeasonForApp).toHaveBeenCalledWith(
           "08b06cfc-74d0-454b-9a51-feda4b6b18da",
+          "S54",
           730
         );
 
@@ -2965,9 +2967,10 @@ describe("FaceIT Routes - Webhook", () => {
         expect(response.status).toBe(200);
         expect(response.text).toBe("Webhook received");
 
-        // Verify that getOrganizerFaceitActiveSeasonForApp was called
+        // Verify that getOrganizerFaceitSeasonForApp was called
         expect(mockGetOrganizerActiveSeasonForApp).toHaveBeenCalledWith(
           "08b06cfc-74d0-454b-9a51-feda4b6b18da",
+          "S54",
           730
         );
 
@@ -3022,9 +3025,10 @@ describe("FaceIT Routes - Webhook", () => {
         expect(response.status).toBe(200);
         expect(response.text).toBe("Webhook received");
 
-        // Verify that getOrganizerFaceitActiveSeasonForApp was called
+        // Verify that getOrganizerFaceitSeasonForApp was called
         expect(mockGetOrganizerActiveSeasonForApp).toHaveBeenCalledWith(
           "08b06cfc-74d0-454b-9a51-feda4b6b18da",
+          "S54",
           730
         );
 
@@ -3071,7 +3075,7 @@ describe("FaceIT Routes - Webhook", () => {
         expect(response.status).toBe(200);
         expect(response.text).toBe("Webhook received");
 
-        // Verify that getOrganizerFaceitActiveSeasonForApp was NOT called for non-group 3 matches
+        // Verify that getOrganizerFaceitSeasonForApp was NOT called for non-group 3 matches
         expect(mockGetOrganizerActiveSeasonForApp).not.toHaveBeenCalled();
 
         // Verify that addMatchToDatabase was called (match should be processed)
@@ -3115,7 +3119,7 @@ describe("FaceIT Routes - Webhook", () => {
         expect(response.status).toBe(200);
         expect(response.text).toBe("Webhook received");
 
-        // Verify that getOrganizerFaceitActiveSeasonForApp was NOT called for non-group 3 matches
+        // Verify that getOrganizerFaceitSeasonForApp was NOT called for non-group 3 matches
         expect(mockGetOrganizerActiveSeasonForApp).not.toHaveBeenCalled();
 
         // Verify that addMatchToDatabase was called (match should be processed)
@@ -3164,9 +3168,10 @@ describe("FaceIT Routes - Webhook", () => {
         expect(response.status).toBe(200);
         expect(response.text).toBe("Webhook received");
 
-        // Verify that getOrganizerFaceitActiveSeasonForApp was called
+        // Verify that getOrganizerFaceitSeasonForApp was called
         expect(mockGetOrganizerActiveSeasonForApp).toHaveBeenCalledWith(
           "08b06cfc-74d0-454b-9a51-feda4b6b18da",
+          "S54",
           730
         );
 

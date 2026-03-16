@@ -19,6 +19,26 @@ export const getSeasonLeagueBySeasonAndFaceitName = async (
   return seasonLeague;
 };
 
+/** Returns league names for a season in the form expected by getSeasonLeagueBySeasonAndFaceitName (searchName). */
+export const getSeasonLeagueSearchNames = async (
+  seasonId: number
+): Promise<Array<{ leagueName: string; searchName: string }>> => {
+  const query = `SELECT l.name as league_name
+    FROM SeasonLeagues sl
+    JOIN Leagues l ON sl.league_id = l.id
+    WHERE sl.season_id = ?
+    ORDER BY sl.tier ASC`;
+  const rows = await runQuery<Array<{ league_name: string }>>(query, [
+    seasonId
+  ]);
+  return rows.map(({ league_name }) => {
+    const searchName = /^div(\d+)$/i.test(league_name)
+      ? league_name.replace(/^div/i, "")
+      : league_name;
+    return { leagueName: league_name, searchName };
+  });
+};
+
 export const getSeasonLeaguesWithMappingsBySeasonId = async (
   seasonId: number,
   connection?: PoolConnection

@@ -79,13 +79,16 @@ import {
 import { createApiKeyValidator } from "../../middlewares/api-key-auth.middleware";
 import {
   getOrganizerByFaceitIdAndGameAppId,
-  getOrganizerFaceitActiveSeasonForApp
+  getOrganizerFaceitSeasonForApp
 } from "../../models/organizer.models";
 import { NotFoundError } from "../../utils/errors";
 import { addMatchTeamMapVetoes } from "../../models/match-team-map-veto.models";
 import { addFaceitMatchGameToDatabase } from "../../services/faceit.services";
 import { validatePlayersInTeams } from "../../models/season-team-players.models";
-import { addChampionshipToDatabase } from "../../services/season-league-external-id.services";
+import {
+  addChampionshipToDatabase,
+  extractSeasonHintFromName
+} from "../../services/season-league-external-id.services";
 import {
   getSeasonLeagueExternalIdByExternalIdWithSeasonSettings,
   removeSeasonLeagueExternalId
@@ -292,11 +295,14 @@ router.post(
             res.status(400).send("Organizer has no faceit_id");
             return;
           }
-          const organizerActiveSeason =
-            await getOrganizerFaceitActiveSeasonForApp(
-              organizer.faceit_id,
-              appId
-            );
+
+          const leagueNameWithSeason = validatedWebhook.payload.entity.name;
+          const seasonHint = extractSeasonHintFromName(leagueNameWithSeason);
+          const organizerActiveSeason = await getOrganizerFaceitSeasonForApp(
+            organizer.faceit_id,
+            seasonHint,
+            appId
+          );
           if (
             organizerActiveSeason?.grand_final_round_one_only &&
             validatedMatchDetails.round !== 1
