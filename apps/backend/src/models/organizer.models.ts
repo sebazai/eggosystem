@@ -2,6 +2,24 @@ import { type Season, type Organizer, SeasonPlatform } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
 import { NotFoundError } from "../utils/errors";
 
+/**
+ * Returns LIKE patterns so both "S5" and "Season 5" (and vice versa) match.
+ * E.g. "S5" or "Season 5" both yield ["%S5%", "%Season 5%"].
+ */
+function getSeasonLikePatterns(seasonStringLike: string): string[] {
+  const trimmed = seasonStringLike.trim();
+  if (trimmed === "") return [];
+  const normalized = trimmed.toLowerCase();
+  const sMatch = normalized.match(/^s\s*(\d+)$/);
+  const seasonMatch = normalized.match(/^season\s*(\d+)$/i);
+  const num = sMatch?.[1] ?? seasonMatch?.[1];
+  if (num) {
+    const n = parseInt(num, 10);
+    return [`%S${n}%`, `%Season ${n}%`];
+  }
+  return [`%${trimmed}%`];
+}
+
 export const getOrganizerByIdOrFail = async (id: number) => {
   const [organizer] = await runQuery<[Organizer | undefined]>(
     "SELECT * FROM Organizers WHERE id = ?",
@@ -32,9 +50,10 @@ export const getOrganizerFaceitSeasonForApp = async (
   seasonStringLike: string,
   appId: number
 ) => {
+  const patterns = getSeasonLikePatterns(seasonStringLike);
   const seasonNameCondition =
-    seasonStringLike.trim() !== ""
-      ? " AND (s.name LIKE ? OR s.full_name LIKE ?)"
+    patterns.length > 0
+      ? ` AND (${patterns.map(() => "(s.name LIKE ? OR s.full_name LIKE ?)").join(" OR ")})`
       : "";
   const query = `SELECT s.* FROM Games g
     JOIN OrganizerGames og ON g.id = og.game_id
@@ -49,8 +68,7 @@ export const getOrganizerFaceitSeasonForApp = async (
     appId,
     SeasonPlatform.FACEIT
   ];
-  if (seasonStringLike.trim() !== "") {
-    const pattern = `%${seasonStringLike.trim()}%`;
+  for (const pattern of patterns) {
     params.push(pattern, pattern);
   }
   const [season] = await runQuery<Array<Season | undefined>>(query, params);

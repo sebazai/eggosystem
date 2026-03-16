@@ -53,7 +53,10 @@ import {
   validMatchDetailsMatchDemoReady,
   validMatchDetailsMatchCreated
 } from "@eggosystem/shared-msw";
-import { getSeasonLeagueBySeasonAndFaceitName } from "../../models/season-league.models";
+import {
+  getSeasonLeagueBySeasonAndFaceitName,
+  getSeasonLeagueSearchNames
+} from "../../models/season-league.models";
 import {
   insertSeasonLeagueExternalId,
   getSeasonLeagueExternalIdByExternalIdWithSeasonSettings
@@ -139,6 +142,10 @@ const mockValidatePlayersInTeams =
 const mockGetSeasonLeagueBySeasonAndFaceitName =
   getSeasonLeagueBySeasonAndFaceitName as jest.MockedFunction<
     typeof getSeasonLeagueBySeasonAndFaceitName
+  >;
+const mockGetSeasonLeagueSearchNames =
+  getSeasonLeagueSearchNames as jest.MockedFunction<
+    typeof getSeasonLeagueSearchNames
   >;
 const mockInsertSeasonLeagueExternalId =
   insertSeasonLeagueExternalId as jest.MockedFunction<
@@ -1020,6 +1027,13 @@ describe("FaceIT Routes - Webhook", () => {
           id: 77
         } as unknown as Season);
 
+        // League search names for resolveLeagueNameFromChampionshipName
+        mockGetSeasonLeagueSearchNames.mockResolvedValue([
+          { leagueName: "div5", searchName: "5" },
+          { leagueName: "div11", searchName: "11" },
+          { leagueName: "Masters", searchName: "Masters" }
+        ]);
+
         // Mock league resolution
         mockGetSeasonLeagueBySeasonAndFaceitName.mockResolvedValue({
           season_id: 77,
@@ -1038,6 +1052,9 @@ describe("FaceIT Routes - Webhook", () => {
       });
 
       it("should set manualProcessed to true when reprocess=true for championship_created", async () => {
+        mockGetOrganizerActiveSeasonForApp.mockImplementation(() =>
+          Promise.resolve({ id: 77 } as unknown as Season)
+        );
         const championshipCreated = {
           transaction_id: "45c6cb33-cb52-40ea-933d-9427034adcf0",
           event: "championship_created",
@@ -1223,10 +1240,16 @@ describe("FaceIT Routes - Webhook", () => {
           }
         };
 
-        // Active organizer season mocked
-        mockGetOrganizerActiveSeasonForApp.mockResolvedValueOnce({
-          id: 77
-        } as unknown as Season);
+        // Active organizer season mocked (mockImplementation so return value is not cleared by restoreAllMocks)
+        mockGetOrganizerActiveSeasonForApp.mockImplementation(() =>
+          Promise.resolve({ id: 77 } as unknown as Season)
+        );
+
+        mockGetSeasonLeagueSearchNames.mockResolvedValue([
+          { leagueName: "div5", searchName: "5" },
+          { leagueName: "div11", searchName: "11" },
+          { leagueName: "Masters", searchName: "Masters" }
+        ]);
 
         // Mock league resolution from faceit name prefix '5'
         mockGetSeasonLeagueBySeasonAndFaceitName.mockResolvedValueOnce({

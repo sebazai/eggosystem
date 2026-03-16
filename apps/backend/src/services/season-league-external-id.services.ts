@@ -10,27 +10,41 @@ import { convertFaceitGameToAppId } from "./faceit.services";
 const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 /**
+ * Normalizes a league name token so "Div5"/"Div6" map to "5"/"6" for lookup
+ * (DB stores leagues as "div5", "div11"; searchName is "5", "11").
+ */
+const normalizeLeagueToken = (token: string): string => {
+  const divMatch = token.match(/^Div(\d+)$/i);
+  return divMatch ? divMatch[1] : token;
+};
+
+/**
  * Resolves the league search name (for getSeasonLeagueBySeasonAndFaceitName) by matching
  * the championship name against known league names for the season. Uses word-boundary
- * matching and prefers longest match (e.g. "11" over "1"). Falls back to first word of
- * the championship name if no league matches.
+ * matching and prefers longest match (e.g. "11" over "1"). Treats "Div5"/"Div6" in the
+ * name as equivalent to "5"/"6". Falls back to first word of the championship name
+ * (with DivN normalized to N) if no league matches.
  */
 export const resolveLeagueNameFromChampionshipName = async (
   championshipName: string,
   seasonId: number
 ): Promise<string> => {
-  const leagueNames = await getSeasonLeagueSearchNames(seasonId);
+  const raw = await getSeasonLeagueSearchNames(seasonId);
+  const leagueNames = Array.isArray(raw) ? raw : [];
   const sorted = [...leagueNames].sort(
     (a, b) => b.searchName.length - a.searchName.length
   );
   const wordBoundaryMatch = (searchName: string) =>
     new RegExp(`\\b${escapeRegex(searchName)}\\b`, "i").test(championshipName);
-  const matched = sorted.find(({ searchName }) =>
-    wordBoundaryMatch(searchName)
+  const matchDivVariant = (searchName: string) =>
+    /^\d+$/.test(searchName) && wordBoundaryMatch("Div" + searchName);
+  const matched = sorted.find(
+    ({ searchName }) =>
+      wordBoundaryMatch(searchName) || matchDivVariant(searchName)
   );
   if (matched) return matched.searchName;
   const firstWord = championshipName.trim().split(/\s+/)[0];
-  return firstWord ?? "";
+  return normalizeLeagueToken(firstWord ?? "");
 };
 
 /**

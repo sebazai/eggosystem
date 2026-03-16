@@ -183,6 +183,25 @@ describe("resolveLeagueNameFromChampionshipName", () => {
     ).resolves.toBe("11");
   });
 
+  it("matches Div5/Div6 in name to league search name 5/6", async () => {
+    mockGetSeasonLeagueSearchNames.mockResolvedValue(defaultSeasonLeagueNames);
+    await expect(
+      resolveLeagueNameFromChampionshipName("Div5 S4 Lohko A", 77)
+    ).resolves.toBe("5");
+    await expect(
+      resolveLeagueNameFromChampionshipName("Div6 S4 Lohko B", 77)
+    ).resolves.toBe("6");
+  });
+
+  it("falls back to first word with DivN normalized to N when no league matches", async () => {
+    mockGetSeasonLeagueSearchNames.mockResolvedValue([
+      { leagueName: "Masters", searchName: "Masters" }
+    ]);
+    await expect(
+      resolveLeagueNameFromChampionshipName("Div5 S4 Unknown", 77)
+    ).resolves.toBe("5");
+  });
+
   it("falls back to first word when no league matches", async () => {
     mockGetSeasonLeagueSearchNames.mockResolvedValue([
       { leagueName: "Masters", searchName: "Masters" }
