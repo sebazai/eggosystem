@@ -53,7 +53,7 @@ const buildLintFix = (filenames) => {
     return `pnpm --filter=${pkg} exec eslint . --fix -- ${relPaths.join(" ")}`;
   });
   if (commands.length === 0) return 'echo "skip lint"';
-  return commands.join(" && ");
+  return commands;
 };
 
 const buildTypecheck = (filenames) => {

@@ -30,6 +30,7 @@ export const createMockSeasonLeagueTeam = (
     league_id: 1,
     placement: null,
     position_offset: null,
+    playoff_seed: null,
     ...overrides
   };
 };

@@ -15,6 +15,7 @@ import seasonLeagueMapperRouter from "./season-league-mapper.routes";
 import faceitValidationRouter from "./faceit-validation.routes";
 import emailVerificationRouter from "./email-verification.routes";
 import casterApplicationsRouter from "./caster-applications.routes";
+import playoffSeedsRouter from "./playoff-seeds.routes";
 
 const router = Router();
 
@@ -115,6 +116,13 @@ router.use(
     fallbackRoles: ["admin", "helpdesk"]
   }),
   casterApplicationsRouter
+);
+router.use(
+  "/playoff-seeds",
+  checkPermissions({
+    fallbackRoles: ["admin", "helpdesk"]
+  }),
+  playoffSeedsRouter
 );
 router.get(
   "/",

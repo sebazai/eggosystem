@@ -145,6 +145,11 @@ const getSeasonMenuItems = (
           hasFilters: false
         },
         {
+          title: "Playoff bracket",
+          url: `/seasons/${signupOrActiveSeason.season_id}/leagues/1/playoff`,
+          hasFilters: false
+        },
+        {
           title: "Captains",
           url: `/seasons/${signupOrActiveSeason.season_id}/captains`,
           hasFilters: false

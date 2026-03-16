@@ -1,4 +1,4 @@
-import { getTeamsForSeason } from "./team.models";
+import { getTeamsForSeason, getTeamLogosByTeamIds } from "./team.models";
 import { runQuery } from "../db/mysqlRunQuery";
 
 // Mock the runQuery function
@@ -75,6 +75,42 @@ describe("Team Models Unit Tests", () => {
       expect(result).toEqual(mockData);
       expect(result[0].league_name).toBe("Unassigned");
       expect(result[0].tier).toBeNull();
+    });
+  });
+
+  describe("getTeamLogosByTeamIds", () => {
+    it("returns empty map for empty teamIds", async () => {
+      const result = await getTeamLogosByTeamIds([]);
+      expect(result).toEqual(new Map());
+      expect(mockRunQuery).not.toHaveBeenCalled();
+    });
+
+    it("returns map of team_id -> team_logo", async () => {
+      mockRunQuery.mockResolvedValue([
+        { id: 10, team_logo: "logo-a" },
+        { id: 20, team_logo: null }
+      ]);
+
+      const result = await getTeamLogosByTeamIds([10, 20]);
+
+      expect(result).toEqual(
+        new Map([
+          [10, "logo-a"],
+          [20, null]
+        ])
+      );
+      expect(mockRunQuery).toHaveBeenCalledWith(
+        expect.stringContaining("SELECT id, team_logo FROM Teams"),
+        [10, 20]
+      );
+    });
+
+    it("deduplicates teamIds", async () => {
+      mockRunQuery.mockResolvedValue([{ id: 10, team_logo: "x" }]);
+
+      await getTeamLogosByTeamIds([10, 10, 10]);
+
+      expect(mockRunQuery).toHaveBeenCalledWith(expect.any(String), [10]);
     });
   });
 });

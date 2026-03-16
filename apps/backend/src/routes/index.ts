@@ -38,6 +38,7 @@ import casterRouter from "./v1/caster.routes";
 import organizerRouter from "./v1/organizer.routes";
 import casterApplicationsRouter from "./v1/caster-applications.routes";
 import calendarRouter from "./v1/calendar.routes";
+import playoffRouter from "./v1/playoff.routes";
 import gameRouter from "./v1/game.routes";
 import hallOfFameRouter from "./v1/hall-of-fame.routes";
 import seasonResultsRouter from "./v1/season-results.routes";
@@ -80,6 +81,7 @@ v1Router.use("/players", playerRouter);
 
 // Mount the routers
 v1Router.use("/calendar", calendarRouter);
+v1Router.use("/playoff", playoffRouter);
 v1Router.use("/organizers", organizerRouter);
 v1Router.use(
   "/caster-applications",

@@ -15,7 +15,10 @@
     "apps/backend": {
       "entry": ["server.ts", "migrations/**/*.ts", "seeds/**/*.ts"],
       "project": ["src/**/*.ts"],
-      "ignoreDependencies": ["@opentelemetry/auto-instrumentations-node"]
+      "ignoreDependencies": [
+        "@opentelemetry/auto-instrumentations-node",
+        "@opentelemetry/otlp-exporter-base"
+      ]
     },
     "apps/frontend": {
       "entry": ["src/app/**/*.{ts,tsx}"],
