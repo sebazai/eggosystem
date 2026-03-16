@@ -519,6 +519,35 @@ export const getHubMatchesByExternalMatchRoomId = async (
 };
 
 /**
+ * Returns a map of external_match_room_id -> our Match.id for playoff matches.
+ * Used to link FaceIT bracket matches to our match room pages (first match id when 2xBO1).
+ */
+export const getPlayoffMatchIdsByExternalRoomIds = async (
+  seasonId: number,
+  leagueId: number,
+  externalRoomIds: string[]
+): Promise<Map<string, number>> => {
+  if (externalRoomIds.length === 0) return new Map();
+  const placeholders = externalRoomIds.map(() => "?").join(", ");
+  const query = `
+    SELECT id, external_match_room_id
+    FROM Matches
+    WHERE season_id = ? AND league_id = ? AND stage = 2 AND external_match_room_id IN (${placeholders})
+    ORDER BY external_match_room_id, id ASC
+  `;
+  const rows = await runQuery<
+    Array<{ id: Match["id"]; external_match_room_id: string }>
+  >(query, [seasonId, leagueId, ...externalRoomIds]);
+  const map = new Map<string, number>();
+  for (const row of rows) {
+    if (!map.has(row.external_match_room_id)) {
+      map.set(row.external_match_room_id, row.id);
+    }
+  }
+  return map;
+};
+
+/**
  * Updates a match's start timestamp using an ISO 8601 timestamp string
  *
  * **Timezone Handling:**

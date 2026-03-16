@@ -5,6 +5,7 @@ export * from "./FaceitLink.interface";
 export * from "./ChampionshipSubscription.interface";
 export * from "./ChampionshipDetails.interface";
 export * from "./FaceitMatchesResponse.interface";
+export * from "./ChampionshipMatchesResponse.interface";
 export * from "./FaceitMatchStatsResponse.interface";
 export * from "./FaceitPlayerDetails.interface";
 export * from "./FaceitRosterValidation.interface";

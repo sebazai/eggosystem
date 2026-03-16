@@ -134,6 +134,11 @@ const data: { navMain: Array<MenuItem> } = {
           title: "Team Flags",
           url: createDashboardNextUrl("sortter/team-flags"),
           requiredRoles: ["admin"]
+        },
+        {
+          title: "Playoff seeds",
+          url: createDashboardNextUrl("playoff-seeds"),
+          requiredRoles: ["admin"]
         }
       ] satisfies Array<SubMenuItem>
     },

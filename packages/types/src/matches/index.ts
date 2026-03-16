@@ -11,6 +11,7 @@ export * from "./MatchMapVetoes.interface";
 export * from "./MatchesWithTeamData.interface";
 export * from "./MatchGamesByTeam.interface";
 export * from "./MatchWithStreamUrls.interface";
+export * from "./PlayoffBracketMatch.interface";
 export * from "./Player.interface";
 export * from "./MatchHistoryItem.interface";
 export * from "./TeamColor.interface";

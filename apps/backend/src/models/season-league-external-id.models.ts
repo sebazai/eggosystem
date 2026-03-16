@@ -2,6 +2,26 @@ import { type Nullable, type SeasonLeagueExternalId } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
 import { type PoolConnection } from "mysql2/promise";
 
+/** Stage id for playoff (double elimination) in Stages table. */
+const STAGE_ID_PLAYOFF = 2;
+
+export const getPlayoffExternalIdBySeasonAndLeague = async (
+  seasonId: number,
+  leagueId: number
+): Promise<string | null> => {
+  const query = `
+    SELECT slei.external_id
+    FROM SeasonLeagueExternalIds slei
+    WHERE slei.season_id = ? AND slei.league_id = ? AND slei.stage_id = ?
+    LIMIT 1
+  `;
+  const [row] = await runQuery<Array<{ external_id: string } | undefined>>(
+    query,
+    [seasonId, leagueId, STAGE_ID_PLAYOFF]
+  );
+  return row?.external_id ?? null;
+};
+
 export const getSeasonLeagueExternalIdByExternalIdWithSeasonSettings = async (
   externalId: string,
   connection?: PoolConnection
