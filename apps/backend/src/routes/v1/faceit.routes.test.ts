@@ -22,7 +22,7 @@ jest.mock("../../services/match-game.services");
 // Import mocked functions
 import {
   getOrganizerByFaceitIdAndGameAppId,
-  getOrganizerFaceitActiveSeasonForApp
+  getOrganizerFaceitSeasonForApp
 } from "../../models/organizer.models";
 import {
   addMatchToDatabase,
@@ -53,7 +53,10 @@ import {
   validMatchDetailsMatchDemoReady,
   validMatchDetailsMatchCreated
 } from "@eggosystem/shared-msw";
-import { getSeasonLeagueBySeasonAndFaceitName } from "../../models/season-league.models";
+import {
+  getSeasonLeagueBySeasonAndFaceitName,
+  getSeasonLeagueSearchNames
+} from "../../models/season-league.models";
 import {
   insertSeasonLeagueExternalId,
   getSeasonLeagueExternalIdByExternalIdWithSeasonSettings
@@ -78,8 +81,8 @@ const mockGetOrganizerByFaceitIdAndGameAppId =
     typeof getOrganizerByFaceitIdAndGameAppId
   >;
 const mockGetOrganizerActiveSeasonForApp =
-  getOrganizerFaceitActiveSeasonForApp as jest.MockedFunction<
-    typeof getOrganizerFaceitActiveSeasonForApp
+  getOrganizerFaceitSeasonForApp as jest.MockedFunction<
+    typeof getOrganizerFaceitSeasonForApp
   >;
 const mockAddMatchToDatabase = addMatchToDatabase as jest.MockedFunction<
   typeof addMatchToDatabase
@@ -139,6 +142,10 @@ const mockValidatePlayersInTeams =
 const mockGetSeasonLeagueBySeasonAndFaceitName =
   getSeasonLeagueBySeasonAndFaceitName as jest.MockedFunction<
     typeof getSeasonLeagueBySeasonAndFaceitName
+  >;
+const mockGetSeasonLeagueSearchNames =
+  getSeasonLeagueSearchNames as jest.MockedFunction<
+    typeof getSeasonLeagueSearchNames
   >;
 const mockInsertSeasonLeagueExternalId =
   insertSeasonLeagueExternalId as jest.MockedFunction<
@@ -1020,6 +1027,13 @@ describe("FaceIT Routes - Webhook", () => {
           id: 77
         } as unknown as Season);
 
+        // League search names for resolveLeagueNameFromChampionshipName
+        mockGetSeasonLeagueSearchNames.mockResolvedValue([
+          { leagueName: "div5", searchName: "5" },
+          { leagueName: "div11", searchName: "11" },
+          { leagueName: "Masters", searchName: "Masters" }
+        ]);
+
         // Mock league resolution
         mockGetSeasonLeagueBySeasonAndFaceitName.mockResolvedValue({
           season_id: 77,
@@ -1038,6 +1052,9 @@ describe("FaceIT Routes - Webhook", () => {
       });
 
       it("should set manualProcessed to true when reprocess=true for championship_created", async () => {
+        mockGetOrganizerActiveSeasonForApp.mockImplementation(() =>
+          Promise.resolve({ id: 77 } as unknown as Season)
+        );
         const championshipCreated = {
           transaction_id: "45c6cb33-cb52-40ea-933d-9427034adcf0",
           event: "championship_created",
@@ -1223,10 +1240,16 @@ describe("FaceIT Routes - Webhook", () => {
           }
         };
 
-        // Active organizer season mocked
-        mockGetOrganizerActiveSeasonForApp.mockResolvedValueOnce({
-          id: 77
-        } as unknown as Season);
+        // Active organizer season mocked (mockImplementation so return value is not cleared by restoreAllMocks)
+        mockGetOrganizerActiveSeasonForApp.mockImplementation(() =>
+          Promise.resolve({ id: 77 } as unknown as Season)
+        );
+
+        mockGetSeasonLeagueSearchNames.mockResolvedValue([
+          { leagueName: "div5", searchName: "5" },
+          { leagueName: "div11", searchName: "11" },
+          { leagueName: "Masters", searchName: "Masters" }
+        ]);
 
         // Mock league resolution from faceit name prefix '5'
         mockGetSeasonLeagueBySeasonAndFaceitName.mockResolvedValueOnce({
@@ -2856,9 +2879,10 @@ describe("FaceIT Routes - Webhook", () => {
         expect(response.status).toBe(200);
         expect(response.text).toBe("Webhook received");
 
-        // Verify that getOrganizerFaceitActiveSeasonForApp was called
+        // Verify that getOrganizerFaceitSeasonForApp was called
         expect(mockGetOrganizerActiveSeasonForApp).toHaveBeenCalledWith(
           "08b06cfc-74d0-454b-9a51-feda4b6b18da",
+          "S54",
           730
         );
 
@@ -2914,9 +2938,10 @@ describe("FaceIT Routes - Webhook", () => {
         expect(response.status).toBe(200);
         expect(response.text).toBe("Webhook received");
 
-        // Verify that getOrganizerFaceitActiveSeasonForApp was called
+        // Verify that getOrganizerFaceitSeasonForApp was called
         expect(mockGetOrganizerActiveSeasonForApp).toHaveBeenCalledWith(
           "08b06cfc-74d0-454b-9a51-feda4b6b18da",
+          "S54",
           730
         );
 
@@ -2965,9 +2990,10 @@ describe("FaceIT Routes - Webhook", () => {
         expect(response.status).toBe(200);
         expect(response.text).toBe("Webhook received");
 
-        // Verify that getOrganizerFaceitActiveSeasonForApp was called
+        // Verify that getOrganizerFaceitSeasonForApp was called
         expect(mockGetOrganizerActiveSeasonForApp).toHaveBeenCalledWith(
           "08b06cfc-74d0-454b-9a51-feda4b6b18da",
+          "S54",
           730
         );
 
@@ -3022,9 +3048,10 @@ describe("FaceIT Routes - Webhook", () => {
         expect(response.status).toBe(200);
         expect(response.text).toBe("Webhook received");
 
-        // Verify that getOrganizerFaceitActiveSeasonForApp was called
+        // Verify that getOrganizerFaceitSeasonForApp was called
         expect(mockGetOrganizerActiveSeasonForApp).toHaveBeenCalledWith(
           "08b06cfc-74d0-454b-9a51-feda4b6b18da",
+          "S54",
           730
         );
 
@@ -3071,7 +3098,7 @@ describe("FaceIT Routes - Webhook", () => {
         expect(response.status).toBe(200);
         expect(response.text).toBe("Webhook received");
 
-        // Verify that getOrganizerFaceitActiveSeasonForApp was NOT called for non-group 3 matches
+        // Verify that getOrganizerFaceitSeasonForApp was NOT called for non-group 3 matches
         expect(mockGetOrganizerActiveSeasonForApp).not.toHaveBeenCalled();
 
         // Verify that addMatchToDatabase was called (match should be processed)
@@ -3115,7 +3142,7 @@ describe("FaceIT Routes - Webhook", () => {
         expect(response.status).toBe(200);
         expect(response.text).toBe("Webhook received");
 
-        // Verify that getOrganizerFaceitActiveSeasonForApp was NOT called for non-group 3 matches
+        // Verify that getOrganizerFaceitSeasonForApp was NOT called for non-group 3 matches
         expect(mockGetOrganizerActiveSeasonForApp).not.toHaveBeenCalled();
 
         // Verify that addMatchToDatabase was called (match should be processed)
@@ -3164,9 +3191,10 @@ describe("FaceIT Routes - Webhook", () => {
         expect(response.status).toBe(200);
         expect(response.text).toBe("Webhook received");
 
-        // Verify that getOrganizerFaceitActiveSeasonForApp was called
+        // Verify that getOrganizerFaceitSeasonForApp was called
         expect(mockGetOrganizerActiveSeasonForApp).toHaveBeenCalledWith(
           "08b06cfc-74d0-454b-9a51-feda4b6b18da",
+          "S54",
           730
         );
 

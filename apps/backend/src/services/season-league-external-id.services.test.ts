@@ -1,23 +1,39 @@
 import type { ChampionshipCreatedWebhook } from "@eggosystem/types";
 import { SeasonPlatform, createMockSeason } from "@eggosystem/types";
-import { addChampionshipToDatabase } from "./season-league-external-id.services";
-import { getOrganizerFaceitActiveSeasonForApp } from "../models/organizer.models";
-import { getSeasonLeagueBySeasonAndFaceitName } from "../models/season-league.models";
+import {
+  addChampionshipToDatabase,
+  extractManualGroupFromName,
+  extractSeasonHintFromName,
+  resolveLeagueNameFromChampionshipName,
+  stageFromChampionshipType
+} from "./season-league-external-id.services";
+import { getOrganizerFaceitSeasonForApp } from "../models/organizer.models";
+import {
+  getSeasonLeagueBySeasonAndFaceitName,
+  getSeasonLeagueSearchNames
+} from "../models/season-league.models";
 import { insertSeasonLeagueExternalId } from "../models/season-league-external-id.models";
 
 jest.mock("../models/organizer.models");
 jest.mock("../models/season-league.models");
 jest.mock("../models/season-league-external-id.models");
 
-const mockGetOrganizerFaceitActiveSeasonForApp = jest.mocked(
-  getOrganizerFaceitActiveSeasonForApp
+const mockGetOrganizerFaceitSeasonForApp = jest.mocked(
+  getOrganizerFaceitSeasonForApp
 );
+const mockGetSeasonLeagueSearchNames = jest.mocked(getSeasonLeagueSearchNames);
 const mockGetSeasonLeagueBySeasonAndFaceitName = jest.mocked(
   getSeasonLeagueBySeasonAndFaceitName
 );
 const mockInsertSeasonLeagueExternalId = jest.mocked(
   insertSeasonLeagueExternalId
 );
+
+const defaultSeasonLeagueNames = [
+  { leagueName: "div5", searchName: "5" },
+  { leagueName: "div11", searchName: "11" },
+  { leagueName: "Masters", searchName: "Masters" }
+];
 
 type WebhookOverrides = Partial<Omit<ChampionshipCreatedWebhook, "payload">> & {
   payload?: Partial<ChampionshipCreatedWebhook["payload"]>;
@@ -73,13 +89,137 @@ function buildWebhook(
   };
 }
 
+describe("extractManualGroupFromName", () => {
+  it("returns 1 for Lohko A", () => {
+    expect(extractManualGroupFromName("5 Div S4 Lohko A")).toBe(1);
+    expect(extractManualGroupFromName("Lohko A 5 Div")).toBe(1);
+    expect(extractManualGroupFromName("lohko a")).toBe(1);
+  });
+
+  it("returns 2 for Lohko B", () => {
+    expect(extractManualGroupFromName("5 Div S4 Lohko B")).toBe(2);
+    expect(extractManualGroupFromName("Lohko B")).toBe(2);
+  });
+
+  it("returns 3 for Lohko C and for Lohko 3", () => {
+    expect(extractManualGroupFromName("Lohko C Playoffs")).toBe(3);
+    expect(extractManualGroupFromName("11 DIV S3 Lohko 3")).toBe(3);
+  });
+
+  it("accepts multiple spaces after Lohko", () => {
+    expect(extractManualGroupFromName("Lohko   A")).toBe(1);
+  });
+
+  it("returns null when no Lohko match", () => {
+    expect(extractManualGroupFromName("Masters S4 Playoffs")).toBe(null);
+    expect(extractManualGroupFromName("")).toBe(null);
+  });
+
+  it("returns null for invalid Lohko value", () => {
+    expect(extractManualGroupFromName("Lohko 0")).toBe(null);
+    expect(extractManualGroupFromName("Lohko AB")).toBe(null);
+  });
+});
+
+describe("stageFromChampionshipType", () => {
+  it("returns 1 for roundRobin", () => {
+    expect(stageFromChampionshipType("roundRobin")).toBe(1);
+  });
+  it("returns 2 for doubleElimination", () => {
+    expect(stageFromChampionshipType("doubleElimination")).toBe(2);
+  });
+  it("returns 1 for other types (default)", () => {
+    expect(stageFromChampionshipType("singleElimination")).toBe(1);
+    expect(stageFromChampionshipType("unknown")).toBe(1);
+  });
+});
+
+describe("extractSeasonHintFromName", () => {
+  it('returns "S{n}" for S followed by digits', () => {
+    expect(extractSeasonHintFromName("Masters S5 Playoffs")).toBe("S5");
+    expect(extractSeasonHintFromName("5 Div S4 Lohko A")).toBe("S4");
+    expect(extractSeasonHintFromName("ESEA S54 EU Elite")).toBe("S54");
+  });
+
+  it("allows optional space between S and digits", () => {
+    expect(extractSeasonHintFromName("Masters S 5 Playoffs")).toBe("S5");
+  });
+
+  it('returns "Season {n}" for Season followed by digits', () => {
+    expect(extractSeasonHintFromName("League Season 5 Playoffs")).toBe(
+      "Season 5"
+    );
+    expect(extractSeasonHintFromName("Season 12")).toBe("Season 12");
+  });
+
+  it("prefers S{n} over Season {n} when both match", () => {
+    expect(extractSeasonHintFromName("S3 Season 3")).toBe("S3");
+  });
+
+  it("returns empty string when no season pattern", () => {
+    expect(extractSeasonHintFromName("Masters Playoffs")).toBe("");
+    expect(extractSeasonHintFromName("")).toBe("");
+  });
+});
+
+describe("resolveLeagueNameFromChampionshipName", () => {
+  it("matches known league search name in championship name (word boundary)", async () => {
+    mockGetSeasonLeagueSearchNames.mockResolvedValue(defaultSeasonLeagueNames);
+    await expect(
+      resolveLeagueNameFromChampionshipName("5 Div S4 Lohko A", 77)
+    ).resolves.toBe("5");
+    await expect(
+      resolveLeagueNameFromChampionshipName("Masters S4 Playoffs", 77)
+    ).resolves.toBe("Masters");
+    await expect(
+      resolveLeagueNameFromChampionshipName("11 DIV S3 Playoffs", 77)
+    ).resolves.toBe("11");
+  });
+
+  it("prefers longest match (11 over 1)", async () => {
+    mockGetSeasonLeagueSearchNames.mockResolvedValue(defaultSeasonLeagueNames);
+    await expect(
+      resolveLeagueNameFromChampionshipName("11 DIV S3", 77)
+    ).resolves.toBe("11");
+  });
+
+  it("matches Div5/Div6 in name to league search name 5/6", async () => {
+    mockGetSeasonLeagueSearchNames.mockResolvedValue(defaultSeasonLeagueNames);
+    await expect(
+      resolveLeagueNameFromChampionshipName("Div5 S4 Lohko A", 77)
+    ).resolves.toBe("5");
+    await expect(
+      resolveLeagueNameFromChampionshipName("Div6 S4 Lohko B", 77)
+    ).resolves.toBe("6");
+  });
+
+  it("falls back to first word with DivN normalized to N when no league matches", async () => {
+    mockGetSeasonLeagueSearchNames.mockResolvedValue([
+      { leagueName: "Masters", searchName: "Masters" }
+    ]);
+    await expect(
+      resolveLeagueNameFromChampionshipName("Div5 S4 Unknown", 77)
+    ).resolves.toBe("5");
+  });
+
+  it("falls back to first word when no league matches", async () => {
+    mockGetSeasonLeagueSearchNames.mockResolvedValue([
+      { leagueName: "Masters", searchName: "Masters" }
+    ]);
+    await expect(
+      resolveLeagueNameFromChampionshipName("Unknown League S4", 77)
+    ).resolves.toBe("Unknown");
+  });
+});
+
 describe("addChampionshipToDatabase", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockGetSeasonLeagueSearchNames.mockResolvedValue(defaultSeasonLeagueNames);
   });
 
   it("throws when no active organizer season exists", async () => {
-    mockGetOrganizerFaceitActiveSeasonForApp.mockResolvedValueOnce(undefined);
+    mockGetOrganizerFaceitSeasonForApp.mockResolvedValueOnce(undefined);
 
     const webhook = buildWebhook();
 
@@ -87,8 +227,9 @@ describe("addChampionshipToDatabase", () => {
       /No active organizer season found/
     );
 
-    expect(mockGetOrganizerFaceitActiveSeasonForApp).toHaveBeenCalledWith(
+    expect(mockGetOrganizerFaceitSeasonForApp).toHaveBeenCalledWith(
       webhook.payload.organizer_id,
+      "S4",
       730
     );
     expect(mockGetSeasonLeagueBySeasonAndFaceitName).not.toHaveBeenCalled();
@@ -106,7 +247,7 @@ describe("addChampionshipToDatabase", () => {
       start_date: new Date().toISOString().slice(0, 10),
       end_date: null
     });
-    mockGetOrganizerFaceitActiveSeasonForApp.mockResolvedValueOnce(mockSeason);
+    mockGetOrganizerFaceitSeasonForApp.mockResolvedValueOnce(mockSeason);
 
     mockGetSeasonLeagueBySeasonAndFaceitName.mockResolvedValueOnce(undefined);
 
@@ -139,7 +280,7 @@ describe("addChampionshipToDatabase", () => {
       start_date: new Date().toISOString().slice(0, 10),
       end_date: null
     });
-    mockGetOrganizerFaceitActiveSeasonForApp.mockResolvedValueOnce(mockSeason);
+    mockGetOrganizerFaceitSeasonForApp.mockResolvedValueOnce(mockSeason);
 
     mockGetSeasonLeagueBySeasonAndFaceitName.mockResolvedValueOnce({
       tier: 3,
@@ -168,7 +309,7 @@ describe("addChampionshipToDatabase", () => {
     );
   });
 
-  it("inserts with stage=2 and is_round_robin_bo2_as_2xbo1=false for singleElimination", async () => {
+  it("inserts with stage=1 for singleElimination (default stage)", async () => {
     const mockSeason = createMockSeason({
       id: 88,
       name: "S4",
@@ -179,7 +320,7 @@ describe("addChampionshipToDatabase", () => {
       start_date: new Date().toISOString().slice(0, 10),
       end_date: null
     });
-    mockGetOrganizerFaceitActiveSeasonForApp.mockResolvedValueOnce(mockSeason);
+    mockGetOrganizerFaceitSeasonForApp.mockResolvedValueOnce(mockSeason);
 
     mockGetSeasonLeagueBySeasonAndFaceitName.mockResolvedValueOnce({
       tier: 1,
@@ -207,7 +348,7 @@ describe("addChampionshipToDatabase", () => {
       "Masters S4 Playoffs",
       88,
       99,
-      2,
+      1,
       "singleElimination",
       null
     );
