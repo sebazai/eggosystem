@@ -36,13 +36,13 @@ isProject: false
 
 ## Data source (current): FaceIT API + Redis
 
-- Bracket is built from **GET championships/{id}/matches?limit=100**. Items are in reverse order; we reverse for tree order. BYE factions supported. Cached in Redis 7 days; invalidated on match_object_created (championship). SeasonLeagueExternalIds (stage_id=2) resolve season+league → championship_id.
+- Bracket is built from **GET championships/{id}/matches?limit=100**. API does not guarantee item order. Controller orders by round, group, and playoff_seed-derived slot (from SeasonLeagueTeams). BYE factions supported. Cached in Redis 7 days; invalidated on match_object_created (championship). SeasonLeagueExternalIds (stage_id=2) resolve season+league → championship_id.
 
 ## Backend
 
 ### 1. Playoff bracket data (FaceIT API + cache)
 
-- **Service**: [apps/backend/src/services/playoff-bracket.services.ts](apps/backend/src/services/playoff-bracket.services.ts) — `getChampionshipMatchesCached(championshipId)` fetches from FaceIT or Redis (key `faceit-championship-matches:{id}`, TTL 7 days). Returns items in **bracket tree order** (API items reversed). `invalidateChampionshipMatchesCache(championshipId)` used on match_object_created.
+- **Service**: [apps/backend/src/services/playoff-bracket.services.ts](apps/backend/src/services/playoff-bracket.services.ts) — `getChampionshipMatchesCached(championshipId)` fetches from FaceIT or Redis (key `faceit-championship-matches:{id}`, TTL 7 days). Returns items in API order (undefined); controller sorts by round, group, playoff_seed-derived slot. `invalidateChampionshipMatchesCache(championshipId)` used on match_object_created.
 - **Resolution**: [getPlayoffExternalIdBySeasonAndLeague](apps/backend/src/models/season-league-external-id.models.ts) gets championship external_id by season_id + league_id (stage_id = 2). [getPlayoffMatchIdsByExternalRoomIds](apps/backend/src/models/match.models.ts) maps FaceIT match_id → our Match.id for links. [getTeamIdsByExternalIds](apps/backend/src/models/season-league-team.models.ts) maps faction_id → our team_id when available.
 - **Types**: [ChampionshipMatchesResponse.interface.ts](packages/types/src/faceit/ChampionshipMatchesResponse.interface.ts) for the FaceIT response; controller maps to existing `PlayoffBracketMatch`.
 

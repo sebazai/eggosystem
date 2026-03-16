@@ -1,6 +1,6 @@
 /**
  * Response shape for GET /data/v4/championships/{championship_id}/matches.
- * Items are in reverse chronological order (last game first); reverse for bracket tree order.
+ * API does not guarantee item order; order by round, group, and playoff_seed-derived slot in consumers.
  */
 export interface FaceitChampionshipMatchFaction {
   faction_id: string;

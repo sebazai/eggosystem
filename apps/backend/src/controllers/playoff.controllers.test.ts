@@ -40,6 +40,7 @@ const mockGetTeamLogosByTeamIds =
 describe("playoff.controllers", () => {
   let mockRequest: Partial<Request>;
   let mockResponse: Partial<Response>;
+  let mockNext: ReturnType<typeof jest.fn>;
 
   beforeEach(() => {
     mockRequest = {
@@ -48,6 +49,7 @@ describe("playoff.controllers", () => {
     mockResponse = {
       json: jest.fn()
     };
+    mockNext = jest.fn();
     jest.clearAllMocks();
   });
 
@@ -57,7 +59,8 @@ describe("playoff.controllers", () => {
 
       await getPlayoffBracketController(
         mockRequest as Request,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext
       );
 
       expect(mockGetPlayoffExternalId).toHaveBeenCalledWith(1, 2);
@@ -116,7 +119,8 @@ describe("playoff.controllers", () => {
 
       await getPlayoffBracketController(
         mockRequest as Request,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext
       );
 
       expect(mockGetChampionshipMatchesCached).toHaveBeenCalledWith(
@@ -184,7 +188,8 @@ describe("playoff.controllers", () => {
 
       await getPlayoffBracketController(
         mockRequest as Request,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext
       );
 
       const [payload] = (mockResponse.json as jest.Mock).mock.calls[0];
