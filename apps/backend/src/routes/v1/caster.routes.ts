@@ -14,6 +14,7 @@ import parseQueryFilterParams from "../../middlewares/parse-query-filter-params.
 import { getFilteredTeamIdDetailsController } from "../../controllers/teams.controllers";
 import { getTeamEnhancedMapStatsController } from "../../controllers/team-map-stats.controllers";
 import { getMatchesBySeasonIdController } from "../../controllers/matches.controllers";
+import { getPlayoffBracketController } from "../../controllers/playoff.controllers";
 
 const router = Router();
 
@@ -26,6 +27,11 @@ router.get(
   "/seasons/:season_id/map-pool",
   validateNumericParams(),
   getSeasonActiveMapPoolController
+);
+router.get(
+  "/seasons/:season_id/leagues/:league_id/playoff/bracket",
+  validateNumericParams(["season_id", "league_id"]),
+  getPlayoffBracketController
 );
 router.get(
   "/seasons/:season_id/league/:league_id/teams",

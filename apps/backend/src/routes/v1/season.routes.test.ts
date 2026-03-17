@@ -8,9 +8,16 @@ import seasonRouter from "./season.routes";
 import { runQuery } from "../../db/mysqlRunQuery";
 import { getConnection } from "../../db/mysqlConnection";
 import type { PoolConnection } from "mysql2/promise";
+import * as playoffControllers from "../../controllers/playoff.controllers";
 
 // Mock the logger
 jest.mock("../../utils/app-logger");
+jest.mock("../../controllers/playoff.controllers");
+
+const mockGetPlayoffBracketController =
+  playoffControllers.getPlayoffBracketController as jest.MockedFunction<
+    typeof playoffControllers.getPlayoffBracketController
+  >;
 
 describe("Season Routes - Integration Tests", () => {
   let app: express.Application;
@@ -106,6 +113,35 @@ describe("Season Routes - Integration Tests", () => {
       const response = await request(app).get("/-1/leagues").expect(200);
 
       expect(response.body).toEqual([]);
+    });
+  });
+
+  describe("GET /:season_id/leagues/:league_id/playoff/bracket", () => {
+    beforeEach(() => {
+      mockGetPlayoffBracketController.mockImplementation(async (_req, res) => {
+        res.status(200).json({ matches: [], bracket: { numR1Slots: 0 } });
+      });
+    });
+
+    it("returns 400 for invalid season_id", async () => {
+      const res = await request(app).get("/foo/leagues/2/playoff/bracket");
+      expect(res.status).toBe(400);
+      expect(res.body.detail).toContain("Invalid numeric param");
+      expect(mockGetPlayoffBracketController).not.toHaveBeenCalled();
+    });
+
+    it("returns 400 for invalid league_id", async () => {
+      const res = await request(app).get("/1/leagues/bar/playoff/bracket");
+      expect(res.status).toBe(400);
+      expect(res.body.detail).toContain("Invalid numeric param");
+      expect(mockGetPlayoffBracketController).not.toHaveBeenCalled();
+    });
+
+    it("calls controller and returns 200 with valid params", async () => {
+      const res = await request(app).get("/1/leagues/2/playoff/bracket");
+      expect(res.status).toBe(200);
+      expect(mockGetPlayoffBracketController).toHaveBeenCalled();
+      expect(res.body).toEqual({ matches: [], bracket: { numR1Slots: 0 } });
     });
   });
 
