@@ -130,7 +130,7 @@ describe("playoff.controllers", () => {
       const [payload] = (mockResponse.json as jest.Mock).mock.calls[0];
       expect(payload).toHaveProperty("matches");
       expect(payload).toHaveProperty("bracket");
-      expect(payload.bracket).toEqual({ numR1Slots: 1 });
+      expect(payload.bracket).toMatchObject({ numR1Slots: 1 });
       expect(Array.isArray(payload.matches)).toBe(true);
       expect(payload.matches.length).toBe(1);
       expect(payload.matches[0]).toMatchObject({

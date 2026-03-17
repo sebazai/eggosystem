@@ -25,6 +25,8 @@
       "project": ["src/**/*.{ts,tsx}", "jest.config.js"],
       "jest": false,
       "ignoreDependencies": [
+        "jest-junit",
+        "jsdom",
         "tailwindcss",
         "tailwindcss-animate",
         "jest-environment-jsdom"
@@ -62,7 +64,8 @@
     "**/dist/**",
     "**/coverage/**",
     "**/node_modules/**",
-    "**/apps/frontend/src/components/ui/**",
+    "**/src/components/ui/**",
+    "**/.lintstaged.rc.mjs",
     "**/apps/frontend/jest.config.js"
   ]
 }
