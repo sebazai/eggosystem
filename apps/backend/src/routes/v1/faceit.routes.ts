@@ -392,6 +392,10 @@ router.post(
           }
         }
 
+        await invalidateChampionshipMatchesCache(
+          validatedWebhook.payload.entity.id
+        );
+
         res.status(200).send("Webhook received");
         return;
       }
@@ -445,6 +449,10 @@ router.post(
             await updateMatchStatusByMatchId(match.id, "ONGOING");
           }
         }
+
+        await invalidateChampionshipMatchesCache(
+          validatedWebhook.payload.entity.id
+        );
 
         res.status(200).send("Webhook received");
         return;
