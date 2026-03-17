@@ -2,8 +2,7 @@ import type {
   FaceitChampionshipMatchesResponse,
   FaceitChampionshipMatchItem
 } from "@eggosystem/types";
-import { redisClient } from "../utils/redisClient";
-import { expireIn7Days } from "../utils/redisClient";
+import { expireIn7Days, redisClient } from "../utils/redisClient";
 import { logger } from "../utils/app-logger";
 
 const CACHE_KEY_PREFIX = "faceit-championship-matches:";
@@ -13,14 +12,20 @@ const LIMIT = 100;
 const getChampionshipMatchesCacheKey = (championshipId: string): string =>
   `${CACHE_KEY_PREFIX}${championshipId}`;
 
+const isRecord = (u: unknown): u is Record<string, unknown> =>
+  typeof u === "object" && u !== null && !Array.isArray(u);
+
 const isFaceitChampionshipMatchItem = (
   u: unknown
 ): u is FaceitChampionshipMatchItem => {
-  if (typeof u !== "object" || u === null) return false;
-  const o = u as Record<string, unknown>;
+  if (!isRecord(u)) return false;
+  const o = u;
   const teams = o.teams;
-  if (typeof teams !== "object" || teams === null) return false;
-  const t = teams as Record<string, unknown>;
+  if (!isRecord(teams)) return false;
+  const t = teams;
+  const faction1 = t.faction1;
+  const faction2 = t.faction2;
+  if (!isRecord(faction1) || !isRecord(faction2)) return false;
   return (
     typeof o.match_id === "string" &&
     typeof o.round === "number" &&
@@ -28,14 +33,10 @@ const isFaceitChampionshipMatchItem = (
     typeof o.status === "string" &&
     typeof o.best_of === "number" &&
     (o.scheduled_at === undefined || typeof o.scheduled_at === "number") &&
-    typeof t.faction1 === "object" &&
-    t.faction1 !== null &&
-    typeof (t.faction1 as Record<string, unknown>).faction_id === "string" &&
-    typeof (t.faction1 as Record<string, unknown>).name === "string" &&
-    typeof t.faction2 === "object" &&
-    t.faction2 !== null &&
-    typeof (t.faction2 as Record<string, unknown>).faction_id === "string" &&
-    typeof (t.faction2 as Record<string, unknown>).name === "string"
+    typeof faction1.faction_id === "string" &&
+    typeof faction1.name === "string" &&
+    typeof faction2.faction_id === "string" &&
+    typeof faction2.name === "string"
   );
 };
 
@@ -47,9 +48,8 @@ const isFaceitChampionshipMatchItemArray = (
 const isFaceitChampionshipMatchesResponse = (
   u: unknown
 ): u is FaceitChampionshipMatchesResponse => {
-  if (typeof u !== "object" || u === null) return false;
-  const o = u as Record<string, unknown>;
-  return "items" in o && isFaceitChampionshipMatchItemArray(o.items);
+  if (!isRecord(u)) return false;
+  return "items" in u && isFaceitChampionshipMatchItemArray(u.items);
 };
 
 export const invalidateChampionshipMatchesCache = async (
