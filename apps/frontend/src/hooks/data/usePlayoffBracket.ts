@@ -10,7 +10,7 @@ export const usePlayoffBracket = (
 ): SWRResponse<PlayoffBracketResponse, Error> => {
   const { data, isLoading, isValidating, error, mutate } =
     useSWR<PlayoffBracketResponse>(
-      `/api/v1/playoff/seasons/${seasonId}/leagues/${leagueId}/bracket`,
+      `/api/v1/seasons/${seasonId}/leagues/${leagueId}/playoff/bracket`,
       expressFetcher
     );
 
