@@ -127,8 +127,9 @@ function MatchCard({ match }: { match: PlayoffBracketMatch }) {
     : "TBD";
   const team2DisplayName = match.team2_name ?? "Bye";
   const hasMatchRoom = match.match_id > 0;
+  const isTeam2Known = match.team2_id != null && match.team2_name != null;
   const cardClassName =
-    "block w-full min-w-[220px] max-w-full rounded-lg border border-border bg-card text-card-foreground shadow-sm transition-colors hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background";
+    "block w-full min-w-[220px] max-w-full rounded-lg border border-border bg-card text-card-foreground shadow-sm transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background";
 
   const content = (
     <div className="flex flex-col p-2 sm:p-3">
@@ -174,7 +175,12 @@ function MatchCard({ match }: { match: PlayoffBracketMatch }) {
         ) : (
           <span className="h-6 w-6 shrink-0" aria-hidden />
         )}
-        <span className="truncate text-sm font-medium text-muted-foreground">
+        <span
+          className={cn(
+            "truncate text-sm font-medium",
+            !isTeam2Known && "text-muted-foreground"
+          )}
+        >
           {match.seed2 != null ? `#${match.seed2} ` : ""}
           {team2DisplayName}
         </span>

@@ -40,6 +40,16 @@ export interface PlayoffBracketResponse {
     bracketSize?: number;
     numR1Slots: number;
     /**
+     * Seed-indexed team lookup (1-based). Index 0 is unused.
+     * When a seed is a BYE or not assigned, the entry is null.
+     */
+    seeds?: Array<{
+      seed: number;
+      team_id: number;
+      team_name: string;
+      team_logo: string | null;
+    } | null>;
+    /**
      * Precomputed layout for rendering.
      * group: 1=upper, 2=lower, 3=grand final (mirrors FaceIT groups).
      *

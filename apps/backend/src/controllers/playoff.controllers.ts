@@ -25,7 +25,9 @@ import {
 const BYE_NAME = "BYE";
 
 const isByeFaction = (name: string, factionId: string): boolean =>
-  name === BYE_NAME || !factionId || factionId.trim() === "";
+  name.trim().toUpperCase() === BYE_NAME ||
+  !factionId ||
+  factionId.trim() === "";
 
 const ALLOWED_MATCH_STATUSES = new Set<string>([
   "SCHEDULED",
@@ -118,6 +120,16 @@ export const getPlayoffBracketController = async (
     const numSlots = bracketSize > 0 ? bracketSize / 2 : 0;
     const seedPos = bracketSize > 0 ? buildSeedPositionMap(bracketSize) : null;
 
+    const seeds: Array<{
+      seed: number;
+      team_id: number;
+      team_name: string;
+      team_logo: string | null;
+    } | null> =
+      bracketSize > 0
+        ? Array.from({ length: bracketSize + 1 }, () => null) // 1-based seeds; index 0 unused
+        : [];
+
     const matches: PlayoffBracketMatch[] = items.map((item) => {
       let f1 = item.teams.faction1;
       let f2 = item.teams.faction2;
@@ -172,9 +184,47 @@ export const getPlayoffBracketController = async (
         : f1.name || "TBD";
       const team1Logo = team1Id > 0 ? (teamLogoMap.get(team1Id) ?? null) : null;
       const team2Logo =
-        bye2 || team2Id == null ? null : (teamLogoMap.get(team2Id) ?? null);
+        bye2 || team2Id == null || team2Id <= 0
+          ? null
+          : (teamLogoMap.get(team2Id) ?? null);
       const team1Score = team1FromF1 ? (bye2 ? 1 : score1) : bye2 ? 0 : score2;
       const team2Score = team1FromF1 ? (bye2 ? 0 : score2) : bye2 ? 1 : score1;
+
+      // Keep seeds lookup populated for other frontends: seed -> team metadata.
+      // Prefer DB-derived team fields (stable), and avoid encoding BYE as a fake team.
+      if (bracketSize > 0) {
+        if (
+          seed1 != null &&
+          seed1 >= 1 &&
+          seed1 <= bracketSize &&
+          team1Id > 0
+        ) {
+          if (!seeds[seed1]) {
+            seeds[seed1] = {
+              seed: seed1,
+              team_id: team1Id,
+              team_name: team1Name,
+              team_logo: team1Logo
+            };
+          }
+        }
+        if (
+          seed2 != null &&
+          seed2 >= 1 &&
+          seed2 <= bracketSize &&
+          team2Id != null &&
+          team2Id > 0
+        ) {
+          if (!seeds[seed2]) {
+            seeds[seed2] = {
+              seed: seed2,
+              team_id: team2Id,
+              team_name: team2Name,
+              team_logo: team2Logo
+            };
+          }
+        }
+      }
 
       return {
         match_id: internalMatchId,
@@ -187,8 +237,8 @@ export const getPlayoffBracketController = async (
         team1_id: team1Id,
         team1_name: team1Name,
         team1_logo: team1Logo,
-        team2_id: bye2 ? null : team2Id,
-        team2_name: bye2 ? null : team2Name,
+        team2_id: bye2 || team2Id == null || team2Id <= 0 ? null : team2Id,
+        team2_name: bye2 || team2Id == null || team2Id <= 0 ? null : team2Name,
         team2_logo: bye2 ? null : team2Logo,
         team1_score: team1Score,
         team2_score: bye2 ? 0 : team2Score,
@@ -337,6 +387,7 @@ export const getPlayoffBracketController = async (
       bracket: {
         bracketSize: bracketSize || undefined,
         numR1Slots: numSlots,
+        seeds: seeds.length > 0 ? seeds : undefined,
         layout: layoutGroups.length > 0 ? { groups: layoutGroups } : undefined
       }
     };
