@@ -31,8 +31,32 @@ export interface PlayoffBracketMatch {
 /** API response for GET playoff bracket: matches plus bracket shape from seeds/FaceIT. */
 export interface PlayoffBracketResponse {
   matches: PlayoffBracketMatch[];
-  /** Round-1 slot count (from seeds); used to build dynamic tree and placeholders. */
+  /**
+   * Bracket metadata and optional precomputed layout.
+   * `layout` is the canonical source of rendering order when present.
+   */
   bracket: {
+    /** Power-of-two bracket size (e.g. 8/16/32). 0 when unknown. */
+    bracketSize?: number;
     numR1Slots: number;
+    /**
+     * Precomputed layout for rendering.
+     * group: 1=upper, 2=lower, 3=grand final (mirrors FaceIT groups).
+     *
+     * Each slot entry contains a match identifier to dereference from `matches`,
+     * or null for an empty slot placeholder.
+     */
+    layout?: {
+      groups: Array<{
+        group: number;
+        rounds: Array<{
+          round: number;
+          slots: Array<{
+            match_id: number;
+            external_match_id?: string;
+          } | null>;
+        }>;
+      }>;
+    };
   };
 }

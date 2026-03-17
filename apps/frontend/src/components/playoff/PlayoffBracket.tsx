@@ -67,9 +67,50 @@ function buildSlotsByGroupAndRound(
         const i = m.slot ?? 0;
         if (i >= 0 && i < slotCount) slots[i] = m;
       }
+
       roundsOut.set(round, slots);
     }
     out.set(group, roundsOut);
+  }
+  return out;
+}
+
+function buildSlotsFromLayout(params: {
+  matches: PlayoffBracketMatch[];
+  layout: {
+    groups: Array<{
+      group: number;
+      rounds: Array<{
+        round: number;
+        slots: Array<{ match_id: number; external_match_id?: string } | null>;
+      }>;
+    }>;
+  };
+}): Map<number, Map<number, (PlayoffBracketMatch | null)[]>> {
+  const { matches, layout } = params;
+  const byMatchId = new Map<number, PlayoffBracketMatch>();
+  const byExternalId = new Map<string, PlayoffBracketMatch>();
+  for (const m of matches) {
+    if (m.match_id > 0) byMatchId.set(m.match_id, m);
+    if (m.external_match_id) byExternalId.set(m.external_match_id, m);
+  }
+
+  const out = new Map<number, Map<number, (PlayoffBracketMatch | null)[]>>();
+  for (const group of layout.groups) {
+    const byRound = new Map<number, (PlayoffBracketMatch | null)[]>();
+    for (const round of group.rounds) {
+      const slots: (PlayoffBracketMatch | null)[] = round.slots.map((ref) => {
+        if (!ref) return null;
+        const byId = ref.match_id > 0 ? byMatchId.get(ref.match_id) : undefined;
+        if (byId) return byId;
+        if (ref.external_match_id) {
+          return byExternalId.get(ref.external_match_id) ?? null;
+        }
+        return null;
+      });
+      byRound.set(round.round, slots);
+    }
+    out.set(group.group, byRound);
   }
   return out;
 }
@@ -87,7 +128,7 @@ function MatchCard({ match }: { match: PlayoffBracketMatch }) {
   const team2DisplayName = match.team2_name ?? "Bye";
   const hasMatchRoom = match.match_id > 0;
   const cardClassName =
-    "block w-full min-w-[220px] max-w-full rounded-lg border border-border bg-card text-card-foreground shadow-sm transition-colors hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-ring";
+    "block w-full min-w-[220px] max-w-full rounded-lg border border-border bg-card text-card-foreground shadow-sm transition-colors hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background";
 
   const content = (
     <div className="flex flex-col p-2 sm:p-3">
@@ -276,14 +317,27 @@ export function PlayoffBracket({
   bracket
 }: {
   matches: PlayoffBracketMatch[];
-  bracket?: { numR1Slots: number };
+  bracket?: {
+    numR1Slots: number;
+    bracketSize?: number;
+    layout?: {
+      groups: Array<{
+        group: number;
+        rounds: Array<{
+          round: number;
+          slots: Array<{ match_id: number; external_match_id?: string } | null>;
+        }>;
+      }>;
+    };
+  };
 }) {
-  const byGroupAndRound = groupMatchesByGroupAndRound(matches);
-  const numR1Slots = bracket?.numR1Slots ?? 0;
-  const slotsByGroupAndRound = buildSlotsByGroupAndRound(
-    byGroupAndRound,
-    numR1Slots
-  );
+  const slotsByGroupAndRound =
+    bracket?.layout != null
+      ? buildSlotsFromLayout({ matches, layout: bracket.layout })
+      : buildSlotsByGroupAndRound(
+          groupMatchesByGroupAndRound(matches),
+          bracket?.numR1Slots ?? 0
+        );
 
   const upper = slotsByGroupAndRound.get(1);
   const lower = slotsByGroupAndRound.get(2);

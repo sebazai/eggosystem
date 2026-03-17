@@ -27,7 +27,7 @@ const isFaceitChampionshipMatchItem = (
     typeof o.group === "number" &&
     typeof o.status === "string" &&
     typeof o.best_of === "number" &&
-    typeof o.scheduled_at === "number" &&
+    (o.scheduled_at === undefined || typeof o.scheduled_at === "number") &&
     typeof t.faction1 === "object" &&
     t.faction1 !== null &&
     typeof (t.faction1 as Record<string, unknown>).faction_id === "string" &&

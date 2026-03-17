@@ -12,6 +12,15 @@ import {
   getPlayoffSeedMapBySeasonAndLeague
 } from "../models/season-league-team.models";
 import { getTeamLogosByTeamIds } from "../models/team.models";
+import {
+  buildSeedPositionMap,
+  getBracketSizeFromMaxSeed,
+  getLowerRoundCount,
+  getLowerSlotsInRound,
+  getUpperBracketSlotForSeeds,
+  getUpperRoundCount,
+  getUpperSlotsInRound
+} from "../utils/playoff-bracket-layout";
 
 const BYE_NAME = "BYE";
 
@@ -48,20 +57,6 @@ const scheduledAtToIso = (scheduledAt: number | null | undefined): string => {
     : date.toISOString();
 };
 
-/**
- * Round-1 slot count from max seed. Scales for any bracket size.
- * 8 teams → 4 slots; 12 teams → 8 slots; 16 teams → 8 slots; 32 teams → 16 slots.
- */
-const getRound1SlotCount = (maxSeed: number): number => {
-  if (maxSeed <= 0) return 0;
-  const bracketSize = Math.pow(2, Math.ceil(Math.log2(maxSeed)));
-  return bracketSize / 2;
-};
-
-/**
- * Slot from seeds: box order is by minimum seed (1, 2, 3, 4...).
- * R1: slot = minSeed - 1 clamped to [0, numSlots-1]. R2+: use minSeed as sort key only.
- */
 const getMinSeed = (
   seed1: number | undefined,
   seed2: number | undefined
@@ -70,16 +65,6 @@ const getMinSeed = (
   if (seed1 != null) return seed1;
   if (seed2 != null) return seed2;
   return 999;
-};
-
-const getRound1Slot = (
-  seed1: number | undefined,
-  seed2: number | undefined,
-  numSlots: number
-): number => {
-  const minSeed = getMinSeed(seed1, seed2);
-  if (minSeed === 999 || numSlots <= 0) return 999;
-  return Math.min(Math.max(0, minSeed - 1), numSlots - 1);
 };
 
 export const getPlayoffBracketController = async (
@@ -129,7 +114,9 @@ export const getPlayoffBracketController = async (
     );
     const maxSeed =
       playoffSeedMap.size > 0 ? Math.max(...playoffSeedMap.values()) : 0;
-    const numSlots = getRound1SlotCount(maxSeed);
+    const bracketSize = getBracketSizeFromMaxSeed(maxSeed);
+    const numSlots = bracketSize > 0 ? bracketSize / 2 : 0;
+    const seedPos = bracketSize > 0 ? buildSeedPositionMap(bracketSize) : null;
 
     const matches: PlayoffBracketMatch[] = items.map((item) => {
       let f1 = item.teams.faction1;
@@ -160,10 +147,15 @@ export const getPlayoffBracketController = async (
       }
 
       const internalMatchId = matchIdMap.get(item.match_id) ?? 0;
-      const isRound1 = item.round === 1;
       const slot =
-        isRound1 && numSlots > 0
-          ? getRound1Slot(seed1, seed2, numSlots)
+        seedPos && item.group === 1
+          ? (getUpperBracketSlotForSeeds({
+              bracketSize,
+              round: item.round,
+              seed1,
+              seed2,
+              seedPos
+            }) ?? undefined)
           : undefined;
 
       // After possible swap: team1 is the side we have first (f1 or f2), team2 second. Use our DB team logo, not FaceIT.
@@ -224,7 +216,8 @@ export const getPlayoffBracketController = async (
       );
     });
 
-    // Assign stable slot for all rounds (0, 1, 2, ...) within each (group, round)
+    // Ensure stable slot ordering for non-upper groups and any un-slotted matches.
+    // Upper group already has canonical slot from seed placement.
     const byGroupRound = new Map<string, PlayoffBracketMatch[]>();
     for (const m of matches) {
       const key = `${m.group}-${m.round}`;
@@ -232,15 +225,120 @@ export const getPlayoffBracketController = async (
       arr.push(m);
       byGroupRound.set(key, arr);
     }
-    for (const arr of byGroupRound.values()) {
+
+    for (const [key, arr] of byGroupRound) {
+      const [groupStr] = key.split("-");
+      const group = Number(groupStr);
+      if (group === 1) continue;
+
+      const scoreKey = (m: PlayoffBracketMatch): number => {
+        if (!seedPos) return 999;
+        const s1 = m.seed1 ?? null;
+        const s2 =
+          m.seed2 ??
+          (s1 != null && bracketSize > 0 ? bracketSize + 1 - s1 : null);
+        const p1 = s1 != null ? seedPos.get(s1) : undefined;
+        const p2 = s2 != null ? seedPos.get(s2) : undefined;
+        const min = Math.min(p1 ?? 999, p2 ?? 999);
+        return Number.isFinite(min) ? min : 999;
+      };
+
+      arr.sort((a, b) => {
+        const ka = scoreKey(a);
+        const kb = scoreKey(b);
+        if (ka !== kb) return ka - kb;
+        const minA = getMatchMinSeed(a);
+        const minB = getMatchMinSeed(b);
+        if (minA !== minB) return minA - minB;
+        return (a.external_match_id ?? "").localeCompare(
+          b.external_match_id ?? ""
+        );
+      });
+
       arr.forEach((m, i) => {
         m.slot = i;
       });
     }
 
+    // Build layout-first response: groups -> rounds -> slots[] with match references.
+    const layoutGroups: NonNullable<
+      PlayoffBracketResponse["bracket"]["layout"]
+    >["groups"] = [];
+
+    const putMatchRef = (
+      group: number,
+      round: number,
+      slotIndex: number,
+      m: PlayoffBracketMatch
+    ): void => {
+      const g = layoutGroups.find((x) => x.group === group);
+      if (!g) return;
+      const r = g.rounds.find((x) => x.round === round);
+      if (!r) return;
+      if (slotIndex < 0 || slotIndex >= r.slots.length) return;
+      if (r.slots[slotIndex] != null) return;
+      r.slots[slotIndex] = {
+        match_id: m.match_id,
+        external_match_id: m.external_match_id
+      };
+    };
+
+    if (bracketSize > 0) {
+      const upperRounds = getUpperRoundCount(bracketSize);
+      if (upperRounds > 0) {
+        layoutGroups.push({
+          group: 1,
+          rounds: Array.from({ length: upperRounds }, (_, idx) => {
+            const round = idx + 1;
+            const slotsInRound = getUpperSlotsInRound(bracketSize, round);
+            return {
+              round,
+              slots: Array.from({ length: slotsInRound }, () => null)
+            };
+          })
+        });
+      }
+
+      const lowerRounds = getLowerRoundCount(bracketSize);
+      const hasLower = matches.some((m) => m.group === 2);
+      if (hasLower && lowerRounds > 0) {
+        layoutGroups.push({
+          group: 2,
+          rounds: Array.from({ length: lowerRounds }, (_, idx) => {
+            const round = idx + 1;
+            const slotsInRound = getLowerSlotsInRound(bracketSize, round);
+            return {
+              round,
+              slots: Array.from({ length: slotsInRound }, () => null)
+            };
+          })
+        });
+      }
+    }
+
+    const hasGrandFinal = matches.some((m) => m.group === 3);
+    if (hasGrandFinal) {
+      layoutGroups.push({
+        group: 3,
+        rounds: [{ round: 1, slots: [null] }]
+      });
+    }
+
+    for (const m of matches) {
+      const slotIndex = m.slot ?? null;
+      if (slotIndex == null) continue;
+      // Grand final might come with arbitrary round index from provider; normalize to round 1.
+      const round = m.group === 3 ? 1 : m.round;
+      putMatchRef(m.group, round, slotIndex, m);
+    }
+
     const response: PlayoffBracketResponse = {
       matches,
-      bracket: { numR1Slots: numSlots }
+      bracket: {
+        bracketSize: bracketSize || undefined,
+        numR1Slots: numSlots,
+        layout: layoutGroups.length > 0 ? { groups: layoutGroups } : undefined
+      }
     };
     res.json(response);
   } catch (error) {
