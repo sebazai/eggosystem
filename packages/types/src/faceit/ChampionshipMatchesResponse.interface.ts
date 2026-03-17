@@ -18,7 +18,8 @@ export interface FaceitChampionshipMatchItem {
   group: number;
   status: string;
   best_of: number;
-  scheduled_at: number;
+  /** May be omitted for some matches (e.g. grand final placeholder). */
+  scheduled_at?: number;
   started_at?: number;
   finished_at?: number;
   teams: {
