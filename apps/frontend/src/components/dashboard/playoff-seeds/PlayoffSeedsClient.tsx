@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import useSWR from "swr";
 import { useDashboardSeason } from "@/hooks/data/dashboard/useDashboardSeason";
 import { SelectedSeasonBadge } from "@/components/dashboard/SelectedSeasonBadge";
@@ -46,6 +46,9 @@ export function PlayoffSeedsClient() {
   const seasonId = selectedSeasonId ? Number(selectedSeasonId) : null;
   const [selectedLeagueId, setSelectedLeagueId] = useState<string>("");
   const [localSeeds, setLocalSeeds] = useState<Map<number, number>>(new Map());
+  // Tracks which rows the user has edited but not yet persisted via "Save seeds".
+  // Used to prevent SWR refetches (e.g. Alt-Tab focus changes) from overwriting in-progress edits.
+  const dirtyTeamIdsRef = useRef<Set<number>>(new Set());
   const [isSaving, setIsSaving] = useState(false);
 
   const {
@@ -75,6 +78,13 @@ export function PlayoffSeedsClient() {
       setSelectedLeagueId("");
     }
   }, [leagues, selectedLeagueId, leagueIdValid]);
+
+  // When switching leagues, clear local state and reload from backend.
+  useEffect(() => {
+    dirtyTeamIdsRef.current = new Set();
+    setLocalSeeds(new Map());
+  }, [effectiveLeagueId]);
+
   const { data: teams = [], mutate: mutateTeams } = useSWR<TeamSeedRow[]>(
     seasonId && effectiveLeagueId
       ? `/api/v1/dashboard/playoff-seeds/season/${seasonId}/league/${effectiveLeagueId}`
@@ -82,16 +92,29 @@ export function PlayoffSeedsClient() {
     (url: string) => fetcher<TeamSeedRow[]>(url),
     {
       onSuccess: (data) => {
-        const next = new Map<number, number>();
-        data.forEach((t) => {
-          if (t.playoff_seed != null) next.set(t.team_id, t.playoff_seed);
+        // Merge backend values into local state, but preserve any user edits (dirty rows).
+        setLocalSeeds((prev) => {
+          const merged = new Map(prev);
+
+          data.forEach((t) => {
+            if (dirtyTeamIdsRef.current.has(t.team_id)) return;
+
+            if (t.playoff_seed != null) {
+              merged.set(t.team_id, t.playoff_seed);
+            } else {
+              merged.delete(t.team_id);
+            }
+          });
+
+          return merged;
         });
-        setLocalSeeds(next);
       }
     }
   );
 
   const handleSeedChange = useCallback((teamId: number, value: string) => {
+    // Mark row as user-edited so SWR refetches don't overwrite while unsaved.
+    dirtyTeamIdsRef.current.add(teamId);
     const num = value === "" ? 0 : parseInt(value, 10);
     setLocalSeeds((prev) => {
       const next = new Map(prev);
@@ -119,6 +142,15 @@ export function PlayoffSeedsClient() {
           body: JSON.stringify({ seeds })
         }
       );
+
+      // Sync UI to backend response and mark everything as clean.
+      const next = new Map<number, number>();
+      updated.forEach((t) => {
+        if (t.playoff_seed != null) next.set(t.team_id, t.playoff_seed);
+      });
+      setLocalSeeds(next);
+      dirtyTeamIdsRef.current = new Set();
+
       await mutateTeams(updated, false);
       toast.success("Playoff seeds saved.");
     } catch (_e) {
