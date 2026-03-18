@@ -85,7 +85,7 @@ services:
       - "3010:3010"
 
   eggo-rabbitmq:
-    image: rabbitmq:4.2.4-management
+    image: rabbitmq:4.2.5-management
     restart: always
     environment:
       - RABBITMQ_DEFAULT_USER=test
