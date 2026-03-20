@@ -202,7 +202,7 @@ services:
     restart: no
 
   eggo-dev-rabbitmq:
-    image: rabbitmq:4.2.4-management
+    image: rabbitmq:4.2.5-management
     container_name: eggo-dev-rabbitmq
     restart: always
     environment:
