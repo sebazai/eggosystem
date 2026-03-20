@@ -232,6 +232,23 @@ audit:
         echo "╚══════════════════════════════════════════════════════════════╝"
         echo ""
 
+        # Print actual advisory details for HIGH + CRITICAL
+        if [ "$CRITICAL" -gt 0 ] || [ "$HIGH" -gt 0 ]; then
+          echo "Detailed HIGH + CRITICAL npm advisories:"
+          jq -c '
+            .advisories | to_entries[]?.value
+            | select(.severity == "critical" or .severity == "high")
+            | {
+                severity: (.severity | ascii_upcase),
+                id: (.id // "n/a"),
+                title: (.title // "n/a"),
+                url: (.url // "n/a"),
+                recommendation: (.recommendation // .overview // "n/a")
+              }
+          ' gl-dependency-scanning-report.json || true
+          echo ""
+        fi
+
         # Warn on CRITICAL vulnerabilities but don't block pipeline
         if [ "$CRITICAL" -gt 0 ]; then
           echo "⚠️ CRITICAL npm vulnerabilities found!"
