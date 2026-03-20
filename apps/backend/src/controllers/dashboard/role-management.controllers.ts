@@ -18,6 +18,7 @@ import {
   removeCaptainFromTeam
 } from "../../models/account-roles.models";
 import { getUserInfoBySteamId } from "../../models/account.models";
+import { getDiscordInfoByAccountId } from "../../models/discord.models";
 import { playerExistsInSeasonTeam } from "../../models/season-team-players.models";
 import {
   BadRequestError,
@@ -106,6 +107,21 @@ export const addRole = async (
           new BadRequestError(
             `Player with Steam ID ${steam_id} is not on this team for this season. ` +
               `Players must be added to the finalized team roster before assigning captain/co-captain roles.`
+          )
+        );
+      }
+
+      // Captain/co-captain must have a real Discord link (not a `fake_` placeholder).
+      // If not, we rollback so the old captain isn't replaced.
+      const discordInfo = await getDiscordInfoByAccountId(
+        account_id,
+        connection
+      );
+      if (!discordInfo) {
+        await connection.rollback();
+        return next(
+          new BadRequestError(
+            "Captains and co-captains must link their Discord account in their profile."
           )
         );
       }

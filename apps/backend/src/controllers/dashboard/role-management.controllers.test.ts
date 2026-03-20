@@ -48,6 +48,17 @@ const mockGetUserInfoBySteamId = getUserInfoBySteamId as jest.MockedFunction<
   typeof getUserInfoBySteamId
 >;
 
+// Mock the discord models
+jest.mock("../../models/discord.models", () => ({
+  getDiscordInfoByAccountId: jest.fn()
+}));
+
+import { getDiscordInfoByAccountId } from "../../models/discord.models";
+const mockGetDiscordInfoByAccountId =
+  getDiscordInfoByAccountId as jest.MockedFunction<
+    typeof getDiscordInfoByAccountId
+  >;
+
 // Mock the season-team-players models
 jest.mock("../../models/season-team-players.models", () => ({
   playerExistsInSeasonTeam: jest.fn()
@@ -138,6 +149,10 @@ const mockHelpers = {
   mockSuccessfulCaptainAssignment: (accountId: number, nickname: string) => {
     mockHelpers.mockUserInfoExists(accountId, nickname);
     mockHelpers.mockPlayerInTeam();
+    mockGetDiscordInfoByAccountId.mockResolvedValue({
+      discordId: "discord-123",
+      discordUsername: "captain#1234"
+    });
     mockHelpers.mockCaptainUpdates();
     mockHelpers.mockUserHasRoleFalse();
   },
@@ -151,6 +166,10 @@ const mockHelpers = {
   ) => {
     mockHelpers.mockUserInfoExists(accountId, nickname);
     mockHelpers.mockPlayerInTeam();
+    mockGetDiscordInfoByAccountId.mockResolvedValue({
+      discordId: "discord-123",
+      discordUsername: "captain#1234"
+    });
     mockHelpers.mockCaptainUpdates();
     mockHelpers.mockUserHasRoleTrue();
   }
@@ -180,6 +199,11 @@ describe("Role Management Controllers", () => {
     };
     mockNext = jest.fn();
     jest.clearAllMocks();
+
+    mockGetDiscordInfoByAccountId.mockResolvedValue({
+      discordId: "discord-123",
+      discordUsername: "captain#1234"
+    });
 
     // Reset mock connection
     mockConnection.beginTransaction.mockClear();
@@ -374,6 +398,41 @@ describe("Role Management Controllers", () => {
           message: `${role} role added and assigned to team successfully`,
           data: { account_id: accountId, nickname, steam_id: steamId, role }
         });
+      });
+
+      it("should throw BadRequestError if discord is not linked and rollback captain change", async () => {
+        const steamId = "76561198000000002";
+        const accountId = 123;
+        const nickname = "NewCaptain";
+        const role = "captain";
+        const seasonId = 10;
+        const teamId = 5;
+
+        mockReq.body = {
+          steam_id: steamId,
+          role,
+          season_id: seasonId,
+          team_id: teamId
+        };
+
+        mockHelpers.mockUserInfoExists(accountId, nickname);
+        mockHelpers.mockPlayerInTeam();
+        mockGetDiscordInfoByAccountId.mockResolvedValue(null);
+
+        await addRole(mockReq as Request, mockRes as Response, mockNext);
+
+        expect(mockNext).toHaveBeenCalledWith(
+          expect.objectContaining({
+            message:
+              "Captains and co-captains must link their Discord account in their profile.",
+            status: 400
+          })
+        );
+
+        // Should rollback and not update SeasonTeamPlayers / roles
+        expect(mockConnection.rollback).toHaveBeenCalled();
+        expect(mockRunQuery).not.toHaveBeenCalled();
+        expect(mockSetRoleForAccount).not.toHaveBeenCalled();
       });
 
       it("should assign co-captain role to a player in SeasonTeamPlayers", async () => {
