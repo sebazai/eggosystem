@@ -669,7 +669,11 @@ router.post(
         );
 
         // 2xBO1: validate map number then set match to FINISHED when demo is ready (before adding MatchGame)
-        if (seasonLeague.is_round_robin_bo2_as_2xbo1) {
+        // Only applies when FaceIT reports best_of === 2; playoff BO3 matches in the same season must be allowed through
+        if (
+          seasonLeague.is_round_robin_bo2_as_2xbo1 &&
+          validatedMatchDetails.best_of === 2
+        ) {
           const demoUrl = validatedWebhook.payload.demo_url;
           const parsedDemoUrl = parseFaceitDemoUrl(demoUrl);
           if (!parsedDemoUrl) {
