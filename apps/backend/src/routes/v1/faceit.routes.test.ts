@@ -2055,6 +2055,11 @@ describe("FaceIT Routes - Webhook", () => {
             is_round_robin_bo2_as_2xbo1: true
           }
         );
+        // 2xBO1 matches have best_of: 2 from FaceIT; override the default fixture (best_of: 3)
+        jest.spyOn(faceitServices, "getFaceITMatchDetails").mockResolvedValue({
+          ...validMatchDetailsMatchDemoReady,
+          best_of: 2
+        } as never);
         mockAddFaceitMatchGameToDatabase = jest
           .spyOn(faceitServices, "addFaceitMatchGameToDatabase")
           .mockResolvedValue(123);
@@ -2146,6 +2151,7 @@ describe("FaceIT Routes - Webhook", () => {
         ]);
         const matchDetailsForRoom = {
           ...validMatchDetailsMatchDemoReady,
+          best_of: 2,
           match_id: externalMatchRoomId
         };
         const demoReadyForMap2 = {
@@ -2192,6 +2198,7 @@ describe("FaceIT Routes - Webhook", () => {
         ]);
         const matchDetailsForRoom = {
           ...validMatchDetailsMatchDemoReady,
+          best_of: 2,
           match_id: externalMatchRoomId
         };
         const demoReadyForMap2 = {
@@ -2229,9 +2236,10 @@ describe("FaceIT Routes - Webhook", () => {
       });
 
       it("when 2xBO1 demo_url has map number 3, throws and returns 400", async () => {
-        jest
-          .spyOn(faceitServices, "getFaceITMatchDetails")
-          .mockResolvedValue(validMatchDetailsMatchDemoReady as never);
+        jest.spyOn(faceitServices, "getFaceITMatchDetails").mockResolvedValue({
+          ...validMatchDetailsMatchDemoReady,
+          best_of: 2
+        } as never);
         mockGetHubMatchesByExternalMatchRoomId.mockResolvedValue([
           { id: 101, status: "ONGOING" },
           { id: 102, status: "ONGOING" }
@@ -2255,6 +2263,34 @@ describe("FaceIT Routes - Webhook", () => {
         expect(response.body.detail).toContain(
           "2xBO1 demo url must have map number 1 or 2, got 3"
         );
+      });
+
+      it("when season is 2xBO1 but match is BO3 (best_of: 3), demo map 3 succeeds", async () => {
+        // Regression test: playoff BO3 matches in a 2xBO1 season must not be blocked at map 3.
+        // The 2xBO1 guard only applies when FaceIT reports best_of === 2.
+        jest
+          .spyOn(faceitServices, "getFaceITMatchDetails")
+          .mockResolvedValue(validMatchDetailsMatchDemoReady as never);
+        mockGetHubMatchesByExternalMatchRoomId.mockResolvedValue([
+          { id: 101, status: "ONGOING" }
+        ]);
+        const demoUrlWithMap3 =
+          "https://demos-europe-central.backblaze.faceit-cdn.net/cs2/1-ffb4225f-ff51-42ed-acb5-af6714175934-3-1.dem.zst";
+        const payload = {
+          ...validWebhookMatchDemoReady,
+          payload: {
+            ...validWebhookMatchDemoReady.payload,
+            demo_url: demoUrlWithMap3
+          }
+        };
+
+        const response = await request(app)
+          .post("/api/v1/faceit/webhook")
+          .set("X-API-KEY", TEST_WEBHOOK_API_KEY)
+          .send(payload);
+
+        expect(response.status).toBe(200);
+        expect(response.text).toBe("Webhook received");
       });
     });
 
