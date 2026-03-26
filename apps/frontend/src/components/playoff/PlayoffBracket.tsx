@@ -3,6 +3,12 @@
 import Link from "next/link";
 import Image from "next/image";
 import type { PlayoffBracketMatch } from "@eggosystem/types";
+import {
+  bracketMatchesToDisplaySlots,
+  buildUpperBracketDisplaySlots,
+  type PlayoffBracketSlotDisplay,
+  type PlayoffUpperBracketWinner
+} from "@/lib/playoff-upper-bracket-preview";
 import { createNextUrl, createTeamLogoUrl } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 
@@ -115,6 +121,24 @@ function buildSlotsFromLayout(params: {
   return out;
 }
 
+function toDisplaySlotsByGroup(
+  slotsByGroupAndRound: Map<number, Map<number, (PlayoffBracketMatch | null)[]>>
+): Map<number, Map<number, PlayoffBracketSlotDisplay[]>> {
+  const out = new Map<number, Map<number, PlayoffBracketSlotDisplay[]>>();
+  for (const [group, byRound] of slotsByGroupAndRound) {
+    if (group === 1) {
+      out.set(group, buildUpperBracketDisplaySlots(byRound));
+      continue;
+    }
+    const converted = new Map<number, PlayoffBracketSlotDisplay[]>();
+    for (const [round, slots] of byRound) {
+      converted.set(round, bracketMatchesToDisplaySlots(slots));
+    }
+    out.set(group, converted);
+  }
+  return out;
+}
+
 function MatchCard({ match }: { match: PlayoffBracketMatch }) {
   const isBye = match.team2_id === null;
   const isFinished = match.status === "FINISHED";
@@ -206,6 +230,69 @@ function MatchCard({ match }: { match: PlayoffBracketMatch }) {
   );
 }
 
+function PreviewTeamRow({ side }: { side: PlayoffUpperBracketWinner | null }) {
+  if (!side) {
+    return (
+      <div className="flex items-center gap-2 rounded px-2 py-1.5">
+        <span className="h-6 w-6 shrink-0" aria-hidden />
+        <span className="truncate text-sm font-medium text-muted-foreground">
+          TBD
+        </span>
+      </div>
+    );
+  }
+  return (
+    <div className="flex items-center gap-2 rounded px-2 py-1.5">
+      {side.team_logo ? (
+        <Image
+          src={createTeamLogoUrl(side.team_logo)}
+          alt=""
+          width={24}
+          height={24}
+          className="h-6 w-6 shrink-0 rounded object-contain"
+        />
+      ) : (
+        <span className="h-6 w-6 shrink-0" aria-hidden />
+      )}
+      <span className="truncate text-sm font-medium">
+        {side.seed != null ? `#${side.seed} ` : ""}
+        {side.team_name}
+      </span>
+    </div>
+  );
+}
+
+function PredictedMatchCard({
+  team1,
+  team2
+}: {
+  team1: PlayoffUpperBracketWinner | null;
+  team2: PlayoffUpperBracketWinner | null;
+}) {
+  const label1 = team1?.team_name ?? "TBD";
+  const label2 = team2?.team_name ?? "TBD";
+  const cardClassName =
+    "w-full min-w-[220px] max-w-full rounded-lg border border-dashed border-muted-foreground/50 bg-muted/15 p-2 text-card-foreground shadow-sm sm:p-3";
+
+  return (
+    <div
+      className={cardClassName}
+      aria-label={`Preview: ${label1} vs ${label2}, match not yet created`}
+    >
+      <div className="mb-1 text-center text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+        Preview
+      </div>
+      <div className="flex flex-col">
+        <PreviewTeamRow side={team1} />
+        <div className="flex items-center justify-center py-1 text-xs font-medium text-muted-foreground">
+          —
+        </div>
+        <PreviewTeamRow side={team2} />
+      </div>
+    </div>
+  );
+}
+
 const ROUND_COLUMN_WIDTH = "min-w-[220px] w-[220px]";
 /** One row must fit one match card (padding + 2 team rows + score). Round 2+ span multiple rows. */
 const SLOT_HEIGHT_PX = 116;
@@ -223,13 +310,32 @@ function EmptySlotCard() {
   );
 }
 
+function slotDisplayKey(
+  slot: PlayoffBracketSlotDisplay,
+  roundNum: number,
+  index: number
+): string {
+  if (slot.kind === "match") {
+    return (
+      slot.match.external_match_id ??
+      `match-${slot.match.group}-${slot.match.round}-${index}`
+    );
+  }
+  if (slot.kind === "preview") {
+    const a = slot.team1?.team_id ?? "x";
+    const b = slot.team2?.team_id ?? "y";
+    return `preview-${roundNum}-${index}-${String(a)}-${String(b)}`;
+  }
+  return `empty-${roundNum}-${index}`;
+}
+
 function RoundColumn({
   roundNum,
   slots,
   sectionMaxSlots
 }: {
   roundNum: number;
-  slots: (PlayoffBracketMatch | null)[];
+  slots: PlayoffBracketSlotDisplay[];
   sectionMaxSlots: number;
 }) {
   const baseHeight = sectionMaxSlots > 0 ? sectionMaxSlots * SLOT_HEIGHT_PX : 0;
@@ -251,22 +357,23 @@ function RoundColumn({
           minHeight: baseHeight
         }}
       >
-        {slots.map((match, index) => {
+        {slots.map((slot, index) => {
           const startRow = index * rowSpan + 1;
           return (
             <div
-              key={
-                match
-                  ? (match.external_match_id ??
-                    `match-${match.group}-${match.round}-${index}`)
-                  : `empty-${roundNum}-${index}`
-              }
+              key={slotDisplayKey(slot, roundNum, index)}
               className="flex items-center justify-center"
               style={{
                 gridRow: `${startRow} / span ${rowSpan}`
               }}
             >
-              {match ? <MatchCard match={match} /> : <EmptySlotCard />}
+              {slot.kind === "match" ? (
+                <MatchCard match={slot.match} />
+              ) : slot.kind === "preview" ? (
+                <PredictedMatchCard team1={slot.team1} team2={slot.team2} />
+              ) : (
+                <EmptySlotCard />
+              )}
             </div>
           );
         })}
@@ -283,7 +390,7 @@ function BracketSection({
   leftOffset
 }: {
   group: number;
-  slotsByRound: Map<number, (PlayoffBracketMatch | null)[]>;
+  slotsByRound: Map<number, PlayoffBracketSlotDisplay[]>;
   leftOffset?: boolean;
 }) {
   const rounds = [...slotsByRound.entries()].sort(([a], [b]) => a - b);
@@ -345,9 +452,11 @@ export function PlayoffBracket({
           bracket?.numR1Slots ?? 0
         );
 
-  const upper = slotsByGroupAndRound.get(1);
-  const lower = slotsByGroupAndRound.get(2);
-  const grandFinal = slotsByGroupAndRound.get(3);
+  const displayByGroup = toDisplaySlotsByGroup(slotsByGroupAndRound);
+
+  const upper = displayByGroup.get(1);
+  const lower = displayByGroup.get(2);
+  const grandFinal = displayByGroup.get(3);
   const lowerMinRound = lower && lower.size > 0 ? Math.min(...lower.keys()) : 2;
   const indentLower = lowerMinRound >= 2;
 

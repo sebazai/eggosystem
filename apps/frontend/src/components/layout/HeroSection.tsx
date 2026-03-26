@@ -23,7 +23,8 @@ import {
   getUpcomingStreamedMatchesSorted
 } from "@/lib/calendar-utils";
 import Link from "next/link";
-import { createNextUrl } from "@/lib/utils";
+import { createNextUrl, cn } from "@/lib/utils";
+import { isOfficialKanaliigaStream } from "@/lib/official-kanaliiga-stream";
 
 type HeroSectionProps = {
   device?: string;
@@ -174,10 +175,16 @@ const StreamedMatchesTab = ({
   return (
     <div className="space-y-3 sm:space-y-4 max-h-[400px] overflow-y-auto pr-2 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-slate-600 hover:scrollbar-thumb-slate-500">
       {matches.map((match) => {
+        const official = isOfficialKanaliigaStream(match);
         return (
           <Card
             key={match.match_id}
-            className="bg-gradient-to-r from-purple-500/10 via-orange-500/10 to-red-500/10 border-purple-500/30 hover:from-purple-500/15 hover:via-orange-500/15 hover:to-red-500/15 ring-1 ring-purple-500/20 transition-all duration-300 cursor-pointer group relative overflow-hidden"
+            className={cn(
+              "bg-gradient-to-r from-purple-500/10 via-orange-500/10 to-red-500/10 hover:from-purple-500/15 hover:via-orange-500/15 hover:to-red-500/15 ring-1 transition-all duration-300 cursor-pointer group relative overflow-hidden border",
+              official
+                ? "border-orange-400/50 ring-orange-400/35 hover:border-orange-400/60"
+                : "border-purple-500/30 ring-purple-500/20"
+            )}
             onClick={() => window.open(`/matches/${match.match_id}`, "_blank")}
           >
             {/* Twitch-style gradient overlay */}
@@ -190,6 +197,17 @@ const StreamedMatchesTab = ({
                   <div className="w-2 h-2 bg-red-400 rounded-full animate-pulse" />
                   LIVE
                 </div>
+              </div>
+            )}
+
+            {official && (
+              <div className="absolute top-3 right-3 z-10">
+                <Badge
+                  variant="secondary"
+                  className="text-xs font-medium shadow-lg bg-orange-500/95 text-white border-orange-400/60 hover:bg-orange-500/95"
+                >
+                  KanaliigaTV
+                </Badge>
               </div>
             )}
 

@@ -15,6 +15,7 @@ import { getTeamLogosByTeamIds } from "../models/team.models";
 import {
   buildSeedPositionMap,
   getBracketSizeFromMaxSeed,
+  getLowerBracketR1LayoutSlotOrGuess,
   getLowerRoundCount,
   getLowerSlotsInRound,
   getUpperBracketSlotForSeeds,
@@ -268,6 +269,10 @@ export const getPlayoffBracketController = async (
 
     // Ensure stable slot ordering for non-upper groups and any un-slotted matches.
     // Upper group already has canonical slot from seed placement.
+    // Lower group first round: sort by inferred column; assign m.slot to that column index (not
+    // sequential 0..n-1) so putMatchRef places each match in the correct layout cell vs FaceIT.
+    // Lower group round >= 2: still sorted by min seed leaf (heuristic); true order follows
+    // which upper match drops vs which LB match feeds in (see playoff-bracket-layout.ts JSDoc).
     const byGroupRound = new Map<string, PlayoffBracketMatch[]>();
     for (const m of matches) {
       const key = `${m.group}-${m.round}`;
@@ -276,9 +281,16 @@ export const getPlayoffBracketController = async (
       byGroupRound.set(key, arr);
     }
 
+    const lowerBracketRounds = matches
+      .filter((m) => m.group === 2)
+      .map((m) => m.round);
+    const firstLowerBracketRound =
+      lowerBracketRounds.length > 0 ? Math.min(...lowerBracketRounds) : 1;
+
     for (const [key, arr] of byGroupRound) {
-      const [groupStr] = key.split("-");
+      const [groupStr, roundStr] = key.split("-");
       const group = Number(groupStr);
+      const round = Number(roundStr);
       if (group === 1) continue;
 
       const scoreKey = (m: PlayoffBracketMatch): number => {
@@ -286,14 +298,42 @@ export const getPlayoffBracketController = async (
         const s1 = m.seed1 ?? null;
         const s2 =
           m.seed2 ??
-          (s1 != null && bracketSize > 0 ? bracketSize + 1 - s1 : null);
+          (group !== 2 && s1 != null && bracketSize > 0
+            ? bracketSize + 1 - s1
+            : null);
         const p1 = s1 != null ? seedPos.get(s1) : undefined;
         const p2 = s2 != null ? seedPos.get(s2) : undefined;
         const min = Math.min(p1 ?? 999, p2 ?? 999);
         return Number.isFinite(min) ? min : 999;
       };
 
+      const lowerR1OrderSlot = (m: PlayoffBracketMatch): number | null =>
+        bracketSize > 0
+          ? getLowerBracketR1LayoutSlotOrGuess({
+              seed1: m.seed1,
+              seed2: m.seed2,
+              bracketSize
+            })
+          : null;
+
       arr.sort((a, b) => {
+        if (
+          group === 2 &&
+          round === firstLowerBracketRound &&
+          bracketSize > 0
+        ) {
+          const sa = lowerR1OrderSlot(a);
+          const sb = lowerR1OrderSlot(b);
+          if (sa != null && sb != null && sa !== sb) return sa - sb;
+          if (sa != null && sb == null) return -1;
+          if (sa == null && sb != null) return 1;
+          if (sa != null && sb != null && sa === sb) {
+            return (a.external_match_id ?? "").localeCompare(
+              b.external_match_id ?? ""
+            );
+          }
+        }
+
         const ka = scoreKey(a);
         const kb = scoreKey(b);
         if (ka !== kb) return ka - kb;
@@ -305,9 +345,30 @@ export const getPlayoffBracketController = async (
         );
       });
 
-      arr.forEach((m, i) => {
-        m.slot = i;
-      });
+      if (group === 2 && round === firstLowerBracketRound && bracketSize > 0) {
+        const usedSlots = new Set<number>();
+        for (const m of arr) {
+          const preferred = getLowerBracketR1LayoutSlotOrGuess({
+            seed1: m.seed1,
+            seed2: m.seed2,
+            bracketSize
+          });
+          let slot: number;
+          if (preferred != null && !usedSlots.has(preferred)) {
+            slot = preferred;
+          } else {
+            let t = 0;
+            while (usedSlots.has(t)) t++;
+            slot = t;
+          }
+          usedSlots.add(slot);
+          m.slot = slot;
+        }
+      } else {
+        arr.forEach((m, i) => {
+          m.slot = i;
+        });
+      }
     }
 
     // Build layout-first response: groups -> rounds -> slots[] with match references.
