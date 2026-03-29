@@ -9,7 +9,8 @@ import type {
   EventApi,
   EventClickArg,
   EventContentArg,
-  MoreLinkContentArg
+  MoreLinkContentArg,
+  MoreLinkHandler
 } from "@fullcalendar/core";
 import useSWR from "swr";
 import type { MatchWithStreamUrls } from "@eggosystem/types";
@@ -242,7 +243,8 @@ export default function EmbedCalendar({
         );
       },
       dayMaxEvents: height ? 2 : 3,
-      moreLinkClick: moreDialog.moreLinkClickForFullCalendar,
+      moreLinkClick:
+        moreDialog.moreLinkClickForFullCalendar as unknown as MoreLinkHandler,
       moreLinkContent: (arg: MoreLinkContentArg) => `+${arg.num} more`,
       slotMinTime: timeRange.minTime,
       slotMaxTime: timeRange.maxTime,

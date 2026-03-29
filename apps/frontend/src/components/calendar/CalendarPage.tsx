@@ -10,7 +10,8 @@ import type {
   EventApi,
   EventClickArg,
   EventContentArg,
-  MoreLinkContentArg
+  MoreLinkContentArg,
+  MoreLinkHandler
 } from "@fullcalendar/core";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -308,7 +309,8 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
         );
       },
       dayMaxEvents: 2, // Reduced from 3 for mobile
-      moreLinkClick: moreDialog.moreLinkClickForFullCalendar,
+      moreLinkClick:
+        moreDialog.moreLinkClickForFullCalendar as unknown as MoreLinkHandler,
       moreLinkContent: (arg: MoreLinkContentArg) => {
         return `+${arg.num} more`;
       },

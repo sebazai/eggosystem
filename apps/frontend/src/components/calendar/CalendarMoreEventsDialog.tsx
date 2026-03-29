@@ -1,11 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import type {
-  EventApi,
-  MoreLinkArg,
-  MoreLinkHandler
-} from "@fullcalendar/core";
+import type { EventApi, MoreLinkArg } from "@fullcalendar/core";
 import { format } from "date-fns";
 import { Clock } from "lucide-react";
 import {
@@ -16,7 +12,40 @@ import {
 } from "@/components/ui/dialog";
 import { formatInTimezone } from "@/lib/timezone";
 
-function segmentHasStream(seg: MoreLinkArg["hiddenSegs"][number]): boolean {
+/**
+ * Structural copy of FullCalendar's segment shape so emitted .d.ts does not reference
+ * `@fullcalendar/core/internal-common` (TS "cannot be named" / portability error).
+ */
+type CalendarMoreDialogSegment = {
+  event: EventApi;
+  start: Date;
+  end: Date;
+  isStart: boolean;
+  isEnd: boolean;
+};
+
+/** Narrow `MoreLinkArg` shape used by our handler (FullCalendar passes additional fields). */
+type CalendarMoreLinkClickInfo = {
+  date: Date;
+  allDay: boolean;
+  allSegs: CalendarMoreDialogSegment[];
+  hiddenSegs: CalendarMoreDialogSegment[];
+  jsEvent: UIEvent;
+};
+
+type UseCalendarMoreLinkDialogReturn = {
+  open: boolean;
+  title: string;
+  segments: CalendarMoreDialogSegment[];
+  onOpenChange: (open: boolean) => void;
+  /**
+   * Pass to `CalendarOptions.moreLinkClick`. Cast with `as import("@fullcalendar/core").MoreLinkHandler`
+   * if the calendar option type does not accept this wider-compatible signature.
+   */
+  moreLinkClickForFullCalendar: (info: CalendarMoreLinkClickInfo) => boolean;
+};
+
+function segmentHasStream(seg: CalendarMoreDialogSegment): boolean {
   const urls = seg.event.extendedProps?.streamUrl;
   if (Array.isArray(urls) && urls.length > 0) return true;
   return seg.event.extendedProps?.hasStream === true;
@@ -24,8 +53,8 @@ function segmentHasStream(seg: MoreLinkArg["hiddenSegs"][number]): boolean {
 
 /** Same ordering as the legacy in-calendar popover: time, streams first, then tier. */
 function sortMoreLinkHiddenSegments(
-  segments: MoreLinkArg["hiddenSegs"]
-): MoreLinkArg["hiddenSegs"] {
+  segments: CalendarMoreDialogSegment[]
+): CalendarMoreDialogSegment[] {
   return [...segments].sort((a, b) => {
     const timeComparison = a.start.getTime() - b.start.getTime();
     if (timeComparison !== 0) return timeComparison;
@@ -40,19 +69,21 @@ function sortMoreLinkHiddenSegments(
   });
 }
 
-export function CalendarMoreEventsDialog({
+type CalendarMoreEventsDialogProps = {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  title: string;
+  segments: CalendarMoreDialogSegment[];
+  onEventSelect: (event: EventApi) => void;
+};
+
+export const CalendarMoreEventsDialog = ({
   open,
   onOpenChange,
   title,
   segments,
   onEventSelect
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  title: string;
-  segments: MoreLinkArg["hiddenSegs"];
-  onEventSelect: (event: EventApi) => void;
-}) {
+}: CalendarMoreEventsDialogProps) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
@@ -117,34 +148,36 @@ export function CalendarMoreEventsDialog({
       </DialogContent>
     </Dialog>
   );
-}
+};
 
 /**
  * State + handler for FullCalendar "+N more" links. Returns a handler typed for
  * `CalendarOptions.moreLinkClick`; FullCalendar's types omit the boolean return that
  * skips the built-in popover.
  */
-export function useCalendarMoreLinkDialog() {
-  const [open, setOpen] = useState(false);
-  const [title, setTitle] = useState("");
-  const [segments, setSegments] = useState<MoreLinkArg["hiddenSegs"]>([]);
+export const useCalendarMoreLinkDialog =
+  (): UseCalendarMoreLinkDialogReturn => {
+    const [open, setOpen] = useState(false);
+    const [title, setTitle] = useState("");
+    const [segments, setSegments] = useState<CalendarMoreDialogSegment[]>([]);
 
-  const onOpenChange = useCallback((next: boolean) => {
-    setOpen(next);
-  }, []);
+    const onOpenChange = useCallback((next: boolean) => {
+      setOpen(next);
+    }, []);
 
-  const moreLinkClick = useCallback((info: MoreLinkArg) => {
-    setTitle(format(info.date, "PPPP"));
-    setSegments(sortMoreLinkHiddenSegments(info.hiddenSegs));
-    setOpen(true);
-    return true;
-  }, []);
+    const moreLinkClick = useCallback((info: MoreLinkArg) => {
+      setTitle(format(info.date, "PPPP"));
+      setSegments(sortMoreLinkHiddenSegments(info.hiddenSegs));
+      setOpen(true);
+      return true;
+    }, []);
 
-  return {
-    open,
-    title,
-    segments,
-    onOpenChange,
-    moreLinkClickForFullCalendar: moreLinkClick as unknown as MoreLinkHandler
+    return {
+      open,
+      title,
+      segments,
+      onOpenChange,
+      moreLinkClickForFullCalendar:
+        moreLinkClick as UseCalendarMoreLinkDialogReturn["moreLinkClickForFullCalendar"]
+    };
   };
-}
