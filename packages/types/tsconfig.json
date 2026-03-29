@@ -4,7 +4,7 @@
     "rootDir": "./src", // Source directory for TypeScript
     "outDir": "./dist", // Output directory for compiled JavaScript
     "declaration": true, // Ensure type declaration files are generated
-    "moduleResolution": "node", // Ensure module resolution works as expected
+    "moduleResolution": "bundler",
     "module": "CommonJS", // Use CommonJS module format
     "target": "ES2018", // Target ES2018 for good Node.js compatibility
     "esModuleInterop": true, // Allows default imports for CommonJS modules
