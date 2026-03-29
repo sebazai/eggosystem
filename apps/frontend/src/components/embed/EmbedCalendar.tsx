@@ -1,19 +1,29 @@
 "use client";
 
-import { useMemo, useRef, useEffect } from "react";
+import { useMemo, useRef, useEffect, useState, useCallback } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import type {
+  EventApi,
   EventClickArg,
   EventContentArg,
-  MoreLinkContentArg
+  MoreLinkArg,
+  MoreLinkContentArg,
+  MoreLinkHandler
 } from "@fullcalendar/core";
+import { format } from "date-fns";
 import useSWR from "swr";
 import type { MatchWithStreamUrls } from "@eggosystem/types";
 import { formatInTimezone } from "@/lib/timezone";
 import { Clock } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle
+} from "@/components/ui/dialog";
 
 // Division definitions with darker, more readable colors
 const DIVISIONS: Record<number, { color: string; borderColor: string }> = {
@@ -136,101 +146,6 @@ const findMinMaxTimes = (matches: MatchWithStreamUrls[]) => {
   };
 };
 
-const POPOVER_VIEWPORT_PADDING_PX = 10;
-
-function parseCssPixelLength(value: string): number {
-  const n = parseFloat(value);
-  return Number.isFinite(n) ? n : 0;
-}
-
-/**
- * FullCalendar positions the "more" popover without ensuring it fits the calendar box.
- * Clamp to `boundsElement`'s client rect so the popover stays inside the embed calendar
- * (not only the window — the calendar can be smaller than the viewport on themed pages).
- */
-function clampFullCalendarMorePopover(
-  popover: HTMLElement,
-  boundsElement: HTMLElement
-): void {
-  const bounds = boundsElement.getBoundingClientRect();
-  const pad = POPOVER_VIEWPORT_PADDING_PX;
-  const maxRight = bounds.right - pad;
-  const minLeft = bounds.left + pad;
-  const maxBottom = bounds.bottom - pad;
-  const minTop = bounds.top + pad;
-
-  const maxPopoverWidth = Math.max(0, bounds.width - 2 * pad);
-  if (maxPopoverWidth > 0) {
-    popover.style.boxSizing = "border-box";
-    popover.style.maxWidth = `${maxPopoverWidth}px`;
-  }
-
-  const computed = window.getComputedStyle(popover);
-  let topPx = parseCssPixelLength(
-    popover.style.top !== "" ? popover.style.top : computed.top
-  );
-  let leftPx = parseCssPixelLength(
-    popover.style.left !== "" ? popover.style.left : computed.left
-  );
-
-  const nudgeVertical = (): void => {
-    const rect = popover.getBoundingClientRect();
-    let deltaY = 0;
-    if (rect.bottom > maxBottom) {
-      deltaY = rect.bottom - maxBottom;
-    }
-    const topAfter = rect.top - deltaY;
-    if (topAfter < minTop) {
-      deltaY = rect.top - minTop;
-    }
-    if (deltaY !== 0) {
-      topPx -= deltaY;
-      popover.style.top = `${topPx}px`;
-    }
-  };
-
-  const nudgeHorizontal = (): void => {
-    const rect = popover.getBoundingClientRect();
-    let deltaX = 0;
-    if (rect.right > maxRight) {
-      deltaX = rect.right - maxRight;
-    }
-    const leftAfter = rect.left - deltaX;
-    if (leftAfter < minLeft) {
-      deltaX = rect.left - minLeft;
-    }
-    if (deltaX !== 0) {
-      leftPx -= deltaX;
-      popover.style.left = `${leftPx}px`;
-    }
-  };
-
-  nudgeVertical();
-  nudgeHorizontal();
-  nudgeVertical();
-  nudgeHorizontal();
-  nudgeVertical();
-
-  // After moving the popover (e.g. from bottom "+ more" to top), FullCalendar may have
-  // left a small height from the pre-move layout. Always cap to available space below the
-  // popover top and make the body scroll so "+40 more" lists are usable.
-  const rect = popover.getBoundingClientRect();
-  const maxTotalH = Math.max(0, maxBottom - rect.top);
-  if (maxTotalH > 0) {
-    popover.style.maxHeight = `${maxTotalH}px`;
-    popover.style.display = "flex";
-    popover.style.flexDirection = "column";
-    popover.style.minHeight = "0";
-    const body = popover.querySelector(".fc-popover-body");
-    if (body instanceof HTMLElement) {
-      body.style.setProperty("max-height", "none", "important");
-      body.style.overflowY = "auto";
-      body.style.minHeight = "0";
-      body.style.flex = "1 1 auto";
-    }
-  }
-}
-
 interface EmbedCalendarProps {
   organizerId: string;
   appId: string;
@@ -251,9 +166,14 @@ export default function EmbedCalendar({
   theme = "light"
 }: EmbedCalendarProps) {
   const calendarRef = useRef<FullCalendar>(null);
-  const embedContainerRef = useRef<HTMLDivElement>(null);
   const view: "dayGridMonth" | "timeGridWeek" =
     defaultView === "week" ? "timeGridWeek" : "dayGridMonth";
+
+  const [moreDialogOpen, setMoreDialogOpen] = useState(false);
+  const [moreDialogTitle, setMoreDialogTitle] = useState("");
+  const [moreDialogSegments, setMoreDialogSegments] = useState<
+    MoreLinkArg["hiddenSegs"]
+  >([]);
 
   // Build the API URL
   const apiUrl = useMemo(() => {
@@ -286,6 +206,25 @@ export default function EmbedCalendar({
       window.open(matchUrl, "_blank", "noopener,noreferrer");
     }
   };
+
+  const openMatchFromEvent = useCallback((event: EventApi) => {
+    const matchId = event.extendedProps?.matchId;
+    if (matchId) {
+      const matchUrl = `${window.location.origin}/matches/${matchId}`;
+      window.open(matchUrl, "_blank", "noopener,noreferrer");
+    }
+  }, []);
+
+  const handleMoreLinkClick = useCallback((info: MoreLinkArg) => {
+    const sorted = [...info.hiddenSegs].sort(
+      (a, b) => a.start.getTime() - b.start.getTime()
+    );
+    setMoreDialogTitle(format(info.date, "PPPP"));
+    setMoreDialogSegments(sorted);
+    setMoreDialogOpen(true);
+    // Truthy return (not `'popover'`) skips FullCalendar's built-in popover.
+    return true;
+  }, []);
 
   const calendarOptions = useMemo(
     () => ({
@@ -323,7 +262,8 @@ export default function EmbedCalendar({
         );
       },
       dayMaxEvents: height ? 2 : 3,
-      moreLinkClick: "popover",
+      // FullCalendar types omit boolean; runtime treats any truthy value (except view names) as "no default popover".
+      moreLinkClick: handleMoreLinkClick as unknown as MoreLinkHandler,
       moreLinkContent: (arg: MoreLinkContentArg) => `+${arg.num} more`,
       slotMinTime: timeRange.minTime,
       slotMaxTime: timeRange.maxTime,
@@ -346,7 +286,14 @@ export default function EmbedCalendar({
       editable: false,
       dayMaxEventRows: 3
     }),
-    [view, matches, timeRange.minTime, timeRange.maxTime, height]
+    [
+      view,
+      matches,
+      timeRange.minTime,
+      timeRange.maxTime,
+      height,
+      handleMoreLinkClick
+    ]
   );
 
   // Apply theme class to document
@@ -354,70 +301,6 @@ export default function EmbedCalendar({
     document.documentElement.classList.remove("dark", "light");
     document.documentElement.classList.add(theme);
   }, [theme]);
-
-  // Keep FullCalendar "more" popover inside the calendar container (see clampFullCalendarMorePopover)
-  useEffect(() => {
-    if (isLoading || !organizerId || !appId) return;
-
-    const root = embedContainerRef.current;
-    if (!root) return;
-
-    const scheduleClamp = (popover: HTMLElement) => {
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          clampFullCalendarMorePopover(popover, root);
-        });
-      });
-    };
-
-    const observer = new MutationObserver((mutations) => {
-      for (const mutation of mutations) {
-        for (const node of mutation.addedNodes) {
-          if (!(node instanceof HTMLElement)) continue;
-          const popover = node.matches(".fc-more-popover")
-            ? node
-            : node.querySelector(".fc-more-popover");
-          if (popover instanceof HTMLElement) {
-            scheduleClamp(popover);
-          }
-        }
-      }
-    });
-
-    observer.observe(root, { childList: true, subtree: true });
-
-    const resetPopoverLayoutStyles = (popover: HTMLElement) => {
-      popover.style.maxHeight = "";
-      popover.style.maxWidth = "";
-      popover.style.boxSizing = "";
-      popover.style.display = "";
-      popover.style.flexDirection = "";
-      popover.style.minHeight = "";
-      const body = popover.querySelector(".fc-popover-body");
-      if (body instanceof HTMLElement) {
-        body.style.removeProperty("max-height");
-        body.style.overflowY = "";
-        body.style.minHeight = "";
-        body.style.flex = "";
-      }
-    };
-
-    const onResize = () => {
-      const popover = root.querySelector(".fc-more-popover");
-      if (!(popover instanceof HTMLElement)) return;
-      resetPopoverLayoutStyles(popover);
-      requestAnimationFrame(() => {
-        clampFullCalendarMorePopover(popover, root);
-      });
-    };
-
-    window.addEventListener("resize", onResize);
-
-    return () => {
-      observer.disconnect();
-      window.removeEventListener("resize", onResize);
-    };
-  }, [isLoading, organizerId, appId]);
 
   if (isLoading) {
     return (
@@ -453,7 +336,6 @@ export default function EmbedCalendar({
 
   return (
     <div
-      ref={embedContainerRef}
       className={`embed-calendar-container bg-background text-foreground ${theme}`}
       style={{ height, width }}
     >
@@ -495,22 +377,6 @@ export default function EmbedCalendar({
           border-width: 2px !important;
           box-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
         }
-        /* Override globals.css min-width:600px so popover can shrink inside narrow embeds */
-        .embed-calendar-container .fc-theme-standard .fc-popover,
-        .embed-calendar-container .fc-popover.fc-more-popover {
-          min-width: 0 !important;
-          box-sizing: border-box;
-        }
-        .embed-calendar-container .fc-popover-body {
-          grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
-        }
-        /* Let JS + flex parent set height; globals use max-height:400px which fights expansion */
-        .embed-calendar-container .fc-theme-standard .fc-popover-body {
-          max-height: none !important;
-        }
-        .embed-calendar-container .fc-more-popover .fc-popover-header {
-          flex-shrink: 0;
-        }
         .embed-calendar-container.dark {
           --background: #09090b;
           --foreground: #fafafa;
@@ -531,6 +397,65 @@ export default function EmbedCalendar({
         }
       `}</style>
       <FullCalendar ref={calendarRef} {...calendarOptions} />
+
+      <Dialog open={moreDialogOpen} onOpenChange={setMoreDialogOpen}>
+        <DialogContent
+          className="flex max-h-[85vh] max-w-[calc(100%-1.5rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-lg"
+          showCloseButton
+        >
+          <DialogHeader className="shrink-0 border-b px-6 py-4 text-left">
+            <DialogTitle className="pr-8">{moreDialogTitle}</DialogTitle>
+            <p className="text-muted-foreground text-sm font-normal">
+              {moreDialogSegments.length}{" "}
+              {moreDialogSegments.length === 1 ? "match" : "matches"}
+            </p>
+          </DialogHeader>
+          <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3 sm:px-6">
+            <ul className="flex flex-col gap-2">
+              {moreDialogSegments.map((seg) => {
+                const ev = seg.event;
+                const startTime = formatInTimezone(ev.startStr, "p");
+                const hasStream = Boolean(ev.extendedProps?.hasStream);
+                const bg = ev.backgroundColor ?? "#6b7280";
+                return (
+                  <li key={ev.id}>
+                    <button
+                      type="button"
+                      className="focus-visible:ring-ring w-full rounded-md px-3 py-2.5 text-left text-xs text-white shadow-sm transition-opacity hover:opacity-95 focus-visible:ring-2 focus-visible:outline-none"
+                      style={{
+                        backgroundColor: bg,
+                        border: hasStream
+                          ? "2px solid #f59e0b"
+                          : "1px solid rgba(255, 255, 255, 0.25)"
+                      }}
+                      onClick={() => {
+                        openMatchFromEvent(ev);
+                        setMoreDialogOpen(false);
+                      }}
+                    >
+                      <div className="font-semibold leading-tight">
+                        {ev.title}
+                      </div>
+                      <div className="mt-1 flex items-center gap-1">
+                        <Clock className="h-2.5 w-2.5 shrink-0 opacity-90" />
+                        <span>{startTime}</span>
+                        {hasStream ? (
+                          <span className="text-amber-300">● Live</span>
+                        ) : null}
+                      </div>
+                      {ev.extendedProps?.league ? (
+                        <div className="mt-0.5 opacity-90">
+                          {String(ev.extendedProps.league)}
+                        </div>
+                      ) : null}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
