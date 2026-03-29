@@ -208,23 +208,27 @@ function clampFullCalendarMorePopover(
   nudgeVertical();
   nudgeHorizontal();
   nudgeVertical();
+  nudgeHorizontal();
+  nudgeVertical();
 
+  // After moving the popover (e.g. from bottom "+ more" to top), FullCalendar may have
+  // left a small height from the pre-move layout. Always cap to available space below the
+  // popover top and make the body scroll so "+40 more" lists are usable.
   const rect = popover.getBoundingClientRect();
   const maxTotalH = Math.max(0, maxBottom - rect.top);
-  if (maxTotalH > 0 && rect.height > maxTotalH) {
+  if (maxTotalH > 0) {
     popover.style.maxHeight = `${maxTotalH}px`;
     popover.style.display = "flex";
     popover.style.flexDirection = "column";
+    popover.style.minHeight = "0";
     const body = popover.querySelector(".fc-popover-body");
     if (body instanceof HTMLElement) {
+      body.style.setProperty("max-height", "none", "important");
       body.style.overflowY = "auto";
       body.style.minHeight = "0";
       body.style.flex = "1 1 auto";
     }
   }
-
-  nudgeHorizontal();
-  nudgeVertical();
 }
 
 interface EmbedCalendarProps {
@@ -388,8 +392,10 @@ export default function EmbedCalendar({
       popover.style.boxSizing = "";
       popover.style.display = "";
       popover.style.flexDirection = "";
+      popover.style.minHeight = "";
       const body = popover.querySelector(".fc-popover-body");
       if (body instanceof HTMLElement) {
+        body.style.removeProperty("max-height");
         body.style.overflowY = "";
         body.style.minHeight = "";
         body.style.flex = "";
@@ -497,6 +503,13 @@ export default function EmbedCalendar({
         }
         .embed-calendar-container .fc-popover-body {
           grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
+        }
+        /* Let JS + flex parent set height; globals use max-height:400px which fights expansion */
+        .embed-calendar-container .fc-theme-standard .fc-popover-body {
+          max-height: none !important;
+        }
+        .embed-calendar-container .fc-more-popover .fc-popover-header {
+          flex-shrink: 0;
         }
         .embed-calendar-container.dark {
           --background: #09090b;
