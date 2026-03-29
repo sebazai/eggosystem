@@ -31,8 +31,8 @@ RUN pnpm build --filter=backend
 FROM base AS leaner
 ENV NODE_ENV=production
 RUN pnpm install --filter='!frontend' --prod --frozen-lockfile
-# Remove the turbo cache, it is not needed in the final image and makes image leaner
-RUN rm -r node_modules/.pnpm/turbo-*
+# Remove turbo from the pnpm store if present (devDependency; often absent with --prod)
+RUN rm -rf node_modules/.pnpm/turbo-*
 
 # Finally the runner stage as final stage
 FROM base AS runner
