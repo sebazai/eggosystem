@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useEffect, useState, useCallback } from "react";
+import { useMemo, useRef, useEffect, useCallback } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
@@ -9,21 +9,16 @@ import type {
   EventApi,
   EventClickArg,
   EventContentArg,
-  MoreLinkArg,
-  MoreLinkContentArg,
-  MoreLinkHandler
+  MoreLinkContentArg
 } from "@fullcalendar/core";
-import { format } from "date-fns";
 import useSWR from "swr";
 import type { MatchWithStreamUrls } from "@eggosystem/types";
 import { formatInTimezone } from "@/lib/timezone";
 import { Clock } from "lucide-react";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle
-} from "@/components/ui/dialog";
+  CalendarMoreEventsDialog,
+  useCalendarMoreLinkDialog
+} from "@/components/calendar/CalendarMoreEventsDialog";
 
 // Division definitions with darker, more readable colors
 const DIVISIONS: Record<number, { color: string; borderColor: string }> = {
@@ -169,11 +164,7 @@ export default function EmbedCalendar({
   const view: "dayGridMonth" | "timeGridWeek" =
     defaultView === "week" ? "timeGridWeek" : "dayGridMonth";
 
-  const [moreDialogOpen, setMoreDialogOpen] = useState(false);
-  const [moreDialogTitle, setMoreDialogTitle] = useState("");
-  const [moreDialogSegments, setMoreDialogSegments] = useState<
-    MoreLinkArg["hiddenSegs"]
-  >([]);
+  const moreDialog = useCalendarMoreLinkDialog();
 
   // Build the API URL
   const apiUrl = useMemo(() => {
@@ -215,17 +206,6 @@ export default function EmbedCalendar({
     }
   }, []);
 
-  const handleMoreLinkClick = useCallback((info: MoreLinkArg) => {
-    const sorted = [...info.hiddenSegs].sort(
-      (a, b) => a.start.getTime() - b.start.getTime()
-    );
-    setMoreDialogTitle(format(info.date, "PPPP"));
-    setMoreDialogSegments(sorted);
-    setMoreDialogOpen(true);
-    // Truthy return (not `'popover'`) skips FullCalendar's built-in popover.
-    return true;
-  }, []);
-
   const calendarOptions = useMemo(
     () => ({
       plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
@@ -262,8 +242,7 @@ export default function EmbedCalendar({
         );
       },
       dayMaxEvents: height ? 2 : 3,
-      // FullCalendar types omit boolean; runtime treats any truthy value (except view names) as "no default popover".
-      moreLinkClick: handleMoreLinkClick as unknown as MoreLinkHandler,
+      moreLinkClick: moreDialog.moreLinkClickForFullCalendar,
       moreLinkContent: (arg: MoreLinkContentArg) => `+${arg.num} more`,
       slotMinTime: timeRange.minTime,
       slotMaxTime: timeRange.maxTime,
@@ -292,7 +271,7 @@ export default function EmbedCalendar({
       timeRange.minTime,
       timeRange.maxTime,
       height,
-      handleMoreLinkClick
+      moreDialog.moreLinkClickForFullCalendar
     ]
   );
 
@@ -398,64 +377,13 @@ export default function EmbedCalendar({
       `}</style>
       <FullCalendar ref={calendarRef} {...calendarOptions} />
 
-      <Dialog open={moreDialogOpen} onOpenChange={setMoreDialogOpen}>
-        <DialogContent
-          className="flex max-h-[85vh] max-w-[calc(100%-1.5rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-lg"
-          showCloseButton
-        >
-          <DialogHeader className="shrink-0 border-b px-6 py-4 text-left">
-            <DialogTitle className="pr-8">{moreDialogTitle}</DialogTitle>
-            <p className="text-muted-foreground text-sm font-normal">
-              {moreDialogSegments.length}{" "}
-              {moreDialogSegments.length === 1 ? "match" : "matches"}
-            </p>
-          </DialogHeader>
-          <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3 sm:px-6">
-            <ul className="flex flex-col gap-2">
-              {moreDialogSegments.map((seg) => {
-                const ev = seg.event;
-                const startTime = formatInTimezone(ev.startStr, "p");
-                const hasStream = Boolean(ev.extendedProps?.hasStream);
-                const bg = ev.backgroundColor ?? "#6b7280";
-                return (
-                  <li key={ev.id}>
-                    <button
-                      type="button"
-                      className="focus-visible:ring-ring w-full rounded-md px-3 py-2.5 text-left text-xs text-white shadow-sm transition-opacity hover:opacity-95 focus-visible:ring-2 focus-visible:outline-none"
-                      style={{
-                        backgroundColor: bg,
-                        border: hasStream
-                          ? "2px solid #f59e0b"
-                          : "1px solid rgba(255, 255, 255, 0.25)"
-                      }}
-                      onClick={() => {
-                        openMatchFromEvent(ev);
-                        setMoreDialogOpen(false);
-                      }}
-                    >
-                      <div className="font-semibold leading-tight">
-                        {ev.title}
-                      </div>
-                      <div className="mt-1 flex items-center gap-1">
-                        <Clock className="h-2.5 w-2.5 shrink-0 opacity-90" />
-                        <span>{startTime}</span>
-                        {hasStream ? (
-                          <span className="text-amber-300">● Live</span>
-                        ) : null}
-                      </div>
-                      {ev.extendedProps?.league ? (
-                        <div className="mt-0.5 opacity-90">
-                          {String(ev.extendedProps.league)}
-                        </div>
-                      ) : null}
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <CalendarMoreEventsDialog
+        open={moreDialog.open}
+        onOpenChange={moreDialog.onOpenChange}
+        title={moreDialog.title}
+        segments={moreDialog.segments}
+        onEventSelect={openMatchFromEvent}
+      />
     </div>
   );
 }

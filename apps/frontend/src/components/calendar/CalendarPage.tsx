@@ -1,16 +1,16 @@
 "use client";
 
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import type {
+  EventApi,
   EventClickArg,
   EventContentArg,
-  MoreLinkContentArg,
-  MoreLinkMountArg
+  MoreLinkContentArg
 } from "@fullcalendar/core";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -49,6 +49,10 @@ import {
   findMinMaxTimes
 } from "@/lib/calendar-utils";
 import { StreamReservation } from "./StreamReservation";
+import {
+  CalendarMoreEventsDialog,
+  useCalendarMoreLinkDialog
+} from "./CalendarMoreEventsDialog";
 import Link from "next/link";
 import { createNextUrl } from "@/lib/utils";
 
@@ -62,6 +66,44 @@ interface EventDetails {
   team1: string;
   team2: string;
   status: string;
+}
+
+function createEventDetails(
+  id: string,
+  title: string,
+  start: string,
+  end: string,
+  league: string,
+  streamUrl?: string[],
+  team1?: string,
+  team2?: string,
+  status?: string
+): EventDetails {
+  return {
+    id,
+    title,
+    start,
+    end,
+    league,
+    streamUrl,
+    team1: team1 || "",
+    team2: team2 || "",
+    status: status || ""
+  };
+}
+
+function eventDetailsFromApi(event: EventApi): EventDetails {
+  return createEventDetails(
+    event.id,
+    event.title,
+    event.startStr,
+    event.endStr,
+    event.extendedProps?.league || "",
+    event.extendedProps?.streamUrl,
+    event.extendedProps?.team1,
+    event.extendedProps?.team2,
+    event.extendedProps?.status || ""
+  );
 }
 
 const RenderStreamLinks = ({ streamUrl }: { streamUrl?: string[] }) => {
@@ -186,6 +228,7 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
   );
 
   const calendarRef = useRef<FullCalendar>(null);
+  const moreDialog = useCalendarMoreLinkDialog();
   const { seasonLeagues } = useSeasonLeagues(seasonId);
 
   const {
@@ -202,32 +245,10 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
     return isUpcoming ? "View Upcoming Match" : "View Match Details";
   };
 
-  const createEventDetails = (
-    id: string,
-    title: string,
-    start: string,
-    end: string,
-    league: string,
-    streamUrl?: string[],
-    team1?: string,
-    team2?: string,
-    status?: string
-  ): EventDetails => ({
-    id,
-    title,
-    start,
-    end,
-    league,
-    streamUrl,
-    team1: team1 || "",
-    team2: team2 || "",
-    status: status || ""
-  });
-
-  const handleEventSelect = (eventDetails: EventDetails) => {
+  const handleEventSelect = useCallback((eventDetails: EventDetails) => {
     setSelectedEvent(eventDetails);
     setIsDialogOpen(true);
-  };
+  }, []);
 
   // Update URL parameters without page reload
   const updateUrlParams = (
@@ -265,27 +286,7 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
       },
       events: calendarMatches ? transformMatchesToEvents(calendarMatches) : [],
       eventClick: (info: EventClickArg) => {
-        // Close any open popover when an event is clicked
-        const popover = document.querySelector(".fc-more-popover");
-        if (popover) {
-          // Remove the popover from DOM
-          popover.remove();
-        }
-
-        const event = info.event;
-        handleEventSelect(
-          createEventDetails(
-            event.id,
-            event.title,
-            event.startStr,
-            event.endStr,
-            event.extendedProps?.league || "",
-            event.extendedProps?.streamUrl,
-            event.extendedProps?.team1,
-            event.extendedProps?.team2,
-            event.extendedProps?.status || ""
-          )
-        );
+        handleEventSelect(eventDetailsFromApi(info.event));
       },
       eventContent: (arg: EventContentArg) => {
         const startTime = formatInTimezone(arg.event.startStr, "p");
@@ -307,120 +308,9 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
         );
       },
       dayMaxEvents: 2, // Reduced from 3 for mobile
-      moreLinkClick: "popover", // Show remaining events in a popover
+      moreLinkClick: moreDialog.moreLinkClickForFullCalendar,
       moreLinkContent: (arg: MoreLinkContentArg) => {
         return `+${arg.num} more`;
-      },
-      moreLinkDidMount: (_info: MoreLinkMountArg) => {
-        // This callback runs when the "more" link is mounted
-        // We can use it to fix popover colors if needed
-      },
-      // Custom popover content to ensure proper event sorting
-      popoverContent: (arg: {
-        events: Array<{
-          id: string;
-          title: string;
-          start: Date;
-          startStr: string;
-          endStr: string;
-          backgroundColor?: string;
-          borderColor?: string;
-          extendedProps?: {
-            league?: string;
-            streamUrl?: string[];
-            team1?: string;
-            team2?: string;
-            tier?: number;
-            status?: string;
-          };
-        }>;
-      }) => {
-        // Sort events by our custom order before displaying
-        const sortedEvents = arg.events.sort((a, b) => {
-          // First sort by start time
-          const timeA = new Date(a.start);
-          const timeB = new Date(b.start);
-          const timeComparison = timeA.getTime() - timeB.getTime();
-
-          // If times are the same, prioritize streamed matches
-          if (timeComparison === 0) {
-            const hasStreamA =
-              a.extendedProps?.streamUrl &&
-              a.extendedProps.streamUrl.length > 0;
-            const hasStreamB =
-              b.extendedProps?.streamUrl &&
-              b.extendedProps.streamUrl.length > 0;
-
-            if (hasStreamA !== hasStreamB) {
-              return hasStreamA ? -1 : 1; // Streamed matches first
-            }
-
-            // If both have same stream status, sort by league tier
-            const tierA = a.extendedProps?.tier || 999;
-            const tierB = b.extendedProps?.tier || 999;
-            return tierA - tierB;
-          }
-
-          return timeComparison;
-        });
-
-        // Create custom popover content with sorted events
-        const popoverContent = document.createElement("div");
-        popoverContent.className = "fc-more-popover-content p-2";
-
-        sortedEvents.forEach((event) => {
-          const eventEl = document.createElement("div");
-          const hasStream =
-            event.extendedProps?.streamUrl &&
-            event.extendedProps.streamUrl.length > 0;
-          eventEl.className = `fc-event fc-event-main mb-2 p-2 rounded cursor-pointer ${hasStream ? "stream-match-popover" : ""}`;
-          eventEl.style.backgroundColor = event.backgroundColor || "#6b7280";
-          eventEl.style.borderColor = event.borderColor || "#4b5563";
-          eventEl.style.color = "#ffffff";
-
-          const title = document.createElement("div");
-          title.className = "font-semibold text-sm mb-1";
-          title.textContent = event.title;
-
-          const time = document.createElement("div");
-          time.className = "text-xs opacity-90";
-          const startTime = formatInTimezone(event.start.toISOString(), "p");
-          time.textContent = `${startTime} - ${event.extendedProps?.league || ""}`;
-
-          eventEl.appendChild(title);
-          eventEl.appendChild(time);
-
-          // Add click handler to open event details
-          eventEl.addEventListener("click", () => {
-            handleEventSelect(
-              createEventDetails(
-                event.id,
-                event.title,
-                event.startStr,
-                event.endStr,
-                event.extendedProps?.league || "",
-                event.extendedProps?.streamUrl,
-                event.extendedProps?.team1,
-                event.extendedProps?.team2,
-                event.extendedProps?.status || ""
-              )
-            );
-
-            // Close the popover
-            const popover = document.querySelector(".fc-more-popover");
-            if (popover) {
-              popover.remove();
-            }
-          });
-
-          popoverContent.appendChild(eventEl);
-        });
-
-        return popoverContent;
-      },
-      didMount: () => {
-        // Calendar is now mounted with custom popover content
-        // No additional event listeners needed
       },
       slotMinTime: timeRange.minTime,
       slotMaxTime: timeRange.maxTime,
@@ -455,11 +345,16 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
       eventLongPressDelay: 500, // Delay for event long press
       selectLongPressDelay: 500, // Delay for selection long press
       // Mobile event display
-      dayMaxEventRows: 2, // Limit event rows on mobile
-      // Mobile popover positioning
-      popoverParent: typeof window !== "undefined" ? document.body : undefined // Ensure popover is positioned relative to body
+      dayMaxEventRows: 2 // Limit event rows on mobile
     }),
-    [view, calendarMatches, timeRange.minTime, timeRange.maxTime]
+    [
+      view,
+      calendarMatches,
+      timeRange.minTime,
+      timeRange.maxTime,
+      moreDialog.moreLinkClickForFullCalendar,
+      handleEventSelect
+    ]
   );
 
   const handleViewChange = (newView: "dayGridMonth" | "timeGridWeek") => {
@@ -684,6 +579,14 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <CalendarMoreEventsDialog
+        open={moreDialog.open}
+        onOpenChange={moreDialog.onOpenChange}
+        title={moreDialog.title}
+        segments={moreDialog.segments}
+        onEventSelect={(ev) => handleEventSelect(eventDetailsFromApi(ev))}
+      />
 
       {/* Event Details Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
