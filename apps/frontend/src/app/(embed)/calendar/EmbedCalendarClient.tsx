@@ -33,7 +33,7 @@ export default function EmbedCalendarClient() {
   const theme = (searchParams.get("theme") as "dark" | "light") || "light";
 
   return (
-    <div style={{ height, width, overflow: "hidden" }}>
+    <div style={{ height, width, overflow: "visible" }}>
       <EmbedCalendar
         organizerId={organizerId}
         appId={appId}
