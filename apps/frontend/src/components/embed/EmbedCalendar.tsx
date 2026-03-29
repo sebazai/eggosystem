@@ -144,15 +144,26 @@ function parseCssPixelLength(value: string): number {
 }
 
 /**
- * FullCalendar positions the "more" popover with a top minimum against the viewport
- * but does not shift it upward when the popover is taller than the space below the anchor,
- * so in a short iframe the popover can be clipped. This adjusts position and max-height
- * so the popover stays inside the iframe document viewport.
+ * FullCalendar positions the "more" popover without ensuring it fits the calendar box.
+ * Clamp to `boundsElement`'s client rect so the popover stays inside the embed calendar
+ * (not only the window — the calendar can be smaller than the viewport on themed pages).
  */
-function clampFullCalendarMorePopover(popover: HTMLElement): void {
-  const viewH = window.innerHeight;
-  const viewW = window.innerWidth;
-  const maxTotalH = viewH - 2 * POPOVER_VIEWPORT_PADDING_PX;
+function clampFullCalendarMorePopover(
+  popover: HTMLElement,
+  boundsElement: HTMLElement
+): void {
+  const bounds = boundsElement.getBoundingClientRect();
+  const pad = POPOVER_VIEWPORT_PADDING_PX;
+  const maxRight = bounds.right - pad;
+  const minLeft = bounds.left + pad;
+  const maxBottom = bounds.bottom - pad;
+  const minTop = bounds.top + pad;
+
+  const maxPopoverWidth = Math.max(0, bounds.width - 2 * pad);
+  if (maxPopoverWidth > 0) {
+    popover.style.boxSizing = "border-box";
+    popover.style.maxWidth = `${maxPopoverWidth}px`;
+  }
 
   const computed = window.getComputedStyle(popover);
   let topPx = parseCssPixelLength(
@@ -162,15 +173,15 @@ function clampFullCalendarMorePopover(popover: HTMLElement): void {
     popover.style.left !== "" ? popover.style.left : computed.left
   );
 
-  const shiftUp = (): void => {
+  const nudgeVertical = (): void => {
     const rect = popover.getBoundingClientRect();
     let deltaY = 0;
-    if (rect.bottom > viewH - POPOVER_VIEWPORT_PADDING_PX) {
-      deltaY = rect.bottom - (viewH - POPOVER_VIEWPORT_PADDING_PX);
+    if (rect.bottom > maxBottom) {
+      deltaY = rect.bottom - maxBottom;
     }
-    const topAfterShift = rect.top - deltaY;
-    if (topAfterShift < POPOVER_VIEWPORT_PADDING_PX) {
-      deltaY -= POPOVER_VIEWPORT_PADDING_PX - topAfterShift;
+    const topAfter = rect.top - deltaY;
+    if (topAfter < minTop) {
+      deltaY = rect.top - minTop;
     }
     if (deltaY !== 0) {
       topPx -= deltaY;
@@ -178,12 +189,30 @@ function clampFullCalendarMorePopover(popover: HTMLElement): void {
     }
   };
 
-  shiftUp();
+  const nudgeHorizontal = (): void => {
+    const rect = popover.getBoundingClientRect();
+    let deltaX = 0;
+    if (rect.right > maxRight) {
+      deltaX = rect.right - maxRight;
+    }
+    const leftAfter = rect.left - deltaX;
+    if (leftAfter < minLeft) {
+      deltaX = rect.left - minLeft;
+    }
+    if (deltaX !== 0) {
+      leftPx -= deltaX;
+      popover.style.left = `${leftPx}px`;
+    }
+  };
 
-  let rect = popover.getBoundingClientRect();
-  if (rect.height > maxTotalH) {
+  nudgeVertical();
+  nudgeHorizontal();
+  nudgeVertical();
+
+  const rect = popover.getBoundingClientRect();
+  const maxTotalH = Math.max(0, maxBottom - rect.top);
+  if (maxTotalH > 0 && rect.height > maxTotalH) {
     popover.style.maxHeight = `${maxTotalH}px`;
-    popover.style.boxSizing = "border-box";
     popover.style.display = "flex";
     popover.style.flexDirection = "column";
     const body = popover.querySelector(".fc-popover-body");
@@ -194,18 +223,8 @@ function clampFullCalendarMorePopover(popover: HTMLElement): void {
     }
   }
 
-  rect = popover.getBoundingClientRect();
-  if (rect.right > viewW - POPOVER_VIEWPORT_PADDING_PX) {
-    const deltaX = rect.right - (viewW - POPOVER_VIEWPORT_PADDING_PX);
-    leftPx -= deltaX;
-    popover.style.left = `${leftPx}px`;
-  }
-  rect = popover.getBoundingClientRect();
-  if (rect.left < POPOVER_VIEWPORT_PADDING_PX) {
-    const deltaX = rect.left - POPOVER_VIEWPORT_PADDING_PX;
-    leftPx -= deltaX;
-    popover.style.left = `${leftPx}px`;
-  }
+  nudgeHorizontal();
+  nudgeVertical();
 }
 
 interface EmbedCalendarProps {
@@ -332,15 +351,17 @@ export default function EmbedCalendar({
     document.documentElement.classList.add(theme);
   }, [theme]);
 
-  // Keep FullCalendar "more" popover inside the iframe viewport (see clampFullCalendarMorePopover)
+  // Keep FullCalendar "more" popover inside the calendar container (see clampFullCalendarMorePopover)
   useEffect(() => {
+    if (isLoading || !organizerId || !appId) return;
+
     const root = embedContainerRef.current;
     if (!root) return;
 
     const scheduleClamp = (popover: HTMLElement) => {
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
-          clampFullCalendarMorePopover(popover);
+          clampFullCalendarMorePopover(popover, root);
         });
       });
     };
@@ -361,10 +382,9 @@ export default function EmbedCalendar({
 
     observer.observe(root, { childList: true, subtree: true });
 
-    const onResize = () => {
-      const popover = root.querySelector(".fc-more-popover");
-      if (!(popover instanceof HTMLElement)) return;
+    const resetPopoverLayoutStyles = (popover: HTMLElement) => {
       popover.style.maxHeight = "";
+      popover.style.maxWidth = "";
       popover.style.boxSizing = "";
       popover.style.display = "";
       popover.style.flexDirection = "";
@@ -374,8 +394,14 @@ export default function EmbedCalendar({
         body.style.minHeight = "";
         body.style.flex = "";
       }
+    };
+
+    const onResize = () => {
+      const popover = root.querySelector(".fc-more-popover");
+      if (!(popover instanceof HTMLElement)) return;
+      resetPopoverLayoutStyles(popover);
       requestAnimationFrame(() => {
-        clampFullCalendarMorePopover(popover);
+        clampFullCalendarMorePopover(popover, root);
       });
     };
 
@@ -385,7 +411,7 @@ export default function EmbedCalendar({
       observer.disconnect();
       window.removeEventListener("resize", onResize);
     };
-  }, []);
+  }, [isLoading, organizerId, appId]);
 
   if (isLoading) {
     return (
@@ -462,6 +488,15 @@ export default function EmbedCalendar({
         .embed-calendar-container .stream-match {
           border-width: 2px !important;
           box-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
+        }
+        /* Override globals.css min-width:600px so popover can shrink inside narrow embeds */
+        .embed-calendar-container .fc-theme-standard .fc-popover,
+        .embed-calendar-container .fc-popover.fc-more-popover {
+          min-width: 0 !important;
+          box-sizing: border-box;
+        }
+        .embed-calendar-container .fc-popover-body {
+          grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
         }
         .embed-calendar-container.dark {
           --background: #09090b;
