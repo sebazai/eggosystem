@@ -3,7 +3,7 @@
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "./src",
-    "moduleResolution": "node", // Ensure module resolution works as expected
+    "moduleResolution": "bundler",
     "module": "ESNext",
     "target": "ESNext",
     "esModuleInterop": true,

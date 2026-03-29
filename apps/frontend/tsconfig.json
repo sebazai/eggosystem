@@ -6,7 +6,8 @@
       "react": ["./node_modules/@types/react"],
       "@eggosystem/types": ["../../packages/types/dist/index"],
       "@eggosystem/viewer": ["../../packages/viewer/src/index"]
-    }
+    },
+    "types": ["jest", "@testing-library/jest-dom"]
   },
   "include": [
     "next-env.d.ts",
@@ -16,6 +17,5 @@
     "eslint.config.mjs",
     "types/**.d.ts"
   ],
-  "types": ["jest", "@testing-library/jest-dom"],
   "exclude": ["node_modules", ".next"]
 }

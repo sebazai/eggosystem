@@ -151,6 +151,12 @@ export async function seed(knex: Knex): Promise<void> {
   ];
 
   for (const user of users) {
+    if (user.id === undefined) {
+      throw new Error(
+        "E2E seed: missing account_id for a test player; check e2eSteamPlayerData / getE2ESteamPlayerBySteamId"
+      );
+    }
+
     // First, ensure the account exists by inserting it
     await knex.raw(
       `
