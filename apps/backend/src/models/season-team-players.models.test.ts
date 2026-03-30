@@ -1,7 +1,9 @@
 import {
   validatePlayersInTeams,
   getSeasonTeamPlayersBySteamIds,
-  discardSeasonTeamPlayer
+  discardSeasonTeamPlayer,
+  getDiscardedSeasonTeamPlayerIdForReactivation,
+  reactivateSeasonTeamPlayerAsPrimary
 } from "./season-team-players.models";
 import { getSeasonLeagueTeamByExternalId } from "./season-league-team.models";
 import { getHubMatchesByExternalMatchRoomId } from "./match.models";
@@ -935,6 +937,74 @@ describe("season-team-players.models", () => {
     });
   });
 
+  describe("getDiscardedSeasonTeamPlayerIdForReactivation", () => {
+    it("should return id when a discarded row exists", async () => {
+      const mockRunQuery = jest.requireMock("../db/mysqlRunQuery").runQuery;
+      mockRunQuery.mockResolvedValueOnce([{ id: 42 }]);
+
+      const id = await getDiscardedSeasonTeamPlayerIdForReactivation(
+        1,
+        101,
+        "steam123"
+      );
+
+      expect(id).toBe(42);
+      expect(mockRunQuery).toHaveBeenCalledWith(
+        expect.stringContaining("discarded_at IS NOT NULL"),
+        [1, 101, "steam123"],
+        undefined
+      );
+    });
+
+    it("should return undefined when no discarded row exists", async () => {
+      const mockRunQuery = jest.requireMock("../db/mysqlRunQuery").runQuery;
+      mockRunQuery.mockResolvedValueOnce([]);
+
+      const id = await getDiscardedSeasonTeamPlayerIdForReactivation(
+        1,
+        101,
+        "steam123"
+      );
+
+      expect(id).toBeUndefined();
+    });
+  });
+
+  describe("reactivateSeasonTeamPlayerAsPrimary", () => {
+    it("should clear discard fields and set primary role", async () => {
+      const mockRunQuery = jest.requireMock("../db/mysqlRunQuery").runQuery;
+      mockRunQuery.mockResolvedValueOnce({ affectedRows: 1 });
+      const mockConnection = {} as unknown as PoolConnection;
+
+      await reactivateSeasonTeamPlayerAsPrimary(
+        77,
+        { ticketNumber: null },
+        mockConnection
+      );
+
+      expect(mockRunQuery).toHaveBeenCalledWith(
+        expect.stringMatching(/discarded_at = NULL[\s\S]*role = 'primary'/),
+        [null, 77],
+        mockConnection
+      );
+    });
+
+    it("should set ticket_number when provided", async () => {
+      const mockRunQuery = jest.requireMock("../db/mysqlRunQuery").runQuery;
+      mockRunQuery.mockResolvedValueOnce({ affectedRows: 1 });
+
+      await reactivateSeasonTeamPlayerAsPrimary(77, {
+        ticketNumber: "HD-100"
+      });
+
+      expect(mockRunQuery).toHaveBeenCalledWith(
+        expect.any(String),
+        ["HD-100", 77],
+        undefined
+      );
+    });
+  });
+
   describe("discardSeasonTeamPlayer", () => {
     beforeEach(() => {
       jest.clearAllMocks();
@@ -982,6 +1052,41 @@ describe("season-team-players.models", () => {
         2,
         "UPDATE SeasonTeamPlayers SET discarded_at = NOW(), discarded_by = ? WHERE season_id = ? AND team_id = ? AND steam_id = ?",
         [accountId, seasonId, teamId, steamId],
+        mockConnection
+      );
+    });
+
+    it("should set ticket_number when discarding with a ticket", async () => {
+      const seasonId = 1;
+      const teamId = 101;
+      const steamId = "steam123";
+      const accountId = 42;
+      const mockConnection = {} as unknown as PoolConnection;
+
+      const mockRunQuery = jest.requireMock("../db/mysqlRunQuery").runQuery;
+      mockRunQuery
+        .mockResolvedValueOnce([
+          createMockSeasonTeamPlayer({
+            season_id: seasonId,
+            team_id: teamId,
+            steam_id: steamId
+          })
+        ])
+        .mockResolvedValueOnce({ affectedRows: 1 });
+
+      await discardSeasonTeamPlayer(
+        seasonId,
+        teamId,
+        steamId,
+        accountId,
+        mockConnection,
+        "HD-12345"
+      );
+
+      expect(mockRunQuery).toHaveBeenNthCalledWith(
+        2,
+        "UPDATE SeasonTeamPlayers SET discarded_at = NOW(), discarded_by = ?, ticket_number = ? WHERE season_id = ? AND team_id = ? AND steam_id = ?",
+        [accountId, "HD-12345", seasonId, teamId, steamId],
         mockConnection
       );
     });

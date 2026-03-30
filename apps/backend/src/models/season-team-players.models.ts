@@ -51,6 +51,53 @@ export const insertSeasonTeamPlayer = async (
   );
 };
 
+/**
+ * When re-adding a primary player after discard, prefer the primary roster row (match_id IS NULL),
+ * otherwise the oldest discarded row (e.g. substitute history).
+ */
+export const getDiscardedSeasonTeamPlayerIdForReactivation = async (
+  seasonId: number,
+  teamId: number,
+  steamId: string,
+  connection?: PoolConnection
+): Promise<number | undefined> => {
+  const [row] = await runQuery<Array<{ id: number }>>(
+    `SELECT id FROM SeasonTeamPlayers
+     WHERE season_id = ? AND team_id = ? AND steam_id = ? AND discarded_at IS NOT NULL
+     ORDER BY (match_id IS NULL) DESC, id ASC
+     LIMIT 1`,
+    [seasonId, teamId, steamId],
+    connection
+  );
+  return row?.id;
+};
+
+/**
+ * Clears soft-delete and normalizes row to a primary roster slot (add-player flow).
+ */
+export const reactivateSeasonTeamPlayerAsPrimary = async (
+  id: number,
+  options: { ticketNumber: string | null | undefined },
+  connection?: PoolConnection
+) => {
+  const ticket =
+    options.ticketNumber !== undefined && options.ticketNumber !== null
+      ? options.ticketNumber.trim() || null
+      : null;
+  await runQuery(
+    `UPDATE SeasonTeamPlayers SET
+       discarded_at = NULL,
+       discarded_by = NULL,
+       role = 'primary',
+       match_id = NULL,
+       replaces_steam_id = NULL,
+       ticket_number = ?
+     WHERE id = ?`,
+    [ticket, id],
+    connection
+  );
+};
+
 export const isPlayerApprovedForSeasonManually = async (
   season_id: number,
   steam_id: string,
@@ -96,7 +143,8 @@ export const discardSeasonTeamPlayer = async (
   teamId: number,
   steamId: string,
   discardedByAccountId: number,
-  connection?: PoolConnection
+  connection?: PoolConnection,
+  ticketNumber?: string | null
 ) => {
   // First verify the player exists and is not already discarded
   const [existingPlayer] = await runQuery<Array<SeasonTeamPlayer>>(
@@ -124,12 +172,20 @@ export const discardSeasonTeamPlayer = async (
     );
   }
 
-  // Update the player to mark as discarded
-  await runQuery(
-    `UPDATE SeasonTeamPlayers SET discarded_at = NOW(), discarded_by = ? WHERE season_id = ? AND team_id = ? AND steam_id = ?`,
-    [discardedByAccountId, seasonId, teamId, steamId],
-    connection
-  );
+  const trimmedTicket = ticketNumber?.trim();
+  if (trimmedTicket) {
+    await runQuery(
+      `UPDATE SeasonTeamPlayers SET discarded_at = NOW(), discarded_by = ?, ticket_number = ? WHERE season_id = ? AND team_id = ? AND steam_id = ?`,
+      [discardedByAccountId, trimmedTicket, seasonId, teamId, steamId],
+      connection
+    );
+  } else {
+    await runQuery(
+      `UPDATE SeasonTeamPlayers SET discarded_at = NOW(), discarded_by = ? WHERE season_id = ? AND team_id = ? AND steam_id = ?`,
+      [discardedByAccountId, seasonId, teamId, steamId],
+      connection
+    );
+  }
 };
 
 export const validatePlayersInTeams = async (
