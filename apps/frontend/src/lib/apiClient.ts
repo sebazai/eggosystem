@@ -181,6 +181,23 @@ export function extractErrorMessage(
   return fallbackMessage;
 }
 
+/** True when errData is worth logging (skip empty `{}`, null, empty string, etc.). */
+function hasLoggableErrorPayload(errData: unknown): boolean {
+  if (errData === null || errData === undefined) {
+    return false;
+  }
+  if (typeof errData === "string") {
+    return errData.length > 0;
+  }
+  if (Array.isArray(errData)) {
+    return errData.length > 0;
+  }
+  if (typeof errData === "object") {
+    return Object.keys(errData).length > 0;
+  }
+  return true;
+}
+
 export class ApiError extends Error {
   status: number;
   type?: string;
@@ -281,7 +298,9 @@ export async function clientApiFetch<T>(
 
     if (!response.ok) {
       const errData = await response.json().catch(() => ({}));
-      console.error("API Client Error", errData);
+      if (hasLoggableErrorPayload(errData)) {
+        console.error("API Client Error", errData);
+      }
 
       if (isRFC7807Error(errData)) {
         throw ApiError.fromRFC7807(errData);
