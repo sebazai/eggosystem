@@ -167,7 +167,9 @@ export const useCalendarMoreLinkDialog =
 
     const moreLinkClick = useCallback((info: MoreLinkArg) => {
       setTitle(format(info.date, "PPPP"));
-      setSegments(sortMoreLinkHiddenSegments(info.hiddenSegs));
+      // Show *all* segments for the day/week cell, not only the overflowed ones.
+      // FullCalendar provides both `allSegs` and `hiddenSegs` in the callback.
+      setSegments(sortMoreLinkHiddenSegments(info.allSegs));
       setOpen(true);
       return true;
     }, []);
