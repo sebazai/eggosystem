@@ -7,13 +7,19 @@ export const useDiscardPlayer = () => {
   const discardPlayer = async (
     seasonId: string,
     teamId: string,
-    steamId: string
+    steamId: string,
+    ticketNumber?: string
   ) => {
     const url = `/api/v1/dashboard/players/${steamId}/team/${teamId}/season/${seasonId}/discard`;
 
-    // Make the POST request
+    const body: { ticket_number?: string } = {};
+    if (ticketNumber !== undefined && ticketNumber.trim() !== "") {
+      body.ticket_number = ticketNumber.trim();
+    }
+
     const result = await clientApiFetch(url, {
-      method: "POST"
+      method: "POST",
+      body: JSON.stringify(body)
     });
 
     // Invalidate related cache keys after successful discard

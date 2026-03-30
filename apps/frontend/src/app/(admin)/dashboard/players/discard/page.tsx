@@ -4,6 +4,7 @@ import { useState } from "react";
 import * as React from "react";
 import { WithRoleProtection } from "@/components/dashboard/WithRoleProtection";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -35,6 +36,7 @@ export default function DiscardPlayerPage() {
   const [selectedTeamId, setSelectedTeamId] = useState<string>("");
   const [selectedPlayerSteamId, setSelectedPlayerSteamId] =
     useState<string>("");
+  const [ticketNumber, setTicketNumber] = useState<string>("");
   const [isDiscarding, setIsDiscarding] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
@@ -62,6 +64,7 @@ export default function DiscardPlayerPage() {
   const handleSeasonChange = () => {
     setSelectedTeamId("");
     setSelectedPlayerSteamId("");
+    setTicketNumber("");
     setSuccess(null);
     setApiError(null);
   };
@@ -74,6 +77,7 @@ export default function DiscardPlayerPage() {
   const handleTeamChange = (value: string) => {
     setSelectedTeamId(value);
     setSelectedPlayerSteamId("");
+    setTicketNumber("");
     setSuccess(null);
     setApiError(null);
   };
@@ -107,13 +111,15 @@ export default function DiscardPlayerPage() {
       await discardPlayer(
         selectedSeasonId,
         selectedTeamId,
-        selectedPlayerSteamId
+        selectedPlayerSteamId,
+        ticketNumber
       );
       setSuccess("Player successfully discarded from the team");
       toast.success("Player discarded successfully");
 
       // Clear selection and refresh roster
       setSelectedPlayerSteamId("");
+      setTicketNumber("");
       await mutateLiveRoster();
     } catch (error) {
       if (error instanceof ApiError) {
@@ -234,6 +240,26 @@ export default function DiscardPlayerPage() {
             )}
 
             {/* Selected Player Info */}
+            {selectedPlayerSteamId && (
+              <div className="space-y-2">
+                <Label htmlFor="discard-ticket-number">
+                  Helpdesk ticket number (optional)
+                </Label>
+                <Input
+                  id="discard-ticket-number"
+                  value={ticketNumber}
+                  onChange={(e) => setTicketNumber(e.target.value)}
+                  placeholder="e.g. ticket ID from your helpdesk"
+                  autoComplete="off"
+                  data-testid="discard-ticket-number"
+                />
+                <p className="text-sm text-muted-foreground">
+                  If provided, stored on the roster row for audit when the
+                  player is discarded.
+                </p>
+              </div>
+            )}
+
             {selectedPlayer && (
               <Card>
                 <CardHeader>

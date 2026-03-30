@@ -14,8 +14,11 @@ import { insertPlayerRankForSeason } from "../../models/season-player-ranks.mode
 import { getFaceITCS2Rank } from "../../services/faceit.services";
 import { setPlayerKanaElo } from "../../models/player.models";
 import {
+  discardSeasonTeamPlayer,
+  getDiscardedSeasonTeamPlayerIdForReactivation,
   insertSeasonTeamPlayer,
-  discardSeasonTeamPlayer
+  playerExistsInSeasonTeam,
+  reactivateSeasonTeamPlayerAsPrimary
 } from "../../models/season-team-players.models";
 import { insertSeasonTeamRegistrationPlayer } from "../../models/season-team-registration-player.models";
 import {
@@ -51,7 +54,19 @@ export const addPlayerToTeamController = async (
   const seasonId = Number(req.params.season_id);
   const teamId = Number(req.params.team_id);
   const steamId = req.params.steam_id;
-  const { kana_elo, calculus } = req.body;
+  const {
+    kana_elo,
+    calculus,
+    ticket_number: ticketNumberBody
+  } = req.body as {
+    kana_elo?: unknown;
+    calculus?: unknown;
+    ticket_number?: unknown;
+  };
+  const optionalTicketNumber =
+    typeof ticketNumberBody === "string" && ticketNumberBody.trim() !== ""
+      ? ticketNumberBody.trim()
+      : undefined;
   const context =
     (req.query.context as string) === "registration"
       ? "registration"
@@ -176,6 +191,12 @@ export const addPlayerToTeamController = async (
   const connection = await getConnection();
   try {
     await connection.beginTransaction();
+    if (await playerExistsInSeasonTeam(steamId, seasonId, teamId, connection)) {
+      await connection.rollback();
+      return next(
+        new BadRequestError("Player is already on this team for this season")
+      );
+    }
     await setPlayerKanaElo(
       steamId,
       eligibility.selectedTeam.new_player_kana_elo,
@@ -184,12 +205,30 @@ export const addPlayerToTeamController = async (
       offeredElo,
       connection
     );
-    await insertSeasonTeamPlayer(
+    const insertRow = {
+      steam_id: steamId,
+      ...(optionalTicketNumber !== undefined
+        ? { ticket_number: optionalTicketNumber }
+        : {})
+    } satisfies InsertSeasonTeamPlayer;
+    const discardedRowId = await getDiscardedSeasonTeamPlayerIdForReactivation(
       seasonId,
       teamId,
-      { steam_id: steamId } satisfies InsertSeasonTeamPlayer,
+      steamId,
       connection
     );
+    if (discardedRowId !== undefined) {
+      await reactivateSeasonTeamPlayerAsPrimary(
+        discardedRowId,
+        {
+          ticketNumber:
+            optionalTicketNumber !== undefined ? optionalTicketNumber : null
+        },
+        connection
+      );
+    } else {
+      await insertSeasonTeamPlayer(seasonId, teamId, insertRow, connection);
+    }
     await connection.commit();
     res.status(200).json({
       message: "Player successfully added to the team",
@@ -625,11 +664,14 @@ export const preparePlayerForSignupController = async (
  * Sets discarded_at timestamp and discarded_by account_id
  */
 export const discardPlayerController = async (
-  req: RequestWithParams<{
-    season_id: string;
-    team_id: string;
-    steam_id: string;
-  }>,
+  req: RequestWithParamsAndBody<
+    {
+      season_id: string;
+      team_id: string;
+      steam_id: string;
+    },
+    { ticket_number?: unknown }
+  >,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
@@ -641,8 +683,20 @@ export const discardPlayerController = async (
   const teamId = Number(req.params.team_id);
   const steamId = req.params.steam_id;
   const accountId = req.auth.account_id as number;
+  const rawTicket = req.body?.ticket_number;
+  const discardTicketNumber =
+    typeof rawTicket === "string" && rawTicket.trim() !== ""
+      ? rawTicket.trim()
+      : undefined;
 
-  await discardSeasonTeamPlayer(seasonId, teamId, steamId, accountId);
+  await discardSeasonTeamPlayer(
+    seasonId,
+    teamId,
+    steamId,
+    accountId,
+    undefined,
+    discardTicketNumber
+  );
 
   res.status(200).json({
     message: "Player successfully discarded from the team",

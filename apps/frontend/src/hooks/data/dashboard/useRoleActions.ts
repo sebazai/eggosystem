@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { clientApiFetch } from "@/lib/apiClient";
 import type { RoleActionResponse, RoleActionRequest } from "@eggosystem/types";
 
@@ -80,11 +80,15 @@ export function useRoleActions() {
     }
   };
 
+  const clearError = useCallback(() => {
+    setError(null);
+  }, []);
+
   return {
     addRole,
     removeRole,
     isLoading,
     error,
-    clearError: () => setError(null)
+    clearError
   };
 }

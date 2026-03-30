@@ -19,7 +19,7 @@ import {
 } from "../../models/account-roles.models";
 import { getUserInfoBySteamId } from "../../models/account.models";
 import { getDiscordInfoByAccountId } from "../../models/discord.models";
-import { playerExistsInSeasonTeam } from "../../models/season-team-players.models";
+import { getSeasonTeamPlayerCaptainFlags } from "../../models/season-team-players.models";
 import {
   BadRequestError,
   NotFoundError,
@@ -93,20 +93,38 @@ export const addRole = async (
     try {
       await connection.beginTransaction();
 
-      // VALIDATION: Player MUST exist in SeasonTeamPlayers
-      const playerExists = await playerExistsInSeasonTeam(
+      // VALIDATION: Player MUST exist in SeasonTeamPlayers (active row)
+      const captainFlags = await getSeasonTeamPlayerCaptainFlags(
         steam_id,
         season_id,
         team_id,
         connection
       );
 
-      if (!playerExists) {
+      if (!captainFlags) {
         await connection.rollback();
         return next(
           new BadRequestError(
             `Player with Steam ID ${steam_id} is not on this team for this season. ` +
               `Players must be added to the finalized team roster before assigning captain/co-captain roles.`
+          )
+        );
+      }
+
+      if (role === "captain" && captainFlags.is_co_captain) {
+        await connection.rollback();
+        return next(
+          new BadRequestError(
+            "This player is already co-captain for this team; remove co-captain before assigning captain."
+          )
+        );
+      }
+
+      if (role === "co-captain" && captainFlags.is_captain) {
+        await connection.rollback();
+        return next(
+          new BadRequestError(
+            "This player is already captain for this team; remove captain before assigning co-captain."
           )
         );
       }
@@ -428,10 +446,11 @@ export const checkExistingCaptain = async (
     const result = await runQuery<
       Array<{ steam_id: string; nickname: string }>
     >(
-      `SELECT strp.steam_id, sp.nickname 
-       FROM SeasonTeamRegistrationPlayers strp
-       JOIN SteamPlayers sp ON strp.steam_id = sp.steam_id
-       WHERE strp.season_id = ? AND strp.team_id = ? AND strp.${field} = 1`,
+      `SELECT stp.steam_id, sp.nickname 
+       FROM SeasonTeamPlayers stp
+       JOIN SteamPlayers sp ON stp.steam_id = sp.steam_id
+       WHERE stp.season_id = ? AND stp.team_id = ? AND stp.${field} = 1
+         AND stp.discarded_at IS NULL`,
       [seasonAsNum, teamAsNum]
     );
 
