@@ -36,6 +36,36 @@ export const playerExistsInSeasonTeam = async (
   return players && players.length > 0;
 };
 
+/**
+ * Captain/co-captain flags for a player on an active finalized roster row.
+ * Returns null if the player is not on the team for this season.
+ */
+export const getSeasonTeamPlayerCaptainFlags = async (
+  steamId: string,
+  seasonId: number,
+  teamId: number,
+  connection?: PoolConnection
+): Promise<{ is_captain: boolean; is_co_captain: boolean } | null> => {
+  const rows = await runQuery<
+    Array<{ is_captain: number | boolean; is_co_captain: number | boolean }>
+  >(
+    `SELECT is_captain, is_co_captain FROM SeasonTeamPlayers 
+     WHERE season_id = ? AND team_id = ? AND steam_id = ? AND discarded_at IS NULL`,
+    [seasonId, teamId, steamId],
+    connection
+  );
+
+  if (!rows || rows.length === 0) {
+    return null;
+  }
+
+  const row = rows[0];
+  return {
+    is_captain: Boolean(row.is_captain),
+    is_co_captain: Boolean(row.is_co_captain)
+  };
+};
+
 export const insertSeasonTeamPlayer = async (
   seasonId: number,
   teamId: number,

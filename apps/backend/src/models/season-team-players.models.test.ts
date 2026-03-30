@@ -3,7 +3,8 @@ import {
   getSeasonTeamPlayersBySteamIds,
   discardSeasonTeamPlayer,
   getDiscardedSeasonTeamPlayerIdForReactivation,
-  reactivateSeasonTeamPlayerAsPrimary
+  reactivateSeasonTeamPlayerAsPrimary,
+  getSeasonTeamPlayerCaptainFlags
 } from "./season-team-players.models";
 import { getSeasonLeagueTeamByExternalId } from "./season-league-team.models";
 import { getHubMatchesByExternalMatchRoomId } from "./match.models";
@@ -1179,6 +1180,37 @@ describe("season-team-players.models", () => {
       ).rejects.toThrow(
         "Please assign a new captain in role management for the team before removing the current captain"
       );
+    });
+  });
+
+  describe("getSeasonTeamPlayerCaptainFlags", () => {
+    it("returns null when no active roster row", async () => {
+      const mockRunQuery = jest.requireMock("../db/mysqlRunQuery").runQuery;
+      mockRunQuery.mockResolvedValueOnce([]);
+
+      const result = await getSeasonTeamPlayerCaptainFlags(
+        "76561198000000001",
+        1,
+        2
+      );
+
+      expect(result).toBeNull();
+    });
+
+    it("returns captain flags from SeasonTeamPlayers row", async () => {
+      const mockRunQuery = jest.requireMock("../db/mysqlRunQuery").runQuery;
+      mockRunQuery.mockResolvedValueOnce([{ is_captain: 1, is_co_captain: 0 }]);
+
+      const result = await getSeasonTeamPlayerCaptainFlags(
+        "76561198000000002",
+        3,
+        4
+      );
+
+      expect(result).toEqual({
+        is_captain: true,
+        is_co_captain: false
+      });
     });
   });
 });
