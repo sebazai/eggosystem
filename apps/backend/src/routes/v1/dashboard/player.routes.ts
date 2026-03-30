@@ -40,7 +40,7 @@ router.post(
   "/:steam_id/team/:team_id/season/:season_id/discard",
   validateNumericParams(["season_id", "team_id"]),
   checkPermissions({
-    fallbackRoles: ["admin"]
+    fallbackRoles: ["admin", "helpdesk"]
   }),
   discardPlayerController
 );
