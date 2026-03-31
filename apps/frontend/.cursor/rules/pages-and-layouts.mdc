@@ -1,0 +1,38 @@
+---
+description: Responsive pages and layouts (mobile-first) for App Router routes
+alwaysApply: false
+globs:
+  [
+    "apps/frontend/**/app/**/*.tsx",
+    "apps/frontend/**/app/**/*.ts"
+  ]
+---
+
+# Pages and Layouts — Mobile and Desktop
+
+## Mobile-first (Tailwind)
+
+- **Base styles = narrow screens.** Write unprefixed utilities for the default (phone) layout; add `sm:`, `md:`, `lg:`, `xl:` only where larger viewports need different layout, spacing, or visibility.
+- **Progressive enhancement:** e.g. `flex flex-col gap-4 md:flex-row md:gap-8`, not the reverse.
+- **Avoid desktop-only assumptions:** no fixed full widths like `w-[1200px]` on root content; prefer `w-full`, `max-w-*`, and responsive padding (`px-4 md:px-6`).
+
+## Layout stability
+
+- Use **`min-w-0`** on flex/grid children that should shrink (prevents overflow clipping weirdness with long text or tables).
+- Prefer **`gap-*`** over margin hacks for spacing between responsive blocks.
+- Wide tables or data: use **horizontal scroll** (`overflow-x-auto` on a wrapper) or the shared **table** patterns (`TanStackTableWrapper` per `tables.mdc`), not unbounded overflow on the page.
+
+## Touch and density
+
+- Keep **primary actions** reachable on small screens (avoid relying only on hover).
+- Interactive controls should remain **comfortably tappable**; prefer existing **shadcn/ui** primitives (`Button`, `Sheet`, etc.) which align with accessible sizing.
+
+## Consistency with the rest of the UI
+
+- Use **semantic tokens** (`bg-background`, `text-foreground`, etc.) and **`cn()`** from `@/lib/utils` like elsewhere in the app.
+- Reuse **layout shells** and patterns from similar routes instead of one-off full-width wrappers.
+
+## Verification
+
+- **Manually check** at least one narrow width (~375px) and one desktop width when changing route-level layout or global padding.
+- **Component tests** for critical screens: assert behavior that matters across viewports where feasible (see `components.mdc` testing section).
