@@ -576,6 +576,49 @@ describe("season-team-players.models", () => {
           })
         );
       });
+
+      it("should not flag when a player has an active primary row and a historical substitute row (same team)", async () => {
+        mockGetSeasonLeagueTeamByExternalId
+          .mockResolvedValueOnce(mockSeasonLeagueTeam1)
+          .mockResolvedValueOnce(mockSeasonLeagueTeam2);
+
+        const mockRunQuery = jest.requireMock("../db/mysqlRunQuery").runQuery;
+        mockRunQuery
+          .mockResolvedValueOnce([
+            createMockSeasonTeamPlayer({
+              season_id: 1,
+              team_id: 101,
+              steam_id: "steam123",
+              role: "substitute",
+              match_id: 9999 // Past game — not the hub match being validated
+            }),
+            createMockSeasonTeamPlayer({
+              season_id: 1,
+              team_id: 101,
+              steam_id: "steam123",
+              role: "primary",
+              match_id: null
+            }),
+            createMockSeasonTeamPlayer({
+              season_id: 1,
+              team_id: 101,
+              steam_id: "steam456",
+              match_id: null
+            })
+          ])
+          .mockResolvedValueOnce([
+            createMockSeasonTeamPlayer({
+              season_id: 1,
+              team_id: 102,
+              steam_id: "steam789",
+              match_id: null
+            })
+          ]);
+
+        await validatePlayersInTeams(seasonId, mockTeams, "match123");
+
+        expect(mockRedisClient.set).not.toHaveBeenCalled();
+      });
     });
 
     describe("role validation scenarios", () => {
