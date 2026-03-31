@@ -629,6 +629,100 @@ describe("season-team-players.models", () => {
 
         expect(mockRedisClient.set).not.toHaveBeenCalled();
       });
+
+      it("should flag when a substitute's replaces_steam_id is still on the Faceit roster", async () => {
+        mockGetSeasonLeagueTeamByExternalId
+          .mockResolvedValueOnce(mockSeasonLeagueTeam1)
+          .mockResolvedValueOnce(mockSeasonLeagueTeam2);
+
+        const mockRunQuery = jest.requireMock("../db/mysqlRunQuery").runQuery;
+        mockRunQuery
+          .mockResolvedValueOnce([
+            createMockSeasonTeamPlayer({
+              season_id: 1,
+              team_id: 101,
+              steam_id: "steam123",
+              role: "substitute",
+              match_id: 1001,
+              replaces_steam_id: "steam456"
+            }),
+            createMockSeasonTeamPlayer({
+              season_id: 1,
+              team_id: 101,
+              steam_id: "steam456",
+              role: "primary",
+              match_id: null,
+              replaces_steam_id: null
+            })
+          ])
+          .mockResolvedValueOnce([{ organizer_id: 1 }])
+          .mockResolvedValueOnce([
+            createMockSeasonTeamPlayer({
+              season_id: 1,
+              team_id: 102,
+              steam_id: "steam789",
+              match_id: null
+            })
+          ]);
+
+        await validatePlayersInTeams(seasonId, mockTeams, "match123");
+
+        expect(mockRedisClient.set).toHaveBeenCalledWith(
+          "match:invalid_players:match123",
+          JSON.stringify({
+            external_match_id: "match123",
+            steam_ids: ["steam123", "steam456"],
+            players_in_season_team_players: ["steam123", "steam456"],
+            team_id: 101,
+            team_name: "Test Team",
+            match_ids: [1001, 1002],
+            players_added_for_this_match: ["steam123"]
+          })
+        );
+      });
+
+      it("should not flag replaces_steam_id conflict when only the substitute is on the Faceit roster", async () => {
+        const teamsSubOnlyOnFaceit: FaceitMatchTeams = {
+          ...mockTeams,
+          faction1: {
+            ...mockTeams.faction1,
+            roster: [mockTeams.faction1.roster[0]!]
+          }
+        };
+
+        mockGetSeasonLeagueTeamByExternalId
+          .mockResolvedValueOnce(mockSeasonLeagueTeam1)
+          .mockResolvedValueOnce(mockSeasonLeagueTeam2);
+
+        const mockRunQuery = jest.requireMock("../db/mysqlRunQuery").runQuery;
+        mockRunQuery
+          .mockResolvedValueOnce([
+            createMockSeasonTeamPlayer({
+              season_id: 1,
+              team_id: 101,
+              steam_id: "steam123",
+              role: "substitute",
+              match_id: 1001,
+              replaces_steam_id: "steam456"
+            })
+          ])
+          .mockResolvedValueOnce([
+            createMockSeasonTeamPlayer({
+              season_id: 1,
+              team_id: 102,
+              steam_id: "steam789",
+              match_id: null
+            })
+          ]);
+
+        await validatePlayersInTeams(
+          seasonId,
+          teamsSubOnlyOnFaceit,
+          "match123"
+        );
+
+        expect(mockRedisClient.set).not.toHaveBeenCalled();
+      });
     });
 
     describe("role validation scenarios", () => {

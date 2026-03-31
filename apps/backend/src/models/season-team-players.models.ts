@@ -272,12 +272,31 @@ export const validatePlayersInTeams = async (
       ...new Set(playersInSeasonTeamPlayers.map((player) => player.steam_id))
     ];
 
+    const faceitRosterSteamIdSet = new Set(
+      playerSteamIds.map((id) => String(id))
+    );
+
+    // Substitute for this hub match: the replaced player must not appear on the Faceit roster
+    // (otherwise both sub and replaced primary are listed as playing).
+    const substituteReplacedPlayerAlsoOnFaceitRoster =
+      playersInSeasonTeamPlayers.some((p) => {
+        if (
+          p.match_id === null ||
+          !matchIdsArray.includes(p.match_id) ||
+          p.replaces_steam_id === null
+        ) {
+          return false;
+        }
+        return faceitRosterSteamIdSet.has(String(p.replaces_steam_id));
+      });
+
     if (
       uniquePlayerSteamIds.length !== playerSteamIds.length ||
       (substituteRowsWithoutPrimary.length > 0 &&
         !substituteRowsWithoutPrimary.some((stp) =>
           matchIdsArray.includes(stp.match_id)
-        ))
+        )) ||
+      substituteReplacedPlayerAlsoOnFaceitRoster
     ) {
       // Add to redis as flag that players are not in SeasonTeamPlayers
       const key = `match:invalid_players:${externalMatchId}`;
