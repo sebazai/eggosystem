@@ -1,5 +1,6 @@
 import { type Request, type Response, type NextFunction } from "express";
 import { redisClient } from "../../utils/redisClient";
+import { scanKeysMatchingPattern } from "../../utils/redisScanKeys";
 import {
   getRedisKeys,
   getRedisKeyData,
@@ -7,10 +8,13 @@ import {
   flushStandingsCaches
 } from "./redis.controllers";
 
+jest.mock("../../utils/redisScanKeys", () => ({
+  scanKeysMatchingPattern: jest.fn()
+}));
+
 // Mock Redis client
 jest.mock("../../utils/redisClient", () => ({
   redisClient: {
-    keys: jest.fn(),
     get: jest.fn(),
     del: jest.fn(),
     type: jest.fn(),
@@ -19,6 +23,7 @@ jest.mock("../../utils/redisClient", () => ({
 }));
 
 const mockRedisClient = redisClient as jest.Mocked<typeof redisClient>;
+const mockScanKeysMatchingPattern = jest.mocked(scanKeysMatchingPattern);
 
 describe("Redis Controllers", () => {
   let mockReq: Partial<Request>;
@@ -33,17 +38,21 @@ describe("Redis Controllers", () => {
     };
     mockNext = jest.fn();
     jest.clearAllMocks();
+    mockScanKeysMatchingPattern.mockReset();
   });
 
   describe("getRedisKeys", () => {
     it("should return paginated Redis keys with valid pattern", async () => {
       const mockKeys = Array.from({ length: 100 }, (_, i) => `user:${i}`);
-      mockRedisClient.keys.mockResolvedValue(mockKeys);
+      mockScanKeysMatchingPattern.mockResolvedValue(mockKeys);
       mockReq.query = { pattern: "user:*", page: "2", limit: "25" };
 
       await getRedisKeys(mockReq as Request, mockRes as Response, mockNext);
 
-      expect(mockRedisClient.keys).toHaveBeenCalledWith("user:*");
+      expect(mockScanKeysMatchingPattern).toHaveBeenCalledWith(
+        redisClient,
+        "user:*"
+      );
       expect(mockRes.json).toHaveBeenCalledWith({
         success: true,
         data: mockKeys.slice(25, 50), // Page 2 with limit 25
@@ -58,12 +67,15 @@ describe("Redis Controllers", () => {
 
     it("should return first page with default pagination", async () => {
       const mockKeys = ["user:1", "user:2", "user:3"];
-      mockRedisClient.keys.mockResolvedValue(mockKeys);
+      mockScanKeysMatchingPattern.mockResolvedValue(mockKeys);
       mockReq.query = { pattern: "user:*" };
 
       await getRedisKeys(mockReq as Request, mockRes as Response, mockNext);
 
-      expect(mockRedisClient.keys).toHaveBeenCalledWith("user:*");
+      expect(mockScanKeysMatchingPattern).toHaveBeenCalledWith(
+        redisClient,
+        "user:*"
+      );
       expect(mockRes.json).toHaveBeenCalledWith({
         success: true,
         data: mockKeys,
@@ -104,12 +116,15 @@ describe("Redis Controllers", () => {
 
     it("should handle invalid page number by using default", async () => {
       const mockKeys = ["user:1", "user:2", "user:3"];
-      mockRedisClient.keys.mockResolvedValue(mockKeys);
+      mockScanKeysMatchingPattern.mockResolvedValue(mockKeys);
       mockReq.query = { pattern: "user:*", page: "0" };
 
       await getRedisKeys(mockReq as Request, mockRes as Response, mockNext);
 
-      expect(mockRedisClient.keys).toHaveBeenCalledWith("user:*");
+      expect(mockScanKeysMatchingPattern).toHaveBeenCalledWith(
+        redisClient,
+        "user:*"
+      );
       expect(mockRes.json).toHaveBeenCalledWith({
         success: true,
         data: mockKeys,
@@ -124,12 +139,15 @@ describe("Redis Controllers", () => {
 
     it("should handle invalid limit by using default", async () => {
       const mockKeys = ["user:1", "user:2", "user:3"];
-      mockRedisClient.keys.mockResolvedValue(mockKeys);
+      mockScanKeysMatchingPattern.mockResolvedValue(mockKeys);
       mockReq.query = { pattern: "user:*", limit: "0" };
 
       await getRedisKeys(mockReq as Request, mockRes as Response, mockNext);
 
-      expect(mockRedisClient.keys).toHaveBeenCalledWith("user:*");
+      expect(mockScanKeysMatchingPattern).toHaveBeenCalledWith(
+        redisClient,
+        "user:*"
+      );
       expect(mockRes.json).toHaveBeenCalledWith({
         success: true,
         data: mockKeys,
@@ -157,7 +175,7 @@ describe("Redis Controllers", () => {
 
     it("should handle Redis errors by throwing", async () => {
       const error = new Error("Redis connection failed");
-      mockRedisClient.keys.mockRejectedValue(error);
+      mockScanKeysMatchingPattern.mockRejectedValue(error);
       mockReq.query = { pattern: "user:*" };
 
       await expect(
@@ -264,7 +282,7 @@ describe("Redis Controllers", () => {
         "faceit-match-stats-abc-123",
         "faceit-match-stats-def-456"
       ];
-      mockRedisClient.keys.mockResolvedValue(mockKeys);
+      mockScanKeysMatchingPattern.mockResolvedValue(mockKeys);
       mockRedisClient.del.mockResolvedValue(2);
 
       await flushStandingsCaches(
@@ -273,7 +291,10 @@ describe("Redis Controllers", () => {
         mockNext
       );
 
-      expect(mockRedisClient.keys).toHaveBeenCalledWith("faceit-match-stats-*");
+      expect(mockScanKeysMatchingPattern).toHaveBeenCalledWith(
+        redisClient,
+        "faceit-match-stats-*"
+      );
       expect(mockRedisClient.del).toHaveBeenCalledWith(...mockKeys);
       expect(mockRes.json).toHaveBeenCalledWith({
         success: true,
@@ -283,7 +304,7 @@ describe("Redis Controllers", () => {
     });
 
     it("should return zero when no keys found", async () => {
-      mockRedisClient.keys.mockResolvedValue([]);
+      mockScanKeysMatchingPattern.mockResolvedValue([]);
 
       await flushStandingsCaches(
         mockReq as Request,

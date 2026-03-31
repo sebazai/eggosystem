@@ -25,6 +25,9 @@ jest.mock("../db/mysqlRunQuery");
 jest.mock("../services/discord-organizer.services", () => ({
   notifyFlaggedMatchInDiscord: jest.fn().mockResolvedValue(undefined)
 }));
+jest.mock("./team.models", () => ({
+  getTeamById: jest.fn().mockResolvedValue([{ name: "Test Team" }])
+}));
 
 const mockGetSeasonLeagueTeamByExternalId =
   getSeasonLeagueTeamByExternalId as jest.MockedFunction<
@@ -296,6 +299,7 @@ describe("season-team-players.models", () => {
             steam_ids: ["steam123", "steam456"],
             players_in_season_team_players: ["steam123"],
             team_id: 101,
+            team_name: "Test Team",
             match_ids: [1001, 1002],
             players_added_for_this_match: []
           })
@@ -306,6 +310,7 @@ describe("season-team-players.models", () => {
           steam_ids: ["steam123", "steam456"],
           players_in_season_team_players: ["steam123"],
           team_id: 101,
+          team_name: "Test Team",
           match_ids: [1001, 1002],
           players_added_for_this_match: []
         });
@@ -343,6 +348,7 @@ describe("season-team-players.models", () => {
             steam_ids: ["steam123", "steam456"],
             players_in_season_team_players: [],
             team_id: 101,
+            team_name: "Test Team",
             match_ids: [1001, 1002],
             players_added_for_this_match: []
           })
@@ -357,6 +363,7 @@ describe("season-team-players.models", () => {
             steam_ids: ["steam789"],
             players_in_season_team_players: [],
             team_id: 102,
+            team_name: "Test Team",
             match_ids: [1001, 1002],
             players_added_for_this_match: []
           })
@@ -393,6 +400,7 @@ describe("season-team-players.models", () => {
             steam_ids: ["steam123", "steam456"],
             players_in_season_team_players: ["steam123"],
             team_id: 101,
+            team_name: "Test Team",
             match_ids: [1001, 1002],
             players_added_for_this_match: []
           })
@@ -526,6 +534,7 @@ describe("season-team-players.models", () => {
             steam_ids: ["steam123", "steam456"],
             players_in_season_team_players: ["steam123", "steam456"],
             team_id: 101,
+            team_name: "Test Team",
             match_ids: [1001, 1002],
             players_added_for_this_match: ["steam123"]
           })
@@ -571,10 +580,54 @@ describe("season-team-players.models", () => {
             steam_ids: ["steam123", "steam456"],
             players_in_season_team_players: ["steam123"],
             team_id: 101,
+            team_name: "Test Team",
             match_ids: [1001, 1002],
             players_added_for_this_match: ["steam123"]
           })
         );
+      });
+
+      it("should not flag when a player has an active primary row and a historical substitute row (same team)", async () => {
+        mockGetSeasonLeagueTeamByExternalId
+          .mockResolvedValueOnce(mockSeasonLeagueTeam1)
+          .mockResolvedValueOnce(mockSeasonLeagueTeam2);
+
+        const mockRunQuery = jest.requireMock("../db/mysqlRunQuery").runQuery;
+        mockRunQuery
+          .mockResolvedValueOnce([
+            createMockSeasonTeamPlayer({
+              season_id: 1,
+              team_id: 101,
+              steam_id: "steam123",
+              role: "substitute",
+              match_id: 9999 // Past game — not the hub match being validated
+            }),
+            createMockSeasonTeamPlayer({
+              season_id: 1,
+              team_id: 101,
+              steam_id: "steam123",
+              role: "primary",
+              match_id: null
+            }),
+            createMockSeasonTeamPlayer({
+              season_id: 1,
+              team_id: 101,
+              steam_id: "steam456",
+              match_id: null
+            })
+          ])
+          .mockResolvedValueOnce([
+            createMockSeasonTeamPlayer({
+              season_id: 1,
+              team_id: 102,
+              steam_id: "steam789",
+              match_id: null
+            })
+          ]);
+
+        await validatePlayersInTeams(seasonId, mockTeams, "match123");
+
+        expect(mockRedisClient.set).not.toHaveBeenCalled();
       });
     });
 

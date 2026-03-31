@@ -184,33 +184,7 @@ export default function RedisManagementPage() {
     return insertionTime.toLocaleString();
   };
 
-  // Determine loading and error states
-  const isLoading = keysLoading || keyDataLoading || isDeleting || isFlushing;
   const error = keysError || keyDataError || deleteError || flushError;
-
-  // Short-circuit returns for loading states
-  if (isLoading) {
-    return (
-      <WithRoleProtection allowedRoles={["admin", "helpdesk"]}>
-        <div className="flex flex-1 flex-col gap-4 p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold">Redis Management</h1>
-              <p className="text-muted-foreground">
-                Manage Redis keys and data
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center justify-center py-8">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
-              <p className="text-muted-foreground">Loading Redis data...</p>
-            </div>
-          </div>
-        </div>
-      </WithRoleProtection>
-    );
-  }
 
   return (
     <WithRoleProtection allowedRoles={["admin", "helpdesk"]}>
@@ -450,6 +424,11 @@ export default function RedisManagementPage() {
                       elo-adjustment:s*:l*:*
                     </p>
                   </div>
+                ) : keysLoading ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mb-4" />
+                    <p className="text-sm">Searching keys…</p>
+                  </div>
                 ) : keys.length === 0 ? (
                   <div className="text-center py-4 text-muted-foreground">
                     No keys found for pattern: {searchPattern}
@@ -482,6 +461,7 @@ export default function RedisManagementPage() {
                           <Button
                             variant="ghost"
                             size="sm"
+                            disabled={isDeleting}
                             onClick={(e) => {
                               e.stopPropagation();
                               handleDeleteKey(key);
@@ -545,7 +525,12 @@ export default function RedisManagementPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col flex-1">
-              {selectedKey ? (
+              {selectedKeyName && keyDataLoading && !selectedKey ? (
+                <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mb-4" />
+                  <p className="text-sm">Loading key…</p>
+                </div>
+              ) : selectedKey ? (
                 <div className="space-y-4 flex flex-col h-full">
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">

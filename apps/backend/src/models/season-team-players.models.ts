@@ -15,6 +15,7 @@ import { getHubMatchesByExternalMatchRoomId } from "./match.models";
 import { BadRequestError } from "../utils/errors";
 import { notifyFlaggedMatchInDiscord } from "../services/discord-organizer.services";
 import { logger } from "../utils/app-logger";
+import { getTeamById } from "./team.models";
 
 /**
  * Check if player exists in SeasonTeamPlayers
@@ -253,10 +254,18 @@ export const validatePlayersInTeams = async (
       playerSteamIds
     );
 
-    // check if any player has match_id other then null, if it does, it should be in the matchIds array
-    const playersWithMatchId = playersInSeasonTeamPlayers.filter(
+    // Substitute rows (match_id set) are only relevant for validation when the player
+    // does not also have an active primary roster row. Otherwise a past substitute
+    // record plus a current primary row would incorrectly flag the match.
+    const steamIdsWithPrimaryRosterRow = new Set(
+      playersInSeasonTeamPlayers
+        .filter((p) => p.match_id === null)
+        .map((p) => p.steam_id)
+    );
+    const substituteRowsWithoutPrimary = playersInSeasonTeamPlayers.filter(
       (player): player is SeasonTeamPlayer & { match_id: number } =>
-        player.match_id !== null
+        player.match_id !== null &&
+        !steamIdsWithPrimaryRosterRow.has(player.steam_id)
     );
 
     const uniquePlayerSteamIds = [
@@ -265,12 +274,16 @@ export const validatePlayersInTeams = async (
 
     if (
       uniquePlayerSteamIds.length !== playerSteamIds.length ||
-      (playersWithMatchId.length > 0 &&
-        !playersWithMatchId.some((stp) => matchIdsArray.includes(stp.match_id)))
+      (substituteRowsWithoutPrimary.length > 0 &&
+        !substituteRowsWithoutPrimary.some((stp) =>
+          matchIdsArray.includes(stp.match_id)
+        ))
     ) {
       // Add to redis as flag that players are not in SeasonTeamPlayers
       const key = `match:invalid_players:${externalMatchId}`;
       const alreadyFlaggedInRedis = (await redisClient.get(key)) !== null;
+
+      const [teamRow] = await getTeamById(teamFromDb.team_id);
 
       const objectToSave = {
         external_match_id: externalMatchId,
@@ -279,8 +292,9 @@ export const validatePlayersInTeams = async (
           (stp) => stp.steam_id
         ),
         team_id: teamFromDb.team_id,
+        ...(teamRow?.name ? { team_name: teamRow.name } : {}),
         match_ids: matchIdsArray,
-        players_added_for_this_match: playersWithMatchId.map(
+        players_added_for_this_match: substituteRowsWithoutPrimary.map(
           (stp) => stp.steam_id
         )
       } satisfies FlaggedMatches;

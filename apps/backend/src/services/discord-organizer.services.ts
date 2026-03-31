@@ -192,16 +192,18 @@ export function buildFlaggedMatchDiscordContent(
   const missingPlayersLine =
     missingSteamIds.length > 0
       ? missingSteamIds.join(", ")
-      : "— (see dashboard for details)";
-  const dashboardUrl = `${baseUrl}/dashboard/matches/flagged`;
+      : "— (no Steam IDs listed; compare Faceit roster to season roster using match links above)";
+
+  const teamLabel =
+    payload.team_name !== undefined && payload.team_name !== ""
+      ? `${payload.team_name} (ID ${payload.team_id})`
+      : `Team ID ${payload.team_id}`;
 
   return [
-    `**Flagged match** — invalid players / roster mismatch. **Team subject to ban hammer (Team ID ${payload.team_id}).**`,
+    `**Flagged match** — invalid players / roster mismatch. **Team subject to ban hammer:** ${teamLabel}.`,
     `**External match:** \`${payload.external_match_id}\``,
-    `**Team ID:** ${payload.team_id}`,
     `**Match links:** ${matchLinks}`,
-    `**Player(s) not in season roster:** ${missingPlayersLine}`,
-    `**Dashboard:** ${dashboardUrl}`
+    `**Player(s) not in season roster:** ${missingPlayersLine}`
   ].join("\n");
 }
 
