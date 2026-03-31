@@ -15,6 +15,7 @@ import { getHubMatchesByExternalMatchRoomId } from "./match.models";
 import { BadRequestError } from "../utils/errors";
 import { notifyFlaggedMatchInDiscord } from "../services/discord-organizer.services";
 import { logger } from "../utils/app-logger";
+import { getTeamById } from "./team.models";
 
 /**
  * Check if player exists in SeasonTeamPlayers
@@ -282,6 +283,8 @@ export const validatePlayersInTeams = async (
       const key = `match:invalid_players:${externalMatchId}`;
       const alreadyFlaggedInRedis = (await redisClient.get(key)) !== null;
 
+      const [teamRow] = await getTeamById(teamFromDb.team_id);
+
       const objectToSave = {
         external_match_id: externalMatchId,
         steam_ids: playerSteamIds,
@@ -289,6 +292,7 @@ export const validatePlayersInTeams = async (
           (stp) => stp.steam_id
         ),
         team_id: teamFromDb.team_id,
+        ...(teamRow?.name ? { team_name: teamRow.name } : {}),
         match_ids: matchIdsArray,
         players_added_for_this_match: substituteRowsWithoutPrimary.map(
           (stp) => stp.steam_id

@@ -38,7 +38,21 @@ describe("discord-organizer.services", () => {
       expect(content).toContain(`${baseUrl}/matches/12717`);
       expect(content).toContain(`${baseUrl}/matches/12718`);
       expect(content).toContain("76561197963612504");
-      expect(content).toContain(`${baseUrl}/dashboard/matches/flagged`);
+      expect(content).not.toContain("dashboard");
+    });
+
+    it("includes team name with ID when team_name is set", () => {
+      const payload: FlaggedMatches = {
+        external_match_id: "1-abc",
+        team_id: 2206,
+        team_name: "Example Team",
+        match_ids: [12932]
+      };
+
+      const content = buildFlaggedMatchDiscordContent(payload, baseUrl);
+
+      expect(content).toContain("Example Team (ID 2206)");
+      expect(content).not.toContain("Team ID 2206.");
     });
 
     it("shows — for match links when match_ids is empty", () => {
@@ -65,7 +79,7 @@ describe("discord-organizer.services", () => {
       const content = buildFlaggedMatchDiscordContent(payload, baseUrl);
 
       expect(content).toContain(
-        "**Player(s) not in season roster:** — (see dashboard for details)"
+        "**Player(s) not in season roster:** — (no Steam IDs listed; compare Faceit roster to season roster using match links above)"
       );
     });
   });

@@ -25,6 +25,9 @@ jest.mock("../db/mysqlRunQuery");
 jest.mock("../services/discord-organizer.services", () => ({
   notifyFlaggedMatchInDiscord: jest.fn().mockResolvedValue(undefined)
 }));
+jest.mock("./team.models", () => ({
+  getTeamById: jest.fn().mockResolvedValue([{ name: "Test Team" }])
+}));
 
 const mockGetSeasonLeagueTeamByExternalId =
   getSeasonLeagueTeamByExternalId as jest.MockedFunction<
@@ -296,6 +299,7 @@ describe("season-team-players.models", () => {
             steam_ids: ["steam123", "steam456"],
             players_in_season_team_players: ["steam123"],
             team_id: 101,
+            team_name: "Test Team",
             match_ids: [1001, 1002],
             players_added_for_this_match: []
           })
@@ -306,6 +310,7 @@ describe("season-team-players.models", () => {
           steam_ids: ["steam123", "steam456"],
           players_in_season_team_players: ["steam123"],
           team_id: 101,
+          team_name: "Test Team",
           match_ids: [1001, 1002],
           players_added_for_this_match: []
         });
@@ -343,6 +348,7 @@ describe("season-team-players.models", () => {
             steam_ids: ["steam123", "steam456"],
             players_in_season_team_players: [],
             team_id: 101,
+            team_name: "Test Team",
             match_ids: [1001, 1002],
             players_added_for_this_match: []
           })
@@ -357,6 +363,7 @@ describe("season-team-players.models", () => {
             steam_ids: ["steam789"],
             players_in_season_team_players: [],
             team_id: 102,
+            team_name: "Test Team",
             match_ids: [1001, 1002],
             players_added_for_this_match: []
           })
@@ -393,6 +400,7 @@ describe("season-team-players.models", () => {
             steam_ids: ["steam123", "steam456"],
             players_in_season_team_players: ["steam123"],
             team_id: 101,
+            team_name: "Test Team",
             match_ids: [1001, 1002],
             players_added_for_this_match: []
           })
@@ -526,6 +534,7 @@ describe("season-team-players.models", () => {
             steam_ids: ["steam123", "steam456"],
             players_in_season_team_players: ["steam123", "steam456"],
             team_id: 101,
+            team_name: "Test Team",
             match_ids: [1001, 1002],
             players_added_for_this_match: ["steam123"]
           })
@@ -571,6 +580,7 @@ describe("season-team-players.models", () => {
             steam_ids: ["steam123", "steam456"],
             players_in_season_team_players: ["steam123"],
             team_id: 101,
+            team_name: "Test Team",
             match_ids: [1001, 1002],
             players_added_for_this_match: ["steam123"]
           })
