@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import { redisClient } from "../../utils/redisClient";
+import { scanKeysMatchingPattern } from "../../utils/redisScanKeys";
 import { BadRequestError } from "../../utils/errors";
 import type {
   RedisKey,
@@ -37,7 +38,7 @@ export const getRedisKeys = async (
     return next(new BadRequestError("Limit must be between 1 and 1000"));
   }
 
-  const allKeys = await redisClient.keys(pattern);
+  const allKeys = await scanKeysMatchingPattern(redisClient, pattern);
   const total = allKeys.length;
   const totalPages = Math.ceil(total / limit);
 
@@ -141,7 +142,7 @@ export const flushStandingsCaches = async (
   try {
     const keysToDelete: string[] = [];
     for (const pattern of STANDINGS_CACHE_PATTERNS) {
-      const keys = await redisClient.keys(pattern);
+      const keys = await scanKeysMatchingPattern(redisClient, pattern);
       keysToDelete.push(...keys);
     }
 
