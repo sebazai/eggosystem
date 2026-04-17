@@ -1,4 +1,4 @@
-import { setupServer, type SetupServerApi } from "msw/node";
+import { setupServer } from "msw/node";
 import { handlers } from "./handlers.js";
 import {
   leetifyValidSteamId,
@@ -33,7 +33,7 @@ import {
   csrankkerLowKanaEloSteamId
 } from "./csrankker/test-ids.js";
 
-export const mswServer: SetupServerApi = setupServer(...handlers);
+export const mswServer = setupServer(...handlers);
 export {
   leetifyValidSteamId,
   leetifyNotFoundSteamId,
