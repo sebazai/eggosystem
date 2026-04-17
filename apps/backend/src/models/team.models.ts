@@ -813,7 +813,8 @@ export const getTeamCaptainsBySeasonId = async (
     JOIN SeasonTeamPlayers strp_captain ON 
       strp_captain.season_id = str.season_id AND 
       strp_captain.team_id = str.team_id AND 
-      strp_captain.is_captain = 1
+      strp_captain.is_captain = 1 AND
+      strp_captain.discarded_at IS NULL
     JOIN SteamPlayers sp_captain ON strp_captain.steam_id = sp_captain.steam_id
     JOIN Accounts captain_account ON sp_captain.account_id = captain_account.id
     LEFT JOIN LinkedAccounts captain_discord ON 
@@ -822,7 +823,8 @@ export const getTeamCaptainsBySeasonId = async (
     LEFT JOIN SeasonTeamPlayers strp_co_captain ON 
       strp_co_captain.season_id = str.season_id AND 
       strp_co_captain.team_id = str.team_id AND 
-      strp_co_captain.is_co_captain = 1
+      strp_co_captain.is_co_captain = 1 AND
+      strp_co_captain.discarded_at IS NULL
     LEFT JOIN SteamPlayers sp_co_captain ON strp_co_captain.steam_id = sp_co_captain.steam_id
     LEFT JOIN Accounts co_captain_account ON sp_co_captain.account_id = co_captain_account.id
     LEFT JOIN LinkedAccounts co_captain_discord ON 

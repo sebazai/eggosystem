@@ -94,7 +94,7 @@ export const MyComponent = () => {
 - Use Tailwind CSS for styling
 - **Use semantic color tokens** for theme support (`bg-background`, `text-foreground`, etc.)
 - Follow existing design system patterns
-- Ensure responsive design for mobile and desktop
+- Ensure responsive design for mobile and desktop; **App Router pages and layouts** (`app/**`) follow `pages-and-layouts.mdc` (mobile-first breakpoints, overflow, touch-friendly patterns)
 - Use `cn()` helper for conditional classes
 
 ## Component Organization
