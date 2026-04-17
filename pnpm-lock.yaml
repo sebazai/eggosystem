@@ -311,10 +311,10 @@ importers:
         version: 6.1.20(@fullcalendar/core@6.1.20)
       '@hookform/error-message':
         specifier: 2.0.1
-        version: 2.0.1(react-dom@19.2.4(react@19.2.4))(react-hook-form@7.72.1(react@19.2.4))(react@19.2.4)
+        version: 2.0.1(react-dom@19.2.4(react@19.2.4))(react-hook-form@7.72.0(react@19.2.4))(react@19.2.4)
       '@hookform/resolvers':
         specifier: 5.2.2
-        version: 5.2.2(react-hook-form@7.72.1(react@19.2.4))
+        version: 5.2.2(react-hook-form@7.72.0(react@19.2.4))
       '@radix-ui/react-accordion':
         specifier: 1.2.12
         version: 1.2.12(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -394,8 +394,8 @@ importers:
         specifier: 19.2.4
         version: 19.2.4(react@19.2.4)
       react-hook-form:
-        specifier: 7.72.1
-        version: 7.72.1(react@19.2.4)
+        specifier: 7.72.0
+        version: 7.72.0(react@19.2.4)
       recharts:
         specifier: 2.15.4
         version: 2.15.4(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -530,8 +530,8 @@ importers:
         specifier: workspace:*
         version: link:../types
       msw:
-        specifier: 2.13.1
-        version: 2.13.1(@types/node@25.5.2)(typescript@6.0.2)
+        specifier: 2.12.14
+        version: 2.12.14(@types/node@25.5.2)(typescript@6.0.2)
     devDependencies:
       typescript:
         specifier: 6.0.2
@@ -5434,6 +5434,10 @@ packages:
     resolution: {integrity: sha512-DKKrynuQRne0PNpEbzuEdHlYOMksHSUI8Zc9Unei5gTsMNA2/vMpoMz/yKba50pejK56qj98qM0SjYxAKi13gQ==}
     engines: {node: ^12.22.0 || ^14.16.0 || ^16.0.0 || >=17.0.0}
 
+  graphql@16.13.2:
+    resolution: {integrity: sha512-5bJ+nf/UCpAjHM8i06fl7eLyVC9iuNAjm9qzkiu2ZGhM0VscSvS6WDPfAwkdkBuoXGM9FJSbKl6wylMwP9Ktig==}
+    engines: {node: ^12.22.0 || ^14.16.0 || ^16.0.0 || >=17.0.0}
+
   handlebars@4.7.9:
     resolution: {integrity: sha512-4E71E0rpOaQuJR2A3xDZ+GM1HyWYv1clR58tC8emQNeQe3RH7MAzSbat+V0wG78LQBo6m6bzSG/L4pBuCsgnUQ==}
     engines: {node: '>=0.4.7'}
@@ -6444,6 +6448,16 @@ packages:
   msgpackr@1.11.5:
     resolution: {integrity: sha512-UjkUHN0yqp9RWKy0Lplhh+wlpdt9oQBYgULZOiFhV3VclSF1JnSQWZ5r9gORQlNYaUKQoR8itv7g7z1xDDuACA==}
 
+  msw@2.12.14:
+    resolution: {integrity: sha512-4KXa4nVBIBjbDbd7vfQNuQ25eFxug0aropCQFoI0JdOBuJWamkT1yLVIWReFI8SiTRc+H1hKzaNk+cLk2N9rtQ==}
+    engines: {node: '>=18'}
+    hasBin: true
+    peerDependencies:
+      typescript: '>= 4.8.x'
+    peerDependenciesMeta:
+      typescript:
+        optional: true
+
   msw@2.13.1:
     resolution: {integrity: sha512-4wjFzJ+osaUDS2OakrXSl5tCFBUbzsaHbi5QRycRtVciOuYmnWn16CpNxcqh3UyslFkHbzKaj/GfYr7Hn67QPQ==}
     engines: {node: '>=18'}
@@ -6938,8 +6952,8 @@ packages:
     peerDependencies:
       react: ^19.2.4
 
-  react-hook-form@7.72.1:
-    resolution: {integrity: sha512-RhwBoy2ygeVZje+C+bwJ8g0NjTdBmDlJvAUHTxRjTmSUKPYsKfMphkS2sgEMotsY03bP358yEYlnUeZy//D9Ig==}
+  react-hook-form@7.72.0:
+    resolution: {integrity: sha512-V4v6jubaf6JAurEaVnT9aUPKFbNtDgohj5CIgVGyPHvT9wRx5OZHVjz31GsxnPNI278XMu+ruFz+wGOscHaLKw==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
       react: ^16.8.0 || ^17 || ^18 || ^19
@@ -7669,6 +7683,10 @@ packages:
 
   type-fest@5.3.1:
     resolution: {integrity: sha512-VCn+LMHbd4t6sF3wfU/+HKT63C9OoyrSIf4b+vtWHpt2U7/4InZG467YDNMFMR70DdHjAdpPWmw2lzRdg0Xqqg==}
+    engines: {node: '>=20'}
+
+  type-fest@5.6.0:
+    resolution: {integrity: sha512-8ZiHFm91orbSAe2PSAiSVBVko18pbhbiB3U9GglSzF/zCGkR+rxpHx6sEMCUm4kxY4LjDIUGgCfUMtwfZfjfUA==}
     engines: {node: '>=20'}
 
   type-is@2.0.1:
@@ -9309,16 +9327,16 @@ snapshots:
     dependencies:
       hono: 4.12.8
 
-  '@hookform/error-message@2.0.1(react-dom@19.2.4(react@19.2.4))(react-hook-form@7.72.1(react@19.2.4))(react@19.2.4)':
+  '@hookform/error-message@2.0.1(react-dom@19.2.4(react@19.2.4))(react-hook-form@7.72.0(react@19.2.4))(react@19.2.4)':
     dependencies:
       react: 19.2.4
       react-dom: 19.2.4(react@19.2.4)
-      react-hook-form: 7.72.1(react@19.2.4)
+      react-hook-form: 7.72.0(react@19.2.4)
 
-  '@hookform/resolvers@5.2.2(react-hook-form@7.72.1(react@19.2.4))':
+  '@hookform/resolvers@5.2.2(react-hook-form@7.72.0(react@19.2.4))':
     dependencies:
       '@standard-schema/utils': 0.3.0
-      react-hook-form: 7.72.1(react@19.2.4)
+      react-hook-form: 7.72.0(react@19.2.4)
 
   '@humanfs/core@0.19.1': {}
 
@@ -13381,6 +13399,8 @@ snapshots:
 
   graphql@16.12.0: {}
 
+  graphql@16.13.2: {}
+
   handlebars@4.7.9:
     dependencies:
       minimist: 1.2.8
@@ -14578,6 +14598,31 @@ snapshots:
     optionalDependencies:
       msgpackr-extract: 3.0.3
 
+  msw@2.12.14(@types/node@25.5.2)(typescript@6.0.2):
+    dependencies:
+      '@inquirer/confirm': 5.1.12(@types/node@25.5.2)
+      '@mswjs/interceptors': 0.41.3
+      '@open-draft/deferred-promise': 2.2.0
+      '@types/statuses': 2.0.6
+      cookie: 1.1.1
+      graphql: 16.13.2
+      headers-polyfill: 4.0.3
+      is-node-process: 1.2.0
+      outvariant: 1.4.3
+      path-to-regexp: 6.3.0
+      picocolors: 1.1.1
+      rettime: 0.10.1
+      statuses: 2.0.2
+      strict-event-emitter: 0.5.1
+      tough-cookie: 6.0.1
+      type-fest: 5.6.0
+      until-async: 3.0.2
+      yargs: 17.7.2
+    optionalDependencies:
+      typescript: 6.0.2
+    transitivePeerDependencies:
+      - '@types/node'
+
   msw@2.13.1(@types/node@25.5.2)(typescript@6.0.2):
     dependencies:
       '@inquirer/confirm': 5.1.12(@types/node@25.5.2)
@@ -15142,7 +15187,7 @@ snapshots:
       react: 19.2.4
       scheduler: 0.27.0
 
-  react-hook-form@7.72.1(react@19.2.4):
+  react-hook-form@7.72.0(react@19.2.4):
     dependencies:
       react: 19.2.4
 
@@ -15982,6 +16027,10 @@ snapshots:
   type-fest@4.41.0: {}
 
   type-fest@5.3.1:
+    dependencies:
+      tagged-tag: 1.0.0
+
+  type-fest@5.6.0:
     dependencies:
       tagged-tag: 1.0.0
 
