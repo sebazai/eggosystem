@@ -4,6 +4,7 @@ WORKDIR /workspace
 
 RUN npm install -g typescript
 RUN npm install -g pnpm@10.27.0
+RUN npm install -g @anthropic-ai/claude-code
 
 # Install tbls (database documentation tool)
 RUN ARCH=$(dpkg --print-architecture) && \
