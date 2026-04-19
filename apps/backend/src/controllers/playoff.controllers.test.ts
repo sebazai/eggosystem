@@ -383,6 +383,180 @@ describe("playoff.controllers", () => {
       expect(lbR2Matches[1].slot).toBe(1);
     });
 
+    /**
+     * 16-team lower bracket excerpt matching FaceIT-style UI (issue discussion / bracket review):
+     * LB2 “Telia Akatemia” (#8, upper drop) vs “Valtori” (#3, LB R1 winner) with #8 on top even
+     * though #3 is the better seed — API may list the feeder first.
+     */
+    it("lower bracket R2: upper dropper is team1 even when feeder has a better seed (#8 vs #3)", async () => {
+      mockGetPlayoffExternalId.mockResolvedValue("champ-lb-faceit-order");
+
+      const fin = (s1: number, s2: number) => ({
+        score: { faction1: s1, faction2: s2 }
+      });
+
+      const team = (id: string, name: string) => ({
+        faction_id: id,
+        name,
+        avatar: ""
+      });
+
+      mockGetChampionshipMatchesCached.mockResolvedValue([
+        {
+          match_id: "lb-r1-1",
+          round: 1,
+          group: 2,
+          status: "FINISHED",
+          best_of: 3,
+          scheduled_at: 0,
+          teams: {
+            faction1: team("fs16", "T16"),
+            faction2: team("fs9", "T9")
+          },
+          results: fin(2, 1)
+        },
+        {
+          match_id: "lb-r1-2",
+          round: 1,
+          group: 2,
+          status: "FINISHED",
+          best_of: 3,
+          scheduled_at: 0,
+          teams: {
+            faction1: team("fs13", "T13"),
+            faction2: team("fs12", "T12")
+          },
+          results: fin(2, 0)
+        },
+        {
+          match_id: "lb-r1-3",
+          round: 1,
+          group: 2,
+          status: "FINISHED",
+          best_of: 3,
+          scheduled_at: 0,
+          teams: {
+            faction1: team("fs15", "T15"),
+            faction2: team("fs10", "T10")
+          },
+          results: fin(1, 2)
+        },
+        {
+          match_id: "lb-r1-4",
+          round: 1,
+          group: 2,
+          status: "FINISHED",
+          best_of: 3,
+          scheduled_at: 0,
+          teams: {
+            faction1: team("fs3", "Valtori"),
+            faction2: team("fs11", "T11")
+          },
+          results: fin(2, 0)
+        },
+        {
+          match_id: "lb-r2-1",
+          round: 2,
+          group: 2,
+          status: "SCHEDULED",
+          best_of: 3,
+          scheduled_at: 0,
+          teams: {
+            faction1: team("fs6", "T6"),
+            faction2: team("fs16", "T16")
+          }
+        },
+        {
+          match_id: "lb-r2-2",
+          round: 2,
+          group: 2,
+          status: "SCHEDULED",
+          best_of: 3,
+          scheduled_at: 0,
+          teams: {
+            faction1: team("fs2", "T2"),
+            faction2: team("fs13", "T13")
+          }
+        },
+        {
+          match_id: "lb-r2-3",
+          round: 2,
+          group: 2,
+          status: "SCHEDULED",
+          best_of: 3,
+          scheduled_at: 0,
+          teams: {
+            faction1: team("fs5", "T5"),
+            faction2: team("fs10", "T10")
+          }
+        },
+        {
+          match_id: "lb-r2-8v3",
+          round: 2,
+          group: 2,
+          status: "SCHEDULED",
+          best_of: 3,
+          scheduled_at: 0,
+          teams: {
+            faction1: team("fs3", "Valtori"),
+            faction2: team("fs8", "Telia")
+          }
+        }
+      ]);
+
+      mockGetPlayoffMatchIds.mockResolvedValue(
+        new Map([
+          ["lb-r1-1", 1],
+          ["lb-r1-2", 2],
+          ["lb-r1-3", 3],
+          ["lb-r1-4", 4],
+          ["lb-r2-1", 5],
+          ["lb-r2-2", 6],
+          ["lb-r2-3", 7],
+          ["lb-r2-8v3", 8]
+        ])
+      );
+
+      const tid = (seed: number) => 1000 + seed;
+      const factions: [string, number][] = [
+        ["fs16", tid(16)],
+        ["fs9", tid(9)],
+        ["fs13", tid(13)],
+        ["fs12", tid(12)],
+        ["fs15", tid(15)],
+        ["fs10", tid(10)],
+        ["fs3", tid(3)],
+        ["fs11", tid(11)],
+        ["fs6", tid(6)],
+        ["fs2", tid(2)],
+        ["fs5", tid(5)],
+        ["fs8", tid(8)]
+      ];
+      mockGetTeamIdsByExternalIds.mockResolvedValue(new Map(factions));
+      mockGetTeamLogosByTeamIds.mockResolvedValue(new Map());
+      mockGetPlayoffSeedMap.mockResolvedValue(
+        new Map(factions.map(([, id]) => [id, id - 1000] as const))
+      );
+
+      await getPlayoffBracketController(
+        mockRequest as Request,
+        mockResponse as Response,
+        mockNext
+      );
+
+      const [payload] = (mockResponse.json as jest.Mock).mock.calls[0];
+      const m = payload.matches.find(
+        (x: { external_match_id: string }) =>
+          x.external_match_id === "lb-r2-8v3"
+      );
+      expect(m).toBeDefined();
+      expect(m.slot).toBe(3);
+      expect(m.seed1).toBe(8);
+      expect(m.seed2).toBe(3);
+      expect(m.team1_id).toBe(tid(8));
+      expect(m.team2_id).toBe(tid(3));
+    });
+
     it("orders lower bracket R1 by api_index over UUID lexicographic order when seeds resolve to same slot", async () => {
       mockGetPlayoffExternalId.mockResolvedValue("champ-lb2");
 

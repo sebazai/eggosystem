@@ -9,7 +9,8 @@ import {
   getLowerSlotsInRound,
   getUpperBracketR1SlotForSeed,
   getUpperBracketSlotForSeeds,
-  getUpperSlotsInRound
+  getUpperSlotsInRound,
+  shouldSwapLowerDropRoundHomeAway
 } from "./playoff-bracket-layout";
 
 describe("playoff-bracket-layout", () => {
@@ -261,12 +262,45 @@ describe("playoff-bracket-layout", () => {
     });
   });
 
+  describe("shouldSwapLowerDropRoundHomeAway", () => {
+    it("swaps when team1 is the LB feeder and team2 is the fresh upper dropper", () => {
+      const prev = new Set([103, 1016]);
+      expect(
+        shouldSwapLowerDropRoundHomeAway({
+          team1Id: 103,
+          team2Id: 108,
+          prevRoundLbTeamIds: prev
+        })
+      ).toBe(true);
+    });
+
+    it("does not swap when team1 is already the upper dropper", () => {
+      const prev = new Set([103]);
+      expect(
+        shouldSwapLowerDropRoundHomeAway({
+          team1Id: 108,
+          team2Id: 103,
+          prevRoundLbTeamIds: prev
+        })
+      ).toBe(false);
+    });
+
+    it("returns false when both teams played the previous lower round (unexpected)", () => {
+      const prev = new Set([101, 102]);
+      expect(
+        shouldSwapLowerDropRoundHomeAway({
+          team1Id: 101,
+          team2Id: 102,
+          prevRoundLbTeamIds: prev
+        })
+      ).toBe(false);
+    });
+  });
+
   describe("getLowerBracketEvenDropRoundLayoutSlotFromState", () => {
     it("LB2: identifies upper dropper by missing LB1 slot (feeder last column → slot 3)", () => {
       const bracketSize = 16;
-      const prev = new Map<number, number>([
-        [101, 3]
-      ]);
+      const prev = new Map<number, number>([[101, 3]]);
       const loserUbR2Match0 = 8;
       const slot = getLowerBracketEvenDropRoundLayoutSlotFromState({
         bracketSize,

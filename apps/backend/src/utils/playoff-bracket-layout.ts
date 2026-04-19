@@ -221,7 +221,7 @@ export function getLowerSlotsInRound(
  * Upper-bracket match index (0-based) at `upperRound` for a team that reached that round,
  * derived from their upper round-1 leaf slot.
  */
-export function getUpperBracketMatchIndexAtRound(params: {
+function getUpperBracketMatchIndexAtRound(params: {
   bracketSize: number;
   upperRound: number;
   seed: number;
@@ -273,9 +273,7 @@ export function getLowerBracketEvenDropRoundLayoutSlotFromState(params: {
     wave === 1 ? ubSlots - 1 - u : u;
 
   const prevSlot = (teamId: number): number | undefined =>
-    teamId > 0
-      ? prevRoundParticipantSlotByTeamId.get(teamId)
-      : undefined;
+    teamId > 0 ? prevRoundParticipantSlotByTeamId.get(teamId) : undefined;
 
   if (
     seed1 != null &&
@@ -308,7 +306,7 @@ export function getLowerBracketEvenDropRoundLayoutSlotFromState(params: {
   const onlyTeam =
     onlySeed != null && seed1 != null && onlySeed === seed1
       ? team1Id
-      : team2Id ?? 0;
+      : (team2Id ?? 0);
   if (onlySeed == null || onlyTeam <= 0) return null;
   // Only the upper dropper can be placed from seed alone (no LB prev slot).
   if (prevSlot(onlyTeam) !== undefined) {
@@ -338,4 +336,25 @@ export function getLowerBracketMergeRoundLayoutSlot(params: {
   if (s1 === undefined || s2 === undefined) return null;
   if (Math.abs(s1 - s2) !== 1) return null;
   return Math.floor(Math.min(s1, s2) / 2);
+}
+
+/**
+ * Lower bracket **even** rounds after R1 (canonical LB 2, 4, …): one team drops from the upper
+ * bracket for their first lower match; the other advanced from the previous lower round. FaceIT
+ * UI shows the **upper dropper on top** (team1) and the **feeder on bottom** (team2).
+ *
+ * `prevRoundLbTeamIds` is the set of team ids that had a match in the immediately preceding lower
+ * round (winners and losers both appear in that round’s snapshot).
+ */
+export function shouldSwapLowerDropRoundHomeAway(params: {
+  team1Id: number;
+  team2Id: number | null;
+  prevRoundLbTeamIds: Set<number>;
+}): boolean {
+  const { team1Id, team2Id, prevRoundLbTeamIds } = params;
+  if (team2Id == null || team2Id <= 0 || team1Id <= 0) return false;
+  const t1Feeder = prevRoundLbTeamIds.has(team1Id);
+  const t2Feeder = prevRoundLbTeamIds.has(team2Id);
+  if (t1Feeder === t2Feeder) return false;
+  return t1Feeder;
 }

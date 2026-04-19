@@ -19,6 +19,7 @@ import {
   getLowerBracketMergeRoundLayoutSlot,
   getLowerBracketR1LayoutSlotOrGuess,
   getLowerRoundCount,
+  shouldSwapLowerDropRoundHomeAway,
   getLowerSlotsInRound,
   getUpperBracketR1SlotForSeed,
   getUpperBracketSlotForSeeds,
@@ -147,9 +148,7 @@ export const getPlayoffBracketController = async (
     const numSlots = bracketSize > 0 ? bracketSize / 2 : 0;
     const seedPos = bracketSize > 0 ? buildSeedPositionMap(bracketSize) : null;
 
-    const group2Rounds = items
-      .filter((i) => i.group === 2)
-      .map((i) => i.round);
+    const group2Rounds = items.filter((i) => i.group === 2).map((i) => i.round);
     const firstLowerRoundInPayload =
       group2Rounds.length > 0 ? Math.min(...group2Rounds) : null;
     /** FaceIT may use lower rounds 2..n+1 instead of 1..n; all DE logic uses offset from this. */
@@ -209,8 +208,7 @@ export const getPlayoffBracketController = async (
         score: number
       ): BracketSide => {
         const team_id = teamIdMap.get(faction_id) ?? 0;
-        const seed =
-          team_id > 0 ? playoffSeedMap.get(team_id) : undefined;
+        const seed = team_id > 0 ? playoffSeedMap.get(team_id) : undefined;
         return {
           faction_id,
           name: name || "TBD",
@@ -228,6 +226,9 @@ export const getPlayoffBracketController = async (
 
       const isLowerMergeRound =
         item.group === 2 && isLowerFaceitMergeRound(item.round);
+
+      const isLowerDropRoundAfterFirst =
+        item.group === 2 && isLowerFaceitDropRoundAfterFirst(item.round);
 
       if (!bye2) {
         const swapHomeAway = (): boolean => {
@@ -251,6 +252,10 @@ export const getPlayoffBracketController = async (
           // Odd lower rounds > R1 merge two LB paths; home/away follows previous-round slot order
           // after layout (see post-pass below).
           if (isLowerMergeRound) {
+            return false;
+          }
+          // Even LB drop rounds: upper dropper on top — corrected after slotting (prev-round map).
+          if (isLowerDropRoundAfterFirst) {
             return false;
           }
           if (home.seed != null && away.seed != null) {
@@ -282,8 +287,7 @@ export const getPlayoffBracketController = async (
 
       const team1Name = home.name;
       const team2Name = bye2 ? BYE_NAME : away.name;
-      const team1Logo =
-        team1Id > 0 ? (teamLogoMap.get(team1Id) ?? null) : null;
+      const team1Logo = team1Id > 0 ? (teamLogoMap.get(team1Id) ?? null) : null;
       const team2Logo =
         bye2 || team2Id == null || team2Id <= 0
           ? null
@@ -381,7 +385,10 @@ export const getPlayoffBracketController = async (
       byGroupRound.set(key, arr);
     }
 
-    const apiOrder = (a: PlayoffBracketMatch, b: PlayoffBracketMatch): number => {
+    const apiOrder = (
+      a: PlayoffBracketMatch,
+      b: PlayoffBracketMatch
+    ): number => {
       const aiA = apiIndexMap.get(a.external_match_id ?? "") ?? 99999;
       const aiB = apiIndexMap.get(b.external_match_id ?? "") ?? 99999;
       return aiA - aiB;
@@ -532,6 +539,30 @@ export const getPlayoffBracketController = async (
         const s2 = prevMap.get(m.team2_id);
         if (s1 === undefined || s2 === undefined) continue;
         if (s1 > s2) {
+          swapPlayoffBracketMatchSides(m);
+        }
+      }
+    }
+
+    // LB2, LB4, … (first time in lower vs LB feeder): FaceIT shows upper dropper on top regardless
+    // of seed — seed-only ordering would swap e.g. #8 vs #3 incorrectly (see playoff-bracket tests).
+    for (const key of lowerKeysSorted) {
+      const round = Number(key.split("-")[1]!);
+      if (bracketSize <= 0 || !isLowerFaceitDropRoundAfterFirst(round)) {
+        continue;
+      }
+      const prevMap = lbSlotByTeamByRound.get(round - 1);
+      if (!prevMap) continue;
+      const prevLbTeamIds = new Set(prevMap.keys());
+      const arr = byGroupRound.get(key)!;
+      for (const m of arr) {
+        if (
+          shouldSwapLowerDropRoundHomeAway({
+            team1Id: m.team1_id,
+            team2Id: m.team2_id,
+            prevRoundLbTeamIds: prevLbTeamIds
+          })
+        ) {
           swapPlayoffBracketMatchSides(m);
         }
       }
