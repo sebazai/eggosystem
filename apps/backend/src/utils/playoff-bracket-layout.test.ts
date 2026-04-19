@@ -3,12 +3,14 @@ import {
   buildSeedOrder,
   buildSeedPositionMap,
   getBracketSizeFromMaxSeed,
+  getLowerBracketEvenDropRoundLayoutSlotFromState,
   getLowerBracketR1LayoutSlot,
   getLowerBracketR1LayoutSlotOrGuess,
   getLowerSlotsInRound,
   getUpperBracketR1SlotForSeed,
   getUpperBracketSlotForSeeds,
-  getUpperSlotsInRound
+  getUpperSlotsInRound,
+  shouldSwapLowerDropRoundHomeAway
 } from "./playoff-bracket-layout";
 
 describe("playoff-bracket-layout", () => {
@@ -257,6 +259,77 @@ describe("playoff-bracket-layout", () => {
           bracketSize: n
         })
       ).toBe(2);
+    });
+  });
+
+  describe("shouldSwapLowerDropRoundHomeAway", () => {
+    it("swaps when team1 is the LB feeder and team2 is the fresh upper dropper", () => {
+      const prev = new Set([103, 1016]);
+      expect(
+        shouldSwapLowerDropRoundHomeAway({
+          team1Id: 103,
+          team2Id: 108,
+          prevRoundLbTeamIds: prev
+        })
+      ).toBe(true);
+    });
+
+    it("does not swap when team1 is already the upper dropper", () => {
+      const prev = new Set([103]);
+      expect(
+        shouldSwapLowerDropRoundHomeAway({
+          team1Id: 108,
+          team2Id: 103,
+          prevRoundLbTeamIds: prev
+        })
+      ).toBe(false);
+    });
+
+    it("returns false when both teams played the previous lower round (unexpected)", () => {
+      const prev = new Set([101, 102]);
+      expect(
+        shouldSwapLowerDropRoundHomeAway({
+          team1Id: 101,
+          team2Id: 102,
+          prevRoundLbTeamIds: prev
+        })
+      ).toBe(false);
+    });
+  });
+
+  describe("getLowerBracketEvenDropRoundLayoutSlotFromState", () => {
+    it("LB2: identifies upper dropper by missing LB1 slot (feeder last column → slot 3)", () => {
+      const bracketSize = 16;
+      const prev = new Map<number, number>([[101, 3]]);
+      const loserUbR2Match0 = 8;
+      const slot = getLowerBracketEvenDropRoundLayoutSlotFromState({
+        bracketSize,
+        lowerRound: 2,
+        seed1: 3,
+        seed2: loserUbR2Match0,
+        team1Id: 101,
+        team2Id: 202,
+        prevRoundParticipantSlotByTeamId: prev
+      });
+      expect(slot).toBe(3);
+    });
+
+    it("LB2: returns null when both sides have a previous lower slot", () => {
+      const prev = new Map<number, number>([
+        [101, 0],
+        [202, 1]
+      ]);
+      expect(
+        getLowerBracketEvenDropRoundLayoutSlotFromState({
+          bracketSize: 16,
+          lowerRound: 2,
+          seed1: 3,
+          seed2: 8,
+          team1Id: 101,
+          team2Id: 202,
+          prevRoundParticipantSlotByTeamId: prev
+        })
+      ).toBeNull();
     });
   });
 });
