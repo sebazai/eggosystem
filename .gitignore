@@ -21,7 +21,8 @@ out/
 .vscode/settings.json
 .idea/
 
-
+# MCP
+.playwright-mcp/
 
 # TypeScript cache
 *.tsbuildinfo
