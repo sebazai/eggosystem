@@ -84,15 +84,18 @@ export function getUpperBracketR1SlotForSeed(
  * In 1-based wording: column 1 = UB match 1 loser vs UB match 2 loser, column 2 = UB3 vs UB4
  * loser, etc. Same pairing rule for any power-of-two bracket size.
  *
- * **Round 2 onward:** each match is conceptually **upper feed** (loser dropping from a specific
- * upper-bracket match / round) vs **lower feed** (winner of a specific lower-bracket match from
- * the previous lower round). FaceIT UI often shows the upper path on one side and the LB chain
- * on the other; exact column order for those rounds is not derived here yet — the playoff
- * controller still orders group 2, round ≥ 2 by seed leaf positions as a heuristic until we have
- * an explicit feeder→slot map (or API fields).
+ * **Round 2 onward (even rounds):** losers drop from upper bracket round `lowerRound/2 + 1`.
+ * The first drop round (lower round 2) uses **reversed** pairing vs upper index so that column
+ * `k` (winner from lower R1 column `k`) faces the loser of upper round 2 match `ubSlots-1-k`.
+ * Later drop rounds (4, 6, …) keep the **same** upper index as the display slot.
+ *
+ * **Odd rounds ≥ 3:** winners of the previous lower round merge in adjacent pairs
+ * `(0,1), (2,3), …` → display slot `floor(min(prevSlotA, prevSlotB) / 2)`.
  *
  * @see getLowerBracketR1LayoutSlot — implements the round-1 column index rule only.
  * @see getLowerBracketR1LayoutSlotOrGuess — same column when one side is still a FaceIT placeholder (no seed2).
+ * @see getLowerBracketEvenDropRoundLayoutSlotFromState — even lower rounds (drops from upper).
+ * @see getLowerBracketMergeRoundLayoutSlot — odd merge rounds from previous-round participant slots.
  */
 export function getLowerBracketR1LayoutSlot(params: {
   seed1: number | undefined;
@@ -212,4 +215,146 @@ export function getLowerSlotsInRound(
   if (round <= 0 || round > lowerRounds) return 0;
   const exponent = n - 1 - Math.ceil(round / 2);
   return exponent >= 0 ? Math.pow(2, exponent) : 0;
+}
+
+/**
+ * Upper-bracket match index (0-based) at `upperRound` for a team that reached that round,
+ * derived from their upper round-1 leaf slot.
+ */
+function getUpperBracketMatchIndexAtRound(params: {
+  bracketSize: number;
+  upperRound: number;
+  seed: number;
+}): number | null {
+  const { bracketSize, upperRound, seed } = params;
+  if (!isPowerOfTwo(bracketSize) || upperRound < 1) return null;
+  const n = getUpperRoundCount(bracketSize);
+  if (upperRound > n) return null;
+  const r1 = getUpperBracketR1SlotForSeed(seed, bracketSize);
+  if (r1 == null) return null;
+  return Math.floor(r1 / Math.pow(2, upperRound - 1));
+}
+
+/**
+ * Even lower rounds (2, 4, 6, …): one side drops from upper round `lowerRound/2 + 1`.
+ * Uses previous-round participant slots to tell the upper drop from the lower-path team when
+ * both seeds would map to the same upper index (e.g. both were in upper round 3).
+ */
+export function getLowerBracketEvenDropRoundLayoutSlotFromState(params: {
+  bracketSize: number;
+  lowerRound: number;
+  seed1: number | undefined;
+  seed2: number | undefined;
+  team1Id: number;
+  team2Id: number | null;
+  prevRoundParticipantSlotByTeamId: Map<number, number>;
+}): number | null {
+  const {
+    bracketSize,
+    lowerRound,
+    seed1,
+    seed2,
+    team1Id,
+    team2Id,
+    prevRoundParticipantSlotByTeamId
+  } = params;
+  if (!isPowerOfTwo(bracketSize) || lowerRound < 2 || lowerRound % 2 !== 0) {
+    return null;
+  }
+  const wave = lowerRound / 2;
+  const upperRound = wave + 1;
+  const n = getUpperRoundCount(bracketSize);
+  if (upperRound > n) return null;
+
+  const ubSlots = getUpperSlotsInRound(bracketSize, upperRound);
+  if (ubSlots <= 0) return null;
+
+  const slotFromUpperIndex = (u: number): number =>
+    wave === 1 ? ubSlots - 1 - u : u;
+
+  const prevSlot = (teamId: number): number | undefined =>
+    teamId > 0 ? prevRoundParticipantSlotByTeamId.get(teamId) : undefined;
+
+  if (
+    seed1 != null &&
+    seed2 != null &&
+    team1Id > 0 &&
+    team2Id != null &&
+    team2Id > 0
+  ) {
+    const p1 = prevSlot(team1Id);
+    const p2 = prevSlot(team2Id);
+    const t1InPrev = p1 !== undefined;
+    const t2InPrev = p2 !== undefined;
+    // Feeder played the previous lower round and has a slot; upper dropper did not.
+    if (t1InPrev === t2InPrev) {
+      return null;
+    }
+    const dropSeed = t1InPrev ? seed2 : seed1;
+    const feederPrev = t1InPrev ? p1! : p2!;
+    const u = getUpperBracketMatchIndexAtRound({
+      bracketSize,
+      upperRound,
+      seed: dropSeed
+    });
+    if (u == null) return null;
+    const slot = slotFromUpperIndex(u);
+    return feederPrev === slot ? slot : null;
+  }
+
+  const onlySeed = seed1 ?? seed2;
+  const onlyTeam =
+    onlySeed != null && seed1 != null && onlySeed === seed1
+      ? team1Id
+      : (team2Id ?? 0);
+  if (onlySeed == null || onlyTeam <= 0) return null;
+  // Only the upper dropper can be placed from seed alone (no LB prev slot).
+  if (prevSlot(onlyTeam) !== undefined) {
+    return null;
+  }
+  const u = getUpperBracketMatchIndexAtRound({
+    bracketSize,
+    upperRound,
+    seed: onlySeed
+  });
+  if (u == null) return null;
+  return slotFromUpperIndex(u);
+}
+
+/**
+ * Odd lower rounds ≥ 3: merge winners from adjacent slots of the previous lower round.
+ */
+export function getLowerBracketMergeRoundLayoutSlot(params: {
+  team1Id: number;
+  team2Id: number | null;
+  prevRoundParticipantSlotByTeamId: Map<number, number>;
+}): number | null {
+  const { team1Id, team2Id, prevRoundParticipantSlotByTeamId } = params;
+  if (team2Id == null || team2Id <= 0 || team1Id <= 0) return null;
+  const s1 = prevRoundParticipantSlotByTeamId.get(team1Id);
+  const s2 = prevRoundParticipantSlotByTeamId.get(team2Id);
+  if (s1 === undefined || s2 === undefined) return null;
+  if (Math.abs(s1 - s2) !== 1) return null;
+  return Math.floor(Math.min(s1, s2) / 2);
+}
+
+/**
+ * Lower bracket **even** rounds after R1 (canonical LB 2, 4, …): one team drops from the upper
+ * bracket for their first lower match; the other advanced from the previous lower round. FaceIT
+ * UI shows the **upper dropper on top** (team1) and the **feeder on bottom** (team2).
+ *
+ * `prevRoundLbTeamIds` is the set of team ids that had a match in the immediately preceding lower
+ * round (winners and losers both appear in that round’s snapshot).
+ */
+export function shouldSwapLowerDropRoundHomeAway(params: {
+  team1Id: number;
+  team2Id: number | null;
+  prevRoundLbTeamIds: Set<number>;
+}): boolean {
+  const { team1Id, team2Id, prevRoundLbTeamIds } = params;
+  if (team2Id == null || team2Id <= 0 || team1Id <= 0) return false;
+  const t1Feeder = prevRoundLbTeamIds.has(team1Id);
+  const t2Feeder = prevRoundLbTeamIds.has(team2Id);
+  if (t1Feeder === t2Feeder) return false;
+  return t1Feeder;
 }
