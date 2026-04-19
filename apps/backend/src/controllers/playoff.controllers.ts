@@ -330,11 +330,18 @@ export const getPlayoffBracketController = async (
           if (sa != null && sb != null && sa !== sb) return sa - sb;
           if (sa != null && sb == null) return -1;
           if (sa == null && sb != null) return 1;
-          if (sa != null && sb != null && sa === sb) {
-            const aiA = apiIndexMap.get(a.external_match_id ?? "") ?? 99999;
-            const aiB = apiIndexMap.get(b.external_match_id ?? "") ?? 99999;
-            return aiA - aiB;
-          }
+          const aiA = apiIndexMap.get(a.external_match_id ?? "") ?? 99999;
+          const aiB = apiIndexMap.get(b.external_match_id ?? "") ?? 99999;
+          return aiA - aiB;
+        }
+
+        if (group === 2) {
+          // LB R2+: FaceIT API response order encodes the correct bracket position
+          // (cross-seeded: loser of last UB match feeds slot 0, loser of first UB match
+          // feeds the last slot). scoreKey / minSeed don't model this cross-pairing.
+          const aiA = apiIndexMap.get(a.external_match_id ?? "") ?? 99999;
+          const aiB = apiIndexMap.get(b.external_match_id ?? "") ?? 99999;
+          return aiA - aiB;
         }
 
         const ka = scoreKey(a);

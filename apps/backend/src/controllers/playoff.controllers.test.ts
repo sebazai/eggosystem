@@ -286,6 +286,103 @@ describe("playoff.controllers", () => {
       ).toEqual(["lb-r1-c", "lb-r1-a", "lb-r1-d", "lb-r1-b"]);
     });
 
+    it("orders lower bracket R2+ by api_index (not scoreKey) when seeds are known", async () => {
+      // LB R2 cross-seeding: Loser of last UB R2 match (e.g. seeds 6,3) goes to slot 0,
+      // Loser of first UB R2 match (e.g. seeds 8,1) goes to the last slot.
+      // FaceIT API returns LB R2 matches in slot order: slot0 first, slot1 last.
+      // scoreKey (seedPos minimum) would produce the reverse: seed 8 (pos 2) < seed 6 (pos 14)
+      // so scoreKey puts the slot-1 match first — wrong. apiIndexMap must be primary.
+      mockGetPlayoffExternalId.mockResolvedValue("champ-lb-r2");
+
+      mockGetChampionshipMatchesCached.mockResolvedValue([
+        // LB R1 match — needed so firstLowerBracketRound=1 and round=2 is treated as R2+
+        {
+          match_id: "lb-r1-seeds",
+          round: 1,
+          group: 2,
+          status: "FINISHED",
+          best_of: 3,
+          scheduled_at: 0,
+          teams: {
+            faction1: { faction_id: "f1", name: "T1", avatar: "" },
+            faction2: { faction_id: "f16", name: "T16", avatar: "" }
+          },
+          results: { score: { faction1: 1, faction2: 0 } }
+        },
+        // LB R2 slot 0: seeds 6 and 9 → scoreKey min = seedPos(9)=3
+        {
+          match_id: "lb-r2-slot0",
+          round: 2,
+          group: 2,
+          status: "SCHEDULED",
+          best_of: 3,
+          scheduled_at: 0,
+          teams: {
+            faction1: { faction_id: "f6", name: "T6", avatar: "" },
+            faction2: { faction_id: "f9", name: "T9", avatar: "" }
+          }
+        },
+        // LB R2 slot 1: seeds 8 and 11 → scoreKey min = seedPos(8)=2 (LOWER than slot0's 3)
+        // Old scoreKey would put this match first (wrong). api_index keeps slot0 first (correct).
+        {
+          match_id: "lb-r2-slot1",
+          round: 2,
+          group: 2,
+          status: "SCHEDULED",
+          best_of: 3,
+          scheduled_at: 0,
+          teams: {
+            faction1: { faction_id: "f8", name: "T8", avatar: "" },
+            faction2: { faction_id: "f11", name: "T11", avatar: "" }
+          }
+        }
+      ]);
+
+      mockGetPlayoffMatchIds.mockResolvedValue(
+        new Map([
+          ["lb-r1-seeds", 1],
+          ["lb-r2-slot0", 2],
+          ["lb-r2-slot1", 3]
+        ])
+      );
+      mockGetTeamIdsByExternalIds.mockResolvedValue(
+        new Map([
+          ["f1", 101],
+          ["f16", 116],
+          ["f6", 106],
+          ["f9", 109],
+          ["f8", 108],
+          ["f11", 111]
+        ])
+      );
+      mockGetTeamLogosByTeamIds.mockResolvedValue(new Map());
+      mockGetPlayoffSeedMap.mockResolvedValue(
+        new Map([
+          [101, 1],
+          [116, 16],
+          [106, 6],
+          [109, 9],
+          [108, 8],
+          [111, 11]
+        ])
+      );
+
+      await getPlayoffBracketController(
+        mockRequest as Request,
+        mockResponse as Response,
+        mockNext
+      );
+
+      const [payload] = (mockResponse.json as jest.Mock).mock.calls[0];
+      const lbR2Matches = payload.matches.filter(
+        (m: { group: number; round: number }) => m.group === 2 && m.round === 2
+      );
+      expect(lbR2Matches[0].external_match_id).toBe("lb-r2-slot0");
+      expect(lbR2Matches[1].external_match_id).toBe("lb-r2-slot1");
+      expect(lbR2Matches[0].slot).toBe(0);
+      expect(lbR2Matches[1].slot).toBe(1);
+    });
+
     it("orders lower bracket R1 by api_index over UUID lexicographic order when seeds resolve to same slot", async () => {
       mockGetPlayoffExternalId.mockResolvedValue("champ-lb2");
 
