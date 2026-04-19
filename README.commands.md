@@ -1,111 +1,195 @@
 # Development Commands
 
-This document provides a comprehensive reference for all development commands in the Kanaliiga Eggosystem.
+This document provides a comprehensive reference for all development commands in the Kanaliiga Eggosystem. All commands are pnpm-based; the root package uses Turborepo to fan out to workspaces.
+
+Always run from the correct directory. Prepend either:
+
+- `cd $(git rev-parse --show-toplevel)` for root commands, or
+- `cd $(git rev-parse --show-toplevel)/apps/{backend,frontend}` for workspace-specific commands.
 
 ## Package Management
+
+### Setup
+
+```bash
+# Install all dependencies across the workspace
+pnpm install
+
+# One-shot dev bootstrap: install + playwright + build + migrate + seed
+pnpm setup:dev
+
+# Install Playwright (chromium + system deps)
+pnpm install:playwright
+
+# Nuke node_modules / .turbo / .next, reinstall, rebuild, reseed
+pnpm fresh
+```
 
 ### Root Workspace Commands
 
 ```bash
-# Install all dependencies across workspace
-pnpm install
+# Start dev (turbo: backend :3001 + frontend :3000)
+pnpm dev
 
-# Build all packages and apps
+# Build all packages and apps (turbo build)
 pnpm build
 
-# Run all tests (unit tests only)
+# Start production servers (turbo start)
+pnpm start
+
+# Run all unit tests (turbo test)
 pnpm test
 
-# Run all tests including E2E
+# Run unit tests followed by E2E
 pnpm test:all
 
-# Run E2E tests only
-pnpm test:e2e
+# Clean build artifacts across all workspaces
+pnpm clean
 
-# Start development environment
-pnpm dev
+# Add a shadcn component (passthrough to frontend)
+pnpm shadcn:add -- <component>
 ```
 
-### Backend Commands (from `apps/backend/`)
+### Backend Commands (`apps/backend`)
 
 ```bash
-# Development server
-pnpm dev
+# Development server (nodemon)
+pnpm --filter=backend dev
 
-# E2E test backend (stubbed)
-pnpm dev:e2e
+# E2E test backend (NODE_ENV=e2e, loads .env.local.test)
+pnpm --filter=backend dev:e2e
 
-# Run tests
-pnpm test
+# Production build (tsc -p tsconfig.build.json)
+pnpm --filter=backend build
 
-# Run tests in watch mode
-pnpm test:watch
+# Start compiled server (node ./dist/server.js)
+pnpm --filter=backend start
 
-# Type checking
-pnpm typecheck
+# Run unit tests (NODE_ENV=test jest --coverage)
+pnpm --filter=backend test
 
-# Linting
-pnpm lint
+# Watch-mode unit tests
+pnpm --filter=backend test:watch
 
-# Format code
-pnpm format
+# Serial tests (runInBand, detectOpenHandles)
+pnpm --filter=backend test:serial
 
-# Database migration
-pnpm migrate
+# Debug tests via node --inspect-brk
+pnpm --filter=backend test:debug
 
-# Database seed
-pnpm seed
+# Type checking (tsc --noEmit)
+pnpm --filter=backend typecheck
 
-# Database reset and seed
-pnpm seed:reset
+# Lint
+pnpm --filter=backend lint
+
+# Clean build output
+pnpm --filter=backend clean
+
+# Email queue smoke script
+pnpm --filter=backend test:email-queue
 ```
 
-### Frontend Commands (from `apps/frontend/`)
+### Frontend Commands (`apps/frontend`)
 
 ```bash
-# Development server
-pnpm dev
+# Development server (next dev, :3000)
+pnpm --filter=frontend dev
 
-# Build for production
-pnpm build
+# Production build
+pnpm --filter=frontend build
 
-# Run tests
-pnpm test
+# E2E build (sets NEXT_PUBLIC_IMAGE_SERVICE_URL)
+pnpm --filter=frontend build:e2e
 
-# Run tests in watch mode
-pnpm test:watch
+# Start Next (next start)
+pnpm --filter=frontend start
 
-# Type checking
-pnpm typecheck
+# Start the standalone output (port 3000)
+pnpm --filter=frontend start:standalone
 
-# Linting
-pnpm lint
+# Unit tests (jest)
+pnpm --filter=frontend test
 
-# Format code
-pnpm format
+# Watch-mode unit tests
+pnpm --filter=frontend test:watch
 
-# E2E tests
-pnpm test:e2e
+# Type checking (tsc --noEmit)
+pnpm --filter=frontend typecheck
 
-# Integration tests (Jest unit tests)
-pnpm test
+# Lint
+pnpm --filter=frontend lint
+
+# Playwright E2E (local / CI)
+pnpm --filter=frontend test:e2e
+pnpm --filter=frontend test:e2e:ui
+pnpm --filter=frontend test:e2e:headed
+pnpm --filter=frontend test:e2e:container   # uses PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+
+# Show a Playwright trace on :9323
+pnpm --filter=frontend playwright-trace
+
+# Clean Next/cache output
+pnpm --filter=frontend clean
+
+# Add a shadcn component
+pnpm --filter=frontend shadcn:add <component>
+
+# Refresh AGENTS.md from Next docs (auto-generated)
+pnpm --filter=frontend agents-md
 ```
+
+### Shared Packages (`packages/*`)
+
+Workspace filters use the full package name:
+
+```bash
+# @eggosystem/types — shared TS types + test factories
+pnpm --filter=@eggosystem/types build
+pnpm --filter=@eggosystem/types dev         # tsc --watch
+pnpm --filter=@eggosystem/types typecheck
+pnpm --filter=@eggosystem/types lint
+pnpm --filter=@eggosystem/types clean
+
+# @eggosystem/shared-msw — MSW handlers
+pnpm --filter=@eggosystem/shared-msw build
+pnpm --filter=@eggosystem/shared-msw dev    # tsc --watch
+pnpm --filter=@eggosystem/shared-msw clean
+
+# @eggosystem/viewer — CS2 2D demo viewer component
+pnpm --filter=@eggosystem/viewer build
+pnpm --filter=@eggosystem/viewer dev        # dev-server.js
+pnpm --filter=@eggosystem/viewer dev:direct # vite directly
+pnpm --filter=@eggosystem/viewer dev:build  # tsc --watch
+pnpm --filter=@eggosystem/viewer typecheck
+pnpm --filter=@eggosystem/viewer lint
+
+# @eggosystem/eslint, @eggosystem/tsconfig — config-only, no scripts to run
+```
+
+`@eggosystem/types#build` and `@eggosystem/shared-msw#build` are declared `dependsOn` for the turbo `dev`, `build`, `typecheck`, and `test` tasks — they will build automatically as needed.
 
 ## Database Commands
 
-**Schema Reference**: See `README.database.md` for complete database schema documentation including triggers, functions, and relationships.
+**Schema Reference**: See `README.database.md` for complete schema documentation including triggers, functions, and relationships.
 
 ### Migration Commands
 
-```bash
-# Create new migration
-pnpm migrate:make <migration_name>
+Run from the workspace root (turbo dispatches to backend); or invoke directly on backend.
 
+```bash
 # Run pending migrations
 pnpm migrate
 
-# Rollback last migration
+# Create a new migration (passes name through to knex)
+pnpm migrate:make <migration_name>
+
+# Rollback the last batch
 pnpm migrate:rollback
+
+# Roll one migration down / up
+pnpm migrate:down
+pnpm migrate:up
 
 # Check migration status
 pnpm migrate:status
@@ -114,99 +198,115 @@ pnpm migrate:status
 ### Seed Commands
 
 ```bash
-# Run development seed
+# Run dev seed (dev_seed.ts)
 pnpm seed
 
-# Run E2E test seed
-pnpm seed:e2e
+# Reset DB, re-seed dev, re-migrate, (and for :e2e) apply e2e seed
+pnpm reseed
+pnpm --filter=backend reseed:e2e
 
-# Reset and seed database
+# Alias of reseed
 pnpm seed:reset
 
-# Update dev seed (after migrations)
-pnpm seed:update
+# Apply only the E2E seed layer
+pnpm --filter=backend seed:e2e
 ```
+
+When adding a new migration, also update `dev_seed.ts` and `e2e_test_seed.ts` (see `docs/update_dev_seed.md`).
 
 ## Testing Commands
 
-### Unit Testing
+### Unit Testing (Jest)
 
 ```bash
-# Run all unit tests
+# Run all unit tests across workspaces
 pnpm test
 
-# Run tests for specific app
+# Run tests for a single app
 pnpm --filter=backend test
 pnpm --filter=frontend test
 
-# Run specific test file
-pnpm test -- <test_file_path>
+# Run backend only, from root
+pnpm test:backend
 
-# Run tests in watch mode
+# Run by filename substring / path
+pnpm --filter=backend test -- leaderboards
+pnpm --filter=backend test -- path/to/file.test.ts
+
+# Watch mode across both apps
 pnpm test:watch
-
-# Run tests with coverage (built into test command)
-pnpm test
 ```
 
-### E2E Testing
+### E2E Testing (Playwright)
+
+`pnpm test:e2e` must be run from the workspace root — it builds, reseeds the E2E DB, and then runs Playwright. Running the raw frontend script skips the reseed/build and produces stale results.
 
 ```bash
-# Run E2E tests (requires backend setup)
+# Full E2E flow: build + reseed:e2e + playwright
 pnpm test:e2e
 
-# Run E2E tests in headed mode
+# Pass-through args (after --)
+pnpm test:e2e -- --grep "Signup Form"
 pnpm test:e2e -- --headed
 
-# Run specific E2E test
-pnpm test:e2e -- <test_file_path>
+# Re-run Playwright only (no build, no reseed)
+pnpm test:e2e:run
+
+# Clean + full E2E (nukes .next, reports, .turbo)
+pnpm test:e2e:clean
+
+# Playwright UI mode
+pnpm test:e2e:ui
+pnpm test:e2e:ui:container    # xvfb wrapper for containers
+
+# Replay a Playwright trace file
+pnpm playwright-trace -- <trace-file>
 ```
 
-### Integration Testing
-
-```bash
-# Run integration tests (Jest unit tests)
-pnpm test
-
-# Run specific test file
-pnpm test -- <test_file_path>
-```
+The backend E2E server can be run standalone with `pnpm --filter=backend dev:e2e` (loads `.env.local.test`).
 
 ## Quality Assurance Commands
 
-### Code Quality
+### Quality Gate
 
 ```bash
-# Type checking
-pnpm typecheck
-
-# Linting
-pnpm lint
-
-# Linting with auto-fix
-pnpm lint:fix
-
-# Code formatting
-pnpm format
-
-# Format check (CI)
-pnpm format:check
+# Full gate: knip + typecheck + format:check + lint
+pnpm quality
 ```
 
-### Build Commands
+Run `pnpm quality` (and fix failures) before considering any change done.
+
+### Individual Gates
 
 ```bash
-# Build all packages
+# Dead-code / unused-deps check
+pnpm knip
+
+# Type checking across workspaces (turbo typecheck)
+pnpm typecheck
+
+# Lint across workspaces (turbo lint --continue)
+pnpm lint
+pnpm lint:fix
+
+# Prettier
+pnpm format          # prettier --write
+pnpm format:check    # prettier --check
+```
+
+### Build
+
+```bash
+# Build everything (turbo build)
 pnpm build
 
-# Build specific app
+# Build a specific workspace
 pnpm --filter=backend build
 pnpm --filter=frontend build
+pnpm --filter=@eggosystem/types build
+pnpm --filter=@eggosystem/shared-msw build
 
-# Build types package
-pnpm --filter=types build
-
-# Clean build artifacts
+# Clean build artifacts (turbo clean)
 pnpm clean
 ```
 
@@ -237,7 +337,7 @@ docker compose build
 # Access MariaDB directly
 docker compose exec devdb mysql -u root -p
 
-# Access PhpMyAdmin
+# PhpMyAdmin
 # http://localhost:8082 (docker compose)
 # http://localhost:8083 (devcontainer)
 
@@ -248,11 +348,11 @@ docker compose exec eggo-db-backup /bin/bash -c 'mysql-backup dump --server $DB_
 ## JWT Key Generation
 
 ```bash
-# Generate access token keys
+# Access token keys
 openssl genpkey -algorithm RSA -out apps/backend/private_access_token.pem
 openssl rsa -pubout -in apps/backend/private_access_token.pem -out apps/backend/public_access_token.pem
 
-# Generate refresh token keys
+# Refresh token keys
 openssl genpkey -algorithm RSA -out apps/backend/private_refresh_token.pem
 openssl rsa -pubout -in apps/backend/private_refresh_token.pem -out apps/backend/public_refresh_token.pem
 ```
@@ -260,10 +360,11 @@ openssl rsa -pubout -in apps/backend/private_refresh_token.pem -out apps/backend
 ## Playwright Setup
 
 ```bash
-# Install Playwright browsers (chromium only)
-pnpm exec playwright install chromium
+# Install Playwright browsers and system deps (chromium)
+pnpm install:playwright
 
-# Install system dependencies (chromium only)
+# Or manually
+pnpm exec playwright install chromium
 pnpm exec playwright install-deps chromium
 
 # For macOS with devcontainer (XQuartz setup)
@@ -302,25 +403,30 @@ xhost localhost
 
 ### Filtering Commands
 
+Workspace filter names match the `name` field in each package's `package.json`:
+
+- `backend` (apps/backend)
+- `frontend` (apps/frontend)
+- `@eggosystem/types`, `@eggosystem/shared-msw`, `@eggosystem/viewer`, `@eggosystem/eslint`, `@eggosystem/tsconfig`
+
 ```bash
-# Run command for specific workspace
+# Run a command for a single workspace
 pnpm --filter=backend <command>
 pnpm --filter=frontend <command>
-pnpm --filter=types <command>
+pnpm --filter=@eggosystem/types <command>
 
-# Run command for multiple workspaces
+# Run a command for multiple workspaces
 pnpm --filter=backend --filter=frontend <command>
 ```
 
-### Parallel Execution
+### Turbo Pipeline
 
-```bash
-# Run commands in parallel
-pnpm --parallel <command>
+Tasks defined in `turbo.json`:
 
-# Run tests in parallel
-pnpm --parallel test
-```
+- `build`, `dev`, `test`, `typecheck` — all `dependsOn` `@eggosystem/types#build` and `@eggosystem/shared-msw#build`
+- `lint`, `format:check` — fan out via `^<task>`
+- `clean`, `shadcn:add` — cache disabled
+- `migrate`, `migrate:rollback`, `migrate:down`, `migrate:up`, `migrate:make`, `migrate:status`, `seed` — cache disabled, scoped to DB env
 
 ### Workspace Root Commands
 
@@ -328,10 +434,10 @@ pnpm --parallel test
 # Always run from workspace root for cross-package operations
 cd $(git rev-parse --show-toplevel) && pnpm <command>
 
-# Backend-specific commands
+# Backend-specific
 cd $(git rev-parse --show-toplevel)/apps/backend && pnpm <command>
 
-# Frontend-specific commands
+# Frontend-specific
 cd $(git rev-parse --show-toplevel)/apps/frontend && pnpm <command>
 ```
 
@@ -344,14 +450,17 @@ cd $(git rev-parse --show-toplevel)/apps/frontend && pnpm <command>
 rm -rf node_modules apps/*/node_modules packages/*/node_modules
 pnpm install
 
+# Or the one-shot nuke-and-rebuild
+pnpm fresh
+
 # Reset database
-pnpm seed:reset
+pnpm reseed
 
 # Clear build artifacts
 pnpm clean
 pnpm build
 
-# Check workspace status
+# Check workspace graph
 pnpm list --depth=0
 ```
 
@@ -359,7 +468,7 @@ pnpm list --depth=0
 
 ```bash
 # Check environment variables
-env | grep -E "(NODE_ENV|DATABASE|JWT)"
+env | grep -E "(NODE_ENV|DB_|JWT)"
 
 # Verify database connection
 pnpm --filter=backend migrate:status

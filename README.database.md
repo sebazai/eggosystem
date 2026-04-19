@@ -45,10 +45,10 @@ FOREIGN KEY (season_id, team_id, league_id)
 
 Many business rules are enforced by database triggers rather than application code:
 
-- **Automatic**: Captain permissions are managed automatically when captain status changes
+- **Automatic**: Captain role and permission grants are managed when captain/co-captain status changes
 - **Reliable**: Works regardless of how data is modified (app, admin tools, direct DB access)
 - **Simple**: Reduces application code complexity
-- **Safe**: Captain permissions are low-privilege, so the risk is minimal
+- **Safe**: Captain-scoped permissions are narrow, so the blast radius is minimal
 
 ## Data Validation
 
@@ -70,19 +70,23 @@ These checks catch data quality issues even if application validation is bypasse
 
 ### Triggers Overview
 
-The database uses triggers to automatically enforce business rules:
+The database uses triggers to automatically enforce business rules. The captain-related triggers were refactored in migration `20251227000000_refactor_captain_permissions_architecture.ts` to split responsibilities between the two roster tables:
 
-**Captain Permissions** - Automatically adds/removes captain permissions when someone becomes or stops being a captain. Also prevents non-captains from having captain permissions.
+**Registration permissions (`SeasonTeamRegistrationPlayers`)** - `add_captain_permissions_on_insert` / `add_captain_permissions_on_update` grant the scoped `edit-registration` permission (in `AccountPermissionScopes`) when a player is flagged as captain or co-captain. The `cleanup_captain_permissions_on_update` / `_on_delete` / `_on_registration_delete` triggers revoke it. `validate_captain_permission_on_insert` / `_on_update` on `AccountPermissionScopes` reject captain-scoped permissions for accounts that are not actually captain or co-captain for that season/team.
 
-**Team Hierarchy** - Ensures only one captain and one co-captain per team per season.
+**Captain role (`SeasonTeamPlayers`)** - `add_captain_role_on_seasonteamplayers_insert` / `_update` grant the `captain` role (in `AccountRoles`) once a player is confirmed on the live roster. `cleanup_captain_role_on_seasonteamplayers_update` / `_delete` remove the role when the player has no remaining captain or co-captain assignments anywhere in `SeasonTeamPlayers`. This table is the source of truth for the captain role after Sortter runs.
 
-**Primary Players** - Prevents players from being primary roster members on multiple teams in the same season.
+**Team hierarchy** - `unique_captain_per_team_season` / `unique_co_captain_per_team_season` (plus the UPDATE variants) enforce at most one captain and one co-captain per team per season on `SeasonTeamRegistrationPlayers`.
 
-**Team Registration** - Prevents duplicate registrations and ensures external platform IDs (FaceIT, Esportal) are unique per season.
+**Primary players** - `before_insert_primary_check` / `before_update_primary_check` on `SeasonTeamPlayers` reject a primary-role insert or update when the same `steam_id` is already a non-discarded primary in another team in the same season (soft-deleted rows with `discarded_at IS NOT NULL` are ignored).
 
-**Player Approvals** - Ensures player approval records specify either a team or organization (for employment verification workflow).
+**Team registration** - `before_insert_team_registration` / `before_update_team_registration` prevent duplicate team registrations, and `before_insert_unique_external_platform` / `before_update_unique_external_platform` keep external platform IDs (FaceIT, Esportal) unique per season.
 
-All triggers are defined in the schema file and work automatically regardless of how data is modified.
+**Player approvals** - `check_team_or_organization` / `check_team_or_organization_update` require every `SeasonPlayerApprovals` row to reference a team, an organization, or both.
+
+**`updated_at` maintenance** - A family of `update_*_updated_at` triggers (generated in `20251011093124_updated_at_created_at.ts` plus a few table-specific migrations) keeps the `updated_at` column current on rows that carry one.
+
+All triggers are defined in `apps/backend/migrations/` and executed by MariaDB regardless of how the data is modified.
 
 ## Database Structure
 
@@ -184,12 +188,13 @@ This prevents invalid scenarios like assigning Team A to a match in Season 2 whe
 
 ### Business Rules (Enforced by Triggers)
 
-1. Only actual captains can have captain permissions
-2. Players can only be primary on one team per season
-3. Teams can only register once per season
-4. External platform IDs must be unique per season
-5. Player approvals must specify either team or organization
-6. Permissions are automatically cleaned up when captain status changes
+1. Only actual captains or co-captains can hold captain-scoped permissions in `AccountPermissionScopes`
+2. The `captain` role is granted and revoked automatically from the live `SeasonTeamPlayers` roster
+3. Players can only be primary (non-discarded) on one team per season
+4. Teams can only register once per season
+5. External platform IDs must be unique per season
+6. Player approvals must specify at least one of team or organization
+7. At most one captain and one co-captain per team per season
 
 ### Error Messages
 
