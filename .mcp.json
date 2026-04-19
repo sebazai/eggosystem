@@ -29,9 +29,12 @@
       "args": ["-C", "/workspace/apps/frontend", "exec", "shadcn", "mcp"],
       "env": {}
     },
-    "GitLab": {
+    "gitlab_mcp": {
       "type": "http",
-      "url": "https://gitlab.com/api/v4/mcp"
+      "url": "https://gitlab.com/api/v4/mcp",
+      "headers": {
+        "PRIVATE-TOKEN": "$GITLAB_TOKEN"
+      }
     }
   }
 }
