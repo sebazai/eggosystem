@@ -198,5 +198,146 @@ describe("playoff.controllers", () => {
       expect(payload.matches[0].seed1).toBe(1);
       expect(payload.matches[0].seed2).toBe(8);
     });
+
+    it("orders lower bracket R1 matches by api_index when teams have no seeds (placeholder)", async () => {
+      mockGetPlayoffExternalId.mockResolvedValue("champ-lb");
+
+      const makePlaceholderFaction = (id: string, name: string) => ({
+        faction_id: id,
+        name,
+        avatar: ""
+      });
+
+      mockGetChampionshipMatchesCached.mockResolvedValue([
+        {
+          match_id: "lb-r1-c",
+          round: 1,
+          group: 2,
+          status: "SCHEDULED",
+          best_of: 3,
+          scheduled_at: 0,
+          teams: {
+            faction1: makePlaceholderFaction("p5", "TBD"),
+            faction2: makePlaceholderFaction("p6", "TBD")
+          }
+        },
+        {
+          match_id: "lb-r1-a",
+          round: 1,
+          group: 2,
+          status: "SCHEDULED",
+          best_of: 3,
+          scheduled_at: 0,
+          teams: {
+            faction1: makePlaceholderFaction("p1", "TBD"),
+            faction2: makePlaceholderFaction("p2", "TBD")
+          }
+        },
+        {
+          match_id: "lb-r1-d",
+          round: 1,
+          group: 2,
+          status: "SCHEDULED",
+          best_of: 3,
+          scheduled_at: 0,
+          teams: {
+            faction1: makePlaceholderFaction("p7", "TBD"),
+            faction2: makePlaceholderFaction("p8", "TBD")
+          }
+        },
+        {
+          match_id: "lb-r1-b",
+          round: 1,
+          group: 2,
+          status: "SCHEDULED",
+          best_of: 3,
+          scheduled_at: 0,
+          teams: {
+            faction1: makePlaceholderFaction("p3", "TBD"),
+            faction2: makePlaceholderFaction("p4", "TBD")
+          }
+        }
+      ]);
+
+      mockGetPlayoffMatchIds.mockResolvedValue(
+        new Map([
+          ["lb-r1-a", 10],
+          ["lb-r1-b", 11],
+          ["lb-r1-c", 12],
+          ["lb-r1-d", 13]
+        ])
+      );
+      mockGetTeamIdsByExternalIds.mockResolvedValue(new Map());
+      mockGetTeamLogosByTeamIds.mockResolvedValue(new Map());
+      mockGetPlayoffSeedMap.mockResolvedValue(new Map());
+
+      await getPlayoffBracketController(
+        mockRequest as Request,
+        mockResponse as Response,
+        mockNext
+      );
+
+      const [payload] = (mockResponse.json as jest.Mock).mock.calls[0];
+      const lbMatches = payload.matches.filter(
+        (m: { group: number }) => m.group === 2
+      );
+      expect(
+        lbMatches.map((m: { external_match_id: string }) => m.external_match_id)
+      ).toEqual(["lb-r1-c", "lb-r1-a", "lb-r1-d", "lb-r1-b"]);
+    });
+
+    it("orders lower bracket R1 by api_index over UUID lexicographic order when seeds resolve to same slot", async () => {
+      mockGetPlayoffExternalId.mockResolvedValue("champ-lb2");
+
+      mockGetChampionshipMatchesCached.mockResolvedValue([
+        {
+          match_id: "zzz-first-in-api",
+          round: 1,
+          group: 2,
+          status: "SCHEDULED",
+          best_of: 3,
+          scheduled_at: 0,
+          teams: {
+            faction1: { faction_id: "f1", name: "TBD", avatar: "" },
+            faction2: { faction_id: "f2", name: "TBD", avatar: "" }
+          }
+        },
+        {
+          match_id: "aaa-second-in-api",
+          round: 1,
+          group: 2,
+          status: "SCHEDULED",
+          best_of: 3,
+          scheduled_at: 0,
+          teams: {
+            faction1: { faction_id: "f3", name: "TBD", avatar: "" },
+            faction2: { faction_id: "f4", name: "TBD", avatar: "" }
+          }
+        }
+      ]);
+
+      mockGetPlayoffMatchIds.mockResolvedValue(
+        new Map([
+          ["zzz-first-in-api", 20],
+          ["aaa-second-in-api", 21]
+        ])
+      );
+      mockGetTeamIdsByExternalIds.mockResolvedValue(new Map());
+      mockGetTeamLogosByTeamIds.mockResolvedValue(new Map());
+      mockGetPlayoffSeedMap.mockResolvedValue(new Map());
+
+      await getPlayoffBracketController(
+        mockRequest as Request,
+        mockResponse as Response,
+        mockNext
+      );
+
+      const [payload] = (mockResponse.json as jest.Mock).mock.calls[0];
+      const lbMatches = payload.matches.filter(
+        (m: { group: number }) => m.group === 2
+      );
+      expect(lbMatches[0].external_match_id).toBe("zzz-first-in-api");
+      expect(lbMatches[1].external_match_id).toBe("aaa-second-in-api");
+    });
   });
 });

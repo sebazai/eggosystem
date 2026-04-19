@@ -94,6 +94,9 @@ export const getPlayoffBracketController = async (
 
     const items = await getChampionshipMatchesCached(championshipId);
 
+    const apiIndexMap = new Map<string, number>();
+    items.forEach((item, idx) => apiIndexMap.set(item.match_id, idx));
+
     const externalMatchIds = items.map((i) => i.match_id);
     const matchIdMap = await getPlayoffMatchIdsByExternalRoomIds(
       seasonId,
@@ -262,9 +265,9 @@ export const getPlayoffBracketController = async (
       const minA = getMatchMinSeed(a);
       const minB = getMatchMinSeed(b);
       if (minA !== minB) return minA - minB;
-      return (a.external_match_id ?? "").localeCompare(
-        b.external_match_id ?? ""
-      );
+      const aiA = apiIndexMap.get(a.external_match_id ?? "") ?? 99999;
+      const aiB = apiIndexMap.get(b.external_match_id ?? "") ?? 99999;
+      return aiA - aiB;
     });
 
     // Ensure stable slot ordering for non-upper groups and any un-slotted matches.
@@ -328,9 +331,9 @@ export const getPlayoffBracketController = async (
           if (sa != null && sb == null) return -1;
           if (sa == null && sb != null) return 1;
           if (sa != null && sb != null && sa === sb) {
-            return (a.external_match_id ?? "").localeCompare(
-              b.external_match_id ?? ""
-            );
+            const aiA = apiIndexMap.get(a.external_match_id ?? "") ?? 99999;
+            const aiB = apiIndexMap.get(b.external_match_id ?? "") ?? 99999;
+            return aiA - aiB;
           }
         }
 
@@ -340,9 +343,9 @@ export const getPlayoffBracketController = async (
         const minA = getMatchMinSeed(a);
         const minB = getMatchMinSeed(b);
         if (minA !== minB) return minA - minB;
-        return (a.external_match_id ?? "").localeCompare(
-          b.external_match_id ?? ""
-        );
+        const aiA = apiIndexMap.get(a.external_match_id ?? "") ?? 99999;
+        const aiB = apiIndexMap.get(b.external_match_id ?? "") ?? 99999;
+        return aiA - aiB;
       });
 
       if (group === 2 && round === firstLowerBracketRound && bracketSize > 0) {
