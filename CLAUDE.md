@@ -111,7 +111,7 @@ These are enforced rules, not suggestions:
 - **No unsafe type casting.** Don't use `as SomeType` or `as unknown as SomeType`. Use `satisfies`, type guards, or properly typed mocks. Don't inline `import("module").Type` — use named imports.
 - **No try/catch unless it owns cleanup.** Only use try/catch for DB transactions that need cleanup; otherwise let errors bubble so the Express error handler formats them as RFC 7807.
 - **Reuse via exports, not duplication.** Export shared helpers and import them; don't re-implement.
-- **Git policy:** never `git push`. Only commit when executing a plan in `.cursor/plans/`; otherwise leave commits to the user. Never use `--no-verify` / `--no-gpg-sign`.
+- **Git policy:** Never use `--no-verify` / `--no-gpg-sign`. Commits and PRs are allowed as part of automated workflows.
 - **Database queries during exploration:** use the MariaDB MCP server (`execute_sql`, `list_tables`, `get_table_schema*`) against database `kanaliiga` for ad-hoc inspection. Application code still uses Knex.
 
 ## Quality Gate (before finishing any change)
