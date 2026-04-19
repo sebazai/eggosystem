@@ -72,6 +72,14 @@ Backend runs on `localhost:3001`, frontend on `localhost:3000`, bull-monitor on 
 
 8. Optional: Apply for a FaceIT App Studio API key at <https://developers.faceit.com/> (most flows work without it).
 
+9. Optional — **GitLab in Cursor (MCP)**: create a [Personal Access Token](https://docs.gitlab.com/ee/user/profile/personal_access_tokens.html) and a local `.env.mcp` file:
+
+   ```bash
+   pnpm gitlab:mcp:pat
+   ```
+
+   That command copies [`.env.mcp.example`](.env.mcp.example) to `.env.mcp` if needed, prints scope guidance, and opens the GitLab token page. Cursor loads `.env.mcp` via [`.cursor/gitlab-mcp.sh`](.cursor/gitlab-mcp.sh) (see [`.cursor/mcp.json`](.cursor/mcp.json)). Details: [Development Commands — GitLab MCP](README.commands.md#gitlab-mcp-cursor).
+
 ## Documentation
 
 - [Architecture Overview](README.architecture.md) — system design and technical patterns

@@ -18,12 +18,41 @@ pnpm install
 # One-shot dev bootstrap: install + playwright + build + migrate + seed
 pnpm setup:dev
 
+# GitLab MCP (Cursor): ensure .env.mcp exists, print PAT help, open GitLab token page
+pnpm gitlab:mcp:pat
+
 # Install Playwright (chromium + system deps)
 pnpm install:playwright
 
 # Nuke node_modules / .turbo / .next, reinstall, rebuild, reseed
 pnpm fresh
 ```
+
+### GitLab MCP (Cursor)
+
+The [GitLab MCP server](https://github.com/zereight/gitlab-mcp) runs through [`.cursor/gitlab-mcp.sh`](.cursor/gitlab-mcp.sh), which loads gitignored [`.env.mcp`](.env.mcp) from the repo root. Cursor reads [`.cursor/mcp.json`](.cursor/mcp.json).
+
+**Create or refresh your Personal Access Token**
+
+```bash
+pnpm gitlab:mcp:pat
+```
+
+This script:
+
+- Copies [`.env.mcp.example`](.env.mcp.example) to `.env.mcp` if `.env.mcp` does not exist (it never overwrites an existing file).
+- Prints which GitLab scopes to choose (`read_api` vs `api`) and where to paste `glpat-...`.
+- Opens the GitLab “Access Tokens” page in your browser (GitLab.com by default).
+
+**Self-managed GitLab:** set `GITLAB_WEB_HOST` to your hostname (no `https://`) so the correct token page opens, for example:
+
+```bash
+GITLAB_WEB_HOST=gitlab.example.com pnpm gitlab:mcp:pat
+```
+
+**Headless / CI / no browser:** set `GITLAB_MCP_PAT_NO_OPEN=1` to skip opening a URL.
+
+After editing `.env.mcp`, reload MCP in Cursor or restart the editor. Official PAT documentation: [Personal access tokens](https://docs.gitlab.com/ee/user/profile/personal_access_tokens.html).
 
 ### Root Workspace Commands
 
