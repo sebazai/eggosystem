@@ -29,7 +29,7 @@
       "args": ["-C", "/workspace/apps/frontend", "exec", "shadcn", "mcp"],
       "env": {}
     },
-    "GitLab": {
+    "gitlab_mcp": {
       "type": "stdio",
       "command": "bash",
       "args": [".cursor/gitlab-mcp.sh"],

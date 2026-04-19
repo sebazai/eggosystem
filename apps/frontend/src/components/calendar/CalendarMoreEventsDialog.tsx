@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from "react";
 import type { EventApi, MoreLinkArg } from "@fullcalendar/core";
-import { format } from "date-fns";
+import { format, isSameDay } from "date-fns";
 import { Clock } from "lucide-react";
 import {
   Dialog,
@@ -67,6 +67,58 @@ function sortMoreLinkHiddenSegments(
     const tierB = Number(b.event.extendedProps?.tier ?? 999);
     return tierA - tierB;
   });
+}
+
+/**
+ * In time-grid views FullCalendar passes the same array for `allSegs` and `hiddenSegs`
+ * (only the stacked/overflow slice). Reconstruct the full set for the column by adding
+ * same-day timed events from the calendar that overlap that slice's time span.
+ *
+ * @public Kept exported for colocated unit tests (`*.test.ts` are ignored by Knip).
+ */
+export function expandTimeGridMoreLinkSegments(
+  columnDate: Date,
+  hiddenSegs: CalendarMoreDialogSegment[],
+  calendarEvents: EventApi[]
+): CalendarMoreDialogSegment[] {
+  if (hiddenSegs.length === 0) {
+    return [];
+  }
+
+  const clusterStartMs = Math.min(...hiddenSegs.map((s) => s.start.getTime()));
+  const clusterEndMs = Math.max(...hiddenSegs.map((s) => s.end.getTime()));
+
+  const hiddenIds = new Set(hiddenSegs.map((s) => s.event.id));
+  const result: CalendarMoreDialogSegment[] = [...hiddenSegs];
+
+  for (const ev of calendarEvents) {
+    if (hiddenIds.has(ev.id)) {
+      continue;
+    }
+    if (ev.allDay) {
+      continue;
+    }
+    const start = ev.start;
+    const end = ev.end;
+    if (!start || !end) {
+      continue;
+    }
+    if (!isSameDay(start, columnDate)) {
+      continue;
+    }
+    if (!(start.getTime() < clusterEndMs && end.getTime() > clusterStartMs)) {
+      continue;
+    }
+    result.push({
+      event: ev,
+      start,
+      end,
+      isStart: true,
+      isEnd: true
+    });
+  }
+
+  return result;
 }
 
 type CalendarMoreEventsDialogProps = {
@@ -167,9 +219,17 @@ export const useCalendarMoreLinkDialog =
 
     const moreLinkClick = useCallback((info: MoreLinkArg) => {
       setTitle(format(info.date, "PPPP"));
-      // Show *all* segments for the day/week cell, not only the overflowed ones.
-      // FullCalendar provides both `allSegs` and `hiddenSegs` in the callback.
-      setSegments(sortMoreLinkHiddenSegments(info.allSegs));
+      // Month view: `allSegs` is every event in the day cell. Time grid: FC sets
+      // `allSegs` === `hiddenSegs` (overflow only); merge visible same-day overlaps.
+      const rawSegs =
+        info.view.type.startsWith("timeGrid") && info.hiddenSegs.length > 0
+          ? expandTimeGridMoreLinkSegments(
+              info.date,
+              info.hiddenSegs as CalendarMoreDialogSegment[],
+              info.view.calendar.getEvents()
+            )
+          : (info.allSegs as CalendarMoreDialogSegment[]);
+      setSegments(sortMoreLinkHiddenSegments(rawSegs));
       setOpen(true);
       return true;
     }, []);

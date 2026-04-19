@@ -1,5 +1,7 @@
 # Fantasy League Player Roles - Analysis & Recommendations
 
+> **Note (audited 2026-04-19):** An analysis/recommendations doc from the design phase. Role definitions and scoring formulas may have changed since implementation — check `apps/backend/src/services/fantasy-points.service.ts` and `apps/backend/src/services/fantasy-value.service.ts` for the authoritative current logic.
+
 ## Overview
 
 This document analyzes the current fantasy league role system, identifies issues, and proposes improvements based on available player statistics and gameplay mechanics.

@@ -9,22 +9,36 @@ This document explains the system architecture, key design decisions, and patter
 ```
 /workspace/
 ├── apps/
-│   ├── backend/          # Express.js API server
-│   └── frontend/         # Next.js web application
+│   ├── backend/          # Express 5 API server (TypeScript, Knex, MariaDB)
+│   └── frontend/         # Next.js 16 App Router application (React 19)
 ├── packages/
-│   ├── types/           # Shared TypeScript types
-│   ├── eslint/          # Shared ESLint configurations
-│   └── shared-msw/      # Mock Service Worker handlers
-├── docs/                # Project documentation
-└── scripts/             # Deployment and utility scripts
+│   ├── types/            # @eggosystem/types — shared types + test-data factories
+│   ├── shared-msw/       # @eggosystem/shared-msw — MSW handlers
+│   ├── viewer/           # @eggosystem/viewer — shared viewer package
+│   ├── eslint/           # @eggosystem/eslint — shared ESLint configs
+│   └── tsconfig/         # @eggosystem/tsconfig — shared tsconfig presets
+└── apps/backend/
+    ├── migrations/       # Knex migrations (150+)
+    └── seeds/            # Dev and E2E seed scripts
 ```
+
+Turbo orchestrates the build graph. The `dev`, `build`, `typecheck`, and `test`
+tasks all `dependsOn` both `@eggosystem/types#build` and
+`@eggosystem/shared-msw#build`, so those packages must compile before the
+backend or frontend can type-check, build, or run.
 
 ### Technology Stack
 
-- **Backend**: Node.js + Express.js + TypeScript
-- **Frontend**: Next.js + React + TypeScript
-- **Database**: MariaDB with Knex.js ORM
-- **Package Manager**: PNPM with workspace support
+- **Backend**: Node.js + Express 5 + TypeScript, Knex query builder, Passport
+  (Steam OpenID), BullMQ
+- **Frontend**: Next.js 16 (App Router) + React 19 + TypeScript, Tailwind v4,
+  shadcn on top of Radix UI primitives, SWR for data fetching,
+  `react-hook-form` + Zod (`@hookform/resolvers`)
+- **Database**: MariaDB accessed via Knex.js; business rules enforced in SQL
+  triggers and functions
+- **Queues**: BullMQ (Redis-backed) for the `welcome-emails` queue; RabbitMQ
+  for external queue consumers
+- **Package Manager**: PNPM workspaces driven by Turborepo
 - **Testing**: Jest (unit) + Playwright (E2E)
 - **Development**: DevContainer + Docker Compose
 - **Monitoring**: Grafana Alloy with OpenTelemetry
@@ -43,23 +57,74 @@ Kanaliiga operates as a **corporate esports league** with the following key conc
 
 ### Registration-to-Competition Pipeline
 
-The system implements a sophisticated **dual-roster architecture**:
+The system implements a **dual-roster architecture**:
 
 1. **Registration Phase**: Teams register players in `SeasonTeamRegistrationPlayers`
-2. **Sorting Phase**: "Sortter" algorithm processes registrations to create balanced leagues
-3. **Competition Phase**: Final rosters copied to `SeasonTeamPlayers` for active tournament play
-4. **Runtime Flexibility**: Active rosters can be modified (add players, substitutes) without affecting original registration data
+   (registration intent, immutable once Sortter has run).
+2. **Sorting Phase**: The "Sortter" algorithm processes registrations to create
+   balanced leagues.
+3. **Competition Phase**: Final rosters are materialised into `SeasonTeamPlayers`
+   for active tournament play.
+4. **Runtime Flexibility**: `SeasonTeamPlayers` can be modified (add players,
+   substitutes, discard a player) without mutating the original registration
+   record.
 
-This separation ensures data integrity for original registration decisions while allowing mid-season roster flexibility.
+This separation preserves the original registration decisions as an audit
+record while allowing mid-season roster flexibility. Do not conflate the two
+tables in application code or queries.
 
-## Data Flow
+## Backend Request Flow
+
+### Entry Point
+
+`apps/backend/src/app.ts` is the Express application factory. It:
+
+- Loads environment variables based on `NODE_ENV`:
+  - `e2e` → `.env.local.test`
+  - `development` / `test` → `.env.development` then `.env` (development takes
+    precedence)
+  - any other value → DB credentials (`DB_HOST`, `DB_PORT`, `DB_USER`,
+    `DB_PASSWORD`, `DB_NAME`) must already be set in the environment, otherwise
+    boot throws. `FRONTEND_URL` is required in all environments.
+- Wires middleware in order: `cookie-parser`, `cors({ origin: true, credentials: true })`,
+  `express.json({ limit: "10mb" })`, `helmet`, `morgan("dev")` (skipping
+  `/api/v1/health`), `passport.initialize()`.
+- Mounts `v1Router` at `/api/v1` and terminates the chain with the central
+  `expressErrorHandler`.
+- Conditionally boots async subsystems (see below).
+
+### Layering
+
+Incoming requests flow through:
+
+```
+routes/v1/*.routes.ts  →  controllers/*.controllers.ts  →  services/*.services.ts
+                                                              ↓
+                                                      models/*.models.ts
+                                                              ↓
+                                                         db/ (Knex)
+```
+
+- Zod request/response validation lives in `apps/backend/src/schemas/`.
+- Controllers return `next(new ErrorClass(...))`; services throw and let
+  errors bubble to the error handler.
+- `try`/`catch` is reserved for DB transactions that own cleanup.
 
 ### API Architecture
 
 - **RESTful APIs**: Standard HTTP methods with JSON responses
-- **Error Handling**: RFC 7807 Problem Details format with database constraint propagation
-- **Authentication**: Steam-based login with JWT tokens (access + refresh)
-- **Validation**: Zod schemas for request/response validation
+- **Error Handling**: RFC 7807 Problem Details format (`application/problem+json`)
+  emitted by `middlewares/express-error-handler.ts`. It special-cases
+  `UnauthorizedError` (express-jwt), `ZodError`, and `BaseError` subclasses, and
+  forwards MariaDB constraint / trigger errors through
+  `convertDatabaseErrorToConflictError`.
+- **Authentication**: Steam OpenID via Passport issues an RSA-signed JWT
+  access token and a refresh token. Keys are stored at
+  `apps/backend/private_access_token.pem`, `public_access_token.pem`,
+  `private_refresh_token.pem`, and `public_refresh_token.pem`. Route protection
+  uses the `authenticateJWT` middleware (with an additional `admin` guard on
+  privileged routes).
+- **Validation**: Zod schemas for request/response validation.
 
 ### Database Design Philosophy
 
@@ -122,6 +187,55 @@ This separation ensures data integrity for original registration decisions while
 - **Future Flexibility**: Can handle various tournament formats
 
 **Implementation**: Triggers validate data integrity when season/league context is provided.
+
+## Async Subsystems
+
+Each async subsystem is gated in `app.ts` on both environment and `NODE_ENV`.
+They are all skipped in `test` and `e2e` mode, and failures are non-fatal — the
+HTTP server still starts.
+
+- **Discord bot** — initialised when `DISCORD_BOT_TOKEN` and `DISCORD_GUILD_ID`
+  are set. Uses `initializeDiscordClient` and `setupDiscordEventHandlers` from
+  `services/discord.services.ts`. Reconnection is attempted on subsequent
+  requests if initial connect fails.
+- **RabbitMQ queue consumers** — started via
+  `queueConsumerManager.startAllConsumers()` when `RABBITMQ_HOST`,
+  `RABBITMQ_USER`, and `RABBITMQ_PASSWORD` are present. Automatic reconnection
+  is built into the manager.
+- **BullMQ email queue (`welcome-emails`)** — Redis-backed, initialised by the
+  email services. Rate-limited (1 email per `EMAIL_SEND_DELAY_MS`), 3 retry
+  attempts with exponential backoff, worker concurrency 1. Enqueued on Sortter
+  finalisation; worker lifecycle follows the server process.
+
+## Frontend Architecture
+
+- App directory: `apps/frontend/src/app` with four route groups:
+  - `(admin)` — dashboard views (cookie-based JWT auth)
+  - `(main)` — public-facing pages
+  - `(embed)` — embedded widgets
+  - `(health)` — health-check surface
+- Styling: Tailwind v4, shadcn components (`components.json`), Radix UI
+  primitives.
+- Data fetching: SWR on the client; server components and route handlers where
+  appropriate.
+- Forms: `react-hook-form` + Zod via `@hookform/resolvers`.
+- Build output uses Next.js standalone mode; `postbuild` copies `.next/static`
+  and `public/` into `.next/standalone/apps/frontend/`.
+- Dashboard auth: the backend sets an `access_token` cookie containing the
+  RSA-signed JWT. E2E tests and the Playwright MCP inject this cookie directly
+  via `generateTestJWTForUser` in `apps/frontend/src/e2e/utils/index.ts`, which
+  signs tokens with the backend's `private_access_token.pem`.
+
+## Shared Packages
+
+- **`@eggosystem/types`** — every persisted entity has both a TypeScript type
+  and a `createMockX(overrides?)` factory colocated in
+  `packages/types/src/**/*.test-utils.ts`. Tests must use these factories
+  instead of hand-rolled mock objects.
+- **`@eggosystem/shared-msw`** — MSW request handlers reused across the
+  frontend and backend test suites.
+- **`@eggosystem/viewer`**, **`@eggosystem/eslint`**, **`@eggosystem/tsconfig`**
+  — shared viewer, lint, and tsconfig presets consumed via `workspace:*`.
 
 ## Key Patterns
 
@@ -223,7 +337,8 @@ The email queue system uses **BullMQ** (Redis-backed job queue) to send welcome 
 **Configuration**:
 
 - **Queue Name**: `welcome-emails`
-- **Rate Limit**: 1 email per 500ms (configurable via `EMAIL_SEND_DELAY_MS`)
+- **Rate Limit**: one email per `EMAIL_SEND_DELAY_MS` (queue-side default 500 ms;
+  worker-side limiter default 750 ms)
 - **Retry Strategy**: 3 attempts with exponential backoff (1s, 2s, 4s)
 - **Job Cleanup**: Completed jobs removed after 7 days, failed after 30 days
 

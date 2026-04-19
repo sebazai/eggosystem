@@ -2,15 +2,38 @@
 
 This document provides comprehensive guidelines for frontend development in the Kanaliiga project, including component patterns, responsive design requirements, and data fetching strategies.
 
-## 🏗️ Architecture & Technology Stack
+## Architecture & Technology Stack
 
-- **Framework**: Next.js 15 with React 19 and App Router
-- **UI Library**: shadcn/ui built on Radix UI primitives
-- **Styling**: Tailwind CSS with custom design tokens
-- **TypeScript**: Strict type safety with `satisfies` operator
+- **Framework**: Next.js 16 (App Router) with React 19
+- **UI Library**: shadcn (see `apps/frontend/components.json`) built on Radix UI primitives
+- **Styling**: Tailwind CSS v4 (via `@tailwindcss/postcss`) with custom design tokens in `globals.css`
+- **TypeScript**: Strict type safety with `satisfies` operator (no unsafe `as` casts)
 - **Icons**: Lucide React
-- **Data Fetching**: SWR for client-side state management
+- **Forms**: `react-hook-form` + Zod via `@hookform/resolvers`
+- **Data Fetching**: SWR for client-side state management; server components / route handlers where appropriate
 - **Testing**: Jest for unit tests, Playwright for E2E tests
+- **Dev server**: `next dev` on port `:3000`
+
+### Route Groups (`apps/frontend/src/app/`)
+
+- `(admin)` — dashboard routes (cookie-based JWT auth)
+- `(main)` — public-facing routes
+- `(embed)` — embedded widgets
+- `(health)` — health / status endpoints
+
+### Dashboard Authentication
+
+Dashboard routes rely on a cookie-based JWT `access_token` issued by the backend. E2E tests and the Playwright MCP inject this cookie directly via `generateTestJWTForUser` in `apps/frontend/src/e2e/utils/index.ts`. See `.cursor/rules/development/playwright-mcp-admin-auth.mdc` for the MCP admin-auth workflow.
+
+### Build Output
+
+The app builds in Next.js **standalone** mode (`output: "standalone"` in `next.config.ts`). The `postbuild` script runs `copy-standalone`, which creates `.next/standalone/apps/frontend/.next/static/` and copies `.next/static/*` plus the `public/` directory into it. `start:standalone` then runs `node .next/standalone/apps/frontend/server.js` on port `3000`.
+
+The `build:e2e` script additionally sets `NEXT_PUBLIC_IMAGE_SERVICE_URL=https://img.kanaliiga.fi` so E2E builds resolve image URLs against the production image service.
+
+### AGENTS.md
+
+`apps/frontend/AGENTS.md` is generated via `@next/codemod@canary agents-md` (see the `agents-md` / `postinstall` scripts in `apps/frontend/package.json`). Do not edit by hand.
 
 ## 📱 Responsive Design Requirements
 

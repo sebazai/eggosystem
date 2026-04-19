@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "hooks": {
+    "preToolUse": [
+      {
+        "command": ".cursor/hooks/run-claude-project-hook.sh block-e2e-wrong-dir.sh",
+        "matcher": "Shell",
+        "timeout": 5
+      },
+      {
+        "command": ".cursor/hooks/run-claude-project-hook.sh warn-directory-execution.sh",
+        "matcher": "Shell",
+        "timeout": 5
+      }
+    ],
+    "postToolUse": [
+      {
+        "command": ".cursor/hooks/run-claude-project-hook.sh warn-as-cast.sh",
+        "matcher": "Write",
+        "timeout": 10
+      },
+      {
+        "command": ".cursor/hooks/run-claude-project-hook.sh warn-try-without-finally.sh",
+        "matcher": "Write",
+        "timeout": 10
+      }
+    ],
+    "stop": [
+      {
+        "command": ".cursor/hooks/run-claude-project-hook.sh remind-quality-gates.sh",
+        "timeout": 10
+      }
+    ]
+  }
+}
