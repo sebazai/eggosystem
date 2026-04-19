@@ -1,5 +1,7 @@
 # Fantasy League - Design Document
 
+> **Note (audited 2026-04-19):** This is a design doc from the feature's initial spec and has not been kept in lockstep with the code. Treat it as intent; for current behavior, read `apps/backend/src/models/fantasy.models.ts`, `apps/backend/src/services/fantasy-value.service.ts`, `apps/backend/src/services/fantasy-points.service.ts`, `apps/backend/src/controllers/fantasy.controllers.ts`, the `FantasyTeamPlayers` / `FantasyLeaderboard` tables (`dbdoc/`), and the UI under `apps/frontend/src/app/(main)/(content-container)/seasons/[season]/fantasy/`.
+
 ## Overview
 
 The Fantasy League is a seasonal competition where players can create their own teams by drafting real Kanaliiga players and earn points based on their performance in actual matches.

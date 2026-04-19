@@ -1,5 +1,7 @@
 # Fantasy League Data Model Explanation
 
+> **Note (audited 2026-04-19):** Written alongside the initial feature rollout. Verify column names and semantics against current migrations under `apps/backend/migrations/` and the generated table docs at `dbdoc/FantasyTeamPlayers.md` and `dbdoc/FantasyLeaderboard.md` before relying on specifics here.
+
 ## Overview
 
 This document explains the fantasy league database schema, data duplication, and how values are stored and updated.

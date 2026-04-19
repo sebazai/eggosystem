@@ -12,4 +12,4 @@ phpMyAdmin -> Export
 - REMOVE: Enclose table and column names with back-quotes (Protects column and table names formed with special characters or keywords)
 
 - Export
-- Save to ./kana_dev_test_seed.sql
+- Save to `apps/backend/seeds/dev/kana_dev_test_seed.sql` (overwrites the file loaded by `dev_seed.ts` / `e2e_test_seed.ts`)

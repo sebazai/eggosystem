@@ -1,5 +1,7 @@
 # Fantasy League Player Value Explanation
 
+> **Note (audited 2026-04-19):** Describes the value-storage design. Field names and formulas match intent, but verify against `apps/backend/src/services/fantasy-value.service.ts` and the `FantasyTeamPlayers` table (`dbdoc/FantasyTeamPlayers.md`) before acting on specifics.
+
 ## Two Different Values
 
 ### 1. `FantasyTeamPlayers.player_value` (Snapshot)

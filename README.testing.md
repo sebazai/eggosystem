@@ -341,40 +341,22 @@ describe("UserProfile", () => {
 
 ### Integration Testing
 
-**Location**: `apps/frontend/src/__tests__/integration/`
-
-**Patterns**:
+Frontend integration tests are colocated next to the code under test (`*.test.tsx`) rather than in a separate directory. Integration-style tests typically render a component against MSW handlers from `@eggosystem/shared-msw` and verify loading/error/success states together.
 
 ```typescript
 import { render, screen, waitFor } from "@testing-library/react";
-import { UserList } from "../UserList";
+import { UserList } from "./UserList";
 
 describe("UserList Integration", () => {
   it("should load and display users", async () => {
     render(<UserList />);
 
-    // Wait for skeleton loading state to disappear
     await waitFor(() => {
       const skeleton = document.querySelector('[class*="animate-pulse"]');
       expect(skeleton).not.toBeInTheDocument();
     });
 
     expect(screen.getByText("John Doe")).toBeInTheDocument();
-  });
-
-  it("should show skeleton during loading", () => {
-    // Mock loading state
-    jest.spyOn(useUsers, "useUsers").mockReturnValue({
-      users: undefined,
-      isLoading: true,
-      error: null
-    });
-
-    render(<UserList />);
-
-    // Check for skeleton elements
-    const skeleton = document.querySelector('[class*="animate-pulse"]');
-    expect(skeleton).toBeInTheDocument();
   });
 });
 ```
@@ -399,11 +381,28 @@ pnpm test:e2e
 
 See **[README.playwright.md](./README.playwright.md)** for detailed guidance.
 
+**E2E helpers**: `apps/frontend/src/e2e/utils/index.ts` exposes helpers for Playwright specs — notably `generateTestJWTForUser(account)`, which returns a cookie-ready access token so specs can authenticate as any seeded user without going through the Steam login flow. The Playwright MCP admin-auth rule lives at `.cursor/rules/development/playwright-mcp-admin-auth.mdc`.
+
+## Test Data Factories
+
+Always use the shared factories from `@eggosystem/types` instead of constructing mock entities inline:
+
+```typescript
+import {
+  createMockSeasonForm,
+  createMockPlayerFullName
+} from "@eggosystem/types";
+
+const form = createMockSeasonForm({ start_at: "2026-05-01" });
+```
+
+Factories live next to their types at `packages/types/src/**/*.test-utils.ts` and are re-exported from the package root. When adding a new shared type, colocate a `createMockX(overrides?)` factory beside it.
+
 ## Test Utilities
 
 ### Backend Test Utilities
 
-**`createExpressTestApp`**:
+**`createExpressTestApp`** (`apps/backend/src/test-utils/`):
 
 ```typescript
 import { createExpressTestApp } from "../../test-utils";
@@ -416,7 +415,7 @@ const { app, cleanup } = createExpressTestApp(router, "/api/v1/path");
 - Automatic environment setup
 - Express app configuration
 - Error handling middleware
-- Cleanup management
+- Cleanup management (always call `cleanup()` in `afterEach`)
 
 ### Frontend Test Utilities
 

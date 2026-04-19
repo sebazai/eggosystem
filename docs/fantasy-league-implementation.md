@@ -1,5 +1,7 @@
 # Fantasy League - Implementation Guide (PoC)
 
+> **Note (audited 2026-04-19):** This is a historical record of the PoC rollout. The feature is now shipped, so code paths, file names, and API shapes listed below may have moved. For current structure, grep `apps/backend/src/**/*fantasy*` and `apps/frontend/src/components/fantasy/` + `apps/frontend/src/hooks/data/fantasy/`.
+
 ## What Was Created
 
 ### 1. Design Documentation
