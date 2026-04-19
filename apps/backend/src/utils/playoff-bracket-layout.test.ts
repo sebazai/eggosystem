@@ -3,6 +3,7 @@ import {
   buildSeedOrder,
   buildSeedPositionMap,
   getBracketSizeFromMaxSeed,
+  getLowerBracketEvenDropRoundLayoutSlotFromState,
   getLowerBracketR1LayoutSlot,
   getLowerBracketR1LayoutSlotOrGuess,
   getLowerSlotsInRound,
@@ -257,6 +258,44 @@ describe("playoff-bracket-layout", () => {
           bracketSize: n
         })
       ).toBe(2);
+    });
+  });
+
+  describe("getLowerBracketEvenDropRoundLayoutSlotFromState", () => {
+    it("LB2: identifies upper dropper by missing LB1 slot (feeder last column → slot 3)", () => {
+      const bracketSize = 16;
+      const prev = new Map<number, number>([
+        [101, 3]
+      ]);
+      const loserUbR2Match0 = 8;
+      const slot = getLowerBracketEvenDropRoundLayoutSlotFromState({
+        bracketSize,
+        lowerRound: 2,
+        seed1: 3,
+        seed2: loserUbR2Match0,
+        team1Id: 101,
+        team2Id: 202,
+        prevRoundParticipantSlotByTeamId: prev
+      });
+      expect(slot).toBe(3);
+    });
+
+    it("LB2: returns null when both sides have a previous lower slot", () => {
+      const prev = new Map<number, number>([
+        [101, 0],
+        [202, 1]
+      ]);
+      expect(
+        getLowerBracketEvenDropRoundLayoutSlotFromState({
+          bracketSize: 16,
+          lowerRound: 2,
+          seed1: 3,
+          seed2: 8,
+          team1Id: 101,
+          team2Id: 202,
+          prevRoundParticipantSlotByTeamId: prev
+        })
+      ).toBeNull();
     });
   });
 });
