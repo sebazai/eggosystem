@@ -30,11 +30,10 @@
       "env": {}
     },
     "gitlab_mcp": {
-      "type": "http",
-      "url": "https://gitlab.com/api/v4/mcp",
-      "headers": {
-        "PRIVATE-TOKEN": "$GITLAB_TOKEN"
-      }
+      "type": "stdio",
+      "command": "bash",
+      "args": [".cursor/gitlab-mcp.sh"],
+      "env": {}
     }
   }
 }
