@@ -69,6 +69,7 @@ Kanaliiga.session.sql
 .pnpm-store/
 
 .cursor/settings.json
+.claude/settings.local.json
 
 # Datbase
 dbdoc/
