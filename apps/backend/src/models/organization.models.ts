@@ -20,9 +20,10 @@ export const getOrganizations = async (
       `SELECT * FROM Organizations WHERE 1=1 ${statusFilter} ORDER BY sort_order DESC, name ASC`
     );
   }
+  const pattern = `%${searchParams}%`;
   return runQuery<Organizations[]>(
-    `SELECT * FROM Organizations WHERE name LIKE ? ${statusFilter} ORDER BY sort_order DESC, name ASC`,
-    [`%${searchParams}%`]
+    `SELECT * FROM Organizations WHERE (name LIKE ? OR organization_code LIKE ?) ${statusFilter} ORDER BY sort_order DESC, name ASC`,
+    [pattern, pattern]
   );
 };
 
