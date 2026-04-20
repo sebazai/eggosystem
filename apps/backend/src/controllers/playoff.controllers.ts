@@ -6,6 +6,7 @@ import type {
 import type { Match } from "@eggosystem/types";
 import { getPlayoffExternalIdBySeasonAndLeague } from "../models/season-league-external-id.models";
 import { getChampionshipMatchesCached } from "../services/playoff-bracket.services";
+import { getChampionshipBracketMatchesCached } from "../services/faceit-bracket.services";
 import { getPlayoffMatchIdsByExternalRoomIds } from "../models/match.models";
 import {
   getTeamIdsByExternalIds,
@@ -29,10 +30,21 @@ import {
 
 const BYE_NAME = "BYE";
 
-const isByeFaction = (name: string, factionId: string): boolean =>
-  name.trim().toUpperCase() === BYE_NAME ||
-  !factionId ||
-  factionId.trim() === "";
+/**
+ * FaceIT can represent placeholder opponents with empty faction_id.
+ * We only treat a side as a real BYE when the name explicitly says BYE.
+ * Empty/unknown opponents should render as TBD, not Bye.
+ */
+const isByeFaction = (name: string, factionId: string): boolean => {
+  const n = (name ?? "").trim().toUpperCase();
+  if (n === BYE_NAME) return true;
+  // FaceIT web bracket API frequently encodes BYE as entity.id === "bye" without a name.
+  const id = (factionId ?? "").trim().toLowerCase();
+  if (id === "bye") return true;
+  // empty ids are often just "not yet known" in bracket dummy matches
+  if (!factionId || factionId.trim() === "") return false;
+  return false;
+};
 
 const ALLOWED_MATCH_STATUSES = new Set<string>([
   "SCHEDULED",
@@ -116,7 +128,14 @@ export const getPlayoffBracketController = async (
       return;
     }
 
-    const items = await getChampionshipMatchesCached(championshipId);
+    // Prefer FaceIT "web bracket" API because it includes placeholder/dummy matches where
+    // upper-bracket losers are already seated into later lower-bracket rounds.
+    // This fixes missing teams in lower bracket waiting slots (e.g. UB finals loser -> LB round 6).
+    let items = await getChampionshipBracketMatchesCached(championshipId);
+    if (items.length === 0) {
+      // Fallback to the official open API feed if the bracket endpoint is unavailable.
+      items = await getChampionshipMatchesCached(championshipId);
+    }
 
     const apiIndexMap = new Map<string, number>();
     items.forEach((item, idx) => apiIndexMap.set(item.match_id, idx));
@@ -286,7 +305,7 @@ export const getPlayoffBracketController = async (
           : undefined;
 
       const team1Name = home.name;
-      const team2Name = bye2 ? BYE_NAME : away.name;
+      const team2Name = bye2 ? BYE_NAME : away.name || "TBD";
       const team1Logo = team1Id > 0 ? (teamLogoMap.get(team1Id) ?? null) : null;
       const team2Logo =
         bye2 || team2Id == null || team2Id <= 0
@@ -294,6 +313,8 @@ export const getPlayoffBracketController = async (
           : (teamLogoMap.get(team2Id) ?? null);
       const team1Score = bye2 ? 1 : home.score;
       const team2Score = bye2 ? 0 : away.score;
+
+      const hasRealTeam2 = !bye2 && team2Id != null && team2Id > 0;
 
       // Keep seeds lookup populated for other frontends: seed -> team metadata.
       // Prefer DB-derived team fields (stable), and avoid encoding BYE as a fake team.
@@ -342,9 +363,10 @@ export const getPlayoffBracketController = async (
         team1_id: team1Id,
         team1_name: team1Name,
         team1_logo: team1Logo,
-        team2_id: bye2 || team2Id == null || team2Id <= 0 ? null : team2Id,
-        team2_name: bye2 || team2Id == null || team2Id <= 0 ? null : team2Name,
-        team2_logo: bye2 ? null : team2Logo,
+        team2_id: bye2 || !hasRealTeam2 ? null : team2Id,
+        // Important: unknown opponent should still render as "TBD" (not "Bye") in UI.
+        team2_name: bye2 ? BYE_NAME : hasRealTeam2 ? team2Name : "TBD",
+        team2_logo: bye2 || !hasRealTeam2 ? null : team2Logo,
         team1_score: team1Score,
         team2_score: bye2 ? 0 : team2Score,
         slot,

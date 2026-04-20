@@ -2,12 +2,14 @@ import { type Request, type Response } from "express";
 import { getPlayoffBracketController } from "./playoff.controllers";
 import * as seasonLeagueExternalIdModels from "../models/season-league-external-id.models";
 import * as playoffBracketServices from "../services/playoff-bracket.services";
+import * as faceitBracketServices from "../services/faceit-bracket.services";
 import * as matchModels from "../models/match.models";
 import * as seasonLeagueTeamModels from "../models/season-league-team.models";
 import * as teamModels from "../models/team.models";
 
 jest.mock("../models/season-league-external-id.models");
 jest.mock("../services/playoff-bracket.services");
+jest.mock("../services/faceit-bracket.services");
 jest.mock("../models/match.models");
 jest.mock("../models/season-league-team.models");
 jest.mock("../models/team.models");
@@ -19,6 +21,10 @@ const mockGetPlayoffExternalId =
 const mockGetChampionshipMatchesCached =
   playoffBracketServices.getChampionshipMatchesCached as jest.MockedFunction<
     typeof playoffBracketServices.getChampionshipMatchesCached
+  >;
+const mockGetChampionshipBracketMatchesCached =
+  faceitBracketServices.getChampionshipBracketMatchesCached as jest.MockedFunction<
+    typeof faceitBracketServices.getChampionshipBracketMatchesCached
   >;
 const mockGetPlayoffMatchIds =
   matchModels.getPlayoffMatchIdsByExternalRoomIds as jest.MockedFunction<
@@ -64,6 +70,7 @@ describe("playoff.controllers", () => {
       );
 
       expect(mockGetPlayoffExternalId).toHaveBeenCalledWith(1, 2);
+      expect(mockGetChampionshipBracketMatchesCached).not.toHaveBeenCalled();
       expect(mockGetChampionshipMatchesCached).not.toHaveBeenCalled();
       expect(mockResponse.json).toHaveBeenCalledWith({
         matches: [],
@@ -74,7 +81,7 @@ describe("playoff.controllers", () => {
     it("returns matches and bracket with numR1Slots from seeds when FaceIT returns items", async () => {
       const championshipId = "champ-1";
       mockGetPlayoffExternalId.mockResolvedValue(championshipId);
-      mockGetChampionshipMatchesCached.mockResolvedValue([
+      mockGetChampionshipBracketMatchesCached.mockResolvedValue([
         {
           match_id: "faceit-1",
           round: 1,
@@ -97,6 +104,7 @@ describe("playoff.controllers", () => {
           results: { score: { faction1: 2, faction2: 1 } }
         }
       ]);
+      mockGetChampionshipMatchesCached.mockResolvedValue([]);
       mockGetPlayoffMatchIds.mockResolvedValue(new Map([["faceit-1", 100]]));
       mockGetTeamIdsByExternalIds.mockResolvedValue(
         new Map([
@@ -123,7 +131,7 @@ describe("playoff.controllers", () => {
         mockNext
       );
 
-      expect(mockGetChampionshipMatchesCached).toHaveBeenCalledWith(
+      expect(mockGetChampionshipBracketMatchesCached).toHaveBeenCalledWith(
         championshipId
       );
       expect(mockResponse.json).toHaveBeenCalled();
@@ -149,7 +157,7 @@ describe("playoff.controllers", () => {
 
     it("puts higher seed as team1 when FaceIT order has lower seed first", async () => {
       mockGetPlayoffExternalId.mockResolvedValue("champ-1");
-      mockGetChampionshipMatchesCached.mockResolvedValue([
+      mockGetChampionshipBracketMatchesCached.mockResolvedValue([
         {
           match_id: "m1",
           round: 1,
@@ -171,6 +179,7 @@ describe("playoff.controllers", () => {
           }
         }
       ]);
+      mockGetChampionshipMatchesCached.mockResolvedValue([]);
       mockGetPlayoffMatchIds.mockResolvedValue(new Map([["m1", 1]]));
       mockGetTeamIdsByExternalIds.mockResolvedValue(
         new Map([
@@ -208,7 +217,7 @@ describe("playoff.controllers", () => {
         avatar: ""
       });
 
-      mockGetChampionshipMatchesCached.mockResolvedValue([
+      mockGetChampionshipBracketMatchesCached.mockResolvedValue([
         {
           match_id: "lb-r1-c",
           round: 1,
@@ -258,6 +267,7 @@ describe("playoff.controllers", () => {
           }
         }
       ]);
+      mockGetChampionshipMatchesCached.mockResolvedValue([]);
 
       mockGetPlayoffMatchIds.mockResolvedValue(
         new Map([
@@ -294,7 +304,7 @@ describe("playoff.controllers", () => {
       // so scoreKey puts the slot-1 match first — wrong. apiIndexMap must be primary.
       mockGetPlayoffExternalId.mockResolvedValue("champ-lb-r2");
 
-      mockGetChampionshipMatchesCached.mockResolvedValue([
+      mockGetChampionshipBracketMatchesCached.mockResolvedValue([
         // LB R1 match — needed so firstLowerBracketRound=1 and round=2 is treated as R2+
         {
           match_id: "lb-r1-seeds",
@@ -337,6 +347,7 @@ describe("playoff.controllers", () => {
           }
         }
       ]);
+      mockGetChampionshipMatchesCached.mockResolvedValue([]);
 
       mockGetPlayoffMatchIds.mockResolvedValue(
         new Map([
@@ -401,7 +412,7 @@ describe("playoff.controllers", () => {
         avatar: ""
       });
 
-      mockGetChampionshipMatchesCached.mockResolvedValue([
+      mockGetChampionshipBracketMatchesCached.mockResolvedValue([
         {
           match_id: "lb-r1-1",
           round: 1,
@@ -503,6 +514,7 @@ describe("playoff.controllers", () => {
           }
         }
       ]);
+      mockGetChampionshipMatchesCached.mockResolvedValue([]);
 
       mockGetPlayoffMatchIds.mockResolvedValue(
         new Map([
@@ -560,7 +572,7 @@ describe("playoff.controllers", () => {
     it("orders lower bracket R1 by api_index over UUID lexicographic order when seeds resolve to same slot", async () => {
       mockGetPlayoffExternalId.mockResolvedValue("champ-lb2");
 
-      mockGetChampionshipMatchesCached.mockResolvedValue([
+      mockGetChampionshipBracketMatchesCached.mockResolvedValue([
         {
           match_id: "zzz-first-in-api",
           round: 1,
@@ -586,6 +598,7 @@ describe("playoff.controllers", () => {
           }
         }
       ]);
+      mockGetChampionshipMatchesCached.mockResolvedValue([]);
 
       mockGetPlayoffMatchIds.mockResolvedValue(
         new Map([
@@ -609,6 +622,77 @@ describe("playoff.controllers", () => {
       );
       expect(lbMatches[0].external_match_id).toBe("zzz-first-in-api");
       expect(lbMatches[1].external_match_id).toBe("aaa-second-in-api");
+    });
+
+    it("treats FaceIT BYE encoded as faction_id 'bye' as BYE (8-team brackets commonly do this)", async () => {
+      mockGetPlayoffExternalId.mockResolvedValue(
+        "e5bd9711-296a-4fa8-9d52-ec9a8604cd81"
+      );
+      mockGetChampionshipBracketMatchesCached.mockResolvedValue([
+        {
+          match_id: "ub-r1-bye",
+          round: 1,
+          group: 1,
+          status: "FINISHED",
+          best_of: 3,
+          scheduled_at: 1000,
+          teams: {
+            faction1: { faction_id: "t1", name: "Team 1", avatar: "" },
+            faction2: { faction_id: "bye", name: "TBD", avatar: "" }
+          },
+          results: { score: { faction1: 1, faction2: 0 } }
+        }
+      ]);
+      mockGetChampionshipMatchesCached.mockResolvedValue([]);
+      mockGetPlayoffMatchIds.mockResolvedValue(new Map([["ub-r1-bye", 1]]));
+      mockGetTeamIdsByExternalIds.mockResolvedValue(new Map([["t1", 10]]));
+      mockGetTeamLogosByTeamIds.mockResolvedValue(new Map());
+      mockGetPlayoffSeedMap.mockResolvedValue(new Map([[10, 1]]));
+
+      await getPlayoffBracketController(
+        mockRequest as Request,
+        mockResponse as Response,
+        mockNext
+      );
+
+      const [payload] = (mockResponse.json as jest.Mock).mock.calls[0];
+      expect(payload.matches[0].team2_id).toBeNull();
+      expect(payload.matches[0].team2_name).toBe("BYE");
+    });
+
+    it("treats empty/unknown opponent (waiting slot from upper bracket drop) as TBD, not BYE", async () => {
+      mockGetPlayoffExternalId.mockResolvedValue(
+        "3acda697-c6ac-4ff5-b37a-5b11efffe77d"
+      );
+      mockGetChampionshipBracketMatchesCached.mockResolvedValue([
+        {
+          match_id: "lb-r6-waiting",
+          round: 6,
+          group: 2,
+          status: "SCHEDULED",
+          best_of: 3,
+          scheduled_at: 0,
+          teams: {
+            faction1: { faction_id: "t1", name: "Team 1", avatar: "" },
+            faction2: { faction_id: "", name: "TBD", avatar: "" }
+          }
+        }
+      ]);
+      mockGetChampionshipMatchesCached.mockResolvedValue([]);
+      mockGetPlayoffMatchIds.mockResolvedValue(new Map([["lb-r6-waiting", 2]]));
+      mockGetTeamIdsByExternalIds.mockResolvedValue(new Map([["t1", 10]]));
+      mockGetTeamLogosByTeamIds.mockResolvedValue(new Map());
+      mockGetPlayoffSeedMap.mockResolvedValue(new Map([[10, 1]]));
+
+      await getPlayoffBracketController(
+        mockRequest as Request,
+        mockResponse as Response,
+        mockNext
+      );
+
+      const [payload] = (mockResponse.json as jest.Mock).mock.calls[0];
+      expect(payload.matches[0].team2_id).toBeNull();
+      expect(payload.matches[0].team2_name).toBe("TBD");
     });
   });
 });
