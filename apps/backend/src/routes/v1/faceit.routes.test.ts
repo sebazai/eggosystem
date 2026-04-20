@@ -46,7 +46,8 @@ import { getMatchGamesByExternalMatchRoomId } from "../../models/match-game.mode
 import { validatePlayersInTeams } from "../../models/season-team-players.models";
 import { expressErrorHandler } from "../../middlewares/express-error-handler";
 import * as seasonLeagueExternalIdServices from "../../services/season-league-external-id.services";
-import * as faceitServices from "../../services/faceit.services";
+import * as faceitChampionshipServices from "../../services/faceit-championship.services";
+import * as faceitMatchServices from "../../services/faceit-match.services";
 import { sendDemoForAllStarPOTGClip } from "../../services/allstar.services";
 import { publishDemoProcessingRequest } from "../../services/match-game.services";
 import {
@@ -1019,7 +1020,7 @@ describe("FaceIT Routes - Webhook", () => {
 
         // Championship details fetch is not needed for assertions
         jest
-          .spyOn(faceitServices, "getFaceITChampionshipDetails")
+          .spyOn(faceitChampionshipServices, "getFaceITChampionshipDetails")
           .mockResolvedValue({} as unknown as Record<string, unknown>);
 
         // Mock active organizer season
@@ -1121,7 +1122,7 @@ describe("FaceIT Routes - Webhook", () => {
 
         // Championship details fetch is not needed for assertions; return empty object
         jest
-          .spyOn(faceitServices, "getFaceITChampionshipDetails")
+          .spyOn(faceitChampionshipServices, "getFaceITChampionshipDetails")
           .mockResolvedValue({} as unknown as Record<string, unknown>);
 
         // No active season exists -> service throws
@@ -1265,7 +1266,7 @@ describe("FaceIT Routes - Webhook", () => {
 
         // Avoid network for championship details fetch
         jest
-          .spyOn(faceitServices, "getFaceITChampionshipDetails")
+          .spyOn(faceitChampionshipServices, "getFaceITChampionshipDetails")
           .mockResolvedValue({} as unknown);
 
         const response = await request(app)
@@ -1977,7 +1978,7 @@ describe("FaceIT Routes - Webhook", () => {
           }
         );
         mockAddFaceitMatchGameToDatabase = jest
-          .spyOn(faceitServices, "addFaceitMatchGameToDatabase")
+          .spyOn(faceitMatchServices, "addFaceitMatchGameToDatabase")
           .mockResolvedValue(123);
         mockSendDemoForAllStarPOTGClip.mockResolvedValue({
           success: true,
@@ -2056,12 +2057,14 @@ describe("FaceIT Routes - Webhook", () => {
           }
         );
         // 2xBO1 matches have best_of: 2 from FaceIT; override the default fixture (best_of: 3)
-        jest.spyOn(faceitServices, "getFaceITMatchDetails").mockResolvedValue({
-          ...validMatchDetailsMatchDemoReady,
-          best_of: 2
-        } as never);
+        jest
+          .spyOn(faceitMatchServices, "getFaceITMatchDetails")
+          .mockResolvedValue({
+            ...validMatchDetailsMatchDemoReady,
+            best_of: 2
+          } as never);
         mockAddFaceitMatchGameToDatabase = jest
-          .spyOn(faceitServices, "addFaceitMatchGameToDatabase")
+          .spyOn(faceitMatchServices, "addFaceitMatchGameToDatabase")
           .mockResolvedValue(123);
         mockSendDemoForAllStarPOTGClip.mockResolvedValue({
           success: true,
@@ -2163,7 +2166,7 @@ describe("FaceIT Routes - Webhook", () => {
           }
         };
         const getDetailsSpy = jest
-          .spyOn(faceitServices, "getFaceITMatchDetails")
+          .spyOn(faceitMatchServices, "getFaceITMatchDetails")
           .mockResolvedValue(matchDetailsForRoom as never);
 
         try {
@@ -2210,7 +2213,7 @@ describe("FaceIT Routes - Webhook", () => {
           }
         };
         const getDetailsSpy = jest
-          .spyOn(faceitServices, "getFaceITMatchDetails")
+          .spyOn(faceitMatchServices, "getFaceITMatchDetails")
           .mockResolvedValue(matchDetailsForRoom as never);
 
         try {
@@ -2236,10 +2239,12 @@ describe("FaceIT Routes - Webhook", () => {
       });
 
       it("when 2xBO1 demo_url has map number 3, throws and returns 400", async () => {
-        jest.spyOn(faceitServices, "getFaceITMatchDetails").mockResolvedValue({
-          ...validMatchDetailsMatchDemoReady,
-          best_of: 2
-        } as never);
+        jest
+          .spyOn(faceitMatchServices, "getFaceITMatchDetails")
+          .mockResolvedValue({
+            ...validMatchDetailsMatchDemoReady,
+            best_of: 2
+          } as never);
         mockGetHubMatchesByExternalMatchRoomId.mockResolvedValue([
           { id: 101, status: "ONGOING" },
           { id: 102, status: "ONGOING" }
@@ -2269,7 +2274,7 @@ describe("FaceIT Routes - Webhook", () => {
         // Regression test: playoff BO3 matches in a 2xBO1 season must not be blocked at map 3.
         // The 2xBO1 guard only applies when FaceIT reports best_of === 2.
         jest
-          .spyOn(faceitServices, "getFaceITMatchDetails")
+          .spyOn(faceitMatchServices, "getFaceITMatchDetails")
           .mockResolvedValue(validMatchDetailsMatchDemoReady as never);
         mockGetHubMatchesByExternalMatchRoomId.mockResolvedValue([
           { id: 101, status: "ONGOING" }
@@ -2303,7 +2308,7 @@ describe("FaceIT Routes - Webhook", () => {
         mockSaveWebhookData.mockResolvedValue({ insertId: 1 });
         mockValidatePlayersInTeams.mockResolvedValue(undefined);
         mockAddFaceitMatchGameToDatabase = jest
-          .spyOn(faceitServices, "addFaceitMatchGameToDatabase")
+          .spyOn(faceitMatchServices, "addFaceitMatchGameToDatabase")
           .mockResolvedValue(123);
       });
 
@@ -2357,7 +2362,7 @@ describe("FaceIT Routes - Webhook", () => {
           0
         );
         mockGetFaceITMatchDetails = jest
-          .spyOn(faceitServices, "getFaceITMatchDetails")
+          .spyOn(faceitMatchServices, "getFaceITMatchDetails")
           .mockResolvedValue({} as never);
       });
 
@@ -2586,7 +2591,7 @@ describe("FaceIT Routes - Webhook", () => {
           }
         );
         mockGetFaceITMatchDetails = jest
-          .spyOn(faceitServices, "getFaceITMatchDetails")
+          .spyOn(faceitMatchServices, "getFaceITMatchDetails")
           .mockResolvedValue(expectedChampionshipDetailsFinished as never);
       });
 
@@ -2904,7 +2909,7 @@ describe("FaceIT Routes - Webhook", () => {
 
         // Mock the getFaceITMatchDetails call
         jest
-          .spyOn(faceitServices, "getFaceITMatchDetails")
+          .spyOn(faceitMatchServices, "getFaceITMatchDetails")
           .mockResolvedValue(group3Round1MatchDetails);
 
         const response = await request(app)
@@ -2963,7 +2968,7 @@ describe("FaceIT Routes - Webhook", () => {
 
         // Mock the getFaceITMatchDetails call
         jest
-          .spyOn(faceitServices, "getFaceITMatchDetails")
+          .spyOn(faceitMatchServices, "getFaceITMatchDetails")
           .mockResolvedValue(group3Round2MatchDetails);
 
         const response = await request(app)
@@ -3015,7 +3020,7 @@ describe("FaceIT Routes - Webhook", () => {
 
         // Mock the getFaceITMatchDetails call
         jest
-          .spyOn(faceitServices, "getFaceITMatchDetails")
+          .spyOn(faceitMatchServices, "getFaceITMatchDetails")
           .mockResolvedValue(group3Round2MatchDetails);
 
         const response = await request(app)
@@ -3073,7 +3078,7 @@ describe("FaceIT Routes - Webhook", () => {
 
         // Mock the getFaceITMatchDetails call
         jest
-          .spyOn(faceitServices, "getFaceITMatchDetails")
+          .spyOn(faceitMatchServices, "getFaceITMatchDetails")
           .mockResolvedValue(group3Round2MatchDetails);
 
         const response = await request(app)
@@ -3123,7 +3128,7 @@ describe("FaceIT Routes - Webhook", () => {
 
         // Mock the getFaceITMatchDetails call
         jest
-          .spyOn(faceitServices, "getFaceITMatchDetails")
+          .spyOn(faceitMatchServices, "getFaceITMatchDetails")
           .mockResolvedValue(group1MatchDetails);
 
         const response = await request(app)
@@ -3167,7 +3172,7 @@ describe("FaceIT Routes - Webhook", () => {
 
         // Mock the getFaceITMatchDetails call
         jest
-          .spyOn(faceitServices, "getFaceITMatchDetails")
+          .spyOn(faceitMatchServices, "getFaceITMatchDetails")
           .mockResolvedValue(group2MatchDetails);
 
         const response = await request(app)
@@ -3216,7 +3221,7 @@ describe("FaceIT Routes - Webhook", () => {
 
         // Mock the getFaceITMatchDetails call
         jest
-          .spyOn(faceitServices, "getFaceITMatchDetails")
+          .spyOn(faceitMatchServices, "getFaceITMatchDetails")
           .mockResolvedValue(group3Round2MatchDetails);
 
         const response = await request(app)
@@ -3273,7 +3278,7 @@ describe("FaceIT Routes - Webhook", () => {
         };
 
         jest
-          .spyOn(faceitServices, "getFaceITMatchDetails")
+          .spyOn(faceitMatchServices, "getFaceITMatchDetails")
           .mockResolvedValue(group3Round3MatchDetails);
 
         const response = await request(app)
