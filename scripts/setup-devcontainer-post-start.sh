@@ -28,6 +28,15 @@ nohup bash -c '
 ' >> /tmp/playwright-setup.log 2>&1 &
 disown -h
 
+# FACEIT MCP server for Cursor (pip / PyPI). GitLab MCP uses npx and needs no install here.
+echo "Starting faceit-mcp install (pip, latest from PyPI)..."
+touch /tmp/faceit-mcp-setup.log
+nohup bash -c '
+  echo "Installing / upgrading faceit-mcp (python3 -m pip install -U faceit-mcp)..."
+  python3 -m pip install -U faceit-mcp && echo "faceit-mcp installation completed successfully!" || echo "faceit-mcp installation failed. Check the log for details."
+' >> /tmp/faceit-mcp-setup.log 2>&1 &
+disown -h
+
 # Give background processes a moment to start
 sleep 2
 
@@ -35,4 +44,5 @@ echo ""
 echo "Background setup tasks started."
 echo "Check progress with:"
 echo "  tail -f /tmp/playwright-setup.log"
+echo "  tail -f /tmp/faceit-mcp-setup.log"
 echo "========================================="
