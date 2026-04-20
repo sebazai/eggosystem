@@ -1,4 +1,7 @@
-import { getOrganizationDiscordInviteLink } from "./organization.models";
+import {
+  getOrganizationDiscordInviteLink,
+  getOrganizations
+} from "./organization.models";
 import { runQuery } from "../db/mysqlRunQuery";
 
 jest.mock("../db/mysqlRunQuery");
@@ -32,5 +35,29 @@ describe("getOrganizationDiscordInviteLink", () => {
     mockRunQuery.mockResolvedValueOnce([{ discord_invite_link: null }]);
     const result = await getOrganizationDiscordInviteLink(2);
     expect(result).toBeNull();
+  });
+});
+
+describe("getOrganizations", () => {
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("searches name and organization_code when a query is provided", async () => {
+    mockRunQuery.mockResolvedValueOnce([]);
+    await getOrganizations("ACME");
+    expect(mockRunQuery).toHaveBeenCalledWith(
+      "SELECT * FROM Organizations WHERE (name LIKE ? OR organization_code LIKE ?) AND status = 'active' ORDER BY sort_order DESC, name ASC",
+      ["%ACME%", "%ACME%"]
+    );
+  });
+
+  it("includes pending orgs when includePending is true", async () => {
+    mockRunQuery.mockResolvedValueOnce([]);
+    await getOrganizations("x", true);
+    expect(mockRunQuery).toHaveBeenCalledWith(
+      "SELECT * FROM Organizations WHERE (name LIKE ? OR organization_code LIKE ?)  ORDER BY sort_order DESC, name ASC",
+      ["%x%", "%x%"]
+    );
   });
 });

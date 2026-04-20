@@ -557,6 +557,26 @@ const getCaptainEmailAndPlayers = async (
   };
 };
 
+async function resolveSignupImagePhash(
+  imageData: string | undefined,
+  imageFilename: string | undefined,
+  entityType: "organization" | "team"
+): Promise<string | undefined> {
+  if (!imageData) return undefined;
+  try {
+    const result = await uploadSignupImage(
+      imageData,
+      imageFilename,
+      entityType,
+      0
+    );
+    return result.phash;
+  } catch (err) {
+    logger.warn(`Failed to upload ${entityType} logo during signup: ${err}`);
+    return undefined;
+  }
+}
+
 export const handleSignupFormForSeason = async (
   season: SeasonDetails,
   formData: SignupFormValues,
@@ -667,23 +687,11 @@ export const handleSignupFormForSeason = async (
 
     // New org and new team.
     if (formData.newTeam) {
-      // Determine team logo if image was uploaded
-      let teamLogo: string | undefined;
-      if (formData.newTeam.image_data) {
-        try {
-          const imageResult = await uploadSignupImage(
-            formData.newTeam.image_data,
-            formData.newTeam.image_filename,
-            "team",
-            0 // Temporary ID, will be updated after insert
-          );
-          teamLogo = imageResult.phash;
-        } catch (imageError) {
-          logger.warn(
-            `Failed to upload team logo during signup: ${imageError}`
-          );
-        }
-      }
+      const teamLogo = await resolveSignupImagePhash(
+        formData.newTeam.image_data,
+        formData.newTeam.image_filename,
+        "team"
+      );
 
       const newTeam = await insertTeam(
         {
@@ -726,23 +734,12 @@ export const handleSignupFormForSeason = async (
   // Handle existing org and new team
   if (formData.organizationId !== -1) {
     if (formData.teamId === -1 && formData.newTeam) {
-      // Determine team logo if image was uploaded
-      let teamLogo: string | undefined;
-      if (formData.newTeam.image_data) {
-        try {
-          const imageResult = await uploadSignupImage(
-            formData.newTeam.image_data,
-            formData.newTeam.image_filename,
-            "team",
-            0 // Temporary ID, will be updated after insert
-          );
-          teamLogo = imageResult.phash;
-        } catch (imageError) {
-          logger.warn(
-            `Failed to upload team logo during signup: ${imageError}`
-          );
-        }
-      } else {
+      let teamLogo = await resolveSignupImagePhash(
+        formData.newTeam.image_data,
+        formData.newTeam.image_filename,
+        "team"
+      );
+      if (!teamLogo) {
         // If no team image provided, default to organization logo
         const [org] = await getOrganizationById(formData.organizationId);
         if (org?.logo) {

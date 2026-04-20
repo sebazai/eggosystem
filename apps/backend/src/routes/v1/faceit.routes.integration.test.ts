@@ -16,7 +16,7 @@ import faceitRouter from "./faceit.routes";
 import { expressErrorHandler } from "../../middlewares/express-error-handler";
 import { runFaceitWebhookIntegrationSeed } from "./faceit-webhook-integration-seed";
 import { runQuery } from "../../db/mysqlRunQuery";
-import * as faceitServices from "../../services/faceit.services";
+import * as faceitMatchServices from "../../services/faceit-match.services";
 import * as seasonTeamPlayersModels from "../../models/season-team-players.models";
 
 const ROOM_IDS = [
@@ -78,7 +78,7 @@ describe("FACEIT webhook integration (replay from fixtures)", () => {
       const callIndexByRoom = new Map<string, number>();
 
       jest
-        .spyOn(faceitServices, "getFaceITMatchDetails")
+        .spyOn(faceitMatchServices, "getFaceITMatchDetails")
         .mockImplementation((externalMatchRoomId: string) => {
           const idx = callIndexByRoom.get(externalMatchRoomId) ?? 0;
           callIndexByRoom.set(externalMatchRoomId, idx + 1);
@@ -170,7 +170,7 @@ describe("FACEIT webhook integration (replay from fixtures)", () => {
       const callIndexByRoom = new Map<string, number>();
 
       jest
-        .spyOn(faceitServices, "getFaceITMatchDetails")
+        .spyOn(faceitMatchServices, "getFaceITMatchDetails")
         .mockImplementation((externalMatchRoomId: string) => {
           const idx = callIndexByRoom.get(externalMatchRoomId) ?? 0;
           callIndexByRoom.set(externalMatchRoomId, idx + 1);
@@ -266,7 +266,7 @@ describe("FACEIT webhook integration (replay from fixtures)", () => {
       const callIndexByRoom = new Map<string, number>();
 
       jest
-        .spyOn(faceitServices, "getFaceITMatchDetails")
+        .spyOn(faceitMatchServices, "getFaceITMatchDetails")
         .mockImplementation((externalMatchRoomId: string) => {
           const idx = callIndexByRoom.get(externalMatchRoomId) ?? 0;
           callIndexByRoom.set(externalMatchRoomId, idx + 1);
@@ -362,7 +362,7 @@ describe("FACEIT webhook integration (replay from fixtures)", () => {
       const callIndexByRoom = new Map<string, number>();
 
       jest
-        .spyOn(faceitServices, "getFaceITMatchDetails")
+        .spyOn(faceitMatchServices, "getFaceITMatchDetails")
         .mockImplementation((externalMatchRoomId: string) => {
           const idx = callIndexByRoom.get(externalMatchRoomId) ?? 0;
           callIndexByRoom.set(externalMatchRoomId, idx + 1);
@@ -434,7 +434,7 @@ describe("FACEIT webhook integration (replay from fixtures)", () => {
       const callIndexByRoom = new Map<string, number>();
 
       jest
-        .spyOn(faceitServices, "getFaceITMatchDetails")
+        .spyOn(faceitMatchServices, "getFaceITMatchDetails")
         .mockImplementation((externalMatchRoomId: string) => {
           const idx = callIndexByRoom.get(externalMatchRoomId) ?? 0;
           callIndexByRoom.set(externalMatchRoomId, idx + 1);
