@@ -10,6 +10,7 @@ import {
   updateErrorForWebhook
 } from "../models/faceit.models";
 import { invalidateChampionshipMatchesCache } from "../services/playoff-bracket.services";
+import { invalidateChampionshipBracketMatchesCache } from "../services/faceit-bracket.services";
 import { isForfeitPayload } from "../utils/faceit-match-status-finished-detection";
 import { logger } from "../utils/app-logger";
 import {
@@ -264,6 +265,9 @@ export const handleFaceitWebhook = async (
         await invalidateChampionshipMatchesCache(
           validatedWebhook.payload.entity.id
         );
+        await invalidateChampionshipBracketMatchesCache(
+          validatedWebhook.payload.entity.id
+        );
       } catch (error) {
         logger.error(
           `Error adding match to database for external match room id ${externalMatchRoomId}: ${error}`
@@ -328,6 +332,9 @@ export const handleFaceitWebhook = async (
       await invalidateChampionshipMatchesCache(
         validatedWebhook.payload.entity.id
       );
+      await invalidateChampionshipBracketMatchesCache(
+        validatedWebhook.payload.entity.id
+      );
 
       res.status(200).send("Webhook received");
       return;
@@ -381,6 +388,9 @@ export const handleFaceitWebhook = async (
       }
 
       await invalidateChampionshipMatchesCache(
+        validatedWebhook.payload.entity.id
+      );
+      await invalidateChampionshipBracketMatchesCache(
         validatedWebhook.payload.entity.id
       );
 

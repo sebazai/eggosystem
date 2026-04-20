@@ -7,6 +7,16 @@ const CACHE_KEY_PREFIX = "faceit-championship-bracket-matches:";
 const getCacheKey = (championshipId: string): string =>
   `${CACHE_KEY_PREFIX}${championshipId}`;
 
+export const invalidateChampionshipBracketMatchesCache = async (
+  championshipId: string
+): Promise<void> => {
+  const key = getCacheKey(championshipId);
+  await redisClient.del(key);
+  logger.info(
+    `[Playoff] Invalidated Redis cache for bracket matches championship ${championshipId}`
+  );
+};
+
 type FaceitBracketPayload = {
   rounds: Array<{
     number: number;
