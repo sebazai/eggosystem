@@ -34,6 +34,12 @@
       "command": "bash",
       "args": [".cursor/gitlab-mcp.sh"],
       "env": {}
+    },
+    "faceit": {
+      "type": "stdio",
+      "command": "bash",
+      "args": [".cursor/faceit-mcp.sh"],
+      "env": {}
     }
   }
 }
