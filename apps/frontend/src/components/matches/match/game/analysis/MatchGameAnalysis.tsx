@@ -6,9 +6,11 @@ import { TableSkeleton } from "@/components/loading";
 import { AfterplantTab } from "./AfterplantTab";
 import { OpeningDuelsTab } from "./OpeningDuelsTab";
 import { KillMatrixTab } from "./KillMatrixTab";
+import { TradeTab } from "./TradeTab";
 import { useMatchGameAfterplantAnalysis } from "@/hooks/data/useMatchGameAfterplantAnalysis";
 import { useMatchGameOpeningDuels } from "@/hooks/data/useMatchGameOpeningDuels";
 import { useMatchGameKillMatrix } from "@/hooks/data/useMatchGameKillMatrix";
+import { useMatchGameTradeStats } from "@/hooks/data/useMatchGameTradeStats";
 import { useGamePlayerStats } from "@/hooks/data/useGamePlayerStats";
 import type { MatchInfo } from "@eggosystem/types";
 
@@ -30,6 +32,9 @@ export const MatchGameAnalysis = ({
   const { killMatrix, isLoading: isLoadingMatrix } =
     useMatchGameKillMatrix(matchGameId);
 
+  const { tradeStats, isLoading: isLoadingTrades } =
+    useMatchGameTradeStats(matchGameId);
+
   const { playerStats, isLoading: isLoadingPlayers } =
     useGamePlayerStats(matchGameId);
 
@@ -37,7 +42,8 @@ export const MatchGameAnalysis = ({
     isLoadingAfterplant ||
     isLoadingPlayers ||
     isLoadingDuels ||
-    isLoadingMatrix;
+    isLoadingMatrix ||
+    isLoadingTrades;
 
   return (
     <Tabs defaultValue="afterplant" className="w-full">
@@ -45,6 +51,7 @@ export const MatchGameAnalysis = ({
         <TabsTrigger value="afterplant">Afterplants &amp; Retakes</TabsTrigger>
         <TabsTrigger value="opening-duels">Opening Duels</TabsTrigger>
         <TabsTrigger value="kill-matrix">Kill &amp; Flash Matrix</TabsTrigger>
+        <TabsTrigger value="trades">Trades</TabsTrigger>
       </TabsList>
 
       <TabsContent value="afterplant">
@@ -77,6 +84,13 @@ export const MatchGameAnalysis = ({
             playerStats={playerStats}
             teams={matchInfo.teams}
           />
+        )}
+      </TabsContent>
+
+      <TabsContent value="trades">
+        {isLoading && <TableSkeleton rows={6} />}
+        {!isLoading && tradeStats && (
+          <TradeTab tradeStats={tradeStats} teams={matchInfo.teams} />
         )}
       </TabsContent>
     </Tabs>

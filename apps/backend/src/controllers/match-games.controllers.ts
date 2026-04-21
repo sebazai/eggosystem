@@ -10,7 +10,8 @@ import {
 import {
   getMatchGameAfterplantAnalysis,
   getMatchGameOpeningDuels,
-  getMatchGameKillMatrix
+  getMatchGameKillMatrix,
+  getMatchGameTradeStats
 } from "../models/match-game-analysis.models";
 import { BadRequestError, NotFoundError } from "../utils/errors";
 import { getTeamStats } from "../models/match.models";
@@ -101,6 +102,15 @@ export const getMatchGameOpeningDuelsController = async (
 ) => {
   const match_game_id = parseInt(req.params.match_game_id, 10);
   const data = await getMatchGameOpeningDuels(match_game_id);
+  res.json(data);
+};
+
+export const getMatchGameTradeStatsController = async (
+  req: RequestWithParams<{ match_game_id: string }>,
+  res: Response
+) => {
+  const match_game_id = parseInt(req.params.match_game_id, 10);
+  const data = await getMatchGameTradeStats(match_game_id);
   res.json(data);
 };
 

@@ -4,7 +4,10 @@ import {
   type MatchGameAfterplantRound,
   type MatchGameOpeningDuel,
   type OpeningDuelTradeStatus,
-  type MatchGameKillMatrix
+  type MatchGameKillMatrix,
+  type MatchGameTradeStats,
+  type PlayerTradeStats,
+  type TradeMatrixEntry
 } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
 
@@ -306,4 +309,93 @@ export const getMatchGameKillMatrix = async (
       count: r.count
     }))
   };
+};
+
+/* ─────────────────────────────────────────────────────────
+ *  Trade Stats
+ * ─────────────────────────────────────────────────────────*/
+
+type PlayerTradeStatsRow = {
+  steam_id: string;
+  nickname: string;
+  team_id: number;
+  trade_opportunities: number;
+  trade_attempts: number;
+  trades: number;
+  traded: number;
+  deaths: number;
+  first_death_traded: number;
+  first_deaths_tradeable: number;
+  first_deaths: number;
+};
+
+type TradeMatrixRow = {
+  trader_steam_id: string;
+  killer_steam_id: string;
+  count: number;
+};
+
+export const getMatchGameTradeStats = async (
+  match_game_id: number
+): Promise<MatchGameTradeStats> => {
+  const playerQuery = `
+    SELECT
+      sp.steam_id,
+      sp.nickname,
+      mt.team_id,
+      ps.trade_opportunities,
+      ps.trade_attempts,
+      ps.trades,
+      ps.traded,
+      ps.deaths,
+      ps.first_death_traded,
+      ps.first_deaths_tradeable,
+      ps.first_deaths
+    FROM PlayerStats ps
+    JOIN SteamPlayers sp ON sp.steam_id = ps.steam_id
+    JOIN MatchGames mg ON mg.id = ps.match_game_id
+    JOIN SeasonTeamPlayers stp ON stp.season_id = mg.season_id
+      AND stp.steam_id = ps.steam_id
+    JOIN MatchTeams mt ON mt.match_id = mg.match_id
+      AND mt.team_id = stp.team_id
+    WHERE ps.match_game_id = ?
+  `;
+
+  const matrixQuery = `
+    SELECT
+      pt.trader_steam_id,
+      pt.killer_steam_id,
+      COUNT(*) AS count
+    FROM PlayerTrades pt
+    WHERE pt.match_game_id = ?
+      AND pt.traded = 1
+    GROUP BY pt.trader_steam_id, pt.killer_steam_id
+  `;
+
+  const [playerRows, matrixRows] = await Promise.all([
+    runQuery<PlayerTradeStatsRow[]>(playerQuery, [match_game_id]),
+    runQuery<TradeMatrixRow[]>(matrixQuery, [match_game_id])
+  ]);
+
+  const players: PlayerTradeStats[] = playerRows.map((r) => ({
+    steam_id: String(r.steam_id),
+    nickname: r.nickname,
+    team_id: Number(r.team_id),
+    trade_opportunities: Number(r.trade_opportunities),
+    trade_attempts: Number(r.trade_attempts),
+    trades: Number(r.trades),
+    traded: Number(r.traded),
+    deaths: Number(r.deaths),
+    first_death_traded: Number(r.first_death_traded),
+    first_deaths_tradeable: Number(r.first_deaths_tradeable),
+    first_deaths: Number(r.first_deaths)
+  }));
+
+  const matrix: TradeMatrixEntry[] = matrixRows.map((r) => ({
+    trader_steam_id: String(r.trader_steam_id),
+    killer_steam_id: String(r.killer_steam_id),
+    count: Number(r.count)
+  }));
+
+  return { players, matrix };
 };

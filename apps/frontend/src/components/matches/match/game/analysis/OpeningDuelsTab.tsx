@@ -476,13 +476,8 @@ export const OpeningDuelsTab = ({
     [duels, teamBSteamIds, nameMap]
   );
 
-  // Determine which side each team plays in each half
-  // In CS, first half rounds typically go 1–12 and second half 13–24 (or 1-based)
-  const halfBoundary = useMemo(() => {
-    if (sortedRounds.length === 0) return 12;
-    const maxRound = sortedRounds.at(-1)!.round_number;
-    return Math.ceil(maxRound / 2);
-  }, [sortedRounds]);
+  // CS2: first half is always rounds 1–12, second half 13–24, OT from 25
+  const halfBoundary = 12;
 
   const half1 = sortedRounds.filter((d) => d.round_number <= halfBoundary);
   const half2 = sortedRounds.filter((d) => d.round_number > halfBoundary);
