@@ -162,40 +162,68 @@ export const patchDashboardMarketingSponsorController = async (
     return next(parsed.error);
   }
 
-  const patch: Parameters<typeof sponsorModels.updateMarketingSponsor>[1] = {};
+  const data = parsed.data;
+  const hasImageUpload =
+    data.image_data !== undefined && data.clear_logo !== true;
+  const hasClearLogo = data.clear_logo === true;
 
-  if (parsed.data.display_name !== undefined) {
-    patch.display_name = parsed.data.display_name;
+  const nonImagePatch: Parameters<
+    typeof sponsorModels.updateMarketingSponsor
+  >[1] = {};
+
+  if (data.display_name !== undefined) {
+    nonImagePatch.display_name = data.display_name;
   }
-  if (parsed.data.display_order !== undefined) {
-    patch.display_order = parsed.data.display_order;
+  if (data.display_order !== undefined) {
+    nonImagePatch.display_order = data.display_order;
   }
-  if (parsed.data.enabled !== undefined) {
-    patch.enabled = parsed.data.enabled;
+  if (data.enabled !== undefined) {
+    nonImagePatch.enabled = data.enabled;
   }
-  if (parsed.data.tier !== undefined) {
-    patch.tier = parsed.data.tier;
+  if (data.tier !== undefined) {
+    nonImagePatch.tier = data.tier;
   }
-  if (parsed.data.external_url !== undefined) {
-    patch.external_url = normalizeExternalUrl(parsed.data.external_url) ?? null;
+  if (data.external_url !== undefined) {
+    nonImagePatch.external_url =
+      normalizeExternalUrl(data.external_url) ?? null;
   }
-  if (parsed.data.clear_logo === true) {
-    patch.image_phash = null;
-  } else if (parsed.data.image_data !== undefined) {
-    patch.image_phash = await uploadMarketingSponsorImageFromPayload(
-      parsed.data.image_data
-    );
+  if (hasClearLogo) {
+    nonImagePatch.image_phash = null;
   }
 
-  if (Object.keys(patch).length === 0) {
+  const hasNonImageKeys = Object.keys(nonImagePatch).length > 0;
+
+  if (!hasNonImageKeys && !hasImageUpload) {
     return next(new BadRequestError("No fields to update"));
   }
 
-  const ok = await sponsorModels.updateMarketingSponsor(id, patch);
-  if (!ok) {
+  if (hasNonImageKeys) {
+    const ok = await sponsorModels.updateMarketingSponsor(id, nonImagePatch);
+    if (!ok) {
+      const exists = await sponsorModels.marketingSponsorExists(id);
+      if (!exists) {
+        return next(new NotFoundError("Sponsor not found"));
+      }
+    }
+  } else if (hasImageUpload) {
     const exists = await sponsorModels.marketingSponsorExists(id);
     if (!exists) {
       return next(new NotFoundError("Sponsor not found"));
+    }
+  }
+
+  if (hasImageUpload && data.image_data !== undefined) {
+    const imagePhash = await uploadMarketingSponsorImageFromPayload(
+      data.image_data
+    );
+    const ok = await sponsorModels.updateMarketingSponsor(id, {
+      image_phash: imagePhash
+    });
+    if (!ok) {
+      const exists = await sponsorModels.marketingSponsorExists(id);
+      if (!exists) {
+        return next(new NotFoundError("Sponsor not found"));
+      }
     }
   }
   await invalidatePublicMarketingSponsorsCache();
