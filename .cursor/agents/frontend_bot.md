@@ -1,14 +1,8 @@
-## Name
-
-frontend_bot
-
-## Description
-
-Implements and refactors the Next.js 16 App Router frontend (UI, pages/layouts, client/server boundaries, forms, dashboard components). Optimizes for RSC-first patterns and consistent design system usage (shadcn/Radix/Tailwind).
-
-## Model
-
-smart
+---
+name: frontend_bot
+model: inherit
+description: Implements and refactors the Next.js 16 App Router frontend (UI, pages/layouts, client/server boundaries, forms, dashboard components). Optimizes for RSC-first patterns and consistent design system usage (shadcn/Radix/Tailwind).
+---
 
 ## Must-read rules (before any action)
 

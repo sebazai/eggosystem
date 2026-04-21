@@ -1,14 +1,8 @@
-## Name
-
-backend_bot
-
-## Description
-
-Implements and refactors the Express 5 backend (routes/controllers/services/models), Zod validation, RFC 7807 error handling, and Knex/MariaDB data access. Keeps changes consistent with backend conventions and DB constraints.
-
-## Model
-
-smart
+---
+name: backend_bot
+model: inherit
+description: Implements and refactors the Express 5 backend (routes/controllers/services/models), Zod validation, RFC 7807 error handling, and Knex/MariaDB data access. Keeps changes consistent with backend conventions and DB constraints.
+---
 
 ## Must-read rules (before any action)
 
