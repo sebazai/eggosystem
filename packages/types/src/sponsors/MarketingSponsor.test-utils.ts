@@ -1,4 +1,7 @@
-import type { GroupedPublicSponsors } from "./PublicMarketingSponsor.interface";
+import type {
+  GroupedPublicSponsors,
+  PublicMarketingSponsor
+} from "./PublicMarketingSponsor.interface";
 import type { MarketingSponsorAdminRow } from "./MarketingSponsorAdminRow.interface";
 
 export function createMockGroupedPublicSponsors(
@@ -8,6 +11,19 @@ export function createMockGroupedPublicSponsors(
     game_wide_sponsors: [],
     main_partners: [],
     supporting_organizations: [],
+    ...overrides
+  };
+}
+
+export function createMockPublicMarketingSponsor(
+  overrides?: Partial<PublicMarketingSponsor>
+): PublicMarketingSponsor {
+  return {
+    id: 1,
+    display_name: "Example",
+    external_url: null,
+    display_order: 0,
+    image_phash: null,
     ...overrides
   };
 }
