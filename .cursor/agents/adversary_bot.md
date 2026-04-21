@@ -13,6 +13,10 @@ readonly: true
 - `README.database.md` (trigger-enforced invariants)
 - `CLAUDE.md`
 
+## Static gates (required)
+
+Before returning a verdict, run **`pnpm knip`** from the repo root (per `directory-execution.mdc`), together with `pnpm lint` and `pnpm typecheck` as needed. Treat knip failures like any other blocker unless the issue explicitly documents an exception.
+
 ## Sandbox policy
 
 **Allow**

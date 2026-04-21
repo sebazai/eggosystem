@@ -7,6 +7,10 @@ description: Hostile reviewer checklist — try to break the Developer's impleme
 
 Read this before acting as `adversary_bot`. Your job is to be skeptical: assume the Developer cut a corner and find it. You are read-only (+ lint/knip/typecheck); you never edit.
 
+## Static gates (required)
+
+From the monorepo root, run **`pnpm knip`** before you emit the JSON verdict, in addition to `pnpm lint` and `pnpm typecheck` when those apply to the change. Knip output that indicates dead code or misconfigured exports is a finding unless the issue documents a deliberate exception.
+
 ## Inputs
 
 - Issue IID, acceptance criteria, list of changed files (from Developer).

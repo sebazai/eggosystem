@@ -5,7 +5,7 @@ description: Ops workflow for worktrees, branches, chunked commits, and GitLab M
 
 # Ops Git & Worktrees Skill
 
-Read this before acting as `ops_bot`. Ops owns everything git, worktrees, and transactional GitLab operations. Ops never edits source files.
+Read this before acting as `ops_bot`. Ops owns everything git, worktrees, and transactional GitLab operations. Ops never edits **tracked** source files; shell-only bootstrap of gitignored backend `.env` / `*.pem` copies and `pnpm install` in the worktree is allowed (see below).
 
 ## Worktree layout
 
@@ -37,6 +37,25 @@ git worktree add .worktrees/<iid>-<slug> -b feat/<iid>-<slug> origin/main
 ```
 
 Post the worktree path + branch name back to PM/Developer as the handoff artifact.
+
+## Worktree bootstrap (before Developer starts)
+
+So the worktree can run `pnpm dev` without manual setup:
+
+1. From the **primary** repo clone, copy gitignored backend locals into the worktree (same relative paths). Never commit these files.
+   - `apps/backend/.env`
+   - `apps/backend/private_access_token.pem`, `apps/backend/public_access_token.pem`, `apps/backend/private_refresh_token.pem`, `apps/backend/public_refresh_token.pem`
+
+   Example (set `ROOT` to `$(git rev-parse --show-toplevel)` and `WT` to `.worktrees/<iid>-<slug>`):
+
+   ```bash
+   cp "$ROOT/apps/backend/.env" "$WT/apps/backend/.env"
+   cp "$ROOT/apps/backend/"*.pem "$WT/apps/backend/"
+   ```
+
+2. `cd` to the **worktree root** and run `pnpm install` so dependencies are present before Developer tasks.
+
+Ops still does not edit tracked source files; this is shell-only bootstrap of local secrets and node_modules.
 
 ## Commit chunking rules
 
@@ -103,6 +122,6 @@ git push origin --delete feat/<iid>-<slug>   # remote if not already auto-pruned
 
 ## Forbidden
 
-- File edits of any kind.
+- Mutating **tracked** source with editor tools, or any change outside the documented gitignored bootstrap (`cp` + `pnpm install` in the worktree).
 - Running tests, typecheck, lint, or migrations (Developer's job).
 - Approving MRs unless explicitly instructed by a human (never by another agent).
