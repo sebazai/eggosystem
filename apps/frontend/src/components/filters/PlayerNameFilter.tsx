@@ -15,6 +15,10 @@ export const PlayerNameFilter: React.FC<PlayerNameFilterProps> = ({
 }) => {
   const searchParams = useSearchParams();
   const pathname = usePathname();
+  // String snapshot: useSearchParams() often returns a new object each render even
+  // when the query string is unchanged; depending on that object in effects can
+  // cause replaceState → re-render loops.
+  const searchParamsSnapshot = searchParams.toString();
   const [playerName, setPlayerName] = useState(initialPlayerName);
   const [debouncedPlayerName, setDebouncedPlayerName] =
     useState(initialPlayerName);
@@ -30,7 +34,7 @@ export const PlayerNameFilter: React.FC<PlayerNameFilterProps> = ({
 
   // Update URL when debounced player name changes
   useEffect(() => {
-    const params = new URLSearchParams(searchParams.toString());
+    const params = new URLSearchParams(searchParamsSnapshot);
 
     if (debouncedPlayerName) {
       params.set("playerName", debouncedPlayerName);
@@ -38,9 +42,14 @@ export const PlayerNameFilter: React.FC<PlayerNameFilterProps> = ({
       params.delete("playerName");
     }
 
-    const newUrl = `${pathname}?${params.toString()}`;
+    const newQuery = params.toString();
+    if (newQuery === searchParamsSnapshot) {
+      return;
+    }
+
+    const newUrl = newQuery ? `${pathname}?${newQuery}` : pathname;
     window.history.replaceState(null, "", newUrl);
-  }, [debouncedPlayerName, pathname, searchParams]);
+  }, [debouncedPlayerName, pathname, searchParamsSnapshot]);
 
   const handleInputChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {

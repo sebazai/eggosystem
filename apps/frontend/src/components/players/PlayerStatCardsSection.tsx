@@ -14,6 +14,24 @@ interface StatCardProps {
   value: string;
 }
 
+/** API may return null for derived stats when insufficient data exists. */
+function formatFixed(value: number | null | undefined, digits: number): string {
+  if (value == null || Number.isNaN(value)) {
+    return "—";
+  }
+  return value.toFixed(digits);
+}
+
+function formatPercent(
+  value: number | null | undefined,
+  digits: number
+): string {
+  if (value == null || Number.isNaN(value)) {
+    return "—";
+  }
+  return `${value.toFixed(digits)}%`;
+}
+
 interface PlayerDetailsProps {
   steamId: string;
 }
@@ -82,10 +100,16 @@ export const PlayerStatCardsSection = ({ steamId }: PlayerDetailsProps) => {
         <StatCard label="Kills" value={playerStats.kills.toString()} />
         <StatCard label="Deaths" value={playerStats.deaths.toString()} />
         <StatCard label="Assists" value={playerStats.assists.toString()} />
-        <StatCard label="K/D Ratio" value={playerStats.kd.toFixed(2)} />
-        <StatCard label="ADR" value={playerStats.adr.toFixed(1) || "0"} />
-        <StatCard label="HS%" value={`${playerStats.hs_percent.toFixed(1)}%`} />
-        <StatCard label="Rating" value={playerStats.kana_rating.toFixed(2)} />
+        <StatCard label="K/D Ratio" value={formatFixed(playerStats.kd, 2)} />
+        <StatCard label="ADR" value={formatFixed(playerStats.adr, 1)} />
+        <StatCard
+          label="HS%"
+          value={formatPercent(playerStats.hs_percent, 1)}
+        />
+        <StatCard
+          label="Rating"
+          value={formatFixed(playerStats.kana_rating, 2)}
+        />
       </div>
     </PlayerStatCardWrapper>
   );

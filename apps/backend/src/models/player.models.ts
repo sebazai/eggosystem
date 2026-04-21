@@ -627,7 +627,9 @@ export const getPlayerMatchHistoryByFilters = async (
     matchHistoryQuery,
     queryParams
   );
-  return matchHistory.filter((mh) => mh.kills && mh.deaths);
+  // Only exclude rows with no PlayerStats (SQL SUMs null). Do not use truthiness:
+  // 0 kills or 0 deaths are valid and must be kept.
+  return matchHistory.filter((mh) => mh.kills != null && mh.deaths != null);
 };
 
 export const getPlayerTeamDetailsWithFilters = async (

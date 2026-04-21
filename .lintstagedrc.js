@@ -77,11 +77,11 @@ const buildTypecheck = (filenames) => {
 
   if (workspaces.size === 0) return 'echo "skip typecheck"';
 
-  // Run typecheck for each affected workspace
-  const filters = Array.from(workspaces)
-    .map((ws) => `--filter=${ws}`)
-    .join(" ");
-  return `pnpm ${filters} typecheck`;
+  // One command per workspace — avoids a single `pnpm --filter=a --filter=b typecheck`
+  // invocation (lint-staged + multi-filter ergonomics, clearer failures).
+  return Array.from(workspaces).map(
+    (ws) => `pnpm --filter=${ws} run typecheck`
+  );
 };
 
 const buildFormat = (filenames) => {
