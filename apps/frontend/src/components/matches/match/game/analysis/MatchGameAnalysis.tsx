@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TableSkeleton } from "@/components/loading";
 import { AfterplantTab } from "./AfterplantTab";
@@ -19,10 +20,31 @@ interface MatchGameAnalysisProps {
   matchInfo: MatchInfo;
 }
 
+const VALID_TABS = [
+  "afterplant",
+  "opening-duels",
+  "kill-matrix",
+  "trades"
+] as const;
+type TabValue = (typeof VALID_TABS)[number];
+
 export const MatchGameAnalysis = ({
   matchGameId,
   matchInfo
 }: MatchGameAnalysisProps) => {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const rawTab = searchParams.get("tab") ?? "";
+  const activeTab: TabValue = (VALID_TABS as readonly string[]).includes(rawTab)
+    ? (rawTab as TabValue)
+    : "afterplant";
+
+  const handleTabChange = (value: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("tab", value);
+    router.replace(`?${params.toString()}`, { scroll: false });
+  };
+
   const { afterplantRounds, isLoading: isLoadingAfterplant } =
     useMatchGameAfterplantAnalysis(matchGameId);
 
@@ -46,7 +68,7 @@ export const MatchGameAnalysis = ({
     isLoadingTrades;
 
   return (
-    <Tabs defaultValue="afterplant" className="w-full">
+    <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
       <TabsList className="mb-4">
         <TabsTrigger value="afterplant">Afterplants &amp; Retakes</TabsTrigger>
         <TabsTrigger value="opening-duels">Opening Duels</TabsTrigger>

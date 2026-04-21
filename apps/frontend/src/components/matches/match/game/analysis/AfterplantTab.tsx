@@ -138,7 +138,7 @@ const TeamSummaryCard = ({
             width={24}
             height={24}
             className="object-contain shrink-0"
-            fallbackSrc="/images/default-team-logo.webp"
+            fallbackSrc="/team-images/nologo.png"
           />
         )}
         <span className="font-bold text-sm">{teamName}</span>
