@@ -23,7 +23,7 @@ This document provides comprehensive guidelines for frontend development in the 
 
 ### Dashboard Authentication
 
-Dashboard routes rely on a cookie-based JWT `access_token` issued by the backend. E2E tests and the Playwright MCP inject this cookie directly via `generateTestJWTForUser` in `apps/frontend/src/e2e/utils/index.ts`. See `.cursor/rules/development/playwright-mcp-admin-auth.mdc` for the MCP admin-auth workflow.
+Dashboard routes rely on a cookie-based JWT `access_token` issued by the backend. E2E tests and the Playwright MCP inject this cookie directly via `generateTestJWTForUser` in `apps/frontend/src/e2e/utils/index.ts`. See `.cursor/skills/playwright-mcp-admin-auth/SKILL.md` for the MCP admin-auth workflow.
 
 ### Build Output
 

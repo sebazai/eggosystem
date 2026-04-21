@@ -1,5 +1,5 @@
 #!/bin/sh
-# PreToolUse(Bash): enforce .cursor/rules/development/e2e-playwright.mdc.
+# PreToolUse(Bash): enforce .cursor/skills/e2e-playwright/SKILL.md.
 # `pnpm test:e2e` must run from workspace root.
 # `pnpm test:e2e:run` alone skips build+reseed; only allow when the same command
 # chains `pnpm build && pnpm --filter=backend reseed:e2e`.
@@ -16,7 +16,7 @@ case "$cmd" in
     case "$cmd" in
       *"pnpm build"*"reseed:e2e"*|*"reseed:e2e"*"test:e2e:run"*) : ;;
       *)
-        echo "BLOCKED: pnpm test:e2e:run skips build and E2E reseed. Use 'pnpm test:e2e' from workspace root instead. (.cursor/rules/development/e2e-playwright.mdc)" >&2
+        echo "BLOCKED: pnpm test:e2e:run skips build and E2E reseed. Use 'pnpm test:e2e' from workspace root instead. (.cursor/skills/e2e-playwright/SKILL.md)" >&2
         exit 2
         ;;
     esac
@@ -35,7 +35,7 @@ case "$cmd" in
     if [ "$(pwd)" = "${CLAUDE_PROJECT_DIR:-/workspace}" ]; then
       exit 0
     fi
-    echo "BLOCKED: 'pnpm test:e2e' must run from the workspace root. Prepend 'cd \$(git rev-parse --show-toplevel) && '. (.cursor/rules/development/e2e-playwright.mdc)" >&2
+    echo "BLOCKED: 'pnpm test:e2e' must run from the workspace root. Prepend 'cd \$(git rev-parse --show-toplevel) && '. (.cursor/skills/e2e-playwright/SKILL.md)" >&2
     exit 2
     ;;
 esac

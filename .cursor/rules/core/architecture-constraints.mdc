@@ -15,6 +15,5 @@ alwaysApply: true
 
 ## Critical Prohibitions
 
-- **No Git Commits**: AI must never commit code - all commits must be done by the user
 - **No Unsafe Type Casting**: Use `satisfies` operator and proper type guards instead of `as` keyword
 - **No Try/Catch Without Cleanup**: Only use try/catch for database transactions with proper cleanup

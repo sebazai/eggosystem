@@ -4,6 +4,8 @@ import { SeasonPlatform } from "@eggosystem/types";
 import Link from "next/link";
 import Image from "next/image";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { BarChart2 } from "lucide-react";
 
 interface MatchMapsHeaderProps {
   matchId: number;
@@ -56,7 +58,7 @@ export const MatchMapsHeader = ({
   return (
     <>
       <div className="flex flex-col sm:flex-row justify-between">
-        <div className="flex flex-row gap-2 mb-5 sm:mb-0">
+        <div className="flex flex-row items-center gap-2 mb-5 sm:mb-0">
           <h1>MATCH STATS</h1>
           {externalMatchRoomUrl && (
             <Link
@@ -70,6 +72,14 @@ export const MatchMapsHeader = ({
                 {platform.charAt(0).toUpperCase() + platform.slice(1)}
               </button>
             </Link>
+          )}
+          {matchGameId && (
+            <Button variant="kanaliigaOrange" size="xs" asChild>
+              <Link href={`/matches/${matchId}/games/${matchGameId}/analysis`}>
+                <BarChart2 className="size-3 mr-1" />
+                Detailed Analysis
+              </Link>
+            </Button>
           )}
         </div>
         {maps?.length !== 1 && (

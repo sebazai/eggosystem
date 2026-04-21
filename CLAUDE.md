@@ -97,7 +97,7 @@ Turbo tasks `dev`, `build`, `typecheck`, `test` all `dependsOn: ["@eggosystem/ty
 
 - `apps/frontend/src/app` uses route groups: `(admin)` dashboard, `(main)` public, `(embed)` embedded widgets, `(health)`. Styling is Tailwind v4 + shadcn (`components.json`) + Radix primitives.
 - Data fetching: SWR client-side; server components + route handlers as needed. Forms: `react-hook-form` + Zod via `@hookform/resolvers`.
-- Dashboard auth: cookie-based JWT (`access_token`) issued by backend. E2E tests and the Playwright MCP inject this cookie directly — see `apps/frontend/src/e2e/utils/index.ts` (`generateTestJWTForUser`) and `.cursor/rules/development/playwright-mcp-admin-auth.mdc`.
+- Dashboard auth: cookie-based JWT (`access_token`) issued by backend. E2E tests and the Playwright MCP inject this cookie directly — see `apps/frontend/src/e2e/utils/index.ts` (`generateTestJWTForUser`) and `.cursor/skills/playwright-mcp-admin-auth/SKILL.md`.
 - Build output uses Next standalone; `postbuild` copies static/public into `.next/standalone/apps/frontend/`.
 - `AGENTS.md` in `apps/frontend` is an auto-generated Next.js docs index — don't edit by hand.
 
