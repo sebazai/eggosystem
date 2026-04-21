@@ -341,7 +341,7 @@ export const PlayerMatchHistoryTable = ({ steamId }: PlayerDetailsProps) => {
   if (matchHistory?.length === 0) {
     return (
       <PlayerMatchHistoryTableWrapper>
-        <div className="text-center text-muted-foreground">
+        <div className="text-center text-muted-foreground py-4">
           No match history available for this player with the current filters.
         </div>
       </PlayerMatchHistoryTableWrapper>
