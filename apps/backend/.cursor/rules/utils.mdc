@@ -1,0 +1,16 @@
+---
+description: Shared helpers under apps/backend/src/utils — prefer these over duplicating logic in models/services
+alwaysApply: false
+globs:
+  ["apps/backend/src/**/*.ts"]
+---
+
+# Backend `src/utils`
+
+Before adding a small pure function (formatting, rounding, coercion, parsing), **check `apps/backend/src/utils/`** for an existing helper (e.g. `date-utils`, `number-utils`, `queryFilter`, `pagination-utils`).
+
+## Numbers / API responses
+
+- **`number-utils.ts`** — `coerceAvgScore` (MariaDB DECIMAL/string → number for JSON), `roundSideKd` (K/D rounded to 2 decimals). Use when mapping raw `runQuery` rows or building stats for `res.json`.
+
+Add new domain-specific **math/normalization** helpers to `number-utils.ts` (or a dedicated util file if large), not inline in models, unless the logic is single-call-site and trivial.

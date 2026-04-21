@@ -1,5 +1,6 @@
 import { type TeamMapStats, type ParsedParams } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
+import { coerceAvgScore, roundSideKd } from "../utils/number-utils";
 import { generateQueryWithFilters } from "../utils/queryFilter";
 import { getActiveMapPoolMaps } from "./season-active-map-pool.models";
 
@@ -74,12 +75,12 @@ const complementStatsWithMapPool = (
       wins: 0,
       losses: 0,
       win_percentage: 0,
-      avg_score: "0.0",
-      avg_opponent_score: "0.0",
+      avg_score: 0,
+      avg_opponent_score: 0,
       ct_win_percentage: 50,
       t_win_percentage: 50,
-      ct_kd: "0.00",
-      t_kd: "0.00",
+      ct_kd: 0,
+      t_kd: 0,
       kills_ct: 0,
       deaths_ct: 0,
       kills_t: 0,
@@ -119,8 +120,8 @@ interface BaseMapStats {
   wins: number;
   losses: number;
   win_percentage: number;
-  avg_score: string;
-  avg_opponent_score: string;
+  avg_score: string | number;
+  avg_opponent_score: string | number;
 }
 
 interface SideStats {
@@ -341,11 +342,8 @@ const getMapStatsWithSides = async (
         ? Math.min(100, Math.max(0, (side.kills_t / side.deaths_t) * 50))
         : 50;
 
-    const ctKd =
-      side.deaths_ct > 0 ? (side.kills_ct / side.deaths_ct).toFixed(2) : "1.00";
-
-    const tKd =
-      side.deaths_t > 0 ? (side.kills_t / side.deaths_t).toFixed(2) : "1.00";
+    const ctKd = roundSideKd(side.kills_ct, side.deaths_ct);
+    const tKd = roundSideKd(side.kills_t, side.deaths_t);
 
     return {
       map_id: base.map_id,
@@ -354,8 +352,8 @@ const getMapStatsWithSides = async (
       wins: base.wins,
       losses: base.losses,
       win_percentage: base.win_percentage,
-      avg_score: base.avg_score,
-      avg_opponent_score: base.avg_opponent_score,
+      avg_score: coerceAvgScore(base.avg_score),
+      avg_opponent_score: coerceAvgScore(base.avg_opponent_score),
       ct_win_percentage: parseFloat(ctWinPercentage.toFixed(1)),
       t_win_percentage: parseFloat(tWinPercentage.toFixed(1)),
       ct_kd: ctKd,

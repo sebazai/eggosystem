@@ -48,8 +48,8 @@ describe("Team Map Stats Integration Tests", () => {
       expect(typeof mapStat.maps_played).toBe("number");
       expect(typeof mapStat.ct_win_percentage).toBe("number");
       expect(typeof mapStat.t_win_percentage).toBe("number");
-      expect(typeof mapStat.ct_kd).toBe("string");
-      expect(typeof mapStat.t_kd).toBe("string");
+      expect(typeof mapStat.ct_kd).toBe("number");
+      expect(typeof mapStat.t_kd).toBe("number");
 
       // Validate ranges
       expect(mapStat.ct_win_percentage).toBeGreaterThanOrEqual(0);
@@ -107,7 +107,7 @@ describe("Team Map Stats Integration Tests", () => {
     expect(mapStat.deaths_ct).toBe(19);
 
     // Verify K/D ratios
-    expect(mapStat.t_kd).toBe("0.58");
-    expect(mapStat.ct_kd).toBe("0.42");
+    expect(mapStat.t_kd).toBe(0.58);
+    expect(mapStat.ct_kd).toBe(0.42);
   });
 });

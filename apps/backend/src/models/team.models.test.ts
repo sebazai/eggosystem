@@ -618,7 +618,7 @@ describe("getTeamMapStats", () => {
       expect(map.wins).toBe(0);
       expect(map.losses).toBe(0);
       expect(map.win_percentage).toBe(0);
-      expect(map.avg_score).toBe("0.0");
+      expect(map.avg_score).toBe(0);
     });
   });
   it("should return all played maps for team 66", async () => {
