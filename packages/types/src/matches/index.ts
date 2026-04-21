@@ -16,3 +16,6 @@ export * from "./Player.interface";
 export * from "./MatchHistoryItem.interface";
 export * from "./TeamColor.interface";
 export * from "./MatchTeamLineup.interface";
+export * from "./MatchGameAfterplantRound.interface";
+export * from "./MatchGameOpeningDuel.interface";
+export * from "./MatchGameKillMatrix.interface";
