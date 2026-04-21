@@ -32,7 +32,7 @@ function mapPublicRow(r: {
   };
 }
 
-export async function listEnabledPublicSponsorsByTier(
+async function listEnabledPublicSponsorsByTier(
   tier: MarketingSponsorTier
 ): Promise<PublicMarketingSponsor[]> {
   const rows = await runQuery<

@@ -8,7 +8,7 @@ const imageDataFieldSchema = z
   .min(1)
   .max(marketingSponsorImageDataMaxChars);
 
-export const marketingSponsorTierSchema = z.enum([
+const marketingSponsorTierSchema = z.enum([
   "game_wide",
   "main_partner",
   "supporting_organization"

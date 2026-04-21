@@ -2,7 +2,7 @@
  * Parse `image_data` from team-logo / sponsor-style payloads:
  * either a full data URI (`data:image/png;base64,...`) or raw base64 bytes.
  */
-export type ParsedBase64Image =
+type ParsedBase64Image =
   | {
       ok: true;
       imageBuffer: Buffer;
