@@ -183,6 +183,12 @@ const data: { navMain: Array<MenuItem> } = {
       items: [] satisfies Array<SubMenuItem>
     },
     {
+      title: "Sponsors",
+      url: createDashboardNextUrl("sponsors"),
+      requiredRoles: ["admin"],
+      items: [] satisfies Array<SubMenuItem>
+    },
+    {
       title: "Email Verification",
       url: createDashboardNextUrl("email-verification"),
       requiredRoles: ["admin", "helpdesk"],
