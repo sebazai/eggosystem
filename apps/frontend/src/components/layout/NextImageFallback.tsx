@@ -11,15 +11,15 @@ function withImageFallback(WrappedComponent: typeof Image) {
   return function ImageWithFallback(props: WithFallbackProps) {
     const { fallbackSrc, ...rest } = props;
 
+    const resolved = createNextUrl(fallbackSrc ?? "/team-images/nologo.png");
+
     return (
       <WrappedComponent
         {...rest}
         onError={(event) => {
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          // @ts-expect-error
-          event.target.srcset = createNextUrl(
-            fallbackSrc ?? "/team-images/nologo.png"
-          );
+          const target = event.target as HTMLImageElement;
+          if (target.srcset === resolved) return; // already showing fallback — stop the loop
+          target.srcset = resolved;
         }}
       />
     );
