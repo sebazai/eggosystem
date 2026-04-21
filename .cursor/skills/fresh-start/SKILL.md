@@ -1,6 +1,14 @@
 ---
 name: fresh-start
 description: Complete project reset - clean all caches, reinstall, rebuild, and reseed database
+disable-model-invocation: true
+---
+
+---
+
+name: fresh-start
+description: Complete project reset - clean all caches, reinstall, rebuild, and reseed database
+
 ---
 
 Perform a complete fresh start of the project. This is useful when things are broken or you want to start from scratch.

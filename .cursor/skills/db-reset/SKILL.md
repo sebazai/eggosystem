@@ -1,6 +1,14 @@
 ---
 name: db-reset
 description: Reset and reseed the database
+disable-model-invocation: true
+---
+
+---
+
+name: db-reset
+description: Reset and reseed the database
+
 ---
 
 Reset the database completely and reseed it with development data.

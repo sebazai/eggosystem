@@ -1,6 +1,14 @@
 ---
 name: quality-check
 description: Run all quality gates (knip, typecheck, format:check, lint)
+disable-model-invocation: true
+---
+
+---
+
+name: quality-check
+description: Run all quality gates (knip, typecheck, format:check, lint)
+
 ---
 
 Run all quality gates to ensure code meets project standards before committing.

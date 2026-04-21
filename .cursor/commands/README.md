@@ -1,6 +1,8 @@
 # Cursor Chat Commands
 
-This directory contains custom chat commands for the Kanaliiga Eggosystem project. These commands can be invoked in Cursor's chat interface to perform common development tasks.
+The per-command `.md` files were migrated to **Agent Skills** at `.cursor/skills/<command-name>/SKILL.md` (same names as listed below). Invoke them from the Cursor skills menu or by name; they use `disable-model-invocation: true` so they are meant to be triggered explicitly.
+
+This README remains a quick index of what each skill covers.
 
 ## Available Commands
 

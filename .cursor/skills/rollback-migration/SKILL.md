@@ -1,6 +1,14 @@
 ---
 name: rollback-migration
 description: Rollback the last database migration
+disable-model-invocation: true
+---
+
+---
+
+name: rollback-migration
+description: Rollback the last database migration
+
 ---
 
 Rollback the most recently applied database migration.

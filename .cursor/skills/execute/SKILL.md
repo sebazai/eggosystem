@@ -1,6 +1,14 @@
 ---
+name: execute
+description: Full issue-to-PR workflow. Fetches a GitLab issue, optionally plans (complex issues only), implements via a dedicated agent, reviews quality and correctness via a dedicated agent, then commits and opens a merge request.
+disable-model-invocation: true
+---
+
+---
+
 description: Full issue-to-PR workflow. Fetches a GitLab issue, optionally plans (complex issues only), implements via a dedicated agent, reviews quality and correctness via a dedicated agent, then commits and opens a merge request.
 argument-hint: <issue-number> [additional context]
+
 ---
 
 # Execute GitLab Issue

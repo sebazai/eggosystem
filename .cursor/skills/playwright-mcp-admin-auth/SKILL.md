@@ -1,6 +1,6 @@
 ---
+name: playwright-mcp-admin-auth
 description: How to inject admin or normal-user session into Playwright MCP browser
-alwaysApply: false
 ---
 
 # Playwright MCP – Session Injection

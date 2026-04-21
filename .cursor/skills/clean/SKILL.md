@@ -1,6 +1,14 @@
 ---
 name: clean
 description: Clean all build artifacts and caches
+disable-model-invocation: true
+---
+
+---
+
+name: clean
+description: Clean all build artifacts and caches
+
 ---
 
 Remove all build artifacts, compiled output, and cache directories.

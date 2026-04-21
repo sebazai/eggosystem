@@ -1,6 +1,6 @@
 ---
+name: e2e-playwright
 description: How and where to run E2E (Playwright) tests
-alwaysApply: false
 ---
 
 # E2E and Playwright Tests

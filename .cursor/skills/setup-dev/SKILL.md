@@ -1,6 +1,14 @@
 ---
 name: setup-dev
 description: Complete setup for new developers
+disable-model-invocation: true
+---
+
+---
+
+name: setup-dev
+description: Complete setup for new developers
+
 ---
 
 Run the complete setup process for a new developer joining the project.

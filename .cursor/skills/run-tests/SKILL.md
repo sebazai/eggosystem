@@ -1,6 +1,14 @@
 ---
 name: run-tests
 description: Run all tests (unit + E2E)
+disable-model-invocation: true
+---
+
+---
+
+name: run-tests
+description: Run all tests (unit + E2E)
+
 ---
 
 Run the complete test suite including both unit tests and E2E tests.

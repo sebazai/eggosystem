@@ -381,7 +381,7 @@ pnpm test:e2e
 
 See **[README.playwright.md](./README.playwright.md)** for detailed guidance.
 
-**E2E helpers**: `apps/frontend/src/e2e/utils/index.ts` exposes helpers for Playwright specs — notably `generateTestJWTForUser(account)`, which returns a cookie-ready access token so specs can authenticate as any seeded user without going through the Steam login flow. The Playwright MCP admin-auth rule lives at `.cursor/rules/development/playwright-mcp-admin-auth.mdc`.
+**E2E helpers**: `apps/frontend/src/e2e/utils/index.ts` exposes helpers for Playwright specs — notably `generateTestJWTForUser(account)`, which returns a cookie-ready access token so specs can authenticate as any seeded user without going through the Steam login flow. The Playwright MCP admin-auth skill lives at `.cursor/skills/playwright-mcp-admin-auth/SKILL.md`.
 
 ## Test Data Factories
 
