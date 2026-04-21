@@ -182,12 +182,12 @@ describe("Team Map Stats Models", () => {
         wins: 5,
         losses: 5,
         win_percentage: 50,
-        avg_score: "13.5",
-        avg_opponent_score: "8.5",
+        avg_score: 13.5,
+        avg_opponent_score: 8.5,
         ct_win_percentage: 53.7,
         t_win_percentage: 54.6,
-        ct_kd: "1.07",
-        t_kd: "1.09",
+        ct_kd: 1.07,
+        t_kd: 1.09,
         kills_ct: 130,
         deaths_ct: 121,
         kills_t: 142,
@@ -222,12 +222,12 @@ describe("Team Map Stats Models", () => {
         wins: 10,
         losses: 0,
         win_percentage: 100,
-        avg_score: "13.0",
-        avg_opponent_score: "9.0",
+        avg_score: 13,
+        avg_opponent_score: 9,
         ct_win_percentage: 72.5,
         t_win_percentage: 41.0,
-        ct_kd: "1.45",
-        t_kd: "0.82",
+        ct_kd: 1.45,
+        t_kd: 0.82,
         kills_ct: 145,
         deaths_ct: 100,
         kills_t: 82,
@@ -266,8 +266,8 @@ describe("Team Map Stats Models", () => {
           wins: 3,
           losses: 2,
           win_percentage: 60.0,
-          avg_score: "13.0",
-          avg_opponent_score: "10.0"
+          avg_score: 13,
+          avg_opponent_score: 10
         },
         {
           map_id: 1,
@@ -276,8 +276,8 @@ describe("Team Map Stats Models", () => {
           wins: 2,
           losses: 1,
           win_percentage: 66.7,
-          avg_score: "13.5",
-          avg_opponent_score: "9.5"
+          avg_score: 13.5,
+          avg_opponent_score: 9.5
         }
       ]);
 
@@ -383,8 +383,8 @@ describe("Team Map Stats Models", () => {
         wins: 0,
         losses: 0,
         win_percentage: 0,
-        avg_score: "0.0",
-        avg_opponent_score: "0.0"
+        avg_score: 0,
+        avg_opponent_score: 0
       });
 
       expect(result[3]).toMatchObject({
@@ -394,8 +394,8 @@ describe("Team Map Stats Models", () => {
         wins: 0,
         losses: 0,
         win_percentage: 0,
-        avg_score: "0.0",
-        avg_opponent_score: "0.0"
+        avg_score: 0,
+        avg_opponent_score: 0
       });
 
       // Verify played maps (dust2, mirage) have correct stats

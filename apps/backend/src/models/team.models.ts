@@ -18,6 +18,7 @@ import { type PoolConnection } from "mysql2/promise";
 import { buildInsertQueryParts } from "../db/utils";
 import { generateQueryWithFilters } from "../utils/queryFilter";
 import { BadRequestError } from "../utils/errors";
+import { coerceAvgScore } from "../utils/number-utils";
 import { getActiveMapPoolMaps } from "./season-active-map-pool.models";
 
 export const getTeams = async () => {
@@ -422,8 +423,8 @@ const complementBasicMapStats = (
       wins: 0,
       losses: 0,
       win_percentage: 0,
-      avg_score: "0.0",
-      avg_opponent_score: "0.0"
+      avg_score: 0,
+      avg_opponent_score: 0
     } as TeamMapStats;
   });
 
@@ -476,7 +477,19 @@ export const getTeamMapStats = async (
 
   const params = [teamId, ...queryParams];
 
-  const stats = await runQuery<TeamMapStats[]>(baseQuery, params);
+  type TeamMapStatsRow = Omit<
+    TeamMapStats,
+    "avg_score" | "avg_opponent_score"
+  > & {
+    avg_score: string | number;
+    avg_opponent_score: string | number;
+  };
+  const rawStats = await runQuery<TeamMapStatsRow[]>(baseQuery, params);
+  const stats = rawStats.map((row) => ({
+    ...row,
+    avg_score: coerceAvgScore(row.avg_score),
+    avg_opponent_score: coerceAvgScore(row.avg_opponent_score)
+  }));
 
   // Only complement with map pool if:
   // 1. Seasons are specified (to know which pool to use)

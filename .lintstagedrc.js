@@ -77,11 +77,14 @@ const buildTypecheck = (filenames) => {
 
   if (workspaces.size === 0) return 'echo "skip typecheck"';
 
-  // One command per workspace — avoids a single `pnpm --filter=a --filter=b typecheck`
-  // invocation (lint-staged + multi-filter ergonomics, clearer failures).
-  return Array.from(workspaces).map(
-    (ws) => `pnpm --filter=${ws} run typecheck`
-  );
+  // Multiple workspaces: one root `turbo typecheck` instead of several parallel
+  // `pnpm --filter=...` runs (faster, less duplicate work).
+  if (workspaces.size >= 2) {
+    return "pnpm run typecheck";
+  }
+
+  const [only] = workspaces;
+  return `pnpm --filter=${only} run typecheck`;
 };
 
 const buildFormat = (filenames) => {
