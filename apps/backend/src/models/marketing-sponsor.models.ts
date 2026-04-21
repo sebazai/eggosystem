@@ -146,6 +146,14 @@ export async function insertMarketingSponsor(input: {
   }
 }
 
+export async function marketingSponsorExists(id: number): Promise<boolean> {
+  const rows = await runQuery<Array<{ id: number }>>(
+    "SELECT id FROM MarketingSponsors WHERE id = ? LIMIT 1",
+    [id]
+  );
+  return rows.length > 0;
+}
+
 export async function updateMarketingSponsor(
   id: number,
   patch: {

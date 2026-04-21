@@ -28,12 +28,10 @@ function normalizeExternalUrl(
   if (trimmed.length === 0) {
     return null;
   }
-  let url: URL;
-  try {
-    url = new URL(trimmed);
-  } catch {
+  if (!URL.canParse(trimmed)) {
     throw new BadRequestError("external_url must be a valid absolute URL");
   }
+  const url = new URL(trimmed);
   if (url.protocol !== "http:" && url.protocol !== "https:") {
     throw new BadRequestError("external_url must use http or https");
   }
@@ -100,13 +98,6 @@ export const createDashboardMarketingSponsorController = async (
     return next(parsed.error);
   }
 
-  let imagePhash: string | null = null;
-  if (parsed.data.image_data) {
-    imagePhash = await uploadMarketingSponsorImageFromPayload(
-      parsed.data.image_data
-    );
-  }
-
   const externalUrl = normalizeExternalUrl(parsed.data.external_url);
   const displayOrder =
     parsed.data.display_order ??
@@ -117,8 +108,42 @@ export const createDashboardMarketingSponsorController = async (
     display_name: parsed.data.display_name,
     external_url: externalUrl === undefined ? null : externalUrl,
     display_order: displayOrder,
-    image_phash: imagePhash
+    image_phash: null
   });
+
+  if (parsed.data.image_data) {
+    try {
+      const imagePhash = await uploadMarketingSponsorImageFromPayload(
+        parsed.data.image_data
+      );
+      const updated = await sponsorModels.updateMarketingSponsor(id, {
+        image_phash: imagePhash
+      });
+      if (!updated) {
+        await sponsorModels.deleteMarketingSponsor(id);
+        return next(
+          new InternalServerError(
+            "Unable to save sponsor logo; the sponsor was not created"
+          )
+        );
+      }
+    } catch (err: unknown) {
+      await sponsorModels.deleteMarketingSponsor(id);
+      if (
+        err instanceof BadRequestError ||
+        err instanceof InternalServerError ||
+        err instanceof NotFoundError
+      ) {
+        return next(err);
+      }
+      return next(
+        new InternalServerError(
+          err instanceof Error ? err.message : "Failed to save sponsor logo"
+        )
+      );
+    }
+  }
+
   await invalidatePublicMarketingSponsorsCache();
   res.status(201).json({ id });
 };
@@ -154,7 +179,9 @@ export const patchDashboardMarketingSponsorController = async (
   if (parsed.data.external_url !== undefined) {
     patch.external_url = normalizeExternalUrl(parsed.data.external_url) ?? null;
   }
-  if (parsed.data.image_data !== undefined) {
+  if (parsed.data.clear_logo === true) {
+    patch.image_phash = null;
+  } else if (parsed.data.image_data !== undefined) {
     patch.image_phash = await uploadMarketingSponsorImageFromPayload(
       parsed.data.image_data
     );
@@ -166,7 +193,10 @@ export const patchDashboardMarketingSponsorController = async (
 
   const ok = await sponsorModels.updateMarketingSponsor(id, patch);
   if (!ok) {
-    return next(new NotFoundError("Sponsor not found"));
+    const exists = await sponsorModels.marketingSponsorExists(id);
+    if (!exists) {
+      return next(new NotFoundError("Sponsor not found"));
+    }
   }
   await invalidatePublicMarketingSponsorsCache();
   res.json({ ok: true });
