@@ -16,7 +16,7 @@ export interface PlayerTradeStats {
   /** Times this player's first-kill-death was traded */
   first_death_traded: number;
   /** Times this player's first-kill-death was in a tradeable position */
-  first_deaths_tradeable: number;
+  first_death_trade_opportunities: number;
   /** Total first-kill deaths this game */
   first_deaths: number;
 }

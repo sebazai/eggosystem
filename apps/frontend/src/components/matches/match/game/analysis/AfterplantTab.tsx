@@ -7,8 +7,7 @@ import {
   XAxis,
   YAxis,
   Tooltip,
-  ResponsiveContainer,
-  Cell
+  ResponsiveContainer
 } from "recharts";
 import { NextImageFallback } from "@/components/layout/NextImageFallback";
 import { createTeamLogoUrl, cn } from "@/lib/utils";
@@ -714,7 +713,11 @@ export const AfterplantTab = ({
       players.forEach((id) => {
         const name = steamIdToName.get(String(id)) ?? String(id);
         const cur = map.get(name) ?? { name, won: 0, lost: 0 };
-        won ? cur.won++ : cur.lost++;
+        if (won) {
+          cur.won++;
+        } else {
+          cur.lost++;
+        }
         map.set(name, cur);
       });
     });

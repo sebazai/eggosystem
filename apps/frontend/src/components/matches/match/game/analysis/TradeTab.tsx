@@ -326,7 +326,10 @@ function FullPlayerCard({
   const attRate = pct(p.trade_attempts, p.trade_opportunities);
   const convRate = pct(p.trades, p.trade_attempts);
   const tradedPct = pct(p.traded, p.deaths);
-  const fdPct = pct(p.first_death_traded, p.first_deaths_tradeable || 1);
+  const fdPct = pct(
+    p.first_death_traded,
+    p.first_death_trade_opportunities || 1
+  );
 
   return (
     <div className="rounded-lg border border-border/60 bg-card p-3 space-y-3">
@@ -404,7 +407,7 @@ function FullPlayerCard({
           <RateBar
             value={fdPct}
             label="FK death traded"
-            sub={`${p.first_death_traded}/${p.first_deaths_tradeable} tradeable FK deaths`}
+            sub={`${p.first_death_traded}/${p.first_death_trade_opportunities} tradeable FK deaths`}
           />
         </div>
       </div>
@@ -804,7 +807,7 @@ export const TradeTab = ({ tradeStats, teams }: TradeTabProps) => {
 
   return (
     <div className="space-y-0">
-      {/* global legend strip */}
+      {/* legend strip */}
       <div className="flex flex-wrap gap-4 text-[10px] text-muted-foreground/50 mb-2">
         {[
           { bg: "bg-green-400/50", label: "Success / traded" },

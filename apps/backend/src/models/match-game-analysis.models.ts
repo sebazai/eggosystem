@@ -325,7 +325,7 @@ type PlayerTradeStatsRow = {
   traded: number;
   deaths: number;
   first_death_traded: number;
-  first_deaths_tradeable: number;
+  first_death_trade_opportunities: number;
   first_deaths: number;
 };
 
@@ -349,12 +349,13 @@ export const getMatchGameTradeStats = async (
       ps.traded,
       ps.deaths,
       ps.first_death_traded,
-      ps.first_deaths_tradeable,
+      ps.first_death_trade_opportunities,
       ps.first_deaths
     FROM PlayerStats ps
     JOIN SteamPlayers sp ON sp.steam_id = ps.steam_id
     JOIN MatchGames mg ON mg.id = ps.match_game_id
-    JOIN SeasonTeamPlayers stp ON stp.season_id = mg.season_id
+    JOIN Matches m ON m.id = mg.match_id
+    JOIN SeasonTeamPlayers stp ON stp.season_id = m.season_id
       AND stp.steam_id = ps.steam_id
     JOIN MatchTeams mt ON mt.match_id = mg.match_id
       AND mt.team_id = stp.team_id
@@ -387,7 +388,7 @@ export const getMatchGameTradeStats = async (
     traded: Number(r.traded),
     deaths: Number(r.deaths),
     first_death_traded: Number(r.first_death_traded),
-    first_deaths_tradeable: Number(r.first_deaths_tradeable),
+    first_death_trade_opportunities: Number(r.first_death_trade_opportunities),
     first_deaths: Number(r.first_deaths)
   }));
 
