@@ -135,7 +135,7 @@ export default async function Home() {
 
             {sponsors.game_wide_sponsors.length > 0 ? (
               <SponsorContainer
-                header="CS2 Season 4 Main Sponsors"
+                header="Featured sponsors"
                 classNames="mt-10 sm:mt-20"
               >
                 <MarketingSponsorLogoGrid items={sponsors.game_wide_sponsors} />

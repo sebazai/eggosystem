@@ -21,7 +21,7 @@ import { toast } from "sonner";
 import Image from "next/image";
 
 const TIERS = [
-  { value: "game_wide", label: "Game-wide sponsor" },
+  { value: "game_wide", label: "Site-wide (e.g. landing hero)" },
   { value: "main_partner", label: "Main partners" },
   { value: "supporting_organization", label: "Supporting organizations" }
 ] as const;
@@ -115,6 +115,26 @@ function SponsorRowEditor({
     }
   };
 
+  const clearLogo = async () => {
+    setBusy(true);
+    try {
+      await clientApiFetch(`/api/v1/dashboard/sponsors/${row.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ clear_logo: true })
+      });
+      toast.success("Logo removed");
+      await onSaved();
+    } catch (e) {
+      const msg =
+        e instanceof ApiError
+          ? (e.detail ?? e.message)
+          : "Could not remove logo";
+      toast.error(msg);
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <div className="w-full border-t pt-3 mt-2 grid gap-3 max-w-lg">
       <div className="grid gap-2">
@@ -164,6 +184,17 @@ function SponsorRowEditor({
         >
           Upload new image
         </Button>
+        {row.image_phash ? (
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            disabled={busy}
+            onClick={() => void clearLogo()}
+          >
+            Remove logo
+          </Button>
+        ) : null}
       </div>
     </div>
   );
@@ -193,9 +224,9 @@ export function SponsorsAdminClient() {
     for (const s of sponsors) {
       map[s.tier].push(s);
     }
-    (Object.keys(map) as TierValue[]).forEach((k) => {
-      map[k] = sortByOrder(map[k]);
-    });
+    for (const t of TIERS) {
+      map[t.value] = sortByOrder(map[t.value]);
+    }
     return map;
   }, [sponsors]);
 
@@ -393,7 +424,8 @@ export function SponsorsAdminClient() {
           <CardHeader>
             <CardTitle>{tier.label}</CardTitle>
             <CardDescription>
-              Reorder with arrows; disable instead of delete.
+              Reorder with arrows. Disable to hide from the public site, or use
+              Remove to delete the sponsor row.
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
