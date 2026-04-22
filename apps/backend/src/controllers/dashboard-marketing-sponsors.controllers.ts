@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction } from "express";
 import { uploadImageToService } from "../services/image-upload.services";
 import { validateImageBuffer } from "../utils/file-type-validator";
 import { parseBase64ImageData } from "../utils/parse-base64-image-data";
+import { normalizeExternalUrl } from "../utils/url-utils";
 import {
   BadRequestError,
   InternalServerError,
@@ -15,29 +16,6 @@ import {
   patchMarketingSponsorBodySchema,
   reorderMarketingSponsorsBodySchema
 } from "../schemas/marketing-sponsor.schemas";
-
-function normalizeExternalUrl(
-  raw: string | null | undefined
-): string | null | undefined {
-  if (raw === undefined) {
-    return undefined;
-  }
-  if (raw === null) {
-    return null;
-  }
-  const trimmed = raw.trim();
-  if (trimmed.length === 0) {
-    return null;
-  }
-  if (!URL.canParse(trimmed)) {
-    throw new BadRequestError("external_url must be a valid absolute URL");
-  }
-  const url = new URL(trimmed);
-  if (url.protocol !== "http:" && url.protocol !== "https:") {
-    throw new BadRequestError("external_url must use http or https");
-  }
-  return trimmed;
-}
 
 async function uploadMarketingSponsorImageFromPayload(
   image_data: string
