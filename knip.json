@@ -37,7 +37,7 @@
       "project": ["*.js"]
     },
     "packages/shared-msw": {
-      "entry": [],
+      "entry": ["src/index.ts"],
       "project": ["src/**/*.ts"]
     },
     "packages/tsconfig": {
