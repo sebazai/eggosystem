@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import type {
@@ -180,10 +181,12 @@ const TeamColumn = ({
       {/* Team header */}
       <div className="flex items-center gap-2 pb-1 border-b border-border/40">
         {team.team_logo && (
-          <img
+          <Image
             src={team.team_logo}
             alt={team.team_name}
-            className="w-5 h-5 object-contain rounded"
+            width={20}
+            height={20}
+            className="object-contain rounded"
           />
         )}
         <span className="text-sm font-bold text-foreground truncate">
