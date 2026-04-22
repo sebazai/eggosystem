@@ -135,7 +135,7 @@ Spawn Review:
 
 ```
 Task(subagent_type=review_bot,
-     prompt="Read .cursor/skills/code-review-checklist/SKILL.md. Audit MR !<mr_iid> in project <group/project> against issue #<iid> acceptance criteria. Delegate a semantic pass to Task(subagent_type=gitlab-assistant, prompt='Run review-merge-request on MR !<mr_iid>'). Post per-line feedback via create_draft_note and publish in one batch via bulk_publish_draft_notes. Post a summary MR note with the criteria-trace matrix and a verdict: request-changes | comment | approve-pending-human. If anything is 'blocker' or 'major', set label 'needs-human-decision' via update_merge_request. NEVER call approve_merge_request or accept_merge_request.
+     prompt="Read .cursor/skills/code-review-checklist/SKILL.md. Audit MR !<mr_iid> in project <group/project> against issue #<iid> acceptance criteria. Delegate a semantic pass to Task(subagent_type=gitlab-assistant, prompt='Run review-merge-request on MR !<mr_iid>'). Post per-line feedback via create_draft_note and publish in one batch via bulk_publish_draft_notes. Post a summary MR note with the criteria-trace matrix and a verdict: request-changes | comment | approve-pending-human. If anything is 'blocker' or 'major', set label 'needs-human-decision' via update_merge_request. If verdict is comment or approve-pending-human, call update_merge_request with draft: false so the MR is no longer a draft. NEVER call approve_merge_request or accept_merge_request.
 
 Return {verdict, findings_count, needs_human_decision}.")
 ```
@@ -145,10 +145,13 @@ Capture `{verdict, findings_count, needs_human_decision}`.
 If `verdict = request-changes`:
 
 - Present findings to human. Ask via `AskQuestion`: **fix-and-retry** (loop to Phase 3) | **accept-as-is** | **abort**.
+- If the human chooses **accept-as-is**, call `mcp__GitLab__update_merge_request` for MR !<mr_iid> with `draft: false` (MR stays open for human merge; this only clears draft state).
 
 ---
 
 ## Phase 6: Hand off to human (HITL merge gate)
+
+By this point the MR must be **non-draft** unless you are stopping before Phase 6: `review_bot` clears draft when the verdict is `comment` or `approve-pending-human`; after **accept-as-is** you must have called `mcp__GitLab__update_merge_request` with `draft: false`.
 
 Output exactly this block and STOP. Do NOT call any merge/approve tool — merge is always a human action.
 

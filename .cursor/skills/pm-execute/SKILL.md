@@ -41,7 +41,7 @@ flowchart LR
 - **Developer** — reads the brief, implements, delegates to domain bots (`backend_bot`, `frontend_bot`, `tester_bot`, `types_bot`, etc.), runs `pnpm knip && typecheck && format:check && lint && test` in the worktree.
 - **Adversary** — static hostile audit (type safety, error handling, security, DB invariants, acceptance-criteria coverage). Returns JSON verdict.
 - **Ops (commit/MR)** — chunks the diff into logical Conventional Commits, pushes, opens a **draft** MR.
-- **Review** — delegates a semantic pass to `gitlab-assistant` (Duo), writes draft notes on the MR, publishes them in one batch, and posts a criteria-trace summary.
+- **Review** — delegates a semantic pass to `gitlab-assistant` (Duo), writes draft notes on the MR, publishes them in one batch, posts a criteria-trace summary, and marks the MR **ready** (`draft: false`) when the verdict is not `request-changes`.
 
 ## Human-in-the-loop gates
 

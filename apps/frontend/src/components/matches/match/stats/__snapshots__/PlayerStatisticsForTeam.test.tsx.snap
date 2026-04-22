@@ -19,7 +19,7 @@ exports[`PlayerStatisticsForTeam Snapshot Tests renders correctly with CT side s
             alt="Team Alpha"
             class="w-6 h-6"
             height="24"
-            src="https://imgdev.kanaliiga.fi/images/by-hash/phash/team-alpha-logo.png"
+            src="https://img.kanaliiga.fi/images/by-hash/phash/team-alpha-logo.png"
             width="24"
           />
           <h2
@@ -221,7 +221,7 @@ exports[`PlayerStatisticsForTeam Snapshot Tests renders correctly with CT side s
             alt="Team Beta"
             class="w-6 h-6"
             height="24"
-            src="https://imgdev.kanaliiga.fi/images/by-hash/phash/team-beta-logo.png"
+            src="https://img.kanaliiga.fi/images/by-hash/phash/team-beta-logo.png"
             width="24"
           />
           <h2
@@ -375,7 +375,7 @@ exports[`PlayerStatisticsForTeam Snapshot Tests renders correctly with T side se
             alt="Team Alpha"
             class="w-6 h-6"
             height="24"
-            src="https://imgdev.kanaliiga.fi/images/by-hash/phash/team-alpha-logo.png"
+            src="https://img.kanaliiga.fi/images/by-hash/phash/team-alpha-logo.png"
             width="24"
           />
           <h2
@@ -577,7 +577,7 @@ exports[`PlayerStatisticsForTeam Snapshot Tests renders correctly with T side se
             alt="Team Beta"
             class="w-6 h-6"
             height="24"
-            src="https://imgdev.kanaliiga.fi/images/by-hash/phash/team-beta-logo.png"
+            src="https://img.kanaliiga.fi/images/by-hash/phash/team-beta-logo.png"
             width="24"
           />
           <h2
@@ -739,7 +739,7 @@ exports[`PlayerStatisticsForTeam Snapshot Tests renders correctly with filter pa
             alt="Team Alpha"
             class="w-6 h-6"
             height="24"
-            src="https://imgdev.kanaliiga.fi/images/by-hash/phash/team-alpha-logo.png"
+            src="https://img.kanaliiga.fi/images/by-hash/phash/team-alpha-logo.png"
             width="24"
           />
           <h2
@@ -941,7 +941,7 @@ exports[`PlayerStatisticsForTeam Snapshot Tests renders correctly with filter pa
             alt="Team Beta"
             class="w-6 h-6"
             height="24"
-            src="https://imgdev.kanaliiga.fi/images/by-hash/phash/team-beta-logo.png"
+            src="https://img.kanaliiga.fi/images/by-hash/phash/team-beta-logo.png"
             width="24"
           />
           <h2
@@ -1095,7 +1095,7 @@ exports[`PlayerStatisticsForTeam Snapshot Tests renders correctly with player st
             alt="Team Alpha"
             class="w-6 h-6"
             height="24"
-            src="https://imgdev.kanaliiga.fi/images/by-hash/phash/team-alpha-logo.png"
+            src="https://img.kanaliiga.fi/images/by-hash/phash/team-alpha-logo.png"
             width="24"
           />
           <h2
@@ -1297,7 +1297,7 @@ exports[`PlayerStatisticsForTeam Snapshot Tests renders correctly with player st
             alt="Team Beta"
             class="w-6 h-6"
             height="24"
-            src="https://imgdev.kanaliiga.fi/images/by-hash/phash/team-beta-logo.png"
+            src="https://img.kanaliiga.fi/images/by-hash/phash/team-beta-logo.png"
             width="24"
           />
           <h2

@@ -39,7 +39,7 @@ Push the branch, then `mcp__GitLab__create_merge_request`:
 
 - `title`: `<type>(<area>): <summary>`
 - `description`: short summary + `Closes #<iid>`
-- `draft: true` initially; Review clears the draft flag later (or the human does).
+- `draft: true` initially; `review_bot` sets `draft: false` when Review completes without `request-changes` (PM clears draft on **accept-as-is**).
 
 Post the MR IID to the caller.
 

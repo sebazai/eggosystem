@@ -10,7 +10,7 @@ Read this before acting as `review_bot`. Review is read-only and comment-only: n
 ## Inputs
 
 - MR IID (from Ops) and the issue IID it closes.
-- Access to `Read`, `Grep`, `Glob`, `SemanticSearch`, `ReadLints`, and GitLab MCP read + draft-note tools.
+- Access to `Read`, `Grep`, `Glob`, `SemanticSearch`, `ReadLints`, and GitLab MCP read + draft-note tools + `update_merge_request` (labels and `draft: false` when appropriate).
 
 ## Workflow
 
@@ -66,6 +66,8 @@ Read this before acting as `review_bot`. Review is read-only and comment-only: n
      ```
 
 6. **Hand to human.** If verdict is anything other than clean, add label `needs-human-decision`. Never call `mcp__GitLab__approve_merge_request` — merge is always human-driven.
+
+7. **Mark the MR ready (non-draft) when Review completes without `request-changes`.** After the summary note (step 5) and any label updates (step 6), if the verdict is `comment` or `approve-pending-human`, call `mcp__GitLab__update_merge_request` with `draft: false` so the MR leaves draft state before the human merge gate. If the verdict is `request-changes`, leave the MR as draft until a follow-up Review or the PM orchestrator clears it (e.g. human **accept-as-is** on `/pm-execute`).
 
 ## Severity wording in notes
 

@@ -101,7 +101,7 @@ git push -u origin HEAD
 
 Then open the MR via MCP:
 
-- `mcp__GitLab__create_merge_request` with `source_branch`, `target_branch=main`, `title` = `<type>(<area>): <summary>`, `description` linking the issue (`Closes #<iid>`), `draft=true` until Review signs off.
+- `mcp__GitLab__create_merge_request` with `source_branch`, `target_branch=main`, `title` = `<type>(<area>): <summary>`, `description` linking the issue (`Closes #<iid>`), `draft=true`. After `review_bot` finishes with verdict `comment` or `approve-pending-human`, it calls `update_merge_request` with `draft: false` (see code-review-checklist skill).
 
 Post the MR IID back to PM + Review.
 

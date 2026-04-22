@@ -114,7 +114,7 @@ export const uploadPlayerAvatarController = async (
 
     // Get image service configuration
     const imageServiceBaseUrl =
-      process.env.IMAGE_SERVICE_URL || "https://imgdev.kanaliiga.fi";
+      process.env.IMAGE_SERVICE_URL || "https://img.kanaliiga.fi";
     const imageServiceApiKey = process.env.IMAGE_SERVICE_API_KEY;
 
     if (!imageServiceApiKey) {
