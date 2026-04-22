@@ -233,7 +233,9 @@ export const handleFaceitWebhook = async (
           logger.error(
             `Organizer ${organizer.name} has no faceit_id, skipping match ${validatedMatchDetails.match_id}`
           );
-          res.status(400).send("Organizer has no faceit_id");
+          // Treat as successfully received to avoid webhook retries for organizers
+          // that we intentionally don't sync.
+          res.status(200).send("Webhook received");
           return;
         }
 
@@ -372,10 +374,24 @@ export const handleFaceitWebhook = async (
         manualReprocess
       );
 
-      await addMatchTeamMapVetoes(
-        validatedMatchDetails,
-        validatedWebhook.payload.entity.id
-      );
+      try {
+        await addMatchTeamMapVetoes(
+          validatedMatchDetails,
+          validatedWebhook.payload.entity.id
+        );
+      } catch (error) {
+        if (
+          error instanceof Error &&
+          error.message.includes("MatchTeamMapVetoes") &&
+          error.message.includes("foreign key constraint fails")
+        ) {
+          logger.warn(
+            `Skipping map veto insert due to FK constraints for match room ${validatedWebhook.payload.id}: ${error.message}`
+          );
+        } else {
+          throw error;
+        }
+      }
 
       // Only set matches to ONGOING if not already FINISHED (e.g. 2xBO1 first game with demo)
       const matchesByRoom = await getMatchesByExternalId(
