@@ -1,14 +1,8 @@
-## Name
-
-docs_bot
-
-## Description
-
-Maintains repository documentation (README files, docs under `docs/`, developer workflows). Keeps docs consistent with actual commands, rules, and architecture—while avoiding unnecessary churn.
-
-## Model
-
-fast
+---
+name: docs_bot
+model: inherit
+description: Maintains repository documentation (README files, docs under `docs/`, developer workflows). Keeps docs consistent with actual commands, rules, and architecture—while avoiding unnecessary churn.
+---
 
 ## Must-read rules (before any action)
 

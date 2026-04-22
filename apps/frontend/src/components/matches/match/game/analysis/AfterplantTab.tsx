@@ -19,6 +19,14 @@ import {
   type MatchPlayerStats
 } from "@eggosystem/types";
 
+const ROUND_END_LABEL: Record<RoundEndReasonInfo, string> = {
+  [RoundEndReasonInfo.BombDefused]: "Defused",
+  [RoundEndReasonInfo.TargetBombed]: "Bombed",
+  [RoundEndReasonInfo.TargetSaved]: "Time",
+  [RoundEndReasonInfo.T_Win]: "Elim",
+  [RoundEndReasonInfo.CT_WIN]: "Elim"
+};
+
 /* ─────────────────────────────────────────── */
 /*  Types & constants                          */
 /* ─────────────────────────────────────────── */
@@ -368,7 +376,7 @@ const DotLane = ({
         return (
           <div
             key={i}
-            title={`${killer} killed ${victim} @${Math.round(k.time_in_round)}s${k.is_traded ? " ↺ traded" : ""}`}
+            title={`${killer} killed ${victim} @${Math.round(k.time_in_round)}s${k.is_traded ? " ↺ trade kill" : ""}`}
             className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-3.5 h-3.5 rounded-full cursor-default z-10"
             style={{
               left: `${toPct(k.time_in_round)}%`,
@@ -447,13 +455,16 @@ const RoundCard = ({
         <div className="flex-1" />
         <span
           className={cn(
-            "text-xs font-bold px-2.5 py-0.5 rounded-full border",
+            "text-xs font-bold px-2.5 py-0.5 rounded-full border flex items-center gap-1.5",
             tWon
               ? "text-amber-300/80 bg-amber-300/10 border-amber-300/30"
               : "text-sky-300/80 bg-sky-300/10 border-sky-300/30"
           )}
         >
           {tWon ? "T won" : "CT won"}
+          <span className="font-normal opacity-70">
+            · {ROUND_END_LABEL[round.round_end_reason_info]}
+          </span>
         </span>
       </div>
 
@@ -839,7 +850,7 @@ export const AfterplantTab = ({
                   border: "2px solid #9ca3af"
                 }}
               />
-              hollow = traded (killer killed back ≤5s)
+              hollow = trade kill (victim had just killed a teammate)
             </span>
           </div>
 

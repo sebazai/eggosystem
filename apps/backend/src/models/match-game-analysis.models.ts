@@ -30,6 +30,12 @@ type KillLogRow = {
   time_in_round: number;
 };
 
+type TradeRow = {
+  trader_steam_id: string;
+  killer_steam_id: string;
+  round_number: number;
+};
+
 export const getMatchGameAfterplantAnalysis = async (
   match_game_id: number
 ): Promise<MatchGameAfterplantRound[]> => {
@@ -69,10 +75,33 @@ export const getMatchGameAfterplantAnalysis = async (
     ORDER BY pklog.round_number ASC, pklog.time_in_round ASC
   `;
 
-  const [rows, killRows] = await Promise.all([
+  // Fetch confirmed trades from the parser-computed PlayerTrades table.
+  // trader_steam_id = who made the trade kill (killed the enemy who had just killed their teammate)
+  // killer_steam_id = the enemy who made the original kill (and who the trader killed)
+  const tradesQuery = `
+    SELECT
+      pt.trader_steam_id,
+      pt.killer_steam_id,
+      pt.round_number
+    FROM PlayerTrades pt
+    WHERE pt.match_game_id = ?
+      AND pt.traded = 1
+  `;
+
+  const [rows, killRows, tradeRows] = await Promise.all([
     runQuery<AfterplantRoundRow[]>(roundsQuery, [match_game_id]),
-    runQuery<KillLogRow[]>(killsQuery, [match_game_id])
+    runQuery<KillLogRow[]>(killsQuery, [match_game_id]),
+    runQuery<TradeRow[]>(tradesQuery, [match_game_id])
   ]);
+
+  // Build a set of "round:trader:killed_enemy" for O(1) lookup.
+  // A kill event (killer K, victim V, round R) is a trade when K = trader and V = killer_steam_id.
+  const tradeSet = new Set<string>();
+  for (const t of tradeRows) {
+    tradeSet.add(
+      `${t.round_number}:${String(t.trader_steam_id)}:${String(t.killer_steam_id)}`
+    );
+  }
 
   // Group kills by round number
   const killsByRound = new Map<number, KillLogRow[]>();
@@ -82,36 +111,23 @@ export const getMatchGameAfterplantAnalysis = async (
     killsByRound.get(rn)!.push(kill);
   }
 
-  // Compute trade flag: a death is traded when the killer is themselves killed
-  // within TRADE_WINDOW_SECONDS in the same round (post-plant)
   function computeKillEvents(kills: KillLogRow[]): AfterplantKillEvent[] {
-    return kills.map((kill) => {
-      const is_traded = kills.some(
-        (other) =>
-          other.victim_steam_id === kill.killer_steam_id &&
-          other.time_in_round > kill.time_in_round &&
-          other.time_in_round <= kill.time_in_round + TRADE_WINDOW_SECONDS
-      );
-      return {
-        victim_steam_id: String(kill.victim_steam_id),
-        victim_team: kill.victim_team,
-        killer_steam_id: String(kill.killer_steam_id),
-        time_in_round: kill.time_in_round,
-        is_traded
-      };
-    });
+    return kills.map((kill) => ({
+      victim_steam_id: String(kill.victim_steam_id),
+      victim_team: kill.victim_team,
+      killer_steam_id: String(kill.killer_steam_id),
+      time_in_round: kill.time_in_round,
+      is_traded: tradeSet.has(
+        `${kill.round_number}:${String(kill.killer_steam_id)}:${String(kill.victim_steam_id)}`
+      )
+    }));
   }
-
-  // Set of plant-round numbers for fast lookup
-  const plantRoundNumbers = new Set(rows.map((r) => r.round_number));
 
   return rows.map((row) => ({
     ...row,
     ct_t: row.ct_t ? jsonBig.parse(row.ct_t) : null,
     kills_after_plant: computeKillEvents(
-      (killsByRound.get(row.round_number) ?? []).filter(() =>
-        plantRoundNumbers.has(row.round_number)
-      )
+      killsByRound.get(row.round_number) ?? []
     )
   }));
 };

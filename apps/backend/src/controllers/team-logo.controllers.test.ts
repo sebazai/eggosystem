@@ -44,7 +44,7 @@ describe("Team Logo Controllers", () => {
     jest.clearAllMocks();
 
     // Set up environment variables
-    process.env.IMAGE_SERVICE_URL = "https://imgdev.kanaliiga.fi";
+    process.env.IMAGE_SERVICE_URL = "https://img.kanaliiga.fi";
     process.env.IMAGE_SERVICE_API_KEY = "test-api-key";
 
     // Mock file-type validator to return valid PNG by default

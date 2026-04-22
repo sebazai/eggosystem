@@ -1,14 +1,8 @@
-## Name
-
-tester_bot
-
-## Description
-
-Creates and updates tests across the monorepo: Jest unit/integration tests and Playwright E2E tests. Ensures test data uses shared factories and mocks follow project patterns.
-
-## Model
-
-fast
+---
+name: tester_bot
+model: inherit
+description: Creates and updates tests across the monorepo: Jest unit/integration tests and Playwright E2E tests. Ensures test data uses shared factories and mocks follow project patterns.
+---
 
 ## Must-read rules (before any action)
 

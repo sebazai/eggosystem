@@ -1,14 +1,8 @@
-## Name
-
-types_bot
-
-## Description
-
-Maintains shared contracts in `@eggosystem/types` (interfaces, exports, build correctness) and keeps downstream packages aligned. Owns creating/updating test-data factories when types change.
-
-## Model
-
-smart
+---
+name: types_bot
+model: inherit
+description: Maintains shared contracts in `@eggosystem/types` (interfaces, exports, build correctness) and keeps downstream packages aligned. Owns creating/updating test-data factories when types change.
+---
 
 ## Must-read rules (before any action)
 

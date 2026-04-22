@@ -1325,7 +1325,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with match that ha
                 alt="Team Eta"
                 class="w-8 h-8 sm:w-10 sm:h-10 ml-1 object-contain hidden xxs:block"
                 height="30"
-                src="https://imgdev.kanaliiga.fi/images/by-hash/phash/eta-logo.png"
+                src="https://img.kanaliiga.fi/images/by-hash/phash/eta-logo.png"
                 width="30"
               />
             </div>
@@ -1355,7 +1355,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with match that ha
                 alt="Team Theta"
                 class="w-6 h-6 sm:w-8 sm:h-8 mr-1 object-contain hidden xxs:block"
                 height="30"
-                src="https://imgdev.kanaliiga.fi/images/by-hash/phash/theta-logo.png"
+                src="https://img.kanaliiga.fi/images/by-hash/phash/theta-logo.png"
                 width="30"
               />
               <div
@@ -1403,7 +1403,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with matches group
                 alt="Team Alpha"
                 class="w-8 h-8 sm:w-10 sm:h-10 ml-1 object-contain hidden xxs:block"
                 height="30"
-                src="https://imgdev.kanaliiga.fi/images/by-hash/phash/alpha-logo.png"
+                src="https://img.kanaliiga.fi/images/by-hash/phash/alpha-logo.png"
                 width="30"
               />
             </div>
@@ -1433,7 +1433,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with matches group
                 alt="Team Beta"
                 class="w-6 h-6 sm:w-8 sm:h-8 mr-1 object-contain hidden xxs:block"
                 height="30"
-                src="https://imgdev.kanaliiga.fi/images/by-hash/phash/beta-logo.png"
+                src="https://img.kanaliiga.fi/images/by-hash/phash/beta-logo.png"
                 width="30"
               />
               <div
@@ -1467,7 +1467,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with matches group
                 alt="Team Gamma"
                 class="w-8 h-8 sm:w-10 sm:h-10 ml-1 object-contain hidden xxs:block"
                 height="30"
-                src="https://imgdev.kanaliiga.fi/images/by-hash/phash/gamma-logo.png"
+                src="https://img.kanaliiga.fi/images/by-hash/phash/gamma-logo.png"
                 width="30"
               />
             </div>
@@ -1497,7 +1497,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with matches group
                 alt="Team Delta"
                 class="w-6 h-6 sm:w-8 sm:h-8 mr-1 object-contain hidden xxs:block"
                 height="30"
-                src="https://imgdev.kanaliiga.fi/images/by-hash/phash/delta-logo.png"
+                src="https://img.kanaliiga.fi/images/by-hash/phash/delta-logo.png"
                 width="30"
               />
               <div
@@ -1538,7 +1538,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with matches group
                 alt="Team Epsilon"
                 class="w-8 h-8 sm:w-10 sm:h-10 ml-1 object-contain hidden xxs:block"
                 height="30"
-                src="https://imgdev.kanaliiga.fi/images/by-hash/phash/epsilon-logo.png"
+                src="https://img.kanaliiga.fi/images/by-hash/phash/epsilon-logo.png"
                 width="30"
               />
             </div>
@@ -1568,7 +1568,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with matches group
                 alt="Team Zeta"
                 class="w-6 h-6 sm:w-8 sm:h-8 mr-1 object-contain hidden xxs:block"
                 height="30"
-                src="https://imgdev.kanaliiga.fi/images/by-hash/phash/zeta-logo.png"
+                src="https://img.kanaliiga.fi/images/by-hash/phash/zeta-logo.png"
                 width="30"
               />
               <div

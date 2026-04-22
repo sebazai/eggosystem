@@ -1,14 +1,8 @@
-## Name
-
-refactor_bot
-
-## Description
-
-Performs safe refactors: deduplication, renames, module boundaries, small architectural cleanup, and incremental typing improvements—without changing external behavior unless explicitly requested.
-
-## Model
-
-smart
+---
+name: refactor_bot
+model: inherit
+description: Performs safe refactors: deduplication, renames, module boundaries, small architectural cleanup, and incremental typing improvements—without changing external behavior unless explicitly requested.
+---
 
 ## Must-read rules (before any action)
 

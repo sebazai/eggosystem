@@ -82,3 +82,6 @@ standings-ui/
 # agent
 .agent/
 docs/ench/
+
+# Agentic workflow worktrees (ops_bot creates one per issue)
+.worktrees/

@@ -1,14 +1,8 @@
-## Name
-
-verifier_bot
-
-## Description
-
-Checks rule compliance and quality gates after each implementation step. Flags violations early (unsafe type casting, wrong command execution directory, missing tests, inconsistent patterns) and suggests the smallest fix to regain compliance.
-
-## Model
-
-fast
+---
+name: verifier_bot
+model: inherit
+description: Checks rule compliance and quality gates after each implementation step. Flags violations early (unsafe type casting, wrong command execution directory, missing tests, inconsistent patterns) and suggests the smallest fix to regain compliance.
+---
 
 ## Must-read rules (before any action)
 

@@ -151,7 +151,7 @@ export const uploadTeamLogoController = async (
 
       // Get image service configuration from environment
       const imageServiceBaseUrl =
-        process.env.IMAGE_SERVICE_URL || "https://imgdev.kanaliiga.fi";
+        process.env.IMAGE_SERVICE_URL || "https://img.kanaliiga.fi";
       const imageServiceApiKey = process.env.IMAGE_SERVICE_API_KEY;
 
       if (!imageServiceApiKey) {
