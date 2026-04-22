@@ -10,6 +10,11 @@ export interface PublicMarketingSponsor {
   display_order: number;
   /** Image-service perceptual hash; resolve via `/images/by-hash/phash/{image_phash}` */
   image_phash: string | null;
+  /**
+   * Optional light-on-dark logo for the site footer (`main_partner` tier only).
+   * When null or empty, the partner is omitted from the public footer.
+   */
+  footer_image_phash: string | null;
 }
 
 export interface GroupedPublicSponsors {

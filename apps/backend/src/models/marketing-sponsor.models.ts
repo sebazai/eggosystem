@@ -22,13 +22,15 @@ function mapPublicRow(r: {
   external_url: string | null;
   display_order: number;
   image_phash: string | null;
+  footer_image_phash: string | null;
 }): PublicMarketingSponsor {
   return {
     id: r.id,
     display_name: r.display_name,
     external_url: r.external_url,
     display_order: r.display_order,
-    image_phash: r.image_phash
+    image_phash: r.image_phash,
+    footer_image_phash: r.footer_image_phash
   };
 }
 
@@ -42,9 +44,10 @@ async function listEnabledPublicSponsorsByTier(
       external_url: string | null;
       display_order: number;
       image_phash: string | null;
+      footer_image_phash: string | null;
     }>
   >(
-    `SELECT id, display_name, external_url, display_order, image_phash
+    `SELECT id, display_name, external_url, display_order, image_phash, footer_image_phash
      FROM MarketingSponsors
      WHERE tier = ? AND enabled = 1
      ORDER BY display_order ASC, id ASC`,
@@ -78,12 +81,13 @@ export async function listAllMarketingSponsorsAdmin(): Promise<
       external_url: string | null;
       display_order: number;
       image_phash: string | null;
+      footer_image_phash: string | null;
       enabled: boolean | 0 | 1;
       created_at: Date;
       updated_at: Date;
     }>
   >(
-    `SELECT id, tier, display_name, external_url, display_order, image_phash, enabled, created_at, updated_at
+    `SELECT id, tier, display_name, external_url, display_order, image_phash, footer_image_phash, enabled, created_at, updated_at
      FROM MarketingSponsors
      ORDER BY tier ASC, display_order ASC, id ASC`
   );
@@ -104,6 +108,7 @@ export async function listAllMarketingSponsorsAdmin(): Promise<
       external_url: r.external_url,
       display_order: r.display_order,
       image_phash: r.image_phash,
+      footer_image_phash: r.footer_image_phash,
       enabled: Boolean(r.enabled),
       created_at: toIso(r.created_at),
       updated_at: toIso(r.updated_at)
@@ -117,18 +122,25 @@ export async function insertMarketingSponsor(input: {
   external_url: string | null;
   display_order: number;
   image_phash: string | null;
+  footer_image_phash?: string | null;
+  /** New uploads default to hidden from the public site until an admin enables them */
+  enabled?: boolean;
 }): Promise<number> {
+  const enabled = input.enabled ?? false;
+  const footerPhash = input.footer_image_phash ?? null;
   const connection = await getConnection();
   try {
     await runQuery(
-      `INSERT INTO MarketingSponsors (tier, display_name, external_url, display_order, image_phash, enabled)
-       VALUES (?, ?, ?, ?, ?, 1)`,
+      `INSERT INTO MarketingSponsors (tier, display_name, external_url, display_order, image_phash, footer_image_phash, enabled)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
       [
         input.tier,
         input.display_name,
         input.external_url,
         input.display_order,
-        input.image_phash
+        input.image_phash,
+        footerPhash,
+        enabled
       ],
       connection
     );
@@ -161,6 +173,7 @@ export async function updateMarketingSponsor(
     external_url?: string | null;
     display_order?: number;
     image_phash?: string | null;
+    footer_image_phash?: string | null;
     enabled?: boolean;
     tier?: MarketingSponsorTier;
   }
@@ -183,6 +196,10 @@ export async function updateMarketingSponsor(
   if (patch.image_phash !== undefined) {
     fields.push("image_phash = ?");
     params.push(patch.image_phash);
+  }
+  if (patch.footer_image_phash !== undefined) {
+    fields.push("footer_image_phash = ?");
+    params.push(patch.footer_image_phash);
   }
   if (patch.enabled !== undefined) {
     fields.push("enabled = ?");

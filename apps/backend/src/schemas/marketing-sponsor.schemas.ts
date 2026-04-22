@@ -19,7 +19,9 @@ export const createMarketingSponsorBodySchema = z.object({
   display_name: z.string().min(1).max(255),
   external_url: z.string().max(2048).nullable().optional(),
   display_order: z.number().int().min(0).optional(),
-  image_data: imageDataFieldSchema.optional()
+  image_data: imageDataFieldSchema.optional(),
+  /** Optional footer-specific logo (stored as `footer_image_phash`); see patch schema */
+  footer_image_data: imageDataFieldSchema.optional()
 });
 
 export const patchMarketingSponsorBodySchema = z
@@ -30,8 +32,11 @@ export const patchMarketingSponsorBodySchema = z
     enabled: z.boolean().optional(),
     tier: marketingSponsorTierSchema.optional(),
     image_data: imageDataFieldSchema.optional(),
+    footer_image_data: imageDataFieldSchema.optional(),
     /** When true, clears stored logo (`image_phash`); mutually exclusive with `image_data` */
-    clear_logo: z.literal(true).optional()
+    clear_logo: z.literal(true).optional(),
+    /** When true, clears stored footer logo (`footer_image_phash`); mutually exclusive with `footer_image_data` */
+    clear_footer_logo: z.literal(true).optional()
   })
   .superRefine((data, ctx) => {
     if (data.clear_logo === true && data.image_data !== undefined) {
@@ -39,6 +44,16 @@ export const patchMarketingSponsorBodySchema = z
         code: z.ZodIssueCode.custom,
         message: "clear_logo cannot be combined with image_data",
         path: ["clear_logo"]
+      });
+    }
+    if (
+      data.clear_footer_logo === true &&
+      data.footer_image_data !== undefined
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "clear_footer_logo cannot be combined with footer_image_data",
+        path: ["clear_footer_logo"]
       });
     }
   });

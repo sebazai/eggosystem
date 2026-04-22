@@ -15,12 +15,14 @@ export function FooterPartners({
   return (
     <div>
       <h2>Partners</h2>
-      <div className="mt-4 space-y-6 sm:space-y-8 flex flex-col items-start dark:invert-0 invert">
+      <div className="mt-4 space-y-6 sm:space-y-8 flex flex-col items-start">
         {partners.map((row) => {
-          const src = row.image_phash
-            ? createTeamLogoUrl(row.image_phash)
-            : null;
-          const inner = src ? (
+          const phash = row.footer_image_phash?.trim();
+          if (!phash) {
+            return null;
+          }
+          const src = createTeamLogoUrl(phash);
+          const inner = (
             <Image
               src={src}
               alt={row.display_name}
@@ -29,8 +31,6 @@ export function FooterPartners({
               className="object-contain max-h-11 w-auto"
               unoptimized
             />
-          ) : (
-            <span className="text-sm font-medium">{row.display_name}</span>
           );
           const body =
             row.external_url != null && row.external_url.length > 0 ? (

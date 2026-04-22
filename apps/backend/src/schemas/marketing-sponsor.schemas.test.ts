@@ -51,4 +51,12 @@ describe("marketing-sponsor.schemas", () => {
     });
     expect(r.success).toBe(false);
   });
+
+  it("rejects patch when clear_footer_logo is combined with footer_image_data", () => {
+    const r = patchMarketingSponsorBodySchema.safeParse({
+      clear_footer_logo: true,
+      footer_image_data: "data:image/png;base64,abcd"
+    });
+    expect(r.success).toBe(false);
+  });
 });

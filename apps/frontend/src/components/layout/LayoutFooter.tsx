@@ -1,10 +1,16 @@
 import Link from "next/link";
+import Image from "next/image";
 import { FooterPartners } from "../sponsors/FooterPartners";
+import { createNextUrl } from "@/lib/utils";
 import { Separator } from "../ui/separator";
 import { getPublicMarketingSponsors } from "@/lib/get-public-marketing-sponsors";
 
 const Footer = async () => {
   const sponsors = await getPublicMarketingSponsors();
+  const footerPartnersWithLogo = sponsors.main_partners.filter(
+    (p) =>
+      p.footer_image_phash != null && p.footer_image_phash.trim().length > 0
+  );
   // Get Git SHA from environment variables
   const gitSha = process.env.NEXT_PUBLIC_GIT_SHA || "";
   const gitlabUrl =
@@ -32,9 +38,9 @@ const Footer = async () => {
             </p>
           </div>
 
-          {/* Column 2 - Sponsors (DB-backed main partners) */}
-          {sponsors.main_partners.length > 0 ? (
-            <FooterPartners partners={sponsors.main_partners} />
+          {/* Column 2 — main partners only if they uploaded a footer-specific logo */}
+          {footerPartnersWithLogo.length > 0 ? (
+            <FooterPartners partners={footerPartnersWithLogo} />
           ) : (
             <div aria-hidden="true" />
           )}
@@ -99,6 +105,23 @@ const Footer = async () => {
               </div>
               <Separator />
               <div className="mt-2 flex flex-row items-center gap-3">
+                <Link
+                  href="https://www.wunderdog.io"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="shrink-0"
+                >
+                  <Image
+                    src={createNextUrl(
+                      "/images/sponsors/wunderdog_oy_logo.jpeg"
+                    )}
+                    alt="Wunderdog"
+                    width={100}
+                    height={100}
+                    className="dark:invert-0 invert"
+                    unoptimized
+                  />
+                </Link>
                 <p className="text-sm text-muted-foreground">
                   Developed with support from{" "}
                   <Link

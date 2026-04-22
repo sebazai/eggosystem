@@ -48,6 +48,9 @@ export function isPublicMarketingSponsor(
   if (!isStringOrNull(value["image_phash"])) {
     return false;
   }
+  if (!isStringOrNull(value["footer_image_phash"])) {
+    return false;
+  }
   return true;
 }
 

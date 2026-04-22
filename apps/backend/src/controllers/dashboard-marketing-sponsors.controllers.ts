@@ -108,24 +108,44 @@ export const createDashboardMarketingSponsorController = async (
     display_name: parsed.data.display_name,
     external_url: externalUrl === undefined ? null : externalUrl,
     display_order: displayOrder,
-    image_phash: null
+    image_phash: null,
+    footer_image_phash: null,
+    enabled: false
   });
 
-  if (parsed.data.image_data) {
+  if (parsed.data.image_data || parsed.data.footer_image_data) {
     try {
-      const imagePhash = await uploadMarketingSponsorImageFromPayload(
-        parsed.data.image_data
-      );
-      const updated = await sponsorModels.updateMarketingSponsor(id, {
-        image_phash: imagePhash
-      });
-      if (!updated) {
-        await sponsorModels.deleteMarketingSponsor(id);
-        return next(
-          new InternalServerError(
-            "Unable to save sponsor logo; the sponsor was not created"
-          )
+      if (parsed.data.image_data) {
+        const imagePhash = await uploadMarketingSponsorImageFromPayload(
+          parsed.data.image_data
         );
+        const updated = await sponsorModels.updateMarketingSponsor(id, {
+          image_phash: imagePhash
+        });
+        if (!updated) {
+          await sponsorModels.deleteMarketingSponsor(id);
+          return next(
+            new InternalServerError(
+              "Unable to save sponsor logo; the sponsor was not created"
+            )
+          );
+        }
+      }
+      if (parsed.data.footer_image_data) {
+        const footerPhash = await uploadMarketingSponsorImageFromPayload(
+          parsed.data.footer_image_data
+        );
+        const updatedFooter = await sponsorModels.updateMarketingSponsor(id, {
+          footer_image_phash: footerPhash
+        });
+        if (!updatedFooter) {
+          await sponsorModels.deleteMarketingSponsor(id);
+          return next(
+            new InternalServerError(
+              "Unable to save footer logo; the sponsor was not created"
+            )
+          );
+        }
       }
     } catch (err: unknown) {
       await sponsorModels.deleteMarketingSponsor(id);
@@ -138,7 +158,7 @@ export const createDashboardMarketingSponsorController = async (
       }
       return next(
         new InternalServerError(
-          err instanceof Error ? err.message : "Failed to save sponsor logo"
+          err instanceof Error ? err.message : "Failed to save sponsor images"
         )
       );
     }
@@ -166,6 +186,9 @@ export const patchDashboardMarketingSponsorController = async (
   const hasImageUpload =
     data.image_data !== undefined && data.clear_logo !== true;
   const hasClearLogo = data.clear_logo === true;
+  const hasFooterImageUpload =
+    data.footer_image_data !== undefined && data.clear_footer_logo !== true;
+  const hasClearFooterLogo = data.clear_footer_logo === true;
 
   const nonImagePatch: Parameters<
     typeof sponsorModels.updateMarketingSponsor
@@ -190,10 +213,13 @@ export const patchDashboardMarketingSponsorController = async (
   if (hasClearLogo) {
     nonImagePatch.image_phash = null;
   }
+  if (hasClearFooterLogo) {
+    nonImagePatch.footer_image_phash = null;
+  }
 
   const hasNonImageKeys = Object.keys(nonImagePatch).length > 0;
 
-  if (!hasNonImageKeys && !hasImageUpload) {
+  if (!hasNonImageKeys && !hasImageUpload && !hasFooterImageUpload) {
     return next(new BadRequestError("No fields to update"));
   }
 
@@ -205,7 +231,7 @@ export const patchDashboardMarketingSponsorController = async (
         return next(new NotFoundError("Sponsor not found"));
       }
     }
-  } else if (hasImageUpload) {
+  } else if (hasImageUpload || hasFooterImageUpload) {
     const exists = await sponsorModels.marketingSponsorExists(id);
     if (!exists) {
       return next(new NotFoundError("Sponsor not found"));
@@ -218,6 +244,21 @@ export const patchDashboardMarketingSponsorController = async (
     );
     const ok = await sponsorModels.updateMarketingSponsor(id, {
       image_phash: imagePhash
+    });
+    if (!ok) {
+      const exists = await sponsorModels.marketingSponsorExists(id);
+      if (!exists) {
+        return next(new NotFoundError("Sponsor not found"));
+      }
+    }
+  }
+
+  if (hasFooterImageUpload && data.footer_image_data !== undefined) {
+    const footerPhash = await uploadMarketingSponsorImageFromPayload(
+      data.footer_image_data
+    );
+    const ok = await sponsorModels.updateMarketingSponsor(id, {
+      footer_image_phash: footerPhash
     });
     if (!ok) {
       const exists = await sponsorModels.marketingSponsorExists(id);

@@ -2,7 +2,10 @@
 
 import { useCallback, useMemo, useState } from "react";
 import useSWR from "swr";
-import type { MarketingSponsorAdminRow } from "@eggosystem/types";
+import type {
+  MarketingSponsorAdminRow,
+  PublicMarketingSponsor
+} from "@eggosystem/types";
 import { clientApiFetch, ApiError } from "@/lib/apiClient";
 import { createTeamLogoUrl } from "@/lib/utils";
 import { resizeImageFileToDataUrl } from "@/lib/sponsor-image-resize";
@@ -17,8 +20,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import Image from "next/image";
+import { MarketingSponsorLogoGrid } from "@/components/sponsors/MarketingSponsorLogoGrid";
+import { SponsorContainer } from "@/components/sponsors/SponsorContainer";
 
 const TIERS = [
   { value: "game_wide", label: "Site-wide (e.g. landing hero)" },
@@ -55,6 +61,28 @@ function sortByOrder(rows: MarketingSponsorAdminRow[]) {
   });
 }
 
+function adminRowToPublic(
+  row: MarketingSponsorAdminRow
+): PublicMarketingSponsor {
+  return {
+    id: row.id,
+    display_name: row.display_name,
+    external_url: row.external_url,
+    display_order: row.display_order,
+    image_phash: row.image_phash,
+    footer_image_phash: row.footer_image_phash
+  };
+}
+
+function tierRowsToPublicPreviewItems(
+  rows: MarketingSponsorAdminRow[],
+  includeDisabled: boolean
+): PublicMarketingSponsor[] {
+  return sortByOrder(rows)
+    .filter((r) => includeDisabled || r.enabled)
+    .map(adminRowToPublic);
+}
+
 function SponsorRowEditor({
   row,
   onCancel,
@@ -67,8 +95,10 @@ function SponsorRowEditor({
   const [name, setName] = useState(row.display_name);
   const [url, setUrl] = useState(row.external_url ?? "");
   const [file, setFile] = useState<File | null>(null);
+  const [footerFile, setFooterFile] = useState<File | null>(null);
   const [maxSide, setMaxSide] = useState(800);
   const [busy, setBusy] = useState(false);
+  const showFooterLogoFields = row.tier === "main_partner";
 
   const saveMeta = async () => {
     setBusy(true);
@@ -129,6 +159,55 @@ function SponsorRowEditor({
         e instanceof ApiError
           ? (e.detail ?? e.message)
           : "Could not remove logo";
+      toast.error(msg);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const saveFooterImage = async () => {
+    if (!footerFile) {
+      toast.error("Choose a footer image file first");
+      return;
+    }
+    setBusy(true);
+    try {
+      const footer_image_data = await resizeImageFileToDataUrl(
+        footerFile,
+        maxSide
+      );
+      await clientApiFetch(`/api/v1/dashboard/sponsors/${row.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ footer_image_data })
+      });
+      toast.success("Footer logo updated");
+      setFooterFile(null);
+      await onSaved();
+    } catch (e) {
+      const msg =
+        e instanceof ApiError
+          ? (e.detail ?? e.message)
+          : "Footer image update failed";
+      toast.error(msg);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const clearFooterLogo = async () => {
+    setBusy(true);
+    try {
+      await clientApiFetch(`/api/v1/dashboard/sponsors/${row.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ clear_footer_logo: true })
+      });
+      toast.success("Footer logo removed");
+      await onSaved();
+    } catch (e) {
+      const msg =
+        e instanceof ApiError
+          ? (e.detail ?? e.message)
+          : "Could not remove footer logo";
       toast.error(msg);
     } finally {
       setBusy(false);
@@ -196,6 +275,41 @@ function SponsorRowEditor({
           </Button>
         ) : null}
       </div>
+      {showFooterLogoFields ? (
+        <div className="grid gap-2 border-t pt-3">
+          <Label>Footer logo (optional)</Label>
+          <p className="text-xs text-muted-foreground">
+            Partners appear in the site footer only when this image is set. Use
+            a light-on-dark variant (e.g. white mark) for the footer background.
+          </p>
+          <Input
+            type="file"
+            accept="image/png,image/jpeg,image/jpg,image/webp,image/gif"
+            onChange={(e) =>
+              setFooterFile(e.target.files?.[0] ? e.target.files[0] : null)
+            }
+          />
+          <Button
+            type="button"
+            size="sm"
+            disabled={busy}
+            onClick={() => void saveFooterImage()}
+          >
+            Upload footer image
+          </Button>
+          {row.footer_image_phash ? (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={busy}
+              onClick={() => void clearFooterLogo()}
+            >
+              Remove footer logo
+            </Button>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -211,9 +325,12 @@ export function SponsorsAdminClient() {
   const [newName, setNewName] = useState("");
   const [newUrl, setNewUrl] = useState("");
   const [newFile, setNewFile] = useState<File | null>(null);
+  const [newFooterFile, setNewFooterFile] = useState<File | null>(null);
   const [maxSide, setMaxSide] = useState(800);
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [includeDisabledInPreview, setIncludeDisabledInPreview] =
+    useState(false);
 
   const byTier = useMemo(() => {
     const map: Record<TierValue, MarketingSponsorAdminRow[]> = {
@@ -229,6 +346,24 @@ export function SponsorsAdminClient() {
     }
     return map;
   }, [sponsors]);
+
+  const homepagePreviewByTier = useMemo(
+    () => ({
+      game_wide: tierRowsToPublicPreviewItems(
+        byTier.game_wide,
+        includeDisabledInPreview
+      ),
+      main_partner: tierRowsToPublicPreviewItems(
+        byTier.main_partner,
+        includeDisabledInPreview
+      ),
+      supporting_organization: tierRowsToPublicPreviewItems(
+        byTier.supporting_organization,
+        includeDisabledInPreview
+      )
+    }),
+    [byTier, includeDisabledInPreview]
+  );
 
   const persistReorder = useCallback(
     async (tier: TierValue, ordered: MarketingSponsorAdminRow[]) => {
@@ -280,19 +415,28 @@ export function SponsorsAdminClient() {
       if (newFile) {
         image_data = await resizeImageFileToDataUrl(newFile, maxSide);
       }
+      let footer_image_data: string | undefined;
+      if (newTier === "main_partner" && newFooterFile) {
+        footer_image_data = await resizeImageFileToDataUrl(
+          newFooterFile,
+          maxSide
+        );
+      }
       await clientApiFetch("/api/v1/dashboard/sponsors", {
         method: "POST",
         body: JSON.stringify({
           tier: newTier,
           display_name: newName.trim(),
           external_url: newUrl.trim() || null,
-          image_data
+          image_data,
+          ...(footer_image_data !== undefined ? { footer_image_data } : {})
         })
       });
       toast.success("Sponsor created");
       setNewName("");
       setNewUrl("");
       setNewFile(null);
+      setNewFooterFile(null);
       await mutate();
     } catch (e) {
       const msg =
@@ -343,10 +487,94 @@ export function SponsorsAdminClient() {
     <div className="flex flex-col gap-8">
       <Card>
         <CardHeader>
+          <CardTitle>Front page preview</CardTitle>
+          <CardDescription>
+            Same sections and styling as the public landing page (featured, main
+            partners, supporting). Use this to check logos at the size visitors
+            see. Disabled sponsors are not shown on the live site until you
+            enable them; use the checkbox below to include them in this preview
+            so you can validate images before publishing.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          <div className="flex items-start gap-2">
+            <Checkbox
+              id="sponsors-preview-include-disabled"
+              checked={includeDisabledInPreview}
+              onCheckedChange={(v) => setIncludeDisabledInPreview(v === true)}
+            />
+            <div className="grid gap-1">
+              <Label
+                htmlFor="sponsors-preview-include-disabled"
+                className="text-sm font-medium leading-none cursor-pointer"
+              >
+                Include disabled sponsors in preview
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                When off, only sponsors that would appear on the live homepage
+                are shown.
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-col gap-10 rounded-lg border bg-card p-4 sm:p-6">
+            {homepagePreviewByTier.game_wide.length > 0 ? (
+              <SponsorContainer
+                header="Featured sponsors"
+                classNames="mt-0 sm:mt-0"
+              >
+                <MarketingSponsorLogoGrid
+                  items={homepagePreviewByTier.game_wide}
+                />
+              </SponsorContainer>
+            ) : null}
+            {homepagePreviewByTier.main_partner.length > 0 ? (
+              <SponsorContainer
+                classNames="mt-0 sm:mt-0"
+                header="Main Partners"
+              >
+                <MarketingSponsorLogoGrid
+                  items={homepagePreviewByTier.main_partner}
+                />
+              </SponsorContainer>
+            ) : null}
+            {homepagePreviewByTier.supporting_organization.length > 0 ? (
+              <SponsorContainer
+                classNames="mt-0 sm:mt-0"
+                secondary={true}
+                header="Supporting our tournaments"
+              >
+                <MarketingSponsorLogoGrid
+                  items={homepagePreviewByTier.supporting_organization}
+                />
+              </SponsorContainer>
+            ) : null}
+            {homepagePreviewByTier.game_wide.length === 0 &&
+            homepagePreviewByTier.main_partner.length === 0 &&
+            homepagePreviewByTier.supporting_organization.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-6">
+                No sponsors to preview yet.
+                {!includeDisabledInPreview &&
+                sponsors.some((s) => !s.enabled) ? (
+                  <>
+                    {" "}
+                    You have disabled sponsors — turn on the checkbox above to
+                    preview their logos here.
+                  </>
+                ) : null}
+              </p>
+            ) : null}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
           <CardTitle>Add sponsor</CardTitle>
           <CardDescription>
-            Images are validated like team logos. Use “Max output size” to
-            shrink large uploads before they are sent to the image service.
+            New sponsors are hidden from the public site until you enable them
+            in the list below. Images are validated like team logos. Use “Max
+            output size” to shrink large uploads before they are sent to the
+            image service.
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 max-w-xl">
@@ -398,6 +626,25 @@ export function SponsorsAdminClient() {
               }
             />
           </div>
+          {newTier === "main_partner" ? (
+            <div className="grid gap-2">
+              <Label htmlFor="footerFile">Footer logo (optional)</Label>
+              <p className="text-xs text-muted-foreground">
+                Without this, the partner is not listed in the site footer. Use
+                a light-on-dark asset for the footer background.
+              </p>
+              <Input
+                id="footerFile"
+                type="file"
+                accept="image/png,image/jpeg,image/jpg,image/webp,image/gif"
+                onChange={(e) =>
+                  setNewFooterFile(
+                    e.target.files?.[0] ? e.target.files[0] : null
+                  )
+                }
+              />
+            </div>
+          ) : null}
           <div className="grid gap-2">
             <Label htmlFor="maxSide">
               Max output size (longest side, pixels): {maxSide}

@@ -7,6 +7,7 @@ export interface MarketingSponsorAdminRow {
   external_url: string | null;
   display_order: number;
   image_phash: string | null;
+  footer_image_phash: string | null;
   enabled: boolean;
   created_at: string;
   updated_at: string;

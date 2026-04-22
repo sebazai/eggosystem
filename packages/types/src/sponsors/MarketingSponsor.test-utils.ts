@@ -24,6 +24,7 @@ export function createMockPublicMarketingSponsor(
     external_url: null,
     display_order: 0,
     image_phash: null,
+    footer_image_phash: null,
     ...overrides
   };
 }
@@ -38,6 +39,7 @@ export function createMockMarketingSponsorAdminRow(
     external_url: "https://example.com",
     display_order: 0,
     image_phash: "abcd1234",
+    footer_image_phash: null,
     enabled: true,
     created_at: "2026-01-01T00:00:00.000Z",
     updated_at: "2026-01-01T00:00:00.000Z",

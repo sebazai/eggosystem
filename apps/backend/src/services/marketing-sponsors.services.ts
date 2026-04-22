@@ -6,7 +6,7 @@ import { loadGroupedPublicSponsors } from "../models/marketing-sponsor.models";
 import { expireIn5m, redisClient } from "../utils/redisClient";
 import { logger } from "../utils/app-logger";
 
-const REDIS_KEY = "public:marketing-sponsors:v1";
+const REDIS_KEY = "public:marketing-sponsors:v2";
 
 function parseCachedMarketingSponsors(
   cached: string
