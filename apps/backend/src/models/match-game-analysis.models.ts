@@ -962,25 +962,31 @@ export const getMatchGameInsights = async (
           })
         );
       } else if (isolated.length > 1) {
-        const allRounds = isolated.flatMap((p) => p.rounds);
-        const summary = isolated
-          .map((p) => `${nick(p.id)} (×${p.count})`)
-          .join(", ");
-        add(
-          makeInsight({
-            id: "OD-3",
-            category: "openings",
-            polarity: "concern",
-            side,
-            team_id: teamId,
-            headline: "Team-wide Isolated Opening Deaths",
-            story: `Multiple players are repeatedly dying in positions their teammates cannot trade: ${summary}. This is a team-wide spacing issue — establish clearer entry pairings so no player opens alone.`,
-            evidence_rounds: allRounds,
-            players: isolated.map((p) => p.id),
-            evidenceCount: isolated.reduce((s, p) => s + p.count, 0),
-            totalRounds: totalSideRounds
-          })
-        );
+        // Use unique rounds for severity — prevents summing per-player counts inflating severity
+        const uniqueRounds = Array.from(
+          new Set(isolated.flatMap((p) => p.rounds))
+        ).sort((a, b) => a - b);
+        // Require the pattern covers enough of the side (≥4 unique rounds) to be meaningful as a team pattern
+        if (uniqueRounds.length >= 4) {
+          const summary = isolated
+            .map((p) => `${nick(p.id)} (×${p.count})`)
+            .join(", ");
+          add(
+            makeInsight({
+              id: "OD-3",
+              category: "openings",
+              polarity: "concern",
+              side,
+              team_id: teamId,
+              headline: "Team-wide Isolated Opening Deaths",
+              story: `Multiple players are repeatedly dying in positions their teammates cannot trade: ${summary}. This is a team-wide spacing issue — establish clearer entry pairings so no player opens alone.`,
+              evidence_rounds: uniqueRounds,
+              players: isolated.map((p) => p.id),
+              evidenceCount: uniqueRounds.length,
+              totalRounds: totalSideRounds
+            })
+          );
+        }
       }
     }
 
@@ -1019,7 +1025,11 @@ export const getMatchGameInsights = async (
           })
         );
       } else if (dominants.length > 1) {
-        const allRounds = dominants.flatMap((p) => p.rounds);
+        // First kills are unique per round (two players can't both get the global first kill)
+        // so dedup is mainly a safety measure here
+        const uniqueRounds = Array.from(
+          new Set(dominants.flatMap((p) => p.rounds))
+        ).sort((a, b) => a - b);
         const summary = dominants
           .map((p) => `${nick(p.id)} (${p.kills} wins)`)
           .join(", ");
@@ -1032,9 +1042,9 @@ export const getMatchGameInsights = async (
             team_id: teamId,
             headline: "Multiple Dominant Openers",
             story: `The team has multiple players winning opening duels on ${side} side: ${summary}. Opponents cannot predict who will push first — a strong positional and mental advantage at the start of each round.`,
-            evidence_rounds: allRounds,
+            evidence_rounds: uniqueRounds,
             players: dominants.map((p) => p.id),
-            evidenceCount: dominants.reduce((s, p) => s + p.kills, 0),
+            evidenceCount: uniqueRounds.length,
             totalRounds: totalSideRounds
           })
         );
@@ -1321,28 +1331,29 @@ export const getMatchGameInsights = async (
           })
         );
       } else if (untradeables.length > 1) {
-        const allRounds = untradeables.flatMap((u) => u.rounds);
-        const summary = untradeables
-          .map((u) => `${nick(u.id)} (${u.traded}/${u.deaths} traded)`)
-          .join(", ");
-        add(
-          makeInsight({
-            id: "TR-3",
-            category: "trades",
-            polarity: "concern",
-            side,
-            team_id: teamId,
-            headline: "Multiple Players Consistently Left Untradeable",
-            story: `${untradeables.length} players were consistently left in non-tradeable positions on ${side} side: ${summary}. The team's spacing is systematically too wide — establish support pairings and tighten entry formations.`,
-            evidence_rounds: allRounds,
-            players: untradeables.map((u) => u.id),
-            evidenceCount: untradeables.reduce(
-              (s, u) => s + (u.deaths - u.traded),
-              0
-            ),
-            totalRounds: totalSideRounds
-          })
-        );
+        const uniqueRounds = Array.from(
+          new Set(untradeables.flatMap((u) => u.rounds))
+        ).sort((a, b) => a - b);
+        if (uniqueRounds.length >= 4) {
+          const summary = untradeables
+            .map((u) => `${nick(u.id)} (${u.traded}/${u.deaths} traded)`)
+            .join(", ");
+          add(
+            makeInsight({
+              id: "TR-3",
+              category: "trades",
+              polarity: "concern",
+              side,
+              team_id: teamId,
+              headline: "Multiple Players Consistently Left Untradeable",
+              story: `${untradeables.length} players were consistently left in non-tradeable positions on ${side} side: ${summary}. The team's spacing is systematically too wide — establish support pairings and tighten entry formations.`,
+              evidence_rounds: uniqueRounds,
+              players: untradeables.map((u) => u.id),
+              evidenceCount: uniqueRounds.length,
+              totalRounds: totalSideRounds
+            })
+          );
+        }
       }
     }
 
@@ -2193,7 +2204,7 @@ export const getMatchGameInsights = async (
       }
       // RC-1: Strong retake when outnumbered
       const outnumberedWins = disadvantagedRetakes.filter((r) => r.won);
-      if (outnumberedWins.length >= 2) {
+      if (outnumberedWins.length >= 3) {
         add(
           makeInsight({
             id: "RC-1",
@@ -2307,25 +2318,29 @@ export const getMatchGameInsights = async (
           })
         );
       } else if (lateDeaths.length > 1) {
-        const allRounds = lateDeaths.flatMap((p) => p.rounds);
-        const summary = lateDeaths
-          .map((p) => `${nick(p.id)} (avg ${p.avgTime}s)`)
-          .join(", ");
-        add(
-          makeInsight({
-            id: "EK-2",
-            category: "impact",
-            polarity: "concern",
-            side,
-            team_id: teamId,
-            headline: "Multiple Players Lurking Without Impact",
-            story: `Several players are consistently dying late in rounds on ${side} side without generating exit kills: ${summary}. The team's lurk/anchor protocol is not producing value — define clearer roles and timing for late-round positioning.`,
-            evidence_rounds: allRounds,
-            players: lateDeaths.map((p) => p.id),
-            evidenceCount: allRounds.length,
-            totalRounds: totalSideRounds
-          })
-        );
+        const uniqueRounds = Array.from(
+          new Set(lateDeaths.flatMap((p) => p.rounds))
+        ).sort((a, b) => a - b);
+        if (uniqueRounds.length >= 4) {
+          const summary = lateDeaths
+            .map((p) => `${nick(p.id)} (avg ${p.avgTime}s)`)
+            .join(", ");
+          add(
+            makeInsight({
+              id: "EK-2",
+              category: "impact",
+              polarity: "concern",
+              side,
+              team_id: teamId,
+              headline: "Multiple Players Lurking Without Impact",
+              story: `Several players are consistently dying late in rounds on ${side} side without generating exit kills: ${summary}. The team's lurk/anchor protocol is not producing value — define clearer roles and timing for late-round positioning.`,
+              evidence_rounds: uniqueRounds,
+              players: lateDeaths.map((p) => p.id),
+              evidenceCount: uniqueRounds.length,
+              totalRounds: totalSideRounds
+            })
+          );
+        }
       }
     }
 
