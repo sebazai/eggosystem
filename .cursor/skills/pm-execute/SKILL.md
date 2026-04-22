@@ -37,7 +37,7 @@ flowchart LR
 ## What each stage does
 
 - **Explorer** — skipped if the issue already has a `## Technical Brief` section; otherwise produces it and pauses for your approval.
-- **Ops (branch)** — creates `.worktrees/<iid>-<slug>/` off `origin/main` with branch `<type>/<iid>-<slug>`.
+- **Ops (branch)** — creates `.worktrees/<iid>-<slug>/` off `origin/development` with branch `<type>/<iid>-<slug>`.
 - **Developer** — reads the brief, implements, delegates to domain bots (`backend_bot`, `frontend_bot`, `tester_bot`, `types_bot`, etc.), runs `pnpm knip && typecheck && format:check && lint && test` in the worktree.
 - **Adversary** — static hostile audit (type safety, error handling, security, DB invariants, acceptance-criteria coverage). Returns JSON verdict.
 - **Ops (commit/MR)** — chunks the diff into logical Conventional Commits, pushes, opens a **draft** MR.

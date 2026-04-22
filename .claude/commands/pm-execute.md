@@ -58,7 +58,7 @@ Spawn Ops:
 
 ```
 Task(subagent_type=ops_bot,
-     prompt="Read .cursor/skills/ops-git-worktrees/SKILL.md. For issue #<iid> titled '<title>' (type <feat|fix|chore|docs>), create a worktree at .worktrees/<iid>-<slug> off origin/main with branch <type>/<iid>-<slug>. Do NOT edit files. Return {worktree_path, branch_name, issue_iid}.")
+     prompt="Read .cursor/skills/ops-git-worktrees/SKILL.md. For issue #<iid> titled '<title>' (type <feat|fix|chore|docs>), create a worktree at .worktrees/<iid>-<slug> off origin/development with branch <type>/<iid>-<slug>. Do NOT edit files. Return {worktree_path, branch_name, issue_iid}.")
 ```
 
 Capture `{worktree_path, branch_name, issue_iid}`.
@@ -114,7 +114,7 @@ Changed files:
 
 After commits, push -u origin <branch_name> and open a DRAFT merge request via mcp__GitLab__create_merge_request:
 - source_branch: <branch_name>
-- target_branch: main (or 'development' if the repo uses that — check existing MRs)
+- target_branch: development (or 'main' if the repo uses that — check existing MRs)
 - title: '<type>(<scope>): <short summary>'
 - description: short summary + 'Closes #<iid>'
 - labels: copy from the issue

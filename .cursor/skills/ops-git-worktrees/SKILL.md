@@ -33,7 +33,7 @@ All work for an issue happens in a dedicated worktree so multiple agents/issues 
 ```bash
 cd $(git rev-parse --show-toplevel)
 git fetch origin
-git worktree add .worktrees/<iid>-<slug> -b feat/<iid>-<slug> origin/main
+git worktree add .worktrees/<iid>-<slug> -b feat/<iid>-<slug> origin/development
 ```
 
 Post the worktree path + branch name back to PM/Developer as the handoff artifact.
@@ -101,7 +101,7 @@ git push -u origin HEAD
 
 Then open the MR via MCP:
 
-- `mcp__GitLab__create_merge_request` with `source_branch`, `target_branch=main`, `title` = `<type>(<area>): <summary>`, `description` linking the issue (`Closes #<iid>`), `draft=true`. After `review_bot` finishes with verdict `comment` or `approve-pending-human`, it calls `update_merge_request` with `draft: false` (see code-review-checklist skill).
+- `mcp__GitLab__create_merge_request` with `source_branch`, `target_branch=development`, `title` = `<type>(<area>): <summary>`, `description` linking the issue (`Closes #<iid>`), `draft=true`. After `review_bot` finishes with verdict `comment` or `approve-pending-human`, it calls `update_merge_request` with `draft: false` (see code-review-checklist skill).
 
 Post the MR IID back to PM + Review.
 
