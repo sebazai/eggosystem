@@ -4,6 +4,15 @@ export async function seed(knex: Knex): Promise<void> {
   // Disable foreign key checks to allow dropping tables with dependencies
   await knex.raw("SET FOREIGN_KEY_CHECKS=0");
 
+  // Drop all events (may have DEFINER users that don't exist in local/dev DB)
+  const events = await knex.raw(
+    "SELECT event_name FROM information_schema.events WHERE event_schema = ?",
+    [process.env.DB_NAME ?? "kanaliiga"]
+  );
+  for (const row of events[0]) {
+    await knex.raw(`DROP EVENT IF EXISTS \`${row.event_name}\``);
+  }
+
   // Drop all triggers
   const triggers = await knex.raw(
     "SELECT trigger_name FROM information_schema.triggers WHERE trigger_schema = ?",
@@ -11,6 +20,15 @@ export async function seed(knex: Knex): Promise<void> {
   );
   for (const row of triggers[0]) {
     await knex.raw(`DROP TRIGGER IF EXISTS \`${row.trigger_name}\``);
+  }
+
+  // Drop all views (can also be defined with missing DEFINER users)
+  const views = await knex.raw(
+    "SELECT table_name FROM information_schema.views WHERE table_schema = ?",
+    [process.env.DB_NAME ?? "kanaliiga"]
+  );
+  for (const row of views[0]) {
+    await knex.raw(`DROP VIEW IF EXISTS \`${row.table_name}\``);
   }
 
   // Drop all functions

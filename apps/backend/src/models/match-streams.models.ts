@@ -10,6 +10,16 @@ interface CreateStreamReservationData {
   stream_url: string;
 }
 
+const createRemovalToken = (): string => crypto.randomBytes(32).toString("hex");
+
+function isDuplicateEntryError(error: unknown): error is { code: string } {
+  if (typeof error !== "object" || error === null) {
+    return false;
+  }
+  const code = Reflect.get(error, "code");
+  return typeof code === "string";
+}
+
 export const updateStreamReservation = async (
   matchId: number,
   accountId: number,
@@ -32,12 +42,6 @@ export const updateStreamReservation = async (
 export const createStreamReservation = async (
   data: CreateStreamReservationData
 ): Promise<Reservation> => {
-  // Generate hash (keeping consistency with existing system)
-  const hash = crypto
-    .createHash("md5")
-    .update(data.stream_url + data.match_id)
-    .digest("hex");
-
   // Check if this match already has a stream reservation from this caster
   const existingReservation = await runQuery<Reservation[]>(
     `SELECT * FROM Reservations WHERE match_id = ? AND account_id = ?`,
@@ -50,13 +54,28 @@ export const createStreamReservation = async (
     );
   }
 
-  // Create the reservation
-  const insertResult = await runQuery<{ insertId: number }>(
-    `INSERT INTO Reservations (match_id, account_id, stream_url, hash) VALUES (?, ?, ?, ?)`,
-    [data.match_id, data.account_id, data.stream_url, hash]
-  );
+  // Create the reservation (with retries in the extremely unlikely event of token collision)
+  let insertId: number | null = null;
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const removalToken = createRemovalToken();
+    try {
+      const insertResult = await runQuery<{ insertId: number }>(
+        `INSERT INTO Reservations (match_id, account_id, stream_url, hash) VALUES (?, ?, ?, ?)`,
+        [data.match_id, data.account_id, data.stream_url, removalToken]
+      );
+      insertId = insertResult.insertId;
+      break;
+    } catch (error) {
+      if (isDuplicateEntryError(error) && error.code === "ER_DUP_ENTRY") {
+        continue;
+      }
+      throw error;
+    }
+  }
 
-  const insertId = insertResult.insertId;
+  if (insertId == null) {
+    throw new ConflictError("Failed to generate a unique reservation token");
+  }
 
   // Return the created reservation
   const [newReservation] = await runQuery<Reservation[]>(
@@ -76,7 +95,7 @@ export const deleteStreamReservation = async (
     [matchId, accountId]
   );
 
-  return (result as { affectedRows: number }).affectedRows > 0;
+  return result.affectedRows > 0;
 };
 
 export const getStreamReservationsByMatch = async (
@@ -89,18 +108,18 @@ export const getStreamReservationsByMatch = async (
 };
 
 /**
- * Removes a reservation by hash and returns season_id for the calendar link.
+ * Removes a reservation by public removal token and returns season_id for the calendar link.
  * Runs in a single transaction to avoid lock wait timeouts.
  */
-export const removeReservationByHashWithSeasonId = async (
-  hash: string
+export const removeReservationByRemovalTokenWithSeasonId = async (
+  token: string
 ): Promise<{ deleted: boolean; season_id: number | null }> => {
   const connection = await getConnection();
   try {
     await connection.beginTransaction();
     const [reservation] = await runQuery<Reservation[]>(
       `SELECT * FROM Reservations WHERE hash = ?`,
-      [hash],
+      [token],
       connection
     );
     if (!reservation) {
@@ -115,10 +134,10 @@ export const removeReservationByHashWithSeasonId = async (
     const season_id = matchRow?.season_id ?? null;
     const deleteResult = await runQuery<{ affectedRows: number }>(
       `DELETE FROM Reservations WHERE hash = ?`,
-      [hash],
+      [token],
       connection
     );
-    const deleted = (deleteResult as { affectedRows: number }).affectedRows > 0;
+    const deleted = deleteResult.affectedRows > 0;
     await connection.commit();
     return { deleted, season_id };
   } catch (error) {

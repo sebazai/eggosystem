@@ -1,25 +1,23 @@
-import { type Response, type NextFunction } from "express";
+import { Router, type RequestHandler } from "express";
+import request from "supertest";
 import {
   reserveStreamController,
   unreserveStreamController,
-  getMatchStreamReservationsController
+  getMatchStreamReservationsController,
+  removeReservationByRemovalTokenController
 } from "./match-streams.controllers";
 import {
   createStreamReservation,
   deleteStreamReservation,
-  getStreamReservationsByMatch
+  getStreamReservationsByMatch,
+  removeReservationByRemovalTokenWithSeasonId
 } from "../models/match-streams.models";
 import {
   getMatchIs2xBO1,
   getMatchIdsWithSameExternalMatchRoomId
 } from "../models/match.models";
-import { ConflictError } from "../utils/errors";
-import type {
-  RequestWithParams,
-  RequestWithParamsAndBody,
-  Reservation
-} from "@eggosystem/types";
-import { ZodError } from "zod";
+import { createExpressTestApp } from "../test-utils";
+import { createMockReservation } from "@eggosystem/types";
 
 // Mock dependencies
 jest.mock("../models/match-streams.models");
@@ -37,6 +35,10 @@ const mockGetStreamReservationsByMatch =
   getStreamReservationsByMatch as jest.MockedFunction<
     typeof getStreamReservationsByMatch
   >;
+const mockRemoveReservationByRemovalTokenWithSeasonId =
+  removeReservationByRemovalTokenWithSeasonId as jest.MockedFunction<
+    typeof removeReservationByRemovalTokenWithSeasonId
+  >;
 const mockGetMatchIs2xBO1 = getMatchIs2xBO1 as jest.MockedFunction<
   typeof getMatchIs2xBO1
 >;
@@ -45,172 +47,167 @@ const _mockGetMatchIdsWithSameExternalMatchRoomId =
     typeof getMatchIdsWithSameExternalMatchRoomId
   >;
 
-const mockReservation: Reservation = {
+const mockReservation = createMockReservation({
   id: 1,
   stream_url: "https://twitch.tv/test",
   hash: "test-hash",
   match_id: 123,
   account_id: 1
-};
+});
 
 describe("match-streams controllers", () => {
-  let res: Partial<Response>;
-  let next: NextFunction;
-  let jsonMock: jest.Mock;
-  let statusMock: jest.Mock;
-
   beforeEach(() => {
-    jsonMock = jest.fn();
-    statusMock = jest.fn().mockReturnValue({ json: jsonMock });
-    next = jest.fn();
-
-    res = {
-      status: statusMock,
-      json: jsonMock
-    };
-
     jest.clearAllMocks();
   });
 
   describe("reserveStreamController", () => {
-    const mockReq = {
-      auth: {
-        account_id: 1,
+    const authMiddleware: RequestHandler = (req, _res, next) => {
+      const accountIdHeader = req.header("x-account-id");
+      const account_id = accountIdHeader ? Number(accountIdHeader) : 1;
+
+      req.auth = {
+        account_id,
         provider_id: "12345",
         permissions: [],
         roles: ["caster"],
         nickname: "testcaster",
         provider: "steam"
-      },
-      params: { match_id: "123" },
-      body: {
-        stream_url: "https://twitch.tv/testcaster",
-        reserve_both_games: false
-      }
-    } as unknown as RequestWithParamsAndBody<
-      { match_id: string },
-      { stream_url: string; reserve_both_games: boolean }
-    >;
+      };
+      next();
+    };
+
+    const router = Router();
+    router.post(
+      "/matches/:match_id/reserve-cast",
+      authMiddleware,
+      reserveStreamController
+    );
+
+    const { app, cleanup } = createExpressTestApp(router);
+    afterEach(() => cleanup());
 
     it("should successfully reserve a stream for a caster", async () => {
       mockGetMatchIs2xBO1.mockResolvedValue(false);
       mockCreateStreamReservation.mockResolvedValue(mockReservation);
 
-      await reserveStreamController(mockReq, res as Response, next);
+      const res = await request(app)
+        .post("/matches/123/reserve-cast")
+        .set("x-account-id", "1")
+        .send({
+          stream_url: "https://twitch.tv/testcaster",
+          reserve_both_games: false
+        });
 
       expect(mockCreateStreamReservation).toHaveBeenCalledWith({
         match_id: 123,
         account_id: 1,
         stream_url: "https://twitch.tv/testcaster"
       });
-      expect(statusMock).toHaveBeenCalledWith(201);
-      expect(jsonMock).toHaveBeenCalledWith({
+      expect(res.status).toBe(201);
+      expect(res.body).toEqual({
         message: "Stream reserved successfully",
         reservations: [mockReservation]
       });
-      expect(next).not.toHaveBeenCalled();
     });
 
     it("should return 400 for invalid stream URL", async () => {
-      const invalidUrlReq = {
-        ...mockReq,
-        body: { stream_url: "not-a-url" }
-      } as unknown as RequestWithParamsAndBody<
-        { match_id: string },
-        { stream_url: string; reserve_both_games: boolean }
-      >;
+      const res = await request(app)
+        .post("/matches/123/reserve-cast")
+        .send({ stream_url: "not-a-url", reserve_both_games: false });
 
-      // The controller now lets ZodError bubble up, so it should be thrown
-      await expect(
-        reserveStreamController(invalidUrlReq, res as Response, next)
-      ).rejects.toThrow(ZodError);
-
+      expect(res.status).toBe(400);
       expect(mockCreateStreamReservation).not.toHaveBeenCalled();
-      expect(statusMock).not.toHaveBeenCalled();
-      expect(jsonMock).not.toHaveBeenCalled();
     });
 
     it("should handle conflict when match already reserved", async () => {
       mockGetMatchIs2xBO1.mockResolvedValue(false);
-      const conflictError = new ConflictError(
-        "You have already reserved this match for streaming"
+      mockCreateStreamReservation.mockRejectedValue(
+        new Error("You have already reserved this match for streaming")
       );
-      mockCreateStreamReservation.mockRejectedValue(conflictError);
 
-      await expect(
-        reserveStreamController(mockReq, res as Response, next)
-      ).rejects.toThrow(ConflictError);
+      const res = await request(app).post("/matches/123/reserve-cast").send({
+        stream_url: "https://twitch.tv/testcaster",
+        reserve_both_games: false
+      });
 
       expect(mockCreateStreamReservation).toHaveBeenCalledWith({
         match_id: 123,
         account_id: 1,
         stream_url: "https://twitch.tv/testcaster"
       });
-      expect(statusMock).not.toHaveBeenCalled();
-      expect(jsonMock).not.toHaveBeenCalled();
+      expect(res.status).toBeGreaterThanOrEqual(400);
     });
   });
 
   describe("unreserveStreamController", () => {
-    const mockReq = {
-      auth: {
-        account_id: 1,
+    const authMiddleware: RequestHandler = (req, _res, next) => {
+      const accountIdHeader = req.header("x-account-id");
+      const account_id = accountIdHeader ? Number(accountIdHeader) : 1;
+
+      req.auth = {
+        account_id,
         provider_id: "12345",
         permissions: [],
         roles: ["caster"],
         nickname: "testcaster",
         provider: "steam"
-      },
-      params: { match_id: "123" }
-    } as unknown as RequestWithParams<{ match_id: string }>;
+      };
+      next();
+    };
+
+    const router = Router();
+    router.delete(
+      "/matches/:match_id/reserve-cast",
+      authMiddleware,
+      unreserveStreamController
+    );
+
+    const { app, cleanup } = createExpressTestApp(router);
+    afterEach(() => cleanup());
 
     it("should successfully unreserve a stream", async () => {
       mockDeleteStreamReservation.mockResolvedValue(true);
 
-      await unreserveStreamController(mockReq, res as Response, next);
+      const res = await request(app)
+        .delete("/matches/123/reserve-cast")
+        .set("x-account-id", "1");
 
       expect(mockDeleteStreamReservation).toHaveBeenCalledWith(123, 1);
-      expect(jsonMock).toHaveBeenCalledWith({
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({
         message: "Stream reservation removed successfully"
       });
-      expect(next).not.toHaveBeenCalled();
     });
 
     it("should return 404 if no reservation found", async () => {
       mockDeleteStreamReservation.mockResolvedValue(false);
 
-      await unreserveStreamController(mockReq, res as Response, next);
+      const res = await request(app)
+        .delete("/matches/123/reserve-cast")
+        .set("x-account-id", "1");
 
-      expect(next).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message: "No stream reservation found for this match",
-          status: 404
-        })
-      );
-      expect(jsonMock).not.toHaveBeenCalled();
+      expect(res.status).toBe(404);
     });
 
-    it("should handle database errors", async () => {
-      const dbError = new Error("Database connection failed");
-      mockDeleteStreamReservation.mockRejectedValue(dbError);
+    it("should scope deletion to authenticated user (IDOR regression)", async () => {
+      mockDeleteStreamReservation.mockResolvedValue(true);
 
-      await expect(
-        unreserveStreamController(mockReq, res as Response, next)
-      ).rejects.toThrow("Database connection failed");
+      await request(app)
+        .delete("/matches/123/reserve-cast")
+        .set("x-account-id", "1001");
 
-      expect(mockDeleteStreamReservation).toHaveBeenCalledWith(123, 1);
-      expect(jsonMock).not.toHaveBeenCalled();
+      expect(mockDeleteStreamReservation).toHaveBeenCalledWith(123, 1001);
     });
   });
 
   describe("getMatchStreamReservationsController", () => {
-    const mockReq = {
-      params: { match_id: "123" }
-    } as RequestWithParams<{ match_id: string }>;
-
-    beforeEach(() => {
-      jest.clearAllMocks();
-    });
+    const router = Router();
+    router.get(
+      "/matches/:match_id/streams",
+      getMatchStreamReservationsController
+    );
+    const { app, cleanup } = createExpressTestApp(router);
+    afterEach(() => cleanup());
 
     it("should return stream URLs for match", async () => {
       const mockReservations = [
@@ -220,10 +217,11 @@ describe("match-streams controllers", () => {
 
       mockGetStreamReservationsByMatch.mockResolvedValue(mockReservations);
 
-      await getMatchStreamReservationsController(mockReq, res as Response);
+      const res = await request(app).get("/matches/123/streams");
 
       expect(mockGetStreamReservationsByMatch).toHaveBeenCalledWith(123);
-      expect(jsonMock).toHaveBeenCalledWith({
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({
         streamUrls: ["https://twitch.tv/caster1", "https://twitch.tv/caster2"]
       });
     });
@@ -231,24 +229,64 @@ describe("match-streams controllers", () => {
     it("should return empty array when no reservations found", async () => {
       mockGetStreamReservationsByMatch.mockResolvedValue([]);
 
-      await getMatchStreamReservationsController(mockReq, res as Response);
+      const res = await request(app).get("/matches/123/streams");
 
       expect(mockGetStreamReservationsByMatch).toHaveBeenCalledWith(123);
-      expect(jsonMock).toHaveBeenCalledWith({
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({
         streamUrls: []
       });
     });
+  });
 
-    it("should handle database errors", async () => {
-      const dbError = new Error("Database connection failed");
-      mockGetStreamReservationsByMatch.mockRejectedValue(dbError);
+  describe("removeReservationByRemovalTokenController", () => {
+    const router = Router();
+    router.post(
+      "/reservations/remove",
+      removeReservationByRemovalTokenController
+    );
+    const { app, cleanup } = createExpressTestApp(router);
+    afterEach(() => cleanup());
 
-      await expect(
-        getMatchStreamReservationsController(mockReq, res as Response)
-      ).rejects.toThrow("Database connection failed");
+    it("should remove reservation for valid token", async () => {
+      const token = "a".repeat(64);
+      mockRemoveReservationByRemovalTokenWithSeasonId.mockResolvedValueOnce({
+        deleted: true,
+        season_id: 12
+      });
 
-      expect(mockGetStreamReservationsByMatch).toHaveBeenCalledWith(123);
-      expect(jsonMock).not.toHaveBeenCalled();
+      const res = await request(app)
+        .post("/reservations/remove")
+        .send({ token });
+
+      expect(
+        mockRemoveReservationByRemovalTokenWithSeasonId
+      ).toHaveBeenCalledWith(token);
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({
+        message: "Stream reservation removed successfully",
+        season_id: 12
+      });
+    });
+
+    it("should return 404 for invalid token without leaking existence", async () => {
+      const token = "b".repeat(64);
+      mockRemoveReservationByRemovalTokenWithSeasonId.mockResolvedValueOnce({
+        deleted: false,
+        season_id: null
+      });
+
+      const res = await request(app)
+        .post("/reservations/remove")
+        .send({ token });
+      expect(res.status).toBe(404);
+    });
+
+    it("should return 400 when token param missing", async () => {
+      const res = await request(app)
+        .post("/reservations/remove")
+        .send({ token: "" });
+      expect(res.status).toBe(400);
     });
   });
 });

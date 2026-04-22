@@ -4,11 +4,12 @@ import {
   deleteStreamReservation,
   getStreamReservationsByMatch,
   updateStreamReservation,
-  removeReservationByHashWithSeasonId
+  removeReservationByRemovalTokenWithSeasonId
 } from "../models/match-streams.models";
 import type {
   RequestWithParams,
   RequestWithParamsAndBody,
+  RequestWithBody,
   Reservation
 } from "@eggosystem/types";
 import { NotFoundError, BadRequestError } from "../utils/errors";
@@ -20,6 +21,12 @@ import {
 
 const streamPayloadSchema = z.object({
   stream_url: z.url().min(1, "Stream URL is required")
+});
+
+const removalTokenSchema = z.object({
+  token: z
+    .string()
+    .regex(/^[0-9a-f]{64}$/i, "Reservation token must be 64 hex characters")
 });
 
 export const reserveStreamController = async (
@@ -153,21 +160,25 @@ export const getMatchStreamReservationsController = async (
   res.json({ streamUrls });
 };
 
-export const removeReservationByHashController = async (
-  req: RequestWithParams<{ hash: string }>,
-  res: Response
+export const removeReservationByRemovalTokenController = async (
+  req: RequestWithBody<{ token: string }>,
+  res: Response,
+  next: NextFunction
 ) => {
-  const { hash } = req.params;
-
-  if (!hash) {
-    throw new BadRequestError("Reservation hash is required");
+  const parsed = removalTokenSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return next(
+      new BadRequestError(parsed.error.issues[0]?.message ?? "Invalid token")
+    );
   }
+  const { token } = parsed.data;
 
   const { deleted, season_id } =
-    await removeReservationByHashWithSeasonId(hash);
+    await removeReservationByRemovalTokenWithSeasonId(token);
 
   if (!deleted) {
-    throw new NotFoundError("Reservation not found or already removed");
+    // Do not leak whether a reservation ever existed for the token.
+    return next(new NotFoundError("Reservation not found or already removed"));
   }
 
   res.json({
