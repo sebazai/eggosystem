@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TableSkeleton } from "@/components/loading";
@@ -8,10 +8,12 @@ import { AfterplantTab } from "./AfterplantTab";
 import { OpeningDuelsTab } from "./OpeningDuelsTab";
 import { KillMatrixTab } from "./KillMatrixTab";
 import { TradeTab } from "./TradeTab";
+import { InsightsTab } from "./InsightsTab";
 import { useMatchGameAfterplantAnalysis } from "@/hooks/data/useMatchGameAfterplantAnalysis";
 import { useMatchGameOpeningDuels } from "@/hooks/data/useMatchGameOpeningDuels";
 import { useMatchGameKillMatrix } from "@/hooks/data/useMatchGameKillMatrix";
 import { useMatchGameTradeStats } from "@/hooks/data/useMatchGameTradeStats";
+import { useMatchGameInsights } from "@/hooks/data/useMatchGameInsights";
 import { useGamePlayerStats } from "@/hooks/data/useGamePlayerStats";
 import type { MatchInfo } from "@eggosystem/types";
 
@@ -21,6 +23,7 @@ interface MatchGameAnalysisProps {
 }
 
 const VALID_TABS = [
+  "insights",
   "afterplant",
   "opening-duels",
   "kill-matrix",
@@ -37,7 +40,7 @@ export const MatchGameAnalysis = ({
   const rawTab = searchParams.get("tab") ?? "";
   const activeTab: TabValue = (VALID_TABS as readonly string[]).includes(rawTab)
     ? (rawTab as TabValue)
-    : "afterplant";
+    : "insights";
 
   const handleTabChange = (value: string) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -57,19 +60,38 @@ export const MatchGameAnalysis = ({
   const { tradeStats, isLoading: isLoadingTrades } =
     useMatchGameTradeStats(matchGameId);
 
+  const { insights, isLoading: isLoadingInsights } =
+    useMatchGameInsights(matchGameId);
+
   const { playerStats, isLoading: isLoadingPlayers } =
     useGamePlayerStats(matchGameId);
 
-  const isLoading =
+  const isLoadingLegacy =
     isLoadingAfterplant ||
     isLoadingPlayers ||
     isLoadingDuels ||
     isLoadingMatrix ||
     isLoadingTrades;
 
+  // Build a steam_id → nickname map from playerStats for the insights tab
+  const playerNames = useMemo(() => {
+    const map = new Map<string, string>();
+    if (!playerStats) return map;
+    for (const p of playerStats) {
+      map.set(String(p.steam_id), p.nickname);
+    }
+    return map;
+  }, [playerStats]);
+
   return (
     <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
       <TabsList className="mb-4 grid grid-cols-2 sm:flex w-full h-auto sm:h-9 items-stretch sm:items-center">
+        <TabsTrigger
+          value="insights"
+          className="h-auto sm:h-full py-2 whitespace-normal sm:whitespace-nowrap text-center text-xs sm:text-sm"
+        >
+          Insights
+        </TabsTrigger>
         <TabsTrigger
           value="afterplant"
           className="h-auto sm:h-full py-2 whitespace-normal sm:whitespace-nowrap text-center text-xs sm:text-sm"
@@ -90,15 +112,22 @@ export const MatchGameAnalysis = ({
         </TabsTrigger>
         <TabsTrigger
           value="trades"
-          className="h-auto sm:h-full py-2 whitespace-normal sm:whitespace-nowrap text-center text-xs sm:text-sm"
+          className="col-span-2 sm:col-span-1 h-auto sm:h-full py-2 whitespace-normal sm:whitespace-nowrap text-center text-xs sm:text-sm"
         >
           Trades
         </TabsTrigger>
       </TabsList>
 
+      <TabsContent value="insights">
+        {(isLoadingInsights || isLoadingPlayers) && <TableSkeleton rows={6} />}
+        {!isLoadingInsights && !isLoadingPlayers && insights && (
+          <InsightsTab insights={insights} playerNames={playerNames} />
+        )}
+      </TabsContent>
+
       <TabsContent value="afterplant">
-        {isLoading && <TableSkeleton rows={6} />}
-        {!isLoading && afterplantRounds && playerStats && (
+        {isLoadingLegacy && <TableSkeleton rows={6} />}
+        {!isLoadingLegacy && afterplantRounds && playerStats && (
           <AfterplantTab
             afterplantRounds={afterplantRounds}
             playerStats={playerStats}
@@ -108,8 +137,8 @@ export const MatchGameAnalysis = ({
       </TabsContent>
 
       <TabsContent value="opening-duels">
-        {isLoading && <TableSkeleton rows={6} />}
-        {!isLoading && openingDuels && playerStats && (
+        {isLoadingLegacy && <TableSkeleton rows={6} />}
+        {!isLoadingLegacy && openingDuels && playerStats && (
           <OpeningDuelsTab
             duels={openingDuels}
             playerStats={playerStats}
@@ -119,8 +148,8 @@ export const MatchGameAnalysis = ({
       </TabsContent>
 
       <TabsContent value="kill-matrix">
-        {isLoading && <TableSkeleton rows={6} />}
-        {!isLoading && killMatrix && playerStats && (
+        {isLoadingLegacy && <TableSkeleton rows={6} />}
+        {!isLoadingLegacy && killMatrix && playerStats && (
           <KillMatrixTab
             matrix={killMatrix}
             playerStats={playerStats}
@@ -130,8 +159,8 @@ export const MatchGameAnalysis = ({
       </TabsContent>
 
       <TabsContent value="trades">
-        {isLoading && <TableSkeleton rows={6} />}
-        {!isLoading && tradeStats && (
+        {isLoadingLegacy && <TableSkeleton rows={6} />}
+        {!isLoadingLegacy && tradeStats && (
           <TradeTab tradeStats={tradeStats} teams={matchInfo.teams} />
         )}
       </TabsContent>

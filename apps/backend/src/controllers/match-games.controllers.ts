@@ -11,7 +11,8 @@ import {
   getMatchGameAfterplantAnalysis,
   getMatchGameOpeningDuels,
   getMatchGameKillMatrix,
-  getMatchGameTradeStats
+  getMatchGameTradeStats,
+  getMatchGameInsights
 } from "../models/match-game-analysis.models";
 import { BadRequestError, NotFoundError } from "../utils/errors";
 import { getTeamStats } from "../models/match.models";
@@ -111,6 +112,15 @@ export const getMatchGameTradeStatsController = async (
 ) => {
   const match_game_id = parseInt(req.params.match_game_id, 10);
   const data = await getMatchGameTradeStats(match_game_id);
+  res.json(data);
+};
+
+export const getMatchGameInsightsController = async (
+  req: RequestWithParams<{ match_game_id: string }>,
+  res: Response
+) => {
+  const match_game_id = parseInt(req.params.match_game_id, 10);
+  const data = await getMatchGameInsights(match_game_id);
   res.json(data);
 };
 
