@@ -39,7 +39,8 @@ Push the branch, then `mcp__GitLab__create_merge_request`:
 
 - `title`: `<type>(<area>): <summary>`
 - `description`: short summary + `Closes #<iid>`
-- `draft: true` initially; `review_bot` sets `draft: false` when Review completes without `request-changes` (PM clears draft on **accept-as-is**).
+- `draft: false` so the MR is **Ready** (not a draft) as soon as it exists. If the project API omits the flag, follow with `update_merge_request` with `draft: false`.
+- On **subsequent** passes after `review_bot` feedback, **do not** open another MR: commit, push, optionally `update_merge_request` to keep the MR non-draft if needed.
 
 Post the MR IID to the caller.
 

@@ -173,7 +173,7 @@ Two ready-made commands wrap the pipeline. Both live as Claude Code slash comman
 - **`/pm-plan <idea>`** — runs only the planning half: human ↔ `pm_bot` ↔ GitLab issue. Stops after `mcp__GitLab__create_issue`. Use this when starting a new feature or bug report.
   - Claude Code: [`.claude/commands/pm-plan.md`](.claude/commands/pm-plan.md)
   - Cursor skill: [`.cursor/skills/pm-plan/SKILL.md`](.cursor/skills/pm-plan/SKILL.md)
-- **`/pm-execute <iid>`** — runs the execution half on an existing issue: Explorer → Ops → Developer (with Adversary loop) → Ops → Review. Stops at the merge HITL gate.
+- **`/pm-execute <iid>`** — runs the execution half on an existing issue: Explorer → Ops → Developer (with Adversary loop) → Ops (opens a **ready** MR) → Review, then **review-fix loops** (Developer → Adversary → Ops push, re-Review) until the MR is in good shape or a HITL gate stops the loop. Stops at the merge HITL gate.
   - Claude Code: [`.claude/commands/pm-execute.md`](.claude/commands/pm-execute.md)
   - Cursor skill: [`.cursor/skills/pm-execute/SKILL.md`](.cursor/skills/pm-execute/SKILL.md)
 
@@ -184,8 +184,8 @@ Typical session:
  → Q&A with PM, issue #247 created.
 /pm-execute 247
  → Explorer drafts brief (you confirm) → Ops cuts branch → Developer implements
-   → Adversary audits → Ops commits & opens MR !312 → Review posts notes →
-   you merge MR !312 in the GitLab UI.
+   → Adversary audits → Ops commits & opens ready MR !312 → Review posts notes →
+   (if needed) more Dev/Adversary/Ops passes on feedback → you merge MR !312 in the GitLab UI.
 ```
 
 ## Escalation

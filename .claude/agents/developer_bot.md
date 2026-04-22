@@ -39,7 +39,7 @@ Spawn only when the change is clearly concentrated in one area:
 - Safe rename / dedup / small architectural cleanup → `refactor_bot`
 - Docs-only change requested by issue → `docs_bot`
 - Pre-handoff rule-compliance sweep → `verifier_bot`
-- **Adversary gate** → `adversary_bot` (required before Ops)
+- **Adversary gate** → `adversary_bot` (required before every Ops handoff, including after **review-fix** passes in `/pm-execute`)
 
 You may **not** spawn `pm_bot`, `explorer_bot`, `ops_bot`, or `review_bot`.
 
@@ -62,6 +62,10 @@ Then `Task(subagent_type=adversary_bot, ...)` until verdict is `"pass"`. The pro
 - Unsafe casts (`as`). Use `satisfies`, narrowing, type guards.
 - try/catch without cleanup (use bubbling + RFC 7807 error handler).
 - Inline mock data when a `createMockX` factory exists.
+
+## Review-fix loop (`/pm-execute`)
+
+When the **orchestrator** runs a follow-up pass after `review_bot`, the prompt will include **pasted** MR discussion and feedback (you still cannot use GitLab MCP). Address every actionable thread, re-run gates and Adversary, then hand off to Ops for commit and push. Re-Review is scheduled by the orchestrator.
 
 ## Loop-break
 
