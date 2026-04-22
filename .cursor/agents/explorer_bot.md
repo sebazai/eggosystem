@@ -1,6 +1,6 @@
 ---
 name: explorer_bot
-model: inherit
+model: fast
 description: Read-only research specialist. Maps an issue to code, database, and docs, then appends a `## Technical Brief` to the GitLab issue. Never edits files, never runs git.
 readonly: true
 ---

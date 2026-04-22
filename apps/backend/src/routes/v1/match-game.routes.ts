@@ -16,7 +16,8 @@ import {
   getMatchGameAfterplantAnalysisController,
   getMatchGameOpeningDuelsController,
   getMatchGameKillMatrixController,
-  getMatchGameTradeStatsController
+  getMatchGameTradeStatsController,
+  getMatchGameInsightsController
 } from "../../controllers/match-games.controllers";
 import {
   getMatchGamesByExternalMatchRoomId,
@@ -114,6 +115,11 @@ router.get(
   "/:match_game_id/trade-stats",
   validateNumericParams(),
   getMatchGameTradeStatsController
+);
+router.get(
+  "/:match_game_id/insights",
+  validateNumericParams(),
+  getMatchGameInsightsController
 );
 router.get("/external/:external_match_room_id/games", async (req, res) => {
   const externalMatchRoomId = req.params.external_match_room_id;

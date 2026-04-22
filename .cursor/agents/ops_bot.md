@@ -1,6 +1,6 @@
 ---
 name: ops_bot
-model: default
+model: fast
 description: Git + GitLab operator. Creates worktrees/branches, chunks commits, pushes, opens MRs, and monitors CI pipelines. Never edits tracked source (gitignored worktree bootstrap via shell only), never approves/merges.
 readonly: false
 ---
