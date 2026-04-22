@@ -14,15 +14,34 @@ const marketingSponsorTierSchema = z.enum([
   "supporting_organization"
 ]);
 
-export const createMarketingSponsorBodySchema = z.object({
-  tier: marketingSponsorTierSchema,
-  display_name: z.string().min(1).max(255),
-  external_url: z.string().max(2048).nullable().optional(),
-  display_order: z.number().int().min(0).optional(),
-  image_data: imageDataFieldSchema.optional(),
-  /** Optional footer-specific logo (stored as `footer_image_phash`); see patch schema */
-  footer_image_data: imageDataFieldSchema.optional()
-});
+export const createMarketingSponsorBodySchema = z
+  .object({
+    tier: marketingSponsorTierSchema,
+    /** Required when `tier` is `game_wide` (must reference an existing game). */
+    game_id: z.number().int().positive().optional(),
+    display_name: z.string().min(1).max(255),
+    external_url: z.string().max(2048).nullable().optional(),
+    display_order: z.number().int().min(0).optional(),
+    image_data: imageDataFieldSchema.optional(),
+    /** Optional footer-specific logo (stored as `footer_image_phash`); see patch schema */
+    footer_image_data: imageDataFieldSchema.optional()
+  })
+  .superRefine((data, ctx) => {
+    if (data.tier === "game_wide" && data.game_id === undefined) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "game_id is required for game_wide tier",
+        path: ["game_id"]
+      });
+    }
+    if (data.tier !== "game_wide" && data.game_id !== undefined) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "game_id is only allowed for game_wide tier",
+        path: ["game_id"]
+      });
+    }
+  });
 
 export const patchMarketingSponsorBodySchema = z
   .object({
@@ -31,6 +50,7 @@ export const patchMarketingSponsorBodySchema = z
     display_order: z.number().int().min(0).optional(),
     enabled: z.boolean().optional(),
     tier: marketingSponsorTierSchema.optional(),
+    game_id: z.number().int().positive().nullable().optional(),
     image_data: imageDataFieldSchema.optional(),
     footer_image_data: imageDataFieldSchema.optional(),
     /** When true, clears stored logo (`image_phash`); mutually exclusive with `image_data` */
@@ -61,9 +81,25 @@ export const patchMarketingSponsorBodySchema = z
 export const reorderMarketingSponsorsBodySchema = z
   .object({
     tier: marketingSponsorTierSchema,
+    /** Required when `tier` is `game_wide` — scope reorder to that game’s rows. */
+    game_id: z.number().int().positive().optional(),
     ordered_ids: z.array(z.number().int().positive())
   })
   .superRefine((val, ctx) => {
+    if (val.tier === "game_wide" && val.game_id === undefined) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "game_id is required when reordering game_wide sponsors",
+        path: ["game_id"]
+      });
+    }
+    if (val.tier !== "game_wide" && val.game_id !== undefined) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "game_id must not be set unless tier is game_wide",
+        path: ["game_id"]
+      });
+    }
     if (new Set(val.ordered_ids).size !== val.ordered_ids.length) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,

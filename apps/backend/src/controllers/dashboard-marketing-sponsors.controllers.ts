@@ -8,6 +8,7 @@ import {
   NotFoundError
 } from "../utils/errors";
 import * as sponsorModels from "../models/marketing-sponsor.models";
+import { getGameByIdOrFail } from "../models/game.models";
 import { invalidatePublicMarketingSponsorsCache } from "../services/marketing-sponsors.services";
 import {
   createMarketingSponsorBodySchema,
@@ -99,12 +100,19 @@ export const createDashboardMarketingSponsorController = async (
   }
 
   const externalUrl = normalizeExternalUrl(parsed.data.external_url);
+  if (parsed.data.tier === "game_wide") {
+    await getGameByIdOrFail(parsed.data.game_id!);
+  }
   const displayOrder =
     parsed.data.display_order ??
-    (await sponsorModels.getNextDisplayOrderForTier(parsed.data.tier));
+    (await sponsorModels.getNextDisplayOrderForTier(
+      parsed.data.tier,
+      parsed.data.tier === "game_wide" ? parsed.data.game_id : undefined
+    ));
 
   const id = await sponsorModels.insertMarketingSponsor({
     tier: parsed.data.tier,
+    game_id: parsed.data.tier === "game_wide" ? parsed.data.game_id! : null,
     display_name: parsed.data.display_name,
     external_url: externalUrl === undefined ? null : externalUrl,
     display_order: displayOrder,
@@ -183,6 +191,30 @@ export const patchDashboardMarketingSponsorController = async (
   }
 
   const data = parsed.data;
+  const current = await sponsorModels.getMarketingSponsorAdminById(id);
+  if (!current) {
+    return next(new NotFoundError("Sponsor not found"));
+  }
+
+  const nextTier = data.tier ?? current.tier;
+  let nextGameId: number | null = current.game_id;
+  if (nextTier !== "game_wide") {
+    nextGameId = null;
+  } else if (data.game_id !== undefined) {
+    nextGameId = data.game_id;
+  }
+  if (
+    nextTier === "game_wide" &&
+    (nextGameId === null || nextGameId === undefined)
+  ) {
+    return next(
+      new BadRequestError("game_wide sponsors must have a valid game_id")
+    );
+  }
+  if (nextTier === "game_wide" && nextGameId !== null) {
+    await getGameByIdOrFail(nextGameId);
+  }
+
   const hasImageUpload =
     data.image_data !== undefined && data.clear_logo !== true;
   const hasClearLogo = data.clear_logo === true;
@@ -206,6 +238,9 @@ export const patchDashboardMarketingSponsorController = async (
   if (data.tier !== undefined) {
     nonImagePatch.tier = data.tier;
   }
+  if (nextGameId !== current.game_id) {
+    nonImagePatch.game_id = nextGameId;
+  }
   if (data.external_url !== undefined) {
     nonImagePatch.external_url =
       normalizeExternalUrl(data.external_url) ?? null;
@@ -226,14 +261,6 @@ export const patchDashboardMarketingSponsorController = async (
   if (hasNonImageKeys) {
     const ok = await sponsorModels.updateMarketingSponsor(id, nonImagePatch);
     if (!ok) {
-      const exists = await sponsorModels.marketingSponsorExists(id);
-      if (!exists) {
-        return next(new NotFoundError("Sponsor not found"));
-      }
-    }
-  } else if (hasImageUpload || hasFooterImageUpload) {
-    const exists = await sponsorModels.marketingSponsorExists(id);
-    if (!exists) {
       return next(new NotFoundError("Sponsor not found"));
     }
   }
@@ -246,10 +273,7 @@ export const patchDashboardMarketingSponsorController = async (
       image_phash: imagePhash
     });
     if (!ok) {
-      const exists = await sponsorModels.marketingSponsorExists(id);
-      if (!exists) {
-        return next(new NotFoundError("Sponsor not found"));
-      }
+      return next(new NotFoundError("Sponsor not found"));
     }
   }
 
@@ -261,10 +285,7 @@ export const patchDashboardMarketingSponsorController = async (
       footer_image_phash: footerPhash
     });
     if (!ok) {
-      const exists = await sponsorModels.marketingSponsorExists(id);
-      if (!exists) {
-        return next(new NotFoundError("Sponsor not found"));
-      }
+      return next(new NotFoundError("Sponsor not found"));
     }
   }
   await invalidatePublicMarketingSponsorsCache();
@@ -297,9 +318,16 @@ export const reorderDashboardMarketingSponsorsController = async (
   if (!parsed.success) {
     return next(parsed.error);
   }
-  const { tier, ordered_ids } = parsed.data;
+  const { tier, ordered_ids, game_id: scopeGameId } = parsed.data;
   const all = await sponsorModels.listAllMarketingSponsorsAdmin();
-  const tierIds = new Set(all.filter((s) => s.tier === tier).map((s) => s.id));
+  const tierIds = new Set(
+    all
+      .filter(
+        (s) =>
+          s.tier === tier && (tier !== "game_wide" || s.game_id === scopeGameId)
+      )
+      .map((s) => s.id)
+  );
   if (ordered_ids.length !== tierIds.size) {
     return next(
       new BadRequestError(
@@ -314,7 +342,11 @@ export const reorderDashboardMarketingSponsorsController = async (
       );
     }
   }
-  await sponsorModels.reorderMarketingSponsorsInTier(tier, ordered_ids);
+  await sponsorModels.reorderMarketingSponsorsInTier(
+    tier,
+    ordered_ids,
+    tier === "game_wide" ? scopeGameId : undefined
+  );
   await invalidatePublicMarketingSponsorsCache();
   res.json({ ok: true });
 };

@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useState } from "react";
 import useSWR from "swr";
 import type {
+  Game,
   MarketingSponsorAdminRow,
   PublicMarketingSponsor
 } from "@eggosystem/types";
@@ -27,7 +28,10 @@ import { MarketingSponsorLogoGrid } from "@/components/sponsors/MarketingSponsor
 import { SponsorContainer } from "@/components/sponsors/SponsorContainer";
 
 const TIERS = [
-  { value: "game_wide", label: "Site-wide (e.g. landing hero)" },
+  {
+    value: "game_wide",
+    label: "Game-wide featured (tied to a game, e.g. landing hero)"
+  },
   { value: "main_partner", label: "Main partners" },
   { value: "supporting_organization", label: "Supporting organizations" }
 ] as const;
@@ -50,6 +54,10 @@ async function fetchSponsors(): Promise<MarketingSponsorAdminRow[]> {
     "/api/v1/dashboard/sponsors"
   );
   return res.sponsors;
+}
+
+async function fetchGames(): Promise<Game[]> {
+  return clientApiFetch<Game[]>("/api/v1/app/games");
 }
 
 function sortByOrder(rows: MarketingSponsorAdminRow[]) {
@@ -85,20 +93,26 @@ function tierRowsToPublicPreviewItems(
 
 function SponsorRowEditor({
   row,
+  games,
   onCancel,
   onSaved
 }: {
   row: MarketingSponsorAdminRow;
+  games: Game[];
   onCancel: () => void;
   onSaved: () => Promise<void>;
 }) {
   const [name, setName] = useState(row.display_name);
   const [url, setUrl] = useState(row.external_url ?? "");
+  const [gameId, setGameId] = useState<number>(
+    row.game_id ?? games[0]?.id ?? 0
+  );
   const [file, setFile] = useState<File | null>(null);
   const [footerFile, setFooterFile] = useState<File | null>(null);
   const [maxSide, setMaxSide] = useState(800);
   const [busy, setBusy] = useState(false);
   const showFooterLogoFields = row.tier === "main_partner";
+  const showGameField = row.tier === "game_wide";
 
   const saveMeta = async () => {
     setBusy(true);
@@ -107,7 +121,8 @@ function SponsorRowEditor({
         method: "PATCH",
         body: JSON.stringify({
           display_name: name.trim(),
-          external_url: url.trim() || null
+          external_url: url.trim() || null,
+          ...(showGameField ? { game_id: gameId } : {})
         })
       });
       toast.success("Updated");
@@ -224,6 +239,26 @@ function SponsorRowEditor({
         <Label>External URL</Label>
         <Input value={url} onChange={(e) => setUrl(e.target.value)} />
       </div>
+      {showGameField ? (
+        <div className="grid gap-2">
+          <Label>Game</Label>
+          <select
+            className="border rounded-md h-9 px-2 bg-background max-w-md"
+            value={gameId}
+            onChange={(e) => setGameId(Number(e.target.value))}
+          >
+            {games.map((g) => (
+              <option key={g.id} value={g.id}>
+                {g.abbreviation} — {g.name}
+              </option>
+            ))}
+          </select>
+          <p className="text-xs text-muted-foreground">
+            Game-wide sponsors appear on the public site only for that game
+            (e.g. MAIN CS2 SPONSOR block on the landing page).
+          </p>
+        </div>
+      ) : null}
       <div className="flex gap-2">
         <Button
           type="button"
@@ -320,8 +355,10 @@ export function SponsorsAdminClient() {
     isLoading,
     mutate
   } = useSWR("/api/v1/dashboard/sponsors", fetchSponsors);
+  const { data: games = [] } = useSWR("app-games", fetchGames);
 
   const [newTier, setNewTier] = useState<TierValue>("main_partner");
+  const [newGameId, setNewGameId] = useState<number | null>(null);
   const [newName, setNewName] = useState("");
   const [newUrl, setNewUrl] = useState("");
   const [newFile, setNewFile] = useState<File | null>(null);
@@ -339,20 +376,57 @@ export function SponsorsAdminClient() {
       supporting_organization: []
     };
     for (const s of sponsors) {
+      if (s.tier === "game_wide") {
+        continue;
+      }
       map[s.tier].push(s);
     }
     for (const t of TIERS) {
+      if (t.value === "game_wide") {
+        continue;
+      }
       map[t.value] = sortByOrder(map[t.value]);
     }
     return map;
   }, [sponsors]);
 
+  const gameWideGroups = useMemo(() => {
+    const map = new Map<
+      number,
+      { abbreviation: string; rows: MarketingSponsorAdminRow[] }
+    >();
+    for (const s of sponsors) {
+      if (s.tier !== "game_wide" || s.game_id == null) {
+        continue;
+      }
+      const cur = map.get(s.game_id) ?? {
+        abbreviation: s.game_abbreviation ?? `Game ${s.game_id}`,
+        rows: [] as MarketingSponsorAdminRow[]
+      };
+      cur.abbreviation = s.game_abbreviation ?? cur.abbreviation;
+      cur.rows.push(s);
+      map.set(s.game_id, cur);
+    }
+    return [...map.entries()]
+      .map(([gameId, v]) => ({
+        gameId,
+        abbreviation: v.abbreviation,
+        rows: sortByOrder(v.rows)
+      }))
+      .sort((a, b) => a.abbreviation.localeCompare(b.abbreviation));
+  }, [sponsors]);
+
+  const homepageGameWideSections = useMemo(
+    () =>
+      gameWideGroups.map((g) => ({
+        header: `MAIN ${g.abbreviation.toUpperCase()} SPONSOR`,
+        items: tierRowsToPublicPreviewItems(g.rows, includeDisabledInPreview)
+      })),
+    [gameWideGroups, includeDisabledInPreview]
+  );
+
   const homepagePreviewByTier = useMemo(
     () => ({
-      game_wide: tierRowsToPublicPreviewItems(
-        byTier.game_wide,
-        includeDisabledInPreview
-      ),
       main_partner: tierRowsToPublicPreviewItems(
         byTier.main_partner,
         includeDisabledInPreview
@@ -366,13 +440,18 @@ export function SponsorsAdminClient() {
   );
 
   const persistReorder = useCallback(
-    async (tier: TierValue, ordered: MarketingSponsorAdminRow[]) => {
+    async (
+      tier: TierValue,
+      ordered: MarketingSponsorAdminRow[],
+      gameWideScopeId?: number
+    ) => {
       try {
         await clientApiFetch("/api/v1/dashboard/sponsors/reorder", {
           method: "PUT",
           body: JSON.stringify({
             tier,
-            ordered_ids: ordered.map((r) => r.id)
+            ordered_ids: ordered.map((r) => r.id),
+            ...(tier === "game_wide" ? { game_id: gameWideScopeId } : {})
           })
         });
         await mutate();
@@ -385,9 +464,15 @@ export function SponsorsAdminClient() {
     [mutate]
   );
 
-  const move = useCallback(
-    async (tier: TierValue, index: number, dir: -1 | 1) => {
-      const list = [...byTier[tier]];
+  const moveRow = useCallback(
+    async (
+      tier: TierValue,
+      rows: MarketingSponsorAdminRow[],
+      gameWideScopeId: number | undefined,
+      index: number,
+      dir: -1 | 1
+    ) => {
+      const list = [...rows];
       const j = index + dir;
       if (j < 0 || j >= list.length) {
         return;
@@ -399,15 +484,25 @@ export function SponsorsAdminClient() {
       }
       list[index] = b;
       list[j] = a;
-      await persistReorder(tier, list);
+      await persistReorder(
+        tier,
+        list,
+        tier === "game_wide" ? gameWideScopeId : undefined
+      );
     },
-    [byTier, persistReorder]
+    [persistReorder]
   );
 
   const onCreate = async () => {
     if (!newName.trim()) {
       toast.error("Display name is required");
       return;
+    }
+    if (newTier === "game_wide") {
+      if (newGameId == null || !Number.isFinite(newGameId)) {
+        toast.error("Choose a game for game-wide sponsors");
+        return;
+      }
     }
     setSaving(true);
     try {
@@ -426,6 +521,9 @@ export function SponsorsAdminClient() {
         method: "POST",
         body: JSON.stringify({
           tier: newTier,
+          ...(newTier === "game_wide" && newGameId != null
+            ? { game_id: newGameId }
+            : {}),
           display_name: newName.trim(),
           external_url: newUrl.trim() || null,
           image_data,
@@ -489,11 +587,11 @@ export function SponsorsAdminClient() {
         <CardHeader>
           <CardTitle>Front page preview</CardTitle>
           <CardDescription>
-            Same sections and styling as the public landing page (featured, main
-            partners, supporting). Use this to check logos at the size visitors
-            see. Disabled sponsors are not shown on the live site until you
-            enable them; use the checkbox below to include them in this preview
-            so you can validate images before publishing.
+            Same sections and styling as the public landing page (main game
+            sponsor, main partners, supporting). Use this to check logos at the
+            size visitors see. Disabled sponsors are not shown on the live site
+            until you enable them; use the checkbox below to include them in
+            this preview so you can validate images before publishing.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
@@ -517,16 +615,17 @@ export function SponsorsAdminClient() {
             </div>
           </div>
           <div className="flex flex-col gap-10 rounded-lg border bg-card p-4 sm:p-6">
-            {homepagePreviewByTier.game_wide.length > 0 ? (
-              <SponsorContainer
-                header="Featured sponsors"
-                classNames="mt-0 sm:mt-0"
-              >
-                <MarketingSponsorLogoGrid
-                  items={homepagePreviewByTier.game_wide}
-                />
-              </SponsorContainer>
-            ) : null}
+            {homepageGameWideSections.map((section) =>
+              section.items.length > 0 ? (
+                <SponsorContainer
+                  key={section.header}
+                  header={section.header}
+                  classNames="mt-0 sm:mt-0"
+                >
+                  <MarketingSponsorLogoGrid items={section.items} />
+                </SponsorContainer>
+              ) : null
+            )}
             {homepagePreviewByTier.main_partner.length > 0 ? (
               <SponsorContainer
                 classNames="mt-0 sm:mt-0"
@@ -548,7 +647,7 @@ export function SponsorsAdminClient() {
                 />
               </SponsorContainer>
             ) : null}
-            {homepagePreviewByTier.game_wide.length === 0 &&
+            {homepageGameWideSections.every((s) => s.items.length === 0) &&
             homepagePreviewByTier.main_partner.length === 0 &&
             homepagePreviewByTier.supporting_organization.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-6">
@@ -588,6 +687,13 @@ export function SponsorsAdminClient() {
                 const t = parseTierValue(e.target.value);
                 if (t) {
                   setNewTier(t);
+                  if (
+                    t === "game_wide" &&
+                    games.length > 0 &&
+                    newGameId == null
+                  ) {
+                    setNewGameId(games[0]!.id);
+                  }
                 }
               }}
             >
@@ -615,6 +721,27 @@ export function SponsorsAdminClient() {
               placeholder="https://"
             />
           </div>
+          {newTier === "game_wide" ? (
+            <div className="grid gap-2">
+              <Label htmlFor="game">Game</Label>
+              <select
+                id="game"
+                className="border rounded-md h-9 px-2 bg-background max-w-md"
+                value={newGameId ?? ""}
+                onChange={(e) => setNewGameId(Number(e.target.value))}
+              >
+                {games.length === 0 ? (
+                  <option value="">Loading games…</option>
+                ) : (
+                  games.map((g) => (
+                    <option key={g.id} value={g.id}>
+                      {g.abbreviation} — {g.name}
+                    </option>
+                  ))
+                )}
+              </select>
+            </div>
+          ) : null}
           <div className="grid gap-2">
             <Label htmlFor="file">Logo image (optional)</Label>
             <Input
@@ -666,7 +793,142 @@ export function SponsorsAdminClient() {
         </CardContent>
       </Card>
 
-      {TIERS.map((tier) => (
+      {gameWideGroups.length === 0 ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Main game sponsors</CardTitle>
+            <CardDescription>
+              No rows yet. Use Add sponsor with tier &quot;Game-wide&quot;, pick
+              a game, then enable each sponsor when it should appear on the
+              public site.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      ) : null}
+      {gameWideGroups.map((group) => (
+        <Card key={group.gameId}>
+          <CardHeader>
+            <CardTitle>
+              MAIN {group.abbreviation.toUpperCase()} SPONSOR
+            </CardTitle>
+            <CardDescription>
+              Shown on the public site for this game (same heading as the
+              landing page). Reorder with arrows; changes apply only within this
+              game.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4">
+            {group.rows.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No sponsors yet.</p>
+            ) : null}
+            {group.rows.map((row, index) => (
+              <div
+                key={row.id}
+                className="flex flex-wrap items-center gap-3 border rounded-lg p-3"
+              >
+                <div className="flex flex-col gap-1 min-w-[200px] flex-1">
+                  <div className="flex items-center gap-2">
+                    {row.image_phash ? (
+                      <Image
+                        src={createTeamLogoUrl(row.image_phash)}
+                        alt=""
+                        width={48}
+                        height={48}
+                        className="object-contain"
+                        unoptimized
+                      />
+                    ) : null}
+                    <span className="font-medium">{row.display_name}</span>
+                    {!row.enabled ? (
+                      <span className="text-xs text-destructive">disabled</span>
+                    ) : null}
+                  </div>
+                  <span className="text-xs text-muted-foreground">
+                    #{row.id} · order {row.display_order}
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() =>
+                      setEditingId((cur) => (cur === row.id ? null : row.id))
+                    }
+                  >
+                    {editingId === row.id ? "Close edit" : "Edit"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      void moveRow(
+                        "game_wide",
+                        group.rows,
+                        group.gameId,
+                        index,
+                        -1
+                      )
+                    }
+                    disabled={index === 0}
+                  >
+                    Up
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      void moveRow(
+                        "game_wide",
+                        group.rows,
+                        group.gameId,
+                        index,
+                        1
+                      )
+                    }
+                    disabled={index === group.rows.length - 1}
+                  >
+                    Down
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      void patchRow(row.id, { enabled: !row.enabled })
+                    }
+                  >
+                    {row.enabled ? "Disable" : "Enable"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => void removeRow(row.id)}
+                  >
+                    Remove
+                  </Button>
+                </div>
+                {editingId === row.id ? (
+                  <SponsorRowEditor
+                    key={row.id}
+                    row={row}
+                    games={games}
+                    onCancel={() => setEditingId(null)}
+                    onSaved={async () => {
+                      setEditingId(null);
+                      await mutate();
+                    }}
+                  />
+                ) : null}
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      ))}
+      {TIERS.filter((t) => t.value !== "game_wide").map((tier) => (
         <Card key={tier.value}>
           <CardHeader>
             <CardTitle>{tier.label}</CardTitle>
@@ -720,7 +982,15 @@ export function SponsorsAdminClient() {
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => void move(tier.value, index, -1)}
+                    onClick={() =>
+                      void moveRow(
+                        tier.value,
+                        byTier[tier.value],
+                        undefined,
+                        index,
+                        -1
+                      )
+                    }
                     disabled={index === 0}
                   >
                     Up
@@ -729,7 +999,15 @@ export function SponsorsAdminClient() {
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => void move(tier.value, index, 1)}
+                    onClick={() =>
+                      void moveRow(
+                        tier.value,
+                        byTier[tier.value],
+                        undefined,
+                        index,
+                        1
+                      )
+                    }
                     disabled={index === byTier[tier.value].length - 1}
                   >
                     Down
@@ -757,6 +1035,7 @@ export function SponsorsAdminClient() {
                   <SponsorRowEditor
                     key={row.id}
                     row={row}
+                    games={games}
                     onCancel={() => setEditingId(null)}
                     onSaved={async () => {
                       setEditingId(null);

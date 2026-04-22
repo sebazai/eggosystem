@@ -35,6 +35,8 @@ export function createMockMarketingSponsorAdminRow(
   return {
     id: 1,
     tier: "main_partner",
+    game_id: null,
+    game_abbreviation: null,
     display_name: "Test Partner",
     external_url: "https://example.com",
     display_order: 0,

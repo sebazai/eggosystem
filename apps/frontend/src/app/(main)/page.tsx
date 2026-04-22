@@ -10,7 +10,11 @@ import { SeasonStatusSection } from "@/components/landing/SeasonStatusSection";
 import { Navigation } from "@/components/layout/Navigation";
 import { createNextUrl } from "@/lib/utils";
 import { MarketingSponsorLogoGrid } from "@/components/sponsors/MarketingSponsorLogoGrid";
-import { getPublicMarketingSponsors } from "@/lib/get-public-marketing-sponsors";
+import {
+  getGameWideMarketingSponsorsForGame,
+  getPublicMarketingSponsors,
+  landingGameAbbrev
+} from "@/lib/get-public-marketing-sponsors";
 
 interface LandingPageStats {
   unique_players: number;
@@ -20,7 +24,10 @@ interface LandingPageStats {
 }
 
 export default async function Home() {
-  const sponsors = await getPublicMarketingSponsors();
+  const [sponsors, gameWideFeatured] = await Promise.all([
+    getPublicMarketingSponsors(),
+    getGameWideMarketingSponsorsForGame(landingGameAbbrev)
+  ]);
 
   const defaultData = {
     unique_players: 4700,
@@ -133,12 +140,12 @@ export default async function Home() {
 
             <Separator className="bg-kanaliiga-orange my-3 md:my-6" />
 
-            {sponsors.game_wide_sponsors.length > 0 ? (
+            {gameWideFeatured.length > 0 ? (
               <SponsorContainer
-                header="Featured sponsors"
+                header={`MAIN ${landingGameAbbrev.toUpperCase()} SPONSOR`}
                 classNames="mt-10 sm:mt-20"
               >
-                <MarketingSponsorLogoGrid items={sponsors.game_wide_sponsors} />
+                <MarketingSponsorLogoGrid items={gameWideFeatured} />
               </SponsorContainer>
             ) : null}
 

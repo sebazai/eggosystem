@@ -1,4 +1,5 @@
 import type {
+  GameWideMarketingSponsorsResponse,
   GroupedPublicSponsors,
   PublicMarketingSponsor
 } from "./PublicMarketingSponsor.interface";
@@ -54,7 +55,7 @@ export function isPublicMarketingSponsor(
   return true;
 }
 
-function isPublicMarketingSponsorArray(
+export function isPublicMarketingSponsorList(
   value: unknown
 ): value is PublicMarketingSponsor[] {
   return (
@@ -73,8 +74,17 @@ export function isGroupedPublicSponsors(
     return false;
   }
   return (
-    isPublicMarketingSponsorArray(value["game_wide_sponsors"]) &&
-    isPublicMarketingSponsorArray(value["main_partners"]) &&
-    isPublicMarketingSponsorArray(value["supporting_organizations"])
+    isPublicMarketingSponsorList(value["game_wide_sponsors"]) &&
+    isPublicMarketingSponsorList(value["main_partners"]) &&
+    isPublicMarketingSponsorList(value["supporting_organizations"])
   );
+}
+
+export function isGameWideMarketingSponsorsResponse(
+  value: unknown
+): value is GameWideMarketingSponsorsResponse {
+  if (!isRecord(value)) {
+    return false;
+  }
+  return isPublicMarketingSponsorList(value["sponsors"]);
 }

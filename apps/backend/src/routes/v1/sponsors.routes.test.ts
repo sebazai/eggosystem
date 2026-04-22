@@ -2,6 +2,7 @@ import request from "supertest";
 import { createExpressTestApp } from "../../test-utils/express-app-setup";
 import sponsorsRouter from "./sponsors.routes";
 import * as marketingSponsorsService from "../../services/marketing-sponsors.services";
+import * as gameModels from "../../models/game.models";
 import {
   createMockGroupedPublicSponsors,
   createMockPublicMarketingSponsor
@@ -11,6 +12,14 @@ jest.mock("../../services/marketing-sponsors.services");
 
 const mockGetCached = jest.mocked(
   marketingSponsorsService.getCachedGroupedPublicSponsors
+);
+const mockGetCachedGameWide = jest.mocked(
+  marketingSponsorsService.getCachedGameWidePublicSponsorsByGameId
+);
+
+const mockGetGameByAbbreviationCi = jest.spyOn(
+  gameModels,
+  "getGameByAbbreviationCi"
 );
 
 describe("GET /api/v1/sponsors", () => {
@@ -67,5 +76,53 @@ describe("GET /api/v1/sponsors", () => {
     expect(Array.isArray(res.body.game_wide_sponsors)).toBe(true);
     expect(Array.isArray(res.body.main_partners)).toBe(true);
     expect(Array.isArray(res.body.supporting_organizations)).toBe(true);
+  });
+});
+
+describe("GET /api/v1/sponsors/games/:game_abbreviation", () => {
+  const { app, cleanup } = createExpressTestApp(
+    sponsorsRouter,
+    "/api/v1/sponsors"
+  );
+
+  afterAll(() => {
+    mockGetGameByAbbreviationCi.mockRestore();
+    cleanup();
+  });
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockGetGameByAbbreviationCi.mockResolvedValue({
+      id: 1,
+      name: "Counter-Strike 2",
+      abbreviation: "CS2",
+      app_id: 730
+    });
+    mockGetCachedGameWide.mockResolvedValue([
+      createMockPublicMarketingSponsor({
+        id: 9,
+        display_name: "GW",
+        display_order: 0,
+        image_phash: "phgw"
+      })
+    ]);
+  });
+
+  it("returns game-wide sponsors and cache headers", async () => {
+    const res = await request(app).get("/api/v1/sponsors/games/cs2");
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({
+      sponsors: [
+        createMockPublicMarketingSponsor({
+          id: 9,
+          display_name: "GW",
+          display_order: 0,
+          image_phash: "phgw"
+        })
+      ]
+    });
+    expect(res.headers["cache-control"]).toBe("public, max-age=300");
+    expect(mockGetCachedGameWide).toHaveBeenCalledWith(1);
   });
 });

@@ -57,17 +57,37 @@ async function listEnabledPublicSponsorsByTier(
 }
 
 export async function loadGroupedPublicSponsors(): Promise<GroupedPublicSponsors> {
-  const [game_wide_sponsors, main_partners, supporting_organizations] =
-    await Promise.all([
-      listEnabledPublicSponsorsByTier("game_wide"),
-      listEnabledPublicSponsorsByTier("main_partner"),
-      listEnabledPublicSponsorsByTier("supporting_organization")
-    ]);
+  const [main_partners, supporting_organizations] = await Promise.all([
+    listEnabledPublicSponsorsByTier("main_partner"),
+    listEnabledPublicSponsorsByTier("supporting_organization")
+  ]);
   return {
-    game_wide_sponsors,
+    game_wide_sponsors: [],
     main_partners,
     supporting_organizations
   };
+}
+
+export async function listEnabledGameWidePublicSponsorsForGameId(
+  gameId: number
+): Promise<PublicMarketingSponsor[]> {
+  const rows = await runQuery<
+    Array<{
+      id: number;
+      display_name: string;
+      external_url: string | null;
+      display_order: number;
+      image_phash: string | null;
+      footer_image_phash: string | null;
+    }>
+  >(
+    `SELECT id, display_name, external_url, display_order, image_phash, footer_image_phash
+     FROM MarketingSponsors
+     WHERE tier = 'game_wide' AND enabled = 1 AND game_id = ?
+     ORDER BY display_order ASC, id ASC`,
+    [gameId]
+  );
+  return rows.map(mapPublicRow);
 }
 
 export async function listAllMarketingSponsorsAdmin(): Promise<
@@ -77,6 +97,8 @@ export async function listAllMarketingSponsorsAdmin(): Promise<
     Array<{
       id: number;
       tier: string;
+      game_id: number | null;
+      game_abbreviation: string | null;
       display_name: string;
       external_url: string | null;
       display_order: number;
@@ -87,9 +109,12 @@ export async function listAllMarketingSponsorsAdmin(): Promise<
       updated_at: Date;
     }>
   >(
-    `SELECT id, tier, display_name, external_url, display_order, image_phash, footer_image_phash, enabled, created_at, updated_at
-     FROM MarketingSponsors
-     ORDER BY tier ASC, display_order ASC, id ASC`
+    `SELECT ms.id, ms.tier, ms.game_id, g.abbreviation AS game_abbreviation,
+            ms.display_name, ms.external_url, ms.display_order, ms.image_phash,
+            ms.footer_image_phash, ms.enabled, ms.created_at, ms.updated_at
+     FROM MarketingSponsors ms
+     LEFT JOIN Games g ON ms.game_id = g.id
+     ORDER BY ms.tier ASC, ms.game_id ASC, ms.display_order ASC, ms.id ASC`
   );
 
   const toIso = (d: Date | string) =>
@@ -104,6 +129,8 @@ export async function listAllMarketingSponsorsAdmin(): Promise<
     return {
       id: r.id,
       tier: r.tier,
+      game_id: r.game_id,
+      game_abbreviation: r.game_abbreviation,
       display_name: r.display_name,
       external_url: r.external_url,
       display_order: r.display_order,
@@ -116,8 +143,64 @@ export async function listAllMarketingSponsorsAdmin(): Promise<
   });
 }
 
+export async function getMarketingSponsorAdminById(
+  id: number
+): Promise<MarketingSponsorAdminRow | undefined> {
+  const rows = await runQuery<
+    Array<{
+      id: number;
+      tier: string;
+      game_id: number | null;
+      game_abbreviation: string | null;
+      display_name: string;
+      external_url: string | null;
+      display_order: number;
+      image_phash: string | null;
+      footer_image_phash: string | null;
+      enabled: boolean | 0 | 1;
+      created_at: Date;
+      updated_at: Date;
+    }>
+  >(
+    `SELECT ms.id, ms.tier, ms.game_id, g.abbreviation AS game_abbreviation,
+            ms.display_name, ms.external_url, ms.display_order, ms.image_phash,
+            ms.footer_image_phash, ms.enabled, ms.created_at, ms.updated_at
+     FROM MarketingSponsors ms
+     LEFT JOIN Games g ON ms.game_id = g.id
+     WHERE ms.id = ?
+     LIMIT 1`,
+    [id]
+  );
+  const r = rows[0];
+  if (!r) {
+    return undefined;
+  }
+  const toIso = (d: Date | string) =>
+    d instanceof Date ? d.toISOString() : String(d);
+  if (!isMarketingSponsorTier(r.tier)) {
+    throw new InternalServerError(
+      `Invalid sponsor tier in database: ${r.tier}`
+    );
+  }
+  return {
+    id: r.id,
+    tier: r.tier,
+    game_id: r.game_id,
+    game_abbreviation: r.game_abbreviation,
+    display_name: r.display_name,
+    external_url: r.external_url,
+    display_order: r.display_order,
+    image_phash: r.image_phash,
+    footer_image_phash: r.footer_image_phash,
+    enabled: Boolean(r.enabled),
+    created_at: toIso(r.created_at),
+    updated_at: toIso(r.updated_at)
+  };
+}
+
 export async function insertMarketingSponsor(input: {
   tier: MarketingSponsorTier;
+  game_id?: number | null;
   display_name: string;
   external_url: string | null;
   display_order: number;
@@ -128,13 +211,15 @@ export async function insertMarketingSponsor(input: {
 }): Promise<number> {
   const enabled = input.enabled ?? false;
   const footerPhash = input.footer_image_phash ?? null;
+  const gameId = input.game_id ?? null;
   const connection = await getConnection();
   try {
     await runQuery(
-      `INSERT INTO MarketingSponsors (tier, display_name, external_url, display_order, image_phash, footer_image_phash, enabled)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO MarketingSponsors (tier, game_id, display_name, external_url, display_order, image_phash, footer_image_phash, enabled)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         input.tier,
+        gameId,
         input.display_name,
         input.external_url,
         input.display_order,
@@ -158,14 +243,6 @@ export async function insertMarketingSponsor(input: {
   }
 }
 
-export async function marketingSponsorExists(id: number): Promise<boolean> {
-  const rows = await runQuery<Array<{ id: number }>>(
-    "SELECT id FROM MarketingSponsors WHERE id = ? LIMIT 1",
-    [id]
-  );
-  return rows.length > 0;
-}
-
 export async function updateMarketingSponsor(
   id: number,
   patch: {
@@ -176,6 +253,7 @@ export async function updateMarketingSponsor(
     footer_image_phash?: string | null;
     enabled?: boolean;
     tier?: MarketingSponsorTier;
+    game_id?: number | null;
   }
 ): Promise<boolean> {
   const fields: string[] = [];
@@ -209,6 +287,10 @@ export async function updateMarketingSponsor(
     fields.push("tier = ?");
     params.push(patch.tier);
   }
+  if (patch.game_id !== undefined) {
+    fields.push("game_id = ?");
+    params.push(patch.game_id);
+  }
 
   if (fields.length === 0) {
     return false;
@@ -231,8 +313,25 @@ export async function deleteMarketingSponsor(id: number): Promise<boolean> {
 }
 
 export async function getNextDisplayOrderForTier(
-  tier: MarketingSponsorTier
+  tier: MarketingSponsorTier,
+  gameId?: number | null
 ): Promise<number> {
+  if (tier === "game_wide") {
+    if (gameId === undefined || gameId === null) {
+      throw new InternalServerError(
+        "gameId is required for getNextDisplayOrderForTier when tier is game_wide"
+      );
+    }
+    const [row] = await runQuery<Array<{ m: number | null }>>(
+      "SELECT MAX(display_order) AS m FROM MarketingSponsors WHERE tier = ? AND game_id = ?",
+      [tier, gameId]
+    );
+    const max = row?.m;
+    if (max === null || max === undefined) {
+      return 0;
+    }
+    return max + 1;
+  }
   const [row] = await runQuery<Array<{ m: number | null }>>(
     "SELECT MAX(display_order) AS m FROM MarketingSponsors WHERE tier = ?",
     [tier]
@@ -246,18 +345,32 @@ export async function getNextDisplayOrderForTier(
 
 export async function reorderMarketingSponsorsInTier(
   tier: MarketingSponsorTier,
-  orderedIds: number[]
+  orderedIds: number[],
+  gameIdForGameWide?: number | null
 ): Promise<void> {
   const connection = await getConnection();
   try {
     await connection.beginTransaction();
     let order = 0;
     for (const id of orderedIds) {
-      await runQuery(
-        "UPDATE MarketingSponsors SET display_order = ? WHERE id = ? AND tier = ?",
-        [order, id, tier],
-        connection
-      );
+      if (tier === "game_wide") {
+        if (gameIdForGameWide === undefined || gameIdForGameWide === null) {
+          throw new InternalServerError(
+            "gameIdForGameWide is required when reordering game_wide sponsors"
+          );
+        }
+        await runQuery(
+          "UPDATE MarketingSponsors SET display_order = ? WHERE id = ? AND tier = ? AND game_id = ?",
+          [order, id, tier, gameIdForGameWide],
+          connection
+        );
+      } else {
+        await runQuery(
+          "UPDATE MarketingSponsors SET display_order = ? WHERE id = ? AND tier = ?",
+          [order, id, tier],
+          connection
+        );
+      }
       order += 1;
     }
     await connection.commit();

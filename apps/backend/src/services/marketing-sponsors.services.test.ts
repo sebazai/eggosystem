@@ -1,4 +1,7 @@
-import { getCachedGroupedPublicSponsors } from "./marketing-sponsors.services";
+import {
+  getCachedGameWidePublicSponsorsByGameId,
+  getCachedGroupedPublicSponsors
+} from "./marketing-sponsors.services";
 import { redisClient } from "../utils/redisClient";
 import * as sponsorModels from "../models/marketing-sponsor.models";
 import {
@@ -65,6 +68,45 @@ describe("marketing-sponsors.services", () => {
 
       expect(result).toEqual(fresh);
       expect(mockModels.loadGroupedPublicSponsors).toHaveBeenCalled();
+    });
+  });
+
+  describe("getCachedGameWidePublicSponsorsByGameId", () => {
+    it("returns cached list when JSON is valid", async () => {
+      const payload = [
+        createMockPublicMarketingSponsor({
+          id: 11,
+          display_name: "Hero",
+          display_order: 0,
+          image_phash: "x"
+        })
+      ];
+      mockRedis.get.mockResolvedValue(JSON.stringify(payload));
+
+      const result = await getCachedGameWidePublicSponsorsByGameId(1);
+
+      expect(result).toEqual(payload);
+      expect(
+        mockModels.listEnabledGameWidePublicSponsorsForGameId
+      ).not.toHaveBeenCalled();
+    });
+
+    it("refreshes from DB when cache is invalid", async () => {
+      const fresh = [
+        createMockPublicMarketingSponsor({ id: 2, display_name: "A" })
+      ];
+      mockRedis.get.mockResolvedValue("not-json");
+      mockModels.listEnabledGameWidePublicSponsorsForGameId.mockResolvedValue(
+        fresh
+      );
+
+      const result = await getCachedGameWidePublicSponsorsByGameId(3);
+
+      expect(result).toEqual(fresh);
+      expect(
+        mockModels.listEnabledGameWidePublicSponsorsForGameId
+      ).toHaveBeenCalledWith(3);
+      expect(mockRedis.set).toHaveBeenCalled();
     });
   });
 });

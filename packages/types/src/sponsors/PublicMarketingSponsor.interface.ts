@@ -18,7 +18,16 @@ export interface PublicMarketingSponsor {
 }
 
 export interface GroupedPublicSponsors {
+  /**
+   * Always empty from the grouped public cache; game-wide sponsors are loaded
+   * per game via `GET /api/v1/sponsors/games/:game_abbreviation`.
+   */
   game_wide_sponsors: PublicMarketingSponsor[];
   main_partners: PublicMarketingSponsor[];
   supporting_organizations: PublicMarketingSponsor[];
+}
+
+/** Response body for public game-wide sponsors (featured hero, etc.). */
+export interface GameWideMarketingSponsorsResponse {
+  sponsors: PublicMarketingSponsor[];
 }
