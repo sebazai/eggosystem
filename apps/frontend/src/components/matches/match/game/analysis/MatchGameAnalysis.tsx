@@ -69,11 +69,31 @@ export const MatchGameAnalysis = ({
 
   return (
     <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-      <TabsList className="mb-4">
-        <TabsTrigger value="afterplant">Afterplants &amp; Retakes</TabsTrigger>
-        <TabsTrigger value="opening-duels">Opening Duels</TabsTrigger>
-        <TabsTrigger value="kill-matrix">Kill &amp; Flash Matrix</TabsTrigger>
-        <TabsTrigger value="trades">Trades</TabsTrigger>
+      <TabsList className="mb-4 grid grid-cols-2 sm:flex w-full h-auto sm:h-9 items-stretch sm:items-center">
+        <TabsTrigger
+          value="afterplant"
+          className="h-auto sm:h-full py-2 whitespace-normal sm:whitespace-nowrap text-center text-xs sm:text-sm"
+        >
+          Afterplants &amp; Retakes
+        </TabsTrigger>
+        <TabsTrigger
+          value="opening-duels"
+          className="h-auto sm:h-full py-2 whitespace-normal sm:whitespace-nowrap text-center text-xs sm:text-sm"
+        >
+          Opening Duels
+        </TabsTrigger>
+        <TabsTrigger
+          value="kill-matrix"
+          className="h-auto sm:h-full py-2 whitespace-normal sm:whitespace-nowrap text-center text-xs sm:text-sm"
+        >
+          Kill &amp; Flash Matrix
+        </TabsTrigger>
+        <TabsTrigger
+          value="trades"
+          className="h-auto sm:h-full py-2 whitespace-normal sm:whitespace-nowrap text-center text-xs sm:text-sm"
+        >
+          Trades
+        </TabsTrigger>
       </TabsList>
 
       <TabsContent value="afterplant">
