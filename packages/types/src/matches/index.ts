@@ -20,3 +20,4 @@ export * from "./MatchGameAfterplantRound.interface";
 export * from "./MatchGameOpeningDuel.interface";
 export * from "./MatchGameKillMatrix.interface";
 export * from "./MatchGameTradeStats.interface";
+export * from "./MatchGameInsights.interface";
