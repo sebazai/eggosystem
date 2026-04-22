@@ -53,7 +53,7 @@ pnpm knip && pnpm typecheck && pnpm format:check && pnpm lint
 pnpm test   # affected workspace(s)
 ```
 
-Then `Task(subagent_type=adversary_bot, ...)` until verdict is `"pass"`.
+Then `Task(subagent_type=adversary_bot, ...)` until verdict is `"pass"`. The prompt **must** include: issue IID + title, **absolute worktree path** (adversary runs read-only `git` there to build `merge_base..HEAD` and `diff_anchoring`), and the acceptance-criteria list — per `.cursor/skills/developer-impl/SKILL.md` and `.cursor/skills/adversarial-review/SKILL.md`.
 
 ## Forbidden
 
@@ -65,4 +65,4 @@ Then `Task(subagent_type=adversary_bot, ...)` until verdict is `"pass"`.
 
 ## Loop-break
 
-If Adversary returns non-empty findings 3 times in a row on the same file range, stop and write a short summary note for PM via your caller — let the human resolve.
+If Adversary returns non-empty findings 3 times in a row on the same diff-anchored scope (per `adversarial-review` skill), stop and write a short summary note for PM via your caller — let the human resolve.

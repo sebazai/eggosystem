@@ -50,10 +50,10 @@ pnpm knip && pnpm typecheck && pnpm format:check && pnpm lint
 pnpm test                  # affected workspaces
 ```
 
-Then `Task(subagent_type=adversary_bot, ...)` until `verdict: "pass"`.
+Then `Task(subagent_type=adversary_bot, ...)` until `verdict: "pass"`. The prompt must include issue IID + title, **absolute worktree path**, and acceptance criteria, per `.cursor/skills/developer-impl/SKILL.md` (adversary runs read-only `git` in that worktree to build `diff_anchoring`).
 
 ## Loop-break
 
-If Adversary rejects the same file range 3+ rounds, stop and return a disagreement summary so PM can escalate to a human.
+If Adversary ↔ Developer have not converged on the same diff-anchored scope 3+ rounds, stop and return a disagreement summary so PM can escalate to a human.
 
 > Runtime enforcement in `.claude/settings.json` + `.claude/agents/developer_bot.md`.

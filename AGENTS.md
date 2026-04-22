@@ -38,14 +38,14 @@ flowchart LR
 
 ## The 6 specialists
 
-| Role                                               | File             | Writes code                   | Touches git | Spawns                                | Notes                               |
-| -------------------------------------------------- | ---------------- | ----------------------------- | ----------- | ------------------------------------- | ----------------------------------- |
-| [`pm_bot`](.claude/agents/pm_bot.md)               | Orchestrator     | No                            | No          | Explorer, Ops, Developer, Review, Duo | Human liaison                       |
-| [`explorer_bot`](.claude/agents/explorer_bot.md)   | Researcher       | No                            | No          | —                                     | DB MCP readonly, WebSearch/WebFetch |
-| [`ops_bot`](.claude/agents/ops_bot.md)             | Git + GitLab     | No                            | Yes         | —                                     | Only git-capable agent              |
-| [`developer_bot`](.claude/agents/developer_bot.md) | Implementer      | **Yes**                       | No          | Adversary + existing domain bots      | Runs quality gates                  |
-| [`adversary_bot`](.claude/agents/adversary_bot.md) | Hostile reviewer | No (lint/knip/typecheck only) | No          | Adversary (depth ≤ 3)                 | Gate before Ops                     |
-| [`review_bot`](.claude/agents/review_bot.md)       | PR auditor       | No                            | No          | Duo `review-merge-request`            | Never approves/merges               |
+| Role                                               | File             | Writes code                   | Touches git | Spawns                                | Notes                                 |
+| -------------------------------------------------- | ---------------- | ----------------------------- | ----------- | ------------------------------------- | ------------------------------------- |
+| [`pm_bot`](.claude/agents/pm_bot.md)               | Orchestrator     | No                            | No          | Explorer, Ops, Developer, Review, Duo | Human liaison                         |
+| [`explorer_bot`](.claude/agents/explorer_bot.md)   | Researcher       | No                            | No          | —                                     | DB MCP readonly, WebSearch/WebFetch   |
+| [`ops_bot`](.claude/agents/ops_bot.md)             | Git + GitLab     | No                            | Yes         | —                                     | Only git-capable agent                |
+| [`developer_bot`](.claude/agents/developer_bot.md) | Implementer      | **Yes**                       | No          | Adversary + existing domain bots      | Runs quality gates                    |
+| [`adversary_bot`](.claude/agents/adversary_bot.md) | Hostile reviewer | No (lint/knip/typecheck only) | Read-only   | Adversary (depth ≤ 3)                 | Diff-anchored review; gate before Ops |
+| [`review_bot`](.claude/agents/review_bot.md)       | PR auditor       | No                            | No          | Duo `review-merge-request`            | Never approves/merges                 |
 
 Full policy per role lives in [`.cursor/agents/<role>.md`](.cursor/agents) (policy record) and [`.claude/agents/<role>.md`](.claude/agents) (runtime enforcement).
 

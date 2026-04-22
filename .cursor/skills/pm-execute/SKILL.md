@@ -39,7 +39,7 @@ flowchart LR
 - **Explorer** — skipped if the issue already has a `## Technical Brief` section; otherwise produces it and pauses for your approval.
 - **Ops (branch)** — creates `.worktrees/<iid>-<slug>/` off `origin/development` with branch `<type>/<iid>-<slug>`.
 - **Developer** — reads the brief, implements, delegates to domain bots (`backend_bot`, `frontend_bot`, `tester_bot`, `types_bot`, etc.), runs `pnpm knip && typecheck && format:check && lint && test` in the worktree.
-- **Adversary** — static hostile audit (type safety, error handling, security, DB invariants, acceptance-criteria coverage). Returns JSON verdict.
+- **Adversary** — static hostile audit **anchored on `git diff` `merge_base..HEAD` in the worktree** (read-only `git`); scoped `workspace-gate` for knip/lint/tc; per-finding `scope` and `diff_anchoring` in JSON per `adversarial-review` skill. Returns JSON verdict.
 - **Ops (commit/MR)** — chunks the diff into logical Conventional Commits, pushes, opens a **draft** MR.
 - **Review** — delegates a semantic pass to `gitlab-assistant` (Duo), writes draft notes on the MR, publishes them in one batch, posts a criteria-trace summary, and marks the MR **ready** (`draft: false`) when the verdict is not `request-changes`.
 
@@ -58,7 +58,7 @@ You will be paged via `AskQuestion` when any of these happen:
 
 - **Ops** will refuse to edit any file.
 - **Developer** will refuse to run any `git` command or call any GitLab MCP tool.
-- **Adversary** will refuse to run `pnpm test` or any git mutation.
+- **Adversary** will refuse to run `pnpm test` or **mutate** `git` (read-only `git` for diff anchoring is allowed).
 - **Review** will refuse to call `approve_merge_request` / `accept_merge_request`.
 
 ## Handoff after merge

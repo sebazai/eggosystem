@@ -84,8 +84,8 @@ Rules:
 - Every shell command prefixed with cd <worktree_path> (or cd $(git rev-parse --show-toplevel) if on main repo root).
 - Delegate to backend_bot / frontend_bot / tester_bot / types_bot / refactor_bot / docs_bot as appropriate for domain depth.
 - Before handoff, all must pass: pnpm knip && pnpm typecheck && pnpm format:check && pnpm lint && pnpm test (affected workspaces).
-- Then invoke Task(subagent_type=adversary_bot, ...) with commit range X..Y and acceptance criteria. Loop until verdict is 'pass'.
-- If Adversary rejects the same file range 3+ rounds, STOP and return {status:'stuck', summary, disagreement}.
+- Then invoke Task(subagent_type=adversary_bot, ...) with: issue IID + title, **absolute** `<worktree_path>`, and acceptance-criteria list. The adversary anchors on **`git` diff `merge_base..HEAD` inside that worktree** (it runs read-only git) and returns JSON with `diff_anchoring` and per-finding `scope` per `.cursor/skills/adversarial-review/SKILL.md`. Do not pass a placeholder “X..Y” unless you computed it — the adversary may compute the range. Loop until verdict is 'pass'.
+- If Adversary rejects the same diff scope 3+ rounds, STOP and return {status:'stuck', summary, disagreement}.
 - Do NOT run git. Do NOT call GitLab MCP. Do NOT edit harness files (.cursor/, .claude/, AGENTS.md).
 
 Return {status:'ready'|'stuck', changed_files[], gate_output, adversary_verdict, summary}.")
