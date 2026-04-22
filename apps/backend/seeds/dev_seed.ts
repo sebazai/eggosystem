@@ -48,18 +48,4 @@ export async function seed(knex: Knex): Promise<void> {
       }
     }
   }
-
-  const existingSponsor = await knex("MarketingSponsors").select("id").first();
-  if (!existingSponsor) {
-    await knex("MarketingSponsors").insert([
-      {
-        tier: "main_partner",
-        display_name: "Dev partner (add logo in dashboard)",
-        external_url: "https://kanaliiga.fi",
-        display_order: 0,
-        image_phash: null,
-        enabled: true
-      }
-    ]);
-  }
 }
