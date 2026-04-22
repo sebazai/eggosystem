@@ -112,7 +112,7 @@ export const MatchGameAnalysis = ({
         </TabsTrigger>
         <TabsTrigger
           value="trades"
-          className="h-auto sm:h-full py-2 whitespace-normal sm:whitespace-nowrap text-center text-xs sm:text-sm"
+          className="col-span-2 sm:col-span-1 h-auto sm:h-full py-2 whitespace-normal sm:whitespace-nowrap text-center text-xs sm:text-sm"
         >
           Trades
         </TabsTrigger>
