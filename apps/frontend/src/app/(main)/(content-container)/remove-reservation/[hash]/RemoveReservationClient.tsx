@@ -39,10 +39,11 @@ export function RemoveReservationClient({ hash }: { hash: string }) {
     if (!hash) return;
     setState({ status: "loading" });
 
-    const res = await fetch(
-      `/api/reservations/remove/${encodeURIComponent(hash)}`,
-      { method: "POST" }
-    );
+    const res = await fetch("/api/reservations/remove", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ token: hash })
+    });
 
     const json: unknown = await res.json().catch(() => ({}));
     const parsed = responseSchema.safeParse(json);
