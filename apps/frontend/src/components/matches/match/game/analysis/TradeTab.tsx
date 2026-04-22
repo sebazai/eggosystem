@@ -170,15 +170,17 @@ function TeamDisciplineCard({
   return (
     <div className="rounded-xl border border-border/60 bg-card p-4 space-y-4">
       {/* header + headline stats */}
-      <div className="flex justify-between items-start gap-4">
-        <span className={cn("text-sm font-bold", teamColor)}>{teamName}</span>
-        <div className="flex gap-4">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 sm:gap-4">
+        <span className={cn("text-sm font-bold shrink-0", teamColor)}>
+          {teamName}
+        </span>
+        <div className="grid grid-cols-4 gap-2 sm:flex sm:gap-4">
           {headlines.map((h) => (
             <div key={h.l} className="text-center">
-              <div className={cn("text-base font-extrabold leading-none", h.c)}>
+              <div className={cn("text-sm font-extrabold leading-none", h.c)}>
                 {h.v}
               </div>
-              <div className="text-[9px] text-muted-foreground/40 mt-1 whitespace-nowrap">
+              <div className="text-[9px] text-muted-foreground/40 mt-1">
                 {h.l}
               </div>
             </div>
@@ -199,7 +201,7 @@ function TeamDisciplineCard({
       <div className="h-px bg-border/40" />
 
       {/* ranked lists */}
-      <div className="grid grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <div>
           <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/35 mb-2">
             Trade efficiency ↓
@@ -291,13 +293,7 @@ function TeamDisciplineSection({
    ══════════════════════════════════════════════════ */
 
 function DeathBar({ p }: { p: PlayerTradeStats }) {
-  const inRange = Math.max(
-    0,
-    p.deaths -
-      p.traded -
-      Math.max(0, p.deaths - p.traded - Math.floor(p.deaths * 0.2))
-  );
-  const isolated = Math.max(0, p.deaths - p.traded - inRange);
+  const untraded = p.deaths - p.traded;
   if (p.deaths === 0) {
     return <div className="h-1.5 rounded-full bg-muted/40" />;
   }
@@ -306,11 +302,8 @@ function DeathBar({ p }: { p: PlayerTradeStats }) {
       {p.traded > 0 && (
         <div className="bg-green-400/60" style={{ flex: p.traded }} />
       )}
-      {inRange > 0 && (
-        <div className="bg-yellow-200/50" style={{ flex: inRange }} />
-      )}
-      {isolated > 0 && (
-        <div className="bg-red-300/35" style={{ flex: isolated }} />
+      {untraded > 0 && (
+        <div className="bg-red-300/35" style={{ flex: untraded }} />
       )}
     </div>
   );
@@ -326,10 +319,7 @@ function FullPlayerCard({
   const attRate = pct(p.trade_attempts, p.trade_opportunities);
   const convRate = pct(p.trades, p.trade_attempts);
   const tradedPct = pct(p.traded, p.deaths);
-  const fdPct = pct(
-    p.first_death_traded,
-    p.first_death_trade_opportunities || 1
-  );
+  const fdPct = pct(p.first_death_traded, p.first_death_trade_opportunities);
 
   return (
     <div className="rounded-lg border border-border/60 bg-card p-3 space-y-3">
@@ -394,8 +384,9 @@ function FullPlayerCard({
         <p className="text-[10px] text-muted-foreground/50">When you die →</p>
         <div className="flex justify-between text-[9px] mb-1">
           <span className="text-green-400/70">Traded ({p.traded})</span>
-          <span className="text-yellow-200/70">In range</span>
-          <span className="text-red-300/60">Isolated</span>
+          <span className="text-red-300/60">
+            Not traded ({p.deaths - p.traded})
+          </span>
         </div>
         <DeathBar p={p} />
         <div className="grid grid-cols-2 gap-3 pt-1">
@@ -432,7 +423,7 @@ function PlayerProfileSection({
         Full trade profile per player: the opportunity funnel (did you try? did
         you convert?), and how well-positioned your deaths were.
       </p>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-3">
           <div className="text-xs font-bold text-amber-300/80">{teamAName}</div>
           {teamAPlayers.map((p) => (
@@ -811,8 +802,8 @@ export const TradeTab = ({ tradeStats, teams }: TradeTabProps) => {
       <div className="flex flex-wrap gap-4 text-[10px] text-muted-foreground/50 mb-2">
         {[
           { bg: "bg-green-400/50", label: "Success / traded" },
-          { bg: "bg-yellow-200/45", label: "Failed / in range" },
-          { bg: "bg-red-300/35", label: "Ignored / isolated" }
+          { bg: "bg-yellow-200/45", label: "Failed (attempted, no kill)" },
+          { bg: "bg-red-300/35", label: "Ignored / not traded" }
         ].map((l) => (
           <span key={l.label} className="flex items-center gap-1.5">
             <span className={cn("inline-block w-2.5 h-2.5 rounded-sm", l.bg)} />

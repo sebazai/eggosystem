@@ -62,10 +62,10 @@ const HeatCell = ({
     <td
       className="text-center align-middle text-sm transition-colors select-none border border-border/30 rounded"
       style={{
-        width: 44,
-        height: 38,
+        width: 36,
+        height: 32,
         background: bg,
-        fontSize: value >= 4 ? 15 : 13
+        fontSize: value >= 4 ? 14 : 12
       }}
     >
       {value === 0 ? (
@@ -83,7 +83,7 @@ const TotalCell = ({ value, isRow }: { value: number; isRow?: boolean }) => (
       "text-center align-middle text-xs font-bold text-muted-foreground",
       isRow ? "border-l border-border/60" : "border-t border-border/60"
     )}
-    style={{ width: 40, height: 38 }}
+    style={{ width: 32, height: 32 }}
   >
     {value > 0 ? value : ""}
   </td>
@@ -129,7 +129,7 @@ const MatrixTable = ({
             {/* Corner label */}
             <th
               className="text-left text-[10px] text-muted-foreground font-normal pb-1 align-bottom pr-2"
-              style={{ minWidth: 90 }}
+              style={{ minWidth: 72 }}
             >
               <span className={rowTeamColor}>{killerLabel}</span>
               <span className="text-muted-foreground/40"> / </span>
@@ -139,7 +139,7 @@ const MatrixTable = ({
               <th
                 key={p.steamId}
                 className="text-center align-bottom pb-1"
-                style={{ minWidth: 44 }}
+                style={{ minWidth: 36 }}
               >
                 <div
                   className="text-[11px] font-semibold whitespace-nowrap"
@@ -156,7 +156,7 @@ const MatrixTable = ({
             ))}
             <th
               className="text-center align-bottom pb-1 border-l border-border/60 text-[10px] text-muted-foreground font-normal"
-              style={{ minWidth: 40 }}
+              style={{ minWidth: 32 }}
             >
               ∑
             </th>
