@@ -1,26 +1,27 @@
 import {
   createStreamReservation,
   deleteStreamReservation,
-  getStreamReservationsByMatch
+  getStreamReservationsByMatch,
+  removeReservationByRemovalTokenWithSeasonId
 } from "./match-streams.models";
 import { runQuery } from "../db/mysqlRunQuery";
 import { ConflictError } from "../utils/errors";
 import { createMockReservation } from "@eggosystem/types";
+import { getConnection } from "../db/mysqlConnection";
 
 jest.mock("../db/mysqlRunQuery");
+jest.mock("../db/mysqlConnection");
 jest.mock("crypto", () => ({
-  createHash: jest.fn(() => ({
-    update: jest.fn().mockReturnThis(),
-    digest: jest.fn(() => "test-hash")
-  }))
+  randomBytes: jest.fn(() => Buffer.from("token", "utf8"))
 }));
 
 const mockRunQuery = runQuery as jest.Mock;
+const mockGetConnection = getConnection as jest.Mock;
 
 const mockReservation = createMockReservation({
   id: 1,
   stream_url: "https://twitch.tv/testcaster",
-  hash: "test-hash",
+  hash: Buffer.from("token", "utf8").toString("hex"),
   match_id: 123,
   account_id: 1
 });
@@ -56,7 +57,12 @@ describe("match-streams models", () => {
       expect(mockRunQuery).toHaveBeenNthCalledWith(
         2,
         "INSERT INTO Reservations (match_id, account_id, stream_url, hash) VALUES (?, ?, ?, ?)",
-        [123, 1, "https://twitch.tv/testcaster", "test-hash"]
+        [
+          123,
+          1,
+          "https://twitch.tv/testcaster",
+          Buffer.from("token", "utf8").toString("hex")
+        ]
       );
       expect(result).toEqual(mockReservation);
     });
@@ -114,6 +120,45 @@ describe("match-streams models", () => {
       const result = await getStreamReservationsByMatch(123);
 
       expect(result).toEqual([]);
+    });
+  });
+
+  describe("removeReservationByRemovalTokenWithSeasonId", () => {
+    const mockConnection = {
+      beginTransaction: jest.fn(),
+      commit: jest.fn(),
+      rollback: jest.fn(),
+      release: jest.fn()
+    };
+
+    beforeEach(() => {
+      mockGetConnection.mockResolvedValue(mockConnection);
+    });
+
+    it("should delete when token exists", async () => {
+      mockRunQuery.mockResolvedValueOnce([mockReservation]);
+      mockRunQuery.mockResolvedValueOnce([{ season_id: 12 }]);
+      mockRunQuery.mockResolvedValueOnce({ affectedRows: 1 });
+
+      const result = await removeReservationByRemovalTokenWithSeasonId(
+        mockReservation.hash
+      );
+
+      expect(result).toEqual({ deleted: true, season_id: 12 });
+      expect(mockConnection.beginTransaction).toHaveBeenCalled();
+      expect(mockConnection.commit).toHaveBeenCalled();
+      expect(mockConnection.release).toHaveBeenCalled();
+    });
+
+    it("should not delete when token does not exist", async () => {
+      mockRunQuery.mockResolvedValueOnce([]);
+
+      const result =
+        await removeReservationByRemovalTokenWithSeasonId("missing-token");
+
+      expect(result).toEqual({ deleted: false, season_id: null });
+      expect(mockConnection.rollback).toHaveBeenCalled();
+      expect(mockRunQuery).toHaveBeenCalledTimes(1);
     });
   });
 });
