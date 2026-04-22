@@ -4,9 +4,11 @@ import { createTeamLogoUrl } from "@/lib/utils";
 import type { PublicMarketingSponsor } from "@eggosystem/types";
 
 export function MarketingSponsorLogoGrid({
-  items
+  items,
+  eager = false
 }: {
   items: PublicMarketingSponsor[];
+  eager?: boolean;
 }) {
   if (items.length === 0) {
     return null;
@@ -25,6 +27,8 @@ export function MarketingSponsorLogoGrid({
             height={80}
             className="object-contain max-h-20 w-auto"
             unoptimized
+            loading={eager ? "eager" : "lazy"}
+            fetchPriority={eager ? "low" : undefined}
           />
         ) : (
           <span className="text-lg font-medium text-slate-900">

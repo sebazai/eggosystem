@@ -145,7 +145,7 @@ export default async function Home() {
                 header={`MAIN ${landingGameAbbrev.toUpperCase()} SPONSOR`}
                 classNames="mt-10 sm:mt-20"
               >
-                <MarketingSponsorLogoGrid items={gameWideFeatured} />
+                <MarketingSponsorLogoGrid items={gameWideFeatured} eager />
               </SponsorContainer>
             ) : null}
 
@@ -154,7 +154,10 @@ export default async function Home() {
                 classNames="mt-10 sm:mt-20"
                 header="Main Partners"
               >
-                <MarketingSponsorLogoGrid items={sponsors.main_partners} />
+                <MarketingSponsorLogoGrid
+                  items={sponsors.main_partners}
+                  eager
+                />
               </SponsorContainer>
             ) : null}
 
@@ -166,6 +169,7 @@ export default async function Home() {
               >
                 <MarketingSponsorLogoGrid
                   items={sponsors.supporting_organizations}
+                  eager
                 />
               </SponsorContainer>
             ) : null}
