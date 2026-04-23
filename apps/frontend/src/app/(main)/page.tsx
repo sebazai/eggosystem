@@ -1,9 +1,7 @@
 "use server";
 
 import { Card, CardContent } from "@/components/ui/card";
-import { KanaMainPartners } from "@/components/sponsors/KanaMainPartners";
 import { SponsorContainer } from "@/components/sponsors/SponsorContainer";
-import { CsSupportingOrgs } from "@/components/sponsors/CsSupportingOrgs";
 import { envConfig } from "@/configs/env";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
@@ -11,7 +9,12 @@ import HeroSection from "@/components/layout/HeroSection";
 import { SeasonStatusSection } from "@/components/landing/SeasonStatusSection";
 import { Navigation } from "@/components/layout/Navigation";
 import { createNextUrl } from "@/lib/utils";
-import { CsMainSponsors } from "@/components/sponsors/CsMainSponsors";
+import { MarketingSponsorLogoGrid } from "@/components/sponsors/MarketingSponsorLogoGrid";
+import {
+  getGameWideMarketingSponsorsForGame,
+  getPublicMarketingSponsors,
+  landingGameAbbrev
+} from "@/lib/get-public-marketing-sponsors";
 
 interface LandingPageStats {
   unique_players: number;
@@ -21,6 +24,11 @@ interface LandingPageStats {
 }
 
 export default async function Home() {
+  const [sponsors, gameWideFeatured] = await Promise.all([
+    getPublicMarketingSponsors(),
+    getGameWideMarketingSponsorsForGame(landingGameAbbrev)
+  ]);
+
   const defaultData = {
     unique_players: 4700,
     total_teams: 800,
@@ -132,27 +140,39 @@ export default async function Home() {
 
             <Separator className="bg-kanaliiga-orange my-3 md:my-6" />
 
-            <SponsorContainer
-              header="CS2 Season 4 Main Sponsors"
-              classNames="mt-10 sm:mt-20 hidden"
-            >
-              <CsMainSponsors />
-            </SponsorContainer>
+            {gameWideFeatured.length > 0 ? (
+              <SponsorContainer
+                header={`MAIN ${landingGameAbbrev.toUpperCase()} SPONSOR`}
+                classNames="mt-10 sm:mt-20"
+              >
+                <MarketingSponsorLogoGrid items={gameWideFeatured} eager />
+              </SponsorContainer>
+            ) : null}
 
-            <SponsorContainer
-              classNames="mt-10 sm:mt-20"
-              header="Main Partners"
-            >
-              <KanaMainPartners />
-            </SponsorContainer>
+            {sponsors.main_partners.length > 0 ? (
+              <SponsorContainer
+                classNames="mt-10 sm:mt-20"
+                header="Main Partners"
+              >
+                <MarketingSponsorLogoGrid
+                  items={sponsors.main_partners}
+                  eager
+                />
+              </SponsorContainer>
+            ) : null}
 
-            <SponsorContainer
-              classNames="mt-10 sm:mt-20"
-              secondary={true}
-              header="Supporting our tournaments"
-            >
-              <CsSupportingOrgs />
-            </SponsorContainer>
+            {sponsors.supporting_organizations.length > 0 ? (
+              <SponsorContainer
+                classNames="mt-10 sm:mt-20"
+                secondary={true}
+                header="Supporting our tournaments"
+              >
+                <MarketingSponsorLogoGrid
+                  items={sponsors.supporting_organizations}
+                  eager
+                />
+              </SponsorContainer>
+            ) : null}
           </div>
         </div>
       </section>

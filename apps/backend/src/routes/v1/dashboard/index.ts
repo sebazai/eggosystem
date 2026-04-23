@@ -16,6 +16,7 @@ import faceitValidationRouter from "./faceit-validation.routes";
 import emailVerificationRouter from "./email-verification.routes";
 import casterApplicationsRouter from "./caster-applications.routes";
 import playoffSeedsRouter from "./playoff-seeds.routes";
+import marketingSponsorsRouter from "./marketing-sponsors.routes";
 
 const router = Router();
 
@@ -123,6 +124,13 @@ router.use(
     fallbackRoles: ["admin", "helpdesk"]
   }),
   playoffSeedsRouter
+);
+router.use(
+  "/sponsors",
+  checkPermissions({
+    fallbackRoles: ["admin"]
+  }),
+  marketingSponsorsRouter
 );
 router.get(
   "/",
