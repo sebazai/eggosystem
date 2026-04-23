@@ -64,6 +64,10 @@ Then `Task(subagent_type=adversary_bot, ...)` until verdict is `"pass"`. The pro
 - try/catch without cleanup (use bubbling + RFC 7807 error handler).
 - Inline mock data when a `createMockX` factory exists.
 
+## When Ops returns (commit or hook failed)
+
+If the orchestrator reports that `ops_bot` could not finish `git commit` (Husky, pre-commit, lint-staged, GPG, etc.), stay in the **same worktree**. Re-run the **full** **Mandatory gate before handoff** block until green, re-run `adversary_bot` if the diff changed materially, then let the orchestrator call Ops again. Never suggest `HUSKY=0` or other hook bypasses.
+
 ## Review-fix loop (`/pm-execute`)
 
 When the **orchestrator** runs a follow-up pass after `review_bot`, the prompt will include **pasted** MR discussion and feedback (you still cannot use GitLab MCP). Address every actionable thread, re-run gates and Adversary, then hand off to Ops for commit and push. Re-Review is scheduled by the orchestrator.

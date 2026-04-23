@@ -58,6 +58,10 @@ pnpm test                  # affected workspaces
 
 Then `Task(subagent_type=adversary_bot, ...)` until `verdict: "pass"`. The prompt must include issue IID + title, **absolute worktree path**, and acceptance criteria, per `.cursor/skills/developer-impl/SKILL.md` (adversary runs read-only `git` in that worktree to build `diff_anchoring`).
 
+## When Ops returns (commit or hook failed)
+
+If the orchestrator reports that `ops_bot` could not finish `git commit` (Husky, pre-commit, lint-staged, GPG, etc.), stay in the **same worktree**. Re-run the **full** quality gate block above until green, re-run `adversary_bot` if the diff changed materially, then let the orchestrator call Ops again. Never suggest `HUSKY=0` or other hook bypasses.
+
 ## Review-fix loop (`/pm-execute`)
 
 When the **orchestrator** runs a second (or later) pass after `review_bot`, the prompt will include **pasted** MR discussion / feedback (you still cannot use GitLab MCP). Treat it like a tighter scope: address each thread, re-run the same quality gates, pass Adversary, then hand back to Ops for commit + push. Re-Review is automatic upstream.

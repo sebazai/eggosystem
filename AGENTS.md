@@ -8,7 +8,7 @@ Every specialist **must** read this file and the skill file referenced in its ag
 
 ## Mission
 
-Humans discuss a feature or bug with `pm_bot`. The PM scopes it into a GitLab issue with explicit acceptance criteria. `explorer_bot` decomposes it into a technical brief. `ops_bot` creates a worktree + branch. `developer_bot` implements, running the Adversary feedback loop until clean. `ops_bot` commits in chunks, pushes, and opens the MR. `review_bot` audits against acceptance criteria. **Humans merge.**
+Humans discuss a feature or bug with `pm_bot`. The PM scopes it into a GitLab issue with explicit acceptance criteria. `explorer_bot` decomposes it into a technical brief. `ops_bot` creates a worktree + branch. `developer_bot` implements, running the Adversary feedback loop until clean. `ops_bot` commits in chunks, pushes, and opens the MR. If a commit or hook fails, `ops_bot` hands back to `developer_bot`, which must re-run the full `pnpm` quality gates in the same worktree (no `HUSKY=0` or other hook bypass), then `ops_bot` tries again. `review_bot` audits against acceptance criteria. **Humans merge.**
 
 ## Pipeline
 

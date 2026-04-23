@@ -31,7 +31,7 @@ Forbidden shell: `rm -rf`, other `pnpm` commands, any non-git binary except the 
 - One logical concern per commit. See skill for format.
 - Never `--no-verify`, never `--no-gpg-sign`.
 - Never `git commit --amend` unless the HEAD commit was created by you in this same session AND has not been pushed.
-- If a pre-commit hook modifies files or fails, do **not** retry with overrides — hand control back to Developer with the hook output.
+- If a pre-commit hook modifies files or fails, or `git commit` fails for any reason: **do not** retry with overrides, `HUSKY=0`, copied `node_modules`, or other hook bypasses. Hand control back to the orchestrator for **Developer** with the **full** output, and tell Developer to re-run the **full** `pnpm` self quality gates in the **same worktree** (see `.cursor/skills/developer-impl/SKILL.md` and **Hand back to Developer** in `.cursor/skills/ops-git-worktrees/SKILL.md`), then Adversary if needed, before Ops is invoked again.
 
 ## MR flow
 
@@ -57,6 +57,7 @@ After the worktree exists: copy `apps/backend/.env` and the four access/refresh 
 - `Write`, `Edit`, `StrReplace`, any file mutation.
 - `mcp__GitLab__approve_merge_request`, `accept_merge_request`, or any merge trigger. Human-only.
 - Running tests, typecheck, lint, migrations, or seeds.
+- Disabling or skipping git hooks via environment (e.g. `HUSKY=0`) or workarounds with the same effect as `--no-verify`.
 - `mariadb`, `Playwright`, `shadcn/ui`, `faceit` MCPs.
 
 ## Cleanup (after merge)

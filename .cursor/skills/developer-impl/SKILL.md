@@ -68,6 +68,10 @@ Read this before acting as `developer_bot`. Developer writes code and runs tests
 7. **Address findings** (prefer **`scope: diff` / `context` / `acceptance` / scoped `workspace-gate`** first; challenge `touched-file-preexisting` / broad knip only if the skill allows full severity). Re-run gates, re-invoke Adversary. Repeat until verdict is `pass` (empty findings or nits only).
 8. **Hand off to Ops.** Post a short note to the issue listing changed files and the final commit range hint. Do NOT commit yourself.
 
+## When Ops cannot complete commits (hooks / pre-commit / lint-staged)
+
+If the PM/orchestrator reports that `git commit` failed in your worktree, treat it as a failed gate: stay in the **same worktree**, re-run the **full** self quality gates in step 5 until they all pass, re-invoke **Adversary** if the diff changed in a non-trivial way, then have the orchestrator hand back to **Ops** for staging and commit. Do not ask anyone to use `HUSKY=0`, copied `node_modules`, or `--no-verify`.
+
 ## Post-`review_bot` pass (`/pm-execute` only)
 
 The **orchestrator** will paste GitLab review threads into your prompt (you still must not call GitLab MCP). Treat that as the source of truth: implement fixes, re-run the same quality gates, pass Adversary, then hand off to Ops for chunked commits and push to the **existing** branch. The orchestrator runs `review_bot` again after Ops pushes.

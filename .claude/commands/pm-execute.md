@@ -122,12 +122,16 @@ After commits, push -u origin <branch_name> and open a **non-draft** (ready) mer
 
 Immediately after create, you may idempotently call mcp__GitLab__update_merge_request with `draft: false` if the API did not set it as expected.
 
-Return {mr_iid, mr_url, commit_shas[], pipeline_id?}.")
+If you cannot complete `git commit` (pre-commit, lint-staged, hooks, GPG, etc.), stop and return {status: 'commit_failed', error_output: <full log>} — do not bypass hooks. The orchestrator will send Developer back to the same worktree to re-run full pnpm quality gates.
+
+Return {status: 'ok', mr_iid, mr_url, commit_shas[], pipeline_id?} on success, or {status: 'commit_failed', error_output} on failure.")
 ```
 
-Capture `{mr_iid, mr_url, commit_shas, pipeline_id?}`.
+**If the Task returns `status: 'commit_failed'`** (or equivalent): re-run **Phase 3** (Developer) with the **full** `error_output`. Instruct Developer explicitly: in the **same worktree**, re-run the full pnpm self quality gates (`knip`, `typecheck`, `format:check`, `lint`, `reseed`, `test`, and `test:e2e` when relevant), fix until hooks would pass, re-run Adversary if the diff changed, then return to **Phase 4** — do not ask Ops to use `HUSKY=0`, copied `node_modules`, or `--no-verify`. Do not proceed to Phase 5 until commits succeed.
 
-If Ops reports CI failure immediately, loop back to Phase 3 with the failure note.
+On **`status: 'ok'`**, capture `{mr_iid, mr_url, commit_shas, pipeline_id?}` and continue to Phase 5.
+
+**If `ops_bot` later reports CI failure** (MR pipeline): loop back to Phase 3 with the failure note.
 
 ---
 

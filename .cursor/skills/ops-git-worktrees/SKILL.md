@@ -85,12 +85,21 @@ EOF
 )"
 ```
 
+## Hand back to Developer (pre-commit, lint-staged, or `git commit` failed)
+
+If `git commit` fails, or Husky / pre-commit / lint-staged / GPG signing errors before the commit completes:
+
+1. **Stop.** Do not “fix” the worktree with extra `pnpm` commands, copied `node_modules`, untracked config shims, or **any** hook bypass. Treat these the same as `--no-verify` (forbidden in `CLAUDE.md`): do not set `HUSKY=0` (or similar) to skip hooks.
+2. Return the **full error output** to the PM/orchestrator.
+3. Instruct **Developer** to work in the **same worktree** and re-run the **full** self quality gates from `.cursor/skills/developer-impl/SKILL.md` (at minimum `pnpm knip`, `pnpm typecheck`, `pnpm format:check`, `pnpm lint`, `pnpm reseed`, `pnpm test` for affected workspaces; add `pnpm test:e2e` when relevant), until everything passes, then re-run **Adversary** if the diff changed materially, and have the orchestrator call **Ops** again to commit.
+4. Do **not** run those `pnpm` commands yourself (see **Forbidden**).
+
 ## Never
 
-- `--no-verify`, `--no-gpg-sign` (blocked by repo policy in `CLAUDE.md`).
+- `--no-verify`, `--no-gpg-sign` (blocked by repo policy in `CLAUDE.md`). Same intent: no env-based hook skip (`HUSKY=0`, etc.).
 - `git push --force` to `main`/`master`.
 - `git commit --amend` unless the previous commit was created in this session AND not yet pushed.
-- Edit files. If a commit fails because of formatting or lint hooks, hand back to Developer with the failure output.
+- Edit files. On commit or hook failure, follow **Hand back to Developer (pre-commit, lint-staged, or `git commit` failed)** — do not attempt fixes yourself.
 
 ## Push + open MR
 

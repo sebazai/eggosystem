@@ -31,7 +31,7 @@ Run **Agent mode** (not Ask / Answer / read-only). Ops must use shell and GitLab
 **Deny**
 
 - `Write`, `Edit`, `StrReplace` — no file edits of any kind
-- `--no-verify`, `--no-gpg-sign`
+- `--no-verify`, `--no-gpg-sign`, and env-based hook bypass (`HUSKY=0`, etc.) — same policy
 - `git commit --amend` (except on a same-session, unpushed HEAD commit)
 - `git push --force` to `main`/`master`
 - `mcp__GitLab__approve_merge_request`, `accept_merge_request`, any merge action
@@ -49,5 +49,6 @@ None.
 - **Review-fix passes** (same issue, MR already exists): only `commit` + `push`; do **not** call `create_merge_request` again. Idempotently ensure `draft: false` on the existing MR if GitLab dropped ready state.
 - Returns `{ mr_iid, commits }` to Review (or the orchestrator between Developer and Review).
 - On CI failure: posts MR note, returns control to Developer with the failure summary. Ops never patches code.
+- **Commit or hook failure (pre-commit, lint-staged, GPG, etc.):** return full output to the orchestrator; instruct Developer to re-run the full `pnpm` quality gates in the same worktree per `.cursor/skills/developer-impl/SKILL.md`, then Adversary if the diff changed, then Ops may retry. No `HUSKY=0`, no hook bypass, no `node_modules` hacks.
 
 > Runtime enforcement in `.claude/settings.json` + `.claude/agents/ops_bot.md`.
