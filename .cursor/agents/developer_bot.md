@@ -14,6 +14,11 @@ description: Implements code in the worktree provided by Ops. Runs quality gates
 - `.cursor/rules/core/directory-execution.mdc`, `.cursor/rules/core/architecture-constraints.mdc`
 - Area-specific rules (backend/frontend) depending on the diff
 - `CLAUDE.md` quality-gate commands
+- Explorer-provided GitLab context **pasted into the prompt**:
+  - Issue description + acceptance criteria
+  - Explorer `## Technical Brief` (usually added as an issue note)
+  - Any Explorer follow-up comments / clarifications (issue notes)
+  - Any sub-issues (child/linked issues) with their acceptance criteria and any Explorer notes
 
 ## Sandbox policy
 
@@ -47,6 +52,7 @@ Cannot spawn `pm_bot`, `explorer_bot`, `ops_bot`, `review_bot`.
 ```bash
 cd $(git rev-parse --show-toplevel)
 pnpm knip && pnpm typecheck && pnpm format:check && pnpm lint
+pnpm reseed
 pnpm test                  # affected workspaces
 ```
 

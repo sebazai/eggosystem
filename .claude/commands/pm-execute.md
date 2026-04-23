@@ -58,7 +58,7 @@ Spawn Ops:
 
 ```
 Task(subagent_type=ops_bot,
-     prompt="Read .cursor/skills/ops-git-worktrees/SKILL.md. For issue #<iid> titled '<title>' (type <feat|fix|chore|docs>), create a worktree at .worktrees/<iid>-<slug> off origin/development with branch <type>/<iid>-<slug>. Do NOT edit files. Return {worktree_path, branch_name, issue_iid}.")
+     prompt="Read .cursor/skills/ops-git-worktrees/SKILL.md. For issue #<iid> titled '<title>' (type <feat|fix|chore|docs>), create a worktree at .worktrees/<type>-<iid>-<slug> off origin/development with branch <type>-<iid>-<slug>. Do NOT edit files. Return {worktree_path, branch_name, issue_iid}.")
 ```
 
 Capture `{worktree_path, branch_name, issue_iid}`.
@@ -83,7 +83,7 @@ Additional context: <extra args from $ARGUMENTS>
 Rules:
 - Every shell command prefixed with cd <worktree_path> (or cd $(git rev-parse --show-toplevel) if on main repo root).
 - Delegate to backend_bot / frontend_bot / tester_bot / types_bot / refactor_bot / docs_bot as appropriate for domain depth.
-- Before handoff, all must pass: pnpm knip && pnpm typecheck && pnpm format:check && pnpm lint && pnpm test (affected workspaces).
+- Before handoff, all must pass: pnpm knip && pnpm typecheck && pnpm format:check && pnpm lint && pnpm reseed && pnpm test (affected workspaces).
 - Then invoke Task(subagent_type=adversary_bot, ...) with: issue IID + title, **absolute** `<worktree_path>`, and acceptance-criteria list. The adversary anchors on **`git` diff `merge_base..HEAD` inside that worktree** (it runs read-only git) and returns JSON with `diff_anchoring` and per-finding `scope` per `.cursor/skills/adversarial-review/SKILL.md`. Do not pass a placeholder “X..Y” unless you computed it — the adversary may compute the range. Loop until verdict is 'pass'.
 - If Adversary rejects the same diff scope 3+ rounds, STOP and return {status:'stuck', summary, disagreement}.
 - Do NOT run git. Do NOT call GitLab MCP. Do NOT edit harness files (.cursor/, .claude/, AGENTS.md).
@@ -166,7 +166,7 @@ Task(subagent_type=developer_bot,
 Address the following GitLab review feedback and discussion threads (author must act in code; you cannot use GitLab MCP):
 <orchestrator-pasted discussions + review_bot summary>
 
-After changes: pnpm knip && pnpm typecheck && pnpm format:check && pnpm lint && pnpm test, then Adversary until pass (same rules as the initial implementation pass). If stuck 3+ Adversary rounds, return {status:'stuck', ...}.
+After changes: pnpm knip && pnpm typecheck && pnpm format:check && pnpm lint && pnpm reseed && pnpm test, then Adversary until pass (same rules as the initial implementation pass). If stuck 3+ Adversary rounds, return {status:'stuck', ...}.
 
 Return {status:'ready'|'stuck', changed_files[], ...}.")
 ```

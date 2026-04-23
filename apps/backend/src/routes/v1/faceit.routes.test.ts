@@ -18,6 +18,8 @@ jest.mock("../../models/season-league.models");
 jest.mock("../../models/season-league-external-id.models");
 jest.mock("../../services/allstar.services");
 jest.mock("../../services/match-game.services");
+jest.mock("../../services/playoff-bracket.services");
+jest.mock("../../services/faceit-bracket.services");
 
 // Import mocked functions
 import {
@@ -48,6 +50,8 @@ import { expressErrorHandler } from "../../middlewares/express-error-handler";
 import * as seasonLeagueExternalIdServices from "../../services/season-league-external-id.services";
 import * as faceitChampionshipServices from "../../services/faceit-championship.services";
 import * as faceitMatchServices from "../../services/faceit-match.services";
+import { invalidateChampionshipMatchesCache } from "../../services/playoff-bracket.services";
+import { invalidateChampionshipBracketMatchesCache } from "../../services/faceit-bracket.services";
 import { sendDemoForAllStarPOTGClip } from "../../services/allstar.services";
 import { publishDemoProcessingRequest } from "../../services/match-game.services";
 import {
@@ -119,6 +123,15 @@ const mockUpdateMatchStartAndEndTimestamp =
 const mockUpdateMatchStatusByMatchId =
   updateMatchStatusByMatchId as jest.MockedFunction<
     typeof updateMatchStatusByMatchId
+  >;
+
+const mockInvalidateChampionshipMatchesCache =
+  invalidateChampionshipMatchesCache as jest.MockedFunction<
+    typeof invalidateChampionshipMatchesCache
+  >;
+const mockInvalidateChampionshipBracketMatchesCache =
+  invalidateChampionshipBracketMatchesCache as jest.MockedFunction<
+    typeof invalidateChampionshipBracketMatchesCache
   >;
 const mockUpdateMatchStartTimestamp =
   updateMatchStartTimestamp as jest.MockedFunction<
@@ -2361,6 +2374,10 @@ describe("FaceIT Routes - Webhook", () => {
         mockGetMatchStatusFinishedCountAfterLastConfiguring.mockResolvedValue(
           0
         );
+        mockInvalidateChampionshipMatchesCache.mockResolvedValue(undefined);
+        mockInvalidateChampionshipBracketMatchesCache.mockResolvedValue(
+          undefined
+        );
         mockGetFaceITMatchDetails = jest
           .spyOn(faceitMatchServices, "getFaceITMatchDetails")
           .mockResolvedValue({} as never);
@@ -2401,6 +2418,16 @@ describe("FaceIT Routes - Webhook", () => {
           "1-dba8981d-5647-466a-be32-12a06fb8fc31",
           "FINISHED"
         );
+
+        // Verify playoff bracket caches were invalidated
+        expect(mockInvalidateChampionshipMatchesCache).toHaveBeenCalledWith(
+          validWebhookPayloadMatchStatusFinished.payload.entity.id
+        );
+        expect(
+          mockInvalidateChampionshipBracketMatchesCache
+        ).toHaveBeenCalledWith(
+          validWebhookPayloadMatchStatusFinished.payload.entity.id
+        );
       });
 
       it("should handle AFK abort case with updateMatchEndTime", async () => {
@@ -2436,6 +2463,16 @@ describe("FaceIT Routes - Webhook", () => {
 
         // Verify updateMatchFinished was NOT called (AFK abort case)
         expect(mockUpdateMatchFinished).not.toHaveBeenCalled();
+
+        // Verify playoff bracket caches were invalidated
+        expect(mockInvalidateChampionshipMatchesCache).toHaveBeenCalledWith(
+          validWebhookPayloadMatchStatusFinishedAFKAbort.payload.entity.id
+        );
+        expect(
+          mockInvalidateChampionshipBracketMatchesCache
+        ).toHaveBeenCalledWith(
+          validWebhookPayloadMatchStatusFinishedAFKAbort.payload.entity.id
+        );
       });
 
       it("should for 2xBO1 only update second match start and end time and set both FINISHED", async () => {
@@ -2475,6 +2512,16 @@ describe("FaceIT Routes - Webhook", () => {
         expect(mockUpdateMatchStatus).toHaveBeenCalledWith(
           "1-dba8981d-5647-466a-be32-12a06fb8fc31",
           "FINISHED"
+        );
+
+        // Verify playoff bracket caches were invalidated
+        expect(mockInvalidateChampionshipMatchesCache).toHaveBeenCalledWith(
+          validWebhookPayloadMatchStatusFinished.payload.entity.id
+        );
+        expect(
+          mockInvalidateChampionshipBracketMatchesCache
+        ).toHaveBeenCalledWith(
+          validWebhookPayloadMatchStatusFinished.payload.entity.id
         );
       });
     });

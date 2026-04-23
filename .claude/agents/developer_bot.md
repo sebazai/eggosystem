@@ -50,6 +50,7 @@ All must pass locally:
 ```bash
 cd $(git rev-parse --show-toplevel)
 pnpm knip && pnpm typecheck && pnpm format:check && pnpm lint
+pnpm reseed
 pnpm test   # affected workspace(s)
 ```
 

@@ -11,8 +11,18 @@ Read this before acting as `adversary_bot`. Your job is to be skeptical: assume 
 
 1. **Establish diff anchoring** — In the worktree the Developer was given (path appears in the task prompt, or `cd $(git rev-parse --show-toplevel)` for the current repo), run read-only git:
    - `git rev-parse HEAD`
-   - `git merge-base HEAD origin/development` (if that fails, try `main`; if still failing, `HEAD~1` as a last resort and note in `notes`)
-   - `git diff --name-only <merge_base>..HEAD` and the full `git diff <merge_base>..HEAD`
+   - **Prefer staged diff anchoring when present** (reviewing uncommitted work):
+     - `git diff --cached --name-only` and the full `git diff --cached`
+     - If that file list is non-empty, set:
+       - `merge_base = HEAD` (short-sha)
+       - `head = HEAD` (short-sha)
+       - `range = "HEAD (staged)"` (string marker; there may be no commit range)
+       - `files_changed =` the `--cached --name-only` list
+       - `source_ref = "computed"`
+       - Mention in `notes` that anchoring used staged/index changes.
+   - Otherwise (no staged changes), anchor on committed branch diff vs **development**:
+     - `git merge-base HEAD origin/development` (fallbacks: `development`, `origin/main`, `main`; last resort `HEAD~1`, and note the fallback in `notes`)
+     - `git diff --name-only <merge_base>..HEAD` and the full `git diff <merge_base>..HEAD`
 2. The **primary review surface** is **added/changed lines** in that diff. The **path set** is that `git diff --name-only` list.
 3. Run the **static gates** (below) and map each tool finding to a path/scope.
 4. Walk the **attack checklist** in diff-first order: prove issues against hunks, then **context** (same function or route as a changed line if behavior/security matters), not whole-file nits in untouched code.

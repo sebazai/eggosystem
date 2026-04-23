@@ -21,10 +21,10 @@ All work for an issue happens in a dedicated worktree so multiple agents/issues 
 
 ## Branch naming
 
-- `feat/<iid>-<slug>` — features
-- `fix/<iid>-<slug>` — bug fixes
-- `chore/<iid>-<slug>` — refactors / infra
-- `docs/<iid>-<slug>` — docs-only
+- `feat-<iid>-<slug>` — features
+- `fix-<iid>-<slug>` — bug fixes
+- `chore-<iid>-<slug>` — refactors / infra
+- `docs-<iid>-<slug>` — docs-only
 
 `<slug>` is kebab-case, ≤40 chars, derived from the issue title.
 
@@ -33,7 +33,7 @@ All work for an issue happens in a dedicated worktree so multiple agents/issues 
 ```bash
 cd $(git rev-parse --show-toplevel)
 git fetch origin
-git worktree add .worktrees/<iid>-<slug> -b feat/<iid>-<slug> origin/development
+git worktree add .worktrees/<type>-<iid>-<slug> -b <type>-<iid>-<slug> origin/development
 ```
 
 Post the worktree path + branch name back to PM/Developer as the handoff artifact.
@@ -46,7 +46,7 @@ So the worktree can run `pnpm dev` without manual setup:
    - `apps/backend/.env`
    - `apps/backend/private_access_token.pem`, `apps/backend/public_access_token.pem`, `apps/backend/private_refresh_token.pem`, `apps/backend/public_refresh_token.pem`
 
-   Example (set `ROOT` to `$(git rev-parse --show-toplevel)` and `WT` to `.worktrees/<iid>-<slug>`):
+   Example (set `ROOT` to `$(git rev-parse --show-toplevel)` and `WT` to `.worktrees/<type>-<iid>-<slug>`):
 
    ```bash
    cp "$ROOT/apps/backend/.env" "$WT/apps/backend/.env"
@@ -95,7 +95,7 @@ EOF
 ## Push + open MR
 
 ```bash
-cd .worktrees/<iid>-<slug>
+cd .worktrees/<type>-<iid>-<slug>
 git push -u origin HEAD
 ```
 
@@ -116,9 +116,9 @@ Post the MR IID back to the orchestrator (PM) + `review_bot`.
 
 ```bash
 cd $(git rev-parse --show-toplevel)
-git worktree remove .worktrees/<iid>-<slug>
-git branch -D feat/<iid>-<slug>   # local
-git push origin --delete feat/<iid>-<slug>   # remote if not already auto-pruned
+git worktree remove .worktrees/<type>-<iid>-<slug>
+git branch -D <type>-<iid>-<slug>   # local
+git push origin --delete <type>-<iid>-<slug>   # remote if not already auto-pruned
 ```
 
 ## Forbidden
