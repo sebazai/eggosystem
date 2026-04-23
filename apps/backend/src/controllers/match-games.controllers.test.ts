@@ -14,6 +14,7 @@ import {
   getMatchGameTradeStats,
   getMatchGameInsights
 } from "../models/match-game-analysis.models";
+import { RoundEndReasonInfo } from "@eggosystem/types";
 
 jest.mock("../models/match-game-analysis.models", () => ({
   getMatchGameAfterplantAnalysis: jest.fn(),
@@ -65,7 +66,7 @@ describe("match-games analysis controllers", () => {
         round_number: 1,
         plant_site: "A" as const,
         ct_t: { T: ["76561198000000001"], CT: ["76561198000000002"] },
-        round_end_reason_info: { id: 7, name: "Bomb defused" },
+        round_end_reason_info: RoundEndReasonInfo.BombDefused,
         ct_team_id: 1,
         t_team_id: 2,
         t_alive_at_plant: 3,
