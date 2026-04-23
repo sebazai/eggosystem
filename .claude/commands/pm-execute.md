@@ -58,7 +58,7 @@ Spawn Ops:
 
 ```
 Task(subagent_type=ops_bot,
-     prompt="Read .cursor/skills/ops-git-worktrees/SKILL.md. For issue #<iid> titled '<title>' (type <feat|fix|chore|docs>), create a worktree at .worktrees/<iid>-<slug> off origin/development with branch <type>/<iid>-<slug>. Do NOT edit files. Return {worktree_path, branch_name, issue_iid}.")
+     prompt="Read .cursor/skills/ops-git-worktrees/SKILL.md. For issue #<iid> titled '<title>' (type <feat|fix|chore|docs>), create a worktree at .worktrees/<type>-<iid>-<slug> off origin/development with branch <type>-<iid>-<slug>. Do NOT edit files. Return {worktree_path, branch_name, issue_iid}.")
 ```
 
 Capture `{worktree_path, branch_name, issue_iid}`.

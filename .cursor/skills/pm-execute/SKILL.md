@@ -41,7 +41,7 @@ flowchart LR
 ## What each stage does
 
 - **Explorer** — skipped if the issue already has a `## Technical Brief` section; otherwise produces it and pauses for your approval.
-- **Ops (branch)** — creates `.worktrees/<iid>-<slug>/` off `origin/development` with branch `<type>/<iid>-<slug>`.
+- **Ops (branch)** — creates `.worktrees/<type>-<iid>-<slug>/` off `origin/development` with branch `<type>-<iid>-<slug>`.
 - **Developer** — reads the brief, implements, delegates to domain bots (`backend_bot`, `frontend_bot`, `tester_bot`, `types_bot`, etc.), runs `pnpm knip && typecheck && format:check && lint && reseed && test` in the worktree.
 - **Adversary** — static hostile audit **anchored on `git diff` `merge_base..HEAD` in the worktree** (read-only `git`); scoped `workspace-gate` for knip/lint/tc; per-finding `scope` and `diff_anchoring` in JSON per `adversarial-review` skill. Returns JSON verdict.
 - **Ops (commit/MR)** — chunks the diff into logical Conventional Commits, pushes, opens a **non-draft** merge request (`draft: false`) so the MR shows as Ready. On **review-fix** passes, only commits and push to the same branch; does not create a second MR.
@@ -69,4 +69,4 @@ You will be paged via `AskQuestion` when any of these happen:
 
 After you merge the MR in GitLab, run (manually or via a follow-up chat):
 
-> Ask ops_bot to remove worktree `.worktrees/<iid>-<slug>` and prune branch `<type>/<iid>-<slug>`.
+> Ask ops_bot to remove worktree `.worktrees/<type>-<iid>-<slug>` and prune branch `<type>-<iid>-<slug>`.

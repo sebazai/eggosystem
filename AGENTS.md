@@ -20,7 +20,7 @@ flowchart LR
     PM -.plan-sprint / backlog-health.-> Duo["gitlab-assistant (Duo)"]
     Explorer -->|"Technical Brief note"| Issue
     Explorer --> Ops[ops_bot]
-    Ops -->|worktree + branch| WT[(".worktrees/&lt;iid&gt;-&lt;slug&gt;")]
+    Ops -->|worktree + branch| WT[(".worktrees/&lt;type&gt;-&lt;iid&gt;-&lt;slug&gt;")]
     Ops --> Developer[developer_bot]
     Developer -->|"Write/Edit + pnpm test"| Code
     Developer -->|spawn| Adversary[adversary_bot]
@@ -139,7 +139,7 @@ E2E (`pnpm test:e2e`) runs only from the workspace root per [.cursor/skills/e2e-
 All work for an issue happens in a dedicated worktree created by `ops_bot`:
 
 ```
-<repo>/.worktrees/<iid>-<slug>/
+<repo>/.worktrees/<type>-<iid>-<slug>/
 ```
 
 `.worktrees/` is gitignored. Branch naming and commit chunking rules are in [.cursor/skills/ops-git-worktrees/SKILL.md](.cursor/skills/ops-git-worktrees/SKILL.md).
