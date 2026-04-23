@@ -40,15 +40,31 @@ Read this before acting as `developer_bot`. Developer writes code and runs tests
 
    For E2E when relevant: `pnpm test:e2e` from repo root (see `.cursor/skills/e2e-playwright/SKILL.md`).
 
-6. **Invoke Adversary** once locally green:
+6. **Invoke Adversary** once locally green. You do **not** run `git` (forbidden) — the adversary establishes **`git merge-base .. HEAD` and the file list in that worktree** and anchors review on the diff. Pass everything it needs in the `Task` prompt:
 
    ```
    Task(subagent_type=adversary_bot,
-        prompt="Attack issue #<iid> changes. Worktree: <path>. Acceptance criteria: <list>.")
+        prompt="Read .cursor/skills/adversarial-review/SKILL.md.
+
+   Issue #<iid> — <title or short ref>
+   Worktree: <absolute worktree path> (cd here first; that is the repo for read-only git).
+   Acceptance criteria (must trace tests and behavior to these):
+   <bullet list>
+
+   Instructions:
+   1) Establish diff_anchoring: merge_base vs HEAD, files_changed, in this worktree only.
+   2) Primary surface = that diff. Apply scope/severity from the skill (diff vs context vs preexisting vs workspace-gate).
+   3) Return the JSON with diff_anchoring and scope on every finding.
+   4) Sub-adversaries must get the same worktree + range + files_changed in their prompt.
+   ")
    ```
 
-7. **Address findings.** Adversary returns structured findings (see `adversarial-review` skill). Fix each, re-run gates, re-invoke Adversary. Repeat until Adversary returns empty findings.
+7. **Address findings** (prefer **`scope: diff` / `context` / `acceptance` / scoped `workspace-gate`** first; challenge `touched-file-preexisting` / broad knip only if the skill allows full severity). Re-run gates, re-invoke Adversary. Repeat until verdict is `pass` (empty findings or nits only).
 8. **Hand off to Ops.** Post a short note to the issue listing changed files and the final commit range hint. Do NOT commit yourself.
+
+## Post-`review_bot` pass (`/pm-execute` only)
+
+The **orchestrator** will paste GitLab review threads into your prompt (you still must not call GitLab MCP). Treat that as the source of truth: implement fixes, re-run the same quality gates, pass Adversary, then hand off to Ops for chunked commits and push to the **existing** branch. The orchestrator runs `review_bot` again after Ops pushes.
 
 ## Coding rules (hard-enforced repo-wide)
 
@@ -61,7 +77,7 @@ Read this before acting as `developer_bot`. Developer writes code and runs tests
 
 ## Loop-break safety
 
-If Adversary ↔ Developer exchange the same file 3+ times without convergence, stop and surface the disagreement to PM with a short summary. Let the human resolve the tradeoff.
+If Adversary ↔ Developer have not converged on the same **diff-anchored** scope 3+ rounds, stop and surface the disagreement to PM with a short summary. Let the human resolve the tradeoff.
 
 ## Forbidden
 

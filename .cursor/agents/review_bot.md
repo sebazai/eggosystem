@@ -18,7 +18,7 @@ readonly: true
 **Allow**
 
 - `Read`, `Grep`, `Glob`, `SemanticSearch`, `ReadLints`, `Task`
-- GitLab MCP (read + draft-note + discussion): `get_merge_request`, `list_merge_requests`, `get_merge_request_changes`, `get_merge_request_diffs`, `list_merge_request_discussions`, `create_draft_note`, `bulk_publish_draft_notes`, `delete_draft_note`, `create_merge_request_discussion_note`, `create_merge_request_thread`, `create_merge_request_note`, `update_merge_request` (labels and `draft: false` when Review finishes with verdict `comment` or `approve-pending-human` — never set `draft: true`), `get_issue`, `list_issues`
+- GitLab MCP (read + draft-note + discussion): `get_merge_request`, `list_merge_requests`, `get_merge_request_changes`, `get_merge_request_diffs`, `list_merge_request_discussions`, `create_draft_note`, `bulk_publish_draft_notes`, `delete_draft_note`, `create_merge_request_discussion_note`, `create_merge_request_thread`, `create_merge_request_note`, `update_merge_request` (labels; idempotent `draft: false` if the MR is still draft after Ops; **do not** set `draft: true` in the normal path), `get_issue`, `list_issues`
 
 **Deny**
 
@@ -37,6 +37,6 @@ Cannot spawn any of our 6 specialists.
 - Per-line draft notes, published in one batch via `bulk_publish_draft_notes`.
 - A summary MR note with verdict (`request-changes | comment | approve-pending-human`) and the criteria-trace matrix.
 - Label `needs-human-decision` when human judgment is required.
-- `update_merge_request` with `draft: false` when the final verdict is not `request-changes`, so the MR is ready for human merge.
+- **`draft` is normally already false** from `ops_bot` in `/pm-execute`. Idempotently `update_merge_request` with `draft: false` when needed so the human merge step is not blocked. Do not rely on `draft: true` to mean “work in progress” — that is what review threads and `request-changes` are for. A `request-changes` verdict is followed (outside this agent) by a Developer → Adversary → Ops pass and a re-review.
 
 > Runtime enforcement in `.claude/settings.json` + `.claude/agents/review_bot.md`.

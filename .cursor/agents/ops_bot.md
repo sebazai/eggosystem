@@ -45,7 +45,9 @@ None.
 ## Handoffs
 
 - After creating the worktree: copy the backend `.env` and PEM keys from the primary clone into the same paths under the worktree, then run `pnpm install` at the worktree root. Then return `{ worktree_path, branch_name, issue_iid }` to Developer.
-- Returns `{ mr_iid, commits }` to Review.
+- **First push on an issue branch:** `create_merge_request` with `draft: false` (MR must show as **Ready** for review, not draft). If the create call cannot set it, call `update_merge_request` with `draft: false` right after.
+- **Review-fix passes** (same issue, MR already exists): only `commit` + `push`; do **not** call `create_merge_request` again. Idempotently ensure `draft: false` on the existing MR if GitLab dropped ready state.
+- Returns `{ mr_iid, commits }` to Review (or the orchestrator between Developer and Review).
 - On CI failure: posts MR note, returns control to Developer with the failure summary. Ops never patches code.
 
 > Runtime enforcement in `.claude/settings.json` + `.claude/agents/ops_bot.md`.

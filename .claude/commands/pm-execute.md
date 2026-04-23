@@ -1,5 +1,5 @@
 ---
-description: Execute a PM-scoped GitLab issue through the full specialist pipeline — Explorer → Ops → Developer (with Adversary loop) → Ops → Review. Stops at the merge HITL gate.
+description: Execute a PM-scoped GitLab issue through the full specialist pipeline — Explorer → Ops → Developer (with Adversary loop) → Ops (ready MR) → Review loop (Developer+Adversary+Ops on feedback until clean). Stops at the merge HITL gate.
 argument-hint: <issue-iid> [additional context]
 ---
 
@@ -84,8 +84,8 @@ Rules:
 - Every shell command prefixed with cd <worktree_path> (or cd $(git rev-parse --show-toplevel) if on main repo root).
 - Delegate to backend_bot / frontend_bot / tester_bot / types_bot / refactor_bot / docs_bot as appropriate for domain depth.
 - Before handoff, all must pass: pnpm knip && pnpm typecheck && pnpm format:check && pnpm lint && pnpm test (affected workspaces).
-- Then invoke Task(subagent_type=adversary_bot, ...) with commit range X..Y and acceptance criteria. Loop until verdict is 'pass'.
-- If Adversary rejects the same file range 3+ rounds, STOP and return {status:'stuck', summary, disagreement}.
+- Then invoke Task(subagent_type=adversary_bot, ...) with: issue IID + title, **absolute** `<worktree_path>`, and acceptance-criteria list. The adversary anchors on **`git` diff `merge_base..HEAD` inside that worktree** (it runs read-only git) and returns JSON with `diff_anchoring` and per-finding `scope` per `.cursor/skills/adversarial-review/SKILL.md`. Do not pass a placeholder “X..Y” unless you computed it — the adversary may compute the range. Loop until verdict is 'pass'.
+- If Adversary rejects the same diff scope 3+ rounds, STOP and return {status:'stuck', summary, disagreement}.
 - Do NOT run git. Do NOT call GitLab MCP. Do NOT edit harness files (.cursor/, .claude/, AGENTS.md).
 
 Return {status:'ready'|'stuck', changed_files[], gate_output, adversary_verdict, summary}.")
@@ -112,13 +112,15 @@ Task(subagent_type=ops_bot,
 Changed files:
 <changed_files[]>
 
-After commits, push -u origin <branch_name> and open a DRAFT merge request via mcp__GitLab__create_merge_request:
+After commits, push -u origin <branch_name> and open a **non-draft** (ready) merge request via mcp__GitLab__create_merge_request:
 - source_branch: <branch_name>
 - target_branch: development (or 'main' if the repo uses that — check existing MRs)
 - title: '<type>(<scope>): <short summary>'
 - description: short summary + 'Closes #<iid>'
 - labels: copy from the issue
-- draft: true
+- draft: false  (so the MR is visible as Ready; Review feedback uses threads, not draft state)
+
+Immediately after create, you may idempotently call mcp__GitLab__update_merge_request with `draft: false` if the API did not set it as expected.
 
 Return {mr_iid, mr_url, commit_shas[], pipeline_id?}.")
 ```
@@ -129,29 +131,68 @@ If Ops reports CI failure immediately, loop back to Phase 3 with the failure not
 
 ---
 
-## Phase 5: Review
+## Phase 5: Review (repeatable; see Phase 5b for the loop)
+
+After each `review_bot` run completes, set **`review_pass`** to how many Review phases you have finished in this `pm-execute` run (the first completion → `1`, the second → `2`, etc.).
 
 Spawn Review:
 
 ```
 Task(subagent_type=review_bot,
-     prompt="Read .cursor/skills/code-review-checklist/SKILL.md. Audit MR !<mr_iid> in project <group/project> against issue #<iid> acceptance criteria. Delegate a semantic pass to Task(subagent_type=gitlab-assistant, prompt='Run review-merge-request on MR !<mr_iid>'). Post per-line feedback via create_draft_note and publish in one batch via bulk_publish_draft_notes. Post a summary MR note with the criteria-trace matrix and a verdict: request-changes | comment | approve-pending-human. If anything is 'blocker' or 'major', set label 'needs-human-decision' via update_merge_request. If verdict is comment or approve-pending-human, call update_merge_request with draft: false so the MR is no longer a draft. NEVER call approve_merge_request or accept_merge_request.
+     prompt="Read .cursor/skills/code-review-checklist/SKILL.md. Audit MR !<mr_iid> in project <group/project> against issue #<iid> acceptance criteria. Delegate a semantic pass to Task(subagent_type=gitlab-assistant, prompt='Run review-merge-request on MR !<mr_iid>'). Post per-line feedback via create_draft_note and publish in one batch via bulk_publish_draft_notes. Post a summary MR note with the criteria-trace matrix and a verdict: request-changes | comment | approve-pending-human. If anything is 'blocker' or 'major', set label 'needs-human-decision' via update_merge_request. The MR is already non-draft from Ops; if needed, idempotently call update_merge_request with draft: false. NEVER call approve_merge_request or accept_merge_request.
 
 Return {verdict, findings_count, needs_human_decision}.")
 ```
 
-Capture `{verdict, findings_count, needs_human_decision}`.
+Capture `{verdict, findings_count, needs_human_decision}`. You have just completed **Review #`review_pass`**.
 
-If `verdict = request-changes`:
+If `verdict` is `comment` or `approve-pending-human`, go to **Phase 6** (skip Phase 5b below).
 
-- Present findings to human. Ask via `AskQuestion`: **fix-and-retry** (loop to Phase 3) | **accept-as-is** | **abort**.
-- If the human chooses **accept-as-is**, call `mcp__GitLab__update_merge_request` for MR !<mr_iid> with `draft: false` (MR stays open for human merge; this only clears draft state).
+## Phase 5b: Review-fix loop (Developer → Adversary → Ops) until clean
+
+If the verdict is `request-changes` (or you need a code follow-up for `needs-human-decision`):
+
+- If **`verdict` is `request-changes` and `review_pass` is 3** (this was the **third** Review in this run), do **not** start another 5b — page the human for **accept-as-is** / manual fix / abort.
+- Otherwise run the steps below, then **re-invoke Phase 5** (next `review_bot`); when that run completes, set `review_pass` accordingly (2, then 3, … per line 136).
+
+1. **Gather feedback for Developer** (orchestrator — you, not `developer_bot`): `mcp__GitLab__list_merge_request_discussions` on MR !<mr_iid> and include unresolved threads; combine with the `review_bot` return payload so `developer_bot` has concrete threads to address (Developer cannot call GitLab).
+
+2. **Re-run Phase 3** (Developer) with a **post-review** prompt, e.g.:
+
+```
+Task(subagent_type=developer_bot,
+     prompt="Read .cursor/skills/developer-impl/SKILL.md. This is a **review-fix** pass for issue #<iid> in worktree <worktree_path> (branch already pushed; MR !<mr_iid>).
+
+Address the following GitLab review feedback and discussion threads (author must act in code; you cannot use GitLab MCP):
+<orchestrator-pasted discussions + review_bot summary>
+
+After changes: pnpm knip && pnpm typecheck && pnpm format:check && pnpm lint && pnpm test, then Adversary until pass (same rules as the initial implementation pass). If stuck 3+ Adversary rounds, return {status:'stuck', ...}.
+
+Return {status:'ready'|'stuck', changed_files[], ...}.")
+```
+
+3. **Re-run Phase 4** (Ops) with a **push-only** prompt, e.g.:
+
+```
+Task(subagent_type=ops_bot,
+     prompt="Read .cursor/skills/ops-git-worktrees/SKILL.md. In worktree <worktree_path> on existing branch <branch_name>, stage and commit new changes in logically chunked Conventional Commits with 'Refs: #<iid>'. There is already MR !<mr_iid> — do NOT call create_merge_request. Push to origin. Call mcp__GitLab__update_merge_request for MR !<mr_iid> with draft: false if the MR is not already ready. If CI fails, return {status:'ci_failed', note} for Developer. Return {commit_shas[], pipeline_id?}.")
+```
+
+If CI fails, loop to Phase 3 with the failure summary.
+
+4. **Re-run Phase 5** (spawn `review_bot` again; see line 136 for `review_pass`). After this completion, re-evaluate from the top of Phase 5 / 5b until:
+   - `verdict` is `comment` or `approve-pending-human`, and you are ready for the merge HITL gate → **Phase 6**; or
+   - you hit the review cap, `needs-human-decision` is unsolvable by agents, or Developer/Adversary is **stuck** (same rules as the initial pass) → page the human.
+
+If `verdict = request-changes` but the human (via `AskQuestion`) chooses **accept-as-is** (optional HITL override any time on `needs-human-decision` or at max attempts):
+
+- Do **not** re-run the bot loop. Ensure MR is non-draft with `mcp__GitLab__update_merge_request` if needed, then go to **Phase 6**.
 
 ---
 
 ## Phase 6: Hand off to human (HITL merge gate)
 
-By this point the MR must be **non-draft** unless you are stopping before Phase 6: `review_bot` clears draft when the verdict is `comment` or `approve-pending-human`; after **accept-as-is** you must have called `mcp__GitLab__update_merge_request` with `draft: false`.
+By this point the MR should already be **non-draft** (Ops in Phase 4, idempotent `update_merge_request` in Review/accept-as-is).
 
 Output exactly this block and STOP. Do NOT call any merge/approve tool — merge is always a human action.
 
@@ -183,7 +224,7 @@ Immediately stop and page the human when any of these occur:
 2. Explorer flags architecture/data-model tradeoffs.
 3. Adversary ↔ Developer have not converged after 3 rounds (Developer returns `status:'stuck'`).
 4. Ops cannot push due to a protected-branch / force-push block.
-5. Review verdict is anything other than `comment` — hand to human.
+5. **Review-fix loop** exhausts the review cap (e.g. 3 full Review passes) without reaching `comment` or `approve-pending-human`, or the MR still has `needs-human-decision` that only a human can clear.
 6. Any agent attempts a tool outside its allowlist (shouldn't happen under Claude Code, but report it if Cursor self-police misfires).
 
 ---

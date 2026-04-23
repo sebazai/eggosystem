@@ -112,7 +112,7 @@ All v1 routers are mounted from `apps/backend/src/routes/index.ts`. High-level g
 | `/kanahautomo`                                                       | `kanahautomo.routes.ts`                     | `corsMiddleware`; per-endpoint JWT                                                                   |
 | `/discord`                                                           | `discord.routes.ts`                         | `corsMiddleware`                                                                                     |
 | `/verify-email`                                                      | `account.controllers#verifyEmailController` | `corsMiddleware` (POST)                                                                              |
-| `/reservations/remove/:hash`                                         | `match-streams.controllers`                 | `corsMiddleware` (GET, hash-based)                                                                   |
+| `/reservations/remove` (POST, JSON body `{ "token": "<64 hex>" }`)   | `match-streams.controllers`                 | `corsMiddleware` (public removal token)                                                              |
 | `/registrations`                                                     | `season-team-registration.routes.ts`        | `corsMiddleware`                                                                                     |
 | `/faceit`                                                            | `faceit.routes.ts`                          | `corsMiddleware`                                                                                     |
 | `/players`                                                           | `player.routes.ts`                          | public / JWT per endpoint                                                                            |
@@ -136,6 +136,7 @@ All v1 routers are mounted from `apps/backend/src/routes/index.ts`. High-level g
 | `/standings`                                                         | `standings.routes.ts`                       | public                                                                                               |
 | `/hall-of-fame`                                                      | `hall-of-fame.routes.ts`                    | public                                                                                               |
 | `/season-results`                                                    | `season-results.routes.ts`                  | public                                                                                               |
+| `/sponsors`                                                          | `sponsors.routes.ts`                        | public; grouped marketing sponsors for the website (see below)                                       |
 | `/stats`                                                             | inline in `routes/index.ts`                 | public, cached 24h                                                                                   |
 | `/health`, `/health/discord`, `/health/rabbitmq`, `/health/database` | inline                                      | public                                                                                               |
 
@@ -160,7 +161,31 @@ Each subroute is additionally gated by `checkPermissions({ fallbackRoles: [...] 
 | `/dashboard/email-verification`   | `admin`, `helpdesk`                       |
 | `/dashboard/caster-applications`  | `admin`, `helpdesk`                       |
 | `/dashboard/playoff-seeds`        | `admin`, `helpdesk`                       |
+| `/dashboard/sponsors`             | `admin` only                              |
 | `GET /dashboard`                  | static `read:dashboard`; fallback `admin` |
+
+### Public marketing sponsors (`GET /api/v1/sponsors`)
+
+Anonymous read used by the public Next.js site (frontpage + footer). Response shape:
+
+- `game_wide_sponsors`, `main_partners`, `supporting_organizations`: arrays of `{ id, display_name, external_url, display_order, image_phash }`
+- `image_phash` is the stable image-service reference (same resolution pattern as team logos: `GET {IMAGE_SERVICE_URL}/images/by-hash/phash/{image_phash}`).
+
+**Caching**
+
+- HTTP `Cache-Control: public, max-age=300` (5 minutes), aligned with short-lived marketing updates.
+- The backend also keeps a Redis cache entry with the same TTL family (see `marketing-sponsors.services.ts`).
+
+This is intentionally shorter than `GET /api/v1/stats` (`max-age=86400`) because sponsor rows change more often than aggregate counters.
+
+**Admin writes**
+
+- `POST /api/v1/dashboard/sponsors` — create (optional `image_data` base64 / data URI, validated like team logo uploads).
+- `PATCH /api/v1/dashboard/sponsors/:id` — update fields / replace image.
+- `DELETE /api/v1/dashboard/sponsors/:id` — remove row.
+- `PUT /api/v1/dashboard/sponsors/reorder` — body `{ tier, ordered_ids }` listing every sponsor id in that tier in display order.
+
+Failures on these mutations are returned as RFC 7807 `application/problem+json` via the global error handler.
 
 ### Filter Query Parameters
 

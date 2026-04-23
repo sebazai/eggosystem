@@ -38,14 +38,14 @@ flowchart LR
 
 ## The 6 specialists
 
-| Role                                               | File             | Writes code                   | Touches git | Spawns                                | Notes                               |
-| -------------------------------------------------- | ---------------- | ----------------------------- | ----------- | ------------------------------------- | ----------------------------------- |
-| [`pm_bot`](.claude/agents/pm_bot.md)               | Orchestrator     | No                            | No          | Explorer, Ops, Developer, Review, Duo | Human liaison                       |
-| [`explorer_bot`](.claude/agents/explorer_bot.md)   | Researcher       | No                            | No          | —                                     | DB MCP readonly, WebSearch/WebFetch |
-| [`ops_bot`](.claude/agents/ops_bot.md)             | Git + GitLab     | No                            | Yes         | —                                     | Only git-capable agent              |
-| [`developer_bot`](.claude/agents/developer_bot.md) | Implementer      | **Yes**                       | No          | Adversary + existing domain bots      | Runs quality gates                  |
-| [`adversary_bot`](.claude/agents/adversary_bot.md) | Hostile reviewer | No (lint/knip/typecheck only) | No          | Adversary (depth ≤ 3)                 | Gate before Ops                     |
-| [`review_bot`](.claude/agents/review_bot.md)       | PR auditor       | No                            | No          | Duo `review-merge-request`            | Never approves/merges               |
+| Role                                               | File             | Writes code                   | Touches git | Spawns                                | Notes                                 |
+| -------------------------------------------------- | ---------------- | ----------------------------- | ----------- | ------------------------------------- | ------------------------------------- |
+| [`pm_bot`](.claude/agents/pm_bot.md)               | Orchestrator     | No                            | No          | Explorer, Ops, Developer, Review, Duo | Human liaison                         |
+| [`explorer_bot`](.claude/agents/explorer_bot.md)   | Researcher       | No                            | No          | —                                     | DB MCP readonly, WebSearch/WebFetch   |
+| [`ops_bot`](.claude/agents/ops_bot.md)             | Git + GitLab     | No                            | Yes         | —                                     | Only git-capable agent                |
+| [`developer_bot`](.claude/agents/developer_bot.md) | Implementer      | **Yes**                       | No          | Adversary + existing domain bots      | Runs quality gates                    |
+| [`adversary_bot`](.claude/agents/adversary_bot.md) | Hostile reviewer | No (lint/knip/typecheck only) | Read-only   | Adversary (depth ≤ 3)                 | Diff-anchored review; gate before Ops |
+| [`review_bot`](.claude/agents/review_bot.md)       | PR auditor       | No                            | No          | Duo `review-merge-request`            | Never approves/merges                 |
 
 Full policy per role lives in [`.cursor/agents/<role>.md`](.cursor/agents) (policy record) and [`.claude/agents/<role>.md`](.claude/agents) (runtime enforcement).
 
@@ -173,7 +173,7 @@ Two ready-made commands wrap the pipeline. Both live as Claude Code slash comman
 - **`/pm-plan <idea>`** — runs only the planning half: human ↔ `pm_bot` ↔ GitLab issue. Stops after `mcp__GitLab__create_issue`. Use this when starting a new feature or bug report.
   - Claude Code: [`.claude/commands/pm-plan.md`](.claude/commands/pm-plan.md)
   - Cursor skill: [`.cursor/skills/pm-plan/SKILL.md`](.cursor/skills/pm-plan/SKILL.md)
-- **`/pm-execute <iid>`** — runs the execution half on an existing issue: Explorer → Ops → Developer (with Adversary loop) → Ops → Review. Stops at the merge HITL gate.
+- **`/pm-execute <iid>`** — runs the execution half on an existing issue: Explorer → Ops → Developer (with Adversary loop) → Ops (opens a **ready** MR) → Review, then **review-fix loops** (Developer → Adversary → Ops push, re-Review) until the MR is in good shape or a HITL gate stops the loop. Stops at the merge HITL gate.
   - Claude Code: [`.claude/commands/pm-execute.md`](.claude/commands/pm-execute.md)
   - Cursor skill: [`.cursor/skills/pm-execute/SKILL.md`](.cursor/skills/pm-execute/SKILL.md)
 
@@ -184,8 +184,8 @@ Typical session:
  → Q&A with PM, issue #247 created.
 /pm-execute 247
  → Explorer drafts brief (you confirm) → Ops cuts branch → Developer implements
-   → Adversary audits → Ops commits & opens MR !312 → Review posts notes →
-   you merge MR !312 in the GitLab UI.
+   → Adversary audits → Ops commits & opens ready MR !312 → Review posts notes →
+   (if needed) more Dev/Adversary/Ops passes on feedback → you merge MR !312 in the GitLab UI.
 ```
 
 ## Escalation

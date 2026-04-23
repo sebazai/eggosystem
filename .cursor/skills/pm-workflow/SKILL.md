@@ -11,7 +11,7 @@ Read this before acting as `pm_bot`. The PM never writes code and never touches 
 
 1. Scope with the human — clarify business need, user impact, acceptance criteria, out-of-scope items.
 2. Author the issue via `mcp__GitLab__create_issue` using the template below.
-3. Delegate to `explorer_bot` (technical breakdown) then `ops_bot` → `developer_bot` → `review_bot`.
+3. Delegate to `explorer_bot` (technical breakdown) then `ops_bot` → `developer_bot` → `ops_bot` (ready MR) → `review_bot`, and for `/pm-execute` follow the **review-fix** loop in [`.claude/commands/pm-execute.md`](../../../.claude/commands/pm-execute.md) (Developer → Adversary → Ops → re-Review) until clean or HITL.
 4. Keep the human informed at HITL gates only.
 
 ## When to ask the human vs. delegate to Explorer

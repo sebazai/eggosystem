@@ -7,14 +7,37 @@ description: Hostile reviewer checklist — try to break the Developer's impleme
 
 Read this before acting as `adversary_bot`. Your job is to be skeptical: assume the Developer cut a corner and find it. You are read-only (+ lint/knip/typecheck); you never edit.
 
-## Static gates (required)
+## Order of operations (do this first)
 
-From the monorepo root, run **`pnpm knip`** before you emit the JSON verdict, in addition to `pnpm lint` and `pnpm typecheck` when those apply to the change. Knip output that indicates dead code or misconfigured exports is a finding unless the issue documents a deliberate exception.
+1. **Establish diff anchoring** — In the worktree the Developer was given (path appears in the task prompt, or `cd $(git rev-parse --show-toplevel)` for the current repo), run read-only git:
+   - `git rev-parse HEAD`
+   - `git merge-base HEAD origin/development` (if that fails, try `main`; if still failing, `HEAD~1` as a last resort and note in `notes`)
+   - `git diff --name-only <merge_base>..HEAD` and the full `git diff <merge_base>..HEAD`
+2. The **primary review surface** is **added/changed lines** in that diff. The **path set** is that `git diff --name-only` list.
+3. Run the **static gates** (below) and map each tool finding to a path/scope.
+4. Walk the **attack checklist** in diff-first order: prove issues against hunks, then **context** (same function or route as a changed line if behavior/security matters), not whole-file nits in untouched code.
+5. **Emit JSON** with `diff_anchoring` filled in and every finding’s `scope` set.
+
+## Diff anchoring vs. scoping and severity
+
+| Scope                          | Definition                                                                                                                                                                                                        | Default severity cap                                                                                                                                                                                                                                                                     |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`diff`**                     | Line appears in the `git diff` hunk (added or modified).                                                                                                                                                          | Use full `severity` per checklist.                                                                                                                                                                                                                                                       |
+| **`context`**                  | Not in a hunk, but in the same **function**, **handler**, **route group**, or **test describe block** that a hunk touched — only when a checklist item (security, authz, error path, N+1) **requires** that read. | Full severity if a real break; otherwise `minor` / `nit`.                                                                                                                                                                                                                                |
+| **`touched-file-preexisting`** | A touched file, but the line is **not** in the `diff` and is **not** part of a required `context` read (e.g. an old `as` cast the branch did not add).                                                            | **`minor` or `nit` only** — **except** clear `security` / `db-invariant` / authz issues, which may be `major` / `blocker`.                                                                                                                                                               |
+| **`workspace-gate`**           | From `pnpm knip` / `pnpm lint` / `pnpm typecheck` output.                                                                                                                                                         | Block the verdict **only** if the message clearly implicates a **file in the path set** above, a **config file changed in the diff**, a **new export** introduced on the branch, or **types** of code you changed. Otherwise: **`nit`**, or summarize under `notes` and do **not** fail. |
+
+`verdict: "pass"` still requires `findings` to be empty or all `severity: "nit"`, **after** applying the caps in this table. Escalate only when the table allows full severity for that scope.
+
+## Static gates (required, but scoped)
+
+From the monorepo root, run **`pnpm knip`**, and **`pnpm lint`** / **`pnpm typecheck`** when they apply. Classify every finding per **`workspace-gate`** rules above. Knip/lint that complain about **unrelated** paths and **no** tie to the branch are **not** a reason to return `verdict: "fail"` with `blocker`/`major`.
 
 ## Inputs
 
-- Issue IID, acceptance criteria, list of changed files (from Developer).
-- Access to `Read`, `Grep`, `Glob`, `SemanticSearch`, `ReadLints`, and a narrow Shell allowlist (`pnpm lint`, `pnpm knip`, `pnpm typecheck`).
+- Issue IID, acceptance criteria, **worktree path** (or confirmation to use current repo root).
+- Optional: explicit `<merge_base>..<head>` if the orchestrator passed one; otherwise you compute it (see order of operations).
+- Access to `Read`, `Grep`, `Glob`, `SemanticSearch`, `ReadLints`, and a narrow Shell allowlist (`pnpm lint`, `pnpm knip`, `pnpm typecheck`, read-only `git`).
 
 ## Output format (return exactly this JSON)
 
@@ -22,15 +45,24 @@ From the monorepo root, run **`pnpm knip`** before you emit the JSON verdict, in
 {
   "issue_iid": <number>,
   "verdict": "pass" | "fail",
+  "diff_anchoring": {
+    "worktree": "<path used for git, or .>",
+    "merge_base": "<short-sha>",
+    "head": "<short-sha>",
+    "range": "<merge_base>..<head>",
+    "files_changed": ["<path>", "..."],
+    "source_ref": "computed|passed-in"
+  },
   "findings": [
     {
       "id": "<short-slug>",
+      "scope": "diff" | "context" | "touched-file-preexisting" | "workspace-gate" | "acceptance",
       "severity": "blocker" | "major" | "minor" | "nit",
       "category": "type-safety" | "error-handling" | "security" | "perf" | "db-invariant" | "test-gap" | "acceptance" | "style" | "other",
       "file": "<path>",
       "line": <number | null>,
-      "evidence": "<what you observed, with a grep/line citation>",
-      "attack": "<the scenario that breaks it>",
+      "evidence": "<what you observed, with a grep/line or diff hunk citation>",
+      "attack": "<the scenario that breaks it, or n/a for nit-only>",
       "fix_hint": "<smallest change that resolves it>"
     }
   ],
@@ -38,54 +70,47 @@ From the monorepo root, run **`pnpm knip`** before you emit the JSON verdict, in
 }
 ```
 
-`verdict: "pass"` requires `findings` to be empty or all entries `severity: "nit"`. Anything `blocker` or `major` means Developer must iterate.
+- Use `scope: "acceptance"` for missing tests vs. acceptance checkboxes (still subject to the usual `severity` rules for test gaps).
+- `verdict: "pass"` requires `findings` to be empty or all entries `severity: "nit"`. Anything `blocker` or `major` (that remains after scoping) means Developer must iterate.
 
 ## Attack checklist (in priority order)
 
+Apply the **scoping** rules above: pattern searches (`as` casts, etc.) **on added/changed lines first**; for touched files, Grep the file but **classify** `scope` and **apply severity caps** for preexisting lines.
+
 ### Type-safety
 
-- Search for `\bas\s+[A-Z]`, `as unknown as`, `@ts-ignore`, `@ts-expect-error`. Each occurrence is a finding unless clearly justified.
-- Missing `satisfies` where a literal is assigned to a typed slot.
-- Inline `import("module").Type` instead of a named import.
+- In **diff** lines: `as` casts, `as unknown as`, `@ts-ignore`, `@ts-expect-error` — each is a finding unless clearly justified in the hunk.
+- `touched-file-preexisting` hits → usually `nit` / `minor` per table.
 
 ### Error-handling (RFC 7807)
 
-- Controllers that `try/catch` without cleanup — should bubble via `next(err)`.
-- Services catching and swallowing or re-wrapping without context.
-- Missing error classes for new failure modes (check `apps/backend/src/errors/`).
+- Controllers that `try/catch` without cleanup in **changed** code — should bubble via `next(err)`.
+- **Context** reads when a hunk changes error handling in a function.
 
 ### Database invariants
 
-- New code that assumes app-level enforcement of rules that live in **triggers** (roster uniqueness, captain rules, primary player validation) — see `README.database.md`.
-- Raw SQL in app code (must go through Knex).
-- New migration without matching update to `dev_seed.ts` / `e2e_test_seed.ts` (see `docs/update_dev_seed.md`).
+- New or changed code that **conflicts** with **triggers** (see `README.database.md`).
+- Raw SQL in new/changed code; migrations/seed files in the `files_changed` list vs `dev_seed` / `e2e` expectations.
 
 ### Security / auth
 
-- New route missing `authenticateJWT` or `admin` middleware where the surrounding routes have it.
-- CORS-sensitive changes to `corsMiddleware`.
-- Secrets logged, hard-coded, or committed.
+- New or changed **routes** or **middleware** wiring — use **`context`** to compare with sibling routes. Missing `authenticateJWT` or `admin` when peers have it in **the same** route file/group.
 
 ### Performance
 
-- N+1 Knex queries — look for loops that call a model function per iteration.
-- Missing indexes on new `WHERE` columns (inspect the migration).
-- Unbounded `LIMIT`-less queries on growing tables.
+- N+1, indexes, unbounded queries in **changed** code or migrations in the path set.
 
 ### Frontend regressions
 
-- New `"use client"` at a page level when only a leaf needs interactivity.
-- Data fetching in `useEffect` instead of RSC / server actions.
-- Inline large mock objects in tests instead of `createMockX` factories.
+- **Diff**-introduced `"use client"`, `useEffect` data fetching, etc.
 
 ### Test gaps vs. acceptance criteria
 
-- For each acceptance checkbox in the issue, there must be at least one test that would fail if that behavior regressed. Missing test → `category: "acceptance"`, `severity: "major"`.
+- For each acceptance checkbox, at least one test that would fail if the behavior regressed. Missing test → `scope: "acceptance"`, `category: "acceptance"`, `severity: "major"` (unless the criterion is docs-only and explicitly out of scope for tests).
 
 ### Rule compliance
 
-- Commands not prefixed with `cd $(git rev-parse --show-toplevel)/...` per `.cursor/rules/core/directory-execution.mdc`.
-- E2E instructions added without mentioning they must run from repo root.
+- Only for **new** instructions or **changed** commands in the diff; do not fail on unrelated doc drift. E2E instructions **added in the diff** should mention running from repo root per `.cursor/rules/core/directory-execution.mdc` only when the issue touches E2E.
 
 ## Tools you may run
 
@@ -96,20 +121,21 @@ pnpm knip
 pnpm typecheck
 ```
 
-Also `ReadLints` on any file you inspect.
+Read-only: `git log`, `git diff`, `git show`, `git merge-base`, `git rev-parse` (per `adversary_bot` agent). Also `ReadLints` on files you inspect.
 
 ## Recursive sub-Adversaries
 
-For large diffs, spawn specialized sub-Adversaries (max depth 3):
+For large diffs, spawn specialized sub-Adversaries (max depth 3). **Pass the same** `worktree`, `issue_iid`, `merge_base..head` **and** the `files_changed` list in every child prompt, plus the focus:
 
-- `Task(subagent_type=adversary_bot, prompt="Focus ONLY on security attack surface for issue #<iid>")`
-- `Task(subagent_type=adversary_bot, prompt="Focus ONLY on DB trigger interactions for issue #<iid>")`
+- `Task(subagent_type=adversary_bot, prompt="... Focus ONLY on security. Same diff_anchoring as parent: worktree <path>, range <merge_base>..<head>, files_changed: ... issue #<iid>")`
+- `Task(subagent_type=adversary_bot, prompt="... Focus ONLY on DB trigger interactions. Same diff_anchoring: ...")`
 
-Merge child findings into your final JSON.
+Merge child findings into your final JSON (dedupe by `id`).
 
 ## Forbidden
 
-- `Write`, `Edit`, `StrReplace`.
+- `Write`, `Edit`, `StrReplace`, any file mutation.
 - `pnpm test` / `pnpm test:e2e` (Developer already ran these; your job is static attack).
-- Any git command. Any MCP.
-- Softening verdicts to `pass` to "unblock" work — if in doubt, fail it.
+- **Git state changes** (no commit, reset, checkout that mutates, no push). Read-only `git` for diff anchoring is allowed.
+- Any **GitLab** or other project MCP.
+- Softening verdicts to `pass` to "unblock" work — when scope is `diff` / `context` / `acceptance` and the issue is real, fail it. For `touched-file-preexisting`, **respect the severity cap** so you do not expand scope.

@@ -8,6 +8,7 @@ import {
   ForbiddenError,
   BadRequestError
 } from "../utils/errors";
+import { parseBase64ImageData } from "../utils/parse-base64-image-data";
 
 interface UploadTeamLogoRequestBody {
   team_id: number;
@@ -64,43 +65,22 @@ export const uploadTeamLogoController = async (
       logger.info(
         `Processing image data: length=${body.image_data.length}, startsWith=${body.image_data.substring(0, 20)}...`
       );
-      // Parse base64 image data
-      let imageBuffer: Buffer;
-      let filename: string;
-      let contentType: string;
-
-      if (body.image_data.startsWith("data:")) {
-        // Format: "data:image/png;base64,iVBORw0KGgo..."
-        const matches = body.image_data.match(/^data:([^;]+);base64,(.*)$/);
-        if (!matches) {
-          logger.error(
-            `Invalid data URI format: ${body.image_data.substring(0, 50)}...`
-          );
-          return next(
-            new BadRequestError(
-              "Invalid image_data format. Expected data URI or base64 string"
-            )
-          );
-        }
-        contentType = matches[1];
-        const base64Data = matches[2];
-        imageBuffer = Buffer.from(base64Data, "base64");
-
-        // Extract filename from content type or use provided filename
-        const ext = contentType.split("/")[1] || "png";
-        filename = body.filename || `team-${teamId}-logo.${ext}`;
-
-        logger.info(
-          `Parsed data URI: contentType=${contentType}, base64Length=${base64Data.length}, bufferLength=${imageBuffer.length}`
-        );
-      } else {
-        // Assume it's just base64 data
-        imageBuffer = Buffer.from(body.image_data, "base64");
-        filename = body.filename || `team-${teamId}-logo.png`;
-        contentType = "image/png"; // Default to PNG if not specified
-
-        logger.info(`Parsed plain base64: bufferLength=${imageBuffer.length}`);
+      const parsedImage = parseBase64ImageData(
+        body.image_data,
+        body.filename || `team-${teamId}-logo.png`
+      );
+      if (!parsedImage.ok) {
+        logger.error(`Invalid image_data: ${parsedImage.message}`);
+        return next(new BadRequestError(parsedImage.message));
       }
+      const imageBuffer = parsedImage.imageBuffer;
+      const ext = parsedImage.contentType.split("/")[1] || "png";
+      const filename = body.filename || `team-${teamId}-logo.${ext}`;
+      const contentType = parsedImage.contentType;
+
+      logger.info(
+        `Parsed image payload: contentType=${contentType}, bufferLength=${imageBuffer.length}, filename=${filename}`
+      );
 
       // Validate image buffer
       if (imageBuffer.length === 0) {

@@ -3,8 +3,14 @@ import Image from "next/image";
 import { FooterPartners } from "../sponsors/FooterPartners";
 import { createNextUrl } from "@/lib/utils";
 import { Separator } from "../ui/separator";
+import { getPublicMarketingSponsors } from "@/lib/get-public-marketing-sponsors";
 
-const Footer = () => {
+const Footer = async () => {
+  const sponsors = await getPublicMarketingSponsors();
+  const footerPartnersWithLogo = sponsors.main_partners.filter(
+    (p) =>
+      p.footer_image_phash != null && p.footer_image_phash.trim().length > 0
+  );
   // Get Git SHA from environment variables
   const gitSha = process.env.NEXT_PUBLIC_GIT_SHA || "";
   const gitlabUrl =
@@ -32,8 +38,12 @@ const Footer = () => {
             </p>
           </div>
 
-          {/* Column 2 - Sponsors */}
-          <FooterPartners />
+          {/* Column 2 — main partners only if they uploaded a footer-specific logo */}
+          {footerPartnersWithLogo.length > 0 ? (
+            <FooterPartners partners={footerPartnersWithLogo} />
+          ) : (
+            <div aria-hidden="true" />
+          )}
 
           {/* Column 3 - Follow Us */}
           <div>

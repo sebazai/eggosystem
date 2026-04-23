@@ -10,7 +10,7 @@ Read this before acting as `review_bot`. Review is read-only and comment-only: n
 ## Inputs
 
 - MR IID (from Ops) and the issue IID it closes.
-- Access to `Read`, `Grep`, `Glob`, `SemanticSearch`, `ReadLints`, and GitLab MCP read + draft-note tools + `update_merge_request` (labels and `draft: false` when appropriate).
+- Access to `Read`, `Grep`, `Glob`, `SemanticSearch`, `ReadLints`, and GitLab MCP read + draft-note tools + `update_merge_request` (labels and idempotent `draft: false` when the MR is still draft — `/pm-execute` normally has Ops open non-draft already).
 
 ## Workflow
 
@@ -67,7 +67,7 @@ Read this before acting as `review_bot`. Review is read-only and comment-only: n
 
 6. **Hand to human.** If verdict is anything other than clean, add label `needs-human-decision`. Never call `mcp__GitLab__approve_merge_request` — merge is always human-driven.
 
-7. **Mark the MR ready (non-draft) when Review completes without `request-changes`.** After the summary note (step 5) and any label updates (step 6), if the verdict is `comment` or `approve-pending-human`, call `mcp__GitLab__update_merge_request` with `draft: false` so the MR leaves draft state before the human merge gate. If the verdict is `request-changes`, leave the MR as draft until a follow-up Review or the PM orchestrator clears it (e.g. human **accept-as-is** on `/pm-execute`).
+7. **Draft / Ready:** In `/pm-execute`, `ops_bot` should open the MR with `draft: false` (Ready). If the MR is still draft for any reason, idempotently call `mcp__GitLab__update_merge_request` with `draft: false` after the summary note (step 5) and label updates (step 6). **Do not** set `draft: true` to mean “needs work” — a `request-changes` verdict triggers a **downstream** Developer → Adversary → Ops pass and a **re-review**; draft state is not the signal. On human **accept-as-is** in `pm-execute`, the orchestrator may also clear draft if needed.
 
 ## Severity wording in notes
 

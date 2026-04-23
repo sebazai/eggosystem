@@ -39,7 +39,7 @@ Spawn only when the change is clearly concentrated in one area:
 - Safe rename / dedup / small architectural cleanup → `refactor_bot`
 - Docs-only change requested by issue → `docs_bot`
 - Pre-handoff rule-compliance sweep → `verifier_bot`
-- **Adversary gate** → `adversary_bot` (required before Ops)
+- **Adversary gate** → `adversary_bot` (required before every Ops handoff, including after **review-fix** passes in `/pm-execute`)
 
 You may **not** spawn `pm_bot`, `explorer_bot`, `ops_bot`, or `review_bot`.
 
@@ -53,7 +53,7 @@ pnpm knip && pnpm typecheck && pnpm format:check && pnpm lint
 pnpm test   # affected workspace(s)
 ```
 
-Then `Task(subagent_type=adversary_bot, ...)` until verdict is `"pass"`.
+Then `Task(subagent_type=adversary_bot, ...)` until verdict is `"pass"`. The prompt **must** include: issue IID + title, **absolute worktree path** (adversary runs read-only `git` there to build `merge_base..HEAD` and `diff_anchoring`), and the acceptance-criteria list — per `.cursor/skills/developer-impl/SKILL.md` and `.cursor/skills/adversarial-review/SKILL.md`.
 
 ## Forbidden
 
@@ -63,6 +63,10 @@ Then `Task(subagent_type=adversary_bot, ...)` until verdict is `"pass"`.
 - try/catch without cleanup (use bubbling + RFC 7807 error handler).
 - Inline mock data when a `createMockX` factory exists.
 
+## Review-fix loop (`/pm-execute`)
+
+When the **orchestrator** runs a follow-up pass after `review_bot`, the prompt will include **pasted** MR discussion and feedback (you still cannot use GitLab MCP). Address every actionable thread, re-run gates and Adversary, then hand off to Ops for commit and push. Re-Review is scheduled by the orchestrator.
+
 ## Loop-break
 
-If Adversary returns non-empty findings 3 times in a row on the same file range, stop and write a short summary note for PM via your caller — let the human resolve.
+If Adversary returns non-empty findings 3 times in a row on the same diff-anchored scope (per `adversarial-review` skill), stop and write a short summary note for PM via your caller — let the human resolve.

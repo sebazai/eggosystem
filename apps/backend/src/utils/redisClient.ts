@@ -5,6 +5,8 @@ export const expireInOneDay = 24 * 60 * 60;
 export const expireIn30Days = 30 * 24 * 60 * 60;
 export const expireIn7Days = 7 * 24 * 60 * 60;
 export const expireIn20m = 20 * 60;
+/** 5 minutes — aligned with short-lived public marketing payloads */
+export const expireIn5m = 5 * 60;
 
 export const redisClient = new Redis({
   host: process.env.REDIS_HOST ?? "eggo-redis",

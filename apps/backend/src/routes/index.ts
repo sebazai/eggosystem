@@ -27,10 +27,11 @@ import {
   verifyEmailController,
   unsubscribeNewsletterController
 } from "../controllers/account.controllers";
-import { removeReservationByHashController } from "../controllers/match-streams.controllers";
+import { removeReservationByRemovalTokenController } from "../controllers/match-streams.controllers";
 import { landingPageStatistics } from "../services/landing-page.services";
 import parseQueryFilterParams from "../middlewares/parse-query-filter-params.middleware";
 import { cacheResponseMiddleware } from "../middlewares/cache-filtered-queries";
+import { BadRequestError } from "../utils/errors";
 import kanahautomoRouter from "./v1/kanahautomo.routes";
 import stageRouter from "./v1/stage.routes";
 import standingsRouter from "./v1/standings.routes";
@@ -41,6 +42,7 @@ import calendarRouter from "./v1/calendar.routes";
 import gameRouter from "./v1/game.routes";
 import hallOfFameRouter from "./v1/hall-of-fame.routes";
 import seasonResultsRouter from "./v1/season-results.routes";
+import sponsorsRouter from "./v1/sponsors.routes";
 
 // Create a new Router instance
 const v1Router = Router();
@@ -69,11 +71,20 @@ v1Router.use("/dashboard", corsMiddleware, authenticateJWT, dashboardRouter);
 v1Router.use("/kanahautomo", corsMiddleware, kanahautomoRouter);
 v1Router.use("/discord", corsMiddleware, discordRouter);
 v1Router.post("/verify-email", corsMiddleware, verifyEmailController);
-v1Router.get(
-  "/reservations/remove/:hash",
+v1Router.post(
+  "/reservations/remove",
   corsMiddleware,
-  removeReservationByHashController
+  removeReservationByRemovalTokenController
 );
+v1Router.get("/reservations/remove", corsMiddleware, (_req, _res, next) => {
+  next(
+    new BadRequestError(
+      "Use POST to remove a reservation.",
+      405,
+      "Method Not Allowed"
+    )
+  );
+});
 v1Router.use("/registrations", corsMiddleware, registrationsRouter);
 v1Router.use("/faceit", corsMiddleware, faceitRouter);
 v1Router.use("/players", playerRouter);
@@ -111,6 +122,7 @@ v1Router.use("/elo", eloRouter);
 v1Router.use("/standings", standingsRouter);
 v1Router.use("/hall-of-fame", hallOfFameRouter);
 v1Router.use("/season-results", seasonResultsRouter);
+v1Router.use("/sponsors", sponsorsRouter);
 
 v1Router.get("/stats", async (req, res) => {
   const stats = await landingPageStatistics();
