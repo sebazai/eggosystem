@@ -418,6 +418,7 @@ export const handleFaceitWebhook = async (
         const externalMatchRoomId = webhookData.payload.id;
         const matchDetails = await getFaceITMatchDetails(externalMatchRoomId);
         const startTime = webhookData.payload.started_at;
+        const externalLeagueId = webhookData.payload.entity.id;
 
         if (
           isForfeitPayload(webhookData.payload) &&
@@ -430,7 +431,7 @@ export const handleFaceitWebhook = async (
           const endTime = webhookData.payload.finished_at;
           const seasonLeague =
             await getSeasonLeagueExternalIdByExternalIdWithSeasonSettings(
-              webhookData.payload.entity.id
+              externalLeagueId
             );
           const matchesByRoom =
             await getMatchesByExternalId(externalMatchRoomId);
@@ -475,12 +476,13 @@ export const handleFaceitWebhook = async (
             matchDetails,
             manualReprocess
           );
+          await invalidateChampionshipMatchesCache(externalLeagueId);
+          await invalidateChampionshipBracketMatchesCache(externalLeagueId);
           res.status(200).send("Webhook received");
           return;
         }
 
         const endTime = webhookData.payload.finished_at;
-        const externalLeagueId = webhookData.payload.entity.id;
         const seasonLeague =
           await getSeasonLeagueExternalIdByExternalIdWithSeasonSettings(
             externalLeagueId
@@ -538,6 +540,8 @@ export const handleFaceitWebhook = async (
           matchDetails,
           manualReprocess
         );
+        await invalidateChampionshipMatchesCache(externalLeagueId);
+        await invalidateChampionshipBracketMatchesCache(externalLeagueId);
         res.status(200).send("Webhook received");
         return;
       }
