@@ -151,11 +151,16 @@ const data: { navMain: Array<MenuItem> } = {
     {
       title: "Demo parser",
       url: "#",
-      requiredRoles: ["admin"],
+      requiredRoles: ["admin", "helpdesk"],
       items: [
         {
           title: "Parse failed",
           url: createDashboardNextUrl("failed-parse"),
+          requiredRoles: ["admin", "helpdesk"]
+        },
+        {
+          title: "Manual demo parse",
+          url: createDashboardNextUrl("manual-demo-parse"),
           requiredRoles: ["admin", "helpdesk"]
         },
         {
