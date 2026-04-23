@@ -179,7 +179,23 @@ export const getMatchPlayerStats = async (
       INNER JOIN SteamPlayers p ON p.steam_id = ps.steam_id
       INNER JOIN MatchGames mg ON mg.id = ps.match_game_id
       INNER JOIN Matches m ON m.id = mg.match_id
-      INNER JOIN SeasonTeamPlayers stp ON stp.season_id = m.season_id AND stp.steam_id = p.steam_id
+      INNER JOIN SeasonTeamPlayers stp ON stp.season_id = m.season_id
+        AND stp.steam_id = p.steam_id
+        AND stp.discarded_at IS NULL
+        AND (
+          stp.match_id = m.id
+          OR (
+            stp.match_id IS NULL
+            AND NOT EXISTS (
+              SELECT 1
+              FROM SeasonTeamPlayers stp2
+              WHERE stp2.season_id = m.season_id
+                AND stp2.steam_id = p.steam_id
+                AND stp2.discarded_at IS NULL
+                AND stp2.match_id = m.id
+            )
+          )
+        )
       INNER JOIN MatchTeams mt ON mt.match_id = m.id AND mt.team_id = stp.team_id
       WHERE mg.match_id = ?
       GROUP BY p.steam_id, p.nickname, stp.team_id
