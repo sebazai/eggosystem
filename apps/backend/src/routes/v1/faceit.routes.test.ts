@@ -50,12 +50,8 @@ import { expressErrorHandler } from "../../middlewares/express-error-handler";
 import * as seasonLeagueExternalIdServices from "../../services/season-league-external-id.services";
 import * as faceitChampionshipServices from "../../services/faceit-championship.services";
 import * as faceitMatchServices from "../../services/faceit-match.services";
-import {
-  invalidateChampionshipMatchesCache
-} from "../../services/playoff-bracket.services";
-import {
-  invalidateChampionshipBracketMatchesCache
-} from "../../services/faceit-bracket.services";
+import { invalidateChampionshipMatchesCache } from "../../services/playoff-bracket.services";
+import { invalidateChampionshipBracketMatchesCache } from "../../services/faceit-bracket.services";
 import { sendDemoForAllStarPOTGClip } from "../../services/allstar.services";
 import { publishDemoProcessingRequest } from "../../services/match-game.services";
 import {
