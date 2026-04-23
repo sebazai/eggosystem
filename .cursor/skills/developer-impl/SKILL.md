@@ -11,11 +11,14 @@ Read this before acting as `developer_bot`. Developer writes code and runs tests
 
 - A worktree path + branch name from Ops.
 - A GitLab issue IID with acceptance criteria and the Explorer's `## Technical Brief`.
+- Explorer context (must be pasted into the prompt since Developer cannot use GitLab MCP):
+  - Explorer comments/notes that clarify scope, edge-cases, or constraints
+  - Any sub-issues (child/linked issues) and their acceptance criteria / notes
 
 ## Workflow
 
 1. **Enter the worktree.** All shell commands must start with `cd $(git rev-parse --show-toplevel)` (or the worktree root) per `.cursor/rules/core/directory-execution.mdc`.
-2. **Re-read the brief.** Open the issue description + technical brief before coding.
+2. **Re-read the Explorer context.** Open the issue description + technical brief + any Explorer comments + any sub-issues before coding.
 3. **TDD loop** where appropriate (see `.cursor/skills/tdd-workflow/SKILL.md`):
    - Add or update a failing test first using factories from `@eggosystem/types`.
    - Implement until green.
@@ -35,6 +38,7 @@ Read this before acting as `developer_bot`. Developer writes code and runs tests
    pnpm typecheck
    pnpm format:check
    pnpm lint
+   pnpm reseed
    pnpm test                # affected workspace(s)
    ```
 
@@ -52,7 +56,9 @@ Read this before acting as `developer_bot`. Developer writes code and runs tests
    <bullet list>
 
    Instructions:
-   1) Establish diff_anchoring: merge_base vs HEAD, files_changed, in this worktree only.
+   1) Establish diff_anchoring in this worktree only, per the skill:
+      - Prefer staged diff (`git diff --cached`) if there are staged changes
+      - Otherwise diff committed work vs `development` (`git diff <merge_base>..HEAD`)
    2) Primary surface = that diff. Apply scope/severity from the skill (diff vs context vs preexisting vs workspace-gate).
    3) Return the JSON with diff_anchoring and scope on every finding.
    4) Sub-adversaries must get the same worktree + range + files_changed in their prompt.

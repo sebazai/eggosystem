@@ -13,7 +13,12 @@ readonly: true
 - `README.database.md` (trigger-enforced invariants)
 - `CLAUDE.md`
 
-**Anchor every review on `git diff <merge_base>..HEAD` in the Developer’s worktree** (read-only `git`); then static gates, mapped through **workspace-gate** rules in the skill.
+**Anchor every review on the Developer’s worktree diff surface** (read-only `git`), in this priority order:
+
+1. **Staged changes** (when reviewing uncommitted work): `git diff --cached` (index vs `HEAD`)
+2. **Committed changes** (when there are branch commits): `git diff <merge_base>..HEAD`, where `<merge_base>` is computed against `origin/development` (fallbacks defined in the skill)
+
+Then run static gates, mapped through **workspace-gate** rules in the skill.
 
 ## Static gates (required, scoped)
 

@@ -128,6 +128,7 @@ pnpm knip
 pnpm typecheck
 pnpm format:check
 pnpm lint
+pnpm reseed
 pnpm test          # affected workspaces
 ```
 
