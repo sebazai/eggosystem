@@ -191,6 +191,7 @@ export const getMatchPlayerStats = async (
               FROM SeasonTeamPlayers stp2
               WHERE stp2.season_id = m.season_id
                 AND stp2.steam_id = p.steam_id
+                AND stp2.team_id = stp.team_id
                 AND stp2.discarded_at IS NULL
                 AND stp2.match_id = m.id
             )
