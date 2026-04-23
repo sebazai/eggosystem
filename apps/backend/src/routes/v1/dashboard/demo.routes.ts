@@ -9,10 +9,30 @@ import {
   getFailedParseMessagesStats
 } from "../../../models/failed-parse.models";
 import type { ReparseRequest } from "@eggosystem/types";
-import { NotFoundError, BadRequestError } from "../../../utils/errors";
+import {
+  NotFoundError,
+  BadRequestError,
+  UnauthorizedError
+} from "../../../utils/errors";
 import { logger } from "../../../utils/app-logger";
+import { enqueueManualDashboardDemoParse } from "../../../services/manual-demo-parse.services";
 
 const router = Router();
+
+const manualParseQueueBodySchema = z.object({
+  match_game_id: z.coerce.number().int().positive(),
+  download_url: z
+    .string()
+    .min(1)
+    .refine((val) => {
+      try {
+        return new URL(val).protocol === "https:";
+      } catch {
+        return false;
+      }
+    }, "Demo download URL must be a valid HTTPS URL"),
+  priority: z.number().int().min(1).max(10).optional().default(5)
+});
 
 // Query parameter schema for listing failed messages
 const listQuerySchema = z.object({
@@ -27,6 +47,47 @@ const reparseRequestSchema = z.object({
   match_game_ids: z.array(z.number().int().positive()).min(1).max(50),
   priority: z.number().int().min(1).max(10).optional().default(5)
 });
+
+/**
+ * POST /v1/dashboard/demos/manual/parse-queue
+ * Staff-only: enqueue a manual HTTPS demo URL for a MatchGame on parse_queue (source dashboard-manual).
+ */
+router.post(
+  "/manual/parse-queue",
+  async (req: Request, res: Response, next: NextFunction) => {
+    const actorAccountId = req.auth?.account_id;
+    if (actorAccountId === undefined) {
+      return next(new UnauthorizedError("Forbidden: Requires authentication"));
+    }
+
+    const parsed = manualParseQueueBodySchema.safeParse(req.body);
+    if (!parsed.success) {
+      logger.warn("Manual parse-queue body validation failed", {
+        issues: parsed.error.flatten()
+      });
+      return next(parsed.error);
+    }
+
+    const { match_game_id, download_url, priority } = parsed.data;
+
+    logger.info("Manual parse-queue enqueue request", {
+      actorAccountId,
+      match_game_id
+    });
+
+    const result = await enqueueManualDashboardDemoParse({
+      matchGameId: match_game_id,
+      downloadUrl: download_url,
+      priority,
+      actorAccountId
+    });
+
+    res.status(200).json({
+      status: "enqueued",
+      match_game_id: result.match_game_id
+    });
+  }
+);
 
 /**
  * GET /v1/dashboard/demos/failed/parse
