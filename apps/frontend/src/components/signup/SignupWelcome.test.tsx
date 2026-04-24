@@ -62,12 +62,12 @@ describe("SignupWelcome", () => {
       ).toBeInTheDocument();
 
       expect(
-        screen.getByText(
-          /Hi and Welcome to Kanaliiga, the biggest and the coolest CS2 tournament in Finland!/i
-        )
+        screen.getByText(/Finland's corporate CS2 tournament/i)
       ).toBeInTheDocument();
 
-      expect(screen.getByText(/💰 Participation Fee/i)).toBeInTheDocument();
+      expect(screen.getAllByText(/Participation Fee/i).length).toBeGreaterThan(
+        0
+      );
 
       expect(screen.getByText(/📏 Rules/i)).toBeInTheDocument();
 

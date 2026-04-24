@@ -30,5 +30,5 @@ RUN apt-get update && apt-get install -y --no-install-recommends git xvfb xauth 
     chown -R node:node /usr/local/mariadb-mcp
 USER node
 RUN cd /usr/local/mariadb-mcp && uv venv
-RUN mkdir -p /home/node/.claude && rtk init -g && rtk init -g --agent cursor
+RUN mkdir -p /home/node/.claude /home/node/.cursor && rtk init -g && rtk init -g --agent cursor
 USER root

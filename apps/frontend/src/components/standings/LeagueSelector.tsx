@@ -18,12 +18,19 @@ export const LeagueSelector = ({
     return null;
   }
 
+  const leagues = (
+    allLeagues.length > 0 ? allLeagues : [selectedLeague]
+  ).filter(
+    (league, idx, arr) =>
+      arr.findIndex((l) => l.external_id === league.external_id) === idx
+  );
+
   return (
     <SharedLeagueSelector
       value={selectedLeague.external_id}
       onValueChange={onLeagueChange}
       placeholder="Select league"
-      leagues={allLeagues.map((l) => ({
+      leagues={leagues.map((l) => ({
         id: l.external_id,
         name: l.external_league_name,
         tier: l.tier

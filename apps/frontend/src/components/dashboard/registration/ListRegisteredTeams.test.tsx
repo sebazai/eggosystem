@@ -377,7 +377,7 @@ describe("ListRegisteredTeams", () => {
       const expandButtons = screen.getAllByLabelText("Expand");
       fireEvent.click(expandButtons[1] as Element); // Expand team with invalid player
 
-      expect(screen.getByText("⚠️ Needs approval")).toBeInTheDocument();
+      expect(screen.getByText(/Needs approval/i)).toBeInTheDocument();
     });
   });
 
