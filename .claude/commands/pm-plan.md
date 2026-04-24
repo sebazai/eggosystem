@@ -121,6 +121,6 @@ If the human asked for multiple related pieces of work, split them into separate
 
 - Do NOT call `Task(developer_bot | ops_bot | review_bot | adversary_bot)` in this command — that is `/pm-execute`.
 - Do NOT edit any file.
-- Do NOT run any shell command beyond `git remote get-url origin` (Phase 0).
+- Do NOT run any shell command beyond `rtk git remote get-url origin` (Phase 0).
 - Do NOT merge or approve anything.
 - Do NOT skip `AskQuestion` — the whole point of this command is human ↔ PM dialogue.

@@ -20,7 +20,7 @@ import { Tv, Trash2, Star } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 const casterUrlSchema = z.object({
-  stream_url: z.url("Please enter a valid URL").min(1, "Stream URL is required")
+  stream_url: z.url("Enter a valid URL").min(1, "Stream URL is required")
 });
 
 type CasterUrlForm = z.infer<typeof casterUrlSchema>;

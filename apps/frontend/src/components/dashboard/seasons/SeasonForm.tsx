@@ -17,6 +17,7 @@ import {
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -477,10 +478,10 @@ export function SeasonForm({
                     </FormControl>
                     <div className="space-y-1 leading-none">
                       <FormLabel>Round Robin BO2 as 2xBO1</FormLabel>
-                      <p className="text-sm text-muted-foreground">
+                      <FormDescription>
                         Treat round robin BO2 matches as two separate BO1
                         matches
-                      </p>
+                      </FormDescription>
                     </div>
                   </FormItem>
                 )}
@@ -502,9 +503,9 @@ export function SeasonForm({
                         disabled={isFormDisabled}
                       />
                     </FormControl>
-                    <p className="text-sm text-muted-foreground">
+                    <FormDescription>
                       Link to payment page for participation fee
-                    </p>
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -526,9 +527,9 @@ export function SeasonForm({
                         disabled={isFormDisabled}
                       />
                     </FormControl>
-                    <p className="text-sm text-muted-foreground">
+                    <FormDescription>
                       Link to the season rulebook
-                    </p>
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -550,9 +551,9 @@ export function SeasonForm({
                         disabled={isFormDisabled}
                       />
                     </FormControl>
-                    <p className="text-sm text-muted-foreground">
+                    <FormDescription>
                       Discord invite link for the season
-                    </p>
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -582,9 +583,9 @@ export function SeasonForm({
                         disabled={isFormDisabled}
                       />
                     </FormControl>
-                    <p className="text-sm text-muted-foreground">
+                    <FormDescription>
                       Participation fee in euros (€)
-                    </p>
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -605,10 +606,10 @@ export function SeasonForm({
                     </FormControl>
                     <div className="space-y-1 leading-none">
                       <FormLabel>Price includes VAT</FormLabel>
-                      <p className="text-sm text-muted-foreground">
+                      <FormDescription>
                         If checked, displays &quot;(includes VAT)&quot;. If
                         unchecked, displays &quot;(+VAT)&quot;.
-                      </p>
+                      </FormDescription>
                     </div>
                   </FormItem>
                 )}
@@ -639,10 +640,10 @@ export function SeasonForm({
                         disabled={isFormDisabled}
                       />
                     </FormControl>
-                    <p className="text-sm text-muted-foreground">
+                    <FormDescription>
                       Discount as decimal (0.2 = 20% off). Must be between 0 and
                       1.
-                    </p>
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -724,7 +725,7 @@ export function SeasonForm({
                                   disabled={isFormDisabled}
                                 />
                               </FormControl>
-                              <FormLabel className="font-normal cursor-pointer">
+                              <FormLabel className="normal-case font-body font-normal cursor-pointer text-foreground">
                                 {map.name}
                               </FormLabel>
                             </FormItem>
@@ -732,9 +733,9 @@ export function SeasonForm({
                         </div>
                       )}
                     </div>
-                    <p className="text-sm text-muted-foreground">
+                    <FormDescription>
                       Select at least one map to be active for this season
-                    </p>
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -744,7 +745,7 @@ export function SeasonForm({
               <Button
                 type="submit"
                 disabled={isFormDisabled}
-                className="w-full"
+                className="w-full md:w-auto"
               >
                 {isSubmitting ? (
                   <>
@@ -754,9 +755,9 @@ export function SeasonForm({
                       : "Creating Season..."}
                   </>
                 ) : mode === "edit" ? (
-                  "Save Season"
+                  "Save Season →"
                 ) : (
-                  "Create Season"
+                  "Create Season →"
                 )}
               </Button>
             </form>

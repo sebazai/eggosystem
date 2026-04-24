@@ -112,7 +112,11 @@ export default function RootLayout({
           poppinsFont.variable
         )}
       >
-        <ThemeProvider attribute="class" enableSystem disableTransitionOnChange>
+        <ThemeProvider
+          attribute="class"
+          forcedTheme="light"
+          disableTransitionOnChange
+        >
           <Suspense>
             <div className="flex flex-col min-h-svh min-w-[200px] w-full">
               <AuthProvider>

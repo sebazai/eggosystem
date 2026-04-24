@@ -339,7 +339,7 @@ const ComparisonPanel = ({
         <div className="bg-black/20 rounded-lg p-2 border border-kanaliiga-orange/20">
           <div className="flex justify-between items-center">
             <span className="text-xs font-medium text-kanaliiga-orange">
-              🎯 You
+              You
             </span>
             <span className="text-lg font-bold text-white">
               {playerValue}
@@ -396,10 +396,10 @@ const ComparisonPanel = ({
               }`}
             >
               {playerVsCompare === "better" && playerVsAvg === "better"
-                ? "🔥 Elite"
+                ? "Elite"
                 : playerVsCompare === "worse" && playerVsAvg === "worse"
-                  ? "📈 Growth"
-                  : "⚡ Solid"}
+                  ? "Growth"
+                  : "Solid"}
             </span>
           </div>
         </div>

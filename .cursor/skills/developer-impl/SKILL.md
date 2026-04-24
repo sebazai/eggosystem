@@ -49,15 +49,15 @@ If re-invoking `adversary_bot` after a **first full** pass, you may **shorten** 
 
    ```bash
    cd $(git rev-parse --show-toplevel)
-   pnpm knip
-   pnpm typecheck
-   pnpm format:check
-   pnpm lint
-   pnpm reseed
-   pnpm test                # affected workspace(s)
+   rtk pnpm knip
+   rtk pnpm typecheck
+   rtk pnpm format:check
+   rtk pnpm lint
+   rtk pnpm reseed
+   rtk pnpm test                # affected workspace(s)
    ```
 
-   For E2E when relevant: `pnpm test:e2e` from repo root (see `.cursor/skills/e2e-playwright/SKILL.md`).
+   For E2E when relevant: `rtk pnpm test:e2e` from repo root (see `.cursor/skills/e2e-playwright/SKILL.md`).
 
 6. **Invoke Adversary** once locally green. You do **not** run `git` (forbidden) — the adversary establishes **`git merge-base .. HEAD` and the file list in that worktree** and anchors review on the diff. Pass everything it needs in the `Task` prompt:
 

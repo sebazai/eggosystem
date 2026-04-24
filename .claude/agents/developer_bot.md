@@ -27,6 +27,8 @@ Everything prefixed with `cd $(git rev-parse --show-toplevel)` (or the worktree 
 - `ls`, `pwd`, `rev-parse` (read-only navigation)
 - `node` / `npx` only for running repo-local scripts (no network installs)
 
+**Always prefix executable commands with `rtk`** (keep `cd ... &&` as the directory prefix).
+
 Forbidden: any `git` command, any `rm -rf` outside build artifacts, any global install.
 
 ## Delegation matrix (via `Task`)
@@ -50,9 +52,9 @@ All must pass locally:
 
 ```bash
 cd $(git rev-parse --show-toplevel)
-pnpm knip && pnpm typecheck && pnpm format:check && pnpm lint
-pnpm reseed
-pnpm test   # affected workspace(s)
+rtk pnpm knip && rtk pnpm typecheck && rtk pnpm format:check && rtk pnpm lint
+rtk pnpm reseed
+rtk pnpm test   # affected workspace(s)
 ```
 
 Then `Task(subagent_type=adversary_bot, ...)` until verdict is `"pass"`. The prompt **must** include: issue IID + title, **absolute worktree path** (adversary runs read-only `git` there to build `merge_base..HEAD` and `diff_anchoring`), and the acceptance-criteria list — per `.cursor/skills/developer-impl/SKILL.md` and `.cursor/skills/adversarial-review/SKILL.md`.

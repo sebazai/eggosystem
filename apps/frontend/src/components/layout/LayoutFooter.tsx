@@ -23,7 +23,7 @@ const Footer = async () => {
   return (
     <footer className="bg-secondary pt-4 sm:pt-12 px-4 sm:px-12">
       <div className="max-w-screen-2xl mx-auto">
-        <div className="border-b border-gray-700 pb-6 mb-6"></div>
+        <div className="border-b border-border pb-6 mb-6"></div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <div>
             <h2>Kanaliiga Ry</h2>
@@ -47,7 +47,7 @@ const Footer = async () => {
 
           {/* Column 3 - Follow Us */}
           <div>
-            <h2>Follow us</h2>
+            <h2>Follow Us</h2>
             <div className="mt-4 space-y-2">
               {[
                 { name: "Discord", link: "https://discord.gg/nhrNC9x" },

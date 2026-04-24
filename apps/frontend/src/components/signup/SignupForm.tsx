@@ -107,7 +107,6 @@ export const SignupForm = ({
   const baseSchema = baseSignupFormSchema({ platform });
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [editUrl, setEditUrl] = useState<string>("");
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [fetchingExternalData, setFetchingExternalData] = useState(false);
   const [validExternalTeamId, setValidExternalTeamId] = useState(
     platform !== SeasonPlatform.Kanaliiga ? null : true
@@ -295,7 +294,6 @@ export const SignupForm = ({
 
   const onSubmit = async (data: SignupFormValues) => {
     setSuccessMessage(null);
-    setErrorMessage(null);
     try {
       // Convert all Steam IDs to SteamID64 format before submitting
       const convertedData = await convertSteamIdsToSteamId64(data);
@@ -345,10 +343,10 @@ export const SignupForm = ({
       });
     } catch (error: unknown) {
       if (error instanceof ApiError) {
-        setErrorMessage(error.message);
+        toast.error(error.message);
         return;
       }
-      setErrorMessage("Something went wrong... Please contact organizer.");
+      toast.error("Something went wrong. Contact the organizer.");
     }
   };
 
@@ -627,20 +625,15 @@ export const SignupForm = ({
                 )}
               </div>
             )}
-            {errorMessage && (
-              <div className="text-red-500 font-semibold">{errorMessage}</div>
-            )}
-
             <Button
               type="submit"
-              variant="outline"
-              className="w-full"
+              className="w-full md:w-auto"
               disabled={isSubmittingOrHasSubmitted || !canSubmit}
               data-testid="signup-submit-button"
             >
               {form.formState.isSubmitting
-                ? "Processing submission..."
-                : "Submit"}
+                ? "Processing Submission..."
+                : "Submit Application →"}
             </Button>
 
             <FormField
@@ -661,7 +654,7 @@ export const SignupForm = ({
                       data-testid="terms-conditions-checkbox"
                     />
                   </FormControl>
-                  <RequiredFormLabel className="flex flex-wrap items-center gap-2">
+                  <RequiredFormLabel className="flex flex-wrap items-center gap-2 normal-case font-body font-normal text-foreground">
                     I have read and understood the
                     <Link
                       className="text-kanaliiga-orange hover:underline whitespace-nowrap"

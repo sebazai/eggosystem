@@ -25,7 +25,7 @@ Read this before acting as `worktree_bot`. This specialist runs **after** `ops_b
 
    ```bash
    cd <worktree_path>
-   pnpm run worktree:ensure
+   rtk pnpm run worktree:ensure
    ```
 
 2. The script (see `scripts/ensure-worktree-pnpm.mjs`):
@@ -33,12 +33,12 @@ Read this before acting as `worktree_bot`. This specialist runs **after** `ops_b
    - Verifies `require.resolve('@eggosystem/eslint/base')` (a published export of a root workspace dep) is under the worktree.
    - If not ok: removes shallow `node_modules` in the root, `apps/*`, and `packages/*`, then runs `pnpm install`.
 
-3. If `pnpm run worktree:ensure` **exits non-zero**, return `{ status: 'failed', worktree_path, log }` to the orchestrator. Do not edit application source; do not skip to Developer until this passes (or a human unblocks with a different worktree path).
+3. If `rtk pnpm run worktree:ensure` **exits non-zero**, return `{ status: 'failed', worktree_path, log }` to the orchestrator. Do not edit application source; do not skip to Developer until this passes (or a human unblocks with a different worktree path).
 
 ## Sandbox policy (Cursor / Claude)
 
-- **Allow:** `Read` / `Grep` / `Glob` to read the script, `Bash` only: `cd <absolute worktree>`, `pnpm run worktree:ensure`, and `pnpm run worktree:ensure` variants (or `node ./scripts/ensure-worktree-pnpm.mjs` from the worktree root with `cwd` set). No other `pnpm` subcommands in normal operation.
-- **Deny:** `git *` (all), GitLab MCP, `Write`/`Edit` of tracked source, `pnpm test*`, `pnpm knip`, `pnpm lint*`, `pnpm typecheck` — this is not a substitute for the Developer’s quality gates.
+- **Allow:** `Read` / `Grep` / `Glob` to read the script, `Bash` only: `cd <absolute worktree>`, `rtk pnpm run worktree:ensure`, and `rtk pnpm run worktree:ensure` variants (or `rtk node ./scripts/ensure-worktree-pnpm.mjs` from the worktree root with `cwd` set). No other `pnpm` subcommands in normal operation.
+- **Deny:** `git *` (all), GitLab MCP, `Write`/`Edit` of tracked source, `rtk pnpm test*`, `rtk pnpm knip`, `rtk pnpm lint*`, `rtk pnpm typecheck` — this is not a substitute for the Developer’s quality gates.
 
 ## Handoff artifact
 
@@ -56,4 +56,5 @@ Return to the orchestrator (then Developer):
 ## Relationship to Ops
 
 - `ops_bot` still does `git worktree add`, copies `apps/backend/.env` and `*.pem` from the primary clone, runs `pnpm install` in the new worktree, and should create a **`CONTEXT.local.md` stub** in the worktree root per `.cursor/skills/ops-git-worktrees/SKILL.md`.
+- `ops_bot` still does `rtk git worktree add`, copies `apps/backend/.env` and `*.pem` from the primary clone, runs `rtk pnpm install` in the new worktree, and should create a **`CONTEXT.local.md` stub** in the worktree root per `.cursor/skills/ops-git-worktrees/SKILL.md`.
 - `worktree_bot` is an explicit **verify/repair** pass so a mistaken symlink or bad copy does not reach Developer. It does not remove `CONTEXT.local.md`. Idempotent: safe to re-run if someone breaks `node_modules` mid-sprint; have the orchestrator re-invoke with the same worktree before another Developer pass.

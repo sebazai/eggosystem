@@ -19,7 +19,7 @@ First token is the issue number. Remaining tokens are optional context to pass t
 Run:
 
 ```bash
-git remote get-url origin
+rtk git remote get-url origin
 ```
 
 Parse the namespace/project path from the URL:
@@ -186,9 +186,9 @@ Build the branch name:
 Example: `feat/123-add-player-registration-endpoint`
 
 ```bash
-git checkout development
-git pull origin development
-git checkout -b <branch-name>
+rtk git checkout development
+rtk git pull origin development
+rtk git checkout -b <branch-name>
 ```
 
 ### 5b. Stage and commit
@@ -214,7 +214,7 @@ Closes #<issue-number>
 ### 5c. Push
 
 ```bash
-git push -u origin <branch-name>
+rtk git push -u origin <branch-name>
 ```
 
 ### 5d. Open Merge Request

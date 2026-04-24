@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { ConditionalNavigation } from "@/components/layout/ConditionalNavigation";
 import Footer from "@/components/layout/LayoutFooter";
 import SkipToContent from "@/components/layout/SkipToContent";
-import { KfcRain } from "@/components/layout/KfcRain";
+import { KfcRain } from "@/components/kanaliiga";
 import ScrollToTop from "@/components/layout/ScrollToTop";
 import { AuthProvider } from "@/context/AuthContext";
 import { Suspense } from "react";
@@ -123,7 +123,7 @@ export default function RootLayout({
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"
-          enableSystem
+          enableSystem={false}
           disableTransitionOnChange
         >
           <Suspense>

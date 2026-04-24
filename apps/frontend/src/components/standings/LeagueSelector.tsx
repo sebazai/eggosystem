@@ -1,13 +1,7 @@
 "use client";
 
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from "@/components/ui/select";
 import type { StandingsLeagues } from "@eggosystem/types";
+import { LeagueSelector as SharedLeagueSelector } from "@/components/league/LeagueSelector";
 
 interface LeagueSelectorProps {
   selectedLeague: StandingsLeagues | null;
@@ -25,19 +19,15 @@ export const LeagueSelector = ({
   }
 
   return (
-    <Select value={selectedLeague.external_id} onValueChange={onLeagueChange}>
-      <SelectTrigger className="min-w-[200px]">
-        <SelectValue placeholder="Select League">
-          {selectedLeague.external_league_name}
-        </SelectValue>
-      </SelectTrigger>
-      <SelectContent>
-        {allLeagues.map((league) => (
-          <SelectItem key={league.external_id} value={league.external_id}>
-            {league.external_league_name}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+    <SharedLeagueSelector
+      value={selectedLeague.external_id}
+      onValueChange={onLeagueChange}
+      placeholder="Select league"
+      leagues={allLeagues.map((l) => ({
+        id: l.external_id,
+        name: l.external_league_name,
+        tier: l.tier
+      }))}
+    />
   );
 };

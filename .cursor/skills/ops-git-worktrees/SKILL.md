@@ -32,8 +32,8 @@ All work for an issue happens in a dedicated worktree so multiple agents/issues 
 
 ```bash
 cd $(git rev-parse --show-toplevel)
-git fetch origin
-git worktree add .worktrees/<type>-<iid>-<slug> -b <type>-<iid>-<slug> origin/development
+rtk git fetch origin
+rtk git worktree add .worktrees/<type>-<iid>-<slug> -b <type>-<iid>-<slug> origin/development
 ```
 
 Post the worktree path + branch name back to PM/Developer as the handoff artifact.
@@ -49,8 +49,8 @@ So the worktree can run `pnpm dev` without manual setup:
    Example (set `ROOT` to `$(git rev-parse --show-toplevel)` and `WT` to `.worktrees/<type>-<iid>-<slug>`):
 
    ```bash
-   cp "$ROOT/apps/backend/.env" "$WT/apps/backend/.env"
-   cp "$ROOT/apps/backend/"*.pem "$WT/apps/backend/"
+   rtk cp "$ROOT/apps/backend/.env" "$WT/apps/backend/.env"
+   rtk cp "$ROOT/apps/backend/"*.pem "$WT/apps/backend/"
    ```
 
 2. `cd` to the **worktree root** and run `pnpm install` so dependencies are present before Developer tasks. **Never** replace `node_modules` with a symlink to the primary clone; pnpm workspace links would point at the wrong `packages/`. The orchestration pipeline runs `worktree_bot` (`pnpm run worktree:ensure` in that worktree) after you—idempotent and repairs mistaken symlinks. See [`.cursor/skills/worktree-readiness/SKILL.md`](../worktree-readiness/SKILL.md).
@@ -105,7 +105,7 @@ Refs: #<iid>
 Use HEREDOC when committing so multi-line bodies render correctly:
 
 ```bash
-git commit -m "$(cat <<'EOF'
+rtk git commit -m "$(cat <<'EOF'
 feat(backend): add caster-application submit endpoint
 
 Refs: #123
@@ -133,7 +133,7 @@ If `git commit` fails, or Husky / pre-commit / lint-staged / GPG signing errors 
 
 ```bash
 cd .worktrees/<type>-<iid>-<slug>
-git push -u origin HEAD
+rtk git push -u origin HEAD
 ```
 
 Then open the MR via MCP:
@@ -153,9 +153,9 @@ Post the MR IID back to the orchestrator (PM) + `review_bot`.
 
 ```bash
 cd $(git rev-parse --show-toplevel)
-git worktree remove .worktrees/<type>-<iid>-<slug>
-git branch -D <type>-<iid>-<slug>   # local
-git push origin --delete <type>-<iid>-<slug>   # remote if not already auto-pruned
+rtk git worktree remove .worktrees/<type>-<iid>-<slug>
+rtk git branch -D <type>-<iid>-<slug>   # local
+rtk git push origin --delete <type>-<iid>-<slug>   # remote if not already auto-pruned
 ```
 
 ## Forbidden

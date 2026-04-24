@@ -129,17 +129,17 @@ Copied from [CLAUDE.md](CLAUDE.md) — all must pass locally before invoking `ad
 
 ```bash
 cd $(git rev-parse --show-toplevel)
-pnpm knip
-pnpm typecheck
-pnpm format:check
-pnpm lint
-pnpm reseed
-pnpm test          # affected workspaces
+rtk pnpm knip
+rtk pnpm typecheck
+rtk pnpm format:check
+rtk pnpm lint
+rtk pnpm reseed
+rtk pnpm test          # affected workspaces
 ```
 
-E2E (`pnpm test:e2e`) runs only from the workspace root per [.cursor/skills/e2e-playwright/SKILL.md](.cursor/skills/e2e-playwright/SKILL.md).
+E2E (`rtk pnpm test:e2e`) runs only from the workspace root per [.cursor/skills/e2e-playwright/SKILL.md](.cursor/skills/e2e-playwright/SKILL.md).
 
-`worktree_bot` (or `pnpm run worktree:ensure` in the worktree) runs **before** these gates in `/pm-execute` so the install is for **this** worktree, not a symlinked `node_modules` from the primary clone. See [.cursor/skills/worktree-readiness/SKILL.md](.cursor/skills/worktree-readiness/SKILL.md).
+`worktree_bot` (or `rtk pnpm run worktree:ensure` in the worktree) runs **before** these gates in `/pm-execute` so the install is for **this** worktree, not a symlinked `node_modules` from the primary clone. See [.cursor/skills/worktree-readiness/SKILL.md](.cursor/skills/worktree-readiness/SKILL.md).
 
 ## Worktrees
 
@@ -174,7 +174,7 @@ Cross-cutting skills used by multiple specialists live in the same [`.cursor/ski
 - Reuse via exports, not duplication.
 - No `--no-verify` / `--no-gpg-sign`.
 - Commands prefixed with `cd $(git rev-parse --show-toplevel)` or the target workspace.
-- E2E is always run from the workspace root via `pnpm test:e2e`.
+- E2E is always run from the workspace root via `rtk pnpm test:e2e`.
 - Database triggers enforce business rules — application code alone cannot bypass them.
 
 ## Entry points (slash commands / skills)

@@ -5,8 +5,8 @@ import { envConfig } from "@/configs/env";
 import type { MatchInfo } from "@eggosystem/types";
 
 const KANALIIGA_OG_IMAGE_PATH = "/images/kanaliiga/opengraph-image.png";
-/** Kanaliiga orange from Tailwind (--kanaliiga-orange: hsl(35, 93%, 49%)) */
-const KANALIIGA_ORANGE = "#ec7610";
+/** Kanaliiga orange — #f29209 / hsl(35, 93%, 49%) */
+const KANALIIGA_ORANGE = "#f29209";
 
 export const OG_IMAGE_SIZE = {
   width: 1200,

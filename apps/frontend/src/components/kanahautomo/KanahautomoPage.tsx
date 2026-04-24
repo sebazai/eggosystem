@@ -39,7 +39,7 @@ import {
   kanahautomoSchema
 } from "@eggosystem/types";
 import { RequiredFormLabel } from "../ui/RequiredFormLabel";
-import { ChevronsUpDown } from "lucide-react";
+import { ChevronsUpDown, User } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useRouter } from "next/navigation";
 import { envConfig } from "@/configs/env";
@@ -555,9 +555,9 @@ export default function KanahautomoPage() {
                         className="mt-1"
                       />
                     </FormControl>
-                    <RequiredFormLabel className="text-sm leading-relaxed">
+                    <RequiredFormLabel className="normal-case font-body font-normal text-foreground text-sm leading-relaxed">
                       I consent to my Steam ID, nickname, and organization being
-                      visible to other Kanahautomo players in Discord. Your
+                      visible to other Kanahautomo players in Discord. My
                       organization will be displayed as a role in the Discord
                       server, making it visible to all members.
                     </RequiredFormLabel>
@@ -627,10 +627,11 @@ export default function KanahautomoPage() {
 
               <Button
                 type="submit"
+                className="w-full md:w-auto"
                 disabled={isSubmitting}
                 data-testid="kanahautomo-submit"
               >
-                {isSubmitting ? "Registering..." : "Join Kanahautomo"}
+                {isSubmitting ? "Registering..." : "Join Kanahautomo →"}
               </Button>
             </form>
           </Form>
@@ -676,7 +677,7 @@ export default function KanahautomoPage() {
                               key={i}
                               className={`w-6 h-6 rounded-full border-2 border-white flex items-center justify-center text-xs font-bold`}
                             >
-                              👤
+                              <User className="w-3 h-3" />
                             </div>
                           )
                         )}

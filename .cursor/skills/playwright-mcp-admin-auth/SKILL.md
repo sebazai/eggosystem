@@ -7,7 +7,7 @@ description: How to inject admin or normal-user session into Playwright MCP brow
 
 When using the **Playwright MCP server** for dashboard/admin or authenticated user flows, inject the same E2E session pattern the frontend E2E tests use. The user does not log in manually.
 
-**E2E tests:** Always run Playwright/E2E from workspace root with `pnpm test:e2e` (see [e2e-playwright.mdc](e2e-playwright.mdc)).
+**E2E tests:** Always run Playwright/E2E from workspace root with `rtk pnpm test:e2e` (see [e2e-playwright.mdc](e2e-playwright.mdc)).
 
 ## Prerequisites
 
@@ -24,7 +24,7 @@ Use when the AI should navigate or act as **admin** (e.g. `/dashboard`, admin-on
 1. **Generate E2E admin JWT** (same payload as `apps/frontend/src/e2e/utils/index.ts`):
 
    ```bash
-   cd $(git rev-parse --show-toplevel)/apps/frontend && node -e "
+   cd $(git rev-parse --show-toplevel)/apps/frontend && rtk node -e "
    const path = require('path');
    const jwt = require('jsonwebtoken');
    const fs = require('fs');

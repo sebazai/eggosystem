@@ -259,8 +259,8 @@ export default function SelectedTeamPanel({
         {isTeamComplete && (
           <div className="p-3 bg-blue-950/30 border border-blue-900/50 rounded-md">
             <p className="text-sm text-blue-300">
-              💡 <strong>Tip:</strong> You can assign player roles after
-              creating your team to earn bonus points!
+              <strong>Tip:</strong> You can assign player roles after creating
+              your team to earn bonus points!
             </p>
           </div>
         )}

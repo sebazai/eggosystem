@@ -12,11 +12,18 @@ export function MatchClientDate({
   className
 }: ClientDateProps) {
   const date = useMemo(() => {
-    return new Date(startTimestamp);
+    // If the timestamp lacks an explicit zone (Z or ±hh:mm), treat it as UTC.
+    const hasExplicitZone =
+      /([zZ]|[+-]\d{2}:\d{2})$/.test(startTimestamp) ||
+      /([+-]\d{4})$/.test(startTimestamp);
+    return new Date(hasExplicitZone ? startTimestamp : `${startTimestamp}Z`);
   }, [startTimestamp]);
 
   const formattedDate = useMemo(() => {
-    return formatDateShort(date, { toUpperCase: true });
+    return formatDateShort(date, {
+      timezone: "UTC",
+      toUpperCase: true
+    });
   }, [date]);
 
   return <span className={className}>{formattedDate}</span>;

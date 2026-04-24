@@ -28,6 +28,51 @@ Vaaleanruskea: #d09158 / hsl(29, 56%, 58%) */
 :root {
   --kanaliiga-orange: hsl(35, 93%, 49%);
   --kanaliiga-light-brown: hsl(29, 56%, 58%);
+  --kanaliiga-dark-gray: #161515;
+  --kanaliiga-white: #ffffff;
+  --kanaliiga-orange-hsl: 35 93% 49%;
+
+  /* --font-mono aliases --font-body; both are BitstreamVeraMono loaded by next/font */
+  --font-mono: var(--font-body);
+
+  /* ---------- Type scale (root 14px) ---------- */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+  --text-4xl: 2.25rem;
+  --text-5xl: 3rem;
+  --text-6xl: 3.75rem;
+
+  /* ---------- Radii ---------- */
+  --radius-pill: 9999px;
+
+  /* ---------- Elevation ---------- */
+  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-orange-glow: 0 0 20px rgb(242 146 9 / 0.35);
+
+  /* ---------- Layout ---------- */
+  --max-page: 1920px;
+  --page-px: 1rem;
+
+  /* ---------- Tier colors ---------- */
+  --tier-premier: 35 93% 49%;
+  --tier-elite: 262 83% 58%;
+  --tier-challenge: 199 89% 48%;
+  --tier-open: 160 60% 45%;
+
+  /* ---------- Status / stream ---------- */
+  --status-live: 0 84% 60%;
+  --status-upcoming: 35 93% 49%;
+  --status-finished: 240 3.8% 46.1%;
+  --stream-glow: rgb(245 158 11);
+
   --background: hsl(0, 100%, 99%);
   --foreground: hsl(240 10% 3.9%);
   --card: hsl(30, 30%, 92%);
@@ -73,8 +118,8 @@ Vaaleanruskea: #d09158 / hsl(29, 56%, 58%) */
   --card-foreground: hsl(0 0% 98%);
   --popover: hsl(240 3% 11%);
   --popover-foreground: hsl(0 0% 98%);
-  --primary: hsl(0 0% 98%);
-  --primary-foreground: hsl(240 5.9% 10%);
+  --primary: var(--kanaliiga-orange);
+  --primary-foreground: hsl(0 0% 100%);
   --secondary: hsl(240 3.7% 15.9%);
   --secondary-foreground: hsl(0 0% 98%);
   --muted: hsl(240 3.7% 15.9%);
@@ -112,6 +157,18 @@ Vaaleanruskea: #d09158 / hsl(29, 56%, 58%) */
   --breakpoint-max: 1920px;
   --color-kanaliiga-orange: var(--kanaliiga-orange);
   --color-kanaliiga-light-brown: var(--kanaliiga-light-brown);
+  --color-kanaliiga-dark-gray: var(--kanaliiga-dark-gray);
+  --color-kanaliiga-white: var(--kanaliiga-white);
+  --color-tier-premier: hsl(var(--tier-premier));
+  --color-tier-elite: hsl(var(--tier-elite));
+  --color-tier-challenge: hsl(var(--tier-challenge));
+  --color-tier-open: hsl(var(--tier-open));
+  --color-status-live: hsl(var(--status-live));
+  --color-status-upcoming: hsl(var(--status-upcoming));
+  --color-status-finished: hsl(var(--status-finished));
+  --shadow-orange-glow: var(--shadow-orange-glow);
+  --animate-stream-pulse: streamPulse 2s ease-in-out infinite;
+  --animate-spin-slow: spin 10s linear infinite;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -176,6 +233,10 @@ Vaaleanruskea: #d09158 / hsl(29, 56%, 58%) */
   }
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-body);
+    font-feature-settings: "tnum" 1;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
   }
 
   html {
@@ -212,12 +273,20 @@ Vaaleanruskea: #d09158 / hsl(29, 56%, 58%) */
     perspective: 1000px;
   }
 
-  nav > * {
+  nav, nav * {
     font-family: var(--font-headings);
   }
 
   .font-headings {
     font-family: var(--font-headings);
+  }
+
+  .font-body {
+    font-family: var(--font-body);
+  }
+
+  .font-poppins {
+    font-family: var(--font-poppins);
   }
 
   .logo {
@@ -270,22 +339,62 @@ Vaaleanruskea: #d09158 / hsl(29, 56%, 58%) */
     text-decoration: underline;
   }
 
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-headings);
+    font-weight: 400;
+    letter-spacing: 0.01em;
+    margin: 0;
+  }
   h1 {
     font-size: var(--text-2xl);
-    color: #f29209; /* Kanaliiga oranssi */
-    font-family: var(--font-headings);
+    color: var(--kanaliiga-orange);
   }
   h2 {
     font-size: var(--text-xl);
-    color: #d09158;
-    font-family: var(--font-headings);
+    color: var(--kanaliiga-light-brown);
   }
-  h3,
-  h4,
-  h5,
-  h6 {
+  h3 { font-size: var(--text-lg); }
+  h4 { font-size: var(--text-base); }
+  h5 { font-size: var(--text-sm); }
+  h6 { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.06em; }
+
+  .h-display {
     font-family: var(--font-headings);
+    font-size: clamp(2.5rem, 5vw, 4.5rem);
+    line-height: 1.05;
+    letter-spacing: 0.01em;
   }
+  .h-hero {
+    font-family: var(--font-headings);
+    font-size: clamp(1.875rem, 3.5vw, 3rem);
+    line-height: 1.1;
+  }
+  .h-section {
+    font-family: var(--font-headings);
+    font-size: clamp(1.5rem, 2.2vw, 1.875rem);
+  }
+
+  small {
+    font-size: var(--text-xs);
+    color: var(--muted-foreground);
+  }
+
+  code, pre, kbd, samp {
+    font-family: var(--font-mono);
+    font-size: 0.95em;
+  }
+
+  ::selection {
+    background: var(--kanaliiga-orange);
+    color: #fff;
+  }
+
+  .text-orange { color: var(--kanaliiga-orange); }
+  .text-brown  { color: var(--kanaliiga-light-brown); }
+  .bg-kana     { background: var(--background); }
+  .bg-kana-card  { background: var(--card); color: var(--card-foreground); }
+  .bg-kana-orange{ background: var(--kanaliiga-orange); color: #fff; }
+  .bg-kana-dark  { background: var(--kanaliiga-dark-gray); color: #fff; }
 
   .animate-spin-slow {
     animation: spin 10s linear infinite;
@@ -358,26 +467,30 @@ Vaaleanruskea: #d09158 / hsl(29, 56%, 58%) */
     background-color: hsl(var(--accent));
   }
 
-  .fc-theme-standard .fc-button-primary {
-    background-color: hsl(var(--primary));
-    border-color: hsl(var(--primary));
-    color: hsl(var(--primary-foreground));
+  /* FullCalendar's own CSS often ships as `.fc .fc-button-primary` and may load after
+     our globals, so we match that selector and use !important to ensure the Kanaliiga
+     orange wins for prev/next/today (when enabled). */
+  .fc .fc-button-primary {
+    background-color: var(--kanaliiga-orange) !important;
+    border-color: var(--kanaliiga-orange) !important;
+    color: #fff !important;
   }
 
-  .fc-theme-standard .fc-button-primary:hover {
-    background-color: hsl(var(--primary) / 0.9);
+  .fc .fc-button-primary:hover {
+    background-color: hsl(35, 93%, 42%) !important;
+    border-color: hsl(35, 93%, 42%) !important;
   }
 
-  .fc-theme-standard .fc-button-primary:disabled {
-    background-color: hsl(var(--muted));
-    border-color: hsl(var(--muted));
-    color: hsl(var(--muted-foreground));
+  .fc .fc-button-primary:disabled {
+    background-color: hsl(var(--muted)) !important;
+    border-color: hsl(var(--muted)) !important;
+    color: hsl(var(--muted-foreground)) !important;
   }
 
-  .fc-theme-standard .fc-button-primary:not(:disabled).fc-button-active,
-  .fc-theme-standard .fc-button-primary:not(:disabled):active {
-    background-color: hsl(var(--primary));
-    border-color: hsl(var(--primary));
+  .fc .fc-button-primary:not(:disabled).fc-button-active,
+  .fc .fc-button-primary:not(:disabled):active {
+    background-color: hsl(35, 93%, 42%) !important;
+    border-color: hsl(35, 93%, 42%) !important;
   }
 
   .fc-theme-standard .fc-highlight {
