@@ -471,25 +471,33 @@ Vaaleanruskea: #d09158 / hsl(29, 56%, 58%) */
      our globals, so we match that selector and use !important to ensure the Kanaliiga
      orange wins for prev/next/today (when enabled). */
   .fc .fc-button-primary {
+    background: var(--kanaliiga-orange) !important;
     background-color: var(--kanaliiga-orange) !important;
+    background-image: none !important;
     border-color: var(--kanaliiga-orange) !important;
     color: #fff !important;
   }
 
   .fc .fc-button-primary:hover {
+    background: hsl(35, 93%, 42%) !important;
     background-color: hsl(35, 93%, 42%) !important;
+    background-image: none !important;
     border-color: hsl(35, 93%, 42%) !important;
   }
 
   .fc .fc-button-primary:disabled {
+    background: hsl(var(--muted)) !important;
     background-color: hsl(var(--muted)) !important;
+    background-image: none !important;
     border-color: hsl(var(--muted)) !important;
     color: hsl(var(--muted-foreground)) !important;
   }
 
   .fc .fc-button-primary:not(:disabled).fc-button-active,
   .fc .fc-button-primary:not(:disabled):active {
+    background: hsl(35, 93%, 42%) !important;
     background-color: hsl(35, 93%, 42%) !important;
+    background-image: none !important;
     border-color: hsl(35, 93%, 42%) !important;
   }
 
