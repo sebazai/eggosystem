@@ -390,7 +390,7 @@ test.describe("Signup Form", () => {
 
       await expect(errorMessage).toBeVisible();
       await expect(errorMessage).toContainText(/required|invalid|uuid/i);
-      await expect(faceitIdField).toHaveClass(/border-red-500/);
+      await expect(faceitIdField).toHaveAttribute("aria-invalid", "true");
       await expect(goToLineupButton).toBeDisabled();
 
       // Test 2: FACEIT ID without hyphens (invalid UUID format)
@@ -401,7 +401,7 @@ test.describe("Signup Form", () => {
       await expect(goToLineupButton).toBeDisabled();
       await expect(errorMessage).toBeVisible();
       await expect(errorMessage).toContainText(/Invalid uuid|invalid|uuid/i);
-      await expect(faceitIdField).toHaveClass(/border-red-500/);
+      await expect(faceitIdField).toHaveAttribute("aria-invalid", "true");
 
       // Test 3: FACEIT ID with HTTP prefix
       await faceitIdField.focus();
@@ -413,7 +413,7 @@ test.describe("Signup Form", () => {
       await expect(errorMessage).toContainText(
         /Expected string, received null|invalid|uuid/i
       );
-      await expect(faceitIdField).toHaveClass(/border-red-500/);
+      await expect(faceitIdField).toHaveAttribute("aria-invalid", "true");
 
       // Test 4: Valid UUID format
       await faceitIdField.focus();
@@ -421,7 +421,7 @@ test.describe("Signup Form", () => {
       await faceitIdField.blur();
 
       await expect(errorMessage).toHaveCount(0);
-      await expect(faceitIdField).not.toHaveClass(/border-red-500/);
+      await expect(faceitIdField).not.toHaveAttribute("aria-invalid", "true");
       await expect(goToLineupButton).toBeEnabled();
 
       // Verify navigation works with valid ID
@@ -449,7 +449,7 @@ test.describe("Signup Form", () => {
       await page.waitForTimeout(2000);
 
       // Verify red border appears (indicates validation failure due to insufficient hours)
-      await expect(steamIdInput0).toHaveClass(/border-red-500/);
+      await expect(steamIdInput0).toHaveAttribute("aria-invalid", "true");
 
       // Test 2: Organizer approval success
       const steamIdInput1 = page.locator('[data-testid="steam-id-input-1"]');
@@ -473,7 +473,7 @@ test.describe("Signup Form", () => {
       await page.waitForTimeout(2000);
 
       // Verify red border appears (indicates validation failure due to lack of organizer approval)
-      await expect(steamIdInput2).toHaveClass(/border-red-500/);
+      await expect(steamIdInput2).toHaveAttribute("aria-invalid", "true");
     });
 
     test("should resolve player by nickname from database", async ({
@@ -559,7 +559,7 @@ test.describe("Signup Form", () => {
       await page.waitForTimeout(2000);
 
       // Verify red border appears (indicates resolution failure)
-      await expect(steamIdInput2).toHaveClass(/border-red-500/);
+      await expect(steamIdInput2).toHaveAttribute("aria-invalid", "true");
 
       // Verify error message is shown
       const errorMessage = page.locator('[data-testid="steam-id-error-2"]');
@@ -1141,7 +1141,7 @@ test.describe("Signup Form", () => {
       await page.waitForTimeout(2000);
 
       // Verify red border appears (indicates validation failure due to missing FaceIT rank)
-      await expect(steamIdInput).toHaveClass(/border-red-500/);
+      await expect(steamIdInput).toHaveAttribute("aria-invalid", "true");
 
       // Verify the external rank error notification is visible
       const externalRankError = page.locator(
@@ -1282,8 +1282,8 @@ test.describe("Signup Form", () => {
       const steamIdInput0 = page.locator('[data-testid="steam-id-input-0"]');
       const steamIdInput1 = page.locator('[data-testid="steam-id-input-1"]');
 
-      await expect(steamIdInput0).toHaveClass(/border-red-500/);
-      await expect(steamIdInput1).toHaveClass(/border-red-500/);
+      await expect(steamIdInput0).toHaveAttribute("aria-invalid", "true");
+      await expect(steamIdInput1).toHaveAttribute("aria-invalid", "true");
     });
   });
 
