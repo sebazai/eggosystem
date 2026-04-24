@@ -55,9 +55,26 @@ Full policy per role lives in [`.cursor/agents/<role>.md`](.cursor/agents) (poli
 
 The following pre-existing specialists in [`.cursor/agents/`](.cursor/agents) remain available as **sub-specialists** that `developer_bot` can call via `Task` for domain depth — they are **not** part of the primary workflow:
 
-- `backend_bot`, `frontend_bot`, `tester_bot`, `types_bot`, `refactor_bot`, `docs_bot`, `verifier_bot`
+- `backend_bot`, `frontend_bot`, `designer_bot`, `tester_bot`, `types_bot`, `refactor_bot`, `docs_bot`, `verifier_bot`
 
 Only `developer_bot` may spawn them.
+
+## Design standards gate (frontend diffs)
+
+If the work includes frontend UI changes (especially under `apps/frontend/src/components/**` or `apps/frontend/src/app/**`), `developer_bot` must run a **design standards review** before invoking `adversary_bot` and before handing off to `ops_bot`.
+
+- **Trigger paths** (non-exhaustive):
+  - `apps/frontend/src/components/**`
+  - `apps/frontend/src/app/**`
+  - `apps/frontend/src/styles/**`
+  - Tailwind/theme config or global CSS affecting UI tokens
+- **Mechanism**:
+  - `developer_bot` spawns `designer_bot` via `Task` with:
+    - worktree path, issue IID, acceptance criteria
+    - list of files changed (or “UI touched under …”)
+    - request: “Review diff for design-system compliance per `.cursor/skills/design-review/SKILL.md`”
+  - `designer_bot` returns `verdict: pass | needs_changes` and findings.
+  - `developer_bot` addresses **blockers** (design-system drift / accessibility regressions) before proceeding to Adversary/Ops.
 
 ## Handoff contract
 

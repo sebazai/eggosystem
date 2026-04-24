@@ -45,6 +45,7 @@ Only via `Task`:
 
 - `adversary_bot` (required before every Ops handoff, including after **review-fix** passes in `/pm-execute`)
 - Existing domain sub-specialists as helpers: `backend_bot`, `frontend_bot`, `tester_bot`, `types_bot`, `refactor_bot`, `docs_bot`, `verifier_bot`
+- Design standards review for UI diffs: `designer_bot` (required when editing frontend components/pages; see `AGENTS.md` and `.cursor/skills/design-review/SKILL.md`)
 
 Cannot spawn `pm_bot`, `explorer_bot`, `ops_bot`, `worktree_bot`, `review_bot`.
 
