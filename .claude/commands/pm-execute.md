@@ -58,7 +58,7 @@ Spawn Ops:
 
 ```
 Task(subagent_type=ops_bot,
-     prompt="Read .cursor/skills/ops-git-worktrees/SKILL.md. For issue #<iid> titled '<title>' (type <feat|fix|chore|docs>), create a worktree at .worktrees/<type>-<iid>-<slug> off origin/development with branch <type>-<iid>-<slug>. Do NOT edit tracked source. Create CONTEXT.local.md stub in the new worktree per the skill: resolve ABS_WT with \`cd \"\$ROOT/.worktrees/<type>-<iid>-<slug>\" && pwd -P\` and use that **exact** string for both \`cat > \"\$ABS_WT/CONTEXT.local.md\"\` and the returned worktree_path (no relative path for the stub file). Return {worktree_path, branch_name, issue_iid}.")
+     prompt="Read .cursor/skills/ops-git-worktrees/SKILL.md. For issue #<iid> titled '<title>' (type <feat|fix|chore|docs>), create a worktree at .worktrees/<type>-<iid>-<slug> off origin/development with branch <type>-<iid>-<slug>. Do NOT edit tracked source. Create CONTEXT.local.md stub in the new worktree per the skill: set ABS_WT to the **canonical** absolute path of that worktree (e.g. cd there from the primary clone and `pwd -P`); use that same string for `cat > $ABS_WT/CONTEXT.local.md` and for the returned `worktree_path` (never a relative path). Return {worktree_path, branch_name, issue_iid}.")
 ```
 
 Capture `{worktree_path, branch_name, issue_iid}`.
@@ -82,7 +82,7 @@ If `status` is not `ok`, **stop** the pipeline, return the payload (and any `not
 
 ## Phase 2.6: Context file (orchestrator)
 
-`ops_bot` should have created **`CONTEXT.local.md`** in `<worktree_path>` (see `.cursor/skills/ops-git-worktrees/SKILL.md`). You (orchestrator) have the full issue from Phase 0. **Do not** require a second GitLab fetch if data is already in memory. For the first `developer_bot` spawn, include in the Task prompt the **Acceptance criteria** and **Technical Brief** text (and sub-issues if any) so Developer can `Write` any `[pending]` sections in `CONTEXT.local.md` before coding. This keeps subagent `Task` prompts and resume-after-disconnect reliable.
+`ops_bot` should have created **`CONTEXT.local.md`** in `<worktree_path>` (see `.cursor/skills/ops-git-worktrees/SKILL.md`); the path in the **Worktree (absolute)** cell must match the same canonical `worktree_path` you carry from Phase 2. You (orchestrator) have the full issue from Phase 0. **Do not** require a second GitLab fetch if data is already in memory. For the first `developer_bot` spawn, include in the Task prompt the **Acceptance criteria** and **Technical Brief** text (and sub-issues if any) so Developer can `Write` any `[pending]` sections in `CONTEXT.local.md` before coding. This keeps subagent `Task` prompts and resume-after-disconnect reliable.
 
 ---
 

@@ -2,7 +2,7 @@
 
 **Copy to the worktree root** as `CONTEXT.local.md` after `ops_bot` creates the worktree. The worktree path lives under `.worktrees/`, which is not committed, so this file is never pushed.
 
-`ops_bot` may create a **stub** with `issue_iid`, paths, and `[pending]` markers. `developer_bot` (or the orchestrator on first spawn) must replace `[pending]` using the same text as the GitLab issue and Technical Brief (see `developer-impl` skill).
+`ops_bot` may create a **stub** (acceptance + brief = `[pending]`, optional sections omitted). This **full** template is the target shape once the issue is wired in. `developer_bot` (or the orchestrator on first spawn) must replace `[pending]` using the same text as the GitLab issue and Technical Brief (see `developer-impl` skill).
 
 ---
 

@@ -14,7 +14,7 @@ All work for an issue happens in a dedicated worktree so multiple agents/issues 
 ```
 <repo>/
   .worktrees/
-    <iid>-<slug>/      # working tree for issue #<iid>
+    <type>-<iid>-<slug>/   # working tree for issue #<iid> (matches branch)
 ```
 
 `.worktrees/` is gitignored.
@@ -57,8 +57,11 @@ So the worktree can run `pnpm dev` without manual setup:
 
 3. **Create `CONTEXT.local.md` in the worktree root** (shell only; this path is under `.worktrees/`, not committed). Use a heredoc with at least: `issue_iid`, absolute worktree path, `branch_name`, `created_utc` ([ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) UTC), and placeholder lines for **Acceptance criteria** / **Technical brief** set to `[pending]`. The orchestrator or `developer_bot` will fill those from the GitLab issue. Template reference: [`.cursor/templates/CONTEXT.local.template.md`](../templates/CONTEXT.local.template.md).
 
+   **Path rule:** do **not** `cat` to a relative `CONTEXT.local.md`. After `git worktree add`, resolve a **canonical** absolute worktree path and use the same value in the file body and in your `{ worktree_path, … }` return, e.g. `ROOT=$(git rev-parse --show-toplevel)` then `ABS_WT=$(cd "$ROOT/.worktrees/<type>-<iid>-<slug>" && pwd -P)`.
+
    ```bash
-   # Run from the worktree root; set ISSUE_IID, BRANCH, ABS_WT, PRIMARY_ROOT
+   # Set ROOT, ISSUE_IID, BRANCH, then resolve ABS_WT (must match worktree_path in handoff)
+   ABS_WT="$(cd "$ROOT/.worktrees/<type>-<iid>-<slug>" && pwd -P)"
    cat > "$ABS_WT/CONTEXT.local.md" <<EOF
    # Worktree context (local only)
 

@@ -43,7 +43,7 @@ flowchart LR
 ## What each stage does
 
 - **Explorer** — skipped if the issue already has a `## Technical Brief` section; otherwise produces it and pauses for your approval.
-- **Ops (branch)** — creates `.worktrees/<type>-<iid>-<slug>/` off `origin/development` with branch `<type>-<iid>-<slug>`, copies backend secrets, runs `pnpm install` in the worktree, and creates a **`CONTEXT.local.md` stub** in the worktree (see `.cursor/skills/ops-git-worktrees/SKILL.md`).
+- **Ops (branch)** — creates `.worktrees/<type>-<iid>-<slug>/` off `origin/development` with branch `<type>-<iid>-<slug>`, copies backend secrets, runs `pnpm install` in the worktree, and creates a **`CONTEXT.local.md` stub** using a **canonical** worktree path (`cd … && pwd -P`); returned `worktree_path` must match that string (see `.cursor/skills/ops-git-worktrees/SKILL.md`).
 - **Worktree (`worktree_bot`)** — runs `pnpm run worktree:ensure` in that worktree (verifies `node_modules` is not a foreign symlink and that a workspace package resolves under the worktree; see `scripts/ensure-worktree-pnpm.mjs`). Stops the pipeline with a human handoff if this fails.
 - **Orchestrator (context)** — ensures `CONTEXT.local.md` has acceptance criteria and Technical Brief (paste from Phase 0 into the first `developer_bot` prompt if still `[pending]`).
 - **Developer** — reads `CONTEXT.local.md` first, implements, delegates to domain bots with the **Task prompt checklist** in `developer-impl`, runs `pnpm knip && typecheck && format:check && lint && reseed && test` in the worktree.

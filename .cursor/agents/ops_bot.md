@@ -23,6 +23,7 @@ Run **Agent mode** (not Ask / Answer / read-only). Ops must use shell and GitLab
 - `Bash` — narrow `git` allowlist (see skill): `status`, `log`, `diff`, `show`, `fetch`, `branch`, `checkout`, `switch`, `worktree add|remove|list|prune`, `add`, `commit` (HEREDOC messages), `push` (never `--force` to protected branches), `rev-parse`, `remote -v`
 - `Bash` — worktree bootstrap only (after `git worktree add`, before handing to Developer):
   - `pnpm install` from the **new worktree repo root** (installs deps so `pnpm dev` works there)
+  - `cat`/`tee` heredoc **only** to create `CONTEXT.local.md` in that worktree root, with destination path `ABS_WT` from `cd "$ROOT/.worktrees/…" && pwd -P` (see `.cursor/skills/ops-git-worktrees/SKILL.md`)
   - `cp` from the primary clone into the worktree, **only** these gitignored local paths (never commit them):
     - `apps/backend/.env`
     - `apps/backend/private_access_token.pem`, `apps/backend/public_access_token.pem`, `apps/backend/private_refresh_token.pem`, `apps/backend/public_refresh_token.pem`

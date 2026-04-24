@@ -23,7 +23,7 @@ Everything must start with `cd $(git rev-parse --show-toplevel)` (or the target 
 - `git rev-parse`, `git remote -v`
 - After `git worktree add`: `cp` from the primary clone into the worktree **only** for gitignored backend locals — `apps/backend/.env` and `apps/backend/*.pem` (same paths under the worktree). Never commit these.
 - `pnpm install` **only** from the new worktree’s repo root, before handing off to Developer (so `pnpm dev` works there).
-- `cat`/`tee` with a heredoc **only** to create `CONTEXT.local.md` in the new worktree root, using a **resolved** `ABS_WT` (`pwd -P`) for the destination path; stub for `developer_bot` (see `.cursor/skills/ops-git-worktrees/SKILL.md`). No other ad-hoc file creation.
+- `cat`/`tee` with a heredoc **only** to create `CONTEXT.local.md` in the new worktree root, with destination `ABS_WT` from `cd "$ROOT/.worktrees/<type>-<iid>-<slug>" && pwd -P` (handoff `worktree_path` must use that same string). Stub for `developer_bot` (see `.cursor/skills/ops-git-worktrees/SKILL.md`). No other ad-hoc file creation.
 
 Forbidden shell: `rm -rf`, other `pnpm` commands, any non-git binary except the scoped `cp` / `pnpm install` / `CONTEXT.local.md` heredoc above.
 
