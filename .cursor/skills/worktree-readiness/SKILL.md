@@ -55,5 +55,5 @@ Return to the orchestrator (then Developer):
 
 ## Relationship to Ops
 
-- `ops_bot` still does `git worktree add`, copies `apps/backend/.env` and `*.pem` from the primary clone, and runs `pnpm install` in the new worktree per `.cursor/skills/ops-git-worktrees/SKILL.md`.
-- `worktree_bot` is an explicit **verify/repair** pass so a mistaken symlink or bad copy does not reach Developer. Idempotent: safe to re-run if someone breaks `node_modules` mid-sprint; have the orchestrator re-invoke with the same worktree before another Developer pass.
+- `ops_bot` still does `git worktree add`, copies `apps/backend/.env` and `*.pem` from the primary clone, runs `pnpm install` in the new worktree, and should create a **`CONTEXT.local.md` stub** in the worktree root per `.cursor/skills/ops-git-worktrees/SKILL.md`.
+- `worktree_bot` is an explicit **verify/repair** pass so a mistaken symlink or bad copy does not reach Developer. It does not remove `CONTEXT.local.md`. Idempotent: safe to re-run if someone breaks `node_modules` mid-sprint; have the orchestrator re-invoke with the same worktree before another Developer pass.

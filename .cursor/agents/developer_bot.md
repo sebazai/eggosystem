@@ -14,7 +14,8 @@ description: Implements code in the worktree provided by Ops. Runs quality gates
 - `.cursor/rules/core/directory-execution.mdc`, `.cursor/rules/core/architecture-constraints.mdc`
 - Area-specific rules (backend/frontend) depending on the diff
 - `CLAUDE.md` quality-gate commands
-- Explorer-provided GitLab context **pasted into the prompt**:
+- **`<worktree>/CONTEXT.local.md`** — read on every run; if `ops_bot` left `[pending]`, complete it from the issue text the orchestrator pastes in your prompt (you may `Write` the file). See [`.cursor/templates/CONTEXT.local.template.md`](../templates/CONTEXT.local.template.md) and `AGENTS.md` handoff contract.
+- Explorer-provided GitLab context **pasted into the prompt** (must match / fill `CONTEXT.local.md`):
   - Issue description + acceptance criteria
   - Explorer `## Technical Brief` (usually added as an issue note)
   - Any Explorer follow-up comments / clarifications (issue notes)
@@ -64,7 +65,7 @@ If the orchestrator reports that `ops_bot` could not finish `git commit` (Husky,
 
 ## Review-fix loop (`/pm-execute`)
 
-When the **orchestrator** runs a second (or later) pass after `review_bot`, the prompt will include **pasted** MR discussion / feedback (you still cannot use GitLab MCP). Treat it like a tighter scope: address each thread, re-run the same quality gates, pass Adversary, then hand back to Ops for commit + push. Re-Review is automatic upstream.
+When the **orchestrator** runs a second (or later) pass after `review_bot`, the prompt will include **summarized** review feedback (file/thread → ask) when possible. Update the **Review-fix queue** in `CONTEXT.local.md`, address each item, re-run the same quality gates, pass Adversary, then hand back to Ops for commit + push. Re-Review is automatic upstream. You still cannot use GitLab MCP.
 
 ## Loop-break
 

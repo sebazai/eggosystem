@@ -47,6 +47,7 @@ From the monorepo root, run **`pnpm knip`**, and **`pnpm lint`** / **`pnpm typec
 
 - Issue IID, acceptance criteria, **worktree path** (or confirmation to use current repo root).
 - Optional: explicit `<merge_base>..<head>` if the orchestrator passed one; otherwise you compute it (see order of operations).
+- **Follow-up pass:** The developer may pass a **short** prompt (re-check areas after fixes). You must still **recompute** `diff_anchoring` in the worktree; never assume the diff is unchanged without read-only `git`. On follow-ups, you may add a `notes` line like `focus: prior finding ids …` for traceability.
 - Access to `Read`, `Grep`, `Glob`, `SemanticSearch`, `ReadLints`, and a narrow Shell allowlist (`pnpm lint`, `pnpm knip`, `pnpm typecheck`, read-only `git`).
 
 ## Output format (return exactly this JSON)

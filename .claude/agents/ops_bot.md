@@ -23,8 +23,9 @@ Everything must start with `cd $(git rev-parse --show-toplevel)` (or the target 
 - `git rev-parse`, `git remote -v`
 - After `git worktree add`: `cp` from the primary clone into the worktree **only** for gitignored backend locals — `apps/backend/.env` and `apps/backend/*.pem` (same paths under the worktree). Never commit these.
 - `pnpm install` **only** from the new worktree’s repo root, before handing off to Developer (so `pnpm dev` works there).
+- `cat`/`tee` with a heredoc **only** to create `CONTEXT.local.md` in the new worktree root, using a **resolved** `ABS_WT` (`pwd -P`) for the destination path; stub for `developer_bot` (see `.cursor/skills/ops-git-worktrees/SKILL.md`). No other ad-hoc file creation.
 
-Forbidden shell: `rm -rf`, other `pnpm` commands, any non-git binary except the scoped `cp` / `pnpm install` above.
+Forbidden shell: `rm -rf`, other `pnpm` commands, any non-git binary except the scoped `cp` / `pnpm install` / `CONTEXT.local.md` heredoc above.
 
 ## Commit rules
 
@@ -50,7 +51,7 @@ Poll `mcp__GitLab__get_pipeline` / `list_pipelines`. On failure, post a summariz
 
 ## Handoff to Developer
 
-After the worktree exists: copy `apps/backend/.env` and the four access/refresh `*.pem` files from the primary clone into the worktree’s `apps/backend/`, run `pnpm install` at the worktree root, then return `{ worktree_path, branch_name, issue_iid }`.
+After the worktree exists: copy `apps/backend/.env` and the four access/refresh `*.pem` files from the primary clone into the worktree’s `apps/backend/`, run `pnpm install` at the worktree root, create the **`CONTEXT.local.md` stub** in the worktree root (Bash heredoc per the ops-git-worktrees skill), then return `{ worktree_path, branch_name, issue_iid }`.
 
 ## Forbidden
 

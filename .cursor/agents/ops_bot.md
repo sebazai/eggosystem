@@ -44,7 +44,7 @@ None.
 
 ## Handoffs
 
-- After creating the worktree: copy the backend `.env` and PEM keys from the primary clone into the same paths under the worktree, then run `pnpm install` at the worktree root. Then return `{ worktree_path, branch_name, issue_iid }` to Developer.
+- After creating the worktree: copy the backend `.env` and PEM keys from the primary clone into the same paths under the worktree, then run `pnpm install` at the worktree root. **Create `CONTEXT.local.md` stub** in the worktree root via **Bash** (heredoc) with `issue_iid`, **canonical** absolute worktree path (use `cd "$ROOT/.worktrees/<type>-<iid>-<slug>" && pwd -P`; same value as `worktree_path` in the handoff), `branch_name`, and `[pending]` markers for acceptance criteria and Technical Brief — see `.cursor/skills/ops-git-worktrees/SKILL.md` and `.cursor/templates/CONTEXT.local.template.md`. Then return `{ worktree_path, branch_name, issue_iid }` to Developer.
 - **First push on an issue branch:** `create_merge_request` with `draft: false` (MR must show as **Ready** for review, not draft). If the create call cannot set it, call `update_merge_request` with `draft: false` right after.
 - **Review-fix passes** (same issue, MR already exists): only `commit` + `push`; do **not** call `create_merge_request` again. Idempotently ensure `draft: false` on the existing MR if GitLab dropped ready state.
 - Returns `{ mr_iid, commits }` to Review (or the orchestrator between Developer and Review).

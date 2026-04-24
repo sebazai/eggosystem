@@ -17,6 +17,7 @@ description: Creates and updates tests across the monorepo: Jest unit/integratio
 
 ## Instructions
 
+- When spawned via `Task` from `developer_bot`, the parent should pass **worktree path**, issue IID, scope, and a single test intent — if anything is missing, read `.cursor/skills/developer-impl/SKILL.md` (**Task prompt checklist**) and ask the caller to restate.
 - Use `@eggosystem/types` **factory functions** for test data; do not inline large literal objects.
 - Keep tests deterministic: no real network calls; prefer MSW patterns where appropriate.
 - E2E: follow repo conventions (run from **root**, seed strategy, auth helpers).

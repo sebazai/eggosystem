@@ -55,7 +55,32 @@ So the worktree can run `pnpm dev` without manual setup:
 
 2. `cd` to the **worktree root** and run `pnpm install` so dependencies are present before Developer tasks. **Never** replace `node_modules` with a symlink to the primary clone; pnpm workspace links would point at the wrong `packages/`. The orchestration pipeline runs `worktree_bot` (`pnpm run worktree:ensure` in that worktree) after you—idempotent and repairs mistaken symlinks. See [`.cursor/skills/worktree-readiness/SKILL.md`](../worktree-readiness/SKILL.md).
 
-Ops still does not edit tracked source files; this is shell-only bootstrap of local secrets and node_modules.
+3. **Create `CONTEXT.local.md` in the worktree root** (shell only; this path is under `.worktrees/`, not committed). Use a heredoc with at least: `issue_iid`, absolute worktree path, `branch_name`, `created_utc` ([ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) UTC), and placeholder lines for **Acceptance criteria** / **Technical brief** set to `[pending]`. The orchestrator or `developer_bot` will fill those from the GitLab issue. Template reference: [`.cursor/templates/CONTEXT.local.template.md`](../templates/CONTEXT.local.template.md).
+
+   ```bash
+   # Run from the worktree root; set ISSUE_IID, BRANCH, ABS_WT, PRIMARY_ROOT
+   cat > "$ABS_WT/CONTEXT.local.md" <<EOF
+   # Worktree context (local only)
+
+   | Field | Value |
+   |---|---|
+   | Issue | #${ISSUE_IID} |
+   | Worktree (absolute) | ${ABS_WT} |
+   | Branch | \`${BRANCH}\` |
+   | Created (UTC) | $(date -u +%Y-%m-%dT%H:%M:%SZ) |
+
+   ## Acceptance criteria
+   [pending — orchestrator or developer_bot completes from GitLab issue]
+
+   ## Technical brief (Explorer)
+   [pending]
+
+   ## Sub-issues
+   [none or pending]
+   EOF
+   ```
+
+Ops still does not edit **tracked** source files; `CONTEXT.local.md` lives only under the gitignored worktree and is created with **Bash** like `.env` bootstrap.
 
 ## Commit chunking rules
 
