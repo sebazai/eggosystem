@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # /pm-plan — Plan with PM
 
-Run only the **planning** half of the 6-specialist pipeline: human ↔ `pm_bot` → GitLab issue.
+Run only the **planning** half of the PM pipeline: human ↔ `pm_bot` → GitLab issue (stops before Ops / worktree / Developer).
 
 Full playbook lives in [`.claude/commands/pm-plan.md`](../../../.claude/commands/pm-plan.md). Under Cursor, this skill is the user-invokable entry point; the same instructions apply.
 

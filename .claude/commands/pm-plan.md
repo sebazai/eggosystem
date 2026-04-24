@@ -5,7 +5,7 @@ argument-hint: <free-text goal or bug description>
 
 # /pm-plan — Plan with PM
 
-Run only the **planning** half of the 6-specialist pipeline: human ↔ `pm_bot` ↔ (`explorer_bot`) → GitLab issue. This stops before Ops/Developer touch anything.
+Run only the **planning** half of the PM pipeline: human ↔ `pm_bot` ↔ (`explorer_bot`) → GitLab issue. This stops before Ops / worktree readiness / Developer touch anything.
 
 **Arguments**: `$ARGUMENTS`
 All arguments are treated as the business-level intent (feature ask or bug description).
@@ -108,7 +108,7 @@ Output exactly this block (Markdown), then STOP. Do not spawn Explorer/Ops/Devel
 
 ### Next step
 
-Run `/pm-execute <iid>` to hand off to `explorer_bot` → `ops_bot` → `developer_bot`
+Run `/pm-execute <iid>` to hand off to `explorer_bot` → `ops_bot` → `worktree_bot` → `developer_bot`
 → `adversary_bot` → `ops_bot` → `review_bot`. The pipeline will pause at the HITL
 gates defined in AGENTS.md (architecture / non-convergence / merge).
 ```

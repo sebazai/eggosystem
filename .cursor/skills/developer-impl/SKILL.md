@@ -9,7 +9,7 @@ Read this before acting as `developer_bot`. Developer writes code and runs tests
 
 ## Inputs
 
-- A worktree path + branch name from Ops.
+- A worktree path + branch name from the orchestrator (from `ops_bot`). The orchestrator should run `worktree_bot` / `pnpm run worktree:ensure` in that worktree first so pnpm and Husky resolve this tree’s `packages/`, not a symlinked `node_modules` from another clone. If you see `MODULE_NOT_FOUND`, knip, or linters flagging the wrong `packages/`, ask the PM to re-run the worktree step—do not symlink or copy `node_modules` from the main repo.
 - A GitLab issue IID with acceptance criteria and the Explorer's `## Technical Brief`.
 - Explorer context (must be pasted into the prompt since Developer cannot use GitLab MCP):
   - Explorer comments/notes that clarify scope, edge-cases, or constraints

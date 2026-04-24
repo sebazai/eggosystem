@@ -1,11 +1,11 @@
 ---
-description: Execute a PM-scoped GitLab issue through the full specialist pipeline — Explorer → Ops → Developer (with Adversary loop) → Ops (ready MR) → Review loop (Developer+Adversary+Ops on feedback until clean). Stops at the merge HITL gate.
+description: Execute a PM-scoped GitLab issue through the full specialist pipeline — Explorer → Ops → worktree readiness → Developer (with Adversary loop) → Ops (ready MR) → Review loop (Developer+Adversary+Ops on feedback until clean). Stops at the merge HITL gate.
 argument-hint: <issue-iid> [additional context]
 ---
 
 # /pm-execute — Run the specialist pipeline
 
-Run the **execution** half of the 6-specialist pipeline on an existing GitLab issue (normally produced by `/pm-plan`).
+Run the **execution** half of the pipeline (Explorer → Ops → worktree → Developer + Adversary + …) on an existing GitLab issue (normally produced by `/pm-plan`).
 
 **Arguments**: `$ARGUMENTS`
 First token is the GitLab issue IID. Remaining tokens are optional context passed to every subagent.
@@ -62,6 +62,21 @@ Task(subagent_type=ops_bot,
 ```
 
 Capture `{worktree_path, branch_name, issue_iid}`.
+
+---
+
+## Phase 2.5: Worktree readiness (`worktree_bot`)
+
+So `node_modules` and pnpm workspace links in the new worktree are not a broken symlink to the primary clone (and Husky / `lint-staged` resolve the same tree as the Developer’s gates), spawn worktree **before** Developer:
+
+```
+Task(subagent_type=worktree_bot,
+     prompt="Read .cursor/skills/worktree-readiness/SKILL.md. In worktree <worktree_path> (issue #<iid>), run: cd <worktree_path> && pnpm run worktree:ensure. Return {status, worktree_path, issue_iid, note?}.")
+```
+
+If `status` is not `ok`, **stop** the pipeline, return the payload (and any `note`) to the human, and do not spawn `developer_bot` until the worktree install is healthy (re-run worktree, fix paths, or recreate the worktree via Ops). If `ok`, keep `{ worktree_path, branch_name, issue_iid }` and proceed to Phase 3.
+
+**Optional recovery:** if a later `git commit` (Phase 4) or Developer gate failure clearly indicates wrong workspace resolution, the orchestrator may re-run this Phase 2.5 in the same worktree before re-invoking Developer.
 
 ---
 

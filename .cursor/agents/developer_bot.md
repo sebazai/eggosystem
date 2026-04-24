@@ -45,7 +45,7 @@ Only via `Task`:
 - `adversary_bot` (required before every Ops handoff, including after **review-fix** passes in `/pm-execute`)
 - Existing domain sub-specialists as helpers: `backend_bot`, `frontend_bot`, `tester_bot`, `types_bot`, `refactor_bot`, `docs_bot`, `verifier_bot`
 
-Cannot spawn `pm_bot`, `explorer_bot`, `ops_bot`, `review_bot`.
+Cannot spawn `pm_bot`, `explorer_bot`, `ops_bot`, `worktree_bot`, `review_bot`.
 
 ## Gate before handoff
 

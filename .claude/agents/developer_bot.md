@@ -41,7 +41,7 @@ Spawn only when the change is clearly concentrated in one area:
 - Pre-handoff rule-compliance sweep → `verifier_bot`
 - **Adversary gate** → `adversary_bot` (required before every Ops handoff, including after **review-fix** passes in `/pm-execute`)
 
-You may **not** spawn `pm_bot`, `explorer_bot`, `ops_bot`, or `review_bot`.
+You may **not** spawn `pm_bot`, `explorer_bot`, `ops_bot`, `worktree_bot`, or `review_bot`.
 
 ## Mandatory gate before handoff
 

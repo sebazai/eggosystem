@@ -53,7 +53,7 @@ So the worktree can run `pnpm dev` without manual setup:
    cp "$ROOT/apps/backend/"*.pem "$WT/apps/backend/"
    ```
 
-2. `cd` to the **worktree root** and run `pnpm install` so dependencies are present before Developer tasks.
+2. `cd` to the **worktree root** and run `pnpm install` so dependencies are present before Developer tasks. **Never** replace `node_modules` with a symlink to the primary clone; pnpm workspace links would point at the wrong `packages/`. The orchestration pipeline runs `worktree_bot` (`pnpm run worktree:ensure` in that worktree) after you—idempotent and repairs mistaken symlinks. See [`.cursor/skills/worktree-readiness/SKILL.md`](../worktree-readiness/SKILL.md).
 
 Ops still does not edit tracked source files; this is shell-only bootstrap of local secrets and node_modules.
 
