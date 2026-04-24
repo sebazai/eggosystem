@@ -51,13 +51,15 @@ const reparseRequestSchema = z.object({
 /**
  * POST /v1/dashboard/demos/manual/parse-queue
  * Staff-only: enqueue a manual HTTPS demo URL for a MatchGame on parse_queue (source dashboard-manual).
+ * Dashboard “repair” actions here use global staff role checks (e.g. admin, helpdesk via
+ * `checkPermissions` on this mount), not a per-match or per-team scoping check.
  */
 router.post(
   "/manual/parse-queue",
   async (req: Request, res: Response, next: NextFunction) => {
     const actorAccountId = req.auth?.account_id;
     if (actorAccountId === undefined) {
-      return next(new UnauthorizedError("Forbidden: Requires authentication"));
+      return next(new UnauthorizedError("Not authenticated"));
     }
 
     const parsed = manualParseQueueBodySchema.safeParse(req.body);
