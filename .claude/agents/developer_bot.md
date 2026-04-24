@@ -37,6 +37,7 @@ Forbidden: any `git` command, any `rm -rf` outside build artifacts, any global i
 
 - Backend layering / Knex / Zod / RFC 7807 → `backend_bot`
 - Next.js RSC / shadcn / Radix / Tailwind → `frontend_bot`
+- Design-system standards review for UI diffs → `designer_bot`
 - Jest / Playwright / MSW tests → `tester_bot`
 - `@eggosystem/types` / factories → `types_bot`
 - Safe rename / dedup / small architectural cleanup → `refactor_bot`
