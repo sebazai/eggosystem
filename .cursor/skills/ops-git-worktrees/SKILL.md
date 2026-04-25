@@ -14,7 +14,7 @@ All work for an issue happens in a dedicated worktree so multiple agents/issues 
 ```
 <repo>/
   .worktrees/
-    <iid>-<slug>/      # working tree for issue #<iid>
+    <type>-<iid>-<slug>/   # working tree for issue #<iid> (matches branch)
 ```
 
 `.worktrees/` is gitignored.
@@ -32,8 +32,8 @@ All work for an issue happens in a dedicated worktree so multiple agents/issues 
 
 ```bash
 cd $(git rev-parse --show-toplevel)
-git fetch origin
-git worktree add .worktrees/<type>-<iid>-<slug> -b <type>-<iid>-<slug> origin/development
+rtk git fetch origin
+rtk git worktree add .worktrees/<type>-<iid>-<slug> -b <type>-<iid>-<slug> origin/development
 ```
 
 Post the worktree path + branch name back to PM/Developer as the handoff artifact.
@@ -49,13 +49,41 @@ So the worktree can run `pnpm dev` without manual setup:
    Example (set `ROOT` to `$(git rev-parse --show-toplevel)` and `WT` to `.worktrees/<type>-<iid>-<slug>`):
 
    ```bash
-   cp "$ROOT/apps/backend/.env" "$WT/apps/backend/.env"
-   cp "$ROOT/apps/backend/"*.pem "$WT/apps/backend/"
+   rtk cp "$ROOT/apps/backend/.env" "$WT/apps/backend/.env"
+   rtk cp "$ROOT/apps/backend/"*.pem "$WT/apps/backend/"
    ```
 
-2. `cd` to the **worktree root** and run `pnpm install` so dependencies are present before Developer tasks.
+2. `cd` to the **worktree root** and run `pnpm install` so dependencies are present before Developer tasks. **Never** replace `node_modules` with a symlink to the primary clone; pnpm workspace links would point at the wrong `packages/`. The orchestration pipeline runs `worktree_bot` (`pnpm run worktree:ensure` in that worktree) after you—idempotent and repairs mistaken symlinks. See [`.cursor/skills/worktree-readiness/SKILL.md`](../worktree-readiness/SKILL.md).
 
-Ops still does not edit tracked source files; this is shell-only bootstrap of local secrets and node_modules.
+3. **Create `CONTEXT.local.md` in the worktree root** (shell only; this path is under `.worktrees/`, not committed). Use a heredoc with at least: `issue_iid`, absolute worktree path, `branch_name`, `created_utc` ([ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) UTC), and placeholder lines for **Acceptance criteria** / **Technical brief** set to `[pending]`. The orchestrator or `developer_bot` will fill those from the GitLab issue. Template reference: [`.cursor/templates/CONTEXT.local.template.md`](../templates/CONTEXT.local.template.md).
+
+   **Path rule:** do **not** `cat` to a relative `CONTEXT.local.md`. After `git worktree add`, resolve a **canonical** absolute worktree path and use the same value in the file body and in your `{ worktree_path, … }` return, e.g. `ROOT=$(git rev-parse --show-toplevel)` then `ABS_WT=$(cd "$ROOT/.worktrees/<type>-<iid>-<slug>" && pwd -P)`.
+
+   ```bash
+   # Set ROOT, ISSUE_IID, BRANCH, then resolve ABS_WT (must match worktree_path in handoff)
+   ABS_WT="$(cd "$ROOT/.worktrees/<type>-<iid>-<slug>" && pwd -P)"
+   cat > "$ABS_WT/CONTEXT.local.md" <<EOF
+   # Worktree context (local only)
+
+   | Field | Value |
+   |---|---|
+   | Issue | #${ISSUE_IID} |
+   | Worktree (absolute) | ${ABS_WT} |
+   | Branch | \`${BRANCH}\` |
+   | Created (UTC) | $(date -u +%Y-%m-%dT%H:%M:%SZ) |
+
+   ## Acceptance criteria
+   [pending — orchestrator or developer_bot completes from GitLab issue]
+
+   ## Technical brief (Explorer)
+   [pending]
+
+   ## Sub-issues
+   [none or pending]
+   EOF
+   ```
+
+Ops still does not edit **tracked** source files; `CONTEXT.local.md` lives only under the gitignored worktree and is created with **Bash** like `.env` bootstrap.
 
 ## Commit chunking rules
 
@@ -77,7 +105,7 @@ Refs: #<iid>
 Use HEREDOC when committing so multi-line bodies render correctly:
 
 ```bash
-git commit -m "$(cat <<'EOF'
+rtk git commit -m "$(cat <<'EOF'
 feat(backend): add caster-application submit endpoint
 
 Refs: #123
@@ -85,18 +113,27 @@ EOF
 )"
 ```
 
+## Hand back to Developer (pre-commit, lint-staged, or `git commit` failed)
+
+If `git commit` fails, or Husky / pre-commit / lint-staged / GPG signing errors before the commit completes:
+
+1. **Stop.** Do not “fix” the worktree with extra `pnpm` commands, copied `node_modules`, untracked config shims, or **any** hook bypass. Treat these the same as `--no-verify` (forbidden in `CLAUDE.md`): do not set `HUSKY=0` (or similar) to skip hooks.
+2. Return the **full error output** to the PM/orchestrator.
+3. Instruct **Developer** to work in the **same worktree** and re-run the **full** self quality gates from `.cursor/skills/developer-impl/SKILL.md` (at minimum `pnpm knip`, `pnpm typecheck`, `pnpm format:check`, `pnpm lint`, `pnpm reseed`, `pnpm test` for affected workspaces; add `pnpm test:e2e` when relevant), until everything passes, then re-run **Adversary** if the diff changed materially, and have the orchestrator call **Ops** again to commit.
+4. Do **not** run those `pnpm` commands yourself (see **Forbidden**).
+
 ## Never
 
-- `--no-verify`, `--no-gpg-sign` (blocked by repo policy in `CLAUDE.md`).
+- `--no-verify`, `--no-gpg-sign` (blocked by repo policy in `CLAUDE.md`). Same intent: no env-based hook skip (`HUSKY=0`, etc.).
 - `git push --force` to `main`/`master`.
 - `git commit --amend` unless the previous commit was created in this session AND not yet pushed.
-- Edit files. If a commit fails because of formatting or lint hooks, hand back to Developer with the failure output.
+- Edit files. On commit or hook failure, follow **Hand back to Developer (pre-commit, lint-staged, or `git commit` failed)** — do not attempt fixes yourself.
 
 ## Push + open MR
 
 ```bash
 cd .worktrees/<type>-<iid>-<slug>
-git push -u origin HEAD
+rtk git push -u origin HEAD
 ```
 
 Then open the MR via MCP:
@@ -116,9 +153,9 @@ Post the MR IID back to the orchestrator (PM) + `review_bot`.
 
 ```bash
 cd $(git rev-parse --show-toplevel)
-git worktree remove .worktrees/<type>-<iid>-<slug>
-git branch -D <type>-<iid>-<slug>   # local
-git push origin --delete <type>-<iid>-<slug>   # remote if not already auto-pruned
+rtk git worktree remove .worktrees/<type>-<iid>-<slug>
+rtk git branch -D <type>-<iid>-<slug>   # local
+rtk git push origin --delete <type>-<iid>-<slug>   # remote if not already auto-pruned
 ```
 
 ## Forbidden

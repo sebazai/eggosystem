@@ -382,6 +382,9 @@ test.describe("Signup Form", () => {
       const errorMessage = page.locator(
         '[data-testid="team-external-id-error"]'
       );
+      const teamExternalIdLabel = faceitIdField.locator(
+        "xpath=ancestor::*[@data-slot='form-item'][1]/*[@data-slot='form-label']"
+      );
 
       // Test 1: Empty FACEIT ID
       await faceitIdField.focus();
@@ -390,7 +393,7 @@ test.describe("Signup Form", () => {
 
       await expect(errorMessage).toBeVisible();
       await expect(errorMessage).toContainText(/required|invalid|uuid/i);
-      await expect(faceitIdField).toHaveClass(/border-red-500/);
+      await expect(teamExternalIdLabel).toHaveAttribute("data-error", "true");
       await expect(goToLineupButton).toBeDisabled();
 
       // Test 2: FACEIT ID without hyphens (invalid UUID format)
@@ -401,7 +404,7 @@ test.describe("Signup Form", () => {
       await expect(goToLineupButton).toBeDisabled();
       await expect(errorMessage).toBeVisible();
       await expect(errorMessage).toContainText(/Invalid uuid|invalid|uuid/i);
-      await expect(faceitIdField).toHaveClass(/border-red-500/);
+      await expect(teamExternalIdLabel).toHaveAttribute("data-error", "true");
 
       // Test 3: FACEIT ID with HTTP prefix
       await faceitIdField.focus();
@@ -413,7 +416,7 @@ test.describe("Signup Form", () => {
       await expect(errorMessage).toContainText(
         /Expected string, received null|invalid|uuid/i
       );
-      await expect(faceitIdField).toHaveClass(/border-red-500/);
+      await expect(teamExternalIdLabel).toHaveAttribute("data-error", "true");
 
       // Test 4: Valid UUID format
       await faceitIdField.focus();
@@ -421,7 +424,10 @@ test.describe("Signup Form", () => {
       await faceitIdField.blur();
 
       await expect(errorMessage).toHaveCount(0);
-      await expect(faceitIdField).not.toHaveClass(/border-red-500/);
+      await expect(teamExternalIdLabel).not.toHaveAttribute(
+        "data-error",
+        "true"
+      );
       await expect(goToLineupButton).toBeEnabled();
 
       // Verify navigation works with valid ID

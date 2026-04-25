@@ -5,14 +5,8 @@ import { useSeasonLeagues } from "@/hooks/data/useSeasonLeagues";
 import { usePlayoffBracket } from "@/hooks/data/usePlayoffBracket";
 import { PlayoffBracket } from "@/components/playoff/PlayoffBracket";
 import { ContentContainer } from "@/components/layout/ContentContainer";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from "@/components/ui/select";
 import { createNextUrl } from "@/lib/utils";
+import { LeagueSelector } from "@/components/league/LeagueSelector";
 
 export function PlayoffPageContent({
   seasonId,
@@ -61,25 +55,18 @@ export function PlayoffPageContent({
                 >
                   League
                 </label>
-                <Select
+                <LeagueSelector
+                  id="playoff-league-select"
                   value={leagueId}
                   onValueChange={handleLeagueChange}
                   name="league"
-                >
-                  <SelectTrigger
-                    id="playoff-league-select"
-                    className="w-[200px]"
-                  >
-                    <SelectValue placeholder="Select league" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {seasonLeagues.map((league) => (
-                      <SelectItem key={league.id} value={String(league.id)}>
-                        {league.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  triggerClassName="w-[200px]"
+                  leagues={seasonLeagues.map((l) => ({
+                    id: String(l.id),
+                    name: l.name,
+                    tier: l.tier
+                  }))}
+                />
               </div>
             )}
           </div>

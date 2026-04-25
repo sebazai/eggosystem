@@ -13,17 +13,11 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { clientApiFetch } from "@/lib/apiClient";
 import { toast } from "sonner";
+import { LeagueSelector } from "@/components/league/LeagueSelector";
 
 interface LeagueOption {
   league_id: number;
@@ -208,21 +202,16 @@ export function PlayoffSeedsClient() {
             <>
               <div className="space-y-2">
                 <Label>League</Label>
-                <Select
+                <LeagueSelector
                   value={selectedLeagueId}
                   onValueChange={setSelectedLeagueId}
-                >
-                  <SelectTrigger className="w-full max-w-xs">
-                    <SelectValue placeholder="Select league" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {leagues.map((l) => (
-                      <SelectItem key={l.league_id} value={String(l.league_id)}>
-                        {l.league_name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  triggerClassName="w-full max-w-xs"
+                  leagues={leagues.map((l) => ({
+                    id: String(l.league_id),
+                    name: l.league_name,
+                    tier: l.tier
+                  }))}
+                />
               </div>
 
               {showTeams && (

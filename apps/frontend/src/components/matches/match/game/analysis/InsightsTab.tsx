@@ -4,6 +4,7 @@ import React, { useMemo, useState } from "react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { createTeamLogoUrl } from "@/lib/utils";
 import type {
   InsightResult,
   MatchGameInsights,
@@ -47,6 +48,16 @@ function sortInsights(insights: InsightResult[]): InsightResult[] {
     if (aPriority !== bPriority) return aPriority - bPriority;
     return SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity];
   });
+}
+
+function resolveImageSrc(src: string | null | undefined): string | null {
+  if (!src) return null;
+  const trimmed = src.trim();
+  if (!trimmed) return null;
+  if (trimmed === "null" || trimmed === "undefined") return null;
+
+  if (trimmed.startsWith("/") || trimmed.startsWith("data:")) return trimmed;
+  return createTeamLogoUrl(trimmed);
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -175,14 +186,15 @@ const TeamColumn = ({
       : insights;
   const sorted = sortInsights(visible);
   const hiddenCount = insights.length - visible.length;
+  const teamLogoSrc = resolveImageSrc(team.team_logo);
 
   return (
     <div className="flex flex-col gap-3 min-w-0">
       {/* Team header */}
       <div className="flex items-center gap-2 pb-1 border-b border-border/40">
-        {team.team_logo && (
+        {teamLogoSrc && (
           <Image
-            src={team.team_logo}
+            src={teamLogoSrc}
             alt={team.team_name}
             width={20}
             height={20}

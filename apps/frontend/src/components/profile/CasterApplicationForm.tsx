@@ -181,7 +181,7 @@ export function OrganizerApplicationBlock({
                       />
                     </FormControl>
                     <div className="space-y-1 leading-none">
-                      <FormLabel className="font-normal">
+                      <FormLabel className="normal-case font-body font-normal text-foreground">
                         I have read the above information and promise to follow
                         them.
                       </FormLabel>
@@ -192,9 +192,10 @@ export function OrganizerApplicationBlock({
               />
               <Button
                 type="submit"
+                className="w-full md:w-auto"
                 disabled={!form.formState.isValid || isSubmitting}
               >
-                {isSubmitting ? "Submitting..." : "Submit application"}
+                {isSubmitting ? "Submitting..." : "Submit Application →"}
               </Button>
             </form>
           </Form>

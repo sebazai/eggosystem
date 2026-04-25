@@ -14,7 +14,6 @@ import { useAuth } from "@/context/AuthContext";
 import Link from "next/link";
 import { DesktopLogOut } from "../profile/DesktopLogOut";
 import { SteamLoginButton } from "../profile/SteamLoginButton";
-import { ModeToggle } from "./ThemeToggle";
 import { createNextUrl } from "@/lib/utils";
 
 export default function UserDropdown() {
@@ -29,9 +28,7 @@ export default function UserDropdown() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-66">
         <DropdownMenuGroup>
-          <DropdownMenuLabel className="flex items-center justify-between">
-            Account <ModeToggle />
-          </DropdownMenuLabel>
+          <DropdownMenuLabel>Account</DropdownMenuLabel>
           {user && (
             <>
               <DropdownMenuItem className="cursor-pointer" asChild>
@@ -41,13 +38,13 @@ export default function UserDropdown() {
               </DropdownMenuItem>
               <DropdownMenuItem className="cursor-pointer" asChild>
                 <Link href={createNextUrl("/my-team")}>
-                  <Users /> <span>My Team</span>
+                  <Users /> <span>Your Team</span>
                 </Link>
               </DropdownMenuItem>
               {user.provider_id && (
                 <DropdownMenuItem className="cursor-pointer" asChild>
                   <Link href={createNextUrl(`/players/${user.provider_id}`)}>
-                    <BarChart3 /> <span>My Page</span>
+                    <BarChart3 /> <span>Your Stats</span>
                   </Link>
                 </DropdownMenuItem>
               )}

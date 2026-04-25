@@ -30,7 +30,7 @@ readonly: true
 
 Only `Task(subagent_type=gitlab-assistant, ...)` for `review-merge-request` semantic passes.
 
-Cannot spawn any of our 6 specialists.
+Cannot spawn any of our 7 pipeline specialists.
 
 ## Deliverables
 

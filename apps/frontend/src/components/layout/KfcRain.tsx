@@ -19,7 +19,7 @@ export const KfcRain = () => {
       initial={{ opacity: 0, y: -100 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.8, repeat: Infinity, repeatType: "mirror" }}
-      className="z-100 fixed top-0 left-0 w-full h-full pointer-events-none z-50 bg-[url('/kfc.png')] bg-[length:100px] bg-repeat animate-spin-slow"
+      className="z-100 fixed top-0 left-0 w-full h-full pointer-events-none z-50 bg-[url('/images/kanaliiga/kfc.png')] bg-[length:100px] bg-repeat animate-spin-slow"
     />
   );
 };

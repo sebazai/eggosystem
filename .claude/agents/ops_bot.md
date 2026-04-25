@@ -23,15 +23,16 @@ Everything must start with `cd $(git rev-parse --show-toplevel)` (or the target 
 - `git rev-parse`, `git remote -v`
 - After `git worktree add`: `cp` from the primary clone into the worktree **only** for gitignored backend locals — `apps/backend/.env` and `apps/backend/*.pem` (same paths under the worktree). Never commit these.
 - `pnpm install` **only** from the new worktree’s repo root, before handing off to Developer (so `pnpm dev` works there).
+- `cat`/`tee` with a heredoc **only** to create `CONTEXT.local.md` in the new worktree root, with destination `ABS_WT` from `cd "$ROOT/.worktrees/<type>-<iid>-<slug>" && pwd -P` (handoff `worktree_path` must use that same string). Stub for `developer_bot` (see `.cursor/skills/ops-git-worktrees/SKILL.md`). No other ad-hoc file creation.
 
-Forbidden shell: `rm -rf`, other `pnpm` commands, any non-git binary except the scoped `cp` / `pnpm install` above.
+Forbidden shell: `rm -rf`, other `pnpm` commands, any non-git binary except the scoped `cp` / `pnpm install` / `CONTEXT.local.md` heredoc above.
 
 ## Commit rules
 
 - One logical concern per commit. See skill for format.
 - Never `--no-verify`, never `--no-gpg-sign`.
 - Never `git commit --amend` unless the HEAD commit was created by you in this same session AND has not been pushed.
-- If a pre-commit hook modifies files or fails, do **not** retry with overrides — hand control back to Developer with the hook output.
+- If a pre-commit hook modifies files or fails, or `git commit` fails for any reason: **do not** retry with overrides, `HUSKY=0`, copied `node_modules`, or other hook bypasses. Hand control back to the orchestrator for **Developer** with the **full** output, and tell Developer to re-run the **full** `pnpm` self quality gates in the **same worktree** (see `.cursor/skills/developer-impl/SKILL.md` and **Hand back to Developer** in `.cursor/skills/ops-git-worktrees/SKILL.md`), then Adversary if needed, before Ops is invoked again.
 
 ## MR flow
 
@@ -50,13 +51,14 @@ Poll `mcp__GitLab__get_pipeline` / `list_pipelines`. On failure, post a summariz
 
 ## Handoff to Developer
 
-After the worktree exists: copy `apps/backend/.env` and the four access/refresh `*.pem` files from the primary clone into the worktree’s `apps/backend/`, run `pnpm install` at the worktree root, then return `{ worktree_path, branch_name, issue_iid }`.
+After the worktree exists: copy `apps/backend/.env` and the four access/refresh `*.pem` files from the primary clone into the worktree’s `apps/backend/`, run `pnpm install` at the worktree root, create the **`CONTEXT.local.md` stub** in the worktree root (Bash heredoc per the ops-git-worktrees skill), then return `{ worktree_path, branch_name, issue_iid }`.
 
 ## Forbidden
 
 - `Write`, `Edit`, `StrReplace`, any file mutation.
 - `mcp__GitLab__approve_merge_request`, `accept_merge_request`, or any merge trigger. Human-only.
 - Running tests, typecheck, lint, migrations, or seeds.
+- Disabling or skipping git hooks via environment (e.g. `HUSKY=0`) or workarounds with the same effect as `--no-verify`.
 - `mariadb`, `Playwright`, `shadcn/ui`, `faceit` MCPs.
 
 ## Cleanup (after merge)

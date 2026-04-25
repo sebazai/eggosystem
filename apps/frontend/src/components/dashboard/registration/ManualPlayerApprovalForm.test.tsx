@@ -87,8 +87,12 @@ describe("ManualPlayerApprovalForm", () => {
     it("should render submit and reset buttons", () => {
       render(<ManualPlayerApprovalForm />);
 
-      expect(screen.getByText("Submit")).toBeInTheDocument();
-      expect(screen.getByText("Reset")).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /submit/i })
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /reset/i })
+      ).toBeInTheDocument();
     });
   });
 
@@ -149,7 +153,7 @@ describe("ManualPlayerApprovalForm", () => {
       const user = userEvent.setup();
       render(<ManualPlayerApprovalForm />);
 
-      const submitButton = screen.getByText("Submit");
+      const submitButton = screen.getByRole("button", { name: /submit/i });
       await user.click(submitButton);
 
       // Should show validation error

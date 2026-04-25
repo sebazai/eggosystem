@@ -9,20 +9,35 @@ Read this before acting as `developer_bot`. Developer writes code and runs tests
 
 ## Inputs
 
-- A worktree path + branch name from Ops.
+- A **canonical** worktree path + branch name from the orchestrator (from `ops_bot`); the path should be absolute and match the **Worktree (absolute)** cell in `CONTEXT.local.md` (ops uses `cd "$ROOT/.worktrees/…" && pwd -P`). The orchestrator should run `worktree_bot` / `pnpm run worktree:ensure` in that worktree first so pnpm and Husky resolve this tree’s `packages/`, not a symlinked `node_modules` from another clone. If you see `MODULE_NOT_FOUND`, knip, or linters flagging the wrong `packages/`, ask the PM to re-run the worktree step—do not symlink or copy `node_modules` from the main repo.
 - A GitLab issue IID with acceptance criteria and the Explorer's `## Technical Brief`.
-- Explorer context (must be pasted into the prompt since Developer cannot use GitLab MCP):
+- **Local context file** — `CONTEXT.local.md` in the worktree root (see [`.cursor/templates/CONTEXT.local.template.md`](../../templates/CONTEXT.local.template.md)). `ops_bot` writes a **stub**; you must ensure acceptance criteria, Technical Brief, and sub-issues are present (copy from the orchestrator’s first message if sections are still `[pending]` or empty).
+- Explorer context (supplement; must be available via paste and/or a filled `CONTEXT.local.md` since Developer cannot use GitLab MCP):
   - Explorer comments/notes that clarify scope, edge-cases, or constraints
   - Any sub-issues (child/linked issues) and their acceptance criteria / notes
+
+## `Task` prompt checklist (subagents: `backend_bot`, `frontend_bot`, `tester_bot`, `types_bot`, `refactor_bot`, `docs_bot`, `verifier_bot`)
+
+`Task` does not inherit the parent turn. **Every** spawn must include:
+
+1. **Absolute** worktree path and issue **IID** + one-line title.
+2. `Read .cursor/agents/<role>.md` and the **Must-read** skills listed there.
+3. **Acceptance criteria** (bullets) and any **non-goals** or constraints from `CONTEXT.local.md` or the prompt.
+4. **Packages/areas in scope** and what is **out of scope** for this `Task`.
+5. The **single intent** the parent is asking for (e.g. “add integration test for X”, not “fix everything”).
+
+### Adversary follow-up passes (round 2+)
+
+If re-invoking `adversary_bot` after a **first full** pass, you may **shorten** the prompt: e.g. “re-establish `diff_anchoring` in the worktree; same acceptance criteria as the previous pass; **re-check** prior finding areas: …”. The adversary must still **recompute** `diff_anchoring` in the worktree. Use the long template in step 7 for the first full review of a work chunk.
 
 ## Workflow
 
 1. **Enter the worktree.** All shell commands must start with `cd $(git rev-parse --show-toplevel)` (or the worktree root) per `.cursor/rules/core/directory-execution.mdc`.
-2. **Re-read the Explorer context.** Open the issue description + technical brief + any Explorer comments + any sub-issues before coding.
+2. **Load `CONTEXT.local.md`.** `Read` `<worktree>/CONTEXT.local.md` before coding. If the stub has `[pending]` or empty **Acceptance criteria** / **Technical brief**, `Write` the file using the text the orchestrator pasted in your prompt, then continue. This file is the shared anchor for you and every `Task` you spawn. You may append a line to the optional **Stage log** when you complete a major milestone.
 3. **TDD loop** where appropriate (see `.cursor/skills/tdd-workflow/SKILL.md`):
    - Add or update a failing test first using factories from `@eggosystem/types`.
    - Implement until green.
-4. **Delegate domain depth** to the existing specialists via `Task` when the change is concentrated in one area:
+4. **Delegate domain depth** to the existing specialists via `Task` (use the **Task prompt checklist** above) when the change is concentrated in one area:
    - Backend (Express/Knex/Zod/RFC 7807) → `backend_bot`
    - Frontend (Next.js RSC / shadcn / forms) → `frontend_bot`
    - Tests (Jest / Playwright / MSW) → `tester_bot`
@@ -34,15 +49,15 @@ Read this before acting as `developer_bot`. Developer writes code and runs tests
 
    ```bash
    cd $(git rev-parse --show-toplevel)
-   pnpm knip
-   pnpm typecheck
-   pnpm format:check
-   pnpm lint
-   pnpm reseed
-   pnpm test                # affected workspace(s)
+   rtk pnpm knip
+   rtk pnpm typecheck
+   rtk pnpm format:check
+   rtk pnpm lint
+   rtk pnpm reseed
+   rtk pnpm test                # affected workspace(s)
    ```
 
-   For E2E when relevant: `pnpm test:e2e` from repo root (see `.cursor/skills/e2e-playwright/SKILL.md`).
+   For E2E when relevant: `rtk pnpm test:e2e` from repo root (see `.cursor/skills/e2e-playwright/SKILL.md`).
 
 6. **Invoke Adversary** once locally green. You do **not** run `git` (forbidden) — the adversary establishes **`git merge-base .. HEAD` and the file list in that worktree** and anchors review on the diff. Pass everything it needs in the `Task` prompt:
 
@@ -68,9 +83,13 @@ Read this before acting as `developer_bot`. Developer writes code and runs tests
 7. **Address findings** (prefer **`scope: diff` / `context` / `acceptance` / scoped `workspace-gate`** first; challenge `touched-file-preexisting` / broad knip only if the skill allows full severity). Re-run gates, re-invoke Adversary. Repeat until verdict is `pass` (empty findings or nits only).
 8. **Hand off to Ops.** Post a short note to the issue listing changed files and the final commit range hint. Do NOT commit yourself.
 
+## When Ops cannot complete commits (hooks / pre-commit / lint-staged)
+
+If the PM/orchestrator reports that `git commit` failed in your worktree, treat it as a failed gate: stay in the **same worktree**, re-run the **full** self quality gates in step 5 until they all pass, re-invoke **Adversary** if the diff changed in a non-trivial way, then have the orchestrator hand back to **Ops** for staging and commit. Do not ask anyone to use `HUSKY=0`, copied `node_modules`, or `--no-verify`.
+
 ## Post-`review_bot` pass (`/pm-execute` only)
 
-The **orchestrator** will paste GitLab review threads into your prompt (you still must not call GitLab MCP). Treat that as the source of truth: implement fixes, re-run the same quality gates, pass Adversary, then hand off to Ops for chunked commits and push to the **existing** branch. The orchestrator runs `review_bot` again after Ops pushes.
+The **orchestrator** will supply review feedback (ideally a **summary table**: file or thread → ask) rather than raw API dumps (see `/pm-execute` Phase 5b). You still must not call GitLab MCP. **Update** the **Review-fix queue** section in `CONTEXT.local.md` with the current asks, then treat that as the checklist: implement fixes, re-run the same quality gates, pass Adversary, then hand off to Ops for chunked commits and push to the **existing** branch. The orchestrator runs `review_bot` again after Ops pushes.
 
 ## Coding rules (hard-enforced repo-wide)
 

@@ -51,10 +51,10 @@ export default function KanaRatingAnalysis() {
         </div>
       </section>
 
-      {/* Revolutionary Evolution */}
+      {/* KanaRating Evolution */}
       <section className="mb-8 p-6 bg-card text-card-foreground border-l-4 border-kanaliiga-orange rounded-lg">
         <h3 className="text-xl font-semibold mb-4 text-kanaliiga-orange">
-          🔬 The Revolutionary Evolution
+          📊 KanaRating Evolution
         </h3>
         <p className="mb-6">
           KanaRating 3.0 represents a complete overhaul from the simple
@@ -83,7 +83,7 @@ export default function KanaRatingAnalysis() {
           {/* KanaRating 3.0 */}
           <div className="p-5 bg-muted text-card-foreground border-l-4 border-kanaliiga-orange rounded-lg">
             <h4 className="text-lg font-semibold mb-3 text-kanaliiga-orange">
-              🚀 KanaRating 3.0: Revolutionary Multi-System Intelligence
+              KanaRating 3.0: Integrated multi-system analysis
             </h4>
             <p className="font-medium mb-3">
               <strong>Complete Transformation:</strong> From basic point
@@ -122,7 +122,7 @@ export default function KanaRatingAnalysis() {
       {/* Why We Skipped 2.0 */}
       <section className="mb-8 p-6 bg-card text-card-foreground border-l-4 border-kanaliiga-orange rounded-lg">
         <h3 className="text-xl font-semibold mb-4 text-kanaliiga-orange">
-          🚀 Why We Skipped KanaRating 2.0
+          Why We Skipped KanaRating 2.0
         </h3>
         <p className="mb-4">
           During development, we realized our improvements were so substantial
@@ -131,18 +131,16 @@ export default function KanaRatingAnalysis() {
 
         <div className="grid md:grid-cols-2 gap-4 mb-6">
           <div className="p-4 bg-muted border-l-4 border-kanaliiga-light-brown rounded">
-            <strong>🔄 Trade Efficiency System</strong> (originally planned as
-            2.1)
+            <strong>Trade Efficiency System</strong> (originally planned as 2.1)
           </div>
           <div className="p-4 bg-muted border-l-4 border-kanaliiga-light-brown rounded">
-            <strong>💰 Economic Adjustments</strong> (originally planned as 2.1)
+            <strong>Economic Adjustments</strong> (originally planned as 2.1)
           </div>
           <div className="p-4 bg-muted border-l-4 border-kanaliiga-light-brown rounded">
-            <strong>📊 Enhanced Round Swing</strong> (originally planned as 2.1)
+            <strong>Enhanced Round Swing</strong> (originally planned as 2.1)
           </div>
           <div className="p-4 bg-muted border-l-4 border-kanaliiga-light-brown rounded">
-            <strong>🛠️ Utility Effectiveness</strong> (originally planned as
-            2.1)
+            <strong>Utility Effectiveness</strong> (originally planned as 2.1)
           </div>
         </div>
 
@@ -150,19 +148,19 @@ export default function KanaRatingAnalysis() {
           Combined, these features represented such a{" "}
           <strong>massive leap forward</strong> that calling it &quot;2.0&quot;
           would undersell the innovation. <strong>KanaRating 3.0</strong> better
-          reflects the revolutionary nature of these changes.
+          reflects the scope of these changes.
         </p>
       </section>
 
       {/* Four Pillars */}
       <section className="mb-8 p-6 bg-card text-card-foreground border-l-4 border-kanaliiga-orange rounded-lg">
         <h3 className="text-xl font-semibold mb-6 text-kanaliiga-orange">
-          🎯 KanaRating 3.0&apos;s Four Pillars
+          KanaRating 3.0&apos;s Four Pillars
         </h3>
         <div className="grid lg:grid-cols-2 gap-6">
           <div className="bg-muted p-5 rounded-lg border-l-4 border-kanaliiga-orange hover:bg-black/10 dark:hover:bg-card/10 transition-colors">
             <h4 className="text-lg font-semibold text-kanaliiga-orange mb-3">
-              🔄 Trade Analysis System
+              Trade Analysis System
             </h4>
             <ul className="list-disc list-inside text-sm space-y-1">
               <li>Enhanced trade kill tracking</li>
@@ -174,7 +172,7 @@ export default function KanaRatingAnalysis() {
 
           <div className="bg-muted p-5 rounded-lg border-l-4 border-kanaliiga-orange hover:bg-black/10 dark:hover:bg-card/10 transition-colors">
             <h4 className="text-lg font-semibold text-kanaliiga-orange mb-3">
-              💰 Economic Impact Evaluation
+              Economic Impact Evaluation
             </h4>
             <ul className="list-disc list-inside text-sm space-y-1">
               <li>Contextual economic efficiency calculations</li>
@@ -198,7 +196,7 @@ export default function KanaRatingAnalysis() {
 
           <div className="bg-muted p-5 rounded-lg border-l-4 border-kanaliiga-orange hover:bg-black/10 dark:hover:bg-card/10 transition-colors">
             <h4 className="text-lg font-semibold text-kanaliiga-orange mb-3">
-              🛠️ Utility Effectiveness System
+              Utility Effectiveness System
             </h4>
             <ul className="list-disc list-inside text-sm space-y-1">
               <li>
@@ -317,7 +315,6 @@ export default function KanaRatingAnalysis() {
         {/* ALM Partners Team */}
         <div className="mb-8">
           <h4 className="text-xl font-bold text-center text-card-foreground p-3 mb-4 bg-kanaliiga-orange rounded-lg ">
-            🔵{" "}
             <Link
               href="https://hub.kanaliiga.fi/teams/2"
               target="_blank"
@@ -455,7 +452,6 @@ export default function KanaRatingAnalysis() {
         {/* JIS-Automation Team */}
         <div className="mb-8">
           <h4 className="text-xl font-bold text-center text-card-foreground p-3 mb-4 bg-destructive rounded-lg ">
-            🔴{" "}
             <Link
               href="https://hub.kanaliiga.fi/teams/594"
               target="_blank"
@@ -602,7 +598,7 @@ export default function KanaRatingAnalysis() {
           {/* Most Extreme Case */}
           <div className="bg-card p-5 rounded-lg  hover:bg-black/10 dark:hover:bg-card/10 transition-shadow">
             <h4 className="text-lg font-semibold mb-2">
-              🔥 Most Extreme Case: &quot;sotanakkki&quot;
+              Most Extreme Case: &quot;sotanakkki&quot;
             </h4>
             <p className="mb-3">
               <strong>Match:</strong>{" "}
@@ -630,7 +626,7 @@ export default function KanaRatingAnalysis() {
           {/* Biggest Beneficiary */}
           <div className="bg-card p-5 rounded-lg  hover:bg-black/10 dark:hover:bg-card/10 transition-shadow">
             <h4 className="text-lg font-semibold mb-2">
-              📈 Biggest Beneficiary: &quot;Voidsheep&quot;
+              Biggest Beneficiary: &quot;Voidsheep&quot;
             </h4>
             <p className="mb-3">
               <strong>Match:</strong>{" "}
@@ -658,7 +654,7 @@ export default function KanaRatingAnalysis() {
           {/* KAST Inflation */}
           <div className="bg-card p-5 rounded-lg  hover:bg-black/10 dark:hover:bg-card/10 transition-shadow">
             <h4 className="text-lg font-semibold mb-2">
-              ⚖️ KAST Inflation: &quot;SMUPPE&quot;
+              KAST Inflation: &quot;SMUPPE&quot;
             </h4>
             <p className="mb-3">
               <strong>Match:</strong>{" "}
@@ -702,7 +698,7 @@ export default function KanaRatingAnalysis() {
       {/* Complete Transformation */}
       <section className="mb-8 p-6 bg-card text-card-foreground border-l-4 border-kanaliiga-orange rounded-lg ">
         <h3 className="text-xl font-semibold mb-4">
-          🎯 The Complete Transformation
+          The Complete Transformation
         </h3>
         <p className="mb-6">
           KanaRating 3.0 isn&apos;t just an upgrade - it&apos;s a{" "}
@@ -712,27 +708,27 @@ export default function KanaRatingAnalysis() {
 
         <div className="grid md:grid-cols-2 gap-4">
           <div className="bg-card p-4 rounded-lg border-l-4 border-green-500  font-medium">
-            ✅ <strong>Trade Analysis:</strong> Enhanced trade kill tracking and
+            <strong>Trade Analysis:</strong> Enhanced trade kill tracking and
             efficiency metrics
           </div>
           <div className="bg-card p-4 rounded-lg border-l-4 border-green-500  font-medium">
-            ✅ <strong>Economic Context:</strong> Contextual economic efficiency
+            <strong>Economic Context:</strong> Contextual economic efficiency
             calculations
           </div>
           <div className="bg-card p-4 rounded-lg border-l-4 border-green-500  font-medium">
-            ✅ <strong>Round Swing:</strong> Advanced win probability with
-            credit distribution
+            <strong>Round Swing:</strong> Advanced win probability with credit
+            distribution
           </div>
           <div className="bg-card p-4 rounded-lg border-l-4 border-green-500  font-medium">
-            ✅ <strong>Utility Intelligence:</strong> 4-category utility
+            <strong>Utility Intelligence:</strong> 4-category utility
             effectiveness system
           </div>
           <div className="bg-card p-4 rounded-lg border-l-4 border-green-500  font-medium">
-            ✅ <strong>Adaptive Formula:</strong> Scales based on available data
+            <strong>Adaptive Formula:</strong> Scales based on available data
             richness
           </div>
           <div className="bg-card p-4 rounded-lg border-l-4 border-green-500  font-medium">
-            ✅ <strong>Multi-Event Correlation:</strong> Complex interaction
+            <strong>Multi-Event Correlation:</strong> Complex interaction
             detection
           </div>
         </div>
@@ -740,16 +736,16 @@ export default function KanaRatingAnalysis() {
 
       {/* Technical Analysis */}
       <section className="mb-8 p-6 bg-card text-card-foreground border-l-4 border-kanaliiga-orange rounded-lg ">
-        <h3 className="text-xl font-semibold mb-4">🔬 Technical Analysis</h3>
+        <h3 className="text-xl font-semibold mb-4">Technical Analysis</h3>
         <p className="mb-6">
           The transformation from KanaRating 1.0 to 3.0 represents a complete
-          methodological revolution:
+          methodological overhaul:
         </p>
 
         <div className="grid lg:grid-cols-2 gap-6">
           <div className="bg-card p-5 rounded-lg border-l-4 border-blue-500  hover: transition-shadow">
             <h4 className="text-lg font-semibold text-blue-600 mb-3">
-              📈 From Points to Intelligence
+              From Points to Intelligence
             </h4>
             <p className="text-sm leading-relaxed">
               KanaRating 1.0&apos;s simple point accumulation (1000 base +
@@ -761,7 +757,7 @@ export default function KanaRatingAnalysis() {
 
           <div className="bg-card p-5 rounded-lg border-l-4 border-blue-500  hover: transition-shadow">
             <h4 className="text-lg font-semibold text-blue-600 mb-3">
-              🎯 Four Integrated Systems
+              Four Integrated Systems
             </h4>
             <p className="text-sm leading-relaxed">
               Rather than just adding utility effectiveness, KanaRating 3.0
@@ -776,7 +772,7 @@ export default function KanaRatingAnalysis() {
 
           <div className="bg-card p-5 rounded-lg border-l-4 border-blue-500  hover: transition-shadow">
             <h4 className="text-lg font-semibold text-blue-600 mb-3">
-              ⚖️ Adaptive Assessment
+              Adaptive Assessment
             </h4>
             <p className="text-sm leading-relaxed">
               The system intelligently adapts based on available data - using
@@ -787,7 +783,7 @@ export default function KanaRatingAnalysis() {
 
           <div className="bg-card p-5 rounded-lg border-l-4 border-blue-500  hover: transition-shadow">
             <h4 className="text-lg font-semibold text-blue-600 mb-3">
-              🚀 Production-Ready Architecture
+              Production-Ready Architecture
             </h4>
             <p className="text-sm leading-relaxed">
               Built with <strong>500+ lines of new logic</strong>, multi-event
@@ -800,7 +796,7 @@ export default function KanaRatingAnalysis() {
 
       {/* Conclusion */}
       <section className="mb-8 p-6 bg-card text-card-foreground border-l-4 border-kanaliiga-orange rounded-lg ">
-        <h3 className="text-xl font-semibold mb-4">🎯 The Evolution Verdict</h3>
+        <h3 className="text-xl font-semibold mb-4">The Evolution Verdict</h3>
         <p className="mb-4">
           KanaRating 3.0 represents the most significant advancement in CS2
           player evaluation, moving from basic statistical analysis to{" "}

@@ -7,13 +7,7 @@ import { expressFetcher, cn, createTeamLogoUrl } from "@/lib/utils";
 import { AutoBreadcrumbs } from "@/components/layout/AutoBreadcrumbs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from "@/components/ui/select";
+import { LeagueSelector } from "@/components/league/LeagueSelector";
 import {
   Table,
   TableBody,
@@ -127,21 +121,16 @@ export default function TopPlayersPage() {
 
             {/* League Selector */}
             {seasonLeagues && seasonLeagues.length > 0 && (
-              <Select
-                value={selectedLeagueId}
+              <LeagueSelector
+                value={selectedLeagueId ?? null}
                 onValueChange={setSelectedLeagueId}
-              >
-                <SelectTrigger className="w-[200px]">
-                  <SelectValue placeholder="Select league" />
-                </SelectTrigger>
-                <SelectContent>
-                  {seasonLeagues.map((league: { id: number; name: string }) => (
-                    <SelectItem key={league.id} value={String(league.id)}>
-                      {league.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                triggerClassName="w-[200px]"
+                leagues={seasonLeagues.map((l) => ({
+                  id: String(l.id),
+                  name: l.name,
+                  tier: l.tier
+                }))}
+              />
             )}
           </div>
 

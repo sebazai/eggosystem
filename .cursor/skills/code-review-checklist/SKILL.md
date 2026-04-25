@@ -10,6 +10,7 @@ Read this before acting as `review_bot`. Review is read-only and comment-only: n
 ## Inputs
 
 - MR IID (from Ops) and the issue IID it closes.
+- **Scope contract** — the **issue body** (acceptance criteria) and **`## Technical Brief`** (Explorer) are the source of requirements. If either is missing, incomplete, or ambiguous, add **clarifying** draft notes or a merge-request thread **instead of** inventing or assuming product intent.
 - Access to `Read`, `Grep`, `Glob`, `SemanticSearch`, `ReadLints`, and GitLab MCP read + draft-note tools + `update_merge_request` (labels and idempotent `draft: false` when the MR is still draft — `/pm-execute` normally has Ops open non-draft already).
 
 ## Workflow

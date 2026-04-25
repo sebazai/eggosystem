@@ -1,6 +1,6 @@
 # AGENTS.md — Agentic Workflow Harness
 
-This file is the contract shared by every agent that operates on this repository. It defines the 6 workflow-role specialists, the sandbox they run in, the handoff artifacts between them, and the human-in-the-loop (HITL) gates.
+This file is the contract shared by every agent that operates on this repository. It defines the 7 **pipeline** role specialists (plus the Adversary sub-loop), the sandbox they run in, the handoff artifacts between them, and the human-in-the-loop (HITL) gates.
 
 Every specialist **must** read this file and the skill file referenced in its agent definition before taking its first action.
 
@@ -8,7 +8,7 @@ Every specialist **must** read this file and the skill file referenced in its ag
 
 ## Mission
 
-Humans discuss a feature or bug with `pm_bot`. The PM scopes it into a GitLab issue with explicit acceptance criteria. `explorer_bot` decomposes it into a technical brief. `ops_bot` creates a worktree + branch. `developer_bot` implements, running the Adversary feedback loop until clean. `ops_bot` commits in chunks, pushes, and opens the MR. `review_bot` audits against acceptance criteria. **Humans merge.**
+Humans discuss a feature or bug with `pm_bot`. The PM scopes it into a GitLab issue with explicit acceptance criteria. `explorer_bot` decomposes it into a technical brief. `ops_bot` creates a worktree + branch and bootstraps it. `worktree_bot` (or the same `pnpm run worktree:ensure` step) verifies that pnpm and `node_modules` in that worktree are not a symlink to another clone—so workspace packages, Husky, and lint-staged resolve correctly. `developer_bot` implements, running the Adversary feedback loop until clean. `ops_bot` commits in chunks, pushes, and opens the MR. If a commit or hook fails, `ops_bot` hands back to `developer_bot`, which must re-run the full `pnpm` quality gates in the same worktree (no `HUSKY=0` or other hook bypass), then `ops_bot` tries again. `review_bot` audits against acceptance criteria. **Humans merge.**
 
 ## Pipeline
 
@@ -21,7 +21,8 @@ flowchart LR
     Explorer -->|"Technical Brief note"| Issue
     Explorer --> Ops[ops_bot]
     Ops -->|worktree + branch| WT[(".worktrees/&lt;type&gt;-&lt;iid&gt;-&lt;slug&gt;")]
-    Ops --> Developer[developer_bot]
+    WT --> WTB[worktree_bot]
+    WTB -->|pnpm ok| Developer[developer_bot]
     Developer -->|"Write/Edit + pnpm test"| Code
     Developer -->|spawn| Adversary[adversary_bot]
     Adversary -->|"findings JSON"| Developer
@@ -36,16 +37,17 @@ flowchart LR
     Human -->|accept + merge| MR
 ```
 
-## The 6 specialists
+## The 7 pipeline specialists
 
-| Role                                               | File             | Writes code                   | Touches git | Spawns                                | Notes                                 |
-| -------------------------------------------------- | ---------------- | ----------------------------- | ----------- | ------------------------------------- | ------------------------------------- |
-| [`pm_bot`](.claude/agents/pm_bot.md)               | Orchestrator     | No                            | No          | Explorer, Ops, Developer, Review, Duo | Human liaison                         |
-| [`explorer_bot`](.claude/agents/explorer_bot.md)   | Researcher       | No                            | No          | —                                     | DB MCP readonly, WebSearch/WebFetch   |
-| [`ops_bot`](.claude/agents/ops_bot.md)             | Git + GitLab     | No                            | Yes         | —                                     | Only git-capable agent                |
-| [`developer_bot`](.claude/agents/developer_bot.md) | Implementer      | **Yes**                       | No          | Adversary + existing domain bots      | Runs quality gates                    |
-| [`adversary_bot`](.claude/agents/adversary_bot.md) | Hostile reviewer | No (lint/knip/typecheck only) | Read-only   | Adversary (depth ≤ 3)                 | Diff-anchored review; gate before Ops |
-| [`review_bot`](.claude/agents/review_bot.md)       | PR auditor       | No                            | No          | Duo `review-merge-request`            | Never approves/merges                 |
+| Role                                               | File             | Writes code                   | Touches git | Spawns                                          | Notes                                                         |
+| -------------------------------------------------- | ---------------- | ----------------------------- | ----------- | ----------------------------------------------- | ------------------------------------------------------------- |
+| [`pm_bot`](.claude/agents/pm_bot.md)               | Orchestrator     | No                            | No          | Explorer, Ops, worktree, Developer, Review, Duo | Human liaison                                                 |
+| [`explorer_bot`](.claude/agents/explorer_bot.md)   | Researcher       | No                            | No          | —                                               | DB MCP readonly, WebSearch/WebFetch                           |
+| [`ops_bot`](.claude/agents/ops_bot.md)             | Git + GitLab     | No                            | Yes         | —                                               | Only git-capable agent                                        |
+| [`worktree_bot`](.claude/agents/worktree_bot.md)   | Worktree pnpm    | No (install layout only)      | No          | —                                               | Runs `pnpm run worktree:ensure` in the new worktree after Ops |
+| [`developer_bot`](.claude/agents/developer_bot.md) | Implementer      | **Yes**                       | No          | Adversary + existing domain bots                | Runs quality gates                                            |
+| [`adversary_bot`](.claude/agents/adversary_bot.md) | Hostile reviewer | No (lint/knip/typecheck only) | Read-only   | Adversary (depth ≤ 3)                           | Diff-anchored review; gate before Ops                         |
+| [`review_bot`](.claude/agents/review_bot.md)       | PR auditor       | No                            | No          | Duo `review-merge-request`                      | Never approves/merges                                         |
 
 Full policy per role lives in [`.cursor/agents/<role>.md`](.cursor/agents) (policy record) and [`.claude/agents/<role>.md`](.claude/agents) (runtime enforcement).
 
@@ -53,27 +55,47 @@ Full policy per role lives in [`.cursor/agents/<role>.md`](.cursor/agents) (poli
 
 The following pre-existing specialists in [`.cursor/agents/`](.cursor/agents) remain available as **sub-specialists** that `developer_bot` can call via `Task` for domain depth — they are **not** part of the primary workflow:
 
-- `backend_bot`, `frontend_bot`, `tester_bot`, `types_bot`, `refactor_bot`, `docs_bot`, `verifier_bot`
+- `backend_bot`, `frontend_bot`, `designer_bot`, `tester_bot`, `types_bot`, `refactor_bot`, `docs_bot`, `verifier_bot`
 
 Only `developer_bot` may spawn them.
+
+## Design standards gate (frontend diffs)
+
+If the work includes frontend UI changes (especially under `apps/frontend/src/components/**` or `apps/frontend/src/app/**`), `developer_bot` must run a **design standards review** before invoking `adversary_bot` and before handing off to `ops_bot`.
+
+- **Trigger paths** (non-exhaustive):
+  - `apps/frontend/src/components/**`
+  - `apps/frontend/src/app/**`
+  - `apps/frontend/src/styles/**`
+  - Tailwind/theme config or global CSS affecting UI tokens
+- **Mechanism**:
+  - `developer_bot` spawns `designer_bot` via `Task` with:
+    - worktree path, issue IID, acceptance criteria
+    - list of files changed (or “UI touched under …”)
+    - request: “Review diff for design-system compliance per `.cursor/skills/design-review/SKILL.md`”
+  - `designer_bot` returns `verdict: pass | needs_changes` and findings.
+  - `developer_bot` addresses **blockers** (design-system drift / accessibility regressions) before proceeding to Adversary/Ops.
 
 ## Handoff contract
 
 Every stage transition produces a typed artifact. Agents do not begin their stage until the previous artifact exists.
 
-| From → To                    | Artifact                                                                           | Location                        |
-| ---------------------------- | ---------------------------------------------------------------------------------- | ------------------------------- |
-| Human → PM                   | Natural-language brief                                                             | Chat                            |
-| PM → Explorer                | GitLab issue IID + acceptance criteria                                             | GitLab issue body               |
-| Explorer → Ops               | Issue updated with `## Technical Brief` section (+ optional sub-issue IIDs linked) | GitLab issue note / description |
-| Ops → Developer              | `{ worktree_path, branch_name, issue_iid }`                                        | Tool return value               |
-| Developer → Adversary        | "ready for review" note on issue: list of changed files + local gate output        | GitLab issue note + prompt      |
-| Adversary → Developer (loop) | Findings JSON (`verdict`, `findings[]`)                                            | Tool return value               |
-| Adversary → Developer (pass) | `{ verdict: "pass", findings: [] }`                                                | Tool return value               |
-| Developer → Ops              | Note on issue: file list + ready-to-commit signal                                  | GitLab issue note               |
-| Ops → Review                 | `{ mr_iid, commit_sha_range }`                                                     | Tool return value               |
-| Review → Human               | Summary MR note with verdict + `needs-human-decision` label if non-clean           | GitLab MR note                  |
-| Human → GitLab               | Merge                                                                              | GitLab UI / API                 |
+| From → To                    | Artifact                                                                                                                                                                                                                                                                                | Location                        |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------- |
+| Human → PM                   | Natural-language brief                                                                                                                                                                                                                                                                  | Chat                            |
+| PM → Explorer                | GitLab issue IID + acceptance criteria                                                                                                                                                                                                                                                  | GitLab issue body               |
+| Explorer → Ops               | Issue updated with `## Technical Brief` section (+ optional sub-issue IIDs linked)                                                                                                                                                                                                      | GitLab issue note / description |
+| Ops → worktree (readiness)   | After Ops: `{ worktree_path, issue_iid }` + **`CONTEXT.local.md` stub** in the worktree root; `worktree_path` is **canonical** (e.g. `pwd -P`) and matches the file’s worktree field (see [`.cursor/templates/CONTEXT.local.template.md`](.cursor/templates/CONTEXT.local.template.md)) | `ops_bot` Bash in worktree only |
+| Orchestrator → Developer     | Filled `CONTEXT.local.md` (acceptance criteria + Technical Brief) **or** the first `developer_bot` prompt contains that text so Developer can `Write` the file                                                                                                                          | Worktree + chat                 |
+| worktree → Developer         | `status: "ok"` and `{ worktree_path, issue_iid }` — if `status` is not `ok`, do not start Developer                                                                                                                                                                                     | Tool return value               |
+| (same session)               | Developer also needs `branch_name` from the Ops return payload (orchestrator holds it), and should **Read** `CONTEXT.local.md` before coding.                                                                                                                                           |                                 |
+| Developer → Adversary        | "ready for review" note on issue: list of changed files + local gate output                                                                                                                                                                                                             | GitLab issue note + prompt      |
+| Adversary → Developer (loop) | Findings JSON (`verdict`, `findings[]`)                                                                                                                                                                                                                                                 | Tool return value               |
+| Adversary → Developer (pass) | `{ verdict: "pass", findings: [] }`                                                                                                                                                                                                                                                     | Tool return value               |
+| Developer → Ops              | Note on issue: file list + ready-to-commit signal                                                                                                                                                                                                                                       | GitLab issue note               |
+| Ops → Review                 | `{ mr_iid, commit_sha_range }`                                                                                                                                                                                                                                                          | Tool return value               |
+| Review → Human               | Summary MR note with verdict + `needs-human-decision` label if non-clean. Review treats **issue + `## Technical Brief` + acceptance criteria** as the scope contract; if any are missing or ambiguous, it posts **clarifying draft notes** rather than inventing requirements.          | GitLab MR note                  |
+| Human → GitLab               | Merge                                                                                                                                                                                                                                                                                   | GitLab UI / API                 |
 
 ## Adversarial feedback loop
 
@@ -116,7 +138,7 @@ Under Cursor the enforcement is policy-only. The [`.cursor/agents/`](.cursor/age
 - **mariadb MCP (readonly)** — `explorer_bot`, `developer_bot`. Schema exploration only; application queries still use Knex (see [CLAUDE.md](CLAUDE.md)).
 - **Playwright MCP** — `developer_bot` only (debug/assertion on dashboard flows). See [.cursor/skills/playwright-mcp-admin-auth/SKILL.md](.cursor/skills/playwright-mcp-admin-auth/SKILL.md).
 - **shadcn/ui MCP** — `developer_bot` only (component discovery).
-- **faceit MCP** — not wired to any of the 6 specialists by default; add explicitly if a feature requires it.
+- **faceit MCP** — not wired to any of the 7 pipeline specialists by default; add explicitly if a feature requires it.
 
 ## Quality gates (Developer is responsible)
 
@@ -124,15 +146,17 @@ Copied from [CLAUDE.md](CLAUDE.md) — all must pass locally before invoking `ad
 
 ```bash
 cd $(git rev-parse --show-toplevel)
-pnpm knip
-pnpm typecheck
-pnpm format:check
-pnpm lint
-pnpm reseed
-pnpm test          # affected workspaces
+rtk pnpm knip
+rtk pnpm typecheck
+rtk pnpm format:check
+rtk pnpm lint
+rtk pnpm reseed
+rtk pnpm test          # affected workspaces
 ```
 
-E2E (`pnpm test:e2e`) runs only from the workspace root per [.cursor/skills/e2e-playwright/SKILL.md](.cursor/skills/e2e-playwright/SKILL.md).
+E2E (`rtk pnpm test:e2e`) runs only from the workspace root per [.cursor/skills/e2e-playwright/SKILL.md](.cursor/skills/e2e-playwright/SKILL.md).
+
+`worktree_bot` (or `rtk pnpm run worktree:ensure` in the worktree) runs **before** these gates in `/pm-execute` so the install is for **this** worktree, not a symlinked `node_modules` from the primary clone. See [.cursor/skills/worktree-readiness/SKILL.md](.cursor/skills/worktree-readiness/SKILL.md).
 
 ## Worktrees
 
@@ -142,7 +166,7 @@ All work for an issue happens in a dedicated worktree created by `ops_bot`:
 <repo>/.worktrees/<type>-<iid>-<slug>/
 ```
 
-`.worktrees/` is gitignored. Branch naming and commit chunking rules are in [.cursor/skills/ops-git-worktrees/SKILL.md](.cursor/skills/ops-git-worktrees/SKILL.md).
+`.worktrees/` is gitignored. Branch naming and commit chunking rules are in [.cursor/skills/ops-git-worktrees/SKILL.md](.cursor/skills/ops-git-worktrees/SKILL.md). A dedicated worktree must get its own `pnpm install` layout; never point `node_modules` at the primary clone, or quality gates and Husky will resolve the wrong `packages/`.
 
 ## Skills index (per-domain)
 
@@ -151,9 +175,12 @@ Each specialist auto-reads its primary skill plus cross-cutting ones. Full list:
 - [`pm-workflow`](.cursor/skills/pm-workflow/SKILL.md)
 - [`explorer-research`](.cursor/skills/explorer-research/SKILL.md)
 - [`ops-git-worktrees`](.cursor/skills/ops-git-worktrees/SKILL.md)
+- [`worktree-readiness`](.cursor/skills/worktree-readiness/SKILL.md)
 - [`developer-impl`](.cursor/skills/developer-impl/SKILL.md)
 - [`adversarial-review`](.cursor/skills/adversarial-review/SKILL.md)
 - [`code-review-checklist`](.cursor/skills/code-review-checklist/SKILL.md)
+
+**Worktree context file:** Each active worktree should contain `CONTEXT.local.md` (see template [`.cursor/templates/CONTEXT.local.template.md`](.cursor/templates/CONTEXT.local.template.md)) so `developer_bot` and `Task` subagents share one **local** source of truth. `developer_bot` has no GitLab MCP; the file is how pasted issue scope survives session drops and subagent spawns. Optional **append-only** rows in the template’s stage log can record pipeline milestones (Explorer brief added, etc.).
 
 Cross-cutting skills used by multiple specialists live in the same [`.cursor/skills/`](.cursor/skills) tree: `tdd-workflow`, `testing-strategy`, `type-safety`, `error-handling`, `eggosystem-types`, `eggosystem-msw`, `e2e-playwright`, `playwright-mcp-admin-auth`, `documentation-organization`, `onboarding`, plus the command skills (`quality-check`, `typecheck`, `lint-fix`, `format-code`, `build`, `clean`, `run-tests`, `setup-dev`, `fresh-start`, `db-status`, `db-reset`, `create-migration`, `run-migrations`, `rollback-migration`, `execute`).
 
@@ -164,7 +191,7 @@ Cross-cutting skills used by multiple specialists live in the same [`.cursor/ski
 - Reuse via exports, not duplication.
 - No `--no-verify` / `--no-gpg-sign`.
 - Commands prefixed with `cd $(git rev-parse --show-toplevel)` or the target workspace.
-- E2E is always run from the workspace root via `pnpm test:e2e`.
+- E2E is always run from the workspace root via `rtk pnpm test:e2e`.
 - Database triggers enforce business rules — application code alone cannot bypass them.
 
 ## Entry points (slash commands / skills)

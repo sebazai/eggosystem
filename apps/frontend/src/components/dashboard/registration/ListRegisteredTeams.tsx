@@ -24,7 +24,8 @@ import {
   ExternalLink,
   CheckCircle,
   ChevronsDown,
-  ChevronsUp
+  ChevronsUp,
+  AlertTriangle
 } from "lucide-react";
 import { envConfig } from "@/configs/env";
 import { createPlatformTeamUrl } from "@/lib/utils";
@@ -358,14 +359,15 @@ export const ListRegisteredTeams = () => {
               </span>
               {isInvalid && (
                 <div className="flex flex-col gap-1 mt-1">
-                  <span className="text-[0.65rem] text-red-600 font-medium">
-                    ⚠️ Needs approval
+                  <span className="text-[0.65rem] text-destructive font-medium flex items-center gap-1">
+                    <AlertTriangle className="size-3" />
+                    Needs approval
                   </span>
-                  <div className="text-[0.65rem] text-red-600 space-y-0.5">
+                  <div className="text-[0.65rem] text-destructive space-y-0.5">
                     {getPlayerApprovalReason(player, team).map(
                       (reason, idx) => (
                         <div key={idx} className="flex items-start gap-1">
-                          <span className="text-red-500">•</span>
+                          <span className="text-destructive">•</span>
                           <span>{reason}</span>
                         </div>
                       )

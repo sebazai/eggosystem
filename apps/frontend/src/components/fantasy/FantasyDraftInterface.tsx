@@ -1,6 +1,7 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { LeagueSelector } from "@/components/league/LeagueSelector";
 import {
   Select,
   SelectContent,
@@ -16,7 +17,9 @@ import type { PlayerTier } from "@eggosystem/types";
 const BUDGET = 1000000;
 
 type FantasyDraftInterfaceProps = {
-  seasonLeagues: Array<{ id: number; name: string }> | undefined;
+  seasonLeagues:
+    | Array<{ id: number; name: string; tier?: number | null }>
+    | undefined;
   isLoadingLeagues: boolean;
   selectedLeagueId: string;
   onLeagueChange: (leagueId: string) => void;
@@ -79,18 +82,19 @@ export function FantasyDraftInterface({
           <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
             <div className="flex flex-col gap-2 flex-1">
               <label className="text-sm font-medium">Select League</label>
-              <Select value={selectedLeagueId} onValueChange={onLeagueChange}>
-                <SelectTrigger className="w-full md:w-[300px]">
-                  <SelectValue placeholder={"Choose a league"} />
-                </SelectTrigger>
-                <SelectContent>
-                  {seasonLeagues?.map((league) => (
-                    <SelectItem key={league.id} value={league.id.toString()}>
-                      {league.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <LeagueSelector
+                value={selectedLeagueId || null}
+                onValueChange={onLeagueChange}
+                placeholder="Choose a league"
+                triggerClassName="w-full md:w-[300px]"
+                leagues={
+                  seasonLeagues?.map((l) => ({
+                    id: String(l.id),
+                    name: l.name,
+                    tier: l.tier
+                  })) ?? []
+                }
+              />
             </div>
 
             <div className="flex flex-col gap-2">

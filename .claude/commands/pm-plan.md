@@ -5,7 +5,7 @@ argument-hint: <free-text goal or bug description>
 
 # /pm-plan — Plan with PM
 
-Run only the **planning** half of the 6-specialist pipeline: human ↔ `pm_bot` ↔ (`explorer_bot`) → GitLab issue. This stops before Ops/Developer touch anything.
+Run only the **planning** half of the PM pipeline: human ↔ `pm_bot` ↔ (`explorer_bot`) → GitLab issue. This stops before Ops / worktree readiness / Developer touch anything.
 
 **Arguments**: `$ARGUMENTS`
 All arguments are treated as the business-level intent (feature ask or bug description).
@@ -108,7 +108,7 @@ Output exactly this block (Markdown), then STOP. Do not spawn Explorer/Ops/Devel
 
 ### Next step
 
-Run `/pm-execute <iid>` to hand off to `explorer_bot` → `ops_bot` → `developer_bot`
+Run `/pm-execute <iid>` to hand off to `explorer_bot` → `ops_bot` → `worktree_bot` → `developer_bot`
 → `adversary_bot` → `ops_bot` → `review_bot`. The pipeline will pause at the HITL
 gates defined in AGENTS.md (architecture / non-convergence / merge).
 ```
@@ -121,6 +121,6 @@ If the human asked for multiple related pieces of work, split them into separate
 
 - Do NOT call `Task(developer_bot | ops_bot | review_bot | adversary_bot)` in this command — that is `/pm-execute`.
 - Do NOT edit any file.
-- Do NOT run any shell command beyond `git remote get-url origin` (Phase 0).
+- Do NOT run any shell command beyond `rtk git remote get-url origin` (Phase 0).
 - Do NOT merge or approve anything.
 - Do NOT skip `AskQuestion` — the whole point of this command is human ↔ PM dialogue.

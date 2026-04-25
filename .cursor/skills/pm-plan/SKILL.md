@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # /pm-plan — Plan with PM
 
-Run only the **planning** half of the 6-specialist pipeline: human ↔ `pm_bot` → GitLab issue.
+Run only the **planning** half of the PM pipeline: human ↔ `pm_bot` → GitLab issue (stops before Ops / worktree / Developer).
 
 Full playbook lives in [`.claude/commands/pm-plan.md`](../../../.claude/commands/pm-plan.md). Under Cursor, this skill is the user-invokable entry point; the same instructions apply.
 
@@ -30,7 +30,7 @@ Or, equivalently, paste the manual prompt from the Cursor entry section of [`AGE
 ## What the agent will refuse
 
 - Writing or editing any file.
-- Any shell command other than `git remote get-url origin`.
+- Any shell command other than `rtk git remote get-url origin`.
 - Spawning `developer_bot` / `ops_bot` / `review_bot` — those are for `pm-execute`.
 - Approving or merging anything.
 - Proceeding when an architecture/data-modeling tradeoff is detected — it will stop and ask you to resolve it first (HITL gate).

@@ -122,7 +122,7 @@ const CustomTooltip = ({
             className="text-xs"
             style={{ color: entry.color }}
           >
-            {entry.name}: {entry.value}/100
+            {entry.name}: {entry.payload.player}/100
           </p>
         ))}
       </div>

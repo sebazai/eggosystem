@@ -23,6 +23,7 @@ Run **Agent mode** (not Ask / Answer / read-only). Ops must use shell and GitLab
 - `Bash` — narrow `git` allowlist (see skill): `status`, `log`, `diff`, `show`, `fetch`, `branch`, `checkout`, `switch`, `worktree add|remove|list|prune`, `add`, `commit` (HEREDOC messages), `push` (never `--force` to protected branches), `rev-parse`, `remote -v`
 - `Bash` — worktree bootstrap only (after `git worktree add`, before handing to Developer):
   - `pnpm install` from the **new worktree repo root** (installs deps so `pnpm dev` works there)
+  - `cat`/`tee` heredoc **only** to create `CONTEXT.local.md` in that worktree root, with destination path `ABS_WT` from `cd "$ROOT/.worktrees/…" && pwd -P` (see `.cursor/skills/ops-git-worktrees/SKILL.md`)
   - `cp` from the primary clone into the worktree, **only** these gitignored local paths (never commit them):
     - `apps/backend/.env`
     - `apps/backend/private_access_token.pem`, `apps/backend/public_access_token.pem`, `apps/backend/private_refresh_token.pem`, `apps/backend/public_refresh_token.pem`
@@ -31,7 +32,7 @@ Run **Agent mode** (not Ask / Answer / read-only). Ops must use shell and GitLab
 **Deny**
 
 - `Write`, `Edit`, `StrReplace` — no file edits of any kind
-- `--no-verify`, `--no-gpg-sign`
+- `--no-verify`, `--no-gpg-sign`, and env-based hook bypass (`HUSKY=0`, etc.) — same policy
 - `git commit --amend` (except on a same-session, unpushed HEAD commit)
 - `git push --force` to `main`/`master`
 - `mcp__GitLab__approve_merge_request`, `accept_merge_request`, any merge action
@@ -44,10 +45,11 @@ None.
 
 ## Handoffs
 
-- After creating the worktree: copy the backend `.env` and PEM keys from the primary clone into the same paths under the worktree, then run `pnpm install` at the worktree root. Then return `{ worktree_path, branch_name, issue_iid }` to Developer.
+- After creating the worktree: copy the backend `.env` and PEM keys from the primary clone into the same paths under the worktree, then run `pnpm install` at the worktree root. **Create `CONTEXT.local.md` stub** in the worktree root via **Bash** (heredoc) with `issue_iid`, **canonical** absolute worktree path (use `cd "$ROOT/.worktrees/<type>-<iid>-<slug>" && pwd -P`; same value as `worktree_path` in the handoff), `branch_name`, and `[pending]` markers for acceptance criteria and Technical Brief — see `.cursor/skills/ops-git-worktrees/SKILL.md` and `.cursor/templates/CONTEXT.local.template.md`. Then return `{ worktree_path, branch_name, issue_iid }` to Developer.
 - **First push on an issue branch:** `create_merge_request` with `draft: false` (MR must show as **Ready** for review, not draft). If the create call cannot set it, call `update_merge_request` with `draft: false` right after.
 - **Review-fix passes** (same issue, MR already exists): only `commit` + `push`; do **not** call `create_merge_request` again. Idempotently ensure `draft: false` on the existing MR if GitLab dropped ready state.
 - Returns `{ mr_iid, commits }` to Review (or the orchestrator between Developer and Review).
 - On CI failure: posts MR note, returns control to Developer with the failure summary. Ops never patches code.
+- **Commit or hook failure (pre-commit, lint-staged, GPG, etc.):** return full output to the orchestrator; instruct Developer to re-run the full `pnpm` quality gates in the same worktree per `.cursor/skills/developer-impl/SKILL.md`, then Adversary if the diff changed, then Ops may retry. No `HUSKY=0`, no hook bypass, no `node_modules` hacks.
 
 > Runtime enforcement in `.claude/settings.json` + `.claude/agents/ops_bot.md`.

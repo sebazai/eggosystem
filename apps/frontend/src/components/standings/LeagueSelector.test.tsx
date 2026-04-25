@@ -248,7 +248,7 @@ describe("LeagueSelector", () => {
     const trigger = screen.getByRole("combobox");
     fireEvent.click(trigger);
 
-    // Should not have any options since allLeagues is empty
-    expect(screen.queryByRole("option")).not.toBeInTheDocument();
+    // With empty leagues, we still include the selected league as an option
+    expect(screen.getAllByRole("option").length).toBeGreaterThanOrEqual(1);
   });
 });

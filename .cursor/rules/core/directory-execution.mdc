@@ -15,13 +15,13 @@ Always prepend `cd $(git rev-parse --show-toplevel)/apps/backend &&` or `cd $(gi
 
 ```bash
 # Backend operations
-cd $(git rev-parse --show-toplevel)/apps/backend && pnpm migrate
+cd $(git rev-parse --show-toplevel)/apps/backend && rtk pnpm migrate
 
 # Frontend operations
-cd $(git rev-parse --show-toplevel)/apps/frontend && pnpm dev
+cd $(git rev-parse --show-toplevel)/apps/frontend && rtk pnpm dev
 
 # Root operations
-cd $(git rev-parse --show-toplevel) && pnpm install
+cd $(git rev-parse --show-toplevel) && rtk pnpm install
 ```
 
 ## Prohibited Patterns

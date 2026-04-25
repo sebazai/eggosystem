@@ -1,11 +1,11 @@
 ---
-description: Execute a PM-scoped GitLab issue through the full specialist pipeline — Explorer → Ops → Developer (with Adversary loop) → Ops (ready MR) → Review loop (Developer+Adversary+Ops on feedback until clean). Stops at the merge HITL gate.
+description: Execute a PM-scoped GitLab issue through the full specialist pipeline — Explorer → Ops → worktree readiness → Developer (with Adversary loop) → Ops (ready MR) → Review loop (Developer+Adversary+Ops on feedback until clean). Stops at the merge HITL gate.
 argument-hint: <issue-iid> [additional context]
 ---
 
 # /pm-execute — Run the specialist pipeline
 
-Run the **execution** half of the 6-specialist pipeline on an existing GitLab issue (normally produced by `/pm-plan`).
+Run the **execution** half of the pipeline (Explorer → Ops → worktree → Developer + Adversary + …) on an existing GitLab issue (normally produced by `/pm-plan`).
 
 **Arguments**: `$ARGUMENTS`
 First token is the GitLab issue IID. Remaining tokens are optional context passed to every subagent.
@@ -58,10 +58,31 @@ Spawn Ops:
 
 ```
 Task(subagent_type=ops_bot,
-     prompt="Read .cursor/skills/ops-git-worktrees/SKILL.md. For issue #<iid> titled '<title>' (type <feat|fix|chore|docs>), create a worktree at .worktrees/<type>-<iid>-<slug> off origin/development with branch <type>-<iid>-<slug>. Do NOT edit files. Return {worktree_path, branch_name, issue_iid}.")
+     prompt="Read .cursor/skills/ops-git-worktrees/SKILL.md. For issue #<iid> titled '<title>' (type <feat|fix|chore|docs>), create a worktree at .worktrees/<type>-<iid>-<slug> off origin/development with branch <type>-<iid>-<slug>. Do NOT edit tracked source. Create CONTEXT.local.md stub in the new worktree per the skill: set ABS_WT to the **canonical** absolute path of that worktree (e.g. cd there from the primary clone and `pwd -P`); use that same string for `cat > $ABS_WT/CONTEXT.local.md` and for the returned `worktree_path` (never a relative path). Return {worktree_path, branch_name, issue_iid}.")
 ```
 
 Capture `{worktree_path, branch_name, issue_iid}`.
+
+---
+
+## Phase 2.5: Worktree readiness (`worktree_bot`)
+
+So `node_modules` and pnpm workspace links in the new worktree are not a broken symlink to the primary clone (and Husky / `lint-staged` resolve the same tree as the Developer’s gates), spawn worktree **before** Developer:
+
+```
+Task(subagent_type=worktree_bot,
+     prompt="Read .cursor/skills/worktree-readiness/SKILL.md. In worktree <worktree_path> (issue #<iid>), run: cd <worktree_path> && pnpm run worktree:ensure. Return {status, worktree_path, issue_iid, note?}.")
+```
+
+If `status` is not `ok`, **stop** the pipeline, return the payload (and any `note`) to the human, and do not spawn `developer_bot` until the worktree install is healthy (re-run worktree, fix paths, or recreate the worktree via Ops). If `ok`, keep `{ worktree_path, branch_name, issue_iid }` and proceed to **Phase 2.6** (then Phase 3).
+
+**Optional recovery:** if a later `git commit` (Phase 4) or Developer gate failure clearly indicates wrong workspace resolution, the orchestrator may re-run this Phase 2.5 in the same worktree before re-invoking Developer.
+
+---
+
+## Phase 2.6: Context file (orchestrator)
+
+`ops_bot` should have created **`CONTEXT.local.md`** in `<worktree_path>` (see `.cursor/skills/ops-git-worktrees/SKILL.md`); the path in the **Worktree (absolute)** cell must match the same canonical `worktree_path` you carry from Phase 2. You (orchestrator) have the full issue from Phase 0. **Do not** require a second GitLab fetch if data is already in memory. For the first `developer_bot` spawn, include in the Task prompt the **Acceptance criteria** and **Technical Brief** text (and sub-issues if any) so Developer can `Write` any `[pending]` sections in `CONTEXT.local.md` before coding. This keeps subagent `Task` prompts and resume-after-disconnect reliable.
 
 ---
 
@@ -73,11 +94,14 @@ Spawn Developer with the full context:
 Task(subagent_type=developer_bot,
      prompt="Read .cursor/skills/developer-impl/SKILL.md. Implement issue #<iid> in worktree <worktree_path>.
 
+First: Read <worktree_path>/CONTEXT.local.md. If **Acceptance criteria** or **Technical brief** are [pending] or empty, fill them from the text below (Write the file), then implement.
+
 Title: <title>
 Acceptance criteria:
 <bullet list>
 Technical Brief:
 <brief text>
+Sub-issues (if any): <...>
 Additional context: <extra args from $ARGUMENTS>
 
 Rules:
@@ -122,12 +146,16 @@ After commits, push -u origin <branch_name> and open a **non-draft** (ready) mer
 
 Immediately after create, you may idempotently call mcp__GitLab__update_merge_request with `draft: false` if the API did not set it as expected.
 
-Return {mr_iid, mr_url, commit_shas[], pipeline_id?}.")
+If you cannot complete `git commit` (pre-commit, lint-staged, hooks, GPG, etc.), stop and return {status: 'commit_failed', error_output: <full log>} — do not bypass hooks. The orchestrator will send Developer back to the same worktree to re-run full pnpm quality gates.
+
+Return {status: 'ok', mr_iid, mr_url, commit_shas[], pipeline_id?} on success, or {status: 'commit_failed', error_output} on failure.")
 ```
 
-Capture `{mr_iid, mr_url, commit_shas, pipeline_id?}`.
+**If the Task returns `status: 'commit_failed'`** (or equivalent): re-run **Phase 3** (Developer) with the **full** `error_output`. Instruct Developer explicitly: in the **same worktree**, re-run the full pnpm self quality gates (`knip`, `typecheck`, `format:check`, `lint`, `reseed`, `test`, and `test:e2e` when relevant), fix until hooks would pass, re-run Adversary if the diff changed, then return to **Phase 4** — do not ask Ops to use `HUSKY=0`, copied `node_modules`, or `--no-verify`. Do not proceed to Phase 5 until commits succeed.
 
-If Ops reports CI failure immediately, loop back to Phase 3 with the failure note.
+On **`status: 'ok'`**, capture `{mr_iid, mr_url, commit_shas, pipeline_id?}` and continue to Phase 5.
+
+**If `ops_bot` later reports CI failure** (MR pipeline): loop back to Phase 3 with the failure note.
 
 ---
 
@@ -155,7 +183,7 @@ If the verdict is `request-changes` (or you need a code follow-up for `needs-hum
 - If **`verdict` is `request-changes` and `review_pass` is 3** (this was the **third** Review in this run), do **not** start another 5b — page the human for **accept-as-is** / manual fix / abort.
 - Otherwise run the steps below, then **re-invoke Phase 5** (next `review_bot`); when that run completes, set `review_pass` accordingly (2, then 3, … per line 136).
 
-1. **Gather feedback for Developer** (orchestrator — you, not `developer_bot`): `mcp__GitLab__list_merge_request_discussions` on MR !<mr_iid> and include unresolved threads; combine with the `review_bot` return payload so `developer_bot` has concrete threads to address (Developer cannot call GitLab).
+1. **Gather feedback for Developer** (orchestrator — you, not `developer_bot`): `mcp__GitLab__list_merge_request_discussions` on MR !<mr_iid> (unresolved first). **Summarize** into a short **table** (file or thread id → ask / resolution) instead of pasting huge raw API payloads. Combine with the `review_bot` return payload. `developer_bot` will copy this into `CONTEXT.local.md` **Review-fix queue** (Developer cannot call GitLab).
 
 2. **Re-run Phase 3** (Developer) with a **post-review** prompt, e.g.:
 
@@ -163,8 +191,10 @@ If the verdict is `request-changes` (or you need a code follow-up for `needs-hum
 Task(subagent_type=developer_bot,
      prompt="Read .cursor/skills/developer-impl/SKILL.md. This is a **review-fix** pass for issue #<iid> in worktree <worktree_path> (branch already pushed; MR !<mr_iid>).
 
-Address the following GitLab review feedback and discussion threads (author must act in code; you cannot use GitLab MCP):
-<orchestrator-pasted discussions + review_bot summary>
+Update CONTEXT.local.md **Review-fix queue** with the table below, then address each row in code (you cannot use GitLab MCP).
+
+### Review feedback (summary table)
+<orchestrator-pasted table + review_bot summary>
 
 After changes: pnpm knip && pnpm typecheck && pnpm format:check && pnpm lint && pnpm reseed && pnpm test, then Adversary until pass (same rules as the initial implementation pass). If stuck 3+ Adversary rounds, return {status:'stuck', ...}.
 
