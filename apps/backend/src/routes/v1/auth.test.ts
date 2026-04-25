@@ -37,7 +37,7 @@ jest.mock("../../middlewares/auth.middleware", () => {
           type: "about:blank",
           title: "Unauthorized",
           status: 401,
-          detail: "Not authenticated"
+          detail: "Forbidden: Requires authentication"
         });
       }
 
@@ -135,7 +135,7 @@ describe("Season Routes Authentication Tests", () => {
         type: "about:blank",
         title: "Unauthorized",
         status: 401,
-        detail: "Not authenticated"
+        detail: "Forbidden: Requires authentication"
       });
     });
 
@@ -148,7 +148,7 @@ describe("Season Routes Authentication Tests", () => {
         type: "about:blank",
         title: "Unauthorized",
         status: 401,
-        detail: "Not authenticated"
+        detail: "Forbidden: Requires authentication"
       });
     });
 
@@ -162,7 +162,7 @@ describe("Season Routes Authentication Tests", () => {
         type: "about:blank",
         title: "Unauthorized",
         status: 401,
-        detail: "Not authenticated"
+        detail: "Forbidden: Requires authentication"
       });
     });
 
@@ -175,7 +175,7 @@ describe("Season Routes Authentication Tests", () => {
         type: "about:blank",
         title: "Unauthorized",
         status: 401,
-        detail: "Not authenticated"
+        detail: "Forbidden: Requires authentication"
       });
     });
 
@@ -189,7 +189,7 @@ describe("Season Routes Authentication Tests", () => {
         type: "about:blank",
         title: "Unauthorized",
         status: 401,
-        detail: "Not authenticated"
+        detail: "Forbidden: Requires authentication"
       });
     });
 
@@ -203,7 +203,7 @@ describe("Season Routes Authentication Tests", () => {
         type: "about:blank",
         title: "Unauthorized",
         status: 401,
-        detail: "Not authenticated"
+        detail: "Forbidden: Requires authentication"
       });
     });
 
@@ -216,7 +216,7 @@ describe("Season Routes Authentication Tests", () => {
         type: "about:blank",
         title: "Unauthorized",
         status: 401,
-        detail: "Not authenticated"
+        detail: "Forbidden: Requires authentication"
       });
     });
 
@@ -229,7 +229,7 @@ describe("Season Routes Authentication Tests", () => {
         type: "about:blank",
         title: "Unauthorized",
         status: 401,
-        detail: "Not authenticated"
+        detail: "Forbidden: Requires authentication"
       });
     });
   });

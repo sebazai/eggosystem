@@ -52,7 +52,7 @@ describe("checkPermission middleware", () => {
 
     expect(next).toHaveBeenCalledWith(
       expect.objectContaining({
-        message: "Not authenticated",
+        message: "Forbidden: Requires authentication",
         status: 401
       })
     );

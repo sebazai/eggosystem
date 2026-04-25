@@ -38,7 +38,7 @@ export function checkPermissions({
     next: NextFunction
   ): Promise<void> => {
     if (!req.auth) {
-      return next(new UnauthorizedError("Not authenticated"));
+      return next(new UnauthorizedError("Forbidden: Requires authentication"));
     }
 
     const permissions: string[] = await getPermissionsForAccountId(

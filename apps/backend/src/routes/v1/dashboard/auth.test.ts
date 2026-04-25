@@ -79,7 +79,7 @@ describe("Dashboard Routes Authentication Tests", () => {
         type: "about:blank",
         title: "Unauthorized",
         status: 401,
-        detail: "Not authenticated"
+        detail: "Forbidden: Requires authentication"
       });
     });
 
@@ -92,7 +92,7 @@ describe("Dashboard Routes Authentication Tests", () => {
         type: "about:blank",
         title: "Unauthorized",
         status: 401,
-        detail: "Not authenticated"
+        detail: "Forbidden: Requires authentication"
       });
     });
 
@@ -105,7 +105,7 @@ describe("Dashboard Routes Authentication Tests", () => {
         type: "about:blank",
         title: "Unauthorized",
         status: 401,
-        detail: "Not authenticated"
+        detail: "Forbidden: Requires authentication"
       });
     });
 
@@ -118,7 +118,7 @@ describe("Dashboard Routes Authentication Tests", () => {
         type: "about:blank",
         title: "Unauthorized",
         status: 401,
-        detail: "Not authenticated"
+        detail: "Forbidden: Requires authentication"
       });
     });
 
@@ -131,7 +131,7 @@ describe("Dashboard Routes Authentication Tests", () => {
         type: "about:blank",
         title: "Unauthorized",
         status: 401,
-        detail: "Not authenticated"
+        detail: "Forbidden: Requires authentication"
       });
     });
 
@@ -144,7 +144,7 @@ describe("Dashboard Routes Authentication Tests", () => {
         type: "about:blank",
         title: "Unauthorized",
         status: 401,
-        detail: "Not authenticated"
+        detail: "Forbidden: Requires authentication"
       });
     });
 
@@ -157,7 +157,7 @@ describe("Dashboard Routes Authentication Tests", () => {
         type: "about:blank",
         title: "Unauthorized",
         status: 401,
-        detail: "Not authenticated"
+        detail: "Forbidden: Requires authentication"
       });
     });
 
@@ -170,7 +170,7 @@ describe("Dashboard Routes Authentication Tests", () => {
         type: "about:blank",
         title: "Unauthorized",
         status: 401,
-        detail: "Not authenticated"
+        detail: "Forbidden: Requires authentication"
       });
     });
 
@@ -183,7 +183,7 @@ describe("Dashboard Routes Authentication Tests", () => {
         type: "about:blank",
         title: "Unauthorized",
         status: 401,
-        detail: "Not authenticated"
+        detail: "Forbidden: Requires authentication"
       });
     });
 
@@ -196,7 +196,7 @@ describe("Dashboard Routes Authentication Tests", () => {
         type: "about:blank",
         title: "Unauthorized",
         status: 401,
-        detail: "Not authenticated"
+        detail: "Forbidden: Requires authentication"
       });
     });
 
@@ -209,7 +209,7 @@ describe("Dashboard Routes Authentication Tests", () => {
         type: "about:blank",
         title: "Unauthorized",
         status: 401,
-        detail: "Not authenticated"
+        detail: "Forbidden: Requires authentication"
       });
     });
   });

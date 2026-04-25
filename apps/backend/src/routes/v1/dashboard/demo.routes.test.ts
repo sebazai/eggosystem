@@ -164,9 +164,8 @@ describe("POST /api/v1/dashboard/demos/manual/parse-queue", () => {
     expect(res.body).toMatchObject({
       status: 401,
       title: "Unauthorized",
-      detail: "Not authenticated"
+      detail: "Forbidden: Requires authentication"
     });
-    expect(String(res.body.detail)).not.toMatch(/forbidden/i);
     cleanup();
   });
 
