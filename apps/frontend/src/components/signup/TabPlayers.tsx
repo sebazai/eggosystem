@@ -32,7 +32,6 @@ import {
 
 import { useCallback, useEffect, useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
-import type { CheckedState } from "@radix-ui/react-checkbox";
 import Image from "next/image";
 import type {
   CS2LeetifyAvgRank,
@@ -54,6 +53,7 @@ import Link from "next/link";
 import { ConfirmationModal } from "../ui/ConfirmationModal";
 import { RosterImportModal } from "./RosterImportModal";
 
+type CheckedState = boolean | "indeterminate";
 interface TabPlayersProps {
   control: Control<SignupFormValues>;
   resetField: UseFormResetField<SignupFormValues>;
