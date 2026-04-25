@@ -20,7 +20,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in loading state 1
         class="text-left text-sm sm:text-lg mb-2"
       >
         <div
-          class="bg-accent animate-pulse rounded-md h-5 w-32 inline-block"
+          class="animate-pulse rounded-md bg-accent h-5 w-32 inline-block"
           data-slot="skeleton"
         />
       </h2>
@@ -34,11 +34,11 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in loading state 1
             class="flex items-center justify-end"
           >
             <div
-              class="bg-accent animate-pulse rounded-md h-4 w-24 sm:w-32 mr-1"
+              class="animate-pulse rounded-md bg-accent h-4 w-24 sm:w-32 mr-1"
               data-slot="skeleton"
             />
             <div
-              class="bg-accent animate-pulse h-8 w-8 sm:h-10 sm:w-10 ml-1 rounded-full hidden xxs:block"
+              class="animate-pulse bg-accent h-8 w-8 sm:h-10 sm:w-10 ml-1 rounded-full hidden xxs:block"
               data-slot="skeleton"
             />
           </div>
@@ -46,7 +46,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in loading state 1
             class="relative h-full min-w-16 md:min-w-20 flex items-center justify-center bg-kanaliiga-light-brown/30 rounded-xs"
           >
             <div
-              class="bg-accent animate-pulse rounded-md h-5 w-7"
+              class="animate-pulse rounded-md bg-accent h-5 w-7"
               data-slot="skeleton"
             />
             <span
@@ -55,7 +55,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in loading state 1
               —
             </span>
             <div
-              class="bg-accent animate-pulse rounded-md h-5 w-7"
+              class="animate-pulse rounded-md bg-accent h-5 w-7"
               data-slot="skeleton"
             />
           </div>
@@ -63,11 +63,11 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in loading state 1
             class="flex items-center justify-start ml-1"
           >
             <div
-              class="bg-accent animate-pulse h-6 w-6 sm:h-8 sm:w-8 mr-1 rounded-full hidden xxs:block"
+              class="animate-pulse bg-accent h-6 w-6 sm:h-8 sm:w-8 mr-1 rounded-full hidden xxs:block"
               data-slot="skeleton"
             />
             <div
-              class="bg-accent animate-pulse rounded-md h-4 w-24 sm:w-32 ml-1"
+              class="animate-pulse rounded-md bg-accent h-4 w-24 sm:w-32 ml-1"
               data-slot="skeleton"
             />
           </div>
@@ -83,11 +83,11 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in loading state 1
             class="flex items-center justify-end"
           >
             <div
-              class="bg-accent animate-pulse rounded-md h-4 w-24 sm:w-32 mr-1"
+              class="animate-pulse rounded-md bg-accent h-4 w-24 sm:w-32 mr-1"
               data-slot="skeleton"
             />
             <div
-              class="bg-accent animate-pulse h-8 w-8 sm:h-10 sm:w-10 ml-1 rounded-full hidden xxs:block"
+              class="animate-pulse bg-accent h-8 w-8 sm:h-10 sm:w-10 ml-1 rounded-full hidden xxs:block"
               data-slot="skeleton"
             />
           </div>
@@ -95,7 +95,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in loading state 1
             class="relative h-full min-w-16 md:min-w-20 flex items-center justify-center bg-kanaliiga-light-brown/30 rounded-xs"
           >
             <div
-              class="bg-accent animate-pulse rounded-md h-5 w-7"
+              class="animate-pulse rounded-md bg-accent h-5 w-7"
               data-slot="skeleton"
             />
             <span
@@ -104,7 +104,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in loading state 1
               —
             </span>
             <div
-              class="bg-accent animate-pulse rounded-md h-5 w-7"
+              class="animate-pulse rounded-md bg-accent h-5 w-7"
               data-slot="skeleton"
             />
           </div>
@@ -112,11 +112,11 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in loading state 1
             class="flex items-center justify-start ml-1"
           >
             <div
-              class="bg-accent animate-pulse h-6 w-6 sm:h-8 sm:w-8 mr-1 rounded-full hidden xxs:block"
+              class="animate-pulse bg-accent h-6 w-6 sm:h-8 sm:w-8 mr-1 rounded-full hidden xxs:block"
               data-slot="skeleton"
             />
             <div
-              class="bg-accent animate-pulse rounded-md h-4 w-24 sm:w-32 ml-1"
+              class="animate-pulse rounded-md bg-accent h-4 w-24 sm:w-32 ml-1"
               data-slot="skeleton"
             />
           </div>
@@ -132,11 +132,11 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in loading state 1
             class="flex items-center justify-end"
           >
             <div
-              class="bg-accent animate-pulse rounded-md h-4 w-24 sm:w-32 mr-1"
+              class="animate-pulse rounded-md bg-accent h-4 w-24 sm:w-32 mr-1"
               data-slot="skeleton"
             />
             <div
-              class="bg-accent animate-pulse h-8 w-8 sm:h-10 sm:w-10 ml-1 rounded-full hidden xxs:block"
+              class="animate-pulse bg-accent h-8 w-8 sm:h-10 sm:w-10 ml-1 rounded-full hidden xxs:block"
               data-slot="skeleton"
             />
           </div>
@@ -144,7 +144,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in loading state 1
             class="relative h-full min-w-16 md:min-w-20 flex items-center justify-center bg-kanaliiga-light-brown/30 rounded-xs"
           >
             <div
-              class="bg-accent animate-pulse rounded-md h-5 w-7"
+              class="animate-pulse rounded-md bg-accent h-5 w-7"
               data-slot="skeleton"
             />
             <span
@@ -153,7 +153,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in loading state 1
               —
             </span>
             <div
-              class="bg-accent animate-pulse rounded-md h-5 w-7"
+              class="animate-pulse rounded-md bg-accent h-5 w-7"
               data-slot="skeleton"
             />
           </div>
@@ -161,11 +161,11 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in loading state 1
             class="flex items-center justify-start ml-1"
           >
             <div
-              class="bg-accent animate-pulse h-6 w-6 sm:h-8 sm:w-8 mr-1 rounded-full hidden xxs:block"
+              class="animate-pulse bg-accent h-6 w-6 sm:h-8 sm:w-8 mr-1 rounded-full hidden xxs:block"
               data-slot="skeleton"
             />
             <div
-              class="bg-accent animate-pulse rounded-md h-4 w-24 sm:w-32 ml-1"
+              class="animate-pulse rounded-md bg-accent h-4 w-24 sm:w-32 ml-1"
               data-slot="skeleton"
             />
           </div>
@@ -177,7 +177,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in loading state 1
         class="text-left text-sm sm:text-lg mb-2"
       >
         <div
-          class="bg-accent animate-pulse rounded-md h-5 w-32 inline-block"
+          class="animate-pulse rounded-md bg-accent h-5 w-32 inline-block"
           data-slot="skeleton"
         />
       </h2>
@@ -191,11 +191,11 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in loading state 1
             class="flex items-center justify-end"
           >
             <div
-              class="bg-accent animate-pulse rounded-md h-4 w-24 sm:w-32 mr-1"
+              class="animate-pulse rounded-md bg-accent h-4 w-24 sm:w-32 mr-1"
               data-slot="skeleton"
             />
             <div
-              class="bg-accent animate-pulse h-8 w-8 sm:h-10 sm:w-10 ml-1 rounded-full hidden xxs:block"
+              class="animate-pulse bg-accent h-8 w-8 sm:h-10 sm:w-10 ml-1 rounded-full hidden xxs:block"
               data-slot="skeleton"
             />
           </div>
@@ -203,7 +203,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in loading state 1
             class="relative h-full min-w-16 md:min-w-20 flex items-center justify-center bg-kanaliiga-light-brown/30 rounded-xs"
           >
             <div
-              class="bg-accent animate-pulse rounded-md h-5 w-7"
+              class="animate-pulse rounded-md bg-accent h-5 w-7"
               data-slot="skeleton"
             />
             <span
@@ -212,7 +212,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in loading state 1
               —
             </span>
             <div
-              class="bg-accent animate-pulse rounded-md h-5 w-7"
+              class="animate-pulse rounded-md bg-accent h-5 w-7"
               data-slot="skeleton"
             />
           </div>
@@ -220,11 +220,11 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in loading state 1
             class="flex items-center justify-start ml-1"
           >
             <div
-              class="bg-accent animate-pulse h-6 w-6 sm:h-8 sm:w-8 mr-1 rounded-full hidden xxs:block"
+              class="animate-pulse bg-accent h-6 w-6 sm:h-8 sm:w-8 mr-1 rounded-full hidden xxs:block"
               data-slot="skeleton"
             />
             <div
-              class="bg-accent animate-pulse rounded-md h-4 w-24 sm:w-32 ml-1"
+              class="animate-pulse rounded-md bg-accent h-4 w-24 sm:w-32 ml-1"
               data-slot="skeleton"
             />
           </div>
@@ -240,11 +240,11 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in loading state 1
             class="flex items-center justify-end"
           >
             <div
-              class="bg-accent animate-pulse rounded-md h-4 w-24 sm:w-32 mr-1"
+              class="animate-pulse rounded-md bg-accent h-4 w-24 sm:w-32 mr-1"
               data-slot="skeleton"
             />
             <div
-              class="bg-accent animate-pulse h-8 w-8 sm:h-10 sm:w-10 ml-1 rounded-full hidden xxs:block"
+              class="animate-pulse bg-accent h-8 w-8 sm:h-10 sm:w-10 ml-1 rounded-full hidden xxs:block"
               data-slot="skeleton"
             />
           </div>
@@ -252,7 +252,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in loading state 1
             class="relative h-full min-w-16 md:min-w-20 flex items-center justify-center bg-kanaliiga-light-brown/30 rounded-xs"
           >
             <div
-              class="bg-accent animate-pulse rounded-md h-5 w-7"
+              class="animate-pulse rounded-md bg-accent h-5 w-7"
               data-slot="skeleton"
             />
             <span
@@ -261,7 +261,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in loading state 1
               —
             </span>
             <div
-              class="bg-accent animate-pulse rounded-md h-5 w-7"
+              class="animate-pulse rounded-md bg-accent h-5 w-7"
               data-slot="skeleton"
             />
           </div>
@@ -269,11 +269,11 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in loading state 1
             class="flex items-center justify-start ml-1"
           >
             <div
-              class="bg-accent animate-pulse h-6 w-6 sm:h-8 sm:w-8 mr-1 rounded-full hidden xxs:block"
+              class="animate-pulse bg-accent h-6 w-6 sm:h-8 sm:w-8 mr-1 rounded-full hidden xxs:block"
               data-slot="skeleton"
             />
             <div
-              class="bg-accent animate-pulse rounded-md h-4 w-24 sm:w-32 ml-1"
+              class="animate-pulse rounded-md bg-accent h-4 w-24 sm:w-32 ml-1"
               data-slot="skeleton"
             />
           </div>
@@ -289,11 +289,11 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in loading state 1
             class="flex items-center justify-end"
           >
             <div
-              class="bg-accent animate-pulse rounded-md h-4 w-24 sm:w-32 mr-1"
+              class="animate-pulse rounded-md bg-accent h-4 w-24 sm:w-32 mr-1"
               data-slot="skeleton"
             />
             <div
-              class="bg-accent animate-pulse h-8 w-8 sm:h-10 sm:w-10 ml-1 rounded-full hidden xxs:block"
+              class="animate-pulse bg-accent h-8 w-8 sm:h-10 sm:w-10 ml-1 rounded-full hidden xxs:block"
               data-slot="skeleton"
             />
           </div>
@@ -301,7 +301,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in loading state 1
             class="relative h-full min-w-16 md:min-w-20 flex items-center justify-center bg-kanaliiga-light-brown/30 rounded-xs"
           >
             <div
-              class="bg-accent animate-pulse rounded-md h-5 w-7"
+              class="animate-pulse rounded-md bg-accent h-5 w-7"
               data-slot="skeleton"
             />
             <span
@@ -310,7 +310,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in loading state 1
               —
             </span>
             <div
-              class="bg-accent animate-pulse rounded-md h-5 w-7"
+              class="animate-pulse rounded-md bg-accent h-5 w-7"
               data-slot="skeleton"
             />
           </div>
@@ -318,11 +318,11 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in loading state 1
             class="flex items-center justify-start ml-1"
           >
             <div
-              class="bg-accent animate-pulse h-6 w-6 sm:h-8 sm:w-8 mr-1 rounded-full hidden xxs:block"
+              class="animate-pulse bg-accent h-6 w-6 sm:h-8 sm:w-8 mr-1 rounded-full hidden xxs:block"
               data-slot="skeleton"
             />
             <div
-              class="bg-accent animate-pulse rounded-md h-4 w-24 sm:w-32 ml-1"
+              class="animate-pulse rounded-md bg-accent h-4 w-24 sm:w-32 ml-1"
               data-slot="skeleton"
             />
           </div>
@@ -334,7 +334,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in loading state 1
         class="text-left text-sm sm:text-lg mb-2"
       >
         <div
-          class="bg-accent animate-pulse rounded-md h-5 w-32 inline-block"
+          class="animate-pulse rounded-md bg-accent h-5 w-32 inline-block"
           data-slot="skeleton"
         />
       </h2>
@@ -348,11 +348,11 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in loading state 1
             class="flex items-center justify-end"
           >
             <div
-              class="bg-accent animate-pulse rounded-md h-4 w-24 sm:w-32 mr-1"
+              class="animate-pulse rounded-md bg-accent h-4 w-24 sm:w-32 mr-1"
               data-slot="skeleton"
             />
             <div
-              class="bg-accent animate-pulse h-8 w-8 sm:h-10 sm:w-10 ml-1 rounded-full hidden xxs:block"
+              class="animate-pulse bg-accent h-8 w-8 sm:h-10 sm:w-10 ml-1 rounded-full hidden xxs:block"
               data-slot="skeleton"
             />
           </div>
@@ -360,7 +360,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in loading state 1
             class="relative h-full min-w-16 md:min-w-20 flex items-center justify-center bg-kanaliiga-light-brown/30 rounded-xs"
           >
             <div
-              class="bg-accent animate-pulse rounded-md h-5 w-7"
+              class="animate-pulse rounded-md bg-accent h-5 w-7"
               data-slot="skeleton"
             />
             <span
@@ -369,7 +369,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in loading state 1
               —
             </span>
             <div
-              class="bg-accent animate-pulse rounded-md h-5 w-7"
+              class="animate-pulse rounded-md bg-accent h-5 w-7"
               data-slot="skeleton"
             />
           </div>
@@ -377,11 +377,11 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in loading state 1
             class="flex items-center justify-start ml-1"
           >
             <div
-              class="bg-accent animate-pulse h-6 w-6 sm:h-8 sm:w-8 mr-1 rounded-full hidden xxs:block"
+              class="animate-pulse bg-accent h-6 w-6 sm:h-8 sm:w-8 mr-1 rounded-full hidden xxs:block"
               data-slot="skeleton"
             />
             <div
-              class="bg-accent animate-pulse rounded-md h-4 w-24 sm:w-32 ml-1"
+              class="animate-pulse rounded-md bg-accent h-4 w-24 sm:w-32 ml-1"
               data-slot="skeleton"
             />
           </div>
@@ -397,11 +397,11 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in loading state 1
             class="flex items-center justify-end"
           >
             <div
-              class="bg-accent animate-pulse rounded-md h-4 w-24 sm:w-32 mr-1"
+              class="animate-pulse rounded-md bg-accent h-4 w-24 sm:w-32 mr-1"
               data-slot="skeleton"
             />
             <div
-              class="bg-accent animate-pulse h-8 w-8 sm:h-10 sm:w-10 ml-1 rounded-full hidden xxs:block"
+              class="animate-pulse bg-accent h-8 w-8 sm:h-10 sm:w-10 ml-1 rounded-full hidden xxs:block"
               data-slot="skeleton"
             />
           </div>
@@ -409,7 +409,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in loading state 1
             class="relative h-full min-w-16 md:min-w-20 flex items-center justify-center bg-kanaliiga-light-brown/30 rounded-xs"
           >
             <div
-              class="bg-accent animate-pulse rounded-md h-5 w-7"
+              class="animate-pulse rounded-md bg-accent h-5 w-7"
               data-slot="skeleton"
             />
             <span
@@ -418,7 +418,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in loading state 1
               —
             </span>
             <div
-              class="bg-accent animate-pulse rounded-md h-5 w-7"
+              class="animate-pulse rounded-md bg-accent h-5 w-7"
               data-slot="skeleton"
             />
           </div>
@@ -426,11 +426,11 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in loading state 1
             class="flex items-center justify-start ml-1"
           >
             <div
-              class="bg-accent animate-pulse h-6 w-6 sm:h-8 sm:w-8 mr-1 rounded-full hidden xxs:block"
+              class="animate-pulse bg-accent h-6 w-6 sm:h-8 sm:w-8 mr-1 rounded-full hidden xxs:block"
               data-slot="skeleton"
             />
             <div
-              class="bg-accent animate-pulse rounded-md h-4 w-24 sm:w-32 ml-1"
+              class="animate-pulse rounded-md bg-accent h-4 w-24 sm:w-32 ml-1"
               data-slot="skeleton"
             />
           </div>
@@ -446,11 +446,11 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in loading state 1
             class="flex items-center justify-end"
           >
             <div
-              class="bg-accent animate-pulse rounded-md h-4 w-24 sm:w-32 mr-1"
+              class="animate-pulse rounded-md bg-accent h-4 w-24 sm:w-32 mr-1"
               data-slot="skeleton"
             />
             <div
-              class="bg-accent animate-pulse h-8 w-8 sm:h-10 sm:w-10 ml-1 rounded-full hidden xxs:block"
+              class="animate-pulse bg-accent h-8 w-8 sm:h-10 sm:w-10 ml-1 rounded-full hidden xxs:block"
               data-slot="skeleton"
             />
           </div>
@@ -458,7 +458,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in loading state 1
             class="relative h-full min-w-16 md:min-w-20 flex items-center justify-center bg-kanaliiga-light-brown/30 rounded-xs"
           >
             <div
-              class="bg-accent animate-pulse rounded-md h-5 w-7"
+              class="animate-pulse rounded-md bg-accent h-5 w-7"
               data-slot="skeleton"
             />
             <span
@@ -467,7 +467,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in loading state 1
               —
             </span>
             <div
-              class="bg-accent animate-pulse rounded-md h-5 w-7"
+              class="animate-pulse rounded-md bg-accent h-5 w-7"
               data-slot="skeleton"
             />
           </div>
@@ -475,11 +475,11 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in loading state 1
             class="flex items-center justify-start ml-1"
           >
             <div
-              class="bg-accent animate-pulse h-6 w-6 sm:h-8 sm:w-8 mr-1 rounded-full hidden xxs:block"
+              class="animate-pulse bg-accent h-6 w-6 sm:h-8 sm:w-8 mr-1 rounded-full hidden xxs:block"
               data-slot="skeleton"
             />
             <div
-              class="bg-accent animate-pulse rounded-md h-4 w-24 sm:w-32 ml-1"
+              class="animate-pulse rounded-md bg-accent h-4 w-24 sm:w-32 ml-1"
               data-slot="skeleton"
             />
           </div>
@@ -491,7 +491,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in loading state 1
         class="text-left text-sm sm:text-lg mb-2"
       >
         <div
-          class="bg-accent animate-pulse rounded-md h-5 w-32 inline-block"
+          class="animate-pulse rounded-md bg-accent h-5 w-32 inline-block"
           data-slot="skeleton"
         />
       </h2>
@@ -505,11 +505,11 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in loading state 1
             class="flex items-center justify-end"
           >
             <div
-              class="bg-accent animate-pulse rounded-md h-4 w-24 sm:w-32 mr-1"
+              class="animate-pulse rounded-md bg-accent h-4 w-24 sm:w-32 mr-1"
               data-slot="skeleton"
             />
             <div
-              class="bg-accent animate-pulse h-8 w-8 sm:h-10 sm:w-10 ml-1 rounded-full hidden xxs:block"
+              class="animate-pulse bg-accent h-8 w-8 sm:h-10 sm:w-10 ml-1 rounded-full hidden xxs:block"
               data-slot="skeleton"
             />
           </div>
@@ -517,7 +517,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in loading state 1
             class="relative h-full min-w-16 md:min-w-20 flex items-center justify-center bg-kanaliiga-light-brown/30 rounded-xs"
           >
             <div
-              class="bg-accent animate-pulse rounded-md h-5 w-7"
+              class="animate-pulse rounded-md bg-accent h-5 w-7"
               data-slot="skeleton"
             />
             <span
@@ -526,7 +526,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in loading state 1
               —
             </span>
             <div
-              class="bg-accent animate-pulse rounded-md h-5 w-7"
+              class="animate-pulse rounded-md bg-accent h-5 w-7"
               data-slot="skeleton"
             />
           </div>
@@ -534,11 +534,11 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in loading state 1
             class="flex items-center justify-start ml-1"
           >
             <div
-              class="bg-accent animate-pulse h-6 w-6 sm:h-8 sm:w-8 mr-1 rounded-full hidden xxs:block"
+              class="animate-pulse bg-accent h-6 w-6 sm:h-8 sm:w-8 mr-1 rounded-full hidden xxs:block"
               data-slot="skeleton"
             />
             <div
-              class="bg-accent animate-pulse rounded-md h-4 w-24 sm:w-32 ml-1"
+              class="animate-pulse rounded-md bg-accent h-4 w-24 sm:w-32 ml-1"
               data-slot="skeleton"
             />
           </div>
@@ -554,11 +554,11 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in loading state 1
             class="flex items-center justify-end"
           >
             <div
-              class="bg-accent animate-pulse rounded-md h-4 w-24 sm:w-32 mr-1"
+              class="animate-pulse rounded-md bg-accent h-4 w-24 sm:w-32 mr-1"
               data-slot="skeleton"
             />
             <div
-              class="bg-accent animate-pulse h-8 w-8 sm:h-10 sm:w-10 ml-1 rounded-full hidden xxs:block"
+              class="animate-pulse bg-accent h-8 w-8 sm:h-10 sm:w-10 ml-1 rounded-full hidden xxs:block"
               data-slot="skeleton"
             />
           </div>
@@ -566,7 +566,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in loading state 1
             class="relative h-full min-w-16 md:min-w-20 flex items-center justify-center bg-kanaliiga-light-brown/30 rounded-xs"
           >
             <div
-              class="bg-accent animate-pulse rounded-md h-5 w-7"
+              class="animate-pulse rounded-md bg-accent h-5 w-7"
               data-slot="skeleton"
             />
             <span
@@ -575,7 +575,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in loading state 1
               —
             </span>
             <div
-              class="bg-accent animate-pulse rounded-md h-5 w-7"
+              class="animate-pulse rounded-md bg-accent h-5 w-7"
               data-slot="skeleton"
             />
           </div>
@@ -583,11 +583,11 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in loading state 1
             class="flex items-center justify-start ml-1"
           >
             <div
-              class="bg-accent animate-pulse h-6 w-6 sm:h-8 sm:w-8 mr-1 rounded-full hidden xxs:block"
+              class="animate-pulse bg-accent h-6 w-6 sm:h-8 sm:w-8 mr-1 rounded-full hidden xxs:block"
               data-slot="skeleton"
             />
             <div
-              class="bg-accent animate-pulse rounded-md h-4 w-24 sm:w-32 ml-1"
+              class="animate-pulse rounded-md bg-accent h-4 w-24 sm:w-32 ml-1"
               data-slot="skeleton"
             />
           </div>
@@ -603,11 +603,11 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in loading state 1
             class="flex items-center justify-end"
           >
             <div
-              class="bg-accent animate-pulse rounded-md h-4 w-24 sm:w-32 mr-1"
+              class="animate-pulse rounded-md bg-accent h-4 w-24 sm:w-32 mr-1"
               data-slot="skeleton"
             />
             <div
-              class="bg-accent animate-pulse h-8 w-8 sm:h-10 sm:w-10 ml-1 rounded-full hidden xxs:block"
+              class="animate-pulse bg-accent h-8 w-8 sm:h-10 sm:w-10 ml-1 rounded-full hidden xxs:block"
               data-slot="skeleton"
             />
           </div>
@@ -615,7 +615,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in loading state 1
             class="relative h-full min-w-16 md:min-w-20 flex items-center justify-center bg-kanaliiga-light-brown/30 rounded-xs"
           >
             <div
-              class="bg-accent animate-pulse rounded-md h-5 w-7"
+              class="animate-pulse rounded-md bg-accent h-5 w-7"
               data-slot="skeleton"
             />
             <span
@@ -624,7 +624,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in loading state 1
               —
             </span>
             <div
-              class="bg-accent animate-pulse rounded-md h-5 w-7"
+              class="animate-pulse rounded-md bg-accent h-5 w-7"
               data-slot="skeleton"
             />
           </div>
@@ -632,11 +632,11 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in loading state 1
             class="flex items-center justify-start ml-1"
           >
             <div
-              class="bg-accent animate-pulse h-6 w-6 sm:h-8 sm:w-8 mr-1 rounded-full hidden xxs:block"
+              class="animate-pulse bg-accent h-6 w-6 sm:h-8 sm:w-8 mr-1 rounded-full hidden xxs:block"
               data-slot="skeleton"
             />
             <div
-              class="bg-accent animate-pulse rounded-md h-4 w-24 sm:w-32 ml-1"
+              class="animate-pulse rounded-md bg-accent h-4 w-24 sm:w-32 ml-1"
               data-slot="skeleton"
             />
           </div>
@@ -657,7 +657,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in validating stat
         class="text-left text-sm sm:text-lg mb-2"
       >
         <div
-          class="bg-accent animate-pulse rounded-md h-5 w-32 inline-block"
+          class="animate-pulse rounded-md bg-accent h-5 w-32 inline-block"
           data-slot="skeleton"
         />
       </h2>
@@ -671,11 +671,11 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in validating stat
             class="flex items-center justify-end"
           >
             <div
-              class="bg-accent animate-pulse rounded-md h-4 w-24 sm:w-32 mr-1"
+              class="animate-pulse rounded-md bg-accent h-4 w-24 sm:w-32 mr-1"
               data-slot="skeleton"
             />
             <div
-              class="bg-accent animate-pulse h-8 w-8 sm:h-10 sm:w-10 ml-1 rounded-full hidden xxs:block"
+              class="animate-pulse bg-accent h-8 w-8 sm:h-10 sm:w-10 ml-1 rounded-full hidden xxs:block"
               data-slot="skeleton"
             />
           </div>
@@ -683,7 +683,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in validating stat
             class="relative h-full min-w-16 md:min-w-20 flex items-center justify-center bg-kanaliiga-light-brown/30 rounded-xs"
           >
             <div
-              class="bg-accent animate-pulse rounded-md h-5 w-7"
+              class="animate-pulse rounded-md bg-accent h-5 w-7"
               data-slot="skeleton"
             />
             <span
@@ -692,7 +692,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in validating stat
               —
             </span>
             <div
-              class="bg-accent animate-pulse rounded-md h-5 w-7"
+              class="animate-pulse rounded-md bg-accent h-5 w-7"
               data-slot="skeleton"
             />
           </div>
@@ -700,11 +700,11 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in validating stat
             class="flex items-center justify-start ml-1"
           >
             <div
-              class="bg-accent animate-pulse h-6 w-6 sm:h-8 sm:w-8 mr-1 rounded-full hidden xxs:block"
+              class="animate-pulse bg-accent h-6 w-6 sm:h-8 sm:w-8 mr-1 rounded-full hidden xxs:block"
               data-slot="skeleton"
             />
             <div
-              class="bg-accent animate-pulse rounded-md h-4 w-24 sm:w-32 ml-1"
+              class="animate-pulse rounded-md bg-accent h-4 w-24 sm:w-32 ml-1"
               data-slot="skeleton"
             />
           </div>
@@ -720,11 +720,11 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in validating stat
             class="flex items-center justify-end"
           >
             <div
-              class="bg-accent animate-pulse rounded-md h-4 w-24 sm:w-32 mr-1"
+              class="animate-pulse rounded-md bg-accent h-4 w-24 sm:w-32 mr-1"
               data-slot="skeleton"
             />
             <div
-              class="bg-accent animate-pulse h-8 w-8 sm:h-10 sm:w-10 ml-1 rounded-full hidden xxs:block"
+              class="animate-pulse bg-accent h-8 w-8 sm:h-10 sm:w-10 ml-1 rounded-full hidden xxs:block"
               data-slot="skeleton"
             />
           </div>
@@ -732,7 +732,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in validating stat
             class="relative h-full min-w-16 md:min-w-20 flex items-center justify-center bg-kanaliiga-light-brown/30 rounded-xs"
           >
             <div
-              class="bg-accent animate-pulse rounded-md h-5 w-7"
+              class="animate-pulse rounded-md bg-accent h-5 w-7"
               data-slot="skeleton"
             />
             <span
@@ -741,7 +741,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in validating stat
               —
             </span>
             <div
-              class="bg-accent animate-pulse rounded-md h-5 w-7"
+              class="animate-pulse rounded-md bg-accent h-5 w-7"
               data-slot="skeleton"
             />
           </div>
@@ -749,11 +749,11 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in validating stat
             class="flex items-center justify-start ml-1"
           >
             <div
-              class="bg-accent animate-pulse h-6 w-6 sm:h-8 sm:w-8 mr-1 rounded-full hidden xxs:block"
+              class="animate-pulse bg-accent h-6 w-6 sm:h-8 sm:w-8 mr-1 rounded-full hidden xxs:block"
               data-slot="skeleton"
             />
             <div
-              class="bg-accent animate-pulse rounded-md h-4 w-24 sm:w-32 ml-1"
+              class="animate-pulse rounded-md bg-accent h-4 w-24 sm:w-32 ml-1"
               data-slot="skeleton"
             />
           </div>
@@ -769,11 +769,11 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in validating stat
             class="flex items-center justify-end"
           >
             <div
-              class="bg-accent animate-pulse rounded-md h-4 w-24 sm:w-32 mr-1"
+              class="animate-pulse rounded-md bg-accent h-4 w-24 sm:w-32 mr-1"
               data-slot="skeleton"
             />
             <div
-              class="bg-accent animate-pulse h-8 w-8 sm:h-10 sm:w-10 ml-1 rounded-full hidden xxs:block"
+              class="animate-pulse bg-accent h-8 w-8 sm:h-10 sm:w-10 ml-1 rounded-full hidden xxs:block"
               data-slot="skeleton"
             />
           </div>
@@ -781,7 +781,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in validating stat
             class="relative h-full min-w-16 md:min-w-20 flex items-center justify-center bg-kanaliiga-light-brown/30 rounded-xs"
           >
             <div
-              class="bg-accent animate-pulse rounded-md h-5 w-7"
+              class="animate-pulse rounded-md bg-accent h-5 w-7"
               data-slot="skeleton"
             />
             <span
@@ -790,7 +790,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in validating stat
               —
             </span>
             <div
-              class="bg-accent animate-pulse rounded-md h-5 w-7"
+              class="animate-pulse rounded-md bg-accent h-5 w-7"
               data-slot="skeleton"
             />
           </div>
@@ -798,11 +798,11 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in validating stat
             class="flex items-center justify-start ml-1"
           >
             <div
-              class="bg-accent animate-pulse h-6 w-6 sm:h-8 sm:w-8 mr-1 rounded-full hidden xxs:block"
+              class="animate-pulse bg-accent h-6 w-6 sm:h-8 sm:w-8 mr-1 rounded-full hidden xxs:block"
               data-slot="skeleton"
             />
             <div
-              class="bg-accent animate-pulse rounded-md h-4 w-24 sm:w-32 ml-1"
+              class="animate-pulse rounded-md bg-accent h-4 w-24 sm:w-32 ml-1"
               data-slot="skeleton"
             />
           </div>
@@ -814,7 +814,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in validating stat
         class="text-left text-sm sm:text-lg mb-2"
       >
         <div
-          class="bg-accent animate-pulse rounded-md h-5 w-32 inline-block"
+          class="animate-pulse rounded-md bg-accent h-5 w-32 inline-block"
           data-slot="skeleton"
         />
       </h2>
@@ -828,11 +828,11 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in validating stat
             class="flex items-center justify-end"
           >
             <div
-              class="bg-accent animate-pulse rounded-md h-4 w-24 sm:w-32 mr-1"
+              class="animate-pulse rounded-md bg-accent h-4 w-24 sm:w-32 mr-1"
               data-slot="skeleton"
             />
             <div
-              class="bg-accent animate-pulse h-8 w-8 sm:h-10 sm:w-10 ml-1 rounded-full hidden xxs:block"
+              class="animate-pulse bg-accent h-8 w-8 sm:h-10 sm:w-10 ml-1 rounded-full hidden xxs:block"
               data-slot="skeleton"
             />
           </div>
@@ -840,7 +840,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in validating stat
             class="relative h-full min-w-16 md:min-w-20 flex items-center justify-center bg-kanaliiga-light-brown/30 rounded-xs"
           >
             <div
-              class="bg-accent animate-pulse rounded-md h-5 w-7"
+              class="animate-pulse rounded-md bg-accent h-5 w-7"
               data-slot="skeleton"
             />
             <span
@@ -849,7 +849,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in validating stat
               —
             </span>
             <div
-              class="bg-accent animate-pulse rounded-md h-5 w-7"
+              class="animate-pulse rounded-md bg-accent h-5 w-7"
               data-slot="skeleton"
             />
           </div>
@@ -857,11 +857,11 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in validating stat
             class="flex items-center justify-start ml-1"
           >
             <div
-              class="bg-accent animate-pulse h-6 w-6 sm:h-8 sm:w-8 mr-1 rounded-full hidden xxs:block"
+              class="animate-pulse bg-accent h-6 w-6 sm:h-8 sm:w-8 mr-1 rounded-full hidden xxs:block"
               data-slot="skeleton"
             />
             <div
-              class="bg-accent animate-pulse rounded-md h-4 w-24 sm:w-32 ml-1"
+              class="animate-pulse rounded-md bg-accent h-4 w-24 sm:w-32 ml-1"
               data-slot="skeleton"
             />
           </div>
@@ -877,11 +877,11 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in validating stat
             class="flex items-center justify-end"
           >
             <div
-              class="bg-accent animate-pulse rounded-md h-4 w-24 sm:w-32 mr-1"
+              class="animate-pulse rounded-md bg-accent h-4 w-24 sm:w-32 mr-1"
               data-slot="skeleton"
             />
             <div
-              class="bg-accent animate-pulse h-8 w-8 sm:h-10 sm:w-10 ml-1 rounded-full hidden xxs:block"
+              class="animate-pulse bg-accent h-8 w-8 sm:h-10 sm:w-10 ml-1 rounded-full hidden xxs:block"
               data-slot="skeleton"
             />
           </div>
@@ -889,7 +889,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in validating stat
             class="relative h-full min-w-16 md:min-w-20 flex items-center justify-center bg-kanaliiga-light-brown/30 rounded-xs"
           >
             <div
-              class="bg-accent animate-pulse rounded-md h-5 w-7"
+              class="animate-pulse rounded-md bg-accent h-5 w-7"
               data-slot="skeleton"
             />
             <span
@@ -898,7 +898,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in validating stat
               —
             </span>
             <div
-              class="bg-accent animate-pulse rounded-md h-5 w-7"
+              class="animate-pulse rounded-md bg-accent h-5 w-7"
               data-slot="skeleton"
             />
           </div>
@@ -906,11 +906,11 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in validating stat
             class="flex items-center justify-start ml-1"
           >
             <div
-              class="bg-accent animate-pulse h-6 w-6 sm:h-8 sm:w-8 mr-1 rounded-full hidden xxs:block"
+              class="animate-pulse bg-accent h-6 w-6 sm:h-8 sm:w-8 mr-1 rounded-full hidden xxs:block"
               data-slot="skeleton"
             />
             <div
-              class="bg-accent animate-pulse rounded-md h-4 w-24 sm:w-32 ml-1"
+              class="animate-pulse rounded-md bg-accent h-4 w-24 sm:w-32 ml-1"
               data-slot="skeleton"
             />
           </div>
@@ -926,11 +926,11 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in validating stat
             class="flex items-center justify-end"
           >
             <div
-              class="bg-accent animate-pulse rounded-md h-4 w-24 sm:w-32 mr-1"
+              class="animate-pulse rounded-md bg-accent h-4 w-24 sm:w-32 mr-1"
               data-slot="skeleton"
             />
             <div
-              class="bg-accent animate-pulse h-8 w-8 sm:h-10 sm:w-10 ml-1 rounded-full hidden xxs:block"
+              class="animate-pulse bg-accent h-8 w-8 sm:h-10 sm:w-10 ml-1 rounded-full hidden xxs:block"
               data-slot="skeleton"
             />
           </div>
@@ -938,7 +938,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in validating stat
             class="relative h-full min-w-16 md:min-w-20 flex items-center justify-center bg-kanaliiga-light-brown/30 rounded-xs"
           >
             <div
-              class="bg-accent animate-pulse rounded-md h-5 w-7"
+              class="animate-pulse rounded-md bg-accent h-5 w-7"
               data-slot="skeleton"
             />
             <span
@@ -947,7 +947,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in validating stat
               —
             </span>
             <div
-              class="bg-accent animate-pulse rounded-md h-5 w-7"
+              class="animate-pulse rounded-md bg-accent h-5 w-7"
               data-slot="skeleton"
             />
           </div>
@@ -955,11 +955,11 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in validating stat
             class="flex items-center justify-start ml-1"
           >
             <div
-              class="bg-accent animate-pulse h-6 w-6 sm:h-8 sm:w-8 mr-1 rounded-full hidden xxs:block"
+              class="animate-pulse bg-accent h-6 w-6 sm:h-8 sm:w-8 mr-1 rounded-full hidden xxs:block"
               data-slot="skeleton"
             />
             <div
-              class="bg-accent animate-pulse rounded-md h-4 w-24 sm:w-32 ml-1"
+              class="animate-pulse rounded-md bg-accent h-4 w-24 sm:w-32 ml-1"
               data-slot="skeleton"
             />
           </div>
@@ -971,7 +971,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in validating stat
         class="text-left text-sm sm:text-lg mb-2"
       >
         <div
-          class="bg-accent animate-pulse rounded-md h-5 w-32 inline-block"
+          class="animate-pulse rounded-md bg-accent h-5 w-32 inline-block"
           data-slot="skeleton"
         />
       </h2>
@@ -985,11 +985,11 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in validating stat
             class="flex items-center justify-end"
           >
             <div
-              class="bg-accent animate-pulse rounded-md h-4 w-24 sm:w-32 mr-1"
+              class="animate-pulse rounded-md bg-accent h-4 w-24 sm:w-32 mr-1"
               data-slot="skeleton"
             />
             <div
-              class="bg-accent animate-pulse h-8 w-8 sm:h-10 sm:w-10 ml-1 rounded-full hidden xxs:block"
+              class="animate-pulse bg-accent h-8 w-8 sm:h-10 sm:w-10 ml-1 rounded-full hidden xxs:block"
               data-slot="skeleton"
             />
           </div>
@@ -997,7 +997,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in validating stat
             class="relative h-full min-w-16 md:min-w-20 flex items-center justify-center bg-kanaliiga-light-brown/30 rounded-xs"
           >
             <div
-              class="bg-accent animate-pulse rounded-md h-5 w-7"
+              class="animate-pulse rounded-md bg-accent h-5 w-7"
               data-slot="skeleton"
             />
             <span
@@ -1006,7 +1006,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in validating stat
               —
             </span>
             <div
-              class="bg-accent animate-pulse rounded-md h-5 w-7"
+              class="animate-pulse rounded-md bg-accent h-5 w-7"
               data-slot="skeleton"
             />
           </div>
@@ -1014,11 +1014,11 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in validating stat
             class="flex items-center justify-start ml-1"
           >
             <div
-              class="bg-accent animate-pulse h-6 w-6 sm:h-8 sm:w-8 mr-1 rounded-full hidden xxs:block"
+              class="animate-pulse bg-accent h-6 w-6 sm:h-8 sm:w-8 mr-1 rounded-full hidden xxs:block"
               data-slot="skeleton"
             />
             <div
-              class="bg-accent animate-pulse rounded-md h-4 w-24 sm:w-32 ml-1"
+              class="animate-pulse rounded-md bg-accent h-4 w-24 sm:w-32 ml-1"
               data-slot="skeleton"
             />
           </div>
@@ -1034,11 +1034,11 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in validating stat
             class="flex items-center justify-end"
           >
             <div
-              class="bg-accent animate-pulse rounded-md h-4 w-24 sm:w-32 mr-1"
+              class="animate-pulse rounded-md bg-accent h-4 w-24 sm:w-32 mr-1"
               data-slot="skeleton"
             />
             <div
-              class="bg-accent animate-pulse h-8 w-8 sm:h-10 sm:w-10 ml-1 rounded-full hidden xxs:block"
+              class="animate-pulse bg-accent h-8 w-8 sm:h-10 sm:w-10 ml-1 rounded-full hidden xxs:block"
               data-slot="skeleton"
             />
           </div>
@@ -1046,7 +1046,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in validating stat
             class="relative h-full min-w-16 md:min-w-20 flex items-center justify-center bg-kanaliiga-light-brown/30 rounded-xs"
           >
             <div
-              class="bg-accent animate-pulse rounded-md h-5 w-7"
+              class="animate-pulse rounded-md bg-accent h-5 w-7"
               data-slot="skeleton"
             />
             <span
@@ -1055,7 +1055,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in validating stat
               —
             </span>
             <div
-              class="bg-accent animate-pulse rounded-md h-5 w-7"
+              class="animate-pulse rounded-md bg-accent h-5 w-7"
               data-slot="skeleton"
             />
           </div>
@@ -1063,11 +1063,11 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in validating stat
             class="flex items-center justify-start ml-1"
           >
             <div
-              class="bg-accent animate-pulse h-6 w-6 sm:h-8 sm:w-8 mr-1 rounded-full hidden xxs:block"
+              class="animate-pulse bg-accent h-6 w-6 sm:h-8 sm:w-8 mr-1 rounded-full hidden xxs:block"
               data-slot="skeleton"
             />
             <div
-              class="bg-accent animate-pulse rounded-md h-4 w-24 sm:w-32 ml-1"
+              class="animate-pulse rounded-md bg-accent h-4 w-24 sm:w-32 ml-1"
               data-slot="skeleton"
             />
           </div>
@@ -1083,11 +1083,11 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in validating stat
             class="flex items-center justify-end"
           >
             <div
-              class="bg-accent animate-pulse rounded-md h-4 w-24 sm:w-32 mr-1"
+              class="animate-pulse rounded-md bg-accent h-4 w-24 sm:w-32 mr-1"
               data-slot="skeleton"
             />
             <div
-              class="bg-accent animate-pulse h-8 w-8 sm:h-10 sm:w-10 ml-1 rounded-full hidden xxs:block"
+              class="animate-pulse bg-accent h-8 w-8 sm:h-10 sm:w-10 ml-1 rounded-full hidden xxs:block"
               data-slot="skeleton"
             />
           </div>
@@ -1095,7 +1095,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in validating stat
             class="relative h-full min-w-16 md:min-w-20 flex items-center justify-center bg-kanaliiga-light-brown/30 rounded-xs"
           >
             <div
-              class="bg-accent animate-pulse rounded-md h-5 w-7"
+              class="animate-pulse rounded-md bg-accent h-5 w-7"
               data-slot="skeleton"
             />
             <span
@@ -1104,7 +1104,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in validating stat
               —
             </span>
             <div
-              class="bg-accent animate-pulse rounded-md h-5 w-7"
+              class="animate-pulse rounded-md bg-accent h-5 w-7"
               data-slot="skeleton"
             />
           </div>
@@ -1112,11 +1112,11 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in validating stat
             class="flex items-center justify-start ml-1"
           >
             <div
-              class="bg-accent animate-pulse h-6 w-6 sm:h-8 sm:w-8 mr-1 rounded-full hidden xxs:block"
+              class="animate-pulse bg-accent h-6 w-6 sm:h-8 sm:w-8 mr-1 rounded-full hidden xxs:block"
               data-slot="skeleton"
             />
             <div
-              class="bg-accent animate-pulse rounded-md h-4 w-24 sm:w-32 ml-1"
+              class="animate-pulse rounded-md bg-accent h-4 w-24 sm:w-32 ml-1"
               data-slot="skeleton"
             />
           </div>
@@ -1128,7 +1128,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in validating stat
         class="text-left text-sm sm:text-lg mb-2"
       >
         <div
-          class="bg-accent animate-pulse rounded-md h-5 w-32 inline-block"
+          class="animate-pulse rounded-md bg-accent h-5 w-32 inline-block"
           data-slot="skeleton"
         />
       </h2>
@@ -1142,11 +1142,11 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in validating stat
             class="flex items-center justify-end"
           >
             <div
-              class="bg-accent animate-pulse rounded-md h-4 w-24 sm:w-32 mr-1"
+              class="animate-pulse rounded-md bg-accent h-4 w-24 sm:w-32 mr-1"
               data-slot="skeleton"
             />
             <div
-              class="bg-accent animate-pulse h-8 w-8 sm:h-10 sm:w-10 ml-1 rounded-full hidden xxs:block"
+              class="animate-pulse bg-accent h-8 w-8 sm:h-10 sm:w-10 ml-1 rounded-full hidden xxs:block"
               data-slot="skeleton"
             />
           </div>
@@ -1154,7 +1154,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in validating stat
             class="relative h-full min-w-16 md:min-w-20 flex items-center justify-center bg-kanaliiga-light-brown/30 rounded-xs"
           >
             <div
-              class="bg-accent animate-pulse rounded-md h-5 w-7"
+              class="animate-pulse rounded-md bg-accent h-5 w-7"
               data-slot="skeleton"
             />
             <span
@@ -1163,7 +1163,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in validating stat
               —
             </span>
             <div
-              class="bg-accent animate-pulse rounded-md h-5 w-7"
+              class="animate-pulse rounded-md bg-accent h-5 w-7"
               data-slot="skeleton"
             />
           </div>
@@ -1171,11 +1171,11 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in validating stat
             class="flex items-center justify-start ml-1"
           >
             <div
-              class="bg-accent animate-pulse h-6 w-6 sm:h-8 sm:w-8 mr-1 rounded-full hidden xxs:block"
+              class="animate-pulse bg-accent h-6 w-6 sm:h-8 sm:w-8 mr-1 rounded-full hidden xxs:block"
               data-slot="skeleton"
             />
             <div
-              class="bg-accent animate-pulse rounded-md h-4 w-24 sm:w-32 ml-1"
+              class="animate-pulse rounded-md bg-accent h-4 w-24 sm:w-32 ml-1"
               data-slot="skeleton"
             />
           </div>
@@ -1191,11 +1191,11 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in validating stat
             class="flex items-center justify-end"
           >
             <div
-              class="bg-accent animate-pulse rounded-md h-4 w-24 sm:w-32 mr-1"
+              class="animate-pulse rounded-md bg-accent h-4 w-24 sm:w-32 mr-1"
               data-slot="skeleton"
             />
             <div
-              class="bg-accent animate-pulse h-8 w-8 sm:h-10 sm:w-10 ml-1 rounded-full hidden xxs:block"
+              class="animate-pulse bg-accent h-8 w-8 sm:h-10 sm:w-10 ml-1 rounded-full hidden xxs:block"
               data-slot="skeleton"
             />
           </div>
@@ -1203,7 +1203,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in validating stat
             class="relative h-full min-w-16 md:min-w-20 flex items-center justify-center bg-kanaliiga-light-brown/30 rounded-xs"
           >
             <div
-              class="bg-accent animate-pulse rounded-md h-5 w-7"
+              class="animate-pulse rounded-md bg-accent h-5 w-7"
               data-slot="skeleton"
             />
             <span
@@ -1212,7 +1212,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in validating stat
               —
             </span>
             <div
-              class="bg-accent animate-pulse rounded-md h-5 w-7"
+              class="animate-pulse rounded-md bg-accent h-5 w-7"
               data-slot="skeleton"
             />
           </div>
@@ -1220,11 +1220,11 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in validating stat
             class="flex items-center justify-start ml-1"
           >
             <div
-              class="bg-accent animate-pulse h-6 w-6 sm:h-8 sm:w-8 mr-1 rounded-full hidden xxs:block"
+              class="animate-pulse bg-accent h-6 w-6 sm:h-8 sm:w-8 mr-1 rounded-full hidden xxs:block"
               data-slot="skeleton"
             />
             <div
-              class="bg-accent animate-pulse rounded-md h-4 w-24 sm:w-32 ml-1"
+              class="animate-pulse rounded-md bg-accent h-4 w-24 sm:w-32 ml-1"
               data-slot="skeleton"
             />
           </div>
@@ -1240,11 +1240,11 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in validating stat
             class="flex items-center justify-end"
           >
             <div
-              class="bg-accent animate-pulse rounded-md h-4 w-24 sm:w-32 mr-1"
+              class="animate-pulse rounded-md bg-accent h-4 w-24 sm:w-32 mr-1"
               data-slot="skeleton"
             />
             <div
-              class="bg-accent animate-pulse h-8 w-8 sm:h-10 sm:w-10 ml-1 rounded-full hidden xxs:block"
+              class="animate-pulse bg-accent h-8 w-8 sm:h-10 sm:w-10 ml-1 rounded-full hidden xxs:block"
               data-slot="skeleton"
             />
           </div>
@@ -1252,7 +1252,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in validating stat
             class="relative h-full min-w-16 md:min-w-20 flex items-center justify-center bg-kanaliiga-light-brown/30 rounded-xs"
           >
             <div
-              class="bg-accent animate-pulse rounded-md h-5 w-7"
+              class="animate-pulse rounded-md bg-accent h-5 w-7"
               data-slot="skeleton"
             />
             <span
@@ -1261,7 +1261,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in validating stat
               —
             </span>
             <div
-              class="bg-accent animate-pulse rounded-md h-5 w-7"
+              class="animate-pulse rounded-md bg-accent h-5 w-7"
               data-slot="skeleton"
             />
           </div>
@@ -1269,11 +1269,11 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly in validating stat
             class="flex items-center justify-start ml-1"
           >
             <div
-              class="bg-accent animate-pulse h-6 w-6 sm:h-8 sm:w-8 mr-1 rounded-full hidden xxs:block"
+              class="animate-pulse bg-accent h-6 w-6 sm:h-8 sm:w-8 mr-1 rounded-full hidden xxs:block"
               data-slot="skeleton"
             />
             <div
-              class="bg-accent animate-pulse rounded-md h-4 w-24 sm:w-32 ml-1"
+              class="animate-pulse rounded-md bg-accent h-4 w-24 sm:w-32 ml-1"
               data-slot="skeleton"
             />
           </div>
