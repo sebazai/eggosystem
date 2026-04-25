@@ -41,7 +41,6 @@ const manualParseQueueBodySchema = z
     match_id: z.coerce.number().int().positive().optional(),
     map_order: z.coerce.number().int().min(1).optional(),
     external_match_room_id: z.string().min(1).optional(),
-    best_of: z.coerce.number().int().min(1).max(5).optional(),
     download_url: httpsUrlSchema,
     priority: z.number().int().min(1).max(10).optional().default(5)
   })
@@ -52,7 +51,7 @@ const manualParseQueueBodySchema = z
       val.external_match_room_id;
     if (!hasAny) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         message:
           "Either match_game_id, match_id, or external_match_room_id must be provided",
         path: ["match_game_id"]
@@ -64,10 +63,20 @@ const manualParseQueueBodySchema = z
       (val.external_match_room_id ? 1 : 0);
     if (count > 1) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         message:
           "Provide only one of match_game_id, match_id, or external_match_room_id",
         path: ["external_match_room_id"]
+      });
+    }
+
+    // If we're creating/inferring a MatchGame from an internal hub match id,
+    // require the caller to specify which map in the series this demo belongs to.
+    if (val.match_id != null && val.map_order == null) {
+      ctx.addIssue({
+        code: "custom",
+        message: "map_order is required when match_id is provided",
+        path: ["map_order"]
       });
     }
   });
@@ -88,7 +97,7 @@ const reparseRequestSchema = z.object({
 
 /**
  * POST /v1/dashboard/demos/manual/parse-queue
- * Staff-only: enqueue a manual HTTPS demo URL for a MatchGame on parse_queue (source dashboard-manual).
+ * Staff-only: enqueue a manual HTTPS demo URL for a MatchGame on parse_queue (source manual/faceit).
  * Dashboard “repair” actions here use global staff role checks (e.g. admin, helpdesk via
  * `checkPermissions` on this mount), not a per-match or per-team scoping check.
  */
@@ -109,10 +118,10 @@ router.post(
     }
 
     const { match_game_id, download_url, priority } = parsed.data;
-    const { match_id, map_order, external_match_room_id, best_of } =
-      parsed.data;
+    const { match_id, map_order, external_match_room_id } = parsed.data;
 
     let matchGameId: number;
+    const source = external_match_room_id ? "faceit" : "manual";
     if (match_game_id != null) {
       matchGameId = match_game_id;
     } else if (match_id != null) {
@@ -140,8 +149,7 @@ router.post(
       matchGameId = await resolveOrCreateMatchGameIdForDemoUrl({
         externalMatchRoomId: external_match_room_id,
         demoUrl: download_url,
-        isRoundRobinBo2As2xBo1: hubMatches.length === 2,
-        bestOf: best_of ?? (hubMatches.length === 2 ? 2 : undefined)
+        isRoundRobinBo2As2xBo1: hubMatches.length === 2
       });
     }
 
@@ -154,7 +162,8 @@ router.post(
       matchGameId,
       downloadUrl: download_url,
       priority,
-      actorAccountId
+      actorAccountId,
+      source
     });
 
     res.status(200).json({

@@ -38,7 +38,6 @@ export function ManualDemoParseForm() {
   const [matchId, setMatchId] = useState("");
   const [mapOrder, setMapOrder] = useState("");
   const [externalMatchRoomId, setExternalMatchRoomId] = useState("");
-  const [bestOf, setBestOf] = useState("");
   const [downloadUrl, setDownloadUrl] = useState("");
   const [priority, setPriority] = useState("5");
   const [submitting, setSubmitting] = useState(false);
@@ -48,6 +47,8 @@ export function ManualDemoParseForm() {
     message: string;
   }> | null>(null);
   const [success, setSuccess] = useState<EnqueueSuccess | null>(null);
+
+  const sourceLabel = mode === "external_match_room_id" ? "faceit" : "manual";
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,8 +60,13 @@ export function ManualDemoParseForm() {
     const matchGameIdNum = Number.parseInt(matchGameId, 10);
     const matchIdNum = Number.parseInt(matchId, 10);
     const mapOrderNum = Number.parseInt(mapOrder, 10);
-    const bestOfNum = Number.parseInt(bestOf, 10);
     const priNum = Number.parseInt(priority, 10);
+
+    if (mode === "match_id" && !Number.isFinite(mapOrderNum)) {
+      setError("map_order is required when Match ID is provided");
+      setSubmitting(false);
+      return;
+    }
 
     try {
       const body = {
@@ -69,13 +75,11 @@ export function ManualDemoParseForm() {
           : mode === "match_id"
             ? {
                 match_id: matchIdNum,
-                ...(Number.isFinite(mapOrderNum)
-                  ? { map_order: mapOrderNum }
-                  : {})
+                map_order: mapOrderNum
               }
             : {
-                external_match_room_id: externalMatchRoomId.trim(),
-                ...(Number.isFinite(bestOfNum) ? { best_of: bestOfNum } : {})
+                external_match_room_id: externalMatchRoomId.trim()
+                // No best_of needed: we infer 2xBO1 via DB state (two hub matches)
               }),
         download_url: downloadUrl.trim(),
         ...(Number.isFinite(priNum) ? { priority: priNum } : {})
@@ -109,8 +113,8 @@ export function ManualDemoParseForm() {
         <CardTitle>Enqueue demo parse</CardTitle>
         <CardDescription>
           Paste a valid HTTPS demo download URL for a match. The job is sent to
-          parse_queue with source{" "}
-          <code className="text-xs">dashboard-manual</code>.
+          parse_queue with source <code className="text-xs">{sourceLabel}</code>
+          .
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -131,7 +135,7 @@ export function ManualDemoParseForm() {
             <Alert>
               <AlertDescription>
                 Enqueued parse for match game{" "}
-                <strong>{success.match_game_id}</strong>.
+                <strong>{success.match_game_id}</strong>
               </AlertDescription>
             </Alert>
           ) : null}
@@ -187,19 +191,6 @@ export function ManualDemoParseForm() {
                   placeholder="e.g. 1-00000002-0002-4000-8000-000000000002"
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="best_of">Best of (optional)</Label>
-                <Input
-                  id="best_of"
-                  name="best_of"
-                  type="number"
-                  min={1}
-                  max={5}
-                  value={bestOf}
-                  onChange={(ev) => setBestOf(ev.target.value)}
-                  placeholder="e.g. 3"
-                />
-              </div>
             </>
           ) : mode === "match_id" ? (
             <>
@@ -217,12 +208,13 @@ export function ManualDemoParseForm() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="map_order">Map order (optional)</Label>
+                <Label htmlFor="map_order">Map order</Label>
                 <Input
                   id="map_order"
                   name="map_order"
                   type="number"
                   min={1}
+                  required
                   value={mapOrder}
                   onChange={(ev) => setMapOrder(ev.target.value)}
                   placeholder="e.g. 1"

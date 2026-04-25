@@ -29,14 +29,14 @@ export const createMarketingSponsorBodySchema = z
   .superRefine((data, ctx) => {
     if (data.tier === "game_wide" && data.game_id === undefined) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         message: "game_id is required for game_wide tier",
         path: ["game_id"]
       });
     }
     if (data.tier !== "game_wide" && data.game_id !== undefined) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         message: "game_id is only allowed for game_wide tier",
         path: ["game_id"]
       });
@@ -61,7 +61,7 @@ export const patchMarketingSponsorBodySchema = z
   .superRefine((data, ctx) => {
     if (data.clear_logo === true && data.image_data !== undefined) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         message: "clear_logo cannot be combined with image_data",
         path: ["clear_logo"]
       });
@@ -71,7 +71,7 @@ export const patchMarketingSponsorBodySchema = z
       data.footer_image_data !== undefined
     ) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         message: "clear_footer_logo cannot be combined with footer_image_data",
         path: ["clear_footer_logo"]
       });
@@ -88,21 +88,21 @@ export const reorderMarketingSponsorsBodySchema = z
   .superRefine((val, ctx) => {
     if (val.tier === "game_wide" && val.game_id === undefined) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         message: "game_id is required when reordering game_wide sponsors",
         path: ["game_id"]
       });
     }
     if (val.tier !== "game_wide" && val.game_id !== undefined) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         message: "game_id must not be set unless tier is game_wide",
         path: ["game_id"]
       });
     }
     if (new Set(val.ordered_ids).size !== val.ordered_ids.length) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         message: "ordered_ids must be unique"
       });
     }

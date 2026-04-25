@@ -90,8 +90,7 @@ export const addFaceitMatchGameToDatabase = async (
   return resolveOrCreateMatchGameIdForDemoUrl({
     externalMatchRoomId,
     demoUrl: demo_url,
-    isRoundRobinBo2As2xBo1,
-    bestOf: matchDetails.best_of
+    isRoundRobinBo2As2xBo1
   });
 };
 
@@ -99,13 +98,11 @@ export const resolveOrCreateMatchGameIdForDemoUrl = async (input: {
   externalMatchRoomId: string;
   demoUrl: string;
   isRoundRobinBo2As2xBo1?: boolean;
-  bestOf?: number;
 }): Promise<number> => {
   const {
     externalMatchRoomId,
     demoUrl,
-    isRoundRobinBo2As2xBo1 = false,
-    bestOf
+    isRoundRobinBo2As2xBo1 = false
   } = input;
 
   const gameWithDemo = await getMatchGameByDemoUrl(demoUrl);
@@ -139,7 +136,7 @@ export const resolveOrCreateMatchGameIdForDemoUrl = async (input: {
     );
     const mapPlayedVoteObject = matchMapVetoes[mapPlayedNumber - 1];
 
-    if (isRoundRobinBo2As2xBo1 && bestOf === 2 && matches.length === 2) {
+    if (isRoundRobinBo2As2xBo1 && matches.length === 2) {
       if (matchMapVetoes.length !== 2) {
         throw new Error("Something is very wrong with this 2xBO1");
       }

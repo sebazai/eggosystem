@@ -80,7 +80,7 @@ export const publishToParseQueue = async (
     return;
   } catch (error) {
     const downloadUrlForLog =
-      request.source === "dashboard-manual"
+      request.source === "manual"
         ? `${request.download_url.slice(0, 64)}…`
         : request.download_url;
     logger.error("Error publishing demo processing request to parse_queue", {
