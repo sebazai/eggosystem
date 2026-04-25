@@ -24,13 +24,6 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from "@/components/ui/select";
 import { Trophy, Medal, Award, Globe } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSeasonLeagues } from "@/hooks/data/useSeasonLeagues";
@@ -38,6 +31,7 @@ import TeamViewDialog from "@/components/fantasy/TeamViewDialog";
 import type { MyFantasyTeam } from "@/hooks/data/useMyFantasyTeam";
 import { TableSkeleton } from "@/components/loading";
 import { useLeaderboardViewMode } from "@/hooks/data/fantasy/useLeaderboardViewMode";
+import { LeagueSelector } from "@/components/league/LeagueSelector";
 
 interface LeaderboardEntry {
   rank: number;
@@ -351,7 +345,7 @@ export default function FantasyLeaderboardPage() {
                 Top 50 fantasy teams ranked by total points
               </CardDescription>
               <div className="mt-2 text-sm text-muted-foreground">
-                💡 Click on any team row to view their full roster and details
+                Click on any team row to view their full roster and details
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -374,35 +368,25 @@ export default function FantasyLeaderboardPage() {
                     seasonLeagues.length > 0 && (
                       <div className="flex items-center gap-2">
                         <label className="text-sm font-medium">Division:</label>
-                        <Select
+                        <LeagueSelector
                           value={effectiveSelectedLeagueId.toString()}
                           onValueChange={(v) => {
                             setUserSelectedLeagueId(parseInt(v));
                             setHasUserSelectedLeague(true);
                           }}
-                        >
-                          <SelectTrigger className="w-[200px]">
-                            <SelectValue placeholder="Select division" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {seasonLeagues.map(
-                              (league: { id: number; name: string }) => (
-                                <SelectItem
-                                  key={league.id}
-                                  value={league.id.toString()}
-                                >
-                                  {league.name}
-                                  {myTeam &&
-                                  league.id ===
-                                    (myTeam as { league_id?: number })
-                                      ?.league_id
-                                    ? " (Your Division)"
-                                    : ""}
-                                </SelectItem>
-                              )
-                            )}
-                          </SelectContent>
-                        </Select>
+                          placeholder="Select division"
+                          triggerClassName="w-[200px]"
+                          leagues={seasonLeagues.map((l) => ({
+                            id: String(l.id),
+                            name:
+                              myTeam &&
+                              l.id ===
+                                (myTeam as { league_id?: number })?.league_id
+                                ? `${l.name} (Your Division)`
+                                : l.name,
+                            tier: l.tier
+                          }))}
+                        />
                       </div>
                     )}
                 </div>

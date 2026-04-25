@@ -10,13 +10,16 @@ export function MatchClientTime({
   endTimestamp,
   className
 }: ClientTimeProps) {
-  // Helper function to format time consistently
-  // Parse ISO timestamp (UTC) and format as UTC time string
+  // Parse ISO timestamp as UTC and format as UTC time string
   const formatTimeUTC = (isoTimestamp: string) => {
-    const date = new Date(isoTimestamp);
-    // Use UTC methods to ensure we're showing UTC time
-    const hours = String(date.getHours()).padStart(2, "0");
-    const minutes = String(date.getMinutes()).padStart(2, "0");
+    // If the timestamp lacks an explicit zone (Z or ±hh:mm), treat it as UTC.
+    const hasExplicitZone =
+      /([zZ]|[+-]\d{2}:\d{2})$/.test(isoTimestamp) ||
+      /([+-]\d{4})$/.test(isoTimestamp);
+    const date = new Date(hasExplicitZone ? isoTimestamp : `${isoTimestamp}Z`);
+
+    const hours = String(date.getUTCHours()).padStart(2, "0");
+    const minutes = String(date.getUTCMinutes()).padStart(2, "0");
     return `${hours}:${minutes}`;
   };
 

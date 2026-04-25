@@ -24,7 +24,6 @@ import { useTeamsWithoutOrgs } from "@/hooks/data/useTeamsWithoutOrgs";
 import { ContentContainer } from "../layout/ContentContainer";
 import { Checkbox } from "../ui/checkbox";
 import { RequiredFormLabel } from "../ui/RequiredFormLabel";
-import { useFormContext } from "react-hook-form";
 import { ImageUploadField } from "./ImageUploadField";
 
 interface TabTeamProps {
@@ -85,7 +84,6 @@ export const TabTeam = ({
     isLoading: isLoadingTeamsWithoutOrg,
     isValidating: isValidatingTeamsWithoutOrg
   } = useTeamsWithoutOrgs(fetchTeamsWithoutOrg);
-  const { formState } = useFormContext();
 
   useEffect(() => {
     if (!fetchTeamsWithoutOrg && watchTeamId !== -1) {
@@ -249,12 +247,7 @@ export const TabTeam = ({
                       field.onChange(parsedValue);
                     }}
                     placeholder={`Team ${platformText} id`}
-                    className={
-                      "pr-10 " +
-                      (formState.errors?.teamExternalId
-                        ? "border-red-500 focus:border-red-500 focus:ring-red-500"
-                        : "")
-                    }
+                    className="pr-10"
                     data-testid="team-external-id-input"
                   />
                   {fetchingExternalData && (
@@ -264,10 +257,7 @@ export const TabTeam = ({
                   )}
                 </div>
               </FormControl>
-              <FormDescription
-                className="text-primary text-xs"
-                data-testid="faceitIdHelp"
-              >
+              <FormDescription data-testid="faceitIdHelp">
                 https://www.faceit.com/fi/teams/ID
               </FormDescription>
               <FormMessage data-testid="team-external-id-error" />
@@ -277,12 +267,12 @@ export const TabTeam = ({
       )}
 
       <Button
-        className="mt-2 w-full"
+        className="mt-2 w-full md:w-auto"
         disabled={!validTeamSelection}
         onClick={() => onNext("players")}
         data-testid="go-to-lineup-button"
       >
-        Go to lineup
+        Go to Lineup →
       </Button>
     </TabsContent>
   );

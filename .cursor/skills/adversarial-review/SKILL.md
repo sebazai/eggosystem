@@ -127,9 +127,9 @@ Apply the **scoping** rules above: pattern searches (`as` casts, etc.) **on adde
 
 ```bash
 cd $(git rev-parse --show-toplevel)
-pnpm lint
-pnpm knip
-pnpm typecheck
+rtk pnpm lint
+rtk pnpm knip
+rtk pnpm typecheck
 ```
 
 Read-only: `git log`, `git diff`, `git show`, `git merge-base`, `git rev-parse` (per `adversary_bot` agent). Also `ReadLints` on files you inspect.

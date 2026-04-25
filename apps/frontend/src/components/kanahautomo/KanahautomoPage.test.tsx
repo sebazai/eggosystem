@@ -218,7 +218,7 @@ describe("KanahautomoPage", () => {
     it("renders the submit button", () => {
       renderKanahautomoPage();
       expect(
-        screen.getByRole("button", { name: "Join Kanahautomo" })
+        screen.getByRole("button", { name: /Join Kanahautomo/i })
       ).toBeInTheDocument();
     });
   });
@@ -567,7 +567,7 @@ describe("KanahautomoPage", () => {
 
       // 5. Submit the form
       const submitButton = screen.getByRole("button", {
-        name: "Join Kanahautomo"
+        name: /Join Kanahautomo/i
       });
       await act(async () => {
         await user.click(submitButton);
@@ -652,7 +652,7 @@ describe("KanahautomoPage", () => {
 
       // Try to submit without selecting organization
       const submitButton = screen.getByRole("button", {
-        name: "Join Kanahautomo"
+        name: /Join Kanahautomo/i
       });
       await act(async () => {
         await user.click(submitButton);
@@ -680,7 +680,7 @@ describe("KanahautomoPage", () => {
       await user.click(orgOptions[0]!);
 
       const submitButton = screen.getByRole("button", {
-        name: "Join Kanahautomo"
+        name: /Join Kanahautomo/i
       });
       await act(async () => {
         await user.click(submitButton);
@@ -711,7 +711,7 @@ describe("KanahautomoPage", () => {
       await user.click(cs2Checkbox);
 
       const submitButton = screen.getByRole("button", {
-        name: "Join Kanahautomo"
+        name: /Join Kanahautomo/i
       });
       await act(async () => {
         await user.click(submitButton);

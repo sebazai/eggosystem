@@ -25,13 +25,6 @@ import {
   DialogTitle
 } from "@/components/ui/dialog";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from "@/components/ui/select";
-import {
   ExternalLink,
   Calendar,
   Clock,
@@ -49,6 +42,8 @@ import {
   DIVISIONS,
   findMinMaxTimes
 } from "@/lib/calendar-utils";
+import { LeagueSelector } from "@/components/league/LeagueSelector";
+import { TierDot } from "@/components/kanaliiga";
 import { StreamReservation } from "./StreamReservation";
 import {
   CalendarMoreEventsDialog,
@@ -431,25 +426,20 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-2 sm:items-center">
                 <div className="flex items-center gap-2">
                   <Filter className="h-4 w-4" />
-                  <Select
+                  <LeagueSelector
                     value={selectedDivision.toString()}
                     onValueChange={handleDivisionChange}
-                  >
-                    <SelectTrigger className="w-full sm:min-w-48">
-                      <SelectValue placeholder="Division" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Divisions</SelectItem>
-                      {seasonLeagues?.map((league) => (
-                        <SelectItem
-                          key={league.id}
-                          value={league.id.toString()}
-                        >
-                          {league.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    placeholder="Division"
+                    triggerClassName="w-full sm:min-w-48"
+                    leagues={[
+                      { id: "all", name: "All Divisions" },
+                      ...(seasonLeagues?.map((l) => ({
+                        id: String(l.id),
+                        name: l.name,
+                        tier: l.tier
+                      })) ?? [])
+                    ]}
+                  />
                 </div>
                 <div className="flex gap-2">
                   <Button
@@ -476,12 +466,7 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
             <div className="flex flex-wrap gap-2">
               {seasonLeagues?.map((league) => (
                 <div key={league.id} className="flex items-center gap-1">
-                  <div
-                    className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full"
-                    style={{
-                      backgroundColor: DIVISIONS[league.tier]?.color
-                    }}
-                  ></div>
+                  <TierDot tier={league.tier} />
                   <span className="text-xs">{league.name}</span>
                 </div>
               ))}
@@ -504,25 +489,20 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
                 </div>
                 <div className="flex items-center gap-2">
                   <Filter className="h-4 w-4" />
-                  <Select
+                  <LeagueSelector
                     value={selectedDivision.toString()}
                     onValueChange={handleDivisionChange}
-                  >
-                    <SelectTrigger className="w-full sm:min-w-48">
-                      <SelectValue placeholder="Division" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Divisions</SelectItem>
-                      {seasonLeagues?.map((league) => (
-                        <SelectItem
-                          key={league.id}
-                          value={league.id.toString()}
-                        >
-                          {league.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    placeholder="Division"
+                    triggerClassName="w-full sm:min-w-48"
+                    leagues={[
+                      { id: "all", name: "All Divisions" },
+                      ...(seasonLeagues?.map((l) => ({
+                        id: String(l.id),
+                        name: l.name,
+                        tier: l.tier
+                      })) ?? [])
+                    ]}
+                  />
                 </div>
               </CardTitle>
             </CardHeader>

@@ -233,10 +233,11 @@ export function SeasonPlayerRankForm() {
 
         <Button
           type="submit"
+          className="w-full md:w-auto"
           disabled={loading || !selectedSeasonId}
           data-testid="manual-rank-submit"
         >
-          {loading ? "Submitting..." : "Submit"}
+          {loading ? "Submitting..." : "Submit →"}
         </Button>
       </form>
     </Form>

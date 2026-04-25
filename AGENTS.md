@@ -55,9 +55,26 @@ Full policy per role lives in [`.cursor/agents/<role>.md`](.cursor/agents) (poli
 
 The following pre-existing specialists in [`.cursor/agents/`](.cursor/agents) remain available as **sub-specialists** that `developer_bot` can call via `Task` for domain depth — they are **not** part of the primary workflow:
 
-- `backend_bot`, `frontend_bot`, `tester_bot`, `types_bot`, `refactor_bot`, `docs_bot`, `verifier_bot`
+- `backend_bot`, `frontend_bot`, `designer_bot`, `tester_bot`, `types_bot`, `refactor_bot`, `docs_bot`, `verifier_bot`
 
 Only `developer_bot` may spawn them.
+
+## Design standards gate (frontend diffs)
+
+If the work includes frontend UI changes (especially under `apps/frontend/src/components/**` or `apps/frontend/src/app/**`), `developer_bot` must run a **design standards review** before invoking `adversary_bot` and before handing off to `ops_bot`.
+
+- **Trigger paths** (non-exhaustive):
+  - `apps/frontend/src/components/**`
+  - `apps/frontend/src/app/**`
+  - `apps/frontend/src/styles/**`
+  - Tailwind/theme config or global CSS affecting UI tokens
+- **Mechanism**:
+  - `developer_bot` spawns `designer_bot` via `Task` with:
+    - worktree path, issue IID, acceptance criteria
+    - list of files changed (or “UI touched under …”)
+    - request: “Review diff for design-system compliance per `.cursor/skills/design-review/SKILL.md`”
+  - `designer_bot` returns `verdict: pass | needs_changes` and findings.
+  - `developer_bot` addresses **blockers** (design-system drift / accessibility regressions) before proceeding to Adversary/Ops.
 
 ## Handoff contract
 
@@ -129,17 +146,17 @@ Copied from [CLAUDE.md](CLAUDE.md) — all must pass locally before invoking `ad
 
 ```bash
 cd $(git rev-parse --show-toplevel)
-pnpm knip
-pnpm typecheck
-pnpm format:check
-pnpm lint
-pnpm reseed
-pnpm test          # affected workspaces
+rtk pnpm knip
+rtk pnpm typecheck
+rtk pnpm format:check
+rtk pnpm lint
+rtk pnpm reseed
+rtk pnpm test          # affected workspaces
 ```
 
-E2E (`pnpm test:e2e`) runs only from the workspace root per [.cursor/skills/e2e-playwright/SKILL.md](.cursor/skills/e2e-playwright/SKILL.md).
+E2E (`rtk pnpm test:e2e`) runs only from the workspace root per [.cursor/skills/e2e-playwright/SKILL.md](.cursor/skills/e2e-playwright/SKILL.md).
 
-`worktree_bot` (or `pnpm run worktree:ensure` in the worktree) runs **before** these gates in `/pm-execute` so the install is for **this** worktree, not a symlinked `node_modules` from the primary clone. See [.cursor/skills/worktree-readiness/SKILL.md](.cursor/skills/worktree-readiness/SKILL.md).
+`worktree_bot` (or `rtk pnpm run worktree:ensure` in the worktree) runs **before** these gates in `/pm-execute` so the install is for **this** worktree, not a symlinked `node_modules` from the primary clone. See [.cursor/skills/worktree-readiness/SKILL.md](.cursor/skills/worktree-readiness/SKILL.md).
 
 ## Worktrees
 
@@ -174,7 +191,7 @@ Cross-cutting skills used by multiple specialists live in the same [`.cursor/ski
 - Reuse via exports, not duplication.
 - No `--no-verify` / `--no-gpg-sign`.
 - Commands prefixed with `cd $(git rev-parse --show-toplevel)` or the target workspace.
-- E2E is always run from the workspace root via `pnpm test:e2e`.
+- E2E is always run from the workspace root via `rtk pnpm test:e2e`.
 - Database triggers enforce business rules — application code alone cannot bypass them.
 
 ## Entry points (slash commands / skills)

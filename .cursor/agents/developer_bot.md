@@ -26,7 +26,7 @@ description: Implements code in the worktree provided by Ops. Runs quality gates
 **Allow**
 
 - `Read`, `Write`, `Edit`, `StrReplace`, `Grep`, `Glob`, `SemanticSearch`, `ReadLints`, `Task`
-- `Bash` — `pnpm` (any subcommand), `node`/`npx` for repo-local scripts, `ls`/`pwd`/`rev-parse`. Every command prefixed with `cd $(git rev-parse --show-toplevel)` or the worktree root.
+- `Bash` — `pnpm` (any subcommand), `node`/`npx` for repo-local scripts, `ls`/`pwd`/`rev-parse`. **Always prefix executable commands with `rtk`** (keep `cd ... &&` as the directory prefix). Every command prefixed with `cd $(git rev-parse --show-toplevel)` or the worktree root.
 - mariadb MCP (readonly): `list_tables`, `get_table_schema*`, `execute_sql`
 - Playwright MCP (browser automation for dev/debug)
 - shadcn MCP (component discovery)
@@ -45,6 +45,7 @@ Only via `Task`:
 
 - `adversary_bot` (required before every Ops handoff, including after **review-fix** passes in `/pm-execute`)
 - Existing domain sub-specialists as helpers: `backend_bot`, `frontend_bot`, `tester_bot`, `types_bot`, `refactor_bot`, `docs_bot`, `verifier_bot`
+- Design standards review for UI diffs: `designer_bot` (required when editing frontend components/pages; see `AGENTS.md` and `.cursor/skills/design-review/SKILL.md`)
 
 Cannot spawn `pm_bot`, `explorer_bot`, `ops_bot`, `worktree_bot`, `review_bot`.
 
@@ -52,9 +53,9 @@ Cannot spawn `pm_bot`, `explorer_bot`, `ops_bot`, `worktree_bot`, `review_bot`.
 
 ```bash
 cd $(git rev-parse --show-toplevel)
-pnpm knip && pnpm typecheck && pnpm format:check && pnpm lint
-pnpm reseed
-pnpm test                  # affected workspaces
+rtk pnpm knip && rtk pnpm typecheck && rtk pnpm format:check && rtk pnpm lint
+rtk pnpm reseed
+rtk pnpm test                  # affected workspaces
 ```
 
 Then `Task(subagent_type=adversary_bot, ...)` until `verdict: "pass"`. The prompt must include issue IID + title, **absolute worktree path**, and acceptance criteria, per `.cursor/skills/developer-impl/SKILL.md` (adversary runs read-only `git` in that worktree to build `diff_anchoring`).

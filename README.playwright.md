@@ -2,7 +2,7 @@
 
 This guide covers how to run Playwright tests, view traces, and debug failed E2E tests in the DevContainer environment.
 
-**Rule:** Always run E2E (Playwright) tests from the **workspace root** with `pnpm test:e2e`. Do not run from `apps/frontend` as the primary way to validate E2E; that skips reseed and build.
+**Rule:** Always run E2E (Playwright) tests from the **workspace root** with `rtk pnpm test:e2e`. Do not run from `apps/frontend` as the primary way to validate E2E; that skips reseed and build.
 
 ## Table of Contents
 
@@ -19,7 +19,7 @@ This guide covers how to run Playwright tests, view traces, and debug failed E2E
 Before running E2E tests, ensure the backend E2E server is running:
 
 ```bash
-pnpm --filter=backend dev:e2e
+rtk pnpm --filter=backend dev:e2e
 ```
 
 This starts the backend in E2E mode with:
@@ -35,7 +35,7 @@ This starts the backend in E2E mode with:
 **Always run from workspace root:**
 
 ```bash
-cd $(git rev-parse --show-toplevel) && pnpm test:e2e
+cd $(git rev-parse --show-toplevel) && rtk pnpm test:e2e
 ```
 
 This command will:
@@ -48,10 +48,10 @@ This command will:
 
 ```bash
 # Terminal 1: start backend E2E server
-cd $(git rev-parse --show-toplevel)/apps/backend && pnpm dev:e2e
+cd $(git rev-parse --show-toplevel)/apps/backend && rtk pnpm dev:e2e
 
 # Terminal 2: from workspace root, ensure build exists, then run Playwright only (skips reseed)
-cd $(git rev-parse --show-toplevel) && pnpm build && pnpm test:e2e:run
+cd $(git rev-parse --show-toplevel) && rtk pnpm build && rtk pnpm test:e2e:run
 ```
 
 **Clear caches and retry**: from workspace root, use `pnpm test:e2e:clean` to clear turbo, `.next`, and Playwright artifacts, then run `pnpm test:e2e`.
@@ -64,16 +64,16 @@ For interactive test development and debugging:
 
 ```bash
 # Terminal 1: Start backend E2E server
-cd $(git rev-parse --show-toplevel)/apps/backend && pnpm dev:e2e
+cd $(git rev-parse --show-toplevel)/apps/backend && rtk pnpm dev:e2e
 
 # Terminal 2: From workspace root, run Playwright UI
-cd $(git rev-parse --show-toplevel) && pnpm test:e2e:ui
+cd $(git rev-parse --show-toplevel) && rtk pnpm test:e2e:ui
 ```
 
 **In DevContainer**: There is no real display, so `pnpm test:e2e:ui` fails with “headed browser without having a XServer running”. Use the xvfb-backed script instead:
 
 ```bash
-pnpm test:e2e:ui:container
+rtk pnpm test:e2e:ui:container
 ```
 
 This runs Playwright UI under a virtual framebuffer (`xvfb-run`), so the headed browser works inside the container. Rebuild the devcontainer once after xvfb was added to the Dockerfile (e.g. “Rebuild Container” in VS Code).
@@ -84,10 +84,10 @@ From workspace root (run reseed + build + tests, or only Playwright if backend i
 
 ```bash
 # Terminal 1: Start backend E2E server (when developing)
-cd $(git rev-parse --show-toplevel)/apps/backend && pnpm dev:e2e
+cd $(git rev-parse --show-toplevel)/apps/backend && rtk pnpm dev:e2e
 
 # Terminal 2: From workspace root, run specific test
-cd $(git rev-parse --show-toplevel) && pnpm test:e2e -- --grep "Signup Form"
+cd $(git rev-parse --show-toplevel) && rtk pnpm test:e2e -- --grep "Signup Form"
 ```
 
 ## Viewing Traces Locally
@@ -116,13 +116,13 @@ Use the `playwright-trace` command to view traces:
 
 ```bash
 cd $(git rev-parse --show-toplevel)/apps/frontend
-pnpm playwright-trace test-results/TestName-TestDescription-e2e-retry1/trace.zip
+rtk pnpm playwright-trace test-results/TestName-TestDescription-e2e-retry1/trace.zip
 ```
 
 Or from workspace root:
 
 ```bash
-pnpm playwright-trace apps/frontend/test-results/TestName-TestDescription-e2e-retry1/trace.zip
+rtk pnpm playwright-trace apps/frontend/test-results/TestName-TestDescription-e2e-retry1/trace.zip
 ```
 
 This will start a web server on `http://localhost:9323`.
@@ -135,7 +135,7 @@ Playwright also generates an HTML report with embedded traces:
 
 ```bash
 cd $(git rev-parse --show-toplevel)/apps/frontend
-pnpm exec playwright show-report --host 0.0.0.0 --port 9323 playwright-report
+rtk pnpm exec playwright show-report --host 0.0.0.0 --port 9323 playwright-report
 ```
 
 Then open `http://localhost:9323` in your browser.
@@ -239,10 +239,10 @@ This error occurs when Playwright tries to open a GUI browser in the DevContaine
 
 ```bash
 # ✅ Correct
-pnpm playwright-trace test-results/trace.zip
+rtk pnpm playwright-trace test-results/trace.zip
 
 # ❌ Wrong (tries to open GUI)
-pnpm exec playwright show-trace test-results/trace.zip
+rtk pnpm exec playwright show-trace test-results/trace.zip
 ```
 
 ### Traces Not Generated
@@ -260,7 +260,7 @@ If port 9323 is already in use:
 ```bash
 # Use a different port
 cd $(git rev-parse --show-toplevel)/apps/frontend
-pnpm exec playwright show-trace --host 0.0.0.0 --port 9324 test-results/trace.zip
+rtk pnpm exec playwright show-trace --host 0.0.0.0 --port 9324 test-results/trace.zip
 ```
 
 ### Cannot Access Trace Viewer
@@ -283,47 +283,47 @@ If `test-results/` is empty after running tests:
 
 ```bash
 cd $(git rev-parse --show-toplevel)/apps/frontend
-DEBUG=pw:api pnpm test:e2e
+DEBUG=pw:api rtk pnpm test:e2e
 ```
 
 ## Useful Commands Reference
 
 ```bash
 # Install Playwright browsers (first time setup)
-pnpm install:playwright
+rtk pnpm install:playwright
 
 # Start backend E2E server (keep running in separate terminal)
-cd $(git rev-parse --show-toplevel)/apps/backend && pnpm dev:e2e
+cd $(git rev-parse --show-toplevel)/apps/backend && rtk pnpm dev:e2e
 
 # Run E2E tests (from root - build, reseed, then Playwright)
-pnpm test:e2e
+rtk pnpm test:e2e
 
 # Run Playwright only (requires backend dev:e2e + prior pnpm build)
-pnpm test:e2e:run
+rtk pnpm test:e2e:run
 
 # Clear caches and run full test:e2e
-pnpm test:e2e:clean
+rtk pnpm test:e2e:clean
 
 # Run E2E tests in UI mode (requires backend dev:e2e running separately)
-pnpm test:e2e:ui
+rtk pnpm test:e2e:ui
 
 # Run Playwright UI in DevContainer (uses xvfb; no host X server needed)
-pnpm test:e2e:ui:container
+rtk pnpm test:e2e:ui:container
 
 # View trace file
-pnpm playwright-trace apps/frontend/test-results/<test-name>/trace.zip
+rtk pnpm playwright-trace apps/frontend/test-results/<test-name>/trace.zip
 
 # View HTML report
 cd $(git rev-parse --show-toplevel)/apps/frontend && \
-  pnpm exec playwright show-report --host 0.0.0.0 --port 9323 playwright-report
+  rtk pnpm exec playwright show-report --host 0.0.0.0 --port 9323 playwright-report
 
 # Run specific test (requires backend dev:e2e running separately)
 cd $(git rev-parse --show-toplevel)/apps/frontend && \
-  pnpm test:e2e -- --grep "test name"
+  rtk pnpm test:e2e -- --grep "test name"
 
 # Run tests in headed mode (requires backend dev:e2e and X11)
 cd $(git rev-parse --show-toplevel)/apps/frontend && \
-  pnpm test:e2e:headed
+  rtk pnpm test:e2e:headed
 ```
 
 ## Additional Resources

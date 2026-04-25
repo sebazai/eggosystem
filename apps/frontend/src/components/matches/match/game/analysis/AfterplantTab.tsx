@@ -642,7 +642,7 @@ const PlayerBarChart = ({
           tick={{ fontSize: 11, fill: "currentColor" }}
         />
         <Tooltip
-          formatter={(value: number, name: string) => [value, name]}
+          formatter={(value, name) => [value ?? 0, name ?? ""]}
           contentStyle={{
             background: "#111827",
             border: "1px solid rgba(255,255,255,0.12)",

@@ -1,10 +1,13 @@
-FROM mcr.microsoft.com/devcontainers/javascript-node:24-bullseye
+FROM mcr.microsoft.com/devcontainers/javascript-node:24-trixie
 ENV TBLS_VERSION=1.92.3
 WORKDIR /workspace
 
 RUN npm install -g typescript
 RUN npm install -g pnpm@10.27.0
 RUN npm install -g @anthropic-ai/claude-code
+
+# Install rtk (CLI proxy) into PATH
+RUN curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | env RTK_INSTALL_DIR="/usr/local/bin" sh
 
 # Install tbls (database documentation tool)
 RUN ARCH=$(dpkg --print-architecture) && \
@@ -26,5 +29,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends git xvfb xauth 
     git clone --depth 1 https://github.com/MariaDB/mcp.git /usr/local/mariadb-mcp && \
     chown -R node:node /usr/local/mariadb-mcp
 USER node
-RUN cd /usr/local/mariadb-mcp && uv sync
+RUN cd /usr/local/mariadb-mcp && uv venv
+RUN mkdir -p /home/node/.claude /home/node/.cursor && rtk init -g && rtk init -g --agent cursor
 USER root

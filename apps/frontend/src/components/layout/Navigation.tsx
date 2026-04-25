@@ -2,6 +2,7 @@
 
 import { ChevronRight, ExternalLink, Menu } from "lucide-react";
 import Image from "next/image";
+import { Logo } from "@/components/kanaliiga";
 import {
   useEffect,
   useReducer,
@@ -52,7 +53,6 @@ import type { ActiveSignupOrSeasonForAppId } from "@eggosystem/types";
 import { Separator } from "../ui/separator";
 import { MobileLogOut } from "../profile/MobileLogOut";
 import { useAuth } from "@/context/AuthContext";
-import { ModeToggle } from "./ThemeToggle";
 
 interface MenuItemLink {
   title: string;
@@ -145,7 +145,7 @@ const getSeasonMenuItems = (
           hasFilters: false
         },
         {
-          title: "Playoff bracket",
+          title: "Playoff Bracket",
           url: `/seasons/${signupOrActiveSeason.season_id}/leagues/1/playoff`,
           hasFilters: false
         },
@@ -390,7 +390,7 @@ export const Navigation = (props: NavbarProps) => {
           <div className="flex items-center justify-between">
             {logo && (
               <Link href={logo.url} className="flex items-center gap-2">
-                <Image src={logo.src} alt={logo.alt} width={75} height={75} />
+                <Logo variant="mark" size="sm" />
               </Link>
             )}
             <Sheet open={sheetOpen} onOpenChange={handleSheetOpenChange}>
@@ -401,7 +401,7 @@ export const Navigation = (props: NavbarProps) => {
                   className="pointer-events-auto"
                   onClick={() => setIsSheetOpen(true)}
                 >
-                  <Menu className="size-6" />
+                  <Menu className="size-5" />
                 </Button>
               </SheetTrigger>
               <SheetContent className="flex flex-col overflow-y-auto">
@@ -413,12 +413,7 @@ export const Navigation = (props: NavbarProps) => {
                           href={logo.url}
                           onClick={() => setIsSheetOpen(false)}
                         >
-                          <Image
-                            src={logo.src}
-                            alt={logo.alt}
-                            width={75}
-                            height={75}
-                          />
+                          <Logo variant="mark" size="sm" />
                         </Link>
                       </span>
                     )}
@@ -461,7 +456,6 @@ export const Navigation = (props: NavbarProps) => {
                     </div>
                   )}
                   <div className="flex flex-wrap items-center gap-4 justify-between m-4 mt-auto">
-                    <ModeToggle />
                     {user && <MobileLogOut logOutUser={() => logout()} />}
                   </div>
                 </div>
@@ -598,7 +592,7 @@ const renderMobileMenuItems = (
           className="flex w-full flex-col gap-4 border-b-0"
         >
           <AccordionItem value={value} className="border-b-0">
-            <AccordionTrigger className="py-0 text-[0.9rem] py-2 hover:no-underline">
+            <AccordionTrigger className="py-2 text-sm hover:no-underline">
               {subItem.title}
             </AccordionTrigger>
             <AccordionContent className="mt-2 pl-4">
@@ -639,7 +633,7 @@ const renderMobileMenuItem = (
   if (item.items) {
     return (
       <AccordionItem key={item.title} value={item.title} className="border-b-0">
-        <AccordionTrigger className="py-0 font-semibold text-[14px] hover:no-underline">
+        <AccordionTrigger className="py-0 text-sm hover:no-underline">
           {item.title}
         </AccordionTrigger>
         <AccordionContent className="mt-2">
