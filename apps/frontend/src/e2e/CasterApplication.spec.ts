@@ -17,8 +17,10 @@ test.describe("Caster Application", () => {
       {
         name: "access_token",
         value: token,
-        url: "http://localhost:3000",
-        path: "/"
+        domain: "localhost",
+        path: "/",
+        httpOnly: true,
+        secure: false
       }
     ]);
 
@@ -45,8 +47,10 @@ test.describe("Caster Application", () => {
       {
         name: "access_token",
         value: token,
-        url: "http://localhost:3000",
-        path: "/"
+        domain: "localhost",
+        path: "/",
+        httpOnly: true,
+        secure: false
       }
     ]);
 
