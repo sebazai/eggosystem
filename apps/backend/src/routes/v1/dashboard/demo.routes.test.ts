@@ -389,7 +389,10 @@ describe("POST /api/v1/dashboard/demos/manual/parse-queue", () => {
       if (q.includes("INSERT INTO AuditLog")) {
         return Promise.resolve({ insertId: 200, affectedRows: 1 });
       }
-      if (q.includes("UPDATE ManualDemoParseIdempotency") && !q.includes("INSERT")) {
+      if (
+        q.includes("UPDATE ManualDemoParseIdempotency") &&
+        !q.includes("INSERT")
+      ) {
         if (q.includes("audit_log_id")) {
           return Promise.resolve({ affectedRows: 1, insertId: 0 });
         }
@@ -433,7 +436,10 @@ describe("POST /api/v1/dashboard/demos/manual/parse-queue", () => {
     let phase: Phase = "a_fail_finalize";
     mockRunQuery.mockImplementation((query) => {
       const q = String(query);
-      if (q.includes("INSERT INTO ManualDemoParseIdempotency") && phase === "b_resume") {
+      if (
+        q.includes("INSERT INTO ManualDemoParseIdempotency") &&
+        phase === "b_resume"
+      ) {
         return Promise.reject(
           Object.assign(new Error("Duplicate entry"), { code: "ER_DUP_ENTRY" })
         );
@@ -469,7 +475,9 @@ describe("POST /api/v1/dashboard/demos/manual/parse-queue", () => {
           return Promise.resolve({ affectedRows: 1, insertId: 0 });
         }
         if (q.includes("completed_at") && phase === "a_fail_finalize") {
-          return Promise.reject(new Error("should not reach completed in phase a"));
+          return Promise.reject(
+            new Error("should not reach completed in phase a")
+          );
         }
       }
       if (q.includes("manual-demo-parse-finalize")) {
@@ -485,12 +493,16 @@ describe("POST /api/v1/dashboard/demos/manual/parse-queue", () => {
       match_game_id: 1,
       download_url: "https://example.com/unique.dem.zst"
     };
-    const res1 = await request(app).post("/api/v1/dashboard/demos/manual/parse-queue").send(body);
+    const res1 = await request(app)
+      .post("/api/v1/dashboard/demos/manual/parse-queue")
+      .send(body);
     expect(res1.status).toBe(400);
     expect(mockPublishToParseQueue).toHaveBeenCalledTimes(1);
 
     phase = "b_resume";
-    const res2 = await request(app).post("/api/v1/dashboard/demos/manual/parse-queue").send(body);
+    const res2 = await request(app)
+      .post("/api/v1/dashboard/demos/manual/parse-queue")
+      .send(body);
     expect(res2.status).toBe(200);
     expect(mockPublishToParseQueue).toHaveBeenCalledTimes(1);
     cleanup();
@@ -534,10 +546,14 @@ describe("POST /api/v1/dashboard/demos/manual/parse-queue", () => {
       match_game_id: 1,
       download_url: "https://example.com/idemp.dem.zst"
     };
-    await request(app).post("/api/v1/dashboard/demos/manual/parse-queue").send(body);
+    await request(app)
+      .post("/api/v1/dashboard/demos/manual/parse-queue")
+      .send(body);
     expect(mockPublishToParseQueue).toHaveBeenCalledTimes(1);
     p = "second";
-    const res2 = await request(app).post("/api/v1/dashboard/demos/manual/parse-queue").send(body);
+    const res2 = await request(app)
+      .post("/api/v1/dashboard/demos/manual/parse-queue")
+      .send(body);
     expect(res2.status).toBe(200);
     expect(res2.body).toEqual({ status: "enqueued", match_game_id: 1 });
     expect(mockPublishToParseQueue).toHaveBeenCalledTimes(1);
@@ -569,7 +585,9 @@ describe("POST /api/v1/dashboard/demos/manual/parse-queue", () => {
     expect(mockRunQuery).toHaveBeenCalled();
     expect(
       mockRunQuery.mock.calls.some(
-        (c) => typeof c[0] === "string" && c[0].includes("INSERT INTO ManualDemoParseIdempotency")
+        (c) =>
+          typeof c[0] === "string" &&
+          c[0].includes("INSERT INTO ManualDemoParseIdempotency")
       )
     ).toBe(true);
     expect(
