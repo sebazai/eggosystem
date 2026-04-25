@@ -11,8 +11,11 @@ import { expressErrorHandler } from "../../../middlewares/express-error-handler"
 import demoRouter from "./demo.routes";
 import { setupFrontendUrl } from "../../../test-utils/environment-setup";
 import { getMatchIdByGameId } from "../../../models/match-game.models";
+import { getHubMatchesByExternalMatchRoomId } from "../../../models/match.models";
 import { publishToParseQueue } from "../../../services/parse-queue.services";
 import { runQuery } from "../../../db/mysqlRunQuery";
+import { resolveOrCreateMatchGameIdForDemoUrl } from "../../../services/faceit-match.services";
+import { resolveOrCreateMatchGameIdForHubMatchDemo } from "../../../services/faceit-match.services";
 
 jest.mock("../../../services/auth.services", () => ({
   getPermissionsForAccountId: jest.fn(),
@@ -20,7 +23,12 @@ jest.mock("../../../services/auth.services", () => ({
 }));
 
 jest.mock("../../../models/match-game.models", () => ({
-  getMatchIdByGameId: jest.fn()
+  getMatchIdByGameId: jest.fn(),
+  listMatchGamesForMatch: jest.fn()
+}));
+
+jest.mock("../../../models/match.models", () => ({
+  getHubMatchesByExternalMatchRoomId: jest.fn()
 }));
 
 jest.mock("../../../services/parse-queue.services", () => ({
@@ -28,6 +36,11 @@ jest.mock("../../../services/parse-queue.services", () => ({
   createDemoProcessingRequest: jest.requireActual(
     "../../../services/parse-queue.services"
   ).createDemoProcessingRequest
+}));
+
+jest.mock("../../../services/faceit-match.services", () => ({
+  resolveOrCreateMatchGameIdForDemoUrl: jest.fn(),
+  resolveOrCreateMatchGameIdForHubMatchDemo: jest.fn()
 }));
 
 jest.mock("../../../models/failed-parse.models", () => ({
@@ -45,8 +58,17 @@ jest.mock("../../../db/mysqlRunQuery", () => ({
 const mockGetPermissions = jest.mocked(getPermissionsForAccountId);
 const mockGetRoles = jest.mocked(getRolesForAccountId);
 const mockGetMatchIdByGameId = jest.mocked(getMatchIdByGameId);
+const mockGetHubMatchesByExternalMatchRoomId = jest.mocked(
+  getHubMatchesByExternalMatchRoomId
+);
 const mockPublishToParseQueue = jest.mocked(publishToParseQueue);
 const mockRunQuery = jest.mocked(runQuery);
+const mockResolveOrCreateMatchGameIdForDemoUrl = jest.mocked(
+  resolveOrCreateMatchGameIdForDemoUrl
+);
+const mockResolveOrCreateMatchGameIdForHubMatchDemo = jest.mocked(
+  resolveOrCreateMatchGameIdForHubMatchDemo
+);
 
 const testAuthHeader = "x-test-auth";
 
@@ -119,6 +141,50 @@ function createDemoDashboardTestApp() {
 describe("POST /api/v1/dashboard/demos/manual/parse-queue", () => {
   afterEach(() => {
     jest.clearAllMocks();
+  });
+
+  it("returns 400 when no match identifier is provided", async () => {
+    const { app, cleanup } = createDemoDashboardTestApp();
+    mockGetPermissions.mockResolvedValue([]);
+    mockGetRoles.mockResolvedValue(["admin"]);
+
+    const res = await request(app)
+      .post("/api/v1/dashboard/demos/manual/parse-queue")
+      .send({
+        download_url: "https://example.com/demo.dem.zst"
+      });
+
+    expect(res.status).toBe(400);
+    expect(res.headers["content-type"]).toMatch(/application\/problem\+json/);
+    expect(res.body).toMatchObject({
+      status: 400,
+      issues: expect.any(Array)
+    });
+    expect(mockPublishToParseQueue).not.toHaveBeenCalled();
+    cleanup();
+  });
+
+  it("returns 400 when multiple match identifiers are provided", async () => {
+    const { app, cleanup } = createDemoDashboardTestApp();
+    mockGetPermissions.mockResolvedValue([]);
+    mockGetRoles.mockResolvedValue(["admin"]);
+
+    const res = await request(app)
+      .post("/api/v1/dashboard/demos/manual/parse-queue")
+      .send({
+        match_game_id: 1,
+        match_id: 2,
+        download_url: "https://example.com/demo.dem.zst"
+      });
+
+    expect(res.status).toBe(400);
+    expect(res.headers["content-type"]).toMatch(/application\/problem\+json/);
+    expect(res.body).toMatchObject({
+      status: 400,
+      issues: expect.any(Array)
+    });
+    expect(mockPublishToParseQueue).not.toHaveBeenCalled();
+    cleanup();
   });
 
   it("returns 401 when unauthenticated", async () => {
@@ -238,6 +304,109 @@ describe("POST /api/v1/dashboard/demos/manual/parse-queue", () => {
     expect(url.startsWith(requestData.download_url_prefix)).toBe(true);
     expect(requestData.download_url_prefix.length).toBeLessThanOrEqual(64);
 
+    cleanup();
+  });
+
+  it("resolves/creates match_game_id from match_id (+ optional map_order) like faceit and enqueues", async () => {
+    const { app, cleanup } = createDemoDashboardTestApp();
+    mockGetPermissions.mockResolvedValue([]);
+    mockGetRoles.mockResolvedValue(["admin"]);
+    mockResolveOrCreateMatchGameIdForHubMatchDemo.mockResolvedValue(77);
+    mockGetMatchIdByGameId.mockResolvedValue([{ match_id: 42 }]);
+    mockPublishToParseQueue.mockResolvedValue(undefined);
+    mockRunQuery.mockImplementation((q) => defaultHappyPathRunQuery(String(q)));
+
+    const res = await request(app)
+      .post("/api/v1/dashboard/demos/manual/parse-queue")
+      .send({
+        match_id: 42,
+        map_order: 1,
+        download_url: "https://example.com/demo.dem.zst",
+        priority: 2
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({
+      status: "enqueued",
+      match_game_id: 77
+    });
+    expect(mockResolveOrCreateMatchGameIdForHubMatchDemo).toHaveBeenCalledWith(
+      expect.objectContaining({ matchId: 42, mapOrder: 1 })
+    );
+    expect(mockPublishToParseQueue).toHaveBeenCalledTimes(1);
+    const msg = mockPublishToParseQueue.mock.calls[0][0];
+    expect(msg).toMatchObject({
+      match_game_id: "77",
+      priority: 2,
+      source: "dashboard-manual",
+      reparse: false
+    });
+    cleanup();
+  });
+
+  it("resolves match_game_id from external_match_room_id + demo url (faceit-like) and enqueues", async () => {
+    const { app, cleanup } = createDemoDashboardTestApp();
+    mockGetPermissions.mockResolvedValue([]);
+    mockGetRoles.mockResolvedValue(["admin"]);
+    mockGetHubMatchesByExternalMatchRoomId.mockResolvedValue([
+      { id: 101, status: "FINISHED" }
+    ]);
+    mockResolveOrCreateMatchGameIdForDemoUrl.mockResolvedValue(555);
+    mockGetMatchIdByGameId.mockResolvedValue([{ match_id: 101 }]);
+    mockPublishToParseQueue.mockResolvedValue(undefined);
+    mockRunQuery.mockImplementation((q) => defaultHappyPathRunQuery(String(q)));
+
+    const demoUrl =
+      "https://demos-europe-central.backblaze.faceit-cdn.net/cs2/room-xyz-1-1.dem.zst";
+    const res = await request(app)
+      .post("/api/v1/dashboard/demos/manual/parse-queue")
+      .send({
+        external_match_room_id: "room-xyz",
+        download_url: demoUrl
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ status: "enqueued", match_game_id: 555 });
+    expect(mockResolveOrCreateMatchGameIdForDemoUrl).toHaveBeenCalledWith(
+      expect.objectContaining({
+        externalMatchRoomId: "room-xyz",
+        demoUrl
+      })
+    );
+    expect(mockPublishToParseQueue).toHaveBeenCalledTimes(1);
+    const msg = mockPublishToParseQueue.mock.calls[0][0];
+    expect(msg).toMatchObject({
+      match_game_id: "555",
+      download_url: demoUrl,
+      source: "dashboard-manual",
+      reparse: false
+    });
+    cleanup();
+  });
+
+  it("returns 404 when external_match_room_id has no matches", async () => {
+    const { app, cleanup } = createDemoDashboardTestApp();
+    mockGetPermissions.mockResolvedValue([]);
+    mockGetRoles.mockResolvedValue(["admin"]);
+    mockGetHubMatchesByExternalMatchRoomId.mockResolvedValue([]);
+
+    const demoUrl =
+      "https://demos-europe-central.backblaze.faceit-cdn.net/cs2/room-empty-1-1.dem.zst";
+    const res = await request(app)
+      .post("/api/v1/dashboard/demos/manual/parse-queue")
+      .send({
+        external_match_room_id: "room-empty",
+        download_url: demoUrl
+      });
+
+    expect(res.status).toBe(404);
+    expect(res.body).toMatchObject({
+      status: 404,
+      title: "Not Found",
+      detail: "No matches found for external_match_room_id"
+    });
+    expect(mockResolveOrCreateMatchGameIdForDemoUrl).not.toHaveBeenCalled();
+    expect(mockPublishToParseQueue).not.toHaveBeenCalled();
     cleanup();
   });
 

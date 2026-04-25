@@ -16,23 +16,61 @@ import {
 } from "../../../utils/errors";
 import { logger } from "../../../utils/app-logger";
 import { enqueueManualDashboardDemoParse } from "../../../services/manual-demo-parse.services";
+import {
+  resolveOrCreateMatchGameIdForDemoUrl,
+  resolveOrCreateMatchGameIdForHubMatchDemo
+} from "../../../services/faceit-match.services";
+import { getHubMatchesByExternalMatchRoomId } from "../../../models/match.models";
 
 const router = Router();
 
-const manualParseQueueBodySchema = z.object({
-  match_game_id: z.coerce.number().int().positive(),
-  download_url: z
-    .string()
-    .min(1)
-    .refine((val) => {
-      try {
-        return new URL(val).protocol === "https:";
-      } catch {
-        return false;
-      }
-    }, "Demo download URL must be a valid HTTPS URL"),
-  priority: z.number().int().min(1).max(10).optional().default(5)
-});
+const httpsUrlSchema = z
+  .string()
+  .min(1)
+  .refine((val) => {
+    try {
+      return new URL(val).protocol === "https:";
+    } catch {
+      return false;
+    }
+  }, "Demo download URL must be a valid HTTPS URL");
+
+const manualParseQueueBodySchema = z
+  .object({
+    match_game_id: z.coerce.number().int().positive().optional(),
+    match_id: z.coerce.number().int().positive().optional(),
+    map_order: z.coerce.number().int().min(1).optional(),
+    external_match_room_id: z.string().min(1).optional(),
+    best_of: z.coerce.number().int().min(1).max(5).optional(),
+    download_url: httpsUrlSchema,
+    priority: z.number().int().min(1).max(10).optional().default(5)
+  })
+  .superRefine((val, ctx) => {
+    const hasAny =
+      val.match_game_id != null ||
+      val.match_id != null ||
+      val.external_match_room_id;
+    if (!hasAny) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message:
+          "Either match_game_id, match_id, or external_match_room_id must be provided",
+        path: ["match_game_id"]
+      });
+    }
+    const count =
+      (val.match_game_id != null ? 1 : 0) +
+      (val.match_id != null ? 1 : 0) +
+      (val.external_match_room_id ? 1 : 0);
+    if (count > 1) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message:
+          "Provide only one of match_game_id, match_id, or external_match_room_id",
+        path: ["external_match_room_id"]
+      });
+    }
+  });
 
 // Query parameter schema for listing failed messages
 const listQuerySchema = z.object({
@@ -71,14 +109,49 @@ router.post(
     }
 
     const { match_game_id, download_url, priority } = parsed.data;
+    const { match_id, map_order, external_match_room_id, best_of } =
+      parsed.data;
+
+    let matchGameId: number;
+    if (match_game_id != null) {
+      matchGameId = match_game_id;
+    } else if (match_id != null) {
+      matchGameId = await resolveOrCreateMatchGameIdForHubMatchDemo({
+        matchId: match_id,
+        demoUrl: download_url,
+        mapOrder: map_order
+      });
+    } else {
+      if (!external_match_room_id) {
+        return next(new BadRequestError("Missing match identifier"));
+      }
+
+      // Mirror FACEIT `match_demo_ready` using provided external match room id + demo url.
+      // Requires MatchTeamMapVetoes to exist for the hub match (same dependency as the webhook path).
+      const hubMatches = await getHubMatchesByExternalMatchRoomId(
+        external_match_room_id
+      );
+      if (!hubMatches || hubMatches.length === 0) {
+        return next(
+          new NotFoundError("No matches found for external_match_room_id")
+        );
+      }
+
+      matchGameId = await resolveOrCreateMatchGameIdForDemoUrl({
+        externalMatchRoomId: external_match_room_id,
+        demoUrl: download_url,
+        isRoundRobinBo2As2xBo1: hubMatches.length === 2,
+        bestOf: best_of ?? (hubMatches.length === 2 ? 2 : undefined)
+      });
+    }
 
     logger.info("Manual parse-queue enqueue request", {
       actorAccountId,
-      match_game_id
+      matchGameId
     });
 
     const result = await enqueueManualDashboardDemoParse({
-      matchGameId: match_game_id,
+      matchGameId,
       downloadUrl: download_url,
       priority,
       actorAccountId

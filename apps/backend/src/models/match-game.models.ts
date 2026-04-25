@@ -251,6 +251,7 @@ export const upsertMatchGameForMatch = async ({
     INSERT INTO MatchGames (match_id, map_id, map_order, demofile, regulation_rounds) 
     VALUES (?, ?, ?, ?, ?)
     ON DUPLICATE KEY UPDATE 
+      id = LAST_INSERT_ID(id),
       demofile = VALUES(demofile),
       regulation_rounds = VALUES(regulation_rounds)
   `;
