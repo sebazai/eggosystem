@@ -52,13 +52,13 @@ Wait for Explorer to complete. Present the Technical Brief to the human and ask 
 
 ---
 
-## Phase 2: Ops — worktree + branch
+## Phase 2: Ops — branch in primary clone
 
 Spawn Ops:
 
 ```
 Task(subagent_type=ops_bot,
-     prompt="Read .cursor/skills/ops-git-worktrees/SKILL.md. For issue #<iid> titled '<title>' (type <feat|fix|chore|docs>), create a worktree at .worktrees/<type>-<iid>-<slug> off origin/development with branch <type>-<iid>-<slug>. Do NOT edit tracked source. Create CONTEXT.local.md stub in the new worktree per the skill: set ABS_WT to the **canonical** absolute path of that worktree (e.g. cd there from the primary clone and `pwd -P`); use that same string for `cat > $ABS_WT/CONTEXT.local.md` and for the returned `worktree_path` (never a relative path). Return {worktree_path, branch_name, issue_iid}.")
+     prompt="Read .cursor/skills/ops-git-worktrees/SKILL.md. For issue #<iid> titled '<title>' (type <feat|fix|chore|docs>), in the **primary repository clone** do **not** use `git worktree add`. `git fetch origin` then create and switch to branch <type>-<iid>-<slug> from origin/development (e.g. `git switch -c <type>-<iid>-<slug> origin/development`). Do NOT edit tracked source. At the **repository root**: `pnpm install --force`, then `pnpm knip` (must exit 0; if knip fails, return the full log and do not hand off to worktree/ Developer). Create CONTEXT.local.md stub at the repo root: set ABS_ROOT to the **canonical** absolute path (`cd $(git rev-parse --show-toplevel) && pwd -P`); use that for `cat > $ABS_ROOT/CONTEXT.local.md` and for the returned `worktree_path` (never a relative path). Return {worktree_path, branch_name, issue_iid} or a failure with error_output if knip did not pass.")
 ```
 
 Capture `{worktree_path, branch_name, issue_iid}`.
@@ -232,7 +232,7 @@ Output exactly this block and STOP. Do NOT call any merge/approve tool — merge
 - Issue: #<iid> — <title>
 - MR: !<mr_iid> — <mr_url>
 - Verdict: <verdict>
-- Worktree: <worktree_path> (branch <branch_name>)
+- Repository: <worktree_path> (branch <branch_name>)
 - Commits: <n> across <commit_sha_range>
 - Review findings: <n> (blocker: <n>, major: <n>, minor: <n>)
 - Pipeline: <pipeline_url | n/a>
@@ -241,7 +241,7 @@ Output exactly this block and STOP. Do NOT call any merge/approve tool — merge
 
 1. Read the MR and review summary note.
 2. If green, merge via the GitLab UI (or your gh/glab CLI). The pipeline WILL NOT auto-merge.
-3. After merge, run `/pm-cleanup <iid>` (if present) or manually ask ops_bot to remove the worktree and prune the branch.
+3. After merge, run `/pm-cleanup <iid>` (if present) or manually ask ops_bot to delete the feature branch (local and remote) and any **legacy** `.worktrees/…` directory if you still use that layout.
 ```
 
 ---

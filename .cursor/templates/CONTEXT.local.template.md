@@ -1,6 +1,6 @@
 # Worktree context (`CONTEXT.local.md`)
 
-**Copy to the worktree root** as `CONTEXT.local.md` after `ops_bot` creates the worktree. The worktree path lives under `.worktrees/`, which is not committed, so this file is never pushed.
+**Create at the repository root** as `CONTEXT.local.md` after `ops_bot` creates the issue branch. It is **gitignored** at `/CONTEXT.local.md` so it is not pushed. The **Worktree (absolute)** field is the canonical `pwd -P` of the primary clone (Git names every checkout a “worktree”).
 
 `ops_bot` may create a **stub** (acceptance + brief = `[pending]`, optional sections omitted). This **full** template is the target shape once the issue is wired in. `developer_bot` (or the orchestrator on first spawn) must replace `[pending]` using the same text as the GitLab issue and Technical Brief (see `developer-impl` skill).
 

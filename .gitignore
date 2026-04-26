@@ -83,5 +83,8 @@ standings-ui/
 .agent/
 docs/ench/
 
-# Agentic workflow worktrees (ops_bot creates one per issue)
+# Local work context at repo root (ops_bot stub; not committed)
+/CONTEXT.local.md
+
+# Agentic workflow worktrees (legacy; ops default is branch in primary clone)
 .worktrees/
