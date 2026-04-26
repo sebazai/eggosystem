@@ -1,14 +1,14 @@
 import { Router } from "express";
 import type { Request, Response, NextFunction } from "express";
 import { z } from "zod";
+import { checkPermissions } from "../../../middlewares/auth.middleware";
 import {
   getFailedParseMessages,
   getFailedParseMessagesCount,
   getFailedParseMessageById,
   reparseFailedMessages,
   getFailedParseMessagesStats,
-  requeue2ddataFailedMessages,
-  requeueAllFailedMessages
+  requeue2ddataFailedMessages
 } from "../../../models/failed-parse.models";
 import type { ReparseRequest } from "@eggosystem/types";
 import type { Requeue2ddataRequest } from "@eggosystem/types";
@@ -24,6 +24,8 @@ import {
   resolveOrCreateMatchGameIdForHubMatchDemo
 } from "../../../services/faceit-match.services";
 import { getHubMatchesByExternalMatchRoomId } from "../../../models/match.models";
+import { enqueueFailedParseBackgroundJob } from "../../../services/failed-parse-background-queue.services";
+import { attachFailedParseJobSse } from "../../../services/failed-parse-sse.services";
 
 const router = Router();
 
@@ -178,6 +180,16 @@ router.post(
   }
 );
 
+// Admin-only: failed-parse + requeue/reparse operations (more sensitive than manual uploads).
+const failedParseRouter = Router();
+router.use(
+  "/failed/parse",
+  checkPermissions({
+    fallbackRoles: ["admin"]
+  }),
+  failedParseRouter
+);
+
 const requeue2ddataRequestSchema = z.object({
   items: z
     .array(
@@ -199,8 +211,8 @@ const requeueAllRequestSchema = z.object({
  * GET /v1/dashboard/demos/failed/parse
  * List failed parse messages with pagination and filtering
  */
-router.get(
-  "/failed/parse",
+failedParseRouter.get(
+  "/",
   async (req: Request, res: Response, next: NextFunction) => {
     logger.info("GET /demos/failed/parse request", { query: req.query });
 
@@ -255,8 +267,8 @@ router.get(
  * GET /v1/dashboard/demos/failed/parse/stats
  * Get statistics about failed parse messages
  */
-router.get(
-  "/failed/parse/stats",
+failedParseRouter.get(
+  "/stats",
   async (req: Request, res: Response, _next: NextFunction) => {
     const stats = await getFailedParseMessagesStats();
 
@@ -267,11 +279,32 @@ router.get(
 );
 
 /**
+ * GET /v1/dashboard/demos/failed/parse/events
+ * Server-Sent Events stream for background failed-parse job progress (per authenticated user).
+ * Must be registered before `/failed/parse/:id` so `events` is not captured as an id.
+ */
+failedParseRouter.get(
+  "/events",
+  async (req: Request, res: Response, next: NextFunction) => {
+    const userId = req.auth?.account_id;
+    if (userId === undefined) {
+      return next(new UnauthorizedError("Not authenticated"));
+    }
+
+    try {
+      await attachFailedParseJobSse(req, res, userId);
+    } catch (error) {
+      return next(error);
+    }
+  }
+);
+
+/**
  * GET /v1/dashboard/demos/failed/parse/:id
  * Get a specific failed parse message by ID
  */
-router.get(
-  "/failed/parse/:id",
+failedParseRouter.get(
+  "/:id",
   async (req: Request, res: Response, next: NextFunction) => {
     const id = parseInt(req.params.id);
 
@@ -300,8 +333,8 @@ router.get(
  * POST /v1/dashboard/demos/failed/parse/reparse
  * Reparse selected failed messages
  */
-router.post(
-  "/failed/parse/reparse",
+failedParseRouter.post(
+  "/reparse",
   async (req: Request, res: Response, next: NextFunction) => {
     logger.info("Reparse request received", { body: req.body });
 
@@ -320,22 +353,24 @@ router.post(
     const reparseRequest: ReparseRequest = validationResult.data;
 
     if (reparseRequest.match_game_ids.length > 5) {
-      void (async () => {
-        try {
-          await reparseFailedMessages(reparseRequest);
-        } catch (error) {
-          logger.error("Background reparse failed", {
-            error: error instanceof Error ? error.message : String(error)
-          });
-        }
-      })();
+      const userId = req.auth?.account_id;
+      if (userId === undefined) {
+        return next(new UnauthorizedError("Not authenticated"));
+      }
+
+      const { jobId } = await enqueueFailedParseBackgroundJob({
+        kind: "reparse",
+        userId,
+        body: reparseRequest
+      });
 
       res.status(200).json({
         success: true,
         requeued_count: 0,
         failed_count: 0,
         queued: true,
-        requested_count: reparseRequest.match_game_ids.length
+        requested_count: reparseRequest.match_game_ids.length,
+        job_id: jobId
       });
       return;
     }
@@ -349,8 +384,8 @@ router.post(
   }
 );
 
-router.post(
-  "/failed/parse/requeue-2ddata",
+failedParseRouter.post(
+  "/requeue-2ddata",
   async (req: Request, res: Response, next: NextFunction) => {
     logger.info("2ddata requeue request received", { body: req.body });
 
@@ -371,22 +406,24 @@ router.post(
     const request: Requeue2ddataRequest = validationResult.data;
 
     if (request.items.length > 5) {
-      void (async () => {
-        try {
-          await requeue2ddataFailedMessages(request);
-        } catch (error) {
-          logger.error("Background 2ddata requeue failed", {
-            error: error instanceof Error ? error.message : String(error)
-          });
-        }
-      })();
+      const userId = req.auth?.account_id;
+      if (userId === undefined) {
+        return next(new UnauthorizedError("Not authenticated"));
+      }
+
+      const { jobId } = await enqueueFailedParseBackgroundJob({
+        kind: "requeue2ddata",
+        userId,
+        body: request
+      });
 
       res.status(200).json({
         success: true,
         requeued_count: 0,
         failed_count: 0,
         queued: true,
-        requested_count: request.items.length
+        requested_count: request.items.length,
+        job_id: jobId
       });
       return;
     }
@@ -397,8 +434,8 @@ router.post(
   }
 );
 
-router.post(
-  "/failed/parse/requeue-all",
+failedParseRouter.post(
+  "/requeue-all",
   async (req: Request, res: Response, next: NextFunction) => {
     logger.info("Requeue-all request received", { body: req.body });
 
@@ -416,22 +453,23 @@ router.post(
       );
     }
 
-    // Always async when requeueing-all: could be large/slow and user only needs acknowledgement.
-    void (async () => {
-      try {
-        await requeueAllFailedMessages(validationResult.data);
-      } catch (error) {
-        logger.error("Background requeue-all failed", {
-          error: error instanceof Error ? error.message : String(error)
-        });
-      }
-    })();
+    const userId = req.auth?.account_id;
+    if (userId === undefined) {
+      return next(new UnauthorizedError("Not authenticated"));
+    }
+
+    const { jobId } = await enqueueFailedParseBackgroundJob({
+      kind: "requeueAll",
+      userId,
+      body: validationResult.data
+    });
 
     const result = {
       success: true,
       requeued_count: 0,
       failed_count: 0,
-      queued: true
+      queued: true,
+      job_id: jobId
     };
     const statusCode = result.success ? 200 : 400;
     res.status(statusCode).json(result);

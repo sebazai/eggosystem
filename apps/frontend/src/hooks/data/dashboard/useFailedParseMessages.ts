@@ -26,7 +26,7 @@ export const useFailedParseMessages = (
   filters: FailedParseMessagesResponse["filters"] | undefined;
   isLoading: boolean;
   error: unknown;
-  mutate: () => void;
+  mutate: () => Promise<FailedParseMessagesResponse | undefined>;
 } => {
   // Memoize the endpoint to prevent unnecessary re-renders
   const endpoint = useMemo(() => {
@@ -52,7 +52,8 @@ export const useFailedParseMessages = (
     filters: data?.filters,
     isLoading,
     error,
-    mutate
+    mutate: async () =>
+      (await mutate()) as FailedParseMessagesResponse | undefined
   };
 };
 

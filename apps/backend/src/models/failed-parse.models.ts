@@ -401,10 +401,19 @@ export const getFailedParseMessageById = async (
  * others are nack'd with requeue so they remain in the error queue.
  */
 export const reparseFailedMessages = async (
-  request: ReparseRequest
+  request: ReparseRequest,
+  opts?: {
+    onProgress?: (p: {
+      processed_count: number;
+      requeued_count: number;
+      failed_count: number;
+      requeued_match_game_ids?: Array<number | string>;
+    }) => void;
+  }
 ): Promise<ReparseResponse> => {
   const { match_game_ids, priority = 5 } = request;
   const requestedIds = new Set(match_game_ids);
+  let processedCount = 0;
 
   if (requestedIds.size === 0) {
     return {
@@ -560,6 +569,13 @@ export const reparseFailedMessages = async (
             channel.ack(msg);
             requestedIds.delete(matchGameIdNum);
             requeuedCount++;
+            processedCount++;
+            opts?.onProgress?.({
+              processed_count: processedCount,
+              requeued_count: requeuedCount,
+              failed_count: failedCount,
+              requeued_match_game_ids: [matchGameIdNum]
+            });
 
             logger.info("Successfully requeued failed message from RabbitMQ", {
               queueName,
@@ -593,6 +609,13 @@ export const reparseFailedMessages = async (
               errors.push(
                 `match_game_id ${matchGameIdNum}: ${processingError instanceof Error ? processingError.message : String(processingError)}`
               );
+              processedCount++;
+              opts?.onProgress?.({
+                processed_count: processedCount,
+                requeued_count: requeuedCount,
+                failed_count: failedCount,
+                requeued_match_game_ids: [matchGameIdNum]
+              });
             }
             channel.nack(msg, false, true);
             logger.error("Failed to process message from RabbitMQ", {
@@ -640,7 +663,15 @@ export const reparseFailedMessages = async (
 };
 
 export const requeue2ddataFailedMessages = async (
-  request: Requeue2ddataRequest
+  request: Requeue2ddataRequest,
+  opts?: {
+    onProgress?: (p: {
+      processed_count: number;
+      requeued_count: number;
+      failed_count: number;
+      requeued_match_game_ids?: Array<number | string>;
+    }) => void;
+  }
 ): Promise<Requeue2ddataResponse> => {
   const requestedKeys = new Set(
     request.items.map((i) => `${i.match_game_id}::${i.demo_path}`)
@@ -654,6 +685,7 @@ export const requeue2ddataFailedMessages = async (
     const { connection, channel } = await createAmqpConnection();
     let requeuedCount = 0;
     let failedCount = 0;
+    let processedCount = 0;
     const errors: string[] = [];
 
     try {
@@ -705,6 +737,13 @@ export const requeue2ddataFailedMessages = async (
           channel.ack(msg);
           requestedKeys.delete(key);
           requeuedCount++;
+          processedCount++;
+          opts?.onProgress?.({
+            processed_count: processedCount,
+            requeued_count: requeuedCount,
+            failed_count: failedCount,
+            requeued_match_game_ids: [matchGameId]
+          });
         } catch (processingError) {
           try {
             const raw = JSON.parse(msg.content.toString()) as Record<
@@ -718,6 +757,13 @@ export const requeue2ddataFailedMessages = async (
               errors.push(
                 `key ${key}: ${processingError instanceof Error ? processingError.message : String(processingError)}`
               );
+              processedCount++;
+              opts?.onProgress?.({
+                processed_count: processedCount,
+                requeued_count: requeuedCount,
+                failed_count: failedCount,
+                requeued_match_game_ids: [key]
+              });
             }
           } catch {
             // ignore
@@ -758,8 +804,16 @@ export const requeue2ddataFailedMessages = async (
 export const requeueAllFailedMessages = async (params: {
   queue_name: string;
   priority?: number;
+  onProgress?: (p: {
+    processed_count: number;
+    total_count?: number;
+    requeued_count: number;
+    failed_count: number;
+    requeued_match_game_ids?: Array<number | string>;
+  }) => void;
 }): Promise<ReparseResponse> => {
   const { queue_name, priority = 5 } = params;
+  const onProgress = params.onProgress;
 
   if (!getErrorQueues(undefined).includes(queue_name)) {
     return {
@@ -799,10 +853,22 @@ export const requeueAllFailedMessages = async (params: {
             await publishToParse2ddataQueue(payloadToPublish);
             channel.ack(msg);
             requeuedCount++;
+            onProgress?.({
+              processed_count: i + 1,
+              total_count: queueInfo.messageCount,
+              requeued_count: requeuedCount,
+              failed_count: failedCount
+            });
           } catch (error) {
             channel.nack(msg, false, true);
             failedCount++;
             errors.push(error instanceof Error ? error.message : String(error));
+            onProgress?.({
+              processed_count: i + 1,
+              total_count: queueInfo.messageCount,
+              requeued_count: requeuedCount,
+              failed_count: failedCount
+            });
           }
         }
       } finally {
@@ -904,6 +970,12 @@ export const requeueAllFailedMessages = async (params: {
               `Missing match_game_id or demo_path for queue ${queue_name}`
             );
             channel.ack(msg);
+            onProgress?.({
+              processed_count: i + 1,
+              total_count: queueInfo.messageCount,
+              requeued_count: requeuedCount,
+              failed_count: failedCount
+            });
             continue;
           }
 
@@ -918,10 +990,23 @@ export const requeueAllFailedMessages = async (params: {
           await publishToParseQueue(parseRequest);
           channel.ack(msg);
           requeuedCount++;
+          onProgress?.({
+            processed_count: i + 1,
+            total_count: queueInfo.messageCount,
+            requeued_count: requeuedCount,
+            failed_count: failedCount,
+            requeued_match_game_ids: [matchGameIdNum]
+          });
         } catch (error) {
           channel.nack(msg, false, true);
           failedCount++;
           errors.push(error instanceof Error ? error.message : String(error));
+          onProgress?.({
+            processed_count: i + 1,
+            total_count: queueInfo.messageCount,
+            requeued_count: requeuedCount,
+            failed_count: failedCount
+          });
         }
       }
     } finally {

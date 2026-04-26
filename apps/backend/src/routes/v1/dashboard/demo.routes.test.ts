@@ -14,6 +14,7 @@ import { getHubMatchesByExternalMatchRoomId } from "../../../models/match.models
 import { publishToParseQueue } from "../../../services/parse-queue.services";
 import { resolveOrCreateMatchGameIdForDemoUrl } from "../../../services/faceit-match.services";
 import { resolveOrCreateMatchGameIdForHubMatchDemo } from "../../../services/faceit-match.services";
+import { attachFailedParseJobSse } from "../../../services/failed-parse-sse.services";
 
 jest.mock("../../../services/auth.services", () => ({
   getPermissionsForAccountId: jest.fn(),
@@ -47,6 +48,14 @@ jest.mock("../../../models/failed-parse.models", () => ({
   getFailedParseMessageById: jest.fn(),
   reparseFailedMessages: jest.fn(),
   getFailedParseMessagesStats: jest.fn()
+}));
+
+jest.mock("../../../services/failed-parse-sse.services", () => ({
+  attachFailedParseJobSse: jest.fn(async (_req, res) => {
+    res.status(200);
+    res.setHeader("Content-Type", "text/event-stream; charset=utf-8");
+    res.end();
+  })
 }));
 
 const mockGetPermissions = jest.mocked(getPermissionsForAccountId);
@@ -467,6 +476,39 @@ describe("POST /api/v1/dashboard/demos/manual/parse-queue", () => {
       detail: "amqp broke"
     });
     expect(res.headers["content-type"]).toMatch(/application\/problem\+json/);
+    cleanup();
+  });
+
+  it("attaches SSE stream for admin", async () => {
+    const { app, cleanup } = createDemoDashboardTestApp();
+    mockGetPermissions.mockResolvedValue([]);
+    mockGetRoles.mockResolvedValue(["admin"]);
+
+    const res = await request(app).get(
+      "/api/v1/dashboard/demos/failed/parse/events"
+    );
+
+    expect(res.status).toBe(200);
+    expect(res.headers["content-type"]).toMatch(/text\/event-stream/);
+    expect(attachFailedParseJobSse).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      99
+    );
+    cleanup();
+  });
+
+  it("returns 403 for helpdesk on SSE stream", async () => {
+    const { app, cleanup } = createDemoDashboardTestApp();
+    mockGetPermissions.mockResolvedValue([]);
+    mockGetRoles.mockResolvedValue(["helpdesk"]);
+
+    const res = await request(app).get(
+      "/api/v1/dashboard/demos/failed/parse/events"
+    );
+
+    expect(res.status).toBe(403);
+    expect(attachFailedParseJobSse).not.toHaveBeenCalled();
     cleanup();
   });
 });
