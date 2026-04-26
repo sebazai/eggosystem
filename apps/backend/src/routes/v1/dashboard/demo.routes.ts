@@ -9,10 +9,78 @@ import {
   getFailedParseMessagesStats
 } from "../../../models/failed-parse.models";
 import type { ReparseRequest } from "@eggosystem/types";
-import { NotFoundError, BadRequestError } from "../../../utils/errors";
+import {
+  NotFoundError,
+  BadRequestError,
+  UnauthorizedError
+} from "../../../utils/errors";
 import { logger } from "../../../utils/app-logger";
+import { enqueueManualDashboardDemoParse } from "../../../services/manual-demo-parse.services";
+import {
+  resolveOrCreateMatchGameIdForDemoUrl,
+  resolveOrCreateMatchGameIdForHubMatchDemo
+} from "../../../services/faceit-match.services";
+import { getHubMatchesByExternalMatchRoomId } from "../../../models/match.models";
 
 const router = Router();
+
+const httpsUrlSchema = z
+  .string()
+  .min(1)
+  .refine((val) => {
+    try {
+      return new URL(val).protocol === "https:";
+    } catch {
+      return false;
+    }
+  }, "Demo download URL must be a valid HTTPS URL");
+
+const manualParseQueueBodySchema = z
+  .object({
+    match_game_id: z.coerce.number().int().positive().optional(),
+    match_id: z.coerce.number().int().positive().optional(),
+    map_order: z.coerce.number().int().min(1).optional(),
+    external_match_room_id: z.string().min(1).optional(),
+    download_url: httpsUrlSchema,
+    priority: z.number().int().min(1).max(10).optional().default(5),
+    reparse: z.boolean().optional().default(false)
+  })
+  .superRefine((val, ctx) => {
+    const hasAny =
+      val.match_game_id != null ||
+      val.match_id != null ||
+      val.external_match_room_id;
+    if (!hasAny) {
+      ctx.addIssue({
+        code: "custom",
+        message:
+          "Either match_game_id, match_id, or external_match_room_id must be provided",
+        path: ["match_game_id"]
+      });
+    }
+    const count =
+      (val.match_game_id != null ? 1 : 0) +
+      (val.match_id != null ? 1 : 0) +
+      (val.external_match_room_id ? 1 : 0);
+    if (count > 1) {
+      ctx.addIssue({
+        code: "custom",
+        message:
+          "Provide only one of match_game_id, match_id, or external_match_room_id",
+        path: ["external_match_room_id"]
+      });
+    }
+
+    // If we're creating/inferring a MatchGame from an internal hub match id,
+    // require the caller to specify which map in the series this demo belongs to.
+    if (val.match_id != null && val.map_order == null) {
+      ctx.addIssue({
+        code: "custom",
+        message: "map_order is required when match_id is provided",
+        path: ["map_order"]
+      });
+    }
+  });
 
 // Query parameter schema for listing failed messages
 const listQuerySchema = z.object({
@@ -27,6 +95,85 @@ const reparseRequestSchema = z.object({
   match_game_ids: z.array(z.number().int().positive()).min(1).max(50),
   priority: z.number().int().min(1).max(10).optional().default(5)
 });
+
+/**
+ * POST /v1/dashboard/demos/manual/parse-queue
+ * Staff-only: enqueue a manual HTTPS demo URL for a MatchGame on parse_queue (source manual/faceit).
+ * Dashboard “repair” actions here use global staff role checks (e.g. admin, helpdesk via
+ * `checkPermissions` on this mount), not a per-match or per-team scoping check.
+ */
+router.post(
+  "/manual/parse-queue",
+  async (req: Request, res: Response, next: NextFunction) => {
+    const actorAccountId = req.auth?.account_id;
+    if (actorAccountId === undefined) {
+      return next(new UnauthorizedError("Not authenticated"));
+    }
+
+    const parsed = manualParseQueueBodySchema.safeParse(req.body);
+    if (!parsed.success) {
+      logger.warn("Manual parse-queue body validation failed", {
+        issues: parsed.error.flatten()
+      });
+      return next(parsed.error);
+    }
+
+    const { match_game_id, download_url, priority } = parsed.data;
+    const { match_id, map_order, external_match_room_id } = parsed.data;
+
+    let matchGameId: number;
+    const source = external_match_room_id ? "faceit" : "manual";
+    if (match_game_id != null) {
+      matchGameId = match_game_id;
+    } else if (match_id != null) {
+      matchGameId = await resolveOrCreateMatchGameIdForHubMatchDemo({
+        matchId: match_id,
+        demoUrl: download_url,
+        mapOrder: map_order
+      });
+    } else {
+      if (!external_match_room_id) {
+        return next(new BadRequestError("Missing match identifier"));
+      }
+
+      // Mirror FACEIT `match_demo_ready` using provided external match room id + demo url.
+      // Requires MatchTeamMapVetoes to exist for the hub match (same dependency as the webhook path).
+      const hubMatches = await getHubMatchesByExternalMatchRoomId(
+        external_match_room_id
+      );
+      if (!hubMatches || hubMatches.length === 0) {
+        return next(
+          new NotFoundError("No matches found for external_match_room_id")
+        );
+      }
+
+      matchGameId = await resolveOrCreateMatchGameIdForDemoUrl({
+        externalMatchRoomId: external_match_room_id,
+        demoUrl: download_url,
+        isRoundRobinBo2As2xBo1: hubMatches.length === 2
+      });
+    }
+
+    logger.info("Manual parse-queue enqueue request", {
+      actorAccountId,
+      matchGameId
+    });
+
+    const result = await enqueueManualDashboardDemoParse({
+      matchGameId,
+      downloadUrl: download_url,
+      priority,
+      actorAccountId,
+      source,
+      reparse: parsed.data.reparse
+    });
+
+    res.status(200).json({
+      status: "enqueued",
+      match_game_id: result.match_game_id
+    });
+  }
+);
 
 /**
  * GET /v1/dashboard/demos/failed/parse
