@@ -241,6 +241,29 @@ export const getMatchIdByGameId = async (
   );
 };
 
+type MatchGameTeamScoresMeta = {
+  id: number;
+  match_id: number;
+  regulation_rounds: number;
+  team_game_scores_staff_lock: number | boolean;
+};
+
+/**
+ * MatchGames row for dashboard team-score read/write: regulation rounds, staff lock, identity.
+ */
+export const getMatchGameMetaForTeamScores = async (
+  matchGameId: number,
+  connection?: PoolConnection
+): Promise<MatchGameTeamScoresMeta | undefined> => {
+  const query = `SELECT id, match_id, COALESCE(regulation_rounds, 24) AS regulation_rounds, team_game_scores_staff_lock FROM MatchGames WHERE id = ? LIMIT 1`;
+  const rows = await runQuery<MatchGameTeamScoresMeta[]>(
+    query,
+    [matchGameId],
+    connection
+  );
+  return rows[0];
+};
+
 export const upsertMatchGameForMatch = async ({
   match_id,
   map_id,
