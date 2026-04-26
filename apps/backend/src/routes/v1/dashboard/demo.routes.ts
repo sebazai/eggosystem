@@ -334,7 +334,8 @@ router.post(
         success: true,
         requeued_count: 0,
         failed_count: 0,
-        queued: true
+        queued: true,
+        requested_count: reparseRequest.match_game_ids.length
       });
       return;
     }
@@ -384,7 +385,8 @@ router.post(
         success: true,
         requeued_count: 0,
         failed_count: 0,
-        queued: true
+        queued: true,
+        requested_count: request.items.length
       });
       return;
     }

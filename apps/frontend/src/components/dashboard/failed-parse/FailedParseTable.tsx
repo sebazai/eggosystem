@@ -126,12 +126,10 @@ export const FailedParseTable = ({
     if (queueFilter === "parse_2ddata_failed") {
       const items = selectedKeys
         .map((key) => filteredMessages.find((m) => m.id.toString() === key))
-        .filter((m) => m != null)
+        .filter((m) => m !== null || m !== undefined)
         .map((m) => {
-          const demoPath = String(
-            (m.original_message as Record<string, unknown>)?.demo_path ?? ""
-          );
-          return { match_game_id: m.match_game_id, demo_path: demoPath };
+          const demoPath = String(m!.original_message?.demo_path ?? "");
+          return { match_game_id: m!.match_game_id, demo_path: demoPath };
         })
         .filter((i) => i.match_game_id !== "" && i.demo_path !== "");
 
@@ -151,8 +149,11 @@ export const FailedParseTable = ({
       try {
         const result = await submitRequeue2ddata({ items: uniqueItems });
         if (result.success) {
+          const requestedCount = result.requested_count ?? uniqueItems.length;
           toast.success(
-            `Successfully requeued ${result.requeued_count} message(s) for 2D parsing`
+            result.queued
+              ? `Queued ${requestedCount} message(s) for 2D requeue in background`
+              : `Successfully requeued ${result.requeued_count} message(s) for 2D parsing`
           );
           setRowSelection({});
           mutate();
@@ -192,8 +193,11 @@ export const FailedParseTable = ({
       });
 
       if (result.success) {
+        const requestedCount = result.requested_count ?? matchGameIds.length;
         toast.success(
-          `Successfully requeued ${result.requeued_count} message(s) for parsing`
+          result.queued
+            ? `Queued ${requestedCount} message(s) for reparse in background`
+            : `Successfully requeued ${result.requeued_count} message(s) for parsing`
         );
         setRowSelection({});
         mutate();
@@ -236,7 +240,9 @@ export const FailedParseTable = ({
       });
       if (result.success) {
         toast.success(
-          `Successfully requeued ${result.requeued_count} message(s)`
+          result.queued
+            ? "Queued requeue-all in background"
+            : `Successfully requeued ${result.requeued_count} message(s)`
         );
         setRowSelection({});
         mutate();

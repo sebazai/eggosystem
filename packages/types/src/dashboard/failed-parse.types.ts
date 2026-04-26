@@ -66,6 +66,13 @@ export interface ReparseResponse {
   requeued_count: number;
   failed_count: number;
   errors?: string[];
+  /**
+   * When true, the backend has accepted the request and is processing it asynchronously.
+   * `requeued_count`/`failed_count` will likely be 0 in the immediate response.
+   */
+  queued?: boolean;
+  /** Number of items requested to be requeued (best-effort informational). */
+  requested_count?: number;
 }
 
 export interface Requeue2ddataItem {
@@ -82,4 +89,11 @@ export interface Requeue2ddataResponse {
   requeued_count: number;
   failed_count: number;
   errors?: string[];
+  /**
+   * When true, the backend has accepted the request and is processing it asynchronously.
+   * `requeued_count`/`failed_count` will likely be 0 in the immediate response.
+   */
+  queued?: boolean;
+  /** Number of items requested to be requeued (best-effort informational). */
+  requested_count?: number;
 }

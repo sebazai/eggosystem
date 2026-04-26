@@ -243,12 +243,20 @@ export const getFailedParseMessages = async (
 
   try {
     const countToFetch = Math.min(offset + limit, 2000);
-    const perQueue = await Promise.all(
+    const perQueueSettled = await Promise.allSettled(
       queues.map(async (queueName) => {
         const raw = await getMessagesFromQueue(queueName, countToFetch);
         return raw.map((m, idx) => ({ queueName, idx, payload: m.payload }));
       })
     );
+
+    const perQueue = perQueueSettled.flatMap((r) => {
+      if (r.status === "fulfilled") return [r.value];
+      logger.warn("Skipping queue fetch due to error", {
+        error: r.reason instanceof Error ? r.reason.message : String(r.reason)
+      });
+      return [];
+    });
 
     const merged = perQueue.flat().map(({ queueName, idx, payload }) => {
       const body = (() => {
@@ -350,14 +358,21 @@ export const getFailedParseMessagesCount = async (
 
   try {
     const queues = getErrorQueues(undefined);
-    const counts = await Promise.all(
+    const settled = await Promise.allSettled(
       queues.map(async (q) => {
         const info = await getQueueInfo(q);
         if (!statusFilter || statusFilter === "failed") return info.messages;
         return 0;
       })
     );
-    return counts.reduce((a, b) => a + b, 0);
+
+    return settled.reduce((sum, r) => {
+      if (r.status === "fulfilled") return sum + r.value;
+      logger.warn("Skipping queue count due to error", {
+        error: r.reason instanceof Error ? r.reason.message : String(r.reason)
+      });
+      return sum;
+    }, 0);
   } catch (error) {
     logger.error(
       "Failed to connect to RabbitMQ management for counting messages",
