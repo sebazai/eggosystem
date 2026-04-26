@@ -6,6 +6,11 @@ import {
   startEmailWorker,
   stopEmailWorker
 } from "./src/services/email-worker.services";
+import {
+  startFailedParseBackgroundWorker,
+  stopFailedParseBackgroundWorker
+} from "./src/services/failed-parse-background-worker.services";
+import { closeFailedParseBackgroundQueue } from "./src/services/failed-parse-background-queue.services";
 
 const port = process.env.PORT || 3001;
 
@@ -38,6 +43,11 @@ if (process.env.NODE_ENV !== "test" && process.env.NODE_ENV !== "e2e") {
   } catch (error) {
     logger.error("Failed to start email worker:", error);
   }
+  try {
+    startFailedParseBackgroundWorker();
+  } catch (error) {
+    logger.error("Failed to start failed-parse background worker:", error);
+  }
 }
 
 // Initialize FACEIT match sync cron job if FACEIT API key is available and not in test mode
@@ -57,6 +67,8 @@ if (
 process.on("SIGTERM", async () => {
   logger.info("SIGTERM received, shutting down gracefully...");
   await stopEmailWorker();
+  await stopFailedParseBackgroundWorker();
+  await closeFailedParseBackgroundQueue();
   await queueConsumerManager.stopAllConsumers();
   server.close(() => {
     logger.info("Server closed");
@@ -67,6 +79,8 @@ process.on("SIGTERM", async () => {
 process.on("SIGINT", async () => {
   logger.info("SIGINT received, shutting down gracefully...");
   await stopEmailWorker();
+  await stopFailedParseBackgroundWorker();
+  await closeFailedParseBackgroundQueue();
   await queueConsumerManager.stopAllConsumers();
   server.close(() => {
     logger.info("Server closed");

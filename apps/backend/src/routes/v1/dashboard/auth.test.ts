@@ -9,6 +9,39 @@ import dashboardRouter from "./index";
 import { authenticateJWT } from "../../../middlewares/auth.middleware";
 import { createMockUserPayload } from "@eggosystem/types";
 
+jest.mock("../../../services/manual-demo-parse.services", () => ({
+  enqueueManualDashboardDemoParse: jest.fn(async () => ({ match_game_id: 7 }))
+}));
+
+jest.mock("../../../models/failed-parse.models", () => ({
+  getFailedParseMessages: jest.fn(async () => []),
+  getFailedParseMessagesCount: jest.fn(async () => 0),
+  getFailedParseMessageById: jest.fn(async () => null),
+  reparseFailedMessages: jest.fn(async () => ({
+    success: true,
+    requeued_count: 0,
+    failed_count: 0
+  })),
+  getFailedParseMessagesStats: jest.fn(async () => ({})),
+  requeue2ddataFailedMessages: jest.fn(async () => ({
+    success: true,
+    requeued_count: 0,
+    failed_count: 0
+  }))
+}));
+
+jest.mock("../../../services/failed-parse-background-queue.services", () => ({
+  enqueueFailedParseBackgroundJob: jest.fn(async () => ({ jobId: "job-1" }))
+}));
+
+jest.mock("../../../services/failed-parse-sse.services", () => ({
+  attachFailedParseJobSse: jest.fn(async (_req, res) => {
+    res.status(200);
+    res.setHeader("Content-Type", "text/event-stream; charset=utf-8");
+    res.end();
+  })
+}));
+
 // Mock the auth services
 jest.mock("../../../services/auth.services");
 import {
@@ -211,6 +244,22 @@ describe("Dashboard Routes Authentication Tests", () => {
         status: 401,
         detail: "Forbidden: Requires authentication"
       });
+    });
+
+    it("should return 401 for demo manual upload without authentication", async () => {
+      await request(app)
+        .post("/api/v1/dashboard/demos/manual/parse-queue")
+        .send({
+          match_game_id: 7,
+          download_url: "https://example.com/demo.dem.zst"
+        })
+        .expect(401);
+    });
+
+    it("should return 401 for failed-parse listing without authentication", async () => {
+      await request(app)
+        .get("/api/v1/dashboard/demos/failed/parse")
+        .expect(401);
     });
   });
 
@@ -472,6 +521,32 @@ describe("Dashboard Routes Authentication Tests", () => {
 
       expect(response.status).not.toBe(403);
     });
+
+    it("should allow demo manual upload with admin role", async () => {
+      await request(app)
+        .post("/api/v1/dashboard/demos/manual/parse-queue")
+        .set("Authorization", "Bearer valid-token")
+        .send({
+          match_game_id: 7,
+          download_url: "https://example.com/demo.dem.zst"
+        })
+        .expect(200);
+    });
+
+    it("should allow failed-parse listing with admin role", async () => {
+      const response = await request(app)
+        .get("/api/v1/dashboard/demos/failed/parse")
+        .set("Authorization", "Bearer valid-token");
+
+      expect(response.status).not.toBe(403);
+    });
+
+    it("should allow failed-parse SSE with admin role", async () => {
+      await request(app)
+        .get("/api/v1/dashboard/demos/failed/parse/events")
+        .set("Authorization", "Bearer valid-token")
+        .expect(200);
+    });
   });
 
   describe("Authenticated with Helpdesk Role", () => {
@@ -579,6 +654,31 @@ describe("Dashboard Routes Authentication Tests", () => {
         .set("Authorization", "Bearer valid-token");
 
       expect(response.status).not.toBe(403);
+    });
+
+    it("should allow demo manual upload with helpdesk role", async () => {
+      await request(app)
+        .post("/api/v1/dashboard/demos/manual/parse-queue")
+        .set("Authorization", "Bearer valid-token")
+        .send({
+          match_game_id: 7,
+          download_url: "https://example.com/demo.dem.zst"
+        })
+        .expect(200);
+    });
+
+    it("should deny failed-parse listing with helpdesk role (admin-only)", async () => {
+      await request(app)
+        .get("/api/v1/dashboard/demos/failed/parse")
+        .set("Authorization", "Bearer valid-token")
+        .expect(403);
+    });
+
+    it("should deny failed-parse SSE with helpdesk role (admin-only)", async () => {
+      await request(app)
+        .get("/api/v1/dashboard/demos/failed/parse/events")
+        .set("Authorization", "Bearer valid-token")
+        .expect(403);
     });
   });
 

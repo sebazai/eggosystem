@@ -1,14 +1,17 @@
 import { Router } from "express";
 import type { Request, Response, NextFunction } from "express";
 import { z } from "zod";
+import { checkPermissions } from "../../../middlewares/auth.middleware";
 import {
   getFailedParseMessages,
   getFailedParseMessagesCount,
   getFailedParseMessageById,
   reparseFailedMessages,
-  getFailedParseMessagesStats
+  getFailedParseMessagesStats,
+  requeue2ddataFailedMessages
 } from "../../../models/failed-parse.models";
 import type { ReparseRequest } from "@eggosystem/types";
+import type { Requeue2ddataRequest } from "@eggosystem/types";
 import {
   NotFoundError,
   BadRequestError,
@@ -21,6 +24,8 @@ import {
   resolveOrCreateMatchGameIdForHubMatchDemo
 } from "../../../services/faceit-match.services";
 import { getHubMatchesByExternalMatchRoomId } from "../../../models/match.models";
+import { enqueueFailedParseBackgroundJob } from "../../../services/failed-parse-background-queue.services";
+import { attachFailedParseJobSse } from "../../../services/failed-parse-sse.services";
 
 const router = Router();
 
@@ -175,12 +180,39 @@ router.post(
   }
 );
 
+// Admin-only: failed-parse + requeue/reparse operations (more sensitive than manual uploads).
+const failedParseRouter = Router();
+router.use(
+  "/failed/parse",
+  checkPermissions({
+    fallbackRoles: ["admin"]
+  }),
+  failedParseRouter
+);
+
+const requeue2ddataRequestSchema = z.object({
+  items: z
+    .array(
+      z.object({
+        match_game_id: z.string().min(1),
+        demo_path: z.string().min(1)
+      })
+    )
+    .min(1)
+    .max(50)
+});
+
+const requeueAllRequestSchema = z.object({
+  queue_name: z.string().min(1),
+  priority: z.number().int().min(1).max(10).optional().default(5)
+});
+
 /**
  * GET /v1/dashboard/demos/failed/parse
  * List failed parse messages with pagination and filtering
  */
-router.get(
-  "/failed/parse",
+failedParseRouter.get(
+  "/",
   async (req: Request, res: Response, next: NextFunction) => {
     logger.info("GET /demos/failed/parse request", { query: req.query });
 
@@ -235,8 +267,8 @@ router.get(
  * GET /v1/dashboard/demos/failed/parse/stats
  * Get statistics about failed parse messages
  */
-router.get(
-  "/failed/parse/stats",
+failedParseRouter.get(
+  "/stats",
   async (req: Request, res: Response, _next: NextFunction) => {
     const stats = await getFailedParseMessagesStats();
 
@@ -247,11 +279,32 @@ router.get(
 );
 
 /**
+ * GET /v1/dashboard/demos/failed/parse/events
+ * Server-Sent Events stream for background failed-parse job progress (per authenticated user).
+ * Must be registered before `/failed/parse/:id` so `events` is not captured as an id.
+ */
+failedParseRouter.get(
+  "/events",
+  async (req: Request, res: Response, next: NextFunction) => {
+    const userId = req.auth?.account_id;
+    if (userId === undefined) {
+      return next(new UnauthorizedError("Not authenticated"));
+    }
+
+    try {
+      await attachFailedParseJobSse(req, res, userId);
+    } catch (error) {
+      return next(error);
+    }
+  }
+);
+
+/**
  * GET /v1/dashboard/demos/failed/parse/:id
  * Get a specific failed parse message by ID
  */
-router.get(
-  "/failed/parse/:id",
+failedParseRouter.get(
+  "/:id",
   async (req: Request, res: Response, next: NextFunction) => {
     const id = parseInt(req.params.id);
 
@@ -280,8 +333,8 @@ router.get(
  * POST /v1/dashboard/demos/failed/parse/reparse
  * Reparse selected failed messages
  */
-router.post(
-  "/failed/parse/reparse",
+failedParseRouter.post(
+  "/reparse",
   async (req: Request, res: Response, next: NextFunction) => {
     logger.info("Reparse request received", { body: req.body });
 
@@ -299,12 +352,126 @@ router.post(
 
     const reparseRequest: ReparseRequest = validationResult.data;
 
-    // Execute reparse
+    if (reparseRequest.match_game_ids.length > 5) {
+      const userId = req.auth?.account_id;
+      if (userId === undefined) {
+        return next(new UnauthorizedError("Not authenticated"));
+      }
+
+      const { jobId } = await enqueueFailedParseBackgroundJob({
+        kind: "reparse",
+        userId,
+        body: reparseRequest
+      });
+
+      res.status(200).json({
+        success: true,
+        requeued_count: 0,
+        failed_count: 0,
+        queued: true,
+        requested_count: reparseRequest.match_game_ids.length,
+        job_id: jobId
+      });
+      return;
+    }
+
     const result = await reparseFailedMessages(reparseRequest);
 
     // Return appropriate status code based on result
     const statusCode = result.success ? 200 : 400;
 
+    res.status(statusCode).json(result);
+  }
+);
+
+failedParseRouter.post(
+  "/requeue-2ddata",
+  async (req: Request, res: Response, next: NextFunction) => {
+    logger.info("2ddata requeue request received", { body: req.body });
+
+    const validationResult = requeue2ddataRequestSchema.safeParse(req.body);
+    if (!validationResult.success) {
+      logger.warn("2ddata requeue validation failed", {
+        error: validationResult.error
+      });
+      return next(
+        new BadRequestError(
+          "Invalid 2ddata requeue request",
+          400,
+          "Validation Failed"
+        )
+      );
+    }
+
+    const request: Requeue2ddataRequest = validationResult.data;
+
+    if (request.items.length > 5) {
+      const userId = req.auth?.account_id;
+      if (userId === undefined) {
+        return next(new UnauthorizedError("Not authenticated"));
+      }
+
+      const { jobId } = await enqueueFailedParseBackgroundJob({
+        kind: "requeue2ddata",
+        userId,
+        body: request
+      });
+
+      res.status(200).json({
+        success: true,
+        requeued_count: 0,
+        failed_count: 0,
+        queued: true,
+        requested_count: request.items.length,
+        job_id: jobId
+      });
+      return;
+    }
+
+    const result = await requeue2ddataFailedMessages(request);
+    const statusCode = result.success ? 200 : 400;
+    res.status(statusCode).json(result);
+  }
+);
+
+failedParseRouter.post(
+  "/requeue-all",
+  async (req: Request, res: Response, next: NextFunction) => {
+    logger.info("Requeue-all request received", { body: req.body });
+
+    const validationResult = requeueAllRequestSchema.safeParse(req.body);
+    if (!validationResult.success) {
+      logger.warn("Requeue-all validation failed", {
+        error: validationResult.error
+      });
+      return next(
+        new BadRequestError(
+          "Invalid requeue-all request",
+          400,
+          "Validation Failed"
+        )
+      );
+    }
+
+    const userId = req.auth?.account_id;
+    if (userId === undefined) {
+      return next(new UnauthorizedError("Not authenticated"));
+    }
+
+    const { jobId } = await enqueueFailedParseBackgroundJob({
+      kind: "requeueAll",
+      userId,
+      body: validationResult.data
+    });
+
+    const result = {
+      success: true,
+      requeued_count: 0,
+      failed_count: 0,
+      queued: true,
+      job_id: jobId
+    };
+    const statusCode = result.success ? 200 : 400;
     res.status(statusCode).json(result);
   }
 );

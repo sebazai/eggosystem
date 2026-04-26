@@ -10,16 +10,24 @@ interface FailedParseTableHeaderProps {
   totalCount: number;
   selectedCount: number;
   isSubmitting: boolean;
+  isRequeueAllSubmitting?: boolean;
   onReparse: () => void;
+  onRequeueAll?: () => void;
   onRefresh: () => void;
+  requeueLabel?: string;
+  requeueAllLabel?: string;
 }
 
 export const FailedParseTableHeader = ({
   totalCount,
   selectedCount,
   isSubmitting,
+  isRequeueAllSubmitting = false,
   onReparse,
-  onRefresh
+  onRequeueAll,
+  onRefresh,
+  requeueLabel = "Requeue for Parse",
+  requeueAllLabel = "Requeue All"
 }: FailedParseTableHeaderProps) => {
   const handleReparse = useCallback(() => {
     onReparse();
@@ -28,6 +36,10 @@ export const FailedParseTableHeader = ({
   const handleRefresh = useCallback(() => {
     onRefresh();
   }, [onRefresh]);
+
+  const handleRequeueAll = useCallback(() => {
+    onRequeueAll?.();
+  }, [onRequeueAll]);
 
   return (
     <CardHeader>
@@ -39,6 +51,26 @@ export const FailedParseTableHeader = ({
           </CardTitle>
         </div>
         <div className="flex items-center gap-2">
+          {onRequeueAll && (
+            <Button
+              onClick={handleRequeueAll}
+              disabled={isSubmitting || isRequeueAllSubmitting}
+              size="sm"
+              variant="outline"
+            >
+              {isRequeueAllSubmitting ? (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  Requeuing...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  {requeueAllLabel}
+                </>
+              )}
+            </Button>
+          )}
           {selectedCount > 0 && (
             <>
               <Badge variant="secondary">{selectedCount} selected</Badge>
@@ -56,7 +88,7 @@ export const FailedParseTableHeader = ({
                 ) : (
                   <>
                     <RefreshCw className="h-4 w-4 mr-2" />
-                    Requeue for Parse
+                    {requeueLabel}
                   </>
                 )}
               </Button>
