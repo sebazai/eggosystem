@@ -6,9 +6,12 @@ import {
   getFailedParseMessagesCount,
   getFailedParseMessageById,
   reparseFailedMessages,
-  getFailedParseMessagesStats
+  getFailedParseMessagesStats,
+  requeue2ddataFailedMessages,
+  requeueAllFailedMessages
 } from "../../../models/failed-parse.models";
 import type { ReparseRequest } from "@eggosystem/types";
+import type { Requeue2ddataRequest } from "@eggosystem/types";
 import {
   NotFoundError,
   BadRequestError,
@@ -175,6 +178,23 @@ router.post(
   }
 );
 
+const requeue2ddataRequestSchema = z.object({
+  items: z
+    .array(
+      z.object({
+        match_game_id: z.string().min(1),
+        demo_path: z.string().min(1)
+      })
+    )
+    .min(1)
+    .max(50)
+});
+
+const requeueAllRequestSchema = z.object({
+  queue_name: z.string().min(1),
+  priority: z.number().int().min(1).max(10).optional().default(5)
+});
+
 /**
  * GET /v1/dashboard/demos/failed/parse
  * List failed parse messages with pagination and filtering
@@ -299,12 +319,119 @@ router.post(
 
     const reparseRequest: ReparseRequest = validationResult.data;
 
-    // Execute reparse
+    if (reparseRequest.match_game_ids.length > 5) {
+      void (async () => {
+        try {
+          await reparseFailedMessages(reparseRequest);
+        } catch (error) {
+          logger.error("Background reparse failed", {
+            error: error instanceof Error ? error.message : String(error)
+          });
+        }
+      })();
+
+      res.status(200).json({
+        success: true,
+        requeued_count: 0,
+        failed_count: 0,
+        queued: true
+      });
+      return;
+    }
+
     const result = await reparseFailedMessages(reparseRequest);
 
     // Return appropriate status code based on result
     const statusCode = result.success ? 200 : 400;
 
+    res.status(statusCode).json(result);
+  }
+);
+
+router.post(
+  "/failed/parse/requeue-2ddata",
+  async (req: Request, res: Response, next: NextFunction) => {
+    logger.info("2ddata requeue request received", { body: req.body });
+
+    const validationResult = requeue2ddataRequestSchema.safeParse(req.body);
+    if (!validationResult.success) {
+      logger.warn("2ddata requeue validation failed", {
+        error: validationResult.error
+      });
+      return next(
+        new BadRequestError(
+          "Invalid 2ddata requeue request",
+          400,
+          "Validation Failed"
+        )
+      );
+    }
+
+    const request: Requeue2ddataRequest = validationResult.data;
+
+    if (request.items.length > 5) {
+      void (async () => {
+        try {
+          await requeue2ddataFailedMessages(request);
+        } catch (error) {
+          logger.error("Background 2ddata requeue failed", {
+            error: error instanceof Error ? error.message : String(error)
+          });
+        }
+      })();
+
+      res.status(200).json({
+        success: true,
+        requeued_count: 0,
+        failed_count: 0,
+        queued: true
+      });
+      return;
+    }
+
+    const result = await requeue2ddataFailedMessages(request);
+    const statusCode = result.success ? 200 : 400;
+    res.status(statusCode).json(result);
+  }
+);
+
+router.post(
+  "/failed/parse/requeue-all",
+  async (req: Request, res: Response, next: NextFunction) => {
+    logger.info("Requeue-all request received", { body: req.body });
+
+    const validationResult = requeueAllRequestSchema.safeParse(req.body);
+    if (!validationResult.success) {
+      logger.warn("Requeue-all validation failed", {
+        error: validationResult.error
+      });
+      return next(
+        new BadRequestError(
+          "Invalid requeue-all request",
+          400,
+          "Validation Failed"
+        )
+      );
+    }
+
+    // Always async when requeueing-all: could be large/slow and user only needs acknowledgement.
+    void (async () => {
+      try {
+        await requeueAllFailedMessages(validationResult.data);
+      } catch (error) {
+        logger.error("Background requeue-all failed", {
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
+    })();
+
+    const result = {
+      success: true,
+      requeued_count: 0,
+      failed_count: 0,
+      queued: true
+    };
+    const statusCode = result.success ? 200 : 400;
     res.status(statusCode).json(result);
   }
 );

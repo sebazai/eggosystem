@@ -9,7 +9,9 @@ import type {
 } from "@tanstack/react-table";
 import {
   useFailedParseMessages,
-  useReparseMessages
+  useReparseMessages,
+  useRequeue2ddataMessages,
+  useRequeueAllFailedMessages
 } from "@/hooks/data/dashboard/useFailedParseMessages";
 import { toast } from "sonner";
 import { FailedParseFilters } from "./FailedParseFilters";
@@ -39,8 +41,7 @@ export const FailedParseTable = ({
     initialStatusFilter
   );
   const [currentPage, setCurrentPage] = useState(0);
-
-  const pageSize = 20;
+  const [pageSize, setPageSize] = useState(20);
 
   // Memoize the hook parameters to prevent unnecessary re-renders
   const hookParams = useMemo(
@@ -64,6 +65,13 @@ export const FailedParseTable = ({
   }, [failedMessages, statusFilter]);
 
   const { submitReparse, isSubmitting } = useReparseMessages();
+  const { submitRequeue2ddata, isSubmitting: isSubmitting2d } =
+    useRequeue2ddataMessages();
+  const { submitRequeueAll, isSubmitting: isSubmittingAll } =
+    useRequeueAllFailedMessages();
+  const isSubmittingAny = isSubmitting || isSubmitting2d;
+  const is2ddataQueue = queueFilter === "parse_2ddata_failed";
+  const isSubmittingHeader = isSubmittingAny || isSubmittingAll;
 
   // TanStack Table callback handlers
   const handleSortingChange: OnChangeFn<SortingState> = useCallback(
@@ -99,6 +107,12 @@ export const FailedParseTable = ({
     setCurrentPage(0);
   }, []);
 
+  const handlePageSizeChange = useCallback((newPageSize: number) => {
+    setPageSize(newPageSize);
+    setCurrentPage(0);
+    setRowSelection({});
+  }, []);
+
   // Reparse handler: send match_game_ids so backend only acks/requeues those messages
   const handleReparse = useCallback(async () => {
     const selectedKeys = Object.keys(rowSelection).filter(
@@ -106,6 +120,54 @@ export const FailedParseTable = ({
     );
     if (selectedKeys.length === 0) {
       toast.error("No messages selected for reparse");
+      return;
+    }
+
+    if (queueFilter === "parse_2ddata_failed") {
+      const items = selectedKeys
+        .map((key) => filteredMessages.find((m) => m.id.toString() === key))
+        .filter((m) => m != null)
+        .map((m) => {
+          const demoPath = String(
+            (m.original_message as Record<string, unknown>)?.demo_path ?? ""
+          );
+          return { match_game_id: m.match_game_id, demo_path: demoPath };
+        })
+        .filter((i) => i.match_game_id !== "" && i.demo_path !== "");
+
+      if (items.length === 0) {
+        toast.error(
+          "Could not resolve (match_game_id, demo_path) for selection"
+        );
+        return;
+      }
+
+      const uniqueItems = Array.from(
+        new Map(
+          items.map((i) => [`${i.match_game_id}::${i.demo_path}`, i])
+        ).values()
+      );
+
+      try {
+        const result = await submitRequeue2ddata({ items: uniqueItems });
+        if (result.success) {
+          toast.success(
+            `Successfully requeued ${result.requeued_count} message(s) for 2D parsing`
+          );
+          setRowSelection({});
+          mutate();
+        } else {
+          toast.error(
+            `Requeue failed: ${result.failed_count} message(s) could not be requeued`
+          );
+          if (result.errors && result.errors.length > 0) {
+            console.error("2ddata requeue errors:", result.errors);
+          }
+        }
+      } catch (error) {
+        toast.error("Failed to submit 2D requeue request");
+        console.error("2ddata requeue error:", error);
+      }
       return;
     }
 
@@ -147,13 +209,50 @@ export const FailedParseTable = ({
       toast.error("Failed to submit reparse request");
       console.error("Reparse error:", error);
     }
-  }, [rowSelection, filteredMessages, submitReparse, mutate]);
+  }, [
+    rowSelection,
+    filteredMessages,
+    submitReparse,
+    submitRequeue2ddata,
+    mutate,
+    queueFilter
+  ]);
 
   // Refresh handler
   const handleRefresh = useCallback(() => {
     mutate();
     setRowSelection({});
   }, [mutate]);
+
+  const handleRequeueAll = useCallback(async () => {
+    if (!queueFilter) {
+      toast.error("Select a queue before requeueing all");
+      return;
+    }
+    try {
+      const result = await submitRequeueAll({
+        queue_name: queueFilter,
+        priority: 5
+      });
+      if (result.success) {
+        toast.success(
+          `Successfully requeued ${result.requeued_count} message(s)`
+        );
+        setRowSelection({});
+        mutate();
+      } else {
+        toast.error(
+          `Requeue all failed: ${result.failed_count} message(s) could not be requeued`
+        );
+        if (result.errors && result.errors.length > 0) {
+          console.error("Requeue all errors:", result.errors);
+        }
+      }
+    } catch (error) {
+      toast.error("Failed to submit requeue all request");
+      console.error("Requeue all error:", error);
+    }
+  }, [queueFilter, submitRequeueAll, mutate]);
 
   // Loading state
   if (isLoading) {
@@ -172,9 +271,15 @@ export const FailedParseTable = ({
       <FailedParseTableHeader
         totalCount={pagination?.total || 0}
         selectedCount={selectedCount}
-        isSubmitting={isSubmitting}
+        isSubmitting={isSubmittingHeader}
+        isRequeueAllSubmitting={isSubmittingAll}
         onReparse={handleReparse}
+        onRequeueAll={queueFilter ? handleRequeueAll : undefined}
         onRefresh={handleRefresh}
+        requeueLabel={
+          is2ddataQueue ? "Requeue for 2D Parse" : "Requeue for Parse"
+        }
+        requeueAllLabel={is2ddataQueue ? "Requeue All (2D)" : "Requeue All"}
       />
 
       <FailedParseFilters
@@ -198,6 +303,7 @@ export const FailedParseTable = ({
             onSortingChange={handleSortingChange}
             onRowSelectionChange={handleRowSelectionChange}
             onPageChange={setCurrentPage}
+            onPageSizeChange={handlePageSizeChange}
           />
         )}
       </CardContent>

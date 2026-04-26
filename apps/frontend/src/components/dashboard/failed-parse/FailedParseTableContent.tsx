@@ -14,7 +14,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { TanStackTableWrapper } from "../../tables/TanStackTableWrapper";
-import { ServerSidePagination } from "../../tables/ServerSidePagination";
+import { TablePagination } from "../../tables/TablePagination";
 import type { FailedParseMessage, CustomColumnMeta } from "@eggosystem/types";
 import Link from "next/link";
 
@@ -41,6 +41,7 @@ interface FailedParseTableContentProps {
   onSortingChange: OnChangeFn<SortingState>;
   onRowSelectionChange: OnChangeFn<RowSelectionState>;
   onPageChange: (page: number) => void;
+  onPageSizeChange: (pageSize: number) => void;
 }
 
 export const FailedParseTableContent = ({
@@ -52,7 +53,8 @@ export const FailedParseTableContent = ({
   rowSelection,
   onSortingChange,
   onRowSelectionChange,
-  onPageChange
+  onPageChange,
+  onPageSizeChange
 }: FailedParseTableContentProps) => {
   // TanStack Table column definitions
   const columns = useMemo<ColumnDef<FailedParseMessage>[]>(
@@ -233,17 +235,19 @@ export const FailedParseTableContent = ({
       onRowSelectionChange={onRowSelectionChange}
       getRowId={(row) => row.id.toString()}
       enableRowSelection={(row) => row.original.status === "failed"}
-      showPagination={false}
+      showPagination={true}
       customCellClassName={customCellClassName}
       customRowClassName={customRowClassName}
       customPagination={
         pagination ? (
-          <ServerSidePagination
-            currentPage={currentPage}
+          <TablePagination
+            totalRows={pagination.total}
+            currentPage={currentPage + 1}
+            totalPages={Math.max(1, Math.ceil(pagination.total / pageSize))}
+            handlePageChange={(page) => onPageChange(page - 1)}
+            handlePageSizeChange={onPageSizeChange}
             pageSize={pageSize}
-            total={pagination.total}
-            hasMore={pagination.has_more}
-            onPageChange={onPageChange}
+            type="items"
           />
         ) : undefined
       }

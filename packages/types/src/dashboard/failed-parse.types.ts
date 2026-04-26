@@ -67,3 +67,19 @@ export interface ReparseResponse {
   failed_count: number;
   errors?: string[];
 }
+
+export interface Requeue2ddataItem {
+  match_game_id: string;
+  demo_path: string;
+}
+
+export interface Requeue2ddataRequest {
+  items: Requeue2ddataItem[];
+}
+
+export interface Requeue2ddataResponse {
+  success: boolean;
+  requeued_count: number;
+  failed_count: number;
+  errors?: string[];
+}

@@ -3,10 +3,17 @@ import {
   publishToParseQueue,
   createDemoProcessingRequest
 } from "../services/parse-queue.services";
+import { publishToParse2ddataQueue } from "../services/parse-2ddata-queue.services";
+import {
+  getMessagesFromQueue,
+  getQueueInfo
+} from "../services/rabbitmq-management.services";
 import type {
   FailedParseMessage,
   ReparseRequest,
-  ReparseResponse
+  ReparseResponse,
+  Requeue2ddataRequest,
+  Requeue2ddataResponse
 } from "@eggosystem/types";
 import { logger } from "../utils/app-logger";
 import { getMatchIdByGameId } from "./match-game.models";
@@ -41,7 +48,12 @@ const createAmqpConnection = async () => {
 const getErrorQueues = (queueFilter?: string): string[] => {
   return queueFilter
     ? [queueFilter]
-    : ["parse_queue_failed", "parsed_save_failed", "work_queue_failed"];
+    : [
+        "parse_queue_failed",
+        "parsed_save_failed",
+        "work_queue_failed",
+        "parse_2ddata_failed"
+      ];
 };
 
 /**
@@ -137,143 +149,179 @@ export const getFailedParseMessages = async (
   queueFilter?: string,
   _statusFilter?: string
 ): Promise<FailedParseMessage[]> => {
-  // For now, return empty array if RabbitMQ connection fails
-  // This prevents the frontend from crashing when RabbitMQ is not available
+  if (queueFilter) {
+    try {
+      // RabbitMQ management API can only return the first N messages.
+      // To support server-side pagination (offset/limit), we request up to offset+limit
+      // and slice on the backend.
+      const countToFetch = Math.min(offset + limit, 2000);
+      const raw = await getMessagesFromQueue(queueFilter, countToFetch);
+
+      const parsed = raw
+        .map((m, idx) => {
+          const body = (() => {
+            try {
+              return JSON.parse(m.payload) as Record<string, unknown>;
+            } catch {
+              return { payload: m.payload } as Record<string, unknown>;
+            }
+          })();
+
+          const matchGameId = extractGameId(body, queueFilter);
+          const parseError = body.parse_error as
+            | Record<string, unknown>
+            | undefined;
+
+          const id = parseInt(
+            `${queueFilter.charCodeAt(0)}${queueFilter.charCodeAt(queueFilter.length - 1)}${String(idx + 1).padStart(3, "0")}`
+          );
+
+          const msg: FailedParseMessage = {
+            id,
+            queue_name: queueFilter,
+            match_game_id: matchGameId,
+            failed_at:
+              (parseError?.failed_at as string) ||
+              (body.failed_at as string) ||
+              (body.timestamp as string) ||
+              (body.created_at as string) ||
+              "",
+            final_error:
+              (parseError?.final_error as string) ||
+              (body.final_error as string) ||
+              (body.error as string) ||
+              "Unknown error",
+            original_message:
+              (body.original_message as Record<string, unknown>) || body,
+            error_details:
+              (body.error_details as Record<string, unknown>) ||
+              (body.error_history as Record<string, unknown>) ||
+              (parseError?.error_history as Record<string, unknown>) ||
+              {},
+            worker_id:
+              (parseError?.worker_id as string) ??
+              (body.worker_id as string | undefined),
+            message_type:
+              (parseError?.message_type as string) ||
+              (body.message_type as string) ||
+              queueFilter,
+            source:
+              (body.source as string) ||
+              ((body.original_message as Record<string, unknown>)?.source as
+                | string
+                | undefined) ||
+              "unknown",
+            status: "failed",
+            created_at:
+              (body.created_at as string) ??
+              (parseError?.failed_at as string) ??
+              "",
+            updated_at:
+              (body.updated_at as string) ??
+              (parseError?.failed_at as string) ??
+              ""
+          };
+
+          return msg;
+        })
+        .slice(offset, offset + limit);
+
+      return parsed;
+    } catch (error) {
+      logger.error(
+        `Failed to read ${queueFilter} via RabbitMQ management API`,
+        error
+      );
+      return [];
+    }
+  }
+
+  // All queues: use RabbitMQ management API across our known error queues.
+  // Note: management `/get` can only return the first N messages per queue;
+  // we fetch up to offset+limit from each queue, merge, then slice.
+  const queues = getErrorQueues(undefined);
+
   try {
-    const queueMessages = await processErrorQueues(
-      queueFilter,
-      async (channel, queueName) => {
-        // Get queue information first
-        const queueInfo = await channel.checkQueue(queueName).catch(() => null);
-        if (!queueInfo) {
-          logger.warn(`Queue ${queueName} does not exist`);
-          return [];
-        }
-
-        // Read messages from the queue by consuming and requeuing them
-        // This ensures we get a proper sample from across the entire queue
-        const messages: FailedParseMessage[] = [];
-        const tempMessages: Array<{
-          msg: amqp.Message;
-          content: Record<string, unknown> | null;
-        }> = []; // Store messages temporarily for requeuing
-
-        // First pass: consume all messages to get a proper sample
-        let totalMessages = 0;
-        while (true) {
-          const msg = await channel.get(queueName, { noAck: false });
-          if (!msg) {
-            break; // No more messages
-          }
-
-          try {
-            const messageContent = JSON.parse(msg.content.toString());
-            tempMessages.push({ msg, content: messageContent });
-            totalMessages++;
-          } catch (parseError) {
-            logger.error(
-              `Failed to parse message from ${queueName}:`,
-              parseError
-            );
-            // Still store the message for requeuing
-            tempMessages.push({ msg, content: null });
-            totalMessages++;
-          }
-        }
-
-        // Calculate sampling strategy for pagination
-        const startIndex = offset;
-        const endIndex = Math.min(offset + limit, totalMessages);
-
-        // Process the sampled messages
-        for (let i = startIndex; i < endIndex; i++) {
-          const { msg, content } = tempMessages[i];
-
-          if (content) {
-            const parseError = content.parse_error as
-              | Record<string, unknown>
-              | undefined;
-            const failedMessage: FailedParseMessage = {
-              id: parseInt(
-                `${queueName.charCodeAt(0)}${queueName.charCodeAt(queueName.length - 1)}${String(i + 1).padStart(3, "0")}`
-              ), // Unique ID combining queue and position
-              queue_name: queueName,
-              match_game_id: extractGameId(content, queueName),
-              failed_at:
-                (parseError?.failed_at as string) ||
-                (content.failed_at as string) ||
-                (content.timestamp as string) ||
-                (content.created_at as string) ||
-                "",
-              final_error:
-                (parseError?.final_error as string) ||
-                (content.final_error as string) ||
-                (content.error as string) ||
-                "Unknown error",
-              original_message:
-                (content.original_message as Record<string, unknown>) ||
-                content,
-              error_details:
-                (content.error_details as Record<string, unknown>) ||
-                (content.error_history as Record<string, unknown>) ||
-                (parseError?.error_history as Record<string, unknown>) ||
-                {},
-              worker_id:
-                (parseError?.worker_id as string) ??
-                (content.worker_id as string | undefined),
-              message_type:
-                (parseError?.message_type as string) ||
-                (content.message_type as string) ||
-                queueName,
-              source:
-                (content.source as string) ||
-                ((content.original_message as Record<string, unknown>)
-                  ?.source as string) ||
-                "unknown",
-              status: "failed",
-              created_at:
-                (content.created_at as string) ??
-                (parseError?.failed_at as string) ??
-                "",
-              updated_at:
-                (content.updated_at as string) ??
-                (parseError?.failed_at as string) ??
-                "",
-              _rabbitMQMessage: msg // Store reference for later requeuing
-            };
-
-            messages.push(failedMessage);
-          }
-        }
-
-        // Requeue all messages back to the queue
-        for (const { msg } of tempMessages) {
-          channel.nack(msg, false, true);
-        }
-
-        return messages;
-      }
+    const countToFetch = Math.min(offset + limit, 2000);
+    const perQueue = await Promise.all(
+      queues.map(async (queueName) => {
+        const raw = await getMessagesFromQueue(queueName, countToFetch);
+        return raw.map((m, idx) => ({ queueName, idx, payload: m.payload }));
+      })
     );
 
-    const allMessages = queueMessages.flat();
-    const result = allMessages.slice(offset, offset + limit);
+    const merged = perQueue.flat().map(({ queueName, idx, payload }) => {
+      const body = (() => {
+        try {
+          return JSON.parse(payload) as Record<string, unknown>;
+        } catch {
+          return { payload } as Record<string, unknown>;
+        }
+      })();
 
-    logger.info(
-      "Generated message IDs for failed parse display",
-      result.map((msg) => ({
-        id: msg.id,
-        match_game_id: msg.match_game_id,
-        queue_name: msg.queue_name
-      }))
-    );
+      const matchGameId = extractGameId(body, queueName);
+      const parseError = body.parse_error as
+        | Record<string, unknown>
+        | undefined;
 
-    return result;
+      const id = parseInt(
+        `${queueName.charCodeAt(0)}${queueName.charCodeAt(queueName.length - 1)}${String(idx + 1).padStart(3, "0")}`
+      );
+
+      const msg: FailedParseMessage = {
+        id,
+        queue_name: queueName,
+        match_game_id: matchGameId,
+        failed_at:
+          (parseError?.failed_at as string) ||
+          (body.failed_at as string) ||
+          (body.timestamp as string) ||
+          (body.created_at as string) ||
+          "",
+        final_error:
+          (parseError?.final_error as string) ||
+          (body.final_error as string) ||
+          (body.error as string) ||
+          "Unknown error",
+        original_message:
+          (body.original_message as Record<string, unknown>) || body,
+        error_details:
+          (body.error_details as Record<string, unknown>) ||
+          (body.error_history as Record<string, unknown>) ||
+          (parseError?.error_history as Record<string, unknown>) ||
+          {},
+        worker_id:
+          (parseError?.worker_id as string) ??
+          (body.worker_id as string | undefined),
+        message_type:
+          (parseError?.message_type as string) ||
+          (body.message_type as string) ||
+          queueName,
+        source:
+          (body.source as string) ||
+          ((body.original_message as Record<string, unknown>)?.source as
+            | string
+            | undefined) ||
+          "unknown",
+        status: "failed",
+        created_at:
+          (body.created_at as string) ??
+          (parseError?.failed_at as string) ??
+          "",
+        updated_at:
+          (body.updated_at as string) ?? (parseError?.failed_at as string) ?? ""
+      };
+
+      return msg;
+    });
+
+    return merged.slice(offset, offset + limit);
   } catch (error) {
     logger.error(
-      "Failed to connect to RabbitMQ for reading failed messages",
+      "Failed to read failed messages via RabbitMQ management API",
       error
     );
-    return []; // Return empty array on connection failure
+    return [];
   }
 };
 
@@ -284,23 +332,37 @@ export const getFailedParseMessagesCount = async (
   queueFilter?: string,
   statusFilter?: string
 ): Promise<number> => {
-  try {
-    const queueCounts = await processErrorQueues(
-      queueFilter,
-      async (channel, queueName) => {
-        const queueInfo = await channel.assertQueue(queueName, {
-          durable: true
-        });
-        if (!statusFilter || statusFilter === "failed") {
-          return queueInfo.messageCount;
-        }
-        return 0;
+  if (queueFilter) {
+    try {
+      const info = await getQueueInfo(queueFilter);
+      if (!statusFilter || statusFilter === "failed") {
+        return info.messages;
       }
-    );
+      return 0;
+    } catch (error) {
+      logger.error(
+        "Failed to connect to RabbitMQ management for counting messages",
+        error
+      );
+      return 0;
+    }
+  }
 
-    return queueCounts.reduce((total, count) => total + count, 0);
+  try {
+    const queues = getErrorQueues(undefined);
+    const counts = await Promise.all(
+      queues.map(async (q) => {
+        const info = await getQueueInfo(q);
+        if (!statusFilter || statusFilter === "failed") return info.messages;
+        return 0;
+      })
+    );
+    return counts.reduce((a, b) => a + b, 0);
   } catch (error) {
-    logger.error("Failed to connect to RabbitMQ for counting messages", error);
+    logger.error(
+      "Failed to connect to RabbitMQ management for counting messages",
+      error
+    );
     return 0;
   }
 };
@@ -352,9 +414,20 @@ export const reparseFailedMessages = async (
       if (requestedIds.size === 0) break;
 
       try {
-        await channel.assertQueue(queueName, { durable: true });
+        const queueInfo = await channel.assertQueue(queueName, {
+          durable: true
+        });
 
-        while (true) {
+        // IMPORTANT:
+        // Do NOT nack(requeue=true) non-requested messages immediately inside the scan loop,
+        // otherwise `channel.get()` can keep returning the same front-of-queue messages and
+        // the HTTP request may never finish when the selected item is deeper in the queue.
+        //
+        // Instead, do a bounded pass (messageCount) and requeue non-requested messages at the end.
+        const messagesToRequeue: amqp.Message[] = [];
+
+        for (let i = 0; i < queueInfo.messageCount; i++) {
+          if (requestedIds.size === 0) break;
           const msg = await channel.get(queueName, { noAck: false });
           if (!msg) break;
 
@@ -376,7 +449,11 @@ export const reparseFailedMessages = async (
                 (messageContent.match_game_id as string);
               downloadUrl =
                 (orig?.download_url as string) ??
-                (messageContent.download_url as string);
+                (messageContent.download_url as string) ??
+                (orig?.demo_path as string) ??
+                (messageContent.demo_path as string) ??
+                (orig?.demo_file as string) ??
+                (messageContent.demo_file as string);
               originalSource =
                 (orig?.source as string) ??
                 (messageContent.source as string) ??
@@ -388,6 +465,8 @@ export const reparseFailedMessages = async (
               downloadUrl =
                 messageContent.originalMessage?.download_url ||
                 messageContent.originalMessage?.demo_file ||
+                messageContent.originalMessage?.demo_path ||
+                messageContent.demo_path ||
                 "";
               originalSource =
                 messageContent.source ||
@@ -396,7 +475,10 @@ export const reparseFailedMessages = async (
             } else {
               matchGameId = messageContent.match_game_id;
               downloadUrl =
-                messageContent.download_url || messageContent.demo_file || "";
+                messageContent.download_url ||
+                messageContent.demo_file ||
+                messageContent.demo_path ||
+                "";
               originalSource = messageContent.source || "faceit";
 
               // work_queue_failed may have demo_file as worker path; resolve URL from DB if needed
@@ -436,7 +518,7 @@ export const reparseFailedMessages = async (
             const isRequested = requestedIds.has(matchGameIdNum);
 
             if (!isRequested) {
-              channel.nack(msg, false, true);
+              messagesToRequeue.push(msg);
               continue;
             }
 
@@ -507,6 +589,10 @@ export const reparseFailedMessages = async (
             });
           }
         }
+
+        for (const msg of messagesToRequeue) {
+          channel.nack(msg, false, true);
+        }
       } catch (queueError) {
         logger.error(`Failed to process queue ${queueName}`, queueError);
       }
@@ -538,6 +624,314 @@ export const reparseFailedMessages = async (
   }
 };
 
+export const requeue2ddataFailedMessages = async (
+  request: Requeue2ddataRequest
+): Promise<Requeue2ddataResponse> => {
+  const requestedKeys = new Set(
+    request.items.map((i) => `${i.match_game_id}::${i.demo_path}`)
+  );
+
+  if (requestedKeys.size === 0) {
+    return { success: true, requeued_count: 0, failed_count: 0 };
+  }
+
+  try {
+    const { connection, channel } = await createAmqpConnection();
+    let requeuedCount = 0;
+    let failedCount = 0;
+    const errors: string[] = [];
+
+    try {
+      const queueName = "parse_2ddata_failed";
+      const queueInfo = await channel.assertQueue(queueName, { durable: true });
+
+      // IMPORTANT:
+      // Do NOT nack(requeue=true) non-requested messages immediately inside the loop,
+      // otherwise `channel.get()` may keep fetching the same messages again and the
+      // HTTP request never returns.
+      //
+      // Instead, we do a bounded pass through the queue (based on messageCount),
+      // then requeue all non-requested messages at the end.
+      const messagesToRequeue: amqp.Message[] = [];
+
+      for (let i = 0; i < queueInfo.messageCount; i++) {
+        if (requestedKeys.size === 0) break;
+        const msg = await channel.get(queueName, { noAck: false });
+        if (!msg) break;
+
+        try {
+          const messageContent = JSON.parse(msg.content.toString()) as Record<
+            string,
+            unknown
+          >;
+          const matchGameId = String(messageContent.match_game_id ?? "");
+          const demoPath = String(messageContent.demo_path ?? "");
+          const key = `${matchGameId}::${demoPath}`;
+
+          if (!requestedKeys.has(key)) {
+            messagesToRequeue.push(msg);
+            continue;
+          }
+
+          if (!matchGameId || !demoPath) {
+            failedCount++;
+            requestedKeys.delete(key);
+            errors.push(`key ${key}: Missing match_game_id or demo_path`);
+            channel.ack(msg);
+            continue;
+          }
+
+          const payloadToPublish: Record<string, unknown> = {
+            ...messageContent
+          };
+          delete payloadToPublish.retry_count;
+
+          await publishToParse2ddataQueue(payloadToPublish);
+          channel.ack(msg);
+          requestedKeys.delete(key);
+          requeuedCount++;
+        } catch (processingError) {
+          try {
+            const raw = JSON.parse(msg.content.toString()) as Record<
+              string,
+              unknown
+            >;
+            const key = `${String(raw.match_game_id ?? "")}::${String(raw.demo_path ?? "")}`;
+            if (requestedKeys.has(key)) {
+              failedCount++;
+              requestedKeys.delete(key);
+              errors.push(
+                `key ${key}: ${processingError instanceof Error ? processingError.message : String(processingError)}`
+              );
+            }
+          } catch {
+            // ignore
+          }
+
+          // On error, requeue the message back to parse_2ddata_failed
+          channel.nack(msg, false, true);
+        }
+      }
+
+      // Requeue all non-requested messages back to the failed queue
+      for (const msg of messagesToRequeue) {
+        channel.nack(msg, false, true);
+      }
+    } finally {
+      await channel.close();
+      await connection.close();
+    }
+
+    const response: Requeue2ddataResponse = {
+      success: requeuedCount > 0,
+      requeued_count: requeuedCount,
+      failed_count: failedCount
+    };
+    if (errors.length > 0) response.errors = errors;
+    return response;
+  } catch (error) {
+    logger.error("Failed to connect to RabbitMQ for 2ddata requeue", error);
+    return {
+      success: false,
+      requeued_count: 0,
+      failed_count: request.items.length,
+      errors: ["Failed to connect to RabbitMQ"]
+    };
+  }
+};
+
+export const requeueAllFailedMessages = async (params: {
+  queue_name: string;
+  priority?: number;
+}): Promise<ReparseResponse> => {
+  const { queue_name, priority = 5 } = params;
+
+  if (!getErrorQueues(undefined).includes(queue_name)) {
+    return {
+      success: false,
+      requeued_count: 0,
+      failed_count: 1,
+      errors: [`Unsupported queue_name ${queue_name}`]
+    };
+  }
+
+  if (queue_name === "parse_2ddata_failed") {
+    try {
+      const { connection, channel } = await createAmqpConnection();
+      let requeuedCount = 0;
+      let failedCount = 0;
+      const errors: string[] = [];
+
+      try {
+        const queueInfo = await channel.assertQueue(queue_name, {
+          durable: true
+        });
+
+        for (let i = 0; i < queueInfo.messageCount; i++) {
+          const msg = await channel.get(queue_name, { noAck: false });
+          if (!msg) break;
+
+          try {
+            const messageContent = JSON.parse(msg.content.toString()) as Record<
+              string,
+              unknown
+            >;
+            const payloadToPublish: Record<string, unknown> = {
+              ...messageContent
+            };
+            delete payloadToPublish.retry_count;
+
+            await publishToParse2ddataQueue(payloadToPublish);
+            channel.ack(msg);
+            requeuedCount++;
+          } catch (error) {
+            channel.nack(msg, false, true);
+            failedCount++;
+            errors.push(error instanceof Error ? error.message : String(error));
+          }
+        }
+      } finally {
+        await channel.close();
+        await connection.close();
+      }
+
+      const response: ReparseResponse = {
+        success: requeuedCount > 0,
+        requeued_count: requeuedCount,
+        failed_count: failedCount
+      };
+      if (errors.length > 0) response.errors = errors;
+      return response;
+    } catch (error) {
+      logger.error(
+        "Failed to connect to RabbitMQ for requeue-all 2ddata",
+        error
+      );
+      return {
+        success: false,
+        requeued_count: 0,
+        failed_count: 1,
+        errors: ["Failed to connect to RabbitMQ"]
+      };
+    }
+  }
+
+  // For parse_queue_failed / parsed_save_failed / work_queue_failed:
+  // consume all messages and publish back to parse_queue.
+  try {
+    const { connection, channel } = await createAmqpConnection();
+    let requeuedCount = 0;
+    let failedCount = 0;
+    const errors: string[] = [];
+
+    try {
+      const queueInfo = await channel.assertQueue(queue_name, {
+        durable: true
+      });
+
+      for (let i = 0; i < queueInfo.messageCount; i++) {
+        const msg = await channel.get(queue_name, { noAck: false });
+        if (!msg) break;
+
+        try {
+          const messageContent = JSON.parse(msg.content.toString());
+
+          let matchGameId: string;
+          let downloadUrl: string;
+          let originalSource: string;
+
+          if (queue_name === "parse_queue_failed") {
+            const orig = messageContent.original_message as
+              | Record<string, unknown>
+              | undefined;
+            matchGameId =
+              (orig?.match_game_id as string) ??
+              (messageContent.match_game_id as string);
+            downloadUrl =
+              (orig?.download_url as string) ??
+              (messageContent.download_url as string) ??
+              (orig?.demo_path as string) ??
+              (messageContent.demo_path as string) ??
+              (orig?.demo_file as string) ??
+              (messageContent.demo_file as string);
+            originalSource =
+              (orig?.source as string) ??
+              (messageContent.source as string) ??
+              "faceit";
+          } else if (queue_name === "parsed_save_failed") {
+            matchGameId =
+              messageContent.match_game_id ||
+              messageContent.originalMessage?.match_game_id;
+            downloadUrl =
+              messageContent.originalMessage?.download_url ||
+              messageContent.originalMessage?.demo_file ||
+              messageContent.originalMessage?.demo_path ||
+              messageContent.demo_path ||
+              "";
+            originalSource =
+              messageContent.source ||
+              messageContent.originalMessage?.source ||
+              "faceit";
+          } else {
+            matchGameId = messageContent.match_game_id;
+            downloadUrl =
+              messageContent.download_url ||
+              messageContent.demo_file ||
+              messageContent.demo_path ||
+              "";
+            originalSource = messageContent.source || "faceit";
+          }
+
+          const matchGameIdNum = parseInt(String(matchGameId), 10);
+          if (!matchGameId || !downloadUrl || Number.isNaN(matchGameIdNum)) {
+            failedCount++;
+            errors.push(
+              `Missing match_game_id or demo_path for queue ${queue_name}`
+            );
+            channel.ack(msg);
+            continue;
+          }
+
+          const parseRequest = createDemoProcessingRequest(
+            matchGameIdNum,
+            downloadUrl,
+            priority,
+            originalSource,
+            true
+          );
+
+          await publishToParseQueue(parseRequest);
+          channel.ack(msg);
+          requeuedCount++;
+        } catch (error) {
+          channel.nack(msg, false, true);
+          failedCount++;
+          errors.push(error instanceof Error ? error.message : String(error));
+        }
+      }
+    } finally {
+      await channel.close();
+      await connection.close();
+    }
+
+    const response: ReparseResponse = {
+      success: requeuedCount > 0,
+      requeued_count: requeuedCount,
+      failed_count: failedCount
+    };
+    if (errors.length > 0) response.errors = errors;
+    return response;
+  } catch (error) {
+    logger.error("Failed to connect to RabbitMQ for requeue-all", error);
+    return {
+      success: false,
+      requeued_count: 0,
+      failed_count: 1,
+      errors: ["Failed to connect to RabbitMQ"]
+    };
+  }
+};
+
 /**
  * Get statistics about failed parse messages from RabbitMQ queues
  */
@@ -545,11 +939,9 @@ export const getFailedParseMessagesStats = async () => {
   try {
     const queueStats = await processErrorQueues(
       undefined,
-      async (channel, queueName) => {
-        const queueInfo = await channel.assertQueue(queueName, {
-          durable: true
-        });
-        const messageCount = queueInfo.messageCount;
+      async (_channel, queueName) => {
+        const info = await getQueueInfo(queueName);
+        const messageCount = info.messages;
 
         return {
           total_count: messageCount,
