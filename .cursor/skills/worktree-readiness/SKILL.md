@@ -5,7 +5,7 @@ description: Verify and repair pnpm + node_modules in a dedicated git worktree s
 
 # Worktree readiness (`worktree_bot`)
 
-Read this before acting as `worktree_bot`. This specialist runs **after** `ops_bot` creates a worktree and **before** `developer_bot` implements. It only touches **untracked** install state (`node_modules` layout) and the repo’s existing `pnpm run worktree:ensure` script.
+Read this before acting as `worktree_bot`. This specialist runs **after** `ops_bot` creates the **issue branch** in the primary clone and **before** `developer_bot` implements. It only touches **untracked** install state (`node_modules` layout) and the repo’s existing `pnpm run worktree:ensure` script.
 
 ## Problem this solves
 
@@ -16,7 +16,7 @@ Read this before acting as `worktree_bot`. This specialist runs **after** `ops_b
 
 ## Inputs
 
-- `worktree_path` — absolute path to the new worktree (same as Ops handoff to Developer).
+- `worktree_path` — absolute path to the **repository root** of the clone (same as Ops handoff; Git uses “worktree” for any checkout, including the primary one).
 - `issue_iid` — for logging (optional).
 
 ## What to run
@@ -55,6 +55,5 @@ Return to the orchestrator (then Developer):
 
 ## Relationship to Ops
 
-- `ops_bot` still does `git worktree add`, copies `apps/backend/.env` and `*.pem` from the primary clone, runs `pnpm install` in the new worktree, and should create a **`CONTEXT.local.md` stub** in the worktree root per `.cursor/skills/ops-git-worktrees/SKILL.md`.
-- `ops_bot` still does `rtk git worktree add`, copies `apps/backend/.env` and `*.pem` from the primary clone, runs `rtk pnpm install` in the new worktree, and should create a **`CONTEXT.local.md` stub** in the worktree root per `.cursor/skills/ops-git-worktrees/SKILL.md`.
-- `worktree_bot` is an explicit **verify/repair** pass so a mistaken symlink or bad copy does not reach Developer. It does not remove `CONTEXT.local.md`. Idempotent: safe to re-run if someone breaks `node_modules` mid-sprint; have the orchestrator re-invoke with the same worktree before another Developer pass.
+- `ops_bot` creates an issue branch in the **primary clone** (no `git worktree add`), runs `rtk pnpm install --force` and `rtk pnpm knip` (exit 0) at the **repository root**, and should create a **`CONTEXT.local.md` stub** at that root per `.cursor/skills/ops-git-worktrees/SKILL.md`. It does not copy `.env` / `*.pem` between trees—only one working tree.
+- `worktree_bot` is an explicit **verify/repair** pass so a mistaken symlink or bad install does not reach Developer. It does not remove `CONTEXT.local.md`. Idempotent: safe to re-run if someone breaks `node_modules` mid-sprint; have the orchestrator re-invoke with the same `worktree_path` before another Developer pass.

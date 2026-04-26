@@ -78,14 +78,6 @@
       ],
       "outputs": [".next/**", "!.next/cache/**", "dist/**", "dist/**/*.d.ts"]
     },
-    "@eggosystem/types#build": {
-      "outputs": [
-        "dist/**",
-        "dist/**/*.js",
-        "dist/**/*.d.ts",
-        "node_modules/**"
-      ]
-    },
     "backend#build": {
       "dependsOn": ["@eggosystem/types#build", "@eggosystem/shared-msw#build"],
       "inputs": [

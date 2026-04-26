@@ -56,7 +56,7 @@ Apply labels via `mcp__GitLab__create_label` + `mcp__GitLab__update_issue`: `typ
 ## Delegation commands
 
 - `Task(subagent_type=explorer_bot, prompt="Produce technical brief for issue #<iid>")`
-- `Task(subagent_type=ops_bot, prompt="Create worktree + branch for issue #<iid>")`
+- `Task(subagent_type=ops_bot, prompt="Create issue branch in primary clone for #<iid> (see ops-git-worktrees skill)")`
 - `Task(subagent_type=developer_bot, prompt="Implement issue #<iid> in worktree <path>")`
 - `Task(subagent_type=review_bot, prompt="Review MR !<iid> against issue #<iid> acceptance criteria")`
 

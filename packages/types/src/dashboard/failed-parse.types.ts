@@ -61,9 +61,70 @@ export interface ReparseRequest {
   priority?: number;
 }
 
+export type FailedParseJobKind = "reparse" | "requeue2ddata" | "requeueAll";
+
+export type FailedParseJobEventStatus =
+  | "started"
+  | "progress"
+  | "completed"
+  | "failed";
+
+/** Payload streamed over SSE (`event: failed-parse-job`) for background requeue jobs. */
+export interface FailedParseJobEvent {
+  job_id: string;
+  kind: FailedParseJobKind;
+  status: FailedParseJobEventStatus;
+  requested_count?: number;
+  match_game_ids?: number[];
+  /** How many items have been processed so far (best-effort). */
+  processed_count?: number;
+  /** Total items expected to be processed (when known). */
+  total_count?: number;
+  requeued_count?: number;
+  failed_count?: number;
+  /** Match game ids requeued since the previous progress event (best-effort). */
+  requeued_match_game_ids?: Array<number | string>;
+  errors?: string[];
+  message?: string;
+}
+
 export interface ReparseResponse {
   success: boolean;
   requeued_count: number;
   failed_count: number;
   errors?: string[];
+  /**
+   * When true, the backend has accepted the request and is processing it asynchronously.
+   * `requeued_count`/`failed_count` will likely be 0 in the immediate response.
+   */
+  queued?: boolean;
+  /** Number of items requested to be requeued (best-effort informational). */
+  requested_count?: number;
+  /** BullMQ job id to correlate with SSE `FailedParseJobEvent.job_id` when `queued` is true. */
+  job_id?: string;
+}
+
+export interface Requeue2ddataItem {
+  match_game_id: string;
+  demo_path: string;
+}
+
+export interface Requeue2ddataRequest {
+  items: Requeue2ddataItem[];
+}
+
+export interface Requeue2ddataResponse {
+  success: boolean;
+  requeued_count: number;
+  failed_count: number;
+  errors?: string[];
+  /**
+   * When true, the backend has accepted the request and is processing it asynchronously.
+   * `requeued_count`/`failed_count` will likely be 0 in the immediate response.
+   */
+  queued?: boolean;
+  /** Number of items requested to be requeued (best-effort informational). */
+  requested_count?: number;
+  /** BullMQ job id to correlate with SSE `FailedParseJobEvent.job_id` when `queued` is true. */
+  job_id?: string;
 }

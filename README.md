@@ -17,7 +17,7 @@ Corporate CS2 esports tournament management platform for Kanaliiga Hub. PNPM wor
 
 - Docker and Docker Compose
 - Node.js 24 (the DevContainer uses `mcr.microsoft.com/devcontainers/javascript-node:24-bullseye`)
-- pnpm 10.33.0 (pinned via `packageManager` in root `package.json`)
+- pnpm 11.0.0-rc.5 (pinned via `packageManager` in root `package.json`; enables [global virtual store](https://pnpm.io/11.x/git-worktrees) for git worktrees via `enableGlobalVirtualStore` in `pnpm-workspace.yaml`)
 - VS Code with Dev Containers extension (recommended). DevContainer still requires Docker on your host.
 
 ### Installation

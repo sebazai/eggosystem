@@ -85,25 +85,42 @@ export const addFaceitMatchGameToDatabase = async (
   isRoundRobinBo2As2xBo1: boolean = false
 ) => {
   const { demo_url } = webhookData.payload;
+  const { match_id: externalMatchRoomId } = matchDetails;
 
-  const gameWithDemo = await getMatchGameByDemoUrl(demo_url);
+  return resolveOrCreateMatchGameIdForDemoUrl({
+    externalMatchRoomId,
+    demoUrl: demo_url,
+    isRoundRobinBo2As2xBo1
+  });
+};
+
+export const resolveOrCreateMatchGameIdForDemoUrl = async (input: {
+  externalMatchRoomId: string;
+  demoUrl: string;
+  isRoundRobinBo2As2xBo1?: boolean;
+}): Promise<number> => {
+  const {
+    externalMatchRoomId,
+    demoUrl,
+    isRoundRobinBo2As2xBo1 = false
+  } = input;
+
+  const gameWithDemo = await getMatchGameByDemoUrl(demoUrl);
 
   if (gameWithDemo) {
     return gameWithDemo.id;
   }
 
-  const parsedDemoUrl = parseFaceitDemoUrl(demo_url);
+  const parsedDemoUrl = parseFaceitDemoUrl(demoUrl);
   if (!parsedDemoUrl) {
-    throw new Error(`Invalid faceit demo url: ${demo_url}`);
+    throw new Error(`Invalid faceit demo url: ${demoUrl}`);
   }
 
-  const { match_id: faceit_match_id } = matchDetails;
-
-  const matches = await getHubMatchesByExternalMatchRoomId(faceit_match_id);
+  const matches = await getHubMatchesByExternalMatchRoomId(externalMatchRoomId);
 
   if (!matches || matches.length === 0) {
     throw new Error(
-      `No matches found when adding match games with match_id: ${faceit_match_id}`
+      `No matches found when adding match games with match_id: ${externalMatchRoomId}`
     );
   }
 
@@ -119,11 +136,7 @@ export const addFaceitMatchGameToDatabase = async (
     );
     const mapPlayedVoteObject = matchMapVetoes[mapPlayedNumber - 1];
 
-    if (
-      isRoundRobinBo2As2xBo1 &&
-      matchDetails.best_of === 2 &&
-      matches.length === 2
-    ) {
+    if (isRoundRobinBo2As2xBo1 && matches.length === 2) {
       if (matchMapVetoes.length !== 2) {
         throw new Error("Something is very wrong with this 2xBO1");
       }
@@ -137,7 +150,7 @@ export const addFaceitMatchGameToDatabase = async (
         match_id: matchObject.id,
         map_id: mapPlayedVoteObject.map_id,
         map_order: mapPlayedNumber,
-        demo_file: demo_url,
+        demo_file: demoUrl,
         connection
       });
       await connection.commit();
@@ -147,10 +160,10 @@ export const addFaceitMatchGameToDatabase = async (
 
     if (!mapPlayedVoteObject) {
       logger.error(
-        `Could not find map played vote object for match ${faceit_match_id}, map played in: ${mapPlayedNumber - 1}, matchMapVetoes: ${JSON.stringify(matchMapVetoes)}`
+        `Could not find map played vote object for match ${externalMatchRoomId}, map played in: ${mapPlayedNumber - 1}, matchMapVetoes: ${JSON.stringify(matchMapVetoes)}`
       );
       throw new Error(
-        `Could not find map played vote object for match_id: ${faceit_match_id}`
+        `Could not find map played vote object for match_id: ${externalMatchRoomId}`
       );
     }
 
@@ -158,10 +171,60 @@ export const addFaceitMatchGameToDatabase = async (
       match_id: match.id,
       map_id: mapPlayedVoteObject.map_id,
       map_order: mapPlayedNumber,
-      demo_file: demo_url,
+      demo_file: demoUrl,
       connection
     });
 
+    await connection.commit();
+    return insertedRow.insertId;
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+};
+
+export const resolveOrCreateMatchGameIdForHubMatchDemo = async (input: {
+  matchId: number;
+  demoUrl: string;
+  mapOrder?: number;
+}): Promise<number> => {
+  const { matchId, demoUrl, mapOrder } = input;
+
+  const existingByDemo = await getMatchGameByDemoUrl(demoUrl);
+  if (existingByDemo) {
+    return existingByDemo.id;
+  }
+
+  const parsedDemoUrl = parseFaceitDemoUrl(demoUrl);
+  const effectiveMapOrder = mapOrder ?? parsedDemoUrl?.mapNumber;
+  if (!effectiveMapOrder || effectiveMapOrder < 1) {
+    throw new Error(
+      "Cannot resolve map order from demo URL; provide map_order explicitly"
+    );
+  }
+
+  const connection = await getConnection();
+  try {
+    await connection.beginTransaction();
+    const matchMapVetoes = await getMatchPickedMapsOrderedByVetoOrder(
+      matchId,
+      connection
+    );
+    const mapPlayedVoteObject = matchMapVetoes[effectiveMapOrder - 1];
+    if (!mapPlayedVoteObject) {
+      throw new Error(
+        `Could not find map veto row for match_id=${matchId} map_order=${effectiveMapOrder}`
+      );
+    }
+    const insertedRow = await upsertMatchGameForMatch({
+      match_id: matchId,
+      map_id: mapPlayedVoteObject.map_id,
+      map_order: effectiveMapOrder,
+      demo_file: demoUrl,
+      connection
+    });
     await connection.commit();
     return insertedRow.insertId;
   } catch (error) {

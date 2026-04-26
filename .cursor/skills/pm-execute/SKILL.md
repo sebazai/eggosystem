@@ -23,7 +23,7 @@ flowchart LR
     Start[/Issue IID/] --> Explore[explorer_bot\nTechnical Brief]
     Explore --> HITL1{Arch/data tradeoff?}
     HITL1 -->|yes| Human1((Human))
-    HITL1 -->|no| Ops1[ops_bot\nworktree + branch]
+    HITL1 -->|no| Ops1[ops_bot\ninstall --force + knip]
     Ops1 --> WTB[worktree_bot\npnpm worktree:ensure]
     WTB --> Ctx[orchestrator\nfill CONTEXT.local.md]
     Ctx --> Dev[developer_bot\nimplement + gates]
@@ -43,12 +43,12 @@ flowchart LR
 ## What each stage does
 
 - **Explorer** — skipped if the issue already has a `## Technical Brief` section; otherwise produces it and pauses for your approval.
-- **Ops (branch)** — creates `.worktrees/<type>-<iid>-<slug>/` off `origin/development` with branch `<type>-<iid>-<slug>`, copies backend secrets, runs `pnpm install` in the worktree, and creates a **`CONTEXT.local.md` stub** using a **canonical** worktree path (`cd … && pwd -P`); returned `worktree_path` must match that string (see `.cursor/skills/ops-git-worktrees/SKILL.md`).
+- **Ops (branch)** — in the **primary clone**, fetches, creates branch `<type>-<iid>-<slug>` from `origin/development` (no `git worktree add`), runs `pnpm install --force` and `pnpm knip` (must pass) at the **repository root**, and creates a **`CONTEXT.local.md` stub** with a **canonical** path (`cd "$(git rev-parse --show-toplevel)" && pwd -P`); returned `worktree_path` must match that string (see `.cursor/skills/ops-git-worktrees/SKILL.md`).
 - **Worktree (`worktree_bot`)** — runs `pnpm run worktree:ensure` in that worktree (verifies `node_modules` is not a foreign symlink and that a workspace package resolves under the worktree; see `scripts/ensure-worktree-pnpm.mjs`). Stops the pipeline with a human handoff if this fails.
 - **Orchestrator (context)** — ensures `CONTEXT.local.md` has acceptance criteria and Technical Brief (paste from Phase 0 into the first `developer_bot` prompt if still `[pending]`).
-- **Developer** — reads `CONTEXT.local.md` first, implements, delegates to domain bots with the **Task prompt checklist** in `developer-impl`, runs `pnpm knip && typecheck && format:check && lint && reseed && test` in the worktree.
-- **Adversary** — static hostile audit **anchored on `git diff` `merge_base..HEAD` in the worktree** (read-only `git`); scoped `workspace-gate` for knip/lint/tc; per-finding `scope` and `diff_anchoring` in JSON per `adversarial-review` skill. Returns JSON verdict.
-- **Ops (commit/MR)** — chunks the diff into logical Conventional Commits, pushes, opens a **non-draft** merge request (`draft: false`) so the MR shows as Ready. On **review-fix** passes, only commits and push to the same branch; does not create a second MR. If a commit or hook fails, Ops returns to Developer with full output; Developer must re-run the **full** pnpm quality gates in the worktree (no `HUSKY=0` / hook bypass), then Adversary if needed, then Ops retries.
+- **Developer** — reads `CONTEXT.local.md` first, implements, delegates to domain bots with the **Task prompt checklist** in `developer-impl`, runs `pnpm knip && typecheck && format:check && lint && reseed && test` in that clone.
+- **Adversary** — static hostile audit **anchored on `git diff` `merge_base..HEAD` in that repository** (read-only `git`); scoped `workspace-gate` for knip/lint/tc; per-finding `scope` and `diff_anchoring` in JSON per `adversarial-review` skill. Returns JSON verdict.
+- **Ops (commit/MR)** — chunks the diff into logical Conventional Commits, pushes, opens a **non-draft** merge request (`draft: false`) so the MR shows as Ready. On **review-fix** passes, only commits and push to the same branch; does not create a second MR. If a commit or hook fails, Ops returns to Developer with full output; Developer must re-run the **full** pnpm quality gates in the same clone (no `HUSKY=0` / hook bypass), then Adversary if needed, then Ops retries.
 - **Review** — treats issue + Technical Brief + acceptance criteria as the **scope contract** (see `code-review-checklist`); delegates a semantic pass to `gitlab-assistant` (Duo), writes draft notes on the MR, publishes them in one batch, posts a criteria-trace summary. If verdict is `request-changes`, the **orchestrator** summarizes threads as a **table** (file → ask), re-runs **Developer** (updates `CONTEXT.local.md` review queue) → **Adversary** → **Ops** push, then **Review** again, until `comment` / `approve-pending-human` (cap e.g. 3 review passes, then HITL).
 
 ## Human-in-the-loop gates
@@ -73,4 +73,4 @@ You will be paged via `AskQuestion` when any of these happen:
 
 After you merge the MR in GitLab, run (manually or via a follow-up chat):
 
-> Ask ops_bot to remove worktree `.worktrees/<type>-<iid>-<slug>` and prune branch `<type>-<iid>-<slug>`.
+> Ask ops_bot to delete branch `<type>-<iid>-<slug>` locally and on the remote (and remove a **legacy** `.worktrees/…` path only if you still use that older layout).

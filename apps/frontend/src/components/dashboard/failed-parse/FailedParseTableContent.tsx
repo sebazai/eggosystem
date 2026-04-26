@@ -14,9 +14,10 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { TanStackTableWrapper } from "../../tables/TanStackTableWrapper";
-import { ServerSidePagination } from "../../tables/ServerSidePagination";
+import { TablePagination } from "../../tables/TablePagination";
 import type { FailedParseMessage, CustomColumnMeta } from "@eggosystem/types";
 import Link from "next/link";
+import { Loader2 } from "lucide-react";
 
 /** Links to match game page via /match-games/[id] which redirects to /matches/[match_id]/games/[id] */
 const MatchGameIdLink = ({ matchGameId }: { matchGameId: string | number }) => (
@@ -41,6 +42,13 @@ interface FailedParseTableContentProps {
   onSortingChange: OnChangeFn<SortingState>;
   onRowSelectionChange: OnChangeFn<RowSelectionState>;
   onPageChange: (page: number) => void;
+  onPageSizeChange: (pageSize: number) => void;
+  /** Row ids (`FailedParseMessage.id`) showing a spinner while a background job runs */
+  pendingRowKeys?: ReadonlySet<string>;
+  /** When true, show spinner on all rows with status `failed` (e.g. requeue-all in progress) */
+  spinAllFailedRows?: boolean;
+  /** Row ids that should be displayed as locally requeued (optimistic). */
+  requeuedRowKeys?: ReadonlySet<string>;
 }
 
 export const FailedParseTableContent = ({
@@ -52,7 +60,11 @@ export const FailedParseTableContent = ({
   rowSelection,
   onSortingChange,
   onRowSelectionChange,
-  onPageChange
+  onPageChange,
+  onPageSizeChange,
+  pendingRowKeys,
+  spinAllFailedRows = false,
+  requeuedRowKeys
 }: FailedParseTableContentProps) => {
   // TanStack Table column definitions
   const columns = useMemo<ColumnDef<FailedParseMessage>[]>(
@@ -72,14 +84,37 @@ export const FailedParseTableContent = ({
             aria-label="Select all"
           />
         ),
-        cell: ({ row }: { row: Row<FailedParseMessage> }) => (
-          <Checkbox
-            checked={row.getIsSelected()}
-            onCheckedChange={(value) => row.toggleSelected(!!value)}
-            aria-label="Select row"
-            disabled={row.original.status !== "failed"}
-          />
-        ),
+        cell: ({ row }: { row: Row<FailedParseMessage> }) => {
+          const rowId = row.id;
+          const isLocallyRequeued = requeuedRowKeys?.has(rowId) ?? false;
+          const isRowPending =
+            (pendingRowKeys?.has(rowId) ?? false) ||
+            (spinAllFailedRows && row.original.status === "failed");
+          if (isLocallyRequeued) {
+            return (
+              <div className="flex justify-center">
+                <Badge variant="secondary" className="text-xs">
+                  requeued
+                </Badge>
+              </div>
+            );
+          }
+          if (isRowPending) {
+            return (
+              <div className="flex justify-center" aria-busy="true">
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              </div>
+            );
+          }
+          return (
+            <Checkbox
+              checked={row.getIsSelected()}
+              onCheckedChange={(value) => row.toggleSelected(!!value)}
+              aria-label="Select row"
+              disabled={row.original.status !== "failed"}
+            />
+          );
+        },
         enableSorting: false,
         meta: {
           responsive: "table-cell",
@@ -117,8 +152,11 @@ export const FailedParseTableContent = ({
       {
         accessorKey: "status",
         header: "STATUS",
-        cell: ({ getValue }) => {
-          const status = getValue<string>();
+        cell: ({ row, getValue }) => {
+          const status =
+            (requeuedRowKeys?.has(row.id) ?? false)
+              ? "requeued"
+              : getValue<string>();
           const variant =
             status === "failed"
               ? "destructive"
@@ -204,7 +242,7 @@ export const FailedParseTableContent = ({
         }
       }
     ],
-    []
+    [pendingRowKeys, spinAllFailedRows, requeuedRowKeys]
   );
 
   const customCellClassName = (
@@ -233,17 +271,19 @@ export const FailedParseTableContent = ({
       onRowSelectionChange={onRowSelectionChange}
       getRowId={(row) => row.id.toString()}
       enableRowSelection={(row) => row.original.status === "failed"}
-      showPagination={false}
+      showPagination={true}
       customCellClassName={customCellClassName}
       customRowClassName={customRowClassName}
       customPagination={
         pagination ? (
-          <ServerSidePagination
-            currentPage={currentPage}
+          <TablePagination
+            totalRows={pagination.total}
+            currentPage={currentPage + 1}
+            totalPages={Math.max(1, Math.ceil(pagination.total / pageSize))}
+            handlePageChange={(page) => onPageChange(page - 1)}
+            handlePageSizeChange={onPageSizeChange}
             pageSize={pageSize}
-            total={pagination.total}
-            hasMore={pagination.has_more}
-            onPageChange={onPageChange}
+            type="items"
           />
         ) : undefined
       }

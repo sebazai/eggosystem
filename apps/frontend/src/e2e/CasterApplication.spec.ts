@@ -18,7 +18,9 @@ test.describe("Caster Application", () => {
         name: "access_token",
         value: token,
         domain: "localhost",
-        path: "/"
+        path: "/",
+        httpOnly: true,
+        secure: false
       }
     ]);
 
@@ -46,11 +48,13 @@ test.describe("Caster Application", () => {
         name: "access_token",
         value: token,
         domain: "localhost",
-        path: "/"
+        path: "/",
+        httpOnly: true,
+        secure: false
       }
     ]);
 
-    await page.goto("/profile");
+    await page.goto("/profile", { waitUntil: "domcontentloaded" });
 
     await expect(
       page.getByRole("heading", { name: /user profile/i })
@@ -58,12 +62,10 @@ test.describe("Caster Application", () => {
       timeout: 10000
     });
 
-    const hasCasterSettings = await page
-      .getByText(/caster settings|default stream url|caster application/i)
-      .first()
-      .isVisible()
-      .catch(() => false);
-
-    expect(hasCasterSettings).toBe(true);
+    await expect(
+      page
+        .getByText(/caster settings|default stream url|caster application/i)
+        .first()
+    ).toBeVisible();
   });
 });
