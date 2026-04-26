@@ -530,7 +530,8 @@ describe("Matches Controllers", () => {
         match_id: 123,
         map_id: 1,
         demofile: "demo.dem",
-        regulation_rounds: 30
+        regulation_rounds: 30,
+        team_game_scores_staff_lock: false
       };
       mockGetMatchGame.mockResolvedValue([mockGame]);
 

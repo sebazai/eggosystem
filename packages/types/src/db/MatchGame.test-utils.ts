@@ -30,6 +30,7 @@ export const createMockMatchGame = (
     demofile: "test-demo.dem",
     map_order: null,
     regulation_rounds: 30,
+    team_game_scores_staff_lock: false,
     ...overrides
   };
 };
