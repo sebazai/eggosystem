@@ -258,7 +258,8 @@ describe("POST /api/v1/dashboard/demos/manual/parse-queue", () => {
         match_id: 42,
         map_order: 1,
         download_url: "https://example.com/demo.dem.zst",
-        priority: 2
+        priority: 2,
+        reparse: true
       });
 
     expect(res.status).toBe(200);
@@ -275,7 +276,7 @@ describe("POST /api/v1/dashboard/demos/manual/parse-queue", () => {
       match_game_id: "77",
       priority: 2,
       source: "manual",
-      reparse: false
+      reparse: true
     });
     cleanup();
   });

@@ -5,6 +5,7 @@ import { clientApiFetch, ApiError } from "@/lib/apiClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Card,
   CardContent,
@@ -40,6 +41,7 @@ export function ManualDemoParseForm() {
   const [externalMatchRoomId, setExternalMatchRoomId] = useState("");
   const [downloadUrl, setDownloadUrl] = useState("");
   const [priority, setPriority] = useState("5");
+  const [reparse, setReparse] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [issues, setIssues] = useState<Array<{
@@ -82,7 +84,8 @@ export function ManualDemoParseForm() {
                 // No best_of needed: we infer 2xBO1 via DB state (two hub matches)
               }),
         download_url: downloadUrl.trim(),
-        ...(Number.isFinite(priNum) ? { priority: priNum } : {})
+        ...(Number.isFinite(priNum) ? { priority: priNum } : {}),
+        reparse
       };
 
       const data = await clientApiFetch<EnqueueSuccess>(
@@ -262,6 +265,15 @@ export function ManualDemoParseForm() {
               value={priority}
               onChange={(ev) => setPriority(ev.target.value)}
             />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="reparse"
+              checked={reparse}
+              onCheckedChange={(val) => setReparse(val === true)}
+            />
+            <Label htmlFor="reparse">Reparse (force re-processing)</Label>
           </div>
 
           <Button type="submit" disabled={submitting}>

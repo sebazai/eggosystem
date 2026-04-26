@@ -39,8 +39,16 @@ export const enqueueManualDashboardDemoParse = async (input: {
   priority: number;
   actorAccountId: number;
   source: ManualDemoParseSource;
+  reparse: boolean;
 }): Promise<{ match_game_id: number }> => {
-  const { matchGameId, downloadUrl, priority, actorAccountId, source } = input;
+  const {
+    matchGameId,
+    downloadUrl,
+    priority,
+    actorAccountId,
+    source,
+    reparse
+  } = input;
 
   const matchRows = await getMatchIdByGameId(matchGameId);
   const matchRow = matchRows[0];
@@ -53,7 +61,7 @@ export const enqueueManualDashboardDemoParse = async (input: {
     downloadUrl,
     priority,
     source,
-    false
+    reparse
   );
 
   const fingerprint = fingerprintDemoUrlForLog(downloadUrl);

@@ -42,7 +42,8 @@ const manualParseQueueBodySchema = z
     map_order: z.coerce.number().int().min(1).optional(),
     external_match_room_id: z.string().min(1).optional(),
     download_url: httpsUrlSchema,
-    priority: z.number().int().min(1).max(10).optional().default(5)
+    priority: z.number().int().min(1).max(10).optional().default(5),
+    reparse: z.boolean().optional().default(false)
   })
   .superRefine((val, ctx) => {
     const hasAny =
@@ -163,7 +164,8 @@ router.post(
       downloadUrl: download_url,
       priority,
       actorAccountId,
-      source
+      source,
+      reparse: parsed.data.reparse
     });
 
     res.status(200).json({
