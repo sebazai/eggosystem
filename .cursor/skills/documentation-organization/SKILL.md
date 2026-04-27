@@ -33,7 +33,6 @@ For API patterns, refer to [API Documentation](README.api.md).
 
 When making changes, always update relevant documentation:
 
-- **Package.json changes**: Update `README.commands.md` with new scripts, dependencies, or command changes
 - **Database migrations**: Update `README.database.md` if migrations include:
   - New triggers or trigger modifications
   - New functions or procedures

@@ -38,3 +38,17 @@ cd $(git rev-parse --show-toplevel)/apps/backend && rtk pnpm dev:e2e
 ```
 
 For a full run, `rtk pnpm test:e2e` from root handles reseed and build; the backend must be reachable during the Playwright step (CI or a separate `dev:e2e` process).
+
+## DevContainer: Playwright UI
+
+Headed `pnpm test:e2e:ui` needs a display. In DevContainer use:
+
+```bash
+cd $(git rev-parse --show-toplevel) && rtk pnpm test:e2e:ui:container
+```
+
+(`xvfb-run` wraps the UI so a virtual framebuffer is available.)
+
+## CI failures and traces
+
+To pull Playwright artifacts from a GitLab job and open `trace.zip` locally, use [.cursor/skills/gitlab-playwright-trace/SKILL.md](../gitlab-playwright-trace/SKILL.md).

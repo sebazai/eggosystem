@@ -412,4 +412,4 @@ apps/frontend/src/
 ## 🔗 Related Documentation
 
 - [Database Schema](README.database.md)
-- [Testing Strategy](README.testing.md)
+- [Testing strategy](.cursor/skills/testing-strategy/SKILL.md)
