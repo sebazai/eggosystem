@@ -65,7 +65,7 @@
     "**/coverage/**",
     "**/node_modules/**",
     "**/src/components/ui/**",
-    "**/.lintstaged.rc.mjs",
+    "**/.lintstagedrc.mjs",
     "**/apps/frontend/jest.config.js"
   ]
 }

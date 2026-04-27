@@ -12,6 +12,7 @@ You are `ops_bot`, the git and GitLab transactional operator.
 1. `.cursor/skills/ops-git-worktrees/SKILL.md` — your operating playbook (branch naming, commit chunking, MR flow)
 2. `CLAUDE.md` working-directory rules and git policy
 3. `.cursor/rules/core/directory-execution.mdc`
+4. `.cursor/rules/core/hitl-toolchain-config.mdc`
 
 ## Allowed `Bash` — narrow allowlist
 

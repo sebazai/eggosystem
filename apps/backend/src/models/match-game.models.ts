@@ -220,16 +220,48 @@ export const hasMatchGameWithDemo = async (
   return Array.isArray(rows) && rows.length > 0;
 };
 
+type MatchGameStaffLockRow = {
+  match_id: number;
+  team_game_scores_staff_lock: number | boolean;
+};
+
+/**
+ * Returns parent `match_id` and `team_game_scores_staff_lock` (staff authority over
+ * team scores) for a MatchGame row.
+ */
 export const getMatchIdByGameId = async (
   matchGameId: number,
   connection?: PoolConnection
 ) => {
-  const query = `SELECT match_id FROM MatchGames WHERE id = ?`;
-  return runQuery<Array<{ match_id: number } | undefined>>(
+  const query = `SELECT match_id, team_game_scores_staff_lock FROM MatchGames WHERE id = ?`;
+  return runQuery<Array<MatchGameStaffLockRow | undefined>>(
     query,
     [matchGameId],
     connection
   );
+};
+
+type MatchGameTeamScoresMeta = {
+  id: number;
+  match_id: number;
+  regulation_rounds: number;
+  team_game_scores_staff_lock: number | boolean;
+};
+
+/**
+ * MatchGames row for dashboard team-score read/write: regulation rounds, staff lock, identity.
+ */
+export const getMatchGameMetaForTeamScores = async (
+  matchGameId: number,
+  connection?: PoolConnection
+): Promise<MatchGameTeamScoresMeta | undefined> => {
+  const query = `SELECT id, match_id, COALESCE(regulation_rounds, 24) AS regulation_rounds, team_game_scores_staff_lock FROM MatchGames WHERE id = ? LIMIT 1`;
+  const rows = await runQuery<MatchGameTeamScoresMeta[]>(
+    query,
+    [matchGameId],
+    connection
+  );
+  return rows[0];
 };
 
 export const upsertMatchGameForMatch = async ({
@@ -314,6 +346,8 @@ export const saveParsedDemoDataForGame = async (
       throw new Error(`Could not find parent match for game ${matchGameId}`);
     }
 
+    const skipTeamGameScoreUpsert = Boolean(match.team_game_scores_staff_lock);
+
     const team1PlayerSteamIds = Object.values(Players)
       .filter((player) => player.Team === 1)
       .map((player) => String(player.SteamID));
@@ -342,27 +376,33 @@ export const saveParsedDemoDataForGame = async (
       );
     }
 
+    const teamScoreWrites = skipTeamGameScoreUpsert
+      ? []
+      : [
+          upsertTeamGameScore({
+            match_id: match.match_id,
+            team_id: terroristTeam.team_id,
+            match_game_id: matchGameId,
+            starting_side: "T",
+            score: Score.Team1Score,
+            halftime_score: Score.Team1HTScore,
+            overtime_score: Score.Team1OTScore,
+            connection
+          }),
+          upsertTeamGameScore({
+            match_id: match.match_id,
+            team_id: counterTerroristTeam.team_id,
+            match_game_id: matchGameId,
+            starting_side: "CT",
+            score: Score.Team2Score,
+            halftime_score: Score.Team2HTScore,
+            overtime_score: Score.Team2OTScore,
+            connection
+          })
+        ];
+
     await Promise.all([
-      upsertTeamGameScore({
-        match_id: match.match_id,
-        team_id: terroristTeam.team_id,
-        match_game_id: matchGameId,
-        starting_side: "T",
-        score: Score.Team1Score,
-        halftime_score: Score.Team1HTScore,
-        overtime_score: Score.Team1OTScore,
-        connection
-      }),
-      upsertTeamGameScore({
-        match_id: match.match_id,
-        team_id: counterTerroristTeam.team_id,
-        match_game_id: matchGameId,
-        starting_side: "CT",
-        score: Score.Team2Score,
-        halftime_score: Score.Team2HTScore,
-        overtime_score: Score.Team2OTScore,
-        connection
-      }),
+      ...teamScoreWrites,
       ...Object.values(Players).map((player) =>
         upsertPlayerStatsForGame({
           matchGameId: matchGameId,

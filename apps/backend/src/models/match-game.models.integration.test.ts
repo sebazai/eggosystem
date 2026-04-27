@@ -397,6 +397,48 @@ describe("saveParsedDemoDataForGame Integration Tests", () => {
       );
     });
 
+    it("should not change persisted TeamGameScores on reparse when team_game_scores_staff_lock is set", async () => {
+      await runQuery(
+        "UPDATE MatchGames SET team_game_scores_staff_lock = 1 WHERE id = ?",
+        [123123]
+      );
+      await runQuery(
+        `INSERT INTO TeamGameScores (match_id, team_id, match_game_id, starting_side, score, halftime_score, overtime_score)
+         VALUES (?, ?, 123123, 'T', 1, 0, 0), (?, ?, 123123, 'CT', 2, 0, 0)`,
+        [SEED_MATCH_ID, SEED_TEAM_A_ID, SEED_MATCH_ID, SEED_TEAM_B_ID]
+      );
+
+      const reparsedWithDifferentScores = {
+        ...MOCK_PARSED_DEMO_DATA,
+        Score: {
+          ...MOCK_PARSED_DEMO_DATA.Score,
+          Team1Score: 99,
+          Team2Score: 88
+        }
+      };
+
+      await saveParsedDemoDataForGame(
+        MOCK_MATCH_GAME_ID,
+        reparsedWithDifferentScores
+      );
+
+      const teamGameScores = await runQuery<TeamGameScore[]>(
+        "SELECT * FROM TeamGameScores WHERE match_game_id = ?",
+        [123123]
+      );
+      expect(teamGameScores).toHaveLength(2);
+      const tRow = teamGameScores.find((r) => r.starting_side === "T");
+      const ctRow = teamGameScores.find((r) => r.starting_side === "CT");
+      expect(tRow).toMatchObject({ score: 1, halftime_score: 0 });
+      expect(ctRow).toMatchObject({ score: 2, halftime_score: 0 });
+
+      const playerOne = await runQuery<Array<{ kills: number }>>(
+        "SELECT kills FROM PlayerStats WHERE match_game_id = ? AND steam_id = '76561197979955992'",
+        [123123]
+      );
+      expect(playerOne[0]).toMatchObject({ kills: 20 });
+    });
+
     it("should save player stats correctly", async () => {
       // Act
       await saveParsedDemoDataForGame(

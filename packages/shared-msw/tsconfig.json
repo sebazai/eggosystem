@@ -3,9 +3,9 @@
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "./src",
-    "moduleResolution": "bundler",
-    "module": "ESNext",
-    "target": "ESNext",
+    "moduleResolution": "node16",
+    "module": "Node16",
+    "target": "ES2022",
     "esModuleInterop": true,
     "sourceMap": true,
     "skipLibCheck": true,

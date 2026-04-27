@@ -11,8 +11,8 @@ description: Implements code in the worktree provided by Ops. Runs quality gates
 - `.cursor/skills/testing-strategy/SKILL.md`
 - `.cursor/skills/type-safety/SKILL.md`
 - `.cursor/skills/error-handling/SKILL.md`
-- `.cursor/rules/core/directory-execution.mdc`, `.cursor/rules/core/architecture-constraints.mdc`
-- Area-specific rules (backend/frontend) depending on the diff
+- `.cursor/rules/core/directory-execution.mdc`, `.cursor/rules/core/architecture-constraints.mdc`, `.cursor/rules/core/hitl-toolchain-config.mdc`
+- Area-specific rules (backend/frontend) depending on the diff — for backend, read **Backend (`apps/backend`)** below and `apps/backend/.cursor/rules/*.mdc` as they apply.
 - `CLAUDE.md` quality-gate commands
 - **`<worktree>/CONTEXT.local.md`** — read on every run; if `ops_bot` left `[pending]`, complete it from the issue text the orchestrator pastes in your prompt (you may `Write` the file). See [`.cursor/templates/CONTEXT.local.template.md`](../templates/CONTEXT.local.template.md) and `AGENTS.md` handoff contract.
 - Explorer-provided GitLab context **pasted into the prompt** (must match / fill `CONTEXT.local.md`):
@@ -20,6 +20,24 @@ description: Implements code in the worktree provided by Ops. Runs quality gates
   - Explorer `## Technical Brief` (usually added as an issue note)
   - Any Explorer follow-up comments / clarifications (issue notes)
   - Any sub-issues (child/linked issues) with their acceptance criteria and any Explorer notes
+
+## Backend (`apps/backend`)
+
+**Where code lives**
+
+| Area            | Path / convention                          | Role                                                                                                                                                                                                                                                                                                                                               |
+| --------------- | ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Routes**      | `src/routes/**`, files named `*.routes.ts` | Create a `Router()`, attach middleware, register handlers. **Preferred:** only import **controllers** and pass `router.get/post/.../patch/delete(path, handler)` (and shared middleware). See `apps/backend/.cursor/rules/routes.mdc`.                                                                                                             |
+| **Controllers** | `src/controllers/**`, `*.controllers.ts`   | Express `(req, res, next)` handlers: auth, `safeParse` / Zod, `return next(new ErrorClass(...))` or `res.json`, call **models** and/or **services**. RFC 7807 via shared error types in `src/utils/errors`.                                                                                                                                        |
+| **Models**      | `src/models/**`, `*.models.ts`             | **Database access** (`runQuery`, Knex, connections). Reusable query helpers and mappers. May throw/return errors for **domain/DB invariants** in existing style; for **new** HTTP-facing validation (body/params shape), do that in the controller (or a shared `schemas/` module), not in the model. See `apps/backend/.cursor/rules/models.mdc`. |
+| **Services**    | `src/services/**`, `*.services.ts`         | **Not every endpoint uses one** — many controllers call models directly. Use services for **orchestration and non-DB I/O**: external HTTP (e.g. FaceIT, Steam, Leetify), Redis, **queues** (RabbitMQ, parse queues), **email**, **image upload**, **SSE** hooks, **cron**-related wiring, etc.                                                     |
+| **Schemas**     | `src/schemas/**`, `*.schemas.ts`           | Shared **Zod** schemas for request bodies/params when a feature already extracts them (e.g. marketing sponsors). Controllers `safeParse` and `return next(err)` on failure.                                                                                                                                                                        |
+
+**Intended call shape for _new_ work:** `route → controller → (services?) → models` — **routes stay thin;** controllers own the HTTP boundary; **models** own persistence; **services** are optional and appear when the work is not “just SQL + response” (external APIs, jobs, cache).
+
+**Legacy pattern (do not copy for new endpoints):** several older route files still **inline** handlers: Zod, `next(new NotFoundError(...))`, `runQuery`, or direct **model** imports inside `*.routes.ts` (e.g. `routes/v1/dashboard/match.routes.ts`, `demo.routes.ts`, and mixed inline + controller usage in `match-game.routes.ts`, plus others). When you add or rework behavior, **move logic into a controller** (and shared Zod into `schemas/` or the controller file) and leave the route file as **router + controller references** only, unless the issue explicitly says “minimal touch” to a legacy file.
+
+**Delegation:** `Task(subagent_type=backend_bot, ...)` for route/controller/model/service work so layering matches the above and `apps/backend/.cursor/rules/`.
 
 ## Sandbox policy
 
@@ -44,7 +62,7 @@ description: Implements code in the worktree provided by Ops. Runs quality gates
 Only via `Task`:
 
 - `adversary_bot` (required before every Ops handoff, including after **review-fix** passes in `/pm-execute`)
-- Existing domain sub-specialists as helpers: `backend_bot`, `frontend_bot`, `tester_bot`, `types_bot`, `refactor_bot`, `docs_bot`, `verifier_bot`
+- Existing domain sub-specialists as helpers: `backend_bot` (routes, controllers, models, **services** — see **Backend (`apps/backend`)** in this file), `frontend_bot`, `tester_bot`, `types_bot`, `refactor_bot`, `docs_bot`, `verifier_bot`
 - Design standards review for UI diffs: `designer_bot` (required when editing frontend components/pages; see `AGENTS.md` and `.cursor/skills/design-review/SKILL.md`)
 
 Cannot spawn `pm_bot`, `explorer_bot`, `ops_bot`, `worktree_bot`, `review_bot`.
@@ -63,6 +81,10 @@ Then `Task(subagent_type=adversary_bot, ...)` until `verdict: "pass"`. The promp
 ## When Ops returns (commit or hook failed)
 
 If the orchestrator reports that `ops_bot` could not finish `git commit` (Husky, pre-commit, lint-staged, GPG, etc.), stay in the **same worktree**. Re-run the **full** quality gate block above until green, re-run `adversary_bot` if the diff changed materially, then let the orchestrator call Ops again. Never suggest `HUSKY=0` or other hook bypasses.
+
+## HITL: do not “fix” failures by changing toolchain commands
+
+If a gate fails, you may fix code/tests/types/formatting. Do **not** change `package.json` scripts, `turbo.json`, or lint-staged config to make gates pass. If that seems necessary, stop and request HITL per `.cursor/rules/core/hitl-toolchain-config.mdc`.
 
 ## Review-fix loop (`/pm-execute`)
 

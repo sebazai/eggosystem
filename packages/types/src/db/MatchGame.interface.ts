@@ -7,4 +7,6 @@ export interface MatchGame {
   demofile: string; // demo file
   map_order?: number | null; // TINYINT UNSIGNED, optional
   regulation_rounds: number;
+  /** When true, demo parse must not overwrite TeamGameScores (staff set). */
+  team_game_scores_staff_lock: boolean;
 }

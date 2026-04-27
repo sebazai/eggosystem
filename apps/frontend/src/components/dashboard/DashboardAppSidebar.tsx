@@ -164,6 +164,11 @@ const data: { navMain: Array<MenuItem> } = {
           requiredRoles: ["admin", "helpdesk"]
         },
         {
+          title: "Edit map scores",
+          url: createDashboardNextUrl("matches/games/team-game-scores"),
+          requiredRoles: ["admin", "helpdesk"]
+        },
+        {
           title: "Flagged matches",
           url: createDashboardNextUrl("matches/flagged")
         }
