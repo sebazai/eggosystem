@@ -118,7 +118,9 @@ describe("saveParsedDemoDataForGame", () => {
     beforeEach(() => {
       // Mock successful database operations
       mockRunQuery
-        .mockResolvedValueOnce([{ match_id: 1 }]) // getMatchIdByGameId
+        .mockResolvedValueOnce([
+          { match_id: 1, team_game_scores_staff_lock: 0 }
+        ]) // getMatchIdByGameId
         .mockResolvedValueOnce([{ team_id: 1 }]) // getTeamIdByPlayerSteamIdsAndGameId for team 1
         .mockResolvedValueOnce([{ team_id: 2 }]); // getTeamIdByPlayerSteamIdsAndGameId for team 2
     });
@@ -139,7 +141,9 @@ describe("saveParsedDemoDataForGame", () => {
 
       // Verify that the correct queries were executed
       expect(mockRunQuery).toHaveBeenCalledWith(
-        expect.stringContaining("SELECT match_id FROM MatchGames WHERE id = ?"),
+        expect.stringContaining(
+          "SELECT match_id, team_game_scores_staff_lock FROM MatchGames WHERE id = ?"
+        ),
         expect.arrayContaining([123123]),
         expect.anything()
       );
@@ -196,6 +200,28 @@ describe("saveParsedDemoDataForGame", () => {
     });
   });
 
+  describe("team_game_scores_staff_lock", () => {
+    beforeEach(() => {
+      mockRunQuery
+        .mockResolvedValueOnce([
+          { match_id: 1, team_game_scores_staff_lock: 1 }
+        ])
+        .mockResolvedValueOnce([{ team_id: 1 }])
+        .mockResolvedValueOnce([{ team_id: 2 }]);
+    });
+
+    it("should not call upsertTeamGameScore when team_game_scores_staff_lock is set", async () => {
+      await saveParsedDemoDataForGame(
+        MOCK_MATCH_GAME_ID,
+        MOCK_PARSED_DEMO_DATA
+      );
+
+      expect(mockUpsertTeamGameScore).not.toHaveBeenCalled();
+      expect(mockUpsertPlayerStatsForGame).toHaveBeenCalled();
+      expect(mockConnection.commit).toHaveBeenCalledTimes(1);
+    });
+  });
+
   describe("error handling", () => {
     it("should throw error when match is not found", async () => {
       // Arrange
@@ -213,7 +239,9 @@ describe("saveParsedDemoDataForGame", () => {
     it("should throw error when teams are not found", async () => {
       // Arrange
       mockRunQuery
-        .mockResolvedValueOnce([{ match_id: 1 }]) // Match found
+        .mockResolvedValueOnce([
+          { match_id: 1, team_game_scores_staff_lock: 0 }
+        ]) // Match found
         .mockResolvedValueOnce([]) // Team 1 not found
         .mockResolvedValueOnce([]); // Team 2 not found
 
@@ -243,7 +271,9 @@ describe("saveParsedDemoDataForGame", () => {
     it("should rollback transaction when team game score insertion fails", async () => {
       // Arrange - Mock the first few calls successfully, then fail
       mockRunQuery
-        .mockResolvedValueOnce([{ match_id: 1 }]) // Match found
+        .mockResolvedValueOnce([
+          { match_id: 1, team_game_scores_staff_lock: 0 }
+        ]) // Match found
         .mockResolvedValueOnce([{ team_id: 1 }]) // Team 1 found
         .mockResolvedValueOnce([{ team_id: 2 }]); // Team 2 found
 
@@ -269,7 +299,9 @@ describe("saveParsedDemoDataForGame", () => {
       };
 
       mockRunQuery
-        .mockResolvedValueOnce([{ match_id: 1 }]) // Match found
+        .mockResolvedValueOnce([
+          { match_id: 1, team_game_scores_staff_lock: 0 }
+        ]) // Match found
         .mockResolvedValueOnce([]) // No team 1 players
         .mockResolvedValueOnce([]); // No team 2 players
 
@@ -287,7 +319,9 @@ describe("saveParsedDemoDataForGame", () => {
       };
 
       mockRunQuery
-        .mockResolvedValueOnce([{ match_id: 1 }]) // Match found
+        .mockResolvedValueOnce([
+          { match_id: 1, team_game_scores_staff_lock: 0 }
+        ]) // Match found
         .mockResolvedValueOnce([{ team_id: 1 }]) // Team 1 found
         .mockResolvedValueOnce([{ team_id: 2 }]); // Team 2 found
 
@@ -308,7 +342,9 @@ describe("saveParsedDemoDataForGame", () => {
       };
 
       mockRunQuery
-        .mockResolvedValueOnce([{ match_id: 1 }]) // Match found
+        .mockResolvedValueOnce([
+          { match_id: 1, team_game_scores_staff_lock: 0 }
+        ]) // Match found
         .mockResolvedValueOnce([{ team_id: 1 }]) // Team 1 found
         .mockResolvedValueOnce([{ team_id: 2 }]); // Team 2 found
 
@@ -324,7 +360,9 @@ describe("saveParsedDemoDataForGame", () => {
     it("should properly manage database transaction", async () => {
       // Arrange
       mockRunQuery
-        .mockResolvedValueOnce([{ match_id: 1 }]) // Match found
+        .mockResolvedValueOnce([
+          { match_id: 1, team_game_scores_staff_lock: 0 }
+        ]) // Match found
         .mockResolvedValueOnce([{ team_id: 1 }]) // Team 1 found
         .mockResolvedValueOnce([{ team_id: 2 }]); // Team 2 found
 
@@ -344,7 +382,9 @@ describe("saveParsedDemoDataForGame", () => {
     it("should rollback and release connection on error", async () => {
       // Arrange
       mockRunQuery
-        .mockResolvedValueOnce([{ match_id: 1 }]) // Match found
+        .mockResolvedValueOnce([
+          { match_id: 1, team_game_scores_staff_lock: 0 }
+        ]) // Match found
         .mockResolvedValueOnce([{ team_id: 1 }]) // Team 1 found
         .mockResolvedValueOnce([{ team_id: 2 }]); // Team 2 found
 
@@ -367,7 +407,9 @@ describe("saveParsedDemoDataForGame", () => {
     it("should preserve all player data during insertion", async () => {
       // Arrange
       mockRunQuery
-        .mockResolvedValueOnce([{ match_id: 1 }]) // Match found
+        .mockResolvedValueOnce([
+          { match_id: 1, team_game_scores_staff_lock: 0 }
+        ]) // Match found
         .mockResolvedValueOnce([{ team_id: 1 }]) // Team 1 found
         .mockResolvedValueOnce([{ team_id: 2 }]); // Team 2 found
 
@@ -385,7 +427,9 @@ describe("saveParsedDemoDataForGame", () => {
     it("should handle trades data correctly", async () => {
       // Arrange
       mockRunQuery
-        .mockResolvedValueOnce([{ match_id: 1 }]) // Match found
+        .mockResolvedValueOnce([
+          { match_id: 1, team_game_scores_staff_lock: 0 }
+        ]) // Match found
         .mockResolvedValueOnce([{ team_id: 1 }]) // Team 1 found
         .mockResolvedValueOnce([{ team_id: 2 }]); // Team 2 found
 
@@ -406,7 +450,9 @@ describe("saveParsedDemoDataForGame", () => {
     it("should handle round stats data correctly", async () => {
       // Arrange
       mockRunQuery
-        .mockResolvedValueOnce([{ match_id: 1 }]) // Match found
+        .mockResolvedValueOnce([
+          { match_id: 1, team_game_scores_staff_lock: 0 }
+        ]) // Match found
         .mockResolvedValueOnce([{ team_id: 1 }]) // Team 1 found
         .mockResolvedValueOnce([{ team_id: 2 }]); // Team 2 found
 

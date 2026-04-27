@@ -220,7 +220,9 @@ describe("POST /api/v1/dashboard/demos/manual/parse-queue", () => {
     const { app, cleanup } = createDemoDashboardTestApp();
     mockGetPermissions.mockResolvedValue([]);
     mockGetRoles.mockResolvedValue(["admin"]);
-    mockGetMatchIdByGameId.mockResolvedValue([{ match_id: 42 }]);
+    mockGetMatchIdByGameId.mockResolvedValue([
+      { match_id: 42, team_game_scores_staff_lock: 0 }
+    ]);
     mockPublishToParseQueue.mockResolvedValue(undefined);
 
     const url =
@@ -258,7 +260,9 @@ describe("POST /api/v1/dashboard/demos/manual/parse-queue", () => {
     mockGetPermissions.mockResolvedValue([]);
     mockGetRoles.mockResolvedValue(["admin"]);
     mockResolveOrCreateMatchGameIdForHubMatchDemo.mockResolvedValue(77);
-    mockGetMatchIdByGameId.mockResolvedValue([{ match_id: 42 }]);
+    mockGetMatchIdByGameId.mockResolvedValue([
+      { match_id: 42, team_game_scores_staff_lock: 0 }
+    ]);
     mockPublishToParseQueue.mockResolvedValue(undefined);
 
     const res = await request(app)
@@ -298,7 +302,9 @@ describe("POST /api/v1/dashboard/demos/manual/parse-queue", () => {
       { id: 101, status: "FINISHED" }
     ]);
     mockResolveOrCreateMatchGameIdForDemoUrl.mockResolvedValue(555);
-    mockGetMatchIdByGameId.mockResolvedValue([{ match_id: 101 }]);
+    mockGetMatchIdByGameId.mockResolvedValue([
+      { match_id: 101, team_game_scores_staff_lock: 0 }
+    ]);
     mockPublishToParseQueue.mockResolvedValue(undefined);
 
     const demoUrl =
@@ -359,7 +365,9 @@ describe("POST /api/v1/dashboard/demos/manual/parse-queue", () => {
     const { app, cleanup } = createDemoDashboardTestApp();
     mockGetPermissions.mockResolvedValue([]);
     mockGetRoles.mockResolvedValue(["helpdesk"]);
-    mockGetMatchIdByGameId.mockResolvedValue([{ match_id: 1 }]);
+    mockGetMatchIdByGameId.mockResolvedValue([
+      { match_id: 1, team_game_scores_staff_lock: 0 }
+    ]);
     mockPublishToParseQueue.mockResolvedValue(undefined);
 
     const res = await request(app)
@@ -459,7 +467,9 @@ describe("POST /api/v1/dashboard/demos/manual/parse-queue", () => {
     const { app, cleanup } = createDemoDashboardTestApp();
     mockGetPermissions.mockResolvedValue([]);
     mockGetRoles.mockResolvedValue(["admin"]);
-    mockGetMatchIdByGameId.mockResolvedValue([{ match_id: 1 }]);
+    mockGetMatchIdByGameId.mockResolvedValue([
+      { match_id: 1, team_game_scores_staff_lock: 0 }
+    ]);
     mockPublishToParseQueue.mockRejectedValue(new Error("amqp broke"));
 
     const res = await request(app)

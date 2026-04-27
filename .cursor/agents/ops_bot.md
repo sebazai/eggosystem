@@ -14,6 +14,7 @@ Run **Agent mode** (not Ask / Answer / read-only). Ops must use shell and GitLab
 - `.cursor/skills/ops-git-worktrees/SKILL.md` (playbook)
 - `CLAUDE.md` (git policy, working-directory rules)
 - `.cursor/rules/core/directory-execution.mdc`
+- `.cursor/rules/core/hitl-toolchain-config.mdc`
 
 ## Sandbox policy
 
@@ -51,5 +52,6 @@ None.
 - Returns `{ mr_iid, commits }` to Review (or the orchestrator between Developer and Review).
 - On CI failure: posts MR note, returns control to Developer with the failure summary. Ops never patches code.
 - **Commit or hook failure (pre-commit, lint-staged, GPG, etc.):** return full output to the orchestrator; instruct Developer to re-run the full `pnpm` quality gates in the same repository per `.cursor/skills/developer-impl/SKILL.md`, then Adversary if the diff changed, then Ops may retry. No `HUSKY=0`, no hook bypass, no `node_modules` hacks.
+- **HITL on toolchain config changes:** if a failure suggests changing `package.json` scripts, `turbo.json`, or lint-staged config, do not propose or attempt a workaround—return for HITL per `.cursor/rules/core/hitl-toolchain-config.mdc`.
 
 > Runtime enforcement in `.claude/settings.json` + `.claude/agents/ops_bot.md`.

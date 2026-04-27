@@ -96,6 +96,7 @@ The **orchestrator** will supply review feedback (ideally a **summary table**: f
 - No unsafe casts `as`. Use `satisfies`, type guards, or properly typed mocks (see `.cursor/skills/type-safety/SKILL.md`).
 - No try/catch unless it owns cleanup (e.g. DB transactions). Let errors bubble to the Express RFC 7807 handler (see `.cursor/skills/error-handling/SKILL.md`).
 - Prefer exports + imports over duplication.
+- **Backend (`apps/backend`):** follow **`route → controller → (services?) → models`** — thin `*.routes.ts` (ideally only controller imports + middleware), controllers own HTTP/Zod/auth, `src/services` for I/O/queues/externals (optional; not every path uses a service), `*.models.ts` for DB. **Legacy** route files may still inline handlers; for **new** code do not copy that. Full table and examples: `.cursor/agents/developer_bot.md` or `.claude/agents/developer_bot.md` (**Backend** section) and `apps/backend/.cursor/rules/`. Use `Task(subagent_type=backend_bot, ...)` for backend changes.
 - Backend uses Knex for app queries; MariaDB MCP is read-only exploration only.
 - Frontend: RSC-first; minimize `use client` / `useEffect` / client-side fetching.
 - Test data comes from `@eggosystem/types` factories — never inline large mock objects.
