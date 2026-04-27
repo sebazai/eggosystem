@@ -28,53 +28,72 @@ describe("TeamGameScoresEditor", () => {
   });
 
   it("loads and saves team game scores", async () => {
-    mockClientApiFetch
-      .mockResolvedValueOnce({
-        match_id: 10,
-        match_game_id: 55,
-        regulation_rounds: 24,
-        team_game_scores_staff_lock: false,
-        match_team_ids: [100, 200],
-        teams: [
-          {
-            team_id: 100,
-            starting_side: "T",
-            score: 13,
-            halftime_score: 6,
-            overtime_score: 0
-          },
-          {
-            team_id: 200,
-            starting_side: "CT",
-            score: 9,
-            halftime_score: 6,
-            overtime_score: 0
-          }
-        ]
-      })
-      .mockResolvedValueOnce({
-        match_id: 10,
-        match_game_id: 55,
-        regulation_rounds: 24,
-        team_game_scores_staff_lock: true,
-        match_team_ids: [100, 200],
-        teams: [
-          {
-            team_id: 100,
-            starting_side: "T",
-            score: 13,
-            halftime_score: 6,
-            overtime_score: 0
-          },
-          {
-            team_id: 200,
-            starting_side: "CT",
-            score: 11,
-            halftime_score: 6,
-            overtime_score: 0
-          }
-        ]
-      });
+    const loadedResponse = {
+      match_id: 10,
+      match_game_id: 55,
+      regulation_rounds: 24,
+      team_game_scores_staff_lock: false,
+      match_team_ids: [100, 200],
+      teams: [
+        {
+          team_id: 100,
+          starting_side: "T",
+          score: 13,
+          halftime_score: 6,
+          overtime_score: 0
+        },
+        {
+          team_id: 200,
+          starting_side: "CT",
+          score: 9,
+          halftime_score: 6,
+          overtime_score: 0
+        }
+      ]
+    };
+
+    const savedResponse = {
+      match_id: 10,
+      match_game_id: 55,
+      regulation_rounds: 24,
+      team_game_scores_staff_lock: true,
+      match_team_ids: [100, 200],
+      teams: [
+        {
+          team_id: 100,
+          starting_side: "T",
+          score: 13,
+          halftime_score: 6,
+          overtime_score: 0
+        },
+        {
+          team_id: 200,
+          starting_side: "CT",
+          score: 11,
+          halftime_score: 6,
+          overtime_score: 0
+        }
+      ]
+    };
+
+    mockClientApiFetch.mockImplementation(async (path, init) => {
+      if (
+        path === "/api/v1/dashboard/matches/games/55/team-game-scores" &&
+        !init
+      )
+        return loadedResponse;
+      if (
+        path === "/api/v1/dashboard/matches/games/55/team-game-scores" &&
+        init?.method === "PUT"
+      )
+        return savedResponse;
+
+      if (path === "/api/v1/dashboard/teams/100") return { id: 100, name: "T" };
+      if (path === "/api/v1/dashboard/teams/200")
+        return { id: 200, name: "CT" };
+
+      throw new Error(`Unhandled request: ${path}`);
+    });
 
     render(<TeamGameScoresEditor />);
 
