@@ -207,6 +207,19 @@ describe("Dashboard Routes Authentication Tests", () => {
       });
     });
 
+    it("should return 401 for matches team game scores without authentication", async () => {
+      const response = await request(app)
+        .get("/api/v1/dashboard/matches/games/1/team-game-scores")
+        .expect(401);
+
+      expect(response.body).toMatchObject({
+        type: "about:blank",
+        title: "Unauthorized",
+        status: 401,
+        detail: "Forbidden: Requires authentication"
+      });
+    });
+
     it("should return 401 for role-management routes without authentication", async () => {
       const response = await request(app)
         .get("/api/v1/dashboard/role-management")
@@ -382,6 +395,20 @@ describe("Dashboard Routes Authentication Tests", () => {
       });
     });
 
+    it("should return 403 for matches team game scores with no admin/helpdesk role", async () => {
+      const response = await request(app)
+        .get("/api/v1/dashboard/matches/games/1/team-game-scores")
+        .set("Authorization", "Bearer valid-token")
+        .expect(403);
+
+      expect(response.body).toMatchObject({
+        type: "about:blank",
+        title: "Forbidden",
+        status: 403,
+        detail: "Forbidden: Insufficient permissions"
+      });
+    });
+
     it("should return 403 for role-management routes with no admin/helpdesk role", async () => {
       const response = await request(app)
         .get("/api/v1/dashboard/role-management")
@@ -493,6 +520,14 @@ describe("Dashboard Routes Authentication Tests", () => {
     it("should allow access to matches routes with admin role", async () => {
       const response = await request(app)
         .get("/api/v1/dashboard/matches")
+        .set("Authorization", "Bearer valid-token");
+
+      expect(response.status).not.toBe(403);
+    });
+
+    it("should allow access to matches team game scores with admin role", async () => {
+      const response = await request(app)
+        .get("/api/v1/dashboard/matches/games/1/team-game-scores")
         .set("Authorization", "Bearer valid-token");
 
       expect(response.status).not.toBe(403);
@@ -627,6 +662,14 @@ describe("Dashboard Routes Authentication Tests", () => {
     it("should allow access to matches routes with helpdesk role", async () => {
       const response = await request(app)
         .get("/api/v1/dashboard/matches")
+        .set("Authorization", "Bearer valid-token");
+
+      expect(response.status).not.toBe(403);
+    });
+
+    it("should allow access to matches team game scores with helpdesk role", async () => {
+      const response = await request(app)
+        .get("/api/v1/dashboard/matches/games/1/team-game-scores")
         .set("Authorization", "Bearer valid-token");
 
       expect(response.status).not.toBe(403);
