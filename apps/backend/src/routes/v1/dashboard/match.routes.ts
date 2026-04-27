@@ -69,31 +69,25 @@ const getManualTeamGameScores = async (
   }
   const matchGameId = parsed.data.match_game_id;
 
-  try {
-    const meta = await getMatchGameMetaForTeamScores(matchGameId);
-    if (!meta) {
-      return next(new NotFoundError("Match game not found"));
-    }
-    const matchTeamRows = await getTeamIdsForMatch(meta.match_id);
-    if (matchTeamRows.length !== 2) {
-      return next(
-        new BadRequestError(
-          "Match does not have exactly two teams in MatchTeams"
-        )
-      );
-    }
-    const teams = await listTeamGameScoresByMatchGameId(matchGameId);
-    res.json({
-      match_id: meta.match_id,
-      match_game_id: matchGameId,
-      regulation_rounds: meta.regulation_rounds,
-      team_game_scores_staff_lock: Boolean(meta.team_game_scores_staff_lock),
-      match_team_ids: matchTeamRows.map((r) => r.team_id),
-      teams
-    });
-  } catch (e) {
-    next(e);
+  const meta = await getMatchGameMetaForTeamScores(matchGameId);
+  if (!meta) {
+    return next(new NotFoundError("Match game not found"));
   }
+  const matchTeamRows = await getTeamIdsForMatch(meta.match_id);
+  if (matchTeamRows.length !== 2) {
+    return next(
+      new BadRequestError("Match does not have exactly two teams in MatchTeams")
+    );
+  }
+  const teams = await listTeamGameScoresByMatchGameId(matchGameId);
+  res.json({
+    match_id: meta.match_id,
+    match_game_id: matchGameId,
+    regulation_rounds: meta.regulation_rounds,
+    team_game_scores_staff_lock: Boolean(meta.team_game_scores_staff_lock),
+    match_team_ids: matchTeamRows.map((r) => r.team_id),
+    teams
+  });
 };
 
 const putManualTeamGameScores = async (
@@ -133,77 +127,71 @@ const putManualTeamGameScores = async (
     );
   }
 
-  try {
-    const meta = await getMatchGameMetaForTeamScores(matchGameId);
-    if (!meta) {
-      return next(new NotFoundError("Match game not found"));
-    }
-    const matchTeamRows = await getTeamIdsForMatch(meta.match_id);
-    if (matchTeamRows.length !== 2) {
-      return next(
-        new BadRequestError(
-          "Match does not have exactly two teams in MatchTeams"
-        )
-      );
-    }
-    const allowed = new Set(matchTeamRows.map((r) => r.team_id));
-    if (!allowed.has(tRow.team_id) || !allowed.has(ctRow.team_id)) {
-      return next(
-        new ZodError([
-          {
-            code: "custom",
-            path: ["teams"],
-            message:
-              "team_id values must be the two teams in MatchTeams for this match"
-          }
-        ])
-      );
-    }
-    if (tRow.team_id === ctRow.team_id) {
-      return next(
-        new ZodError([
-          {
-            code: "custom",
-            path: ["teams"],
-            message: "T and CT entries must be different team_id values"
-          }
-        ])
-      );
-    }
-    const regulationRounds = meta.regulation_rounds;
-    validateCs2TeamGameScorePair(
-      {
-        score: tRow.score,
-        halftime_score: tRow.halftime_score,
-        overtime_score: tRow.overtime_score
-      },
-      {
-        score: ctRow.score,
-        halftime_score: ctRow.halftime_score,
-        overtime_score: ctRow.overtime_score
-      },
-      regulationRounds
-    );
-
-    await saveStaffManualTeamGameScores({
-      matchId: meta.match_id,
-      matchGameId,
-      t: tRow,
-      ct: ctRow
-    });
-
-    const teams = await listTeamGameScoresByMatchGameId(matchGameId);
-    res.json({
-      match_id: meta.match_id,
-      match_game_id: matchGameId,
-      regulation_rounds: meta.regulation_rounds,
-      team_game_scores_staff_lock: true,
-      match_team_ids: matchTeamRows.map((r) => r.team_id),
-      teams
-    });
-  } catch (e) {
-    next(e);
+  const meta = await getMatchGameMetaForTeamScores(matchGameId);
+  if (!meta) {
+    return next(new NotFoundError("Match game not found"));
   }
+  const matchTeamRows = await getTeamIdsForMatch(meta.match_id);
+  if (matchTeamRows.length !== 2) {
+    return next(
+      new BadRequestError("Match does not have exactly two teams in MatchTeams")
+    );
+  }
+  const allowed = new Set(matchTeamRows.map((r) => r.team_id));
+  if (!allowed.has(tRow.team_id) || !allowed.has(ctRow.team_id)) {
+    return next(
+      new ZodError([
+        {
+          code: "custom",
+          path: ["teams"],
+          message:
+            "team_id values must be the two teams in MatchTeams for this match"
+        }
+      ])
+    );
+  }
+  if (tRow.team_id === ctRow.team_id) {
+    return next(
+      new ZodError([
+        {
+          code: "custom",
+          path: ["teams"],
+          message: "T and CT entries must be different team_id values"
+        }
+      ])
+    );
+  }
+  const regulationRounds = meta.regulation_rounds;
+  validateCs2TeamGameScorePair(
+    {
+      score: tRow.score,
+      halftime_score: tRow.halftime_score,
+      overtime_score: tRow.overtime_score
+    },
+    {
+      score: ctRow.score,
+      halftime_score: ctRow.halftime_score,
+      overtime_score: ctRow.overtime_score
+    },
+    regulationRounds
+  );
+
+  await saveStaffManualTeamGameScores({
+    matchId: meta.match_id,
+    matchGameId,
+    t: tRow,
+    ct: ctRow
+  });
+
+  const teams = await listTeamGameScoresByMatchGameId(matchGameId);
+  res.json({
+    match_id: meta.match_id,
+    match_game_id: matchGameId,
+    regulation_rounds: meta.regulation_rounds,
+    team_game_scores_staff_lock: true,
+    match_team_ids: matchTeamRows.map((r) => r.team_id),
+    teams
+  });
 };
 
 router.get("/flagged", getFlaggedMatchesController);

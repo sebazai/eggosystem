@@ -39,7 +39,7 @@ const mockSave = jest.mocked(saveStaffManualTeamGameScores);
 
 jest.mock("../../../middlewares/auth.middleware", () => ({
   authenticateJWT: (
-    req: express.Request,
+    req: express.Request & { auth?: unknown },
     res: express.Response,
     next: express.NextFunction
   ) => {
@@ -47,7 +47,7 @@ jest.mock("../../../middlewares/auth.middleware", () => ({
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return next();
     }
-    (req as express.Request & { auth?: unknown }).auth = createMockUserPayload({
+    req.auth = createMockUserPayload({
       account_id: 1,
       provider_id: "1",
       nickname: "t"
