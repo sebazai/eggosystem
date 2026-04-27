@@ -86,6 +86,10 @@
         "node_modules/**"
       ]
     },
+    "@eggosystem/shared-msw#build": {
+      "dependsOn": ["@eggosystem/types#build"],
+      "outputs": ["dist/**", "dist/**/*.js", "dist/**/*.d.ts"]
+    },
     "backend#build": {
       "dependsOn": ["@eggosystem/types#build", "@eggosystem/shared-msw#build"],
       "inputs": [
@@ -100,6 +104,22 @@
       ],
       "outputs": ["dist/**", "node_modules/**"]
     },
+    "frontend#build": {
+      "dependsOn": ["@eggosystem/types#build", "@eggosystem/viewer#build"],
+      "inputs": [
+        "src/**/*.{ts,tsx,js,jsx}",
+        "!src/**/*.test.{ts,tsx,js,jsx}",
+        "!src/**/*.spec.{ts,tsx,js,jsx}",
+        "!src/__tests__/**/*",
+        "!src/__mocks__/**/*",
+        "public/**",
+        "package.json",
+        "tsconfig*.json",
+        "next.config.*",
+        ".env*"
+      ],
+      "outputs": [".next/**", "!.next/cache/**", "dist/**"]
+    },
     "lint": {
       "dependsOn": ["^lint"]
     },
@@ -107,7 +127,7 @@
       "dependsOn": ["^format:check"]
     },
     "typecheck": {
-      "dependsOn": ["^typecheck"]
+      "dependsOn": ["^build", "^typecheck"]
     },
     "dev": {
       "dependsOn": ["@eggosystem/types#build", "@eggosystem/shared-msw#build"],
