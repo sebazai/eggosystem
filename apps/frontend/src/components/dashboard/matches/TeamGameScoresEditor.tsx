@@ -24,6 +24,11 @@ interface TeamGameScoreRow {
   overtime_score: number;
 }
 
+interface TeamSummary {
+  id: number;
+  name: string;
+}
+
 interface GetTeamGameScoresResponse {
   match_id: number;
   match_game_id: number;
@@ -66,6 +71,9 @@ export function TeamGameScoresEditor() {
   const [editedTeams, setEditedTeams] = useState<TeamGameScoreRow[] | null>(
     null
   );
+  const [teamNamesById, setTeamNamesById] = useState<Record<number, string>>(
+    {}
+  );
 
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -85,6 +93,32 @@ export function TeamGameScoresEditor() {
     return Number.isFinite(id) && id > 0;
   }, [matchGameId]);
 
+  async function loadTeamNames(teamIds: number[]) {
+    const uniqueIds = [...new Set(teamIds)].filter((id) => Number.isFinite(id));
+    if (!uniqueIds.length) return;
+
+    const results = await Promise.allSettled(
+      uniqueIds.map((teamId) =>
+        clientApiFetch<TeamSummary>(`/api/v1/dashboard/teams/${teamId}`)
+      )
+    );
+
+    const next: Record<number, string> = {};
+    for (const res of results) {
+      if (res.status !== "fulfilled") continue;
+      const team = res.value;
+      if (
+        team &&
+        typeof team === "object" &&
+        typeof team.id === "number" &&
+        typeof team.name === "string"
+      ) {
+        next[team.id] = team.name;
+      }
+    }
+    setTeamNamesById((prev) => ({ ...prev, ...next }));
+  }
+
   async function onLoad() {
     setError(null);
     setIssues(null);
@@ -103,6 +137,7 @@ export function TeamGameScoresEditor() {
       );
       setLoaded(data);
       setEditedTeams(normalizeTeamRows(data.teams));
+      void loadTeamNames(data.match_team_ids);
     } catch (err) {
       if (err instanceof ApiError) {
         setError(err.detail || err.message);
@@ -185,6 +220,7 @@ export function TeamGameScoresEditor() {
       );
       setLoaded(data);
       setEditedTeams(normalizeTeamRows(data.teams));
+      void loadTeamNames(data.match_team_ids);
       setSuccessMessage("Saved");
     } catch (err) {
       if (err instanceof ApiError) {
@@ -268,7 +304,8 @@ export function TeamGameScoresEditor() {
                 <Card key={row.starting_side}>
                   <CardHeader>
                     <CardTitle className="text-base">
-                      {row.starting_side} — team {row.team_id}
+                      {row.starting_side} —{" "}
+                      {teamNamesById[row.team_id] ?? `team ${row.team_id}`}
                     </CardTitle>
                     <CardDescription>
                       Edit scores for the {row.starting_side} starting side.
