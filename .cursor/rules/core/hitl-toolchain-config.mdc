@@ -1,0 +1,37 @@
+---
+description: HITL gate for toolchain command/config changes (scripts/turbo/lint-staged)
+alwaysApply: true
+---
+
+# HITL: Toolchain command/config changes are human-only
+
+If any check fails (typecheck, lint, format, tests, knip, Husky, lint-staged, turbo tasks, CI), **do not “fix” it by changing the commands that run the checks**.
+
+## Protected files / configs (do not edit without HITL)
+
+- `**/package.json`
+  - Especially `scripts`, and any `lint-staged` configuration embedded in `package.json`
+- `turbo.json`
+- lint-staged configs:
+  - `.lintstagedrc`, `.lintstagedrc.*`
+  - `lint-staged.config.*`
+
+## Allowed without HITL
+
+- Fixing the **underlying code** so the existing commands pass.
+- Adding/updating tests, types, formatting, or lint fixes **in code**.
+- Adjusting non-execution metadata (e.g., `package.json` `name`, `version`, `description`) only when the issue explicitly requires it.
+
+## Requires HITL (stop and ask)
+
+- Any change that alters what commands run, when they run, or what they enforce, including:
+  - editing `package.json` `scripts`
+  - editing `turbo.json` pipelines/tasks
+  - editing lint-staged config (any location)
+  - weakening checks (removing files/globs, reducing strictness, skipping steps, adding `|| true`, adding `--no-verify`, etc.)
+
+## When you hit a failure
+
+- Report the failing command output and the suspected root cause.
+- Propose code-level fixes first.
+- If the **only** viable fix is changing one of the protected files/configs, **request HITL** and do not apply that change autonomously.

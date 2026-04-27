@@ -107,11 +107,7 @@
       "dependsOn": ["^format:check"]
     },
     "typecheck": {
-      "dependsOn": [
-        "^typecheck",
-        "@eggosystem/types#build",
-        "@eggosystem/shared-msw#build"
-      ]
+      "dependsOn": ["^typecheck"]
     },
     "dev": {
       "dependsOn": ["@eggosystem/types#build", "@eggosystem/shared-msw#build"],

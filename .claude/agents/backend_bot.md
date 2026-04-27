@@ -23,6 +23,10 @@ You are `backend_bot`, the backend implementation specialist.
 
 ## Constraints
 
-- Keep existing layering; don’t bypass controller/service boundaries.
+- **Layering (strict):** `route → controller → model`.
+  - **`*.routes.ts`:** Only wire the Express `Router` — import controllers, middleware, and register `router.METHOD(path, controllerFn)`. **Do not** add inline handlers, Zod schemas, or direct model calls for a request/response path in route files.
+  - **`*.controllers.ts`:** HTTP boundary — Zod (params/body/query), auth, `return next(new ErrorClass(...))`, call models, shape responses. **Request validation and API-level error handling for bad input live here, not in models.**
+  - **`*.models.ts` / services:** Knex, transactions, mappers. **Do not** put Zod or HTTP request validation in model files, and do not treat models as the place to reject malformed client payloads with `BadRequestError`-style flow; that belongs in controllers.
+- Do not bypass established route/controller/model boundaries.
 - Use Knex for application queries; MariaDB MCP is for ad-hoc exploration only.
 - Avoid unsafe TypeScript casts (`as`) and try/catch without cleanup.
