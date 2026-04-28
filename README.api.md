@@ -306,7 +306,7 @@ Controllers should `return next(new BadRequestError(...))` etc. (from `utils/err
 ## Testing
 
 - Unit tests (Jest + Supertest) live next to code; create apps with `createExpressTestApp(router, mountPath)` from `src/test-utils` and always run the returned `cleanup()` in `afterEach`.
-- E2E tests (Playwright) must be run from the repo root: `pnpm test:e2e`. See [README.playwright.md](README.playwright.md).
+- E2E tests (Playwright) must be run from the repo root: `pnpm test:e2e`. See [.cursor/skills/e2e-playwright/SKILL.md](.cursor/skills/e2e-playwright/SKILL.md).
 
 ## Performance
 
@@ -320,5 +320,5 @@ Controllers should `return next(new BadRequestError(...))` etc. (from `utils/err
 - [Database](README.database.md) — Knex, migrations, triggers, identity model
 - [Dashboard](README.dashboard.md) — admin/helpdesk UI and its security model
 - [Frontend](README.frontend.md) — Next.js App Router + SWR integration
-- [Testing](README.testing.md) — unit + integration conventions
-- [Playwright](README.playwright.md) — E2E setup and running
+- [Testing strategy](.cursor/skills/testing-strategy/SKILL.md) — unit + integration conventions
+- [E2E / Playwright](.cursor/skills/e2e-playwright/SKILL.md) — E2E from repo root

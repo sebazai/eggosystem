@@ -387,6 +387,6 @@ All security violations return RFC 7807 compliant error responses:
 ## 🔗 Related Documentation
 
 - [Frontend Development](README.frontend.md) - Component patterns and responsive design
-- [Testing Strategy](README.testing.md) - Authentication testing patterns
+- [Testing strategy](.cursor/skills/testing-strategy/SKILL.md) — authentication testing patterns
 - [Backend API Documentation](README.api.md) - API security patterns
 - [Database Schema](README.database.md) - Role and permission tables

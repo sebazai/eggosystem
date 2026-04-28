@@ -1,217 +1,233 @@
-# AGENTS.md — Agentic Workflow Harness
+# DAG-driven multi-agent workflow (`/dag-execute`)
 
-This file is the contract shared by every agent that operates on this repository. It defines the 7 **pipeline** role specialists (plus the Adversary sub-loop), the sandbox they run in, the handoff artifacts between them, and the human-in-the-loop (HITL) gates.
+## Slash commands
 
-Every specialist **must** read this file and the skill file referenced in its agent definition before taking its first action.
+- **`/dag-execute <issue_iid>`** — Product → Decompose → Architecture (HITL) → DAG implementation (**each task**: `implementer_bot` ↔ `adversary_bot` ≤3 rounds → Draft MR → CR → CI) → Final Review → human merge.
+- **`/observe <mr_iid>`** — post-merge analysis (CI logs, optional Grafana/Sentry, git revert detection). Off the critical path.
 
-> Enforcement: sandbox rules are applied by Claude Code via per-agent `tools:` frontmatter in [`.claude/agents/`](.claude/agents) plus the `permissions.allow`/`deny` lists in [`.claude/settings.json`](.claude/settings.json). Under Cursor, the same policy is documented in [`.cursor/agents/`](.cursor/agents) but not runtime-enforced; Cursor agents must self-police.
+## Agents (10)
 
-## Mission
+All in `/workspace/.claude/agents/`. Each returns a JSON envelope per `/workspace/.claude/skills/json-handoff/SKILL.md` — no prose around it.
 
-Humans discuss a feature or bug with `pm_bot`. The PM scopes it into a GitLab issue with explicit acceptance criteria. `explorer_bot` decomposes it into a technical brief. `ops_bot` creates an **issue branch** in the **primary clone** and bootstraps it (`pnpm install --force` and a passing `pnpm knip` at the repository root before handoff). `worktree_bot` (or the same `pnpm run worktree:ensure` step) verifies that pnpm and `node_modules` in that clone are not a symlink to another checkout—so workspace packages, Husky, and lint-staged resolve correctly. `developer_bot` implements, running the Adversary feedback loop until clean. `ops_bot` commits in chunks, pushes, and opens the MR. If a commit or hook fails, `ops_bot` hands back to `developer_bot`, which must re-run the full `pnpm` quality gates in the same clone (no `HUSKY=0` or other hook bypass), then `ops_bot` tries again. `review_bot` audits against acceptance criteria. **Humans merge.**
+| Agent              | Role                                                                                                                                             |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `product_bot`      | Issue → stories with KPIs                                                                                                                        |
+| `decomposer_bot`   | Stories → task DAG (`depends_on[]`)                                                                                                              |
+| `architect_bot`    | API + DB schema design (read-only MariaDB)                                                                                                       |
+| `implementer_bot`  | One task → quality gates; loops with **`adversary_bot`** → Draft MR                                                                              |
+| `ui_bot`           | shadcn/Tailwind components (sub-agent of implementer)                                                                                            |
+| `adversary_bot`    | Challenges implementation vs architecture, acceptance criteria, issue intent (**max 3** runs per task, before Draft MR); feeds `implementer_bot` |
+| `code_review_bot`  | Per-task diff review                                                                                                                             |
+| `final_review_bot` | Cross-task business validation                                                                                                                   |
+| `devops_bot`       | CI pipeline monitoring + retry-once                                                                                                              |
+| `observer_bot`     | Post-merge health (manual via `/observe`)                                                                                                        |
 
-## Pipeline
+## HITL gates (4)
 
-```mermaid
-flowchart LR
-    Human["Human (scope / HITL)"] -->|brief| PM[pm_bot]
-    PM -->|create_issue| Issue[("GitLab Issue")]
-    PM -->|delegate| Explorer[explorer_bot]
-    PM -.plan-sprint / backlog-health.-> Duo["gitlab-assistant (Duo)"]
-    Explorer -->|"Technical Brief note"| Issue
-    Explorer --> Ops[ops_bot]
-    Ops -->|issue branch| WT[("Primary clone\n+ branch")]
-    WT --> WTB[worktree_bot]
-    WTB -->|pnpm ok| Developer[developer_bot]
-    Developer -->|"Write/Edit + pnpm test"| Code
-    Developer -->|spawn| Adversary[adversary_bot]
-    Adversary -->|"findings JSON"| Developer
-    Adversary -. recursive .-> Adversary
-    Developer -->|pass| Ops
-    Ops -->|commit + push| Branch[(GitLab branch)]
-    Ops -->|create_merge_request| MR[(GitLab MR)]
-    Ops --> Review[review_bot]
-    Review -.review-merge-request.-> Duo
-    Review -->|draft notes batch| MR
-    Review --> Human
-    Human -->|accept + merge| MR
-```
+1. Architecture sign-off (Phase 3 of `/dag-execute`).
+2. Implementer **`stuck`**, **`adversary_bot` rejects 3 rounds**, Code Review rejects 3 rounds, or gate rounds exhausted.
+3. Final Review rejected (cross-cutting or 3 rounds).
+4. Merge approval — every MR is merged by the human via the GitLab UI; orchestrator never calls `mcp__GitLab__merge_merge_request`.
 
-## The 7 pipeline specialists
+## Branching
 
-| Role                                               | File             | Writes code                   | Touches git | Spawns                                          | Notes                                                                                            |
-| -------------------------------------------------- | ---------------- | ----------------------------- | ----------- | ----------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| [`pm_bot`](.claude/agents/pm_bot.md)               | Orchestrator     | No                            | No          | Explorer, Ops, worktree, Developer, Review, Duo | Human liaison                                                                                    |
-| [`explorer_bot`](.claude/agents/explorer_bot.md)   | Researcher       | No                            | No          | —                                               | DB MCP readonly, WebSearch/WebFetch                                                              |
-| [`ops_bot`](.claude/agents/ops_bot.md)             | Git + GitLab     | No                            | Yes         | —                                               | Only git-capable agent; new-branch bootstrap may run `pnpm install --force` and `pnpm knip` only |
-| [`worktree_bot`](.claude/agents/worktree_bot.md)   | Worktree pnpm    | No (install layout only)      | No          | —                                               | Runs `pnpm run worktree:ensure` in that clone after Ops                                          |
-| [`developer_bot`](.claude/agents/developer_bot.md) | Implementer      | **Yes**                       | No          | Adversary + existing domain bots                | Runs quality gates                                                                               |
-| [`adversary_bot`](.claude/agents/adversary_bot.md) | Hostile reviewer | No (lint/knip/typecheck only) | Read-only   | Adversary (depth ≤ 3)                           | Diff-anchored review; gate before Ops                                                            |
-| [`review_bot`](.claude/agents/review_bot.md)       | PR auditor       | No                            | No          | Duo `review-merge-request`                      | Never approves/merges                                                                            |
+- Branch per task: `feat-<iid>-<task_id>-<slug>` (e.g. `feat-247-T1-stream-route`).
+- **`base_branch` (how implementers reuse upstream code):**
+  - **No dependencies:** `base_branch = development`. Worktree: `git worktree add … -b <branch> origin/development`. Draft MR **target = `development`**.
+  - **Exactly one dependency (stacked MRs):** `base_branch = <parent task branch name>` (e.g. `feat-338-T2-…`). Worktree: `git worktree add … -b <branch> origin/<parent-branch>`. Draft MR **target = parent branch** (not `development`) so the diff is only the child task and CI runs on top of the parent’s tree. **When to use:** the child must compile against unmerged parent work (typical linear chains). After the parent MR merges to `development`, **rebase the child branch onto current `development` and switch the MR target to `development`** (or merge the stack strictly in topo order if your GitLab prefers that — see Merge train below).
+  - **Multiple dependencies:** there is no single “parent-only” base. Prefer **`development` plus merging each completed dependency branch into the task branch before implementation** (`git merge origin/<dep-branch>` for each prerequisite in topo-safe order). Draft MR typically **targets `development`** once that branch carries all merged predecessors, or carries the merged commits locally so CI is faithful. Alternative: introduce a shared integration branch for the issue once and base later tasks on that (manual/orchestrator choice).
+- **“Deepest dependency” tie-break** (single-dependency stacks): when tasks are independent until they funnel into one child, choose the dependency whose branch must land first (**topological order** among `depends_on`); linear chains simply use the immediate parent branch.
+- One Draft MR per task; opened by `implementer_bot`. Orchestrator unmarks Draft after Final Review approves.
+- **Merge train (after parents land on `development`):** for dependents that were stacked on a merged parent branch name, orchestrator/human rebases children onto `development` (`git rebase --onto development <old_parent_tip> <child_branch>` or equivalent) and **`--force-with-lease` only after confirmation** (`ask` permission tier — see Phase 6 in `/dag-execute`).
 
-Full policy per role lives in [`.cursor/agents/<role>.md`](.cursor/agents) (policy record) and [`.claude/agents/<role>.md`](.claude/agents) (runtime enforcement).
+## Worktrees
 
-### Coexistence with existing domain bots
+- One worktree per task: `/workspace/.worktrees/<iid>-<task_id>/`.
+- `git worktree add` creates them; the orchestrator does this before spawning each `implementer_bot`.
+- `git worktree remove --force` cleans up after merge (in `ask` permission tier — confirmed by human).
+- Parallel `pnpm install` uses `--frozen-lockfile` to prevent store corruption.
 
-The following pre-existing specialists in [`.cursor/agents/`](.cursor/agents) remain available as **sub-specialists** that `developer_bot` can call via `Task` for domain depth — they are **not** part of the primary workflow:
-
-- `backend_bot`, `frontend_bot`, `designer_bot`, `tester_bot`, `types_bot`, `refactor_bot`, `docs_bot`, `verifier_bot`
-
-Only `developer_bot` may spawn them.
-
-## Design standards gate (frontend diffs)
-
-If the work includes frontend UI changes (especially under `apps/frontend/src/components/**` or `apps/frontend/src/app/**`), `developer_bot` must run a **design standards review** before invoking `adversary_bot` and before handing off to `ops_bot`.
-
-- **Trigger paths** (non-exhaustive):
-  - `apps/frontend/src/components/**`
-  - `apps/frontend/src/app/**`
-  - `apps/frontend/src/styles/**`
-  - Tailwind/theme config or global CSS affecting UI tokens
-- **Mechanism**:
-  - `developer_bot` spawns `designer_bot` via `Task` with:
-    - worktree path, issue IID, acceptance criteria
-    - list of files changed (or “UI touched under …”)
-    - request: “Review diff for design-system compliance per `.cursor/skills/design-review/SKILL.md`”
-  - `designer_bot` returns `verdict: pass | needs_changes` and findings.
-  - `developer_bot` addresses **blockers** (design-system drift / accessibility regressions) before proceeding to Adversary/Ops.
-
-## Handoff contract
-
-Every stage transition produces a typed artifact. Agents do not begin their stage until the previous artifact exists.
-
-| From → To                    | Artifact                                                                                                                                                                                                                                                                                                                                                                                 | Location                        |
-| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------- |
-| Human → PM                   | Natural-language brief                                                                                                                                                                                                                                                                                                                                                                   | Chat                            |
-| PM → Explorer                | GitLab issue IID + acceptance criteria                                                                                                                                                                                                                                                                                                                                                   | GitLab issue body               |
-| Explorer → Ops               | Issue updated with `## Technical Brief` section (+ optional sub-issue IIDs linked)                                                                                                                                                                                                                                                                                                       | GitLab issue note / description |
-| Ops → worktree (readiness)   | After Ops: `{ worktree_path, issue_iid }` + **`CONTEXT.local.md` stub**; **`pnpm knip` must have passed** at that **repository root** during bootstrap; `worktree_path` is **canonical** (e.g. `cd $(git rev-parse --show-toplevel) && pwd -P`) and matches the file’s worktree field (see [`.cursor/templates/CONTEXT.local.template.md`](.cursor/templates/CONTEXT.local.template.md)) | `ops_bot` Bash at repo root     |
-| Orchestrator → Developer     | Filled `CONTEXT.local.md` (acceptance criteria + Technical Brief) **or** the first `developer_bot` prompt contains that text so Developer can `Write` the file                                                                                                                                                                                                                           | Clone + chat                    |
-| worktree → Developer         | `status: "ok"` and `{ worktree_path, issue_iid }` — if `status` is not `ok`, do not start Developer                                                                                                                                                                                                                                                                                      | Tool return value               |
-| (same session)               | Developer also needs `branch_name` from the Ops return payload (orchestrator holds it), and should **Read** `CONTEXT.local.md` before coding.                                                                                                                                                                                                                                            |                                 |
-| Developer → Adversary        | "ready for review" note on issue: list of changed files + local gate output                                                                                                                                                                                                                                                                                                              | GitLab issue note + prompt      |
-| Adversary → Developer (loop) | Findings JSON (`verdict`, `findings[]`)                                                                                                                                                                                                                                                                                                                                                  | Tool return value               |
-| Adversary → Developer (pass) | `{ verdict: "pass", findings: [] }`                                                                                                                                                                                                                                                                                                                                                      | Tool return value               |
-| Developer → Ops              | Note on issue: file list + ready-to-commit signal                                                                                                                                                                                                                                                                                                                                        | GitLab issue note               |
-| Ops → Review                 | `{ mr_iid, commit_sha_range }`                                                                                                                                                                                                                                                                                                                                                           | Tool return value               |
-| Review → Human               | Summary MR note with verdict + `needs-human-decision` label if non-clean. Review treats **issue + `## Technical Brief` + acceptance criteria** as the scope contract; if any are missing or ambiguous, it posts **clarifying draft notes** rather than inventing requirements.                                                                                                           | GitLab MR note                  |
-| Human → GitLab               | Merge                                                                                                                                                                                                                                                                                                                                                                                    | GitLab UI / API                 |
-
-## Adversarial feedback loop
-
-```mermaid
-stateDiagram-v2
-    [*] --> Implementing
-    Implementing --> LocalGreen: quality gates pass
-    LocalGreen --> AdversaryCheck: spawn adversary_bot
-    AdversaryCheck --> Implementing: verdict=fail
-    AdversaryCheck --> ReadyForOps: verdict=pass
-    Implementing --> HumanEscalation: 3+ rounds same file
-    ReadyForOps --> [*]
-    HumanEscalation --> [*]
-```
-
-- Rounds 1–2: Developer addresses findings and re-invokes Adversary.
-- Round 3 on the same file range: Developer stops and returns a disagreement summary. PM pages the human.
-
-## HITL gates (human is required)
-
-1. **Scope / acceptance criteria** — PM asks `AskQuestion` before creating the issue when intent is ambiguous, cross-cutting, or has meaningful tradeoffs.
-2. **Architecture & data modeling** — any schema/migration/trigger change is HITL; PM blocks Explorer until the human confirms approach.
-3. **Adversary ↔ Developer non-convergence** — 3+ rounds on the same file range pages the human.
-4. **Review verdict non-clean** — `needs-human-decision` label is added; no further automation.
-5. **Merge** — `mcp__GitLab__approve_merge_request` / `accept_merge_request` are denied to every agent. Merge is **always** a human action.
-
-## Sandboxing — deny-all + explicit allowlist
-
-1. **Per-agent `tools:` frontmatter** in [`.claude/agents/<role>.md`](.claude/agents) is the primary allowlist. Tools not listed are unavailable to that agent.
-2. **Repo-wide `permissions` in [`.claude/settings.json`](.claude/settings.json)** add a global `deny` for dangerous patterns (`git push --force`, `--no-verify`, `sudo`, `rm -rf /`, `curl | sh`, etc.) and an `allow` list for the exact shell patterns the pipeline needs. Destructive-but-sometimes-needed commands (`git reset --hard`, `git worktree remove`, `git branch -D`) require confirmation via the `ask` list.
-3. **MCP surface** is constrained by `enabledMcpjsonServers` in settings; per-agent narrowing happens in `tools:` using the `mcp__<server>__<tool>` naming.
-4. **Hooks** in [`.claude/hooks/`](.claude/hooks) provide defense-in-depth at the `PreToolUse` / `PostToolUse` / `Stop` phases (e.g. `block-e2e-wrong-dir`, `warn-as-cast`, `remind-quality-gates`).
-
-Under Cursor the enforcement is policy-only. The [`.cursor/agents/`](.cursor/agents) files encode the same allow/deny as the Claude versions; agents self-report violations.
-
-## MCP matrix
-
-- **GitLab MCP (stdio, `project-0-workspace-GitLab`)** — `pm_bot` (issue tools), `ops_bot` (branch + MR transactional tools), `review_bot` (MR read + draft-note tools), `explorer_bot` (issue notes + links only). `developer_bot` and `adversary_bot` have **no** GitLab access.
-- **Cursor Duo `gitlab-assistant`** — invoked via `Task(subagent_type=gitlab-assistant, ...)` for `plan-sprint`, `backlog-health` (PM), and `review-merge-request` (Review).
-- **mariadb MCP (readonly)** — `explorer_bot`, `developer_bot`. Schema exploration only; application queries still use Knex (see [CLAUDE.md](CLAUDE.md)).
-- **Playwright MCP** — `developer_bot` only (debug/assertion on dashboard flows). See [.cursor/skills/playwright-mcp-admin-auth/SKILL.md](.cursor/skills/playwright-mcp-admin-auth/SKILL.md).
-- **shadcn/ui MCP** — `developer_bot` only (component discovery).
-- **faceit MCP** — not wired to any of the 7 pipeline specialists by default; add explicitly if a feature requires it.
-
-## Quality gates (Developer is responsible)
-
-Copied from [CLAUDE.md](CLAUDE.md) — all must pass locally before invoking `adversary_bot`:
+## Quality gates (per implementer task)
 
 ```bash
-cd $(git rev-parse --show-toplevel)
+cd /workspace/.worktrees/<iid>-<task_id>
+rtk pnpm install --frozen-lockfile
+rtk pnpm format
+rtk pnpm --filter=<workspace> typecheck
+rtk pnpm --filter=<workspace> lint
+rtk pnpm --filter=<workspace> test
 rtk pnpm knip
-rtk pnpm typecheck
-rtk pnpm format:check
-rtk pnpm lint
-rtk pnpm reseed
-rtk pnpm test          # affected workspaces
+# Do not run `pnpm test:e2e` here; commit with Husky skipped (see implementer_bot).
 ```
 
-E2E (`rtk pnpm test:e2e`) runs only from the workspace root per [.cursor/skills/e2e-playwright/SKILL.md](.cursor/skills/e2e-playwright/SKILL.md).
+All must exit 0 before the implementer opens the Draft MR. Commits must use **`HUSKY=0 rtk git commit …`** so Husky does not re-run checks (`implementer_bot`). **`adversary_bot` runs before** that MR (**up to three** attempts per task; orchestrator parses JSON only).
 
-`ops_bot` already runs `pnpm install --force` and `pnpm knip` in the **primary clone**; `worktree_bot` (or `rtk pnpm run worktree:ensure` there) runs **after** that so the install is for **this** checkout, not a symlinked `node_modules` from another path. If `worktree:ensure` reinstalls, the Developer re-runs the full quality gates in that clone. See [.cursor/skills/worktree-readiness/SKILL.md](.cursor/skills/worktree-readiness/SKILL.md).
+## Envelope validation
 
-## Branches (primary clone)
+`PostToolUse:Task` hook at `/workspace/.claude/hooks/validate-envelope.sh` lints DAG-pipeline subagent output and warns (non-blocking) on schema mismatch. Legacy agents (e.g. `developer_bot`, `pm_bot`) are ignored by the hook.
 
-`ops_bot` creates an **issue branch** in the **primary repository clone** (no `git worktree add` for new work). The handoff’s `worktree_path` is the **canonical absolute path to that clone’s root** (Git treats every checkout as a worktree).
+## When to use which
 
-Branch naming, bootstrap (`pnpm install --force` + `pnpm knip`), and commit chunking rules are in [.cursor/skills/ops-git-worktrees/SKILL.md](.cursor/skills/ops-git-worktrees/SKILL.md). Keep a real `pnpm` install in that clone; never symlink `node_modules` to a different checkout, or quality gates and Husky will resolve the wrong `packages/`. Legacy parallel trees may live under `.worktrees/` (gitignored) but are not the default.
+- **`/dag-execute`** (new) — multi-MR per issue, structured JSON throughout, formal architecture HITL, parallel task execution. Best for issues that decompose cleanly into 2–8 independent tasks.
 
-## Skills index (per-domain)
+<!-- rtk-instructions v2 -->
 
-Each specialist auto-reads its primary skill plus cross-cutting ones. Full list:
+# RTK (Rust Token Killer) - Token-Optimized Commands
 
-- [`pm-workflow`](.cursor/skills/pm-workflow/SKILL.md)
-- [`explorer-research`](.cursor/skills/explorer-research/SKILL.md)
-- [`ops-git-worktrees`](.cursor/skills/ops-git-worktrees/SKILL.md)
-- [`worktree-readiness`](.cursor/skills/worktree-readiness/SKILL.md)
-- [`developer-impl`](.cursor/skills/developer-impl/SKILL.md)
-- [`adversarial-review`](.cursor/skills/adversarial-review/SKILL.md)
-- [`code-review-checklist`](.cursor/skills/code-review-checklist/SKILL.md)
+## Golden Rule
 
-**Context file:** The active issue branch in the primary clone should have `CONTEXT.local.md` at the **repository root** (gitignored; see template [`.cursor/templates/CONTEXT.local.template.md`](.cursor/templates/CONTEXT.local.template.md)) so `developer_bot` and `Task` subagents share one **local** source of truth. `developer_bot` has no GitLab MCP; the file is how pasted issue scope survives session drops and subagent spawns. Optional **append-only** rows in the template’s stage log can record pipeline milestones (Explorer brief added, etc.).
+**Always prefix commands with `rtk`**. If RTK has a dedicated filter, it uses it. If not, it passes through unchanged. This means RTK is always safe to use.
 
-Cross-cutting skills used by multiple specialists live in the same [`.cursor/skills/`](.cursor/skills) tree: `tdd-workflow`, `testing-strategy`, `type-safety`, `error-handling`, `eggosystem-types`, `eggosystem-msw`, `e2e-playwright`, `playwright-mcp-admin-auth`, `documentation-organization`, `onboarding`, plus the command skills (`quality-check`, `typecheck`, `lint-fix`, `format-code`, `build`, `clean`, `run-tests`, `setup-dev`, `fresh-start`, `db-status`, `db-reset`, `create-migration`, `run-migrations`, `rollback-migration`, `execute`).
+**Important**: Even in command chains with `&&`, use `rtk`:
 
-## Non-negotiables (from [CLAUDE.md](CLAUDE.md))
+```bash
+# ❌ Wrong
+git add . && git commit -m "msg" && git push
 
-- No unsafe type casts (`as SomeType`, `as unknown as SomeType`).
-- No try/catch unless it owns cleanup (e.g. DB transactions).
-- Reuse via exports, not duplication.
-- No `--no-verify` / `--no-gpg-sign`.
-- Commands prefixed with `cd $(git rev-parse --show-toplevel)` or the target workspace.
-- E2E is always run from the workspace root via `rtk pnpm test:e2e`.
-- Database triggers enforce business rules — application code alone cannot bypass them.
-
-## Entry points (slash commands / skills)
-
-Two ready-made commands wrap the pipeline. Both live as Claude Code slash commands **and** Cursor skills:
-
-- **`/pm-plan <idea>`** — runs only the planning half: human ↔ `pm_bot` ↔ GitLab issue. Stops after `mcp__GitLab__create_issue`. Use this when starting a new feature or bug report.
-  - Claude Code: [`.claude/commands/pm-plan.md`](.claude/commands/pm-plan.md)
-  - Cursor skill: [`.cursor/skills/pm-plan/SKILL.md`](.cursor/skills/pm-plan/SKILL.md)
-- **`/pm-execute <iid>`** — runs the execution half on an existing issue: Explorer → Ops → Developer (with Adversary loop) → Ops (opens a **ready** MR) → Review, then **review-fix loops** (Developer → Adversary → Ops push, re-Review) until the MR is in good shape or a HITL gate stops the loop. Stops at the merge HITL gate.
-  - Claude Code: [`.claude/commands/pm-execute.md`](.claude/commands/pm-execute.md)
-  - Cursor skill: [`.cursor/skills/pm-execute/SKILL.md`](.cursor/skills/pm-execute/SKILL.md)
-
-Typical session:
-
-```text
-/pm-plan Allow casters to set a stream URL from their profile
- → Q&A with PM, issue #247 created.
-/pm-execute 247
- → Explorer drafts brief (you confirm) → Ops cuts branch → Developer implements
-   → Adversary audits → Ops commits & opens ready MR !312 → Review posts notes →
-   (if needed) more Dev/Adversary/Ops passes on feedback → you merge MR !312 in the GitLab UI.
+# ✅ Correct
+rtk git add . && rtk git commit -m "msg" && rtk git push
 ```
 
-## Escalation
+## If RTK output is missing (use tee logs)
 
-Any agent encountering a situation not covered here stops and returns control to its caller with a short rationale. The caller either re-plans or pages the human via `pm_bot`.
+RTK may heavily filter output (especially on failures). **When a command fails and you need the full raw output, read the RTK tee log instead of re-running the command.**
+
+- **Devcontainer (Linux) tee logs**: `~/.config/rtk/tee/`
+- **Devcontainer (Linux) config**: `~/.config/rtk/config.toml`
+- **macOS config**: `~/Library/Application Support/rtk/config.toml`
+
+When a command fails, RTK saves the full output as above.
+
+## RTK Commands by Workflow
+
+### Build & Compile (80-90% savings)
+
+```bash
+rtk cargo build         # Cargo build output
+rtk cargo check         # Cargo check output
+rtk cargo clippy        # Clippy warnings grouped by file (80%)
+rtk tsc                 # TypeScript errors grouped by file/code (83%)
+rtk lint                # ESLint/Biome violations grouped (84%)
+rtk prettier --check    # Files needing format only (70%)
+rtk next build          # Next.js build with route metrics (87%)
+```
+
+### Test (60-99% savings)
+
+```bash
+rtk cargo test          # Cargo test failures only (90%)
+rtk go test             # Go test failures only (90%)
+rtk jest                # Jest failures only (99.5%)
+rtk vitest              # Vitest failures only (99.5%)
+rtk playwright test     # Playwright failures only (94%)
+rtk pytest              # Python test failures only (90%)
+rtk rake test           # Ruby test failures only (90%)
+rtk rspec               # RSpec test failures only (60%)
+rtk test <cmd>          # Generic test wrapper - failures only
+```
+
+### Git (59-80% savings)
+
+```bash
+rtk git status          # Compact status
+rtk git log             # Compact log (works with all git flags)
+rtk git diff            # Compact diff (80%)
+rtk git show            # Compact show (80%)
+rtk git add             # Ultra-compact confirmations (59%)
+rtk git commit          # Ultra-compact confirmations (59%)
+rtk git push            # Ultra-compact confirmations
+rtk git pull            # Ultra-compact confirmations
+rtk git branch          # Compact branch list
+rtk git fetch           # Compact fetch
+rtk git stash           # Compact stash
+rtk git worktree        # Compact worktree
+```
+
+Note: Git passthrough works for ALL subcommands, even those not explicitly listed.
+
+### GitHub (26-87% savings)
+
+```bash
+rtk gh pr view <num>    # Compact PR view (87%)
+rtk gh pr checks        # Compact PR checks (79%)
+rtk gh run list         # Compact workflow runs (82%)
+rtk gh issue list       # Compact issue list (80%)
+rtk gh api              # Compact API responses (26%)
+```
+
+### JavaScript/TypeScript Tooling (70-90% savings)
+
+```bash
+rtk pnpm list           # Compact dependency tree (70%)
+rtk pnpm outdated       # Compact outdated packages (80%)
+rtk pnpm install        # Compact install output (90%)
+rtk npm run <script>    # Compact npm script output
+rtk npx <cmd>           # Compact npx command output
+rtk prisma              # Prisma without ASCII art (88%)
+```
+
+### Files & Search (60-75% savings)
+
+```bash
+rtk ls <path>           # Tree format, compact (65%)
+rtk read <file>         # Code reading with filtering (60%)
+rtk grep <pattern>      # Search grouped by file (75%)
+rtk find <pattern>      # Find grouped by directory (70%)
+```
+
+### Analysis & Debug (70-90% savings)
+
+```bash
+rtk err <cmd>           # Filter errors only from any command
+rtk log <file>          # Deduplicated logs with counts
+rtk json <file>         # JSON structure without values
+rtk deps                # Dependency overview
+rtk env                 # Environment variables compact
+rtk summary <cmd>       # Smart summary of command output
+rtk diff                # Ultra-compact diffs
+```
+
+### Infrastructure (85% savings)
+
+```bash
+rtk docker ps           # Compact container list
+rtk docker images       # Compact image list
+rtk docker logs <c>     # Deduplicated logs
+rtk kubectl get         # Compact resource list
+rtk kubectl logs        # Deduplicated pod logs
+```
+
+### Network (65-70% savings)
+
+```bash
+rtk curl <url>          # Compact HTTP responses (70%)
+rtk wget <url>          # Compact download output (65%)
+```
+
+### Meta Commands
+
+```bash
+rtk gain                # View token savings statistics
+rtk gain --history      # View command history with savings
+rtk discover            # Analyze Claude Code sessions for missed RTK usage
+rtk proxy <cmd>         # Run command without filtering (for debugging)
+rtk init                # Add RTK instructions to CLAUDE.md
+rtk init --global       # Add RTK to ~/.claude/CLAUDE.md
+```
+
+## Token Savings Overview
+
+| Category         | Commands                       | Typical Savings |
+| ---------------- | ------------------------------ | --------------- |
+| Tests            | vitest, playwright, cargo test | 90-99%          |
+| Build            | next, tsc, lint, prettier      | 70-87%          |
+| Git              | status, log, diff, add, commit | 59-80%          |
+| GitHub           | gh pr, gh run, gh issue        | 26-87%          |
+| Package Managers | pnpm, npm, npx                 | 70-90%          |
+| Files            | ls, read, grep, find           | 60-75%          |
+| Infrastructure   | docker, kubectl                | 85%             |
+| Network          | curl, wget                     | 65-70%          |
+
+Overall average: **60-90% token reduction** on common development operations.
+
+<!-- /rtk-instructions -->

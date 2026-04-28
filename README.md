@@ -78,18 +78,17 @@ Backend runs on `localhost:3001`, frontend on `localhost:3000`, bull-monitor on 
    pnpm gitlab:mcp:pat
    ```
 
-   That command copies [`.env.mcp.example`](.env.mcp.example) to `.env.mcp` if needed, prints scope guidance, and opens the GitLab token page. Cursor loads `.env.mcp` via [`.cursor/gitlab-mcp.sh`](.cursor/gitlab-mcp.sh) (see [`.cursor/mcp.json`](.cursor/mcp.json)). Details: [Development Commands — GitLab MCP](README.commands.md#gitlab-mcp-cursor).
+   That command copies [`.env.mcp.example`](.env.mcp.example) to `.env.mcp` if needed, prints scope guidance, and opens the GitLab token page. Cursor loads `.env.mcp` via [`.cursor/gitlab-mcp.sh`](.cursor/gitlab-mcp.sh) (see [`.cursor/mcp.json`](.cursor/mcp.json)).
 
 ## Documentation
 
 - [Architecture Overview](README.architecture.md) — system design and technical patterns
 - [Backend API](README.api.md) — endpoints, authentication, security
 - [Database Schema](README.database.md) — tables, triggers, SQL functions ([visual diagram](https://csdb.kanaliiga.fi/))
-- [Development Commands](README.commands.md) — command reference
 - [Dashboard Security](README.dashboard.md) — dashboard auth and authorization
 - [Frontend Development](README.frontend.md) — component patterns and data fetching
-- [Testing Strategy](README.testing.md) — Jest unit tests
-- [Playwright / E2E](README.playwright.md) — end-to-end testing notes
+- [Unit / integration testing](.cursor/skills/testing-strategy/SKILL.md) — Jest patterns and command hierarchy
+- [E2E / Playwright](.cursor/skills/e2e-playwright/SKILL.md) — run from repo root, prerequisites
 
 ### JWT Key Generation
 
