@@ -66,6 +66,8 @@ mcp__GitLab__create_merge_request({
 })
 ```
 
+`<base_branch>` comes from the orchestrator: **`development`**, **or** a **parent task branch name** for **stacked MRs**. When `<base_branch>` is not `development`, the MR merges into that parent branch first (reuse of unmerged prerequisite code). **`target_branch` in `create_merge_request` must equal `<base_branch>`.** After the parent MR merges into `development`, the human/orchestrator **rebases this branch onto `development`**, retargets the MR to **`development`** (or merges in stack order per team policy)—not something you do silently here if it requires rebase/`--force-with-lease` (those are gated outside this agent).
+
 ## Output
 
 Return ONLY the JSON envelope. `payload` schema:

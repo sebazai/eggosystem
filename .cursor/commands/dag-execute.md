@@ -140,16 +140,34 @@ Each task `t` runs through these substeps. The orchestrator runs them sequential
 
 #### 4a. Compute branch + base + worktree
 
+**Goal:** dependents must **reuse prerequisite code**. Two patterns:
+
+1. **Stacked MR (single dependency):** `<base>` **is that task’s branch name** (e.g. `feat-<iid>-T2-slug`). The Draft MR’s **merge target branch = `<base>`**, not `development`, until the parent has merged upstream and you rebase/reparent the child branch onto `development`.
+2. **Integration branch (multiple dependencies):** `<base>` = `development`; after `git worktree add … origin/development`, **merge `origin/<each completed dep branch>`** into `<branch>` (topo-safe order) so the implementation sees all predecessors without waiting for unrelated MRs to merge.
+
 ```bash
 type   = t.type if t.type in {"feat","fix"} else "feat"
 slug   = kebab-case(t.title, max 4 words)
 branch = "feat-<iid>-<t.id>-<slug>"
-base   = "development" if t.depends_on == [] else <branch_of_deepest_completed_dep>
+
+if t.depends_on == []
+  base = "development"
+else if length(t.depends_on) == 1
+  # Stacked MR: branch from completed parent task branch (must exist on origin)
+  base = <completed_dep_branch_name>   # e.g. feat-338-T2-unfinished-matches-model
+else
+  # Parallel deps merged into feature branch — MR target stays development-oriented
+  base = "development"
+
 worktree_path = "/workspace/.worktrees/<iid>-<t.id>"
 
 rtk git fetch origin
 rtk git worktree add <worktree_path> -b <branch> origin/<base>
+# If multiple deps: then merge sibling dep branches — do NOT omit or gate will fail:
+# git merge origin/feat-<iid>-T1-... && git merge origin/feat-<iid>-T2-... ...
 ```
+
+Pass **`base`** to `implementer_bot` as `Base:` so **`create_merge_request.target_branch`** matches **stacked** vs **development** workflows (see `/workspace/.cursor/agents/implementer_bot.md`).
 
 #### 4b. Implementer
 
