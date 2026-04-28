@@ -5,7 +5,7 @@ description: Shared JSON envelope contract for all DAG-pipeline agents. Every ag
 
 # JSON Envelope Contract
 
-All agents in the DAG pipeline (`product_bot`, `decomposer_bot`, `architect_bot`, `implementer_bot`, `ui_bot`, `code_review_bot`, `qa_bot`, `final_review_bot`, `devops_bot`, `observer_bot`) return a single JSON object as their final message. No prose before or after. No code fences. Just JSON.
+All agents in the DAG pipeline (`intake_bot`, `product_bot`, `decomposer_bot`, `architect_bot`, `implementer_bot`, `ui_bot`, `adversary_bot`, `code_review_bot`, `final_review_bot`, `devops_bot`, `observer_bot`) return a single JSON object as their final message. No prose before or after. No code fences. Just JSON.
 
 ## Envelope
 
@@ -41,6 +41,22 @@ All agents in the DAG pipeline (`product_bot`, `decomposer_bot`, `architect_bot`
 5. The orchestrator may render the JSON to GitLab as a prose comment on issues/MRs; agents themselves must NOT post directly to GitLab unless their role explicitly requires it (only `implementer_bot` does — for branch/MR creation).
 
 ## Per-agent payload schemas
+
+### `intake_bot.payload`
+
+```json
+{
+  "issue_iid": 247,
+  "issue_url": "https://gitlab.com/<group>/<project>/-/issues/247",
+  "title": "Add stream-url card to dashboard",
+  "labels": ["feat", "frontend"],
+  "acceptance_criteria_count": 3,
+  "ready_for_dag_execute": true,
+  "next_command": "/dag-execute 247"
+}
+```
+
+`ready_for_dag_execute` is `true` when title is set, body has `## Acceptance criteria` with ≥1 unchecked checkbox, and the issue does not carry `needs-human-decision`.
 
 ### `product_bot.payload`
 
@@ -117,17 +133,22 @@ Constraints:
   "base_branch": "development" | "feat-247-T0-...",
   "worktree_path": "/workspace/.worktrees/247-T1",
   "mr_iid": 1234,
+  "mr_opened": true,
   "commits": ["abc123", "def456"],
   "gate_output": {
+    "format": "pass" | "fail",
     "typecheck": "pass" | "fail",
     "lint": "pass" | "fail",
     "test": "pass" | "fail",
     "knip": "pass" | "fail",
-    "e2e": "pass" | "fail" | "skipped"
+    "e2e": "skipped",
+    "adversary_alignment": "pass" | "skipped"
   },
   "summary": "one-line description for the MR title"
 }
 ```
+
+Use `mr_opened=false` (and omit `mr_iid` or set `mr_iid` to `null`) when the orchestrator set **`SkipMergeRequest: true`** for an adversary-loop iteration — quality gates ran and branch pushed, but Draft MR waits until `adversary_bot` approves. Final `implementer_bot` invocation for the task MUST set `mr_opened=true`, `mr_iid`, and gate_output `adversary_alignment`: `"pass"` after adversary approval.
 
 ### `ui_bot.payload`
 
@@ -161,18 +182,18 @@ Constraints:
 }
 ```
 
-### `qa_bot.payload`
+### `adversary_bot.payload`
 
 ```json
 {
   "task_id": "T1",
-  "verdict": "pass" | "fail",
-  "test_cases": ["string"],
-  "failures": [
+  "verdict": "approved" | "rejected",
+  "misalignments": [
     {
+      "category": "business_requirement" | "architecture" | "acceptance_criteria" | "project_conventions",
       "description": "string",
       "severity": "low" | "medium" | "high",
-      "screenshot": "/tmp/qa/...png" | null
+      "remediation_hint": "string"
     }
   ]
 }

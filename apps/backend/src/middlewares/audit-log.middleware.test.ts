@@ -13,6 +13,26 @@ import { BadRequestError } from "../utils/errors";
 describe("audit-log.middleware Integration Tests", () => {
   let connection: Awaited<ReturnType<typeof getConnection>>;
 
+  const largeBodyTestTimeoutMs = 30_000;
+  const auditInsertWaitTimeoutMs = 10_000;
+
+  async function waitForLatestRow<T>(
+    sqlQuery: string,
+    timeoutMs: number
+  ): Promise<T> {
+    const startedAt = Date.now();
+
+    while (Date.now() - startedAt < timeoutMs) {
+      const rows = await runQuery<Array<T>>(sqlQuery, []);
+      const row = rows[0];
+      if (row) return row;
+
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+
+    throw new Error(`Timed out waiting for DB row (${timeoutMs}ms)`);
+  }
+
   beforeAll(async () => {
     connection = await getConnection();
   });
@@ -373,41 +393,43 @@ describe("audit-log.middleware Integration Tests", () => {
       }
     });
 
-    it("should handle large response bodies correctly", async () => {
-      const router = express.Router();
-      const largeData = Array(1000)
-        .fill(0)
-        .map((_, i) => ({ id: i, data: "x".repeat(100) }));
+    it(
+      "should handle large response bodies correctly",
+      async () => {
+        const router = express.Router();
+        const largeData = Array(1000)
+          .fill(0)
+          .map((_, i) => ({ id: i, data: "x".repeat(100) }));
 
-      router.get(
-        "/test/:id",
-        auditReadEntity("TestEntity"),
-        (req: Request, res: Response) => {
-          res.status(200).json({ id: req.params.id, items: largeData });
-        }
-      );
-
-      const { app, cleanup } = createExpressTestApp(router, "/api/v1");
-
-      try {
-        await request(app).get("/api/v1/test/123");
-
-        await new Promise((resolve) => setTimeout(resolve, 100));
-
-        const auditLogs = await runQuery<
-          Array<{ response_data: string | null }>
-        >(
-          "SELECT response_data FROM AuditLog WHERE entity_type = 'TestEntity' ORDER BY id DESC LIMIT 1",
-          []
+        router.get(
+          "/test/:id",
+          auditReadEntity("TestEntity"),
+          (req: Request, res: Response) => {
+            res.status(200).json({ id: req.params.id, items: largeData });
+          }
         );
 
-        expect(auditLogs[0].response_data).toBeTruthy();
-        const responseData = JSON.parse(auditLogs[0].response_data || "{}");
-        expect(responseData.items).toHaveLength(1000);
-      } finally {
-        cleanup();
-      }
-    });
+        const { app, cleanup } = createExpressTestApp(router, "/api/v1");
+
+        try {
+          await request(app).get("/api/v1/test/123");
+
+          const auditLog = await waitForLatestRow<{
+            response_data: string | null;
+          }>(
+            "SELECT response_data FROM AuditLog WHERE entity_type = 'TestEntity' ORDER BY id DESC LIMIT 1",
+            auditInsertWaitTimeoutMs
+          );
+
+          expect(auditLog.response_data).toBeTruthy();
+          const responseData = JSON.parse(auditLog.response_data || "{}");
+          expect(responseData.items).toHaveLength(1000);
+        } finally {
+          cleanup();
+        }
+      },
+      largeBodyTestTimeoutMs
+    );
 
     it("should not crash request when audit log database insert fails", async () => {
       // Mock runQuery to fail for audit log insert only
