@@ -1,6 +1,6 @@
 import {
-  type Map,
   type Match,
+  type MatchVetoContext,
   type MatchVetoContextTeam,
   type MatchVetoContextVeto,
   getVetoTemplate
@@ -14,7 +14,7 @@ interface MatchMetaRow {
   status: Match["status"];
 }
 
-export const getMatchVetoMeta = async (
+const getMatchVetoMeta = async (
   matchId: number
 ): Promise<MatchMetaRow | null> => {
   const rows = await runQuery<MatchMetaRow[]>(
@@ -24,7 +24,7 @@ export const getMatchVetoMeta = async (
   return rows[0] ?? null;
 };
 
-export const getMatchTeams = async (
+const getMatchTeams = async (
   matchId: number
 ): Promise<MatchVetoContextTeam[]> => {
   const query = `
@@ -37,7 +37,7 @@ export const getMatchTeams = async (
   return runQuery<MatchVetoContextTeam[]>(query, [matchId]);
 };
 
-export const getMatchVetoesWithMapNames = async (
+const getMatchVetoesWithMapNames = async (
   matchId: number
 ): Promise<MatchVetoContextVeto[]> => {
   const query = `
@@ -58,7 +58,9 @@ export const getMatchVetoesWithMapNames = async (
   return runQuery<MatchVetoContextVeto[]>(query, [matchId]);
 };
 
-export const getMatchVetoContext = async (matchId: number) => {
+export const getMatchVetoContext = async (
+  matchId: number
+): Promise<MatchVetoContext | null> => {
   const meta = await getMatchVetoMeta(matchId);
   if (!meta) return null;
 
@@ -75,8 +77,8 @@ export const getMatchVetoContext = async (matchId: number) => {
     best_of: meta.best_of,
     status: meta.status,
     teams,
-    map_pool: mapPool satisfies Map[],
+    map_pool: mapPool,
     vetoes,
     template
-  };
+  } satisfies MatchVetoContext;
 };
