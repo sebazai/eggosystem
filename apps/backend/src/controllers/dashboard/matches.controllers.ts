@@ -2,6 +2,8 @@ import { type NextFunction, type Request, type Response } from "express";
 import { z, ZodError } from "zod";
 import { type FlaggedMatches } from "@eggosystem/types";
 import { getMatchGameMetaForTeamScores } from "../../models/match-game.models";
+import { getMatch } from "../../models/match.models";
+import { deleteMatchTeamMapVetoesByMatchId } from "../../models/match-team-map-veto.models";
 import {
   getTeamIdsForMatch,
   listTeamGameScoresByMatchGameId,
@@ -15,6 +17,10 @@ import {
   NotFoundError,
   UnauthorizedError
 } from "../../utils/errors";
+
+const matchIdParamSchema = z.object({
+  match_id: z.coerce.number().int().positive()
+});
 
 const matchGameIdParamSchema = z.object({
   match_game_id: z.coerce.number().int().positive()
@@ -207,4 +213,24 @@ export const putManualTeamGameScoresController = async (
     match_team_ids: matchTeamRows.map((r) => r.team_id),
     teams
   });
+};
+
+export const deleteMatchTeamMapVetoesController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const parsed = matchIdParamSchema.safeParse(req.params);
+  if (!parsed.success) {
+    return next(parsed.error);
+  }
+  const matchId = parsed.data.match_id;
+
+  const matches = await getMatch(matchId);
+  if (!matches || matches.length === 0) {
+    return next(new NotFoundError("Match not found"));
+  }
+
+  await deleteMatchTeamMapVetoesByMatchId(matchId);
+  res.status(204).end();
 };
