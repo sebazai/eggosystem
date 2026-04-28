@@ -32,9 +32,13 @@ All in `/workspace/.claude/agents/`. Each returns a JSON envelope per `/workspac
 ## Branching
 
 - Branch per task: `feat-<iid>-<task_id>-<slug>` (e.g. `feat-247-T1-stream-route`).
-- Base branch: `development` if no deps; else the latest pushed branch of the deepest dependency.
+- **`base_branch` (how implementers reuse upstream code):**
+  - **No dependencies:** `base_branch = development`. Worktree: `git worktree add … -b <branch> origin/development`. Draft MR **target = `development`**.
+  - **Exactly one dependency (stacked MRs):** `base_branch = <parent task branch name>` (e.g. `feat-338-T2-…`). Worktree: `git worktree add … -b <branch> origin/<parent-branch>`. Draft MR **target = parent branch** (not `development`) so the diff is only the child task and CI runs on top of the parent’s tree. **When to use:** the child must compile against unmerged parent work (typical linear chains). After the parent MR merges to `development`, **rebase the child branch onto current `development` and switch the MR target to `development`** (or merge the stack strictly in topo order if your GitLab prefers that — see Merge train below).
+  - **Multiple dependencies:** there is no single “parent-only” base. Prefer **`development` plus merging each completed dependency branch into the task branch before implementation** (`git merge origin/<dep-branch>` for each prerequisite in topo-safe order). Draft MR typically **targets `development`** once that branch carries all merged predecessors, or carries the merged commits locally so CI is faithful. Alternative: introduce a shared integration branch for the issue once and base later tasks on that (manual/orchestrator choice).
+- **“Deepest dependency” tie-break** (single-dependency stacks): when tasks are independent until they funnel into one child, choose the dependency whose branch must land first (**topological order** among `depends_on`); linear chains simply use the immediate parent branch.
 - One Draft MR per task; opened by `implementer_bot`. Orchestrator unmarks Draft after Final Review approves.
-- After a parent MR merges: orchestrator rebases dependents (`git rebase --onto development <old_parent> <child>`; `--force-with-lease` confirmed by human via the `ask` permission tier).
+- **Merge train (after parents land on `development`):** for dependents that were stacked on a merged parent branch name, orchestrator/human rebases children onto `development` (`git rebase --onto development <old_parent_tip> <child_branch>` or equivalent) and **`--force-with-lease` only after confirmation** (`ask` permission tier — see Phase 6 in `/dag-execute`).
 
 ## Worktrees
 
@@ -82,6 +86,16 @@ git add . && git commit -m "msg" && git push
 # ✅ Correct
 rtk git add . && rtk git commit -m "msg" && rtk git push
 ```
+
+## If RTK output is missing (use tee logs)
+
+RTK may heavily filter output (especially on failures). **When a command fails and you need the full raw output, read the RTK tee log instead of re-running the command.**
+
+- **Devcontainer (Linux) tee logs**: `~/.config/rtk/tee/`
+- **Devcontainer (Linux) config**: `~/.config/rtk/config.toml`
+- **macOS config**: `~/Library/Application Support/rtk/config.toml`
+
+When a command fails, RTK saves the full output as above.
 
 ## RTK Commands by Workflow
 
