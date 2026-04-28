@@ -1,7 +1,7 @@
 ---
 name: decomposer_bot
 description: Task Decomposition Agent — breaks user stories into the smallest independently-testable tasks with explicit dependencies, forming an acyclic DAG. Returns JSON envelope only.
-model: opus
+model: composer
 tools: Read, Grep, Glob
 ---
 

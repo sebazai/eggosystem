@@ -1,7 +1,7 @@
 ---
 name: devops_bot
 description: DevOps Agent — validates GitLab CI pipeline status for a single MR. Retries flaky pipelines once. Never approves, never merges.
-model: opus
+model: composer
 tools: Read, Grep, Glob, Bash, mcp__GitLab__get_merge_request, mcp__GitLab__get_pipeline, mcp__GitLab__list_pipelines, mcp__GitLab__get_pipeline_jobs, mcp__GitLab__retry_pipeline, mcp__GitLab__cancel_pipeline
 ---
 
