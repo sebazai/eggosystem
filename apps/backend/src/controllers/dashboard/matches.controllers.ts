@@ -1,13 +1,19 @@
 import { type NextFunction, type Request, type Response } from "express";
 import { z, ZodError } from "zod";
-import { type FlaggedMatches } from "@eggosystem/types";
+import { type FlaggedMatches, type RequestWithParams } from "@eggosystem/types";
 import { getMatchGameMetaForTeamScores } from "../../models/match-game.models";
+import {
+  getMatch,
+  getUnfinishedMatchesBySeason
+} from "../../models/match.models";
+import { deleteMatchTeamMapVetoesByMatchId } from "../../models/match-team-map-veto.models";
 import {
   getTeamIdsForMatch,
   listTeamGameScoresByMatchGameId,
   saveStaffManualTeamGameScores,
   validateCs2TeamGameScorePair
 } from "../../models/team-game-score.models";
+import { getActiveOrPassedSeasonId } from "../../services/season.services";
 import { logger } from "../../utils/app-logger";
 import { redisClient } from "../../utils/redisClient";
 import {
@@ -15,6 +21,10 @@ import {
   NotFoundError,
   UnauthorizedError
 } from "../../utils/errors";
+
+const matchIdParamSchema = z.object({
+  match_id: z.coerce.number().int().positive()
+});
 
 const matchGameIdParamSchema = z.object({
   match_game_id: z.coerce.number().int().positive()
@@ -51,6 +61,15 @@ const putTeamGameScoresBodySchema = z
       });
     }
   });
+
+export const getUnfinishedMatchesController = async (
+  req: RequestWithParams<{ season_id: string }>,
+  res: Response
+) => {
+  const seasonId = await getActiveOrPassedSeasonId(req.params.season_id);
+  const matches = await getUnfinishedMatchesBySeason(seasonId);
+  res.json({ matches });
+};
 
 export const getFlaggedMatchesController = async (
   req: Request,
@@ -207,4 +226,24 @@ export const putManualTeamGameScoresController = async (
     match_team_ids: matchTeamRows.map((r) => r.team_id),
     teams
   });
+};
+
+export const deleteMatchTeamMapVetoesController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const parsed = matchIdParamSchema.safeParse(req.params);
+  if (!parsed.success) {
+    return next(parsed.error);
+  }
+  const matchId = parsed.data.match_id;
+
+  const matches = await getMatch(matchId);
+  if (!matches || matches.length === 0) {
+    return next(new NotFoundError("Match not found"));
+  }
+
+  await deleteMatchTeamMapVetoesByMatchId(matchId);
+  res.status(204).end();
 };

@@ -1,7 +1,7 @@
 ---
 name: architect_bot
 description: Architecture Agent — designs API endpoints and database schema deltas as structured JSON. Reads MariaDB schema for context. Never writes code or migrations.
-model: opus
+model: composer
 tools: Read, Grep, Glob, mcp__mariadb__list_tables, mcp__mariadb__get_table_schema, mcp__mariadb__get_table_schema_with_relations
 ---
 

@@ -6,7 +6,8 @@ import {
 } from "./match.models";
 import {
   type ChampionshipDetailsReady,
-  type MatchTeamMapVeto
+  type MatchTeamMapVeto,
+  resolveVetoAction
 } from "@eggosystem/types";
 import { getSeasonLeagueTeamByExternalId } from "./season-league-team.models";
 import { getConnection } from "../db/mysqlConnection";
@@ -110,13 +111,12 @@ const addMatchTeamMapVeto = async (
           ? faction1_hub_team_id
           : faction2_hub_team_id;
 
-      // If the veto is the last one and the round is the best of, set it to decider
-      const action =
-        entity.round === vetoAmount &&
-        (best_of % 3 === 0 || best_of % 5 === 0) &&
-        entity.status === "pick"
-          ? "decider"
-          : entity.status;
+      const action = resolveVetoAction(
+        best_of,
+        entity.round,
+        vetoAmount,
+        entity.status
+      );
 
       const vetoOrder = entity.round;
 
@@ -211,6 +211,18 @@ export const addMatchTeamMapVetoes = async (
   } finally {
     connection.release();
   }
+};
+
+export const deleteMatchTeamMapVetoesByMatchId = async (
+  matchId: number,
+  connection?: PoolConnection
+): Promise<number> => {
+  const result = await runQuery<{ affectedRows: number }>(
+    `DELETE FROM MatchTeamMapVetoes WHERE match_id = ?`,
+    [matchId],
+    connection
+  );
+  return result.affectedRows;
 };
 
 export const getMatchPickedMapsOrderedByVetoOrder = async (

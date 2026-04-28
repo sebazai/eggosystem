@@ -160,4 +160,101 @@ describe("Game Routes", () => {
       });
     });
   });
+
+  describe("Analysis routes — invalid param rejection", () => {
+    const analysisRoutes = [
+      "afterplant-analysis",
+      "opening-duels",
+      "kill-matrix",
+      "trade-stats",
+      "insights"
+    ];
+
+    for (const route of analysisRoutes) {
+      it(`GET /abc/${route} returns 400 for non-numeric match_game_id`, async () => {
+        const response = await request(app)
+          .get(`/abc/${route}`)
+          .expect("Content-Type", /json/)
+          .expect(400);
+
+        expect(response.body).toMatchObject({
+          type: "about:blank",
+          status: 400,
+          title: "Bad Request"
+        });
+      });
+    }
+  });
+
+  describe("GET /:match_game_id/afterplant-analysis", () => {
+    it("returns an array for game id 10340", async () => {
+      const response = await request(app)
+        .get("/10340/afterplant-analysis")
+        .expect("Content-Type", /json/)
+        .expect(200);
+
+      expect(Array.isArray(response.body)).toBe(true);
+    });
+
+    it("returns empty array for non-existent game id", async () => {
+      const response = await request(app)
+        .get("/99999/afterplant-analysis")
+        .expect("Content-Type", /json/)
+        .expect(200);
+
+      expect(Array.isArray(response.body)).toBe(true);
+      expect(response.body).toHaveLength(0);
+    });
+  });
+
+  describe("GET /:match_game_id/kill-matrix", () => {
+    it("returns kill matrix shape for game id 10340", async () => {
+      const response = await request(app)
+        .get("/10340/kill-matrix")
+        .expect("Content-Type", /json/)
+        .expect(200);
+
+      expect(response.body).toHaveProperty("kills");
+      expect(response.body).toHaveProperty("flash_assists");
+      expect(Array.isArray(response.body.kills)).toBe(true);
+      expect(Array.isArray(response.body.flash_assists)).toBe(true);
+    });
+  });
+
+  describe("GET /:match_game_id/opening-duels", () => {
+    it("returns an array for game id 10340", async () => {
+      const response = await request(app)
+        .get("/10340/opening-duels")
+        .expect("Content-Type", /json/)
+        .expect(200);
+
+      expect(Array.isArray(response.body)).toBe(true);
+    });
+  });
+
+  describe("GET /:match_game_id/trade-stats", () => {
+    it("returns trade stats shape for game id 10340", async () => {
+      const response = await request(app)
+        .get("/10340/trade-stats")
+        .expect("Content-Type", /json/)
+        .expect(200);
+
+      expect(response.body).toHaveProperty("players");
+      expect(response.body).toHaveProperty("matrix");
+      expect(Array.isArray(response.body.players)).toBe(true);
+      expect(Array.isArray(response.body.matrix)).toBe(true);
+    });
+  });
+
+  describe("GET /:match_game_id/insights", () => {
+    it("returns insights shape for game id 10340", async () => {
+      const response = await request(app)
+        .get("/10340/insights")
+        .expect("Content-Type", /json/)
+        .expect(200);
+
+      expect(response.body).toHaveProperty("teams");
+      expect(Array.isArray(response.body.teams)).toBe(true);
+    });
+  });
 });
