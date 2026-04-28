@@ -23,6 +23,16 @@ const BO1_TEMPLATE: VetoTemplate = {
 };
 
 /**
+ * BO2 — four bans, two picks, one final ban (no decider).
+ * A-ban, B-ban, A-ban, B-ban, A-pick, B-pick, B-ban.
+ */
+const BO2_TEMPLATE: VetoTemplate = {
+  bestOf: 2,
+  mapPoolSize: CS2_MAP_POOL_SIZE,
+  steps: buildSteps(["drop", "drop", "drop", "drop", "pick", "pick", "drop"])
+};
+
+/**
  * BO3 — two bans, two picks, two bans, one decider.
  * A-ban, B-ban, A-pick, B-pick, A-ban, B-ban, decider.
  */
@@ -44,6 +54,7 @@ const BO5_TEMPLATE: VetoTemplate = {
 
 const VETO_TEMPLATE_MAP: ReadonlyMap<number, VetoTemplate> = new Map([
   [1, BO1_TEMPLATE],
+  [2, BO2_TEMPLATE],
   [3, BO3_TEMPLATE],
   [5, BO5_TEMPLATE]
 ]);
@@ -97,6 +108,7 @@ export function resolveVetoAction(
     template !== undefined &&
     totalSteps !== template.steps.length
   ) {
+    if (bestOf === 2) return "pick";
     return bestOf % 3 === 0 || bestOf % 5 === 0 ? "decider" : "pick";
   }
 

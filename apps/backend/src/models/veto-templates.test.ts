@@ -13,6 +13,14 @@ describe("getVetoTemplate", () => {
     expect(tpl!.steps).toHaveLength(7);
   });
 
+  it("returns BO2 template with 7 steps", () => {
+    const tpl = getVetoTemplate(2);
+    expect(tpl).toBeDefined();
+    expect(tpl!.bestOf).toBe(2);
+    expect(tpl!.mapPoolSize).toBe(7);
+    expect(tpl!.steps).toHaveLength(7);
+  });
+
   it("returns BO3 template with 7 steps", () => {
     const tpl = getVetoTemplate(3);
     expect(tpl).toBeDefined();
@@ -28,7 +36,6 @@ describe("getVetoTemplate", () => {
   });
 
   it("returns undefined for unknown best-of value", () => {
-    expect(getVetoTemplate(2)).toBeUndefined();
     expect(getVetoTemplate(7)).toBeUndefined();
   });
 
@@ -39,6 +46,15 @@ describe("getVetoTemplate", () => {
     expect(actions.filter((a) => a === "decider")).toHaveLength(1);
     expect(actions.filter((a) => a === "pick")).toHaveLength(0);
     expect(actions[6]).toBe("decider");
+  });
+
+  it("BO2 template has 5 drops and 2 picks", () => {
+    const tpl = getVetoTemplate(2)!;
+    const actions = tpl.steps.map((s) => s.action);
+    expect(actions.filter((a) => a === "drop")).toHaveLength(5);
+    expect(actions.filter((a) => a === "pick")).toHaveLength(2);
+    expect(actions.filter((a) => a === "decider")).toHaveLength(0);
+    expect(actions[6]).toBe("drop");
   });
 
   it("BO3 template has 4 drops, 2 picks and 1 decider", () => {
@@ -69,10 +85,11 @@ describe("getVetoTemplate", () => {
 });
 
 describe("getAllVetoTemplates", () => {
-  it("returns a map with 3 templates", () => {
+  it("returns a map with 4 templates", () => {
     const all = getAllVetoTemplates();
-    expect(all.size).toBe(3);
+    expect(all.size).toBe(4);
     expect(all.has(1)).toBe(true);
+    expect(all.has(2)).toBe(true);
     expect(all.has(3)).toBe(true);
     expect(all.has(5)).toBe(true);
   });
@@ -84,6 +101,19 @@ describe("resolveVetoAction", () => {
       expect(resolveVetoAction(1, 1, 7, "drop")).toBe("drop");
       expect(resolveVetoAction(1, 6, 7, "drop")).toBe("drop");
       expect(resolveVetoAction(1, 7, 7, "pick")).toBe("decider");
+    });
+  });
+
+  describe("with BO2 template", () => {
+    it("resolves bans at positions 1-4 and 7", () => {
+      expect(resolveVetoAction(2, 1, 7, "drop")).toBe("drop");
+      expect(resolveVetoAction(2, 4, 7, "drop")).toBe("drop");
+      expect(resolveVetoAction(2, 7, 7, "drop")).toBe("drop");
+    });
+
+    it("resolves picks at positions 5-6", () => {
+      expect(resolveVetoAction(2, 5, 7, "pick")).toBe("pick");
+      expect(resolveVetoAction(2, 6, 7, "pick")).toBe("pick");
     });
   });
 
@@ -137,19 +167,19 @@ describe("resolveVetoAction", () => {
 
   describe("fallback for unknown best-of", () => {
     it("classifies last pick as decider", () => {
-      expect(resolveVetoAction(2, 5, 5, "pick")).toBe("decider");
+      expect(resolveVetoAction(7, 5, 5, "pick")).toBe("decider");
     });
 
     it("passes through drop for non-last position", () => {
-      expect(resolveVetoAction(2, 3, 5, "drop")).toBe("drop");
+      expect(resolveVetoAction(7, 3, 5, "drop")).toBe("drop");
     });
 
     it("passes through pick for non-last position", () => {
-      expect(resolveVetoAction(2, 3, 5, "pick")).toBe("pick");
+      expect(resolveVetoAction(7, 3, 5, "pick")).toBe("pick");
     });
 
     it("does not reclassify last drop as decider", () => {
-      expect(resolveVetoAction(2, 5, 5, "drop")).toBe("drop");
+      expect(resolveVetoAction(7, 5, 5, "drop")).toBe("drop");
     });
   });
 });
