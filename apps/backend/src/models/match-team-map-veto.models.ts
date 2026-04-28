@@ -233,6 +233,22 @@ export interface CreateVetoStepInput {
 }
 
 /**
+ * Count veto rows already stored for the match (used to reject duplicate submissions).
+ */
+export const countExistingVetoStepsForMatch = async (
+  matchId: number,
+  connection: PoolConnection
+): Promise<number> => {
+  const rows = await runQuery<Array<{ cnt: number }>>(
+    `SELECT COUNT(*) AS cnt FROM MatchTeamMapVetoes WHERE match_id = ?`,
+    [matchId],
+    connection
+  );
+  const raw = rows[0]?.cnt;
+  return typeof raw === "number" ? raw : Number(raw ?? 0);
+};
+
+/**
  * Bulk-insert admin-provided veto steps inside an existing transaction.
  * Actions are resolved from the veto template for the match's best_of value.
  */

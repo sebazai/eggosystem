@@ -3,14 +3,17 @@ import { z } from "zod";
 import { getVetoTemplate } from "@eggosystem/types";
 import { getMatch } from "../../models/match.models";
 import { getTeamIdsForMatch } from "../../models/team-game-score.models";
-import { getActiveMapPoolBySeasonId } from "../../models/season-active-map-pool.models";
+import { getSeasonMapPoolForMatch } from "../../models/season-active-map-pool.models";
 import {
   createMatchVetoSteps,
+  countExistingVetoStepsForMatch,
   type CreateVetoStepInput
 } from "../../models/match-team-map-veto.models";
 import { getConnection } from "../../db/mysqlConnection";
+import { convertDatabaseErrorToConflictError } from "../../utils/database-errors";
 import {
   BadRequestError,
+  ConflictError,
   NotFoundError,
   UnauthorizedError
 } from "../../utils/errors";
@@ -97,20 +100,18 @@ export const createMatchVetoStepsController = async (
     }
   }
 
-  const mapPool = await getActiveMapPoolBySeasonId(match.season_id);
-  if (mapPool.length === 0) {
+  const mapRows = await getSeasonMapPoolForMatch(matchId);
+  if (mapRows.length === 0) {
     return next(
-      new BadRequestError(
-        `No active map pool found for season ${match.season_id}`
-      )
+      new BadRequestError(`No active map pool found for match ${matchId}`)
     );
   }
-  const allowedMapIds = new Set(mapPool);
+  const allowedMapIds = new Set(mapRows.map((m) => m.id));
   for (const step of steps) {
     if (!allowedMapIds.has(step.map_id)) {
       return next(
         new BadRequestError(
-          `map_id ${step.map_id} is not in the active map pool for season ${match.season_id}`
+          `map_id ${step.map_id} is not in the active map pool for this match`
         )
       );
     }
@@ -130,6 +131,14 @@ export const createMatchVetoStepsController = async (
   try {
     await connection.beginTransaction();
 
+    const existing = await countExistingVetoStepsForMatch(matchId, connection);
+    if (existing > 0) {
+      await connection.rollback();
+      return next(
+        new ConflictError("Map veto steps already exist for this match")
+      );
+    }
+
     const vetoInputs: CreateVetoStepInput[] = steps.map((s) => ({
       match_id: matchId,
       team_id: s.team_id,
@@ -147,6 +156,10 @@ export const createMatchVetoStepsController = async (
     res.status(201).json({ match_id: matchId, vetoes: created });
   } catch (error) {
     await connection.rollback();
+    const conflict = convertDatabaseErrorToConflictError(error);
+    if (conflict !== null) {
+      return next(conflict);
+    }
     throw error;
   } finally {
     connection.release();

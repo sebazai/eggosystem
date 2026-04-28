@@ -11,11 +11,15 @@ import {
 import { createMockUserPayload } from "@eggosystem/types";
 import { getMatch } from "../../../models/match.models";
 import { getTeamIdsForMatch } from "../../../models/team-game-score.models";
-import { getActiveMapPoolBySeasonId } from "../../../models/season-active-map-pool.models";
-import { createMatchVetoSteps } from "../../../models/match-team-map-veto.models";
+import { getSeasonMapPoolForMatch } from "../../../models/season-active-map-pool.models";
+import {
+  countExistingVetoStepsForMatch,
+  createMatchVetoSteps
+} from "../../../models/match-team-map-veto.models";
 import { getConnection } from "../../../db/mysqlConnection";
 import matchRouter from "./match.routes";
 import type { PoolConnection } from "mysql2/promise";
+import type { Match } from "@eggosystem/types";
 
 jest.mock("../../../db/mysqlRunQuery");
 
@@ -44,12 +48,13 @@ jest.mock("../../../models/team-game-score.models", () => ({
 
 jest.mock("../../../models/season-active-map-pool.models", () => ({
   ...jest.requireActual("../../../models/season-active-map-pool.models"),
-  getActiveMapPoolBySeasonId: jest.fn()
+  getSeasonMapPoolForMatch: jest.fn()
 }));
 
 jest.mock("../../../models/match-team-map-veto.models", () => ({
   ...jest.requireActual("../../../models/match-team-map-veto.models"),
-  createMatchVetoSteps: jest.fn()
+  createMatchVetoSteps: jest.fn(),
+  countExistingVetoStepsForMatch: jest.fn()
 }));
 
 const mockCommit = jest.fn();
@@ -84,7 +89,8 @@ jest.mock("../../../middlewares/auth.middleware", () => ({
 
 const mockGetMatch = jest.mocked(getMatch);
 const mockGetTeamIds = jest.mocked(getTeamIdsForMatch);
-const mockGetMapPool = jest.mocked(getActiveMapPoolBySeasonId);
+const mockGetSeasonMapPoolForMatch = jest.mocked(getSeasonMapPoolForMatch);
+const mockCountExistingVetoes = jest.mocked(countExistingVetoStepsForMatch);
 const mockCreateSteps = jest.mocked(createMatchVetoSteps);
 const mockGetConnection = jest.mocked(getConnection);
 
@@ -95,14 +101,12 @@ const bo3Match = {
   stage: 1,
   best_of: 3,
   external_match_room_id: null,
-  group: null,
-  round: null,
-  status: "SCHEDULED" as const,
-  created_at: new Date(),
-  updated_at: new Date(),
-  start_timestamp: new Date(),
+  group: 1,
+  round: 1,
+  status: "SCHEDULED",
+  start_timestamp: "2025-01-01T00:00:00.000Z",
   end_timestamp: null
-};
+} satisfies Match;
 
 const validBo3Steps = [
   { team_id: 100, map_id: 1, veto_order: 1 },
@@ -138,6 +142,11 @@ describe("POST /api/v1/dashboard/matches/:match_id/vetoes", () => {
     mockGetPermissions.mockResolvedValue([]);
     mockGetRoles.mockResolvedValue(["admin"]);
 
+    mockGetSeasonMapPoolForMatch.mockResolvedValue(
+      [1, 2, 3, 4, 5, 6, 7].map((id) => ({ id, name: `Map ${id}` }))
+    );
+    mockCountExistingVetoes.mockResolvedValue(0);
+
     mockGetConnection.mockResolvedValue({
       beginTransaction: mockBeginTransaction,
       commit: mockCommit,
@@ -153,7 +162,6 @@ describe("POST /api/v1/dashboard/matches/:match_id/vetoes", () => {
   it("creates veto steps and returns 201", async () => {
     mockGetMatch.mockResolvedValue([bo3Match]);
     mockGetTeamIds.mockResolvedValue([{ team_id: 100 }, { team_id: 200 }]);
-    mockGetMapPool.mockResolvedValue([1, 2, 3, 4, 5, 6, 7]);
     mockCreateSteps.mockResolvedValue(
       validBo3Steps.map((s, i) => ({
         id: i + 1,
@@ -221,7 +229,9 @@ describe("POST /api/v1/dashboard/matches/:match_id/vetoes", () => {
   it("returns 400 when map_id is not in the active map pool", async () => {
     mockGetMatch.mockResolvedValue([bo3Match]);
     mockGetTeamIds.mockResolvedValue([{ team_id: 100 }, { team_id: 200 }]);
-    mockGetMapPool.mockResolvedValue([1, 2, 3, 4, 5, 6]);
+    mockGetSeasonMapPoolForMatch.mockResolvedValue(
+      [1, 2, 3, 4, 5, 6].map((id) => ({ id, name: `Map ${id}` }))
+    );
 
     const res = await request(app)
       .post("/api/v1/dashboard/matches/10/vetoes")
@@ -229,13 +239,14 @@ describe("POST /api/v1/dashboard/matches/:match_id/vetoes", () => {
       .send({ steps: validBo3Steps });
 
     expect(res.status).toBe(400);
-    expect(res.body.detail).toMatch(/map_id 7 is not in the active map pool/);
+    expect(res.body.detail).toMatch(
+      /map_id 7 is not in the active map pool for this match/
+    );
   });
 
   it("returns 400 when duplicate map_id values exist", async () => {
     mockGetMatch.mockResolvedValue([bo3Match]);
     mockGetTeamIds.mockResolvedValue([{ team_id: 100 }, { team_id: 200 }]);
-    mockGetMapPool.mockResolvedValue([1, 2, 3, 4, 5, 6, 7]);
 
     const dupSteps = validBo3Steps.map((s, i) =>
       i === 6 ? { ...s, map_id: 1 } : s
@@ -270,7 +281,6 @@ describe("POST /api/v1/dashboard/matches/:match_id/vetoes", () => {
   it("rolls back the transaction on model error", async () => {
     mockGetMatch.mockResolvedValue([bo3Match]);
     mockGetTeamIds.mockResolvedValue([{ team_id: 100 }, { team_id: 200 }]);
-    mockGetMapPool.mockResolvedValue([1, 2, 3, 4, 5, 6, 7]);
     mockCreateSteps.mockRejectedValue(new Error("DB error"));
 
     await request(app)
@@ -290,6 +300,40 @@ describe("POST /api/v1/dashboard/matches/:match_id/vetoes", () => {
       .send({});
 
     expect(res.status).toBe(400);
+  });
+
+  it("returns 409 when veto steps already exist for this match", async () => {
+    mockGetMatch.mockResolvedValue([bo3Match]);
+    mockGetTeamIds.mockResolvedValue([{ team_id: 100 }, { team_id: 200 }]);
+    mockCountExistingVetoes.mockResolvedValue(3);
+
+    const res = await request(app)
+      .post("/api/v1/dashboard/matches/10/vetoes")
+      .set("Authorization", "Bearer x")
+      .send({ steps: validBo3Steps });
+
+    expect(res.status).toBe(409);
+    expect(res.body.detail).toMatch(/Map veto steps already exist/);
+    expect(mockRollback).toHaveBeenCalled();
+    expect(mockCreateSteps).not.toHaveBeenCalled();
+  });
+
+  it("returns 409 when insert hits duplicate veto key (race)", async () => {
+    mockGetMatch.mockResolvedValue([bo3Match]);
+    mockGetTeamIds.mockResolvedValue([{ team_id: 100 }, { team_id: 200 }]);
+    mockCreateSteps.mockRejectedValue({
+      code: "ER_DUP_ENTRY",
+      sqlMessage:
+        "Duplicate entry '10-100-1' for key 'matchteammapvetoes_match_id_team_id_veto_order_unique'"
+    });
+
+    const res = await request(app)
+      .post("/api/v1/dashboard/matches/10/vetoes")
+      .set("Authorization", "Bearer x")
+      .send({ steps: validBo3Steps });
+
+    expect(res.status).toBe(409);
+    expect(mockRollback).toHaveBeenCalled();
   });
 
   it("returns 400 when best_of has no template", async () => {
