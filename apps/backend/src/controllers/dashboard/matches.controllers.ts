@@ -7,6 +7,7 @@ import {
   getUnfinishedMatchesBySeason
 } from "../../models/match.models";
 import { deleteMatchTeamMapVetoesByMatchId } from "../../models/match-team-map-veto.models";
+import { getMatchVetoContext } from "../../models/match-veto-context.models";
 import {
   getTeamIdsForMatch,
   listTeamGameScoresByMatchGameId,
@@ -246,4 +247,22 @@ export const deleteMatchTeamMapVetoesController = async (
 
   await deleteMatchTeamMapVetoesByMatchId(matchId);
   res.status(204).end();
+};
+
+export const getMatchVetoContextController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const parsed = matchIdParamSchema.safeParse(req.params);
+  if (!parsed.success) {
+    return next(parsed.error);
+  }
+
+  const context = await getMatchVetoContext(parsed.data.match_id);
+  if (!context) {
+    return next(new NotFoundError("Match not found"));
+  }
+
+  res.json(context);
 };
