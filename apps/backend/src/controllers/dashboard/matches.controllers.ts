@@ -2,7 +2,6 @@ import { type NextFunction, type Request, type Response } from "express";
 import { z, ZodError } from "zod";
 import { type FlaggedMatches, type RequestWithParams } from "@eggosystem/types";
 import { getMatchGameMetaForTeamScores } from "../../models/match-game.models";
-import { getUnfinishedMatchesBySeason } from "../../models/match.models";
 import {
   getMatch,
   getUnfinishedMatchesBySeason
