@@ -1,8 +1,28 @@
 import {
+  getExpectedVetoActingTeamId,
   getVetoTemplate,
   getAllVetoTemplates,
   resolveVetoAction
 } from "@eggosystem/types";
+
+describe("getExpectedVetoActingTeamId", () => {
+  const pair = [100, 200] as const;
+
+  it("odd veto_order uses vote starter", () => {
+    expect(getExpectedVetoActingTeamId(1, 100, pair)).toBe(100);
+    expect(getExpectedVetoActingTeamId(3, 100, pair)).toBe(100);
+    expect(getExpectedVetoActingTeamId(1, 200, pair)).toBe(200);
+  });
+
+  it("even veto_order uses the other team", () => {
+    expect(getExpectedVetoActingTeamId(2, 100, pair)).toBe(200);
+    expect(getExpectedVetoActingTeamId(6, 200, pair)).toBe(100);
+  });
+
+  it("returns null when vote starter is not a participant", () => {
+    expect(getExpectedVetoActingTeamId(1, 999, pair)).toBeNull();
+  });
+});
 
 describe("getVetoTemplate", () => {
   it("returns BO1 template with 7 steps", () => {

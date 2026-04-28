@@ -118,6 +118,19 @@ const validBo3Steps = [
   { team_id: 100, map_id: 7, veto_order: 7 }
 ];
 
+const bo3VetoBody = (
+  steps: (typeof validBo3Steps)[number][],
+  voteStarterTeamId = 100
+) => ({
+  vote_starter_team_id: voteStarterTeamId,
+  steps
+});
+
+const bo3StepsVoteStarter200 = validBo3Steps.map((s) => ({
+  ...s,
+  team_id: s.veto_order % 2 === 1 ? 200 : 100
+}));
+
 describe("POST /api/v1/dashboard/matches/:match_id/vetoes", () => {
   let app: express.Application;
   let cleanup: () => void;
@@ -176,7 +189,7 @@ describe("POST /api/v1/dashboard/matches/:match_id/vetoes", () => {
     const res = await request(app)
       .post("/api/v1/dashboard/matches/10/vetoes")
       .set("Authorization", "Bearer x")
-      .send({ steps: validBo3Steps });
+      .send(bo3VetoBody(validBo3Steps));
 
     expect(res.status).toBe(201);
     expect(res.body.match_id).toBe(10);
@@ -186,13 +199,69 @@ describe("POST /api/v1/dashboard/matches/:match_id/vetoes", () => {
     expect(mockRelease).toHaveBeenCalled();
   });
 
+  it("creates veto steps when vote_starter_team_id is the higher team id (B starts)", async () => {
+    mockGetMatch.mockResolvedValue([bo3Match]);
+    mockGetTeamIds.mockResolvedValue([{ team_id: 100 }, { team_id: 200 }]);
+    mockCreateSteps.mockResolvedValue(
+      bo3StepsVoteStarter200.map((s, i) => ({
+        id: i + 1,
+        match_id: 10,
+        team_id: s.team_id,
+        map_id: s.map_id,
+        action: i < 2 ? "drop" : i < 4 ? "pick" : i < 6 ? "drop" : "decider",
+        veto_order: s.veto_order
+      }))
+    );
+
+    const res = await request(app)
+      .post("/api/v1/dashboard/matches/10/vetoes")
+      .set("Authorization", "Bearer x")
+      .send(bo3VetoBody(bo3StepsVoteStarter200, 200));
+
+    expect(res.status).toBe(201);
+  });
+
+  it("returns 400 when veto step team_id breaks alternating order for vote_starter_team_id", async () => {
+    mockGetMatch.mockResolvedValue([bo3Match]);
+    mockGetTeamIds.mockResolvedValue([{ team_id: 100 }, { team_id: 200 }]);
+
+    const wrongAlternation = validBo3Steps.map((s) =>
+      s.veto_order === 2 ? { ...s, team_id: 100 } : s
+    );
+
+    const res = await request(app)
+      .post("/api/v1/dashboard/matches/10/vetoes")
+      .set("Authorization", "Bearer x")
+      .send(bo3VetoBody(wrongAlternation));
+
+    expect(res.status).toBe(400);
+    expect(res.body.detail).toMatch(
+      /veto_order 2 must be performed by team_id 200/
+    );
+  });
+
+  it("returns 400 when vote_starter_team_id is not a match participant", async () => {
+    mockGetMatch.mockResolvedValue([bo3Match]);
+    mockGetTeamIds.mockResolvedValue([{ team_id: 100 }, { team_id: 200 }]);
+
+    const res = await request(app)
+      .post("/api/v1/dashboard/matches/10/vetoes")
+      .set("Authorization", "Bearer x")
+      .send(bo3VetoBody(validBo3Steps, 999));
+
+    expect(res.status).toBe(400);
+    expect(res.body.detail).toMatch(
+      /vote_starter_team_id 999 is not a participant/
+    );
+  });
+
   it("returns 404 when match not found", async () => {
     mockGetMatch.mockResolvedValue([]);
 
     const res = await request(app)
       .post("/api/v1/dashboard/matches/999/vetoes")
       .set("Authorization", "Bearer x")
-      .send({ steps: validBo3Steps });
+      .send(bo3VetoBody(validBo3Steps));
 
     expect(res.status).toBe(404);
   });
@@ -203,7 +272,7 @@ describe("POST /api/v1/dashboard/matches/:match_id/vetoes", () => {
     const res = await request(app)
       .post("/api/v1/dashboard/matches/10/vetoes")
       .set("Authorization", "Bearer x")
-      .send({ steps: validBo3Steps.slice(0, 3) });
+      .send(bo3VetoBody(validBo3Steps.slice(0, 3)));
 
     expect(res.status).toBe(400);
     expect(res.body.detail).toMatch(/Expected 7 veto steps/);
@@ -220,7 +289,7 @@ describe("POST /api/v1/dashboard/matches/:match_id/vetoes", () => {
     const res = await request(app)
       .post("/api/v1/dashboard/matches/10/vetoes")
       .set("Authorization", "Bearer x")
-      .send({ steps: badSteps });
+      .send(bo3VetoBody(badSteps));
 
     expect(res.status).toBe(400);
     expect(res.body.detail).toMatch(/team_id 999 is not a participant/);
@@ -236,7 +305,7 @@ describe("POST /api/v1/dashboard/matches/:match_id/vetoes", () => {
     const res = await request(app)
       .post("/api/v1/dashboard/matches/10/vetoes")
       .set("Authorization", "Bearer x")
-      .send({ steps: validBo3Steps });
+      .send(bo3VetoBody(validBo3Steps));
 
     expect(res.status).toBe(400);
     expect(res.body.detail).toMatch(
@@ -255,7 +324,7 @@ describe("POST /api/v1/dashboard/matches/:match_id/vetoes", () => {
     const res = await request(app)
       .post("/api/v1/dashboard/matches/10/vetoes")
       .set("Authorization", "Bearer x")
-      .send({ steps: dupSteps });
+      .send(bo3VetoBody(dupSteps));
 
     expect(res.status).toBe(400);
     expect(res.body.detail).toMatch(/Duplicate map_id/);
@@ -272,7 +341,7 @@ describe("POST /api/v1/dashboard/matches/:match_id/vetoes", () => {
     const res = await request(app)
       .post("/api/v1/dashboard/matches/10/vetoes")
       .set("Authorization", "Bearer x")
-      .send({ steps: badOrders });
+      .send(bo3VetoBody(badOrders));
 
     expect(res.status).toBe(400);
     expect(res.body.detail).toMatch(/veto_order values must be sequential/);
@@ -286,7 +355,7 @@ describe("POST /api/v1/dashboard/matches/:match_id/vetoes", () => {
     await request(app)
       .post("/api/v1/dashboard/matches/10/vetoes")
       .set("Authorization", "Bearer x")
-      .send({ steps: validBo3Steps });
+      .send(bo3VetoBody(validBo3Steps));
 
     expect(mockRollback).toHaveBeenCalled();
     expect(mockRelease).toHaveBeenCalled();
@@ -310,7 +379,7 @@ describe("POST /api/v1/dashboard/matches/:match_id/vetoes", () => {
     const res = await request(app)
       .post("/api/v1/dashboard/matches/10/vetoes")
       .set("Authorization", "Bearer x")
-      .send({ steps: validBo3Steps });
+      .send(bo3VetoBody(validBo3Steps));
 
     expect(res.status).toBe(409);
     expect(res.body.detail).toMatch(/Map veto steps already exist/);
@@ -330,7 +399,7 @@ describe("POST /api/v1/dashboard/matches/:match_id/vetoes", () => {
     const res = await request(app)
       .post("/api/v1/dashboard/matches/10/vetoes")
       .set("Authorization", "Bearer x")
-      .send({ steps: validBo3Steps });
+      .send(bo3VetoBody(validBo3Steps));
 
     expect(res.status).toBe(409);
     expect(mockRollback).toHaveBeenCalled();
@@ -342,7 +411,7 @@ describe("POST /api/v1/dashboard/matches/:match_id/vetoes", () => {
     const res = await request(app)
       .post("/api/v1/dashboard/matches/10/vetoes")
       .set("Authorization", "Bearer x")
-      .send({ steps: validBo3Steps });
+      .send(bo3VetoBody(validBo3Steps));
 
     expect(res.status).toBe(400);
     expect(res.body.detail).toMatch(/No veto template/);

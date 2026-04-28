@@ -92,3 +92,25 @@ export function resolveVetoAction(
 
   return faceitAction;
 }
+
+/**
+ * Team that must act at this veto step under alternating BO1/BO3/BO5 rules
+ * (A-ban, B-ban, …): odd `vetoOrder` (1-based) uses `voteStarterTeamId`, even uses the other match team.
+ *
+ * `orderedMatchTeamIds` must be the two participant team ids in **ascending `team_id` order**
+ * (same order as `MatchTeams` for a two-team match).
+ *
+ * @returns `null` when `voteStarterTeamId` is not one of the two teams.
+ */
+export function getExpectedVetoActingTeamId(
+  vetoOrder: number,
+  voteStarterTeamId: number,
+  orderedMatchTeamIds: readonly [number, number]
+): number | null {
+  const [teamLow, teamHigh] = orderedMatchTeamIds;
+  if (voteStarterTeamId !== teamLow && voteStarterTeamId !== teamHigh) {
+    return null;
+  }
+  const otherTeamId = voteStarterTeamId === teamLow ? teamHigh : teamLow;
+  return vetoOrder % 2 === 1 ? voteStarterTeamId : otherTeamId;
+}
