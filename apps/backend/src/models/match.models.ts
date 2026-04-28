@@ -22,7 +22,9 @@ import {
   FaceitMatchStatus,
   type MatchGamesByTeam,
   type MatchWithStreamUrls,
-  type SeasonLeague
+  type SeasonLeague,
+  type UnfinishedMatch,
+  type UnfinishedMatchQuery
 } from "@eggosystem/types";
 import {
   fetchPlayerStatsForMatchOrGame,
@@ -1186,6 +1188,40 @@ export const getMatchTeamLineups = async (matchId: number) => {
   });
 
   return teams;
+};
+
+export const getUnfinishedMatchesBySeason = async (
+  seasonId: number
+): Promise<UnfinishedMatch[]> => {
+  const query = `
+    SELECT
+      m.id AS match_id,
+      l.name AS league_name,
+      t1.name AS team1_name,
+      t2.name AS team2_name,
+      m.best_of,
+      m.status,
+      m.start_timestamp
+    FROM Matches m
+    JOIN Leagues l ON l.id = m.league_id
+    JOIN MatchTeams mt1 ON mt1.match_id = m.id
+    JOIN Teams t1 ON t1.id = mt1.team_id
+    JOIN MatchTeams mt2 ON mt2.match_id = m.id AND mt2.team_id > mt1.team_id
+    JOIN Teams t2 ON t2.id = mt2.team_id
+    WHERE m.season_id = ?
+      AND m.status NOT IN ('FINISHED', 'ABORTED', 'CANCELLED', 'FORFEIT')
+    ORDER BY m.start_timestamp ASC
+  `;
+
+  const rows = await runQuery<UnfinishedMatchQuery[]>(query, [seasonId]);
+
+  return rows.map((row) => ({
+    match_id: row.match_id,
+    label: `${row.league_name} ${row.team1_name} vs. ${row.team2_name}`,
+    best_of: row.best_of,
+    status: row.status,
+    start_timestamp: row.start_timestamp
+  }));
 };
 
 export const ensureMatchIdAndTeamIdMatches = async (
