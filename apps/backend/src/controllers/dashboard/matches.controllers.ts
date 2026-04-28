@@ -1,8 +1,11 @@
 import { type NextFunction, type Request, type Response } from "express";
 import { z, ZodError } from "zod";
-import { type FlaggedMatches } from "@eggosystem/types";
+import { type FlaggedMatches, type RequestWithParams } from "@eggosystem/types";
 import { getMatchGameMetaForTeamScores } from "../../models/match-game.models";
-import { getMatch } from "../../models/match.models";
+import {
+  getMatch,
+  getUnfinishedMatchesBySeason
+} from "../../models/match.models";
 import { deleteMatchTeamMapVetoesByMatchId } from "../../models/match-team-map-veto.models";
 import {
   getTeamIdsForMatch,
@@ -10,6 +13,7 @@ import {
   saveStaffManualTeamGameScores,
   validateCs2TeamGameScorePair
 } from "../../models/team-game-score.models";
+import { getActiveOrPassedSeasonId } from "../../services/season.services";
 import { logger } from "../../utils/app-logger";
 import { redisClient } from "../../utils/redisClient";
 import {
@@ -57,6 +61,15 @@ const putTeamGameScoresBodySchema = z
       });
     }
   });
+
+export const getUnfinishedMatchesController = async (
+  req: RequestWithParams<{ season_id: string }>,
+  res: Response
+) => {
+  const seasonId = await getActiveOrPassedSeasonId(req.params.season_id);
+  const matches = await getUnfinishedMatchesBySeason(seasonId);
+  res.json({ matches });
+};
 
 export const getFlaggedMatchesController = async (
   req: Request,
