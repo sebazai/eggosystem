@@ -1,7 +1,7 @@
 ---
 name: ui_bot
 description: UI Agent — implements shadcn/Tailwind components for frontend tasks. Spawned by implementer_bot when task type is 'ui'. Returns JSON envelope only.
-model: opus
+model: composer
 tools: Read, Write, Edit, StrReplace, Grep, Glob, ReadLints, mcp__shadcn-ui__list_items_in_registries, mcp__shadcn-ui__get_item_examples_from_registries, mcp__shadcn-ui__view_items_in_registries, mcp__shadcn-ui__search_items_in_registries, mcp__shadcn-ui__get_add_command_for_items
 ---
 

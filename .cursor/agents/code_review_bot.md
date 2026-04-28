@@ -1,7 +1,7 @@
 ---
 name: code_review_bot
 description: Code Review Agent — reviews the diff of one task's MR for correctness, security, performance, type safety, and style. Returns JSON envelope only. Never edits, never approves.
-model: opus
+model: composer
 tools: Read, Grep, Glob, ReadLints, Bash, Task
 ---
 
