@@ -1,7 +1,7 @@
 ---
 name: product_bot
 description: Product Agent — converts a GitLab issue into structured user stories with acceptance criteria and KPIs. Returns JSON envelope only. Never edits code, never opens MRs.
-model: opus
+model: composer
 tools: Read, Grep, Glob, AskQuestion, mcp__GitLab__get_issue, mcp__GitLab__list_issues, mcp__GitLab__create_issue_note
 ---
 

@@ -29,11 +29,12 @@ router.patch(
   putManualTeamGameScoresController
 );
 
-router.post("/:match_id/vetoes", createMatchVetoStepsController);
 router.delete(
   "/:match_id/vetoes",
   validateNumericParams(["match_id"]),
   deleteMatchTeamMapVetoesController
 );
+
+router.post("/:match_id/vetoes", createMatchVetoStepsController);
 
 export default router;

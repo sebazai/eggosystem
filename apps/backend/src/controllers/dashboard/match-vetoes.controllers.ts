@@ -1,6 +1,9 @@
 import { type NextFunction, type Request, type Response } from "express";
 import { z } from "zod";
-import { getVetoTemplate } from "@eggosystem/types";
+import {
+  getExpectedVetoActingTeamId,
+  getVetoTemplate
+} from "@eggosystem/types";
 import { getMatch } from "../../models/match.models";
 import { getTeamIdsForMatch } from "../../models/team-game-score.models";
 import { getSeasonMapPoolForMatch } from "../../models/season-active-map-pool.models";
@@ -29,6 +32,7 @@ const vetoStepSchema = z.object({
 });
 
 const createVetoStepsBodySchema = z.object({
+  vote_starter_team_id: z.number().int().positive(),
   steps: z.array(vetoStepSchema).min(1)
 });
 
@@ -51,7 +55,7 @@ export const createMatchVetoStepsController = async (
   if (!bodyParsed.success) {
     return next(bodyParsed.error);
   }
-  const { steps } = bodyParsed.data;
+  const { steps, vote_starter_team_id: voteStarterTeamId } = bodyParsed.data;
 
   const [match] = await getMatch(matchId);
   if (!match) {
@@ -89,12 +93,46 @@ export const createMatchVetoStepsController = async (
       new BadRequestError("Match does not have exactly two teams in MatchTeams")
     );
   }
+  const orderedMatchTeams: readonly [number, number] = [
+    matchTeamRows[0].team_id,
+    matchTeamRows[1].team_id
+  ];
   const allowedTeamIds = new Set(matchTeamRows.map((r) => r.team_id));
+  if (!allowedTeamIds.has(voteStarterTeamId)) {
+    return next(
+      new BadRequestError(
+        `vote_starter_team_id ${voteStarterTeamId} is not a participant of match ${matchId}`
+      )
+    );
+  }
   for (const step of steps) {
     if (!allowedTeamIds.has(step.team_id)) {
       return next(
         new BadRequestError(
           `team_id ${step.team_id} is not a participant of match ${matchId}`
+        )
+      );
+    }
+  }
+
+  for (const step of steps) {
+    const expectedTeamId = getExpectedVetoActingTeamId(
+      step.veto_order,
+      voteStarterTeamId,
+      orderedMatchTeams
+    );
+    if (expectedTeamId === null) {
+      return next(
+        new BadRequestError(
+          `vote_starter_team_id ${voteStarterTeamId} is not a participant of match ${matchId}`
+        )
+      );
+    }
+    if (step.team_id !== expectedTeamId) {
+      return next(
+        new BadRequestError(
+          `veto_order ${step.veto_order} must be performed by team_id ${expectedTeamId} ` +
+            `(alternating veto with vote_starter_team_id ${voteStarterTeamId}), got ${step.team_id}`
         )
       );
     }
