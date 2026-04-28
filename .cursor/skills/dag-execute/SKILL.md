@@ -16,7 +16,7 @@ Open a Cursor chat and ask the agent to run the **dag-execute** skill for GitLab
 
 # /dag-execute — DAG-driven multi-agent pipeline
 
-Orchestrate a GitLab issue end-to-end via 10 specialized agents (`product_bot`, `decomposer_bot`, `architect_bot`, `implementer_bot`, `ui_bot`, `code_review_bot`, `qa_bot`, `final_review_bot`, `devops_bot`, `observer_bot`). Each agent returns a strict JSON envelope per `/workspace/.cursor/skills/json-handoff/SKILL.md`. You (the orchestrator) parse those envelopes, coordinate worktrees, manage branch dependencies, and gate the human at four HITL points.
+Orchestrate a GitLab issue end-to-end via 10 specialized agents (`product_bot`, `decomposer_bot`, `architect_bot`, `implementer_bot`, `ui_bot`, `adversary_bot`, `code_review_bot`, `final_review_bot`, `devops_bot`, `observer_bot`). Each agent returns a strict JSON envelope per `/workspace/.cursor/skills/json-handoff/SKILL.md`. You (the orchestrator) parse those envelopes, coordinate worktrees, manage branch dependencies, and gate the human at four HITL points.
 
 **Arguments**: `$ARGUMENTS`
 First token = GitLab issue IID. Remaining tokens = optional context appended to every subagent prompt.
@@ -126,9 +126,9 @@ AskQuestion(
 
 ## Phase 4 — DAG Execution
 
-Track per-task state: `pending | running | review | qa | ci | completed | stuck`. Initialize all to `pending`.
+Track per-task state: `pending | running | review | ci | completed | stuck`. Initialize all to `pending`.
 
-Maintain retry counters per task: `code_review_rounds`, `qa_rounds`, `gate_rounds` (each capped at 3).
+Maintain retry counters per task: `adversary_runs` (capped at **3** completed `adversary_bot` invocations per task), `code_review_rounds`, `gate_rounds` (each capped at 3). **Alignment** is enforced by an **implementer ↔ adversary loop** before the Draft MR exists (see 4b).
 
 ```
 loop:
@@ -151,55 +151,87 @@ Each task `t` runs through these substeps. The orchestrator runs them sequential
 
 #### 4a. Compute branch + base + worktree
 
+**Goal:** dependents must **reuse prerequisite code**. Two patterns:
+
+1. **Stacked MR (single dependency):** `<base>` **is that task’s branch name** (e.g. `feat-<iid>-T2-slug`). The Draft MR’s **merge target branch = `<base>`**, not `development`, until the parent has merged upstream and you rebase/reparent the child branch onto `development`.
+2. **Integration branch (multiple dependencies):** `<base>` = `development`; after `git worktree add … origin/development`, **merge `origin/<each completed dep branch>`** into `<branch>` (topo-safe order) so the implementation sees all predecessors without waiting for unrelated MRs to merge.
+
 ```bash
 type   = t.type if t.type in {"feat","fix"} else "feat"
 slug   = kebab-case(t.title, max 4 words)
 branch = "feat-<iid>-<t.id>-<slug>"
-base   = "development" if t.depends_on == [] else <branch_of_deepest_completed_dep>
+
+if t.depends_on == []
+  base = "development"
+else if length(t.depends_on) == 1
+  # Stacked MR: branch from completed parent task branch (must exist on origin)
+  base = <completed_dep_branch_name>   # e.g. feat-338-T2-unfinished-matches-model
+else
+  # Parallel deps merged into feature branch — MR target stays development-oriented
+  base = "development"
+
 worktree_path = "/workspace/.worktrees/<iid>-<t.id>"
 
 rtk git fetch origin
 rtk git worktree add <worktree_path> -b <branch> origin/<base>
+# If multiple deps: then merge sibling dep branches — do NOT omit or gate will fail:
+# git merge origin/feat-<iid>-T1-... && git merge origin/feat-<iid>-T2-... ...
 ```
 
-#### 4b. Implementer
+Pass **`base`** to `implementer_bot` as `Base:` so **`create_merge_request.target_branch`** matches **stacked** vs **development** workflows (see `/workspace/.cursor/agents/implementer_bot.md`).
+
+#### 4b. Implementer ↔ adversary (instant feedback before Draft MR)
+
+Initialize **`adversary_runs = 0`** for each task once per Dispatch sequence. Maintain **`misalignments_acc`** (empty JSON array unless adversary rejects).
+
+Repeat until **`adversary_approved`** is true:
+
+1. **Implement + push**
 
 ```
 Task(subagent_type=implementer_bot,
-     prompt="Read /workspace/.cursor/agents/implementer_bot.md. Implement task <t.id> in worktree <worktree_path>. Branch: <branch>. Base: <base>. Architecture (filtered): <relevant api+db entries for t.id>. Issue IID: <iid>. Return ONLY the JSON envelope.")
+     prompt="Read /workspace/.cursor/agents/implementer_bot.md. Implement task <t.id>. Worktree <worktree_path>. Branch <branch>. Base <base>. Architecture (filtered): <…>. Issue IID <iid>. Issue title + stories excerpt: … SkipMergeRequest: true|false. adversary_misalignments: <misalignments_acc or empty>. FIRST iteration or not yet adversary-approved: SkipMergeRequest=true. Return ONLY JSON envelope.")
 ```
 
-Parse:
+`SkipMergeRequest` is **`true`** until `adversary_bot` returns `payload.verdict=approved`; set **`false`** only for the final push that opens Draft MR **after** approval.
 
-- `status="ok"` and all `gate_output` keys are `pass`/`skipped` → `state=review`, store `mr_iid`.
-- `status="stuck"` and `gate_rounds < 3` → re-spawn with `errors[]` as input; increment `gate_rounds`.
-- `status="stuck"` and `gate_rounds == 3` → HITL gate #2 (escalate to human; print diff, errors, ask `retry|abort-task|abort-pipeline`).
-- `status="blocked"` → stop pipeline, surface `errors[]`.
-- `hitl_required=true` → AskQuestion with `hitl_reason`.
+Parse implementer:
+
+- `status="ok"`, gates `pass`/`skipped` as required, **`mr_opened=false`** when `SkipMergeRequest=true` → continue to adversary (**do not** set `state=review` yet).
+- `status="ok"`, **`mr_opened=true`**, `mr_iid` set — only valid when `SkipMergeRequest=false` after adversary approved → set `state=review`, store `mr_iid`, break out of 4b loop.
+- `status="stuck"` / `gate_rounds` handling unchanged (see below).
+- `status="blocked"` → stop pipeline; `hitl_required` → AskQuestion.
+
+2. **Adversary** (only when last implementer returned `mr_opened=false`)
+
+```
+Task(subagent_type=adversary_bot,
+     prompt="Read /workspace/.cursor/agents/adversary_bot.md. task_id <t.id>. Worktree <worktree_path>. Branch <branch>. Base <base>. acceptance_criteria: <t.acceptance_criteria>. stories_snippet: <product stories + KPIs>. architecture_excerpt: <filtered api+db>. issue_title: … Return ONLY JSON envelope.")
+```
+
+Increment **`adversary_runs += 1`** after each completed adversary response.
+
+- `verdict="approved"` → set **`adversary_approved=true`**, **`misalignments_acc=[]`**, then spawn **one more** `implementer_bot` with **`SkipMergeRequest=false`** (may be gates-only + `create_merge_request` if no further edits). After that envelope has `mr_opened=true`, exit 4b loop with `state=review`.
+- `verdict="rejected"` → append `payload.misalignments` into orchestrator context; if **`adversary_runs < 3`**, loop to step 1 with **`SkipMergeRequest=true`** and inject misalignments into **`adversary_misalignments`**. If **`adversary_runs == 3`** and still rejected → **HITL gate #2** (adversary non-convergence).
+
+**`status="stuck"` on implementer** (quality gates / tooling): same as before — re-spawn with `errors[]`; increment `gate_rounds`; at 3 → HITL gate #2.
 
 #### 4c. Code Review
+
+Re-opens of `implementer_bot` **after** Draft MR creation (rejected verdict) MUST use **`SkipMergeRequest: false`** — MR already exists; push updates to the existing branch/MR.
 
 ```
 Task(subagent_type=code_review_bot,
      prompt="Read /workspace/.cursor/agents/code_review_bot.md. Task: <t.id>. MR: !<mr_iid>. Branch: <branch>. Base: <base>. Worktree: <worktree_path>. Acceptance criteria: <t.acceptance_criteria>. Return ONLY the JSON envelope.")
 ```
 
-- `verdict="approved"` → `state=qa`.
+- `verdict="approved"` → `state=ci`.
 - `verdict="rejected"` and `code_review_rounds < 3` → loop back to 4b with `issues[]` injected; increment counter.
 - `verdict="rejected"` and `code_review_rounds == 3` → HITL gate #2.
 
-#### 4d. QA
+#### 4d. DevOps
 
-```
-Task(subagent_type=qa_bot,
-     prompt="Read /workspace/.cursor/agents/qa_bot.md. Task: <t.id>. MR: !<mr_iid>. Worktree: <worktree_path>. Acceptance criteria: <t.acceptance_criteria>. Return ONLY the JSON envelope.")
-```
-
-- `verdict="pass"` → `state=ci`.
-- `verdict="fail"` and `qa_rounds < 3` → loop back to 4b with `failures[]` injected; increment counter.
-- `verdict="fail"` and `qa_rounds == 3` → HITL gate #2.
-
-#### 4e. DevOps
+When looping **after CI failure**, **`implementer_bot`** already has open Draft MR — use **`SkipMergeRequest: false`**.
 
 ```
 Task(subagent_type=devops_bot,
@@ -210,13 +242,13 @@ Task(subagent_type=devops_bot,
 - `status="failed"` → loop back to 4b with `checks[]` failures; increment `gate_rounds`.
 - `status="running"` (timeout) → re-spawn devops_bot once more; if still running, escalate.
 
-#### 4f. Mark task completed and continue the outer loop.
+#### 4e. Mark task completed and continue the outer loop.
 
 ---
 
 ## Phase 5 — Final Review (HITL gate #3)
 
-Once all tasks have `state="completed"` (Draft MRs are open, all per-task gates green):
+Once all tasks have `state="completed"` (Draft MRs are open, **code_review** + CI green per task — **`adversary_bot` approved alignment before Draft MR opened**):
 
 ```
 Task(subagent_type=final_review_bot,
@@ -293,12 +325,12 @@ NOT auto-invoked. The user runs `/observe <mr_iid>` later if they want post-merg
 
 ## HITL gate summary
 
-| #   | Gate                                              | Trigger                       | Action                                             |
-| --- | ------------------------------------------------- | ----------------------------- | -------------------------------------------------- |
-| 1   | Architecture sign-off                             | After `architect_bot` returns | `AskQuestion`: approve / revise / abort            |
-| 2   | Implementer↔Review/QA non-convergence             | 3 rounds same scope           | `AskQuestion`: retry / abort-task / abort-pipeline |
-| 3   | Final Review rejected (cross-cutting or 3 rounds) | After Phase 5                 | Escalate to human with full issue list             |
-| 4   | Merge approval                                    | Per MR in Phase 6             | `AskQuestion`: merge / skip / abort                |
+| #   | Gate                                                                            | Trigger                       | Action                                             |
+| --- | ------------------------------------------------------------------------------- | ----------------------------- | -------------------------------------------------- |
+| 1   | Architecture sign-off                                                           | After `architect_bot` returns | `AskQuestion`: approve / revise / abort            |
+| 2   | Implementer stuck, adversary non-convergence (3 adversary rounds), CR, or gates | 3 rounds same scope           | `AskQuestion`: retry / abort-task / abort-pipeline |
+| 3   | Final Review rejected (cross-cutting or 3 rounds)                               | After Phase 5                 | Escalate to human with full issue list             |
+| 4   | Merge approval                                                                  | Per MR in Phase 6             | `AskQuestion`: merge / skip / abort                |
 
 ---
 

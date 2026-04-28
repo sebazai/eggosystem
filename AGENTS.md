@@ -2,30 +2,30 @@
 
 ## Slash commands
 
-- **`/dag-execute <issue_iid>`** — full pipeline: Product → Decompose → Architecture (HITL) → DAG implementation (parallel, one MR per task) → Final Review → human merge.
+- **`/dag-execute <issue_iid>`** — Product → Decompose → Architecture (HITL) → DAG implementation (**each task**: `implementer_bot` ↔ `adversary_bot` ≤3 rounds → Draft MR → CR → CI) → Final Review → human merge.
 - **`/observe <mr_iid>`** — post-merge analysis (CI logs, optional Grafana/Sentry, git revert detection). Off the critical path.
 
 ## Agents (10)
 
 All in `/workspace/.claude/agents/`. Each returns a JSON envelope per `/workspace/.claude/skills/json-handoff/SKILL.md` — no prose around it.
 
-| Agent              | Role                                                  |
-| ------------------ | ----------------------------------------------------- |
-| `product_bot`      | Issue → stories with KPIs                             |
-| `decomposer_bot`   | Stories → task DAG (`depends_on[]`)                   |
-| `architect_bot`    | API + DB schema design (read-only MariaDB)            |
-| `implementer_bot`  | One task in one worktree → Draft MR                   |
-| `ui_bot`           | shadcn/Tailwind components (sub-agent of implementer) |
-| `code_review_bot`  | Per-task diff review                                  |
-| `qa_bot`           | Per-task Playwright validation                        |
-| `final_review_bot` | Cross-task business validation                        |
-| `devops_bot`       | CI pipeline monitoring + retry-once                   |
-| `observer_bot`     | Post-merge health (manual via `/observe`)             |
+| Agent              | Role                                                                                                                                             |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `product_bot`      | Issue → stories with KPIs                                                                                                                        |
+| `decomposer_bot`   | Stories → task DAG (`depends_on[]`)                                                                                                              |
+| `architect_bot`    | API + DB schema design (read-only MariaDB)                                                                                                       |
+| `implementer_bot`  | One task → quality gates; loops with **`adversary_bot`** → Draft MR                                                                              |
+| `ui_bot`           | shadcn/Tailwind components (sub-agent of implementer)                                                                                            |
+| `adversary_bot`    | Challenges implementation vs architecture, acceptance criteria, issue intent (**max 3** runs per task, before Draft MR); feeds `implementer_bot` |
+| `code_review_bot`  | Per-task diff review                                                                                                                             |
+| `final_review_bot` | Cross-task business validation                                                                                                                   |
+| `devops_bot`       | CI pipeline monitoring + retry-once                                                                                                              |
+| `observer_bot`     | Post-merge health (manual via `/observe`)                                                                                                        |
 
 ## HITL gates (4)
 
 1. Architecture sign-off (Phase 3 of `/dag-execute`).
-2. Implementer ↔ Code Review or QA non-convergence (3 rounds).
+2. Implementer **`stuck`**, **`adversary_bot` rejects 3 rounds**, Code Review rejects 3 rounds, or gate rounds exhausted.
 3. Final Review rejected (cross-cutting or 3 rounds).
 4. Merge approval — every MR is merged by the human via the GitLab UI; orchestrator never calls `mcp__GitLab__merge_merge_request`.
 
@@ -52,14 +52,15 @@ All in `/workspace/.claude/agents/`. Each returns a JSON envelope per `/workspac
 ```bash
 cd /workspace/.worktrees/<iid>-<task_id>
 rtk pnpm install --frozen-lockfile
+rtk pnpm format
 rtk pnpm --filter=<workspace> typecheck
 rtk pnpm --filter=<workspace> lint
 rtk pnpm --filter=<workspace> test
 rtk pnpm knip
-rtk pnpm test:e2e   # only when type ∈ {frontend, integration, ui}; runs from repo root
+# Do not run `pnpm test:e2e` here; commit with Husky skipped (see implementer_bot).
 ```
 
-All must exit 0 before the implementer pushes its MR.
+All must exit 0 before the implementer opens the Draft MR. Commits must use **`HUSKY=0 rtk git commit …`** so Husky does not re-run checks (`implementer_bot`). **`adversary_bot` runs before** that MR (**up to three** attempts per task; orchestrator parses JSON only).
 
 ## Envelope validation
 

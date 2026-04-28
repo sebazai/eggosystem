@@ -22,7 +22,7 @@ SUBAGENT_TYPE="$(printf '%s' "$INPUT" | jq -r '.tool_input.subagent_type // ""' 
 # Only validate the DAG-pipeline agents. Other agents (existing pm_bot etc.)
 # do not yet adhere to the envelope contract.
 case "$SUBAGENT_TYPE" in
-  product_bot|decomposer_bot|architect_bot|implementer_bot|ui_bot|code_review_bot|qa_bot|final_review_bot|devops_bot|observer_bot)
+  intake_bot|product_bot|decomposer_bot|architect_bot|implementer_bot|ui_bot|code_review_bot|adversary_bot|final_review_bot|devops_bot|observer_bot)
     ;;
   *)
     exit 0
