@@ -278,7 +278,19 @@ export const createMatchVetoSteps = async (
     );
   }
 
-  const placeholders = steps.map(() => "(?, ?, ?, ?, ?)").join(", ");
+  /**
+   * Allocate explicit primary keys so inserts succeed when `id` is not
+   * AUTO_INCREMENT (some dev/test DB snapshots). `FOR UPDATE` serializes
+   * allocation with other transactional writes to this table.
+   */
+  const maxRows = await runQuery<Array<{ max_id: number | null }>>(
+    `SELECT MAX(id) AS max_id FROM MatchTeamMapVetoes FOR UPDATE`,
+    [],
+    connection
+  );
+  let nextId = Number(maxRows[0]?.max_id ?? 0) + 1;
+
+  const placeholders = steps.map(() => "(?, ?, ?, ?, ?, ?)").join(", ");
   const params: Array<number | string> = [];
   for (const step of steps) {
     const templateStep = template.steps.find(
@@ -290,16 +302,18 @@ export const createMatchVetoSteps = async (
       );
     }
     params.push(
+      nextId,
       step.match_id,
       step.team_id,
       step.map_id,
       templateStep.action,
       step.veto_order
     );
+    nextId += 1;
   }
 
   await runQuery(
-    `INSERT INTO MatchTeamMapVetoes (match_id, team_id, map_id, action, veto_order)
+    `INSERT INTO MatchTeamMapVetoes (id, match_id, team_id, map_id, action, veto_order)
      VALUES ${placeholders}`,
     params,
     connection
