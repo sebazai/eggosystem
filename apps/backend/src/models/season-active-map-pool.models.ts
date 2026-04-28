@@ -1,5 +1,6 @@
 import { runQuery } from "../db/mysqlRunQuery";
 import { type PoolConnection } from "mysql2/promise";
+import type { Map } from "@eggosystem/types";
 
 /**
  * Get all maps from the active map pool for the given seasons (id + name).
@@ -85,4 +86,26 @@ export const setActiveMapPoolForSeason = async (
     }
     await runQuery(insertQuery, insertParams, connection);
   }
+};
+
+/**
+ * Get the active map pool for a match's season.
+ * Joins Matches → SeasonActiveMapPool → Maps to resolve the season from the match_id.
+ *
+ * @param matchId - The match ID to look up
+ * @returns Array of maps (id + name) in the season's active pool, ordered by name
+ */
+export const getSeasonMapPoolForMatch = async (
+  matchId: number
+): Promise<Map[]> => {
+  const query = `
+    SELECT DISTINCT m2.id, m2.name
+    FROM Matches mt
+    JOIN SeasonActiveMapPool samp ON samp.season_id = mt.season_id
+    JOIN Maps m2 ON m2.id = samp.map_id
+    WHERE mt.id = ?
+    ORDER BY m2.name ASC
+  `;
+
+  return runQuery<Map[]>(query, [matchId]);
 };
