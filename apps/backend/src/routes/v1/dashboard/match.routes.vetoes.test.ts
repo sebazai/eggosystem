@@ -159,6 +159,7 @@ describe("POST /api/v1/dashboard/matches/:match_id/vetoes", () => {
       [1, 2, 3, 4, 5, 6, 7].map((id) => ({ id, name: `Map ${id}` }))
     );
     mockCountExistingVetoes.mockResolvedValue(0);
+    mockCreateSteps.mockResolvedValue([]);
 
     mockGetConnection.mockResolvedValue({
       beginTransaction: mockBeginTransaction,
@@ -406,7 +407,7 @@ describe("POST /api/v1/dashboard/matches/:match_id/vetoes", () => {
   });
 
   it("returns 400 when best_of has no template", async () => {
-    mockGetMatch.mockResolvedValue([{ ...bo3Match, best_of: 2 }]);
+    mockGetMatch.mockResolvedValue([{ ...bo3Match, best_of: 4 }]);
 
     const res = await request(app)
       .post("/api/v1/dashboard/matches/10/vetoes")
