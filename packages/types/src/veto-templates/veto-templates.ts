@@ -64,12 +64,14 @@ export function getAllVetoTemplates(): ReadonlyMap<number, VetoTemplate> {
 }
 
 /**
- * Resolve a FACEIT-reported veto action to the canonical internal action
- * using the veto template for the given best-of format.
+ * Resolve a FACEIT-reported veto action to the canonical internal action.
  *
- * FACEIT only reports `"drop"` | `"pick"` — this function reclassifies the
- * final step as `"decider"` when the template says so (or falls back to
- * position-based heuristics for unknown best-of values).
+ * FACEIT only reports `"drop"` | `"pick"`. Prefer FACEIT for non-final steps so
+ * we never contradict per-round status (fixtures and MSW mocks can differ from
+ * the canonical 7-map template shape). Promote `"pick"` to `"decider"` only when
+ * the full veto history completes the canonical template (`totalSteps === 7`) and
+ * the template’s last step is a decider, or when histories are truncated/partials:
+ * reuse the legacy best-of modulus rule, unknown best-of, or fallback last-pick→decider.
  */
 export function resolveVetoAction(
   bestOf: number,
@@ -77,18 +79,30 @@ export function resolveVetoAction(
   totalSteps: number,
   faceitAction: "drop" | "pick"
 ): VetoAction {
+  if (faceitAction === "drop") return "drop";
+
   const template = VETO_TEMPLATE_MAP.get(bestOf);
 
-  if (template) {
-    const step = template.steps.find((s) => s.order === vetoOrder);
-    if (step) return step.action;
-  }
-
-  // Fallback for unregistered best-of values:
-  // last step + pick → decider
-  if (vetoOrder === totalSteps && faceitAction === "pick") {
+  if (
+    vetoOrder === totalSteps &&
+    template &&
+    totalSteps === template.steps.length &&
+    template.steps.find((s) => s.order === vetoOrder)?.action === "decider"
+  ) {
     return "decider";
   }
 
-  return faceitAction;
+  if (
+    vetoOrder === totalSteps &&
+    template !== undefined &&
+    totalSteps !== template.steps.length
+  ) {
+    return bestOf % 3 === 0 || bestOf % 5 === 0 ? "decider" : "pick";
+  }
+
+  if (vetoOrder === totalSteps && template === undefined) {
+    return "decider";
+  }
+
+  return "pick";
 }

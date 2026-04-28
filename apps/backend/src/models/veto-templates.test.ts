@@ -123,6 +123,18 @@ describe("resolveVetoAction", () => {
     });
   });
 
+  describe("fallback when totalSteps mismatches template length", () => {
+    it("does not promote final pick → decider for BO1 with partial veto history", () => {
+      expect(resolveVetoAction(1, 1, 2, "pick")).toBe("pick");
+      expect(resolveVetoAction(1, 2, 2, "pick")).toBe("pick");
+    });
+
+    it("uses faceitAction when BO3 has only 2 steps", () => {
+      expect(resolveVetoAction(3, 1, 2, "pick")).toBe("pick");
+      expect(resolveVetoAction(3, 2, 2, "pick")).toBe("decider");
+    });
+  });
+
   describe("fallback for unknown best-of", () => {
     it("classifies last pick as decider", () => {
       expect(resolveVetoAction(2, 5, 5, "pick")).toBe("decider");
