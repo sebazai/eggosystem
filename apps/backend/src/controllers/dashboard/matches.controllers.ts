@@ -3,6 +3,7 @@ import { z, ZodError } from "zod";
 import { type FlaggedMatches, type RequestWithParams } from "@eggosystem/types";
 import { getMatchGameMetaForTeamScores } from "../../models/match-game.models";
 import { getUnfinishedMatchesBySeason } from "../../models/match.models";
+import { getMatchVetoContext } from "../../models/match-veto-context.models";
 import {
   getTeamIdsForMatch,
   listTeamGameScoresByMatchGameId,
@@ -17,6 +18,10 @@ import {
   NotFoundError,
   UnauthorizedError
 } from "../../utils/errors";
+
+const matchIdParamSchema = z.object({
+  match_id: z.coerce.number().int().positive()
+});
 
 const matchGameIdParamSchema = z.object({
   match_game_id: z.coerce.number().int().positive()
@@ -218,4 +223,22 @@ export const putManualTeamGameScoresController = async (
     match_team_ids: matchTeamRows.map((r) => r.team_id),
     teams
   });
+};
+
+export const getMatchVetoContextController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const parsed = matchIdParamSchema.safeParse(req.params);
+  if (!parsed.success) {
+    return next(parsed.error);
+  }
+
+  const context = await getMatchVetoContext(parsed.data.match_id);
+  if (!context) {
+    return next(new NotFoundError("Match not found"));
+  }
+
+  res.json(context);
 };

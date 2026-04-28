@@ -22,3 +22,4 @@ export * from "./MatchGameKillMatrix.interface";
 export * from "./MatchGameTradeStats.interface";
 export * from "./MatchGameInsights.interface";
 export * from "./UnfinishedMatch.interface";
+export * from "./MatchVetoContext.interface";
