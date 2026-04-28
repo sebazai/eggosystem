@@ -1,0 +1,934 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`LeaderboardsGrid Snapshot Tests renders correctly in error state 1`] = `
+<div>
+  <div
+    class="flex items-center justify-center min-h-[50vh]"
+  >
+    Error loading data.
+  </div>
+</div>
+`;
+
+exports[`LeaderboardsGrid Snapshot Tests renders correctly in loading state 1`] = `
+<div>
+  <div
+    class="grid grid-cols-1 md:grid-cols-2 gap-6"
+  >
+    <div
+      class="bg-card rounded-sm overflow-hidden"
+    >
+      <div
+        class="bg-kanaliiga-light-brown/30 p-4"
+      >
+        <div
+          class="animate-pulse rounded-md bg-accent h-8 w-40"
+          data-slot="skeleton"
+        />
+      </div>
+      <div
+        class="p-4"
+      >
+        <div
+          class="flex items-center justify-between py-3 px-2"
+        >
+          <div
+            class="flex items-center gap-3 flex-1"
+          >
+            <div
+              class="animate-pulse rounded-md bg-accent h-6 w-6"
+              data-slot="skeleton"
+            />
+            <div
+              class="flex flex-col gap-1"
+            >
+              <div
+                class="animate-pulse rounded-md bg-accent h-5 w-24"
+                data-slot="skeleton"
+              />
+            </div>
+          </div>
+          <div
+            class="flex items-center gap-4"
+          >
+            <div
+              class="animate-pulse rounded-md bg-accent h-4 w-20"
+              data-slot="skeleton"
+            />
+          </div>
+        </div>
+        <div
+          class="flex items-center justify-between py-3 px-2"
+        >
+          <div
+            class="flex items-center gap-3 flex-1"
+          >
+            <div
+              class="animate-pulse rounded-md bg-accent h-6 w-6"
+              data-slot="skeleton"
+            />
+            <div
+              class="flex flex-col gap-1"
+            >
+              <div
+                class="animate-pulse rounded-md bg-accent h-5 w-24"
+                data-slot="skeleton"
+              />
+            </div>
+          </div>
+          <div
+            class="flex items-center gap-4"
+          >
+            <div
+              class="animate-pulse rounded-md bg-accent h-4 w-20"
+              data-slot="skeleton"
+            />
+          </div>
+        </div>
+        <div
+          class="flex items-center justify-between py-3 px-2"
+        >
+          <div
+            class="flex items-center gap-3 flex-1"
+          >
+            <div
+              class="animate-pulse rounded-md bg-accent h-6 w-6"
+              data-slot="skeleton"
+            />
+            <div
+              class="flex flex-col gap-1"
+            >
+              <div
+                class="animate-pulse rounded-md bg-accent h-5 w-24"
+                data-slot="skeleton"
+              />
+            </div>
+          </div>
+          <div
+            class="flex items-center gap-4"
+          >
+            <div
+              class="animate-pulse rounded-md bg-accent h-4 w-20"
+              data-slot="skeleton"
+            />
+          </div>
+        </div>
+        <div
+          class="flex items-center justify-between py-3 px-2"
+        >
+          <div
+            class="flex items-center gap-3 flex-1"
+          >
+            <div
+              class="animate-pulse rounded-md bg-accent h-6 w-6"
+              data-slot="skeleton"
+            />
+            <div
+              class="flex flex-col gap-1"
+            >
+              <div
+                class="animate-pulse rounded-md bg-accent h-5 w-24"
+                data-slot="skeleton"
+              />
+            </div>
+          </div>
+          <div
+            class="flex items-center gap-4"
+          >
+            <div
+              class="animate-pulse rounded-md bg-accent h-4 w-20"
+              data-slot="skeleton"
+            />
+          </div>
+        </div>
+        <div
+          class="flex items-center justify-between py-3 px-2"
+        >
+          <div
+            class="flex items-center gap-3 flex-1"
+          >
+            <div
+              class="animate-pulse rounded-md bg-accent h-6 w-6"
+              data-slot="skeleton"
+            />
+            <div
+              class="flex flex-col gap-1"
+            >
+              <div
+                class="animate-pulse rounded-md bg-accent h-5 w-24"
+                data-slot="skeleton"
+              />
+            </div>
+          </div>
+          <div
+            class="flex items-center gap-4"
+          >
+            <div
+              class="animate-pulse rounded-md bg-accent h-4 w-20"
+              data-slot="skeleton"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+    <div
+      class="bg-card rounded-sm overflow-hidden"
+    >
+      <div
+        class="bg-kanaliiga-light-brown/30 p-4"
+      >
+        <div
+          class="animate-pulse rounded-md bg-accent h-8 w-40"
+          data-slot="skeleton"
+        />
+      </div>
+      <div
+        class="p-4"
+      >
+        <div
+          class="flex items-center justify-between py-3 px-2"
+        >
+          <div
+            class="flex items-center gap-3 flex-1"
+          >
+            <div
+              class="animate-pulse rounded-md bg-accent h-6 w-6"
+              data-slot="skeleton"
+            />
+            <div
+              class="flex flex-col gap-1"
+            >
+              <div
+                class="animate-pulse rounded-md bg-accent h-5 w-24"
+                data-slot="skeleton"
+              />
+            </div>
+          </div>
+          <div
+            class="flex items-center gap-4"
+          >
+            <div
+              class="animate-pulse rounded-md bg-accent h-4 w-20"
+              data-slot="skeleton"
+            />
+          </div>
+        </div>
+        <div
+          class="flex items-center justify-between py-3 px-2"
+        >
+          <div
+            class="flex items-center gap-3 flex-1"
+          >
+            <div
+              class="animate-pulse rounded-md bg-accent h-6 w-6"
+              data-slot="skeleton"
+            />
+            <div
+              class="flex flex-col gap-1"
+            >
+              <div
+                class="animate-pulse rounded-md bg-accent h-5 w-24"
+                data-slot="skeleton"
+              />
+            </div>
+          </div>
+          <div
+            class="flex items-center gap-4"
+          >
+            <div
+              class="animate-pulse rounded-md bg-accent h-4 w-20"
+              data-slot="skeleton"
+            />
+          </div>
+        </div>
+        <div
+          class="flex items-center justify-between py-3 px-2"
+        >
+          <div
+            class="flex items-center gap-3 flex-1"
+          >
+            <div
+              class="animate-pulse rounded-md bg-accent h-6 w-6"
+              data-slot="skeleton"
+            />
+            <div
+              class="flex flex-col gap-1"
+            >
+              <div
+                class="animate-pulse rounded-md bg-accent h-5 w-24"
+                data-slot="skeleton"
+              />
+            </div>
+          </div>
+          <div
+            class="flex items-center gap-4"
+          >
+            <div
+              class="animate-pulse rounded-md bg-accent h-4 w-20"
+              data-slot="skeleton"
+            />
+          </div>
+        </div>
+        <div
+          class="flex items-center justify-between py-3 px-2"
+        >
+          <div
+            class="flex items-center gap-3 flex-1"
+          >
+            <div
+              class="animate-pulse rounded-md bg-accent h-6 w-6"
+              data-slot="skeleton"
+            />
+            <div
+              class="flex flex-col gap-1"
+            >
+              <div
+                class="animate-pulse rounded-md bg-accent h-5 w-24"
+                data-slot="skeleton"
+              />
+            </div>
+          </div>
+          <div
+            class="flex items-center gap-4"
+          >
+            <div
+              class="animate-pulse rounded-md bg-accent h-4 w-20"
+              data-slot="skeleton"
+            />
+          </div>
+        </div>
+        <div
+          class="flex items-center justify-between py-3 px-2"
+        >
+          <div
+            class="flex items-center gap-3 flex-1"
+          >
+            <div
+              class="animate-pulse rounded-md bg-accent h-6 w-6"
+              data-slot="skeleton"
+            />
+            <div
+              class="flex flex-col gap-1"
+            >
+              <div
+                class="animate-pulse rounded-md bg-accent h-5 w-24"
+                data-slot="skeleton"
+              />
+            </div>
+          </div>
+          <div
+            class="flex items-center gap-4"
+          >
+            <div
+              class="animate-pulse rounded-md bg-accent h-4 w-20"
+              data-slot="skeleton"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+    <div
+      class="bg-card rounded-sm overflow-hidden"
+    >
+      <div
+        class="bg-kanaliiga-light-brown/30 p-4"
+      >
+        <div
+          class="animate-pulse rounded-md bg-accent h-8 w-40"
+          data-slot="skeleton"
+        />
+      </div>
+      <div
+        class="p-4"
+      >
+        <div
+          class="flex items-center justify-between py-3 px-2"
+        >
+          <div
+            class="flex items-center gap-3 flex-1"
+          >
+            <div
+              class="animate-pulse rounded-md bg-accent h-6 w-6"
+              data-slot="skeleton"
+            />
+            <div
+              class="flex flex-col gap-1"
+            >
+              <div
+                class="animate-pulse rounded-md bg-accent h-5 w-24"
+                data-slot="skeleton"
+              />
+            </div>
+          </div>
+          <div
+            class="flex items-center gap-4"
+          >
+            <div
+              class="animate-pulse rounded-md bg-accent h-4 w-20"
+              data-slot="skeleton"
+            />
+          </div>
+        </div>
+        <div
+          class="flex items-center justify-between py-3 px-2"
+        >
+          <div
+            class="flex items-center gap-3 flex-1"
+          >
+            <div
+              class="animate-pulse rounded-md bg-accent h-6 w-6"
+              data-slot="skeleton"
+            />
+            <div
+              class="flex flex-col gap-1"
+            >
+              <div
+                class="animate-pulse rounded-md bg-accent h-5 w-24"
+                data-slot="skeleton"
+              />
+            </div>
+          </div>
+          <div
+            class="flex items-center gap-4"
+          >
+            <div
+              class="animate-pulse rounded-md bg-accent h-4 w-20"
+              data-slot="skeleton"
+            />
+          </div>
+        </div>
+        <div
+          class="flex items-center justify-between py-3 px-2"
+        >
+          <div
+            class="flex items-center gap-3 flex-1"
+          >
+            <div
+              class="animate-pulse rounded-md bg-accent h-6 w-6"
+              data-slot="skeleton"
+            />
+            <div
+              class="flex flex-col gap-1"
+            >
+              <div
+                class="animate-pulse rounded-md bg-accent h-5 w-24"
+                data-slot="skeleton"
+              />
+            </div>
+          </div>
+          <div
+            class="flex items-center gap-4"
+          >
+            <div
+              class="animate-pulse rounded-md bg-accent h-4 w-20"
+              data-slot="skeleton"
+            />
+          </div>
+        </div>
+        <div
+          class="flex items-center justify-between py-3 px-2"
+        >
+          <div
+            class="flex items-center gap-3 flex-1"
+          >
+            <div
+              class="animate-pulse rounded-md bg-accent h-6 w-6"
+              data-slot="skeleton"
+            />
+            <div
+              class="flex flex-col gap-1"
+            >
+              <div
+                class="animate-pulse rounded-md bg-accent h-5 w-24"
+                data-slot="skeleton"
+              />
+            </div>
+          </div>
+          <div
+            class="flex items-center gap-4"
+          >
+            <div
+              class="animate-pulse rounded-md bg-accent h-4 w-20"
+              data-slot="skeleton"
+            />
+          </div>
+        </div>
+        <div
+          class="flex items-center justify-between py-3 px-2"
+        >
+          <div
+            class="flex items-center gap-3 flex-1"
+          >
+            <div
+              class="animate-pulse rounded-md bg-accent h-6 w-6"
+              data-slot="skeleton"
+            />
+            <div
+              class="flex flex-col gap-1"
+            >
+              <div
+                class="animate-pulse rounded-md bg-accent h-5 w-24"
+                data-slot="skeleton"
+              />
+            </div>
+          </div>
+          <div
+            class="flex items-center gap-4"
+          >
+            <div
+              class="animate-pulse rounded-md bg-accent h-4 w-20"
+              data-slot="skeleton"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+    <div
+      class="bg-card rounded-sm overflow-hidden"
+    >
+      <div
+        class="bg-kanaliiga-light-brown/30 p-4"
+      >
+        <div
+          class="animate-pulse rounded-md bg-accent h-8 w-40"
+          data-slot="skeleton"
+        />
+      </div>
+      <div
+        class="p-4"
+      >
+        <div
+          class="flex items-center justify-between py-3 px-2"
+        >
+          <div
+            class="flex items-center gap-3 flex-1"
+          >
+            <div
+              class="animate-pulse rounded-md bg-accent h-6 w-6"
+              data-slot="skeleton"
+            />
+            <div
+              class="flex flex-col gap-1"
+            >
+              <div
+                class="animate-pulse rounded-md bg-accent h-5 w-24"
+                data-slot="skeleton"
+              />
+            </div>
+          </div>
+          <div
+            class="flex items-center gap-4"
+          >
+            <div
+              class="animate-pulse rounded-md bg-accent h-4 w-20"
+              data-slot="skeleton"
+            />
+          </div>
+        </div>
+        <div
+          class="flex items-center justify-between py-3 px-2"
+        >
+          <div
+            class="flex items-center gap-3 flex-1"
+          >
+            <div
+              class="animate-pulse rounded-md bg-accent h-6 w-6"
+              data-slot="skeleton"
+            />
+            <div
+              class="flex flex-col gap-1"
+            >
+              <div
+                class="animate-pulse rounded-md bg-accent h-5 w-24"
+                data-slot="skeleton"
+              />
+            </div>
+          </div>
+          <div
+            class="flex items-center gap-4"
+          >
+            <div
+              class="animate-pulse rounded-md bg-accent h-4 w-20"
+              data-slot="skeleton"
+            />
+          </div>
+        </div>
+        <div
+          class="flex items-center justify-between py-3 px-2"
+        >
+          <div
+            class="flex items-center gap-3 flex-1"
+          >
+            <div
+              class="animate-pulse rounded-md bg-accent h-6 w-6"
+              data-slot="skeleton"
+            />
+            <div
+              class="flex flex-col gap-1"
+            >
+              <div
+                class="animate-pulse rounded-md bg-accent h-5 w-24"
+                data-slot="skeleton"
+              />
+            </div>
+          </div>
+          <div
+            class="flex items-center gap-4"
+          >
+            <div
+              class="animate-pulse rounded-md bg-accent h-4 w-20"
+              data-slot="skeleton"
+            />
+          </div>
+        </div>
+        <div
+          class="flex items-center justify-between py-3 px-2"
+        >
+          <div
+            class="flex items-center gap-3 flex-1"
+          >
+            <div
+              class="animate-pulse rounded-md bg-accent h-6 w-6"
+              data-slot="skeleton"
+            />
+            <div
+              class="flex flex-col gap-1"
+            >
+              <div
+                class="animate-pulse rounded-md bg-accent h-5 w-24"
+                data-slot="skeleton"
+              />
+            </div>
+          </div>
+          <div
+            class="flex items-center gap-4"
+          >
+            <div
+              class="animate-pulse rounded-md bg-accent h-4 w-20"
+              data-slot="skeleton"
+            />
+          </div>
+        </div>
+        <div
+          class="flex items-center justify-between py-3 px-2"
+        >
+          <div
+            class="flex items-center gap-3 flex-1"
+          >
+            <div
+              class="animate-pulse rounded-md bg-accent h-6 w-6"
+              data-slot="skeleton"
+            />
+            <div
+              class="flex flex-col gap-1"
+            >
+              <div
+                class="animate-pulse rounded-md bg-accent h-5 w-24"
+                data-slot="skeleton"
+              />
+            </div>
+          </div>
+          <div
+            class="flex items-center gap-4"
+          >
+            <div
+              class="animate-pulse rounded-md bg-accent h-4 w-20"
+              data-slot="skeleton"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`LeaderboardsGrid Snapshot Tests renders correctly with category that has no players 1`] = `
+<div>
+  <div
+    class="grid grid-cols-1 md:grid-cols-2 gap-6"
+    data-testid="leaderboards-grid"
+  >
+    <div
+      class="rounded-sm overflow-hidden"
+      data-testid="leaderboards-grid-section-0"
+    >
+      <div
+        class="bg-kanaliiga-light-brown/30 p-4"
+      >
+        <h2
+          class="text-kanaliiga-orange"
+        >
+          Empty Category
+        </h2>
+      </div>
+      <div
+        class="bg-white/10 p-4"
+      >
+        <p
+          class="text-muted-foreground text-center py-4"
+        >
+          No data available for this category
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`LeaderboardsGrid Snapshot Tests renders correctly with empty leaderboards 1`] = `
+<div>
+  <div
+    class="text-center p-8"
+  >
+    <h1
+      class="text-3xl font-bold py-8"
+    >
+      No Results
+    </h1>
+    <p
+      class="text-muted-foreground"
+    >
+      No leaderboard data available for the selected filters.
+    </p>
+  </div>
+</div>
+`;
+
+exports[`LeaderboardsGrid Snapshot Tests renders correctly with leaderboard data 1`] = `
+<div>
+  <div
+    class="grid grid-cols-1 md:grid-cols-2 gap-6"
+    data-testid="leaderboards-grid"
+  >
+    <div
+      class="rounded-sm overflow-hidden"
+      data-testid="leaderboards-grid-section-0"
+    >
+      <div
+        class="bg-kanaliiga-light-brown/30 p-4"
+      >
+        <h2
+          class="text-kanaliiga-orange"
+        >
+          Top Rating
+        </h2>
+      </div>
+      <div
+        class="bg-white/10 p-4"
+      >
+        <a
+          class="mb-2 last:mb-0 hover:bg-black/10 dark:hover:bg-white/10 transition-colors flex justify-between py-3 px-1 cursor-pointer font-black text-base md:text-lg rounded shadow-md dark:shadow-md:white/30 bg-white/30 dark:bg-black/30"
+          data-testid="stats-row"
+          href="/players/76561198012345678"
+        >
+          <div
+            class="flex items-center gap-5"
+          >
+            <span
+              class="w-6 text-center text-muted-foreground"
+              data-testid="placement"
+            >
+              👑
+            </span>
+            <div
+              class="flex items-center gap-2"
+            >
+              <span
+                class="min-w-20 font-bold text-base"
+                data-testid="object-name"
+              >
+                TestPlayer1
+              </span>
+              <span
+                class="hidden xs:block md:hidden text-muted-foreground text-sm min-w-15 break-all lg:block"
+              >
+                TestTeam1
+              </span>
+            </div>
+          </div>
+          <div
+            class="flex items-center gap-2"
+          >
+            <span
+              class="hidden text-muted-foreground text-xs xxs:block min-w-10"
+              data-testid="maps-played"
+            >
+              15
+               maps
+            </span>
+            <span
+              class="w-16 items-center text-right font-bold"
+              data-testid="stats-grid-value"
+            >
+              1.25
+            </span>
+          </div>
+        </a>
+        <a
+          class="mb-2 last:mb-0 hover:bg-black/10 dark:hover:bg-white/10 transition-colors flex justify-between py-3 px-1 cursor-pointer text-sm rounded shadow-md dark:shadow-md:white/30 bg-white/30 dark:bg-black/30"
+          data-testid="stats-row"
+          href="/players/76561198012345679"
+        >
+          <div
+            class="flex items-center gap-5"
+          >
+            <span
+              class="w-6 text-center text-muted-foreground"
+              data-testid="placement"
+            >
+              🥈
+            </span>
+            <div
+              class="flex items-center gap-2"
+            >
+              <span
+                class="min-w-20 font-bold"
+                data-testid="object-name"
+              >
+                TestPlayer2
+              </span>
+              <span
+                class="hidden xs:block md:hidden text-muted-foreground text-sm min-w-15 break-all lg:block"
+              >
+                TestTeam2
+              </span>
+            </div>
+          </div>
+          <div
+            class="flex items-center gap-2"
+          >
+            <span
+              class="hidden text-muted-foreground text-xs xxs:block min-w-10"
+              data-testid="maps-played"
+            >
+              12
+               maps
+            </span>
+            <span
+              class="w-16 items-center text-right font-bold"
+              data-testid="stats-grid-value"
+            >
+              1.18
+            </span>
+          </div>
+        </a>
+        <a
+          class="mb-2 last:mb-0 hover:bg-black/10 dark:hover:bg-white/10 transition-colors flex justify-between py-3 px-1 cursor-pointer text-sm rounded shadow-md dark:shadow-md:white/30 bg-white/30 dark:bg-black/30"
+          data-testid="stats-row"
+          href="/players/76561198012345680"
+        >
+          <div
+            class="flex items-center gap-5"
+          >
+            <span
+              class="w-6 text-center text-muted-foreground"
+              data-testid="placement"
+            >
+              🥉
+            </span>
+            <div
+              class="flex items-center gap-2"
+            >
+              <span
+                class="min-w-20 font-bold"
+                data-testid="object-name"
+              >
+                TestPlayer3
+              </span>
+              <span
+                class="hidden xs:block md:hidden text-muted-foreground text-sm min-w-15 break-all lg:block"
+              >
+                TestTeam1
+              </span>
+            </div>
+          </div>
+          <div
+            class="flex items-center gap-2"
+          >
+            <span
+              class="hidden text-muted-foreground text-xs xxs:block min-w-10"
+              data-testid="maps-played"
+            >
+              10
+               maps
+            </span>
+            <span
+              class="w-16 items-center text-right font-bold"
+              data-testid="stats-grid-value"
+            >
+              1.12
+            </span>
+          </div>
+        </a>
+      </div>
+    </div>
+    <div
+      class="rounded-sm overflow-hidden"
+      data-testid="leaderboards-grid-section-1"
+    >
+      <div
+        class="bg-kanaliiga-light-brown/30 p-4"
+      >
+        <h2
+          class="text-kanaliiga-orange"
+        >
+          Headshot %
+        </h2>
+      </div>
+      <div
+        class="bg-white/10 p-4"
+      >
+        <a
+          class="mb-2 last:mb-0 hover:bg-black/10 dark:hover:bg-white/10 transition-colors flex justify-between py-3 px-1 cursor-pointer font-black text-base md:text-lg rounded shadow-md dark:shadow-md:white/30 bg-white/30 dark:bg-black/30"
+          data-testid="stats-row"
+          href="/players/76561198012345681"
+        >
+          <div
+            class="flex items-center gap-5"
+          >
+            <span
+              class="w-6 text-center text-muted-foreground"
+              data-testid="placement"
+            >
+              👑
+            </span>
+            <div
+              class="flex items-center gap-2"
+            >
+              <span
+                class="min-w-20 font-bold text-base"
+                data-testid="object-name"
+              >
+                HeadshotKing
+              </span>
+              <span
+                class="hidden xs:block md:hidden text-muted-foreground text-sm min-w-15 break-all lg:block"
+              >
+                TestTeam3
+              </span>
+            </div>
+          </div>
+          <div
+            class="flex items-center gap-2"
+          >
+            <span
+              class="hidden text-muted-foreground text-xs xxs:block min-w-10"
+              data-testid="maps-played"
+            >
+              8
+               maps
+            </span>
+            <span
+              class="w-16 items-center text-right font-bold"
+              data-testid="stats-grid-value"
+            >
+              65.5%
+            </span>
+          </div>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+`;

@@ -67,9 +67,7 @@ function teamIdForVetoOrder(
   starterTeamId: number,
   teams: MatchVetoContextTeam[]
 ): number {
-  const ids = [...teams]
-    .map((t) => t.team_id)
-    .sort((a, b) => a - b);
+  const ids = [...teams].map((t) => t.team_id).sort((a, b) => a - b);
   const other = ids.find((id) => id !== starterTeamId);
   if (other === undefined) {
     throw new Error("Starter team must be one of the two match teams");
@@ -77,10 +75,7 @@ function teamIdForVetoOrder(
   return vetoOrder % 2 === 1 ? starterTeamId : other;
 }
 
-function teamNameById(
-  teams: MatchVetoContextTeam[],
-  teamId: number
-): string {
+function teamNameById(teams: MatchVetoContextTeam[], teamId: number): string {
   return teams.find((t) => t.team_id === teamId)?.team_name ?? `#${teamId}`;
 }
 
@@ -102,9 +97,7 @@ export function MapVetoAdminPanel() {
 
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [busyAction, setBusyAction] = useState<
-    "clear" | "submit" | null
-  >(null);
+  const [busyAction, setBusyAction] = useState<"clear" | "submit" | null>(null);
 
   const loadUnfinished = useCallback(async () => {
     if (!selectedSeasonId) {
@@ -241,11 +234,7 @@ export function MapVetoAdminPanel() {
 
     try {
       const steps = templateSteps.map((s) => ({
-        team_id: teamIdForVetoOrder(
-          s.order,
-          starterTeamId,
-          context.teams
-        ),
+        team_id: teamIdForVetoOrder(s.order, starterTeamId, context.teams),
         map_id: draftSelections[s.order],
         veto_order: s.order
       }));
@@ -284,9 +273,12 @@ export function MapVetoAdminPanel() {
     setError(null);
     setSuccessMessage(null);
     try {
-      await clientApiFetch(`/api/v1/dashboard/matches/${context.match_id}/vetoes`, {
-        method: "DELETE"
-      });
+      await clientApiFetch(
+        `/api/v1/dashboard/matches/${context.match_id}/vetoes`,
+        {
+          method: "DELETE"
+        }
+      );
       setSuccessMessage("Veto entries cleared.");
       await loadContext(context.match_id);
     } catch (err) {
@@ -317,8 +309,7 @@ export function MapVetoAdminPanel() {
     Array.isArray(context.vetoes) &&
     context.vetoes.length > 0;
 
-  const teamCountInvalid =
-    context !== null && context.teams.length !== 2;
+  const teamCountInvalid = context !== null && context.teams.length !== 2;
 
   const poolTooSmall =
     context !== null &&
@@ -482,8 +473,8 @@ export function MapVetoAdminPanel() {
       {context && !contextLoading && teamCountInvalid ? (
         <Alert variant="destructive">
           <AlertDescription>
-            This match needs exactly two teams in MatchTeams before vetoes can be
-            recorded.
+            This match needs exactly two teams in MatchTeams before vetoes can
+            be recorded.
           </AlertDescription>
         </Alert>
       ) : null}
@@ -574,8 +565,8 @@ export function MapVetoAdminPanel() {
               Admin veto flow (BO{context.best_of})
             </CardTitle>
             <CardDescription>
-              Choose which team performs the first veto, then complete each
-              step in order. Submit sends one request with the full sequence.
+              Choose which team performs the first veto, then complete each step
+              in order. Submit sends one request with the full sequence.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -672,7 +663,8 @@ export function MapVetoAdminPanel() {
                   Submit veto sequence
                 </Button>
                 <p className="text-sm text-muted-foreground">
-                  All {totalSteps} steps filled with distinct maps from the pool.
+                  All {totalSteps} steps filled with distinct maps from the
+                  pool.
                 </p>
               </div>
             ) : null}

@@ -1,0 +1,1433 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`PlayerStatisticsForTeam Snapshot Tests renders correctly with CT side selected 1`] = `
+<div>
+  <div
+    class="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4"
+  >
+    <div
+      class="flex flex-col"
+    >
+      <div
+        class="flex items-center justify-between p-2 mb-[1px] bg-kanaliiga-light-brown/30"
+      >
+        <a
+          class="flex items-center gap-2 hover:bg-kanaliiga-light-brown/40 p-2 rounded transition-colors"
+          href="/teams/1"
+        >
+          <img
+            alt="Team Alpha"
+            class="w-6 h-6"
+            height="24"
+            src="https://img.kanaliiga.fi/images/by-hash/phash/team-alpha-logo.png"
+            width="24"
+          />
+          <h2
+            class="text-base font-bold"
+          >
+            Team Alpha
+          </h2>
+        </a>
+        <div
+          class="flex gap-1"
+        >
+          <button
+            class="px-2 py-1 text-xs font-medium rounded transition-colors bg-blue-600 text-white"
+          >
+            CT
+          </button>
+          <button
+            class="px-2 py-1 text-xs font-medium rounded transition-colors bg-kanaliiga-light-brown/50 text-gray-300 hover:bg-kanaliiga-light-brown/70"
+          >
+            T
+          </button>
+        </div>
+      </div>
+      <div
+        class="grid grid-cols-[2fr_repeat(4,1fr)] md:grid-cols-[2fr_repeat(6,1fr)] lg:grid-cols-[2fr_repeat(8,1fr)] items-center text-muted-foreground p-2 bg-kanaliiga-light-brown/30"
+      >
+        <div
+          class="text-left"
+        >
+          PLAYER
+        </div>
+        <div
+          class="text-center"
+        >
+          K
+        </div>
+        <div
+          class="text-center hidden md:block"
+        >
+          A(f)
+        </div>
+        <div
+          class="text-center"
+        >
+          D
+        </div>
+        <div
+          class="text-center"
+        >
+          +/-
+        </div>
+        <div
+          class="text-center"
+        >
+          ADR
+        </div>
+        <div
+          class="text-center hidden md:block"
+        >
+          FK
+        </div>
+        <div
+          class="text-center hidden lg:block"
+        >
+          FD
+        </div>
+        <div
+          class="text-center hidden lg:block"
+        >
+          UD
+        </div>
+      </div>
+      <a
+        class="cursor-pointer hover:bg-kanaliiga-light-brown/10"
+        href="/players/76561198012345678?teams=1"
+      >
+        <div
+          class="grid grid-cols-[2fr_repeat(4,1fr)] md:grid-cols-[2fr_repeat(6,1fr)] lg:grid-cols-[2fr_repeat(8,1fr)] p-2 border-b border-gray-800 items-center"
+        >
+          <div
+            class="text-left font-bold"
+          >
+            Player1
+          </div>
+          <div
+            class="text-center"
+          >
+            22
+          </div>
+          <div
+            class="text-center hidden md:block"
+          >
+            5
+            (
+            2
+            )
+          </div>
+          <div
+            class="text-center"
+          >
+            15
+          </div>
+          <div
+            class="text-center text-green-500"
+          >
+            +7
+          </div>
+          <div
+            class="text-center"
+          >
+            85.5
+          </div>
+          <div
+            class="text-center hidden md:block"
+          >
+            3
+          </div>
+          <div
+            class="text-center hidden lg:block"
+          >
+            1
+          </div>
+          <div
+            class="text-center hidden lg:block"
+          >
+            120
+          </div>
+        </div>
+      </a>
+      <a
+        class="cursor-pointer hover:bg-kanaliiga-light-brown/10"
+        href="/players/76561198012345679?teams=1"
+      >
+        <div
+          class="grid grid-cols-[2fr_repeat(4,1fr)] md:grid-cols-[2fr_repeat(6,1fr)] lg:grid-cols-[2fr_repeat(8,1fr)] p-2 border-b border-gray-800 items-center"
+        >
+          <div
+            class="text-left font-bold"
+          >
+            Player2
+          </div>
+          <div
+            class="text-center"
+          >
+            18
+          </div>
+          <div
+            class="text-center hidden md:block"
+          >
+            7
+            (
+            3
+            )
+          </div>
+          <div
+            class="text-center"
+          >
+            17
+          </div>
+          <div
+            class="text-center text-green-500"
+          >
+            +1
+          </div>
+          <div
+            class="text-center"
+          >
+            72.3
+          </div>
+          <div
+            class="text-center hidden md:block"
+          >
+            1
+          </div>
+          <div
+            class="text-center hidden lg:block"
+          >
+            2
+          </div>
+          <div
+            class="text-center hidden lg:block"
+          >
+            80
+          </div>
+        </div>
+      </a>
+    </div>
+    <div
+      class="flex flex-col"
+    >
+      <div
+        class="flex items-center justify-between p-2 mb-[1px] bg-kanaliiga-light-brown/30"
+      >
+        <a
+          class="flex items-center gap-2 hover:bg-kanaliiga-light-brown/40 p-2 rounded transition-colors"
+          href="/teams/2"
+        >
+          <img
+            alt="Team Beta"
+            class="w-6 h-6"
+            height="24"
+            src="https://img.kanaliiga.fi/images/by-hash/phash/team-beta-logo.png"
+            width="24"
+          />
+          <h2
+            class="text-base font-bold"
+          >
+            Team Beta
+          </h2>
+        </a>
+        <div
+          class="flex gap-1"
+        >
+          <button
+            class="px-2 py-1 text-xs font-medium rounded transition-colors bg-blue-600 text-white"
+          >
+            CT
+          </button>
+          <button
+            class="px-2 py-1 text-xs font-medium rounded transition-colors bg-kanaliiga-light-brown/50 text-gray-300 hover:bg-kanaliiga-light-brown/70"
+          >
+            T
+          </button>
+        </div>
+      </div>
+      <div
+        class="grid grid-cols-[2fr_repeat(4,1fr)] md:grid-cols-[2fr_repeat(6,1fr)] lg:grid-cols-[2fr_repeat(8,1fr)] items-center text-muted-foreground p-2 bg-kanaliiga-light-brown/30"
+      >
+        <div
+          class="text-left"
+        >
+          PLAYER
+        </div>
+        <div
+          class="text-center"
+        >
+          K
+        </div>
+        <div
+          class="text-center hidden md:block"
+        >
+          A(f)
+        </div>
+        <div
+          class="text-center"
+        >
+          D
+        </div>
+        <div
+          class="text-center"
+        >
+          +/-
+        </div>
+        <div
+          class="text-center"
+        >
+          ADR
+        </div>
+        <div
+          class="text-center hidden md:block"
+        >
+          FK
+        </div>
+        <div
+          class="text-center hidden lg:block"
+        >
+          FD
+        </div>
+        <div
+          class="text-center hidden lg:block"
+        >
+          UD
+        </div>
+      </div>
+      <a
+        class="cursor-pointer hover:bg-kanaliiga-light-brown/10"
+        href="/players/76561198012345680?teams=2"
+      >
+        <div
+          class="grid grid-cols-[2fr_repeat(4,1fr)] md:grid-cols-[2fr_repeat(6,1fr)] lg:grid-cols-[2fr_repeat(8,1fr)] p-2 border-b border-gray-800 items-center"
+        >
+          <div
+            class="text-left font-bold"
+          >
+            Player3
+          </div>
+          <div
+            class="text-center"
+          >
+            20
+          </div>
+          <div
+            class="text-center hidden md:block"
+          >
+            4
+            (
+            1
+            )
+          </div>
+          <div
+            class="text-center"
+          >
+            16
+          </div>
+          <div
+            class="text-center text-green-500"
+          >
+            +4
+          </div>
+          <div
+            class="text-center"
+          >
+            78.2
+          </div>
+          <div
+            class="text-center hidden md:block"
+          >
+            2
+          </div>
+          <div
+            class="text-center hidden lg:block"
+          >
+            1
+          </div>
+          <div
+            class="text-center hidden lg:block"
+          >
+            95
+          </div>
+        </div>
+      </a>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`PlayerStatisticsForTeam Snapshot Tests renders correctly with T side selected 1`] = `
+<div>
+  <div
+    class="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4"
+  >
+    <div
+      class="flex flex-col"
+    >
+      <div
+        class="flex items-center justify-between p-2 mb-[1px] bg-kanaliiga-light-brown/30"
+      >
+        <a
+          class="flex items-center gap-2 hover:bg-kanaliiga-light-brown/40 p-2 rounded transition-colors"
+          href="/teams/1"
+        >
+          <img
+            alt="Team Alpha"
+            class="w-6 h-6"
+            height="24"
+            src="https://img.kanaliiga.fi/images/by-hash/phash/team-alpha-logo.png"
+            width="24"
+          />
+          <h2
+            class="text-base font-bold"
+          >
+            Team Alpha
+          </h2>
+        </a>
+        <div
+          class="flex gap-1"
+        >
+          <button
+            class="px-2 py-1 text-xs font-medium rounded transition-colors bg-kanaliiga-light-brown/50 text-gray-300 hover:bg-kanaliiga-light-brown/70"
+          >
+            CT
+          </button>
+          <button
+            class="px-2 py-1 text-xs font-medium rounded transition-colors bg-orange-600 text-white"
+          >
+            T
+          </button>
+        </div>
+      </div>
+      <div
+        class="grid grid-cols-[2fr_repeat(4,1fr)] md:grid-cols-[2fr_repeat(6,1fr)] lg:grid-cols-[2fr_repeat(8,1fr)] items-center text-muted-foreground p-2 bg-kanaliiga-light-brown/30"
+      >
+        <div
+          class="text-left"
+        >
+          PLAYER
+        </div>
+        <div
+          class="text-center"
+        >
+          K
+        </div>
+        <div
+          class="text-center hidden md:block"
+        >
+          A(f)
+        </div>
+        <div
+          class="text-center"
+        >
+          D
+        </div>
+        <div
+          class="text-center"
+        >
+          +/-
+        </div>
+        <div
+          class="text-center"
+        >
+          ADR
+        </div>
+        <div
+          class="text-center hidden md:block"
+        >
+          FK
+        </div>
+        <div
+          class="text-center hidden lg:block"
+        >
+          FD
+        </div>
+        <div
+          class="text-center hidden lg:block"
+        >
+          UD
+        </div>
+      </div>
+      <a
+        class="cursor-pointer hover:bg-kanaliiga-light-brown/10"
+        href="/players/76561198012345678?teams=1"
+      >
+        <div
+          class="grid grid-cols-[2fr_repeat(4,1fr)] md:grid-cols-[2fr_repeat(6,1fr)] lg:grid-cols-[2fr_repeat(8,1fr)] p-2 border-b border-gray-800 items-center"
+        >
+          <div
+            class="text-left font-bold"
+          >
+            Player1
+          </div>
+          <div
+            class="text-center"
+          >
+            22
+          </div>
+          <div
+            class="text-center hidden md:block"
+          >
+            5
+            (
+            2
+            )
+          </div>
+          <div
+            class="text-center"
+          >
+            15
+          </div>
+          <div
+            class="text-center text-green-500"
+          >
+            +7
+          </div>
+          <div
+            class="text-center"
+          >
+            85.5
+          </div>
+          <div
+            class="text-center hidden md:block"
+          >
+            3
+          </div>
+          <div
+            class="text-center hidden lg:block"
+          >
+            1
+          </div>
+          <div
+            class="text-center hidden lg:block"
+          >
+            120
+          </div>
+        </div>
+      </a>
+      <a
+        class="cursor-pointer hover:bg-kanaliiga-light-brown/10"
+        href="/players/76561198012345679?teams=1"
+      >
+        <div
+          class="grid grid-cols-[2fr_repeat(4,1fr)] md:grid-cols-[2fr_repeat(6,1fr)] lg:grid-cols-[2fr_repeat(8,1fr)] p-2 border-b border-gray-800 items-center"
+        >
+          <div
+            class="text-left font-bold"
+          >
+            Player2
+          </div>
+          <div
+            class="text-center"
+          >
+            18
+          </div>
+          <div
+            class="text-center hidden md:block"
+          >
+            7
+            (
+            3
+            )
+          </div>
+          <div
+            class="text-center"
+          >
+            17
+          </div>
+          <div
+            class="text-center text-green-500"
+          >
+            +1
+          </div>
+          <div
+            class="text-center"
+          >
+            72.3
+          </div>
+          <div
+            class="text-center hidden md:block"
+          >
+            1
+          </div>
+          <div
+            class="text-center hidden lg:block"
+          >
+            2
+          </div>
+          <div
+            class="text-center hidden lg:block"
+          >
+            80
+          </div>
+        </div>
+      </a>
+    </div>
+    <div
+      class="flex flex-col"
+    >
+      <div
+        class="flex items-center justify-between p-2 mb-[1px] bg-kanaliiga-light-brown/30"
+      >
+        <a
+          class="flex items-center gap-2 hover:bg-kanaliiga-light-brown/40 p-2 rounded transition-colors"
+          href="/teams/2"
+        >
+          <img
+            alt="Team Beta"
+            class="w-6 h-6"
+            height="24"
+            src="https://img.kanaliiga.fi/images/by-hash/phash/team-beta-logo.png"
+            width="24"
+          />
+          <h2
+            class="text-base font-bold"
+          >
+            Team Beta
+          </h2>
+        </a>
+        <div
+          class="flex gap-1"
+        >
+          <button
+            class="px-2 py-1 text-xs font-medium rounded transition-colors bg-kanaliiga-light-brown/50 text-gray-300 hover:bg-kanaliiga-light-brown/70"
+          >
+            CT
+          </button>
+          <button
+            class="px-2 py-1 text-xs font-medium rounded transition-colors bg-orange-600 text-white"
+          >
+            T
+          </button>
+        </div>
+      </div>
+      <div
+        class="grid grid-cols-[2fr_repeat(4,1fr)] md:grid-cols-[2fr_repeat(6,1fr)] lg:grid-cols-[2fr_repeat(8,1fr)] items-center text-muted-foreground p-2 bg-kanaliiga-light-brown/30"
+      >
+        <div
+          class="text-left"
+        >
+          PLAYER
+        </div>
+        <div
+          class="text-center"
+        >
+          K
+        </div>
+        <div
+          class="text-center hidden md:block"
+        >
+          A(f)
+        </div>
+        <div
+          class="text-center"
+        >
+          D
+        </div>
+        <div
+          class="text-center"
+        >
+          +/-
+        </div>
+        <div
+          class="text-center"
+        >
+          ADR
+        </div>
+        <div
+          class="text-center hidden md:block"
+        >
+          FK
+        </div>
+        <div
+          class="text-center hidden lg:block"
+        >
+          FD
+        </div>
+        <div
+          class="text-center hidden lg:block"
+        >
+          UD
+        </div>
+      </div>
+      <a
+        class="cursor-pointer hover:bg-kanaliiga-light-brown/10"
+        href="/players/76561198012345680?teams=2"
+      >
+        <div
+          class="grid grid-cols-[2fr_repeat(4,1fr)] md:grid-cols-[2fr_repeat(6,1fr)] lg:grid-cols-[2fr_repeat(8,1fr)] p-2 border-b border-gray-800 items-center"
+        >
+          <div
+            class="text-left font-bold"
+          >
+            Player3
+          </div>
+          <div
+            class="text-center"
+          >
+            20
+          </div>
+          <div
+            class="text-center hidden md:block"
+          >
+            4
+            (
+            1
+            )
+          </div>
+          <div
+            class="text-center"
+          >
+            16
+          </div>
+          <div
+            class="text-center text-green-500"
+          >
+            +4
+          </div>
+          <div
+            class="text-center"
+          >
+            78.2
+          </div>
+          <div
+            class="text-center hidden md:block"
+          >
+            2
+          </div>
+          <div
+            class="text-center hidden lg:block"
+          >
+            1
+          </div>
+          <div
+            class="text-center hidden lg:block"
+          >
+            95
+          </div>
+        </div>
+      </a>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`PlayerStatisticsForTeam Snapshot Tests renders correctly with empty player stats 1`] = `
+<div>
+  <div
+    class="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4"
+  />
+</div>
+`;
+
+exports[`PlayerStatisticsForTeam Snapshot Tests renders correctly with filter params 1`] = `
+<div>
+  <div
+    class="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4"
+  >
+    <div
+      class="flex flex-col"
+    >
+      <div
+        class="flex items-center justify-between p-2 mb-[1px] bg-kanaliiga-light-brown/30"
+      >
+        <a
+          class="flex items-center gap-2 hover:bg-kanaliiga-light-brown/40 p-2 rounded transition-colors"
+          href="/teams/1?seasons=1&leagues=1"
+        >
+          <img
+            alt="Team Alpha"
+            class="w-6 h-6"
+            height="24"
+            src="https://img.kanaliiga.fi/images/by-hash/phash/team-alpha-logo.png"
+            width="24"
+          />
+          <h2
+            class="text-base font-bold"
+          >
+            Team Alpha
+          </h2>
+        </a>
+        <div
+          class="flex gap-1"
+        >
+          <button
+            class="px-2 py-1 text-xs font-medium rounded transition-colors bg-kanaliiga-light-brown/50 text-gray-300 hover:bg-kanaliiga-light-brown/70"
+          >
+            CT
+          </button>
+          <button
+            class="px-2 py-1 text-xs font-medium rounded transition-colors bg-kanaliiga-light-brown/50 text-gray-300 hover:bg-kanaliiga-light-brown/70"
+          >
+            T
+          </button>
+        </div>
+      </div>
+      <div
+        class="grid grid-cols-[2fr_repeat(4,1fr)] md:grid-cols-[2fr_repeat(6,1fr)] lg:grid-cols-[2fr_repeat(8,1fr)] items-center text-muted-foreground p-2 bg-kanaliiga-light-brown/30"
+      >
+        <div
+          class="text-left"
+        >
+          PLAYER
+        </div>
+        <div
+          class="text-center"
+        >
+          K
+        </div>
+        <div
+          class="text-center hidden md:block"
+        >
+          A(f)
+        </div>
+        <div
+          class="text-center"
+        >
+          D
+        </div>
+        <div
+          class="text-center"
+        >
+          +/-
+        </div>
+        <div
+          class="text-center"
+        >
+          ADR
+        </div>
+        <div
+          class="text-center hidden md:block"
+        >
+          KAST
+        </div>
+        <div
+          class="text-center hidden lg:block"
+        >
+          HS%
+        </div>
+        <div
+          class="text-center hidden lg:block"
+        >
+          RATING
+        </div>
+      </div>
+      <a
+        class="cursor-pointer hover:bg-kanaliiga-light-brown/10"
+        href="/players/76561198012345678?seasons=1&leagues=1&teams=1"
+      >
+        <div
+          class="grid grid-cols-[2fr_repeat(4,1fr)] md:grid-cols-[2fr_repeat(6,1fr)] lg:grid-cols-[2fr_repeat(8,1fr)] p-2 border-b border-gray-800 items-center"
+        >
+          <div
+            class="text-left font-bold"
+          >
+            Player1
+          </div>
+          <div
+            class="text-center"
+          >
+            22
+          </div>
+          <div
+            class="text-center hidden md:block"
+          >
+            5
+            (
+            2
+            )
+          </div>
+          <div
+            class="text-center"
+          >
+            15
+          </div>
+          <div
+            class="text-center text-green-500"
+          >
+            +7
+          </div>
+          <div
+            class="text-center"
+          >
+            85.5
+          </div>
+          <div
+            class="text-center hidden md:block"
+          >
+            72.5%
+          </div>
+          <div
+            class="text-center hidden lg:block"
+          >
+            48%
+          </div>
+          <div
+            class="text-center hidden lg:block"
+          >
+            1.25
+          </div>
+        </div>
+      </a>
+      <a
+        class="cursor-pointer hover:bg-kanaliiga-light-brown/10"
+        href="/players/76561198012345679?seasons=1&leagues=1&teams=1"
+      >
+        <div
+          class="grid grid-cols-[2fr_repeat(4,1fr)] md:grid-cols-[2fr_repeat(6,1fr)] lg:grid-cols-[2fr_repeat(8,1fr)] p-2 border-b border-gray-800 items-center"
+        >
+          <div
+            class="text-left font-bold"
+          >
+            Player2
+          </div>
+          <div
+            class="text-center"
+          >
+            18
+          </div>
+          <div
+            class="text-center hidden md:block"
+          >
+            7
+            (
+            3
+            )
+          </div>
+          <div
+            class="text-center"
+          >
+            17
+          </div>
+          <div
+            class="text-center text-green-500"
+          >
+            +1
+          </div>
+          <div
+            class="text-center"
+          >
+            72.3
+          </div>
+          <div
+            class="text-center hidden md:block"
+          >
+            68%
+          </div>
+          <div
+            class="text-center hidden lg:block"
+          >
+            52%
+          </div>
+          <div
+            class="text-center hidden lg:block"
+          >
+            1.05
+          </div>
+        </div>
+      </a>
+    </div>
+    <div
+      class="flex flex-col"
+    >
+      <div
+        class="flex items-center justify-between p-2 mb-[1px] bg-kanaliiga-light-brown/30"
+      >
+        <a
+          class="flex items-center gap-2 hover:bg-kanaliiga-light-brown/40 p-2 rounded transition-colors"
+          href="/teams/2?seasons=1&leagues=1"
+        >
+          <img
+            alt="Team Beta"
+            class="w-6 h-6"
+            height="24"
+            src="https://img.kanaliiga.fi/images/by-hash/phash/team-beta-logo.png"
+            width="24"
+          />
+          <h2
+            class="text-base font-bold"
+          >
+            Team Beta
+          </h2>
+        </a>
+        <div
+          class="flex gap-1"
+        >
+          <button
+            class="px-2 py-1 text-xs font-medium rounded transition-colors bg-kanaliiga-light-brown/50 text-gray-300 hover:bg-kanaliiga-light-brown/70"
+          >
+            CT
+          </button>
+          <button
+            class="px-2 py-1 text-xs font-medium rounded transition-colors bg-kanaliiga-light-brown/50 text-gray-300 hover:bg-kanaliiga-light-brown/70"
+          >
+            T
+          </button>
+        </div>
+      </div>
+      <div
+        class="grid grid-cols-[2fr_repeat(4,1fr)] md:grid-cols-[2fr_repeat(6,1fr)] lg:grid-cols-[2fr_repeat(8,1fr)] items-center text-muted-foreground p-2 bg-kanaliiga-light-brown/30"
+      >
+        <div
+          class="text-left"
+        >
+          PLAYER
+        </div>
+        <div
+          class="text-center"
+        >
+          K
+        </div>
+        <div
+          class="text-center hidden md:block"
+        >
+          A(f)
+        </div>
+        <div
+          class="text-center"
+        >
+          D
+        </div>
+        <div
+          class="text-center"
+        >
+          +/-
+        </div>
+        <div
+          class="text-center"
+        >
+          ADR
+        </div>
+        <div
+          class="text-center hidden md:block"
+        >
+          KAST
+        </div>
+        <div
+          class="text-center hidden lg:block"
+        >
+          HS%
+        </div>
+        <div
+          class="text-center hidden lg:block"
+        >
+          RATING
+        </div>
+      </div>
+      <a
+        class="cursor-pointer hover:bg-kanaliiga-light-brown/10"
+        href="/players/76561198012345680?seasons=1&leagues=1&teams=2"
+      >
+        <div
+          class="grid grid-cols-[2fr_repeat(4,1fr)] md:grid-cols-[2fr_repeat(6,1fr)] lg:grid-cols-[2fr_repeat(8,1fr)] p-2 border-b border-gray-800 items-center"
+        >
+          <div
+            class="text-left font-bold"
+          >
+            Player3
+          </div>
+          <div
+            class="text-center"
+          >
+            20
+          </div>
+          <div
+            class="text-center hidden md:block"
+          >
+            4
+            (
+            1
+            )
+          </div>
+          <div
+            class="text-center"
+          >
+            16
+          </div>
+          <div
+            class="text-center text-green-500"
+          >
+            +4
+          </div>
+          <div
+            class="text-center"
+          >
+            78.2
+          </div>
+          <div
+            class="text-center hidden md:block"
+          >
+            70%
+          </div>
+          <div
+            class="text-center hidden lg:block"
+          >
+            45%
+          </div>
+          <div
+            class="text-center hidden lg:block"
+          >
+            1.15
+          </div>
+        </div>
+      </a>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`PlayerStatisticsForTeam Snapshot Tests renders correctly with player stats for both teams 1`] = `
+<div>
+  <div
+    class="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4"
+  >
+    <div
+      class="flex flex-col"
+    >
+      <div
+        class="flex items-center justify-between p-2 mb-[1px] bg-kanaliiga-light-brown/30"
+      >
+        <a
+          class="flex items-center gap-2 hover:bg-kanaliiga-light-brown/40 p-2 rounded transition-colors"
+          href="/teams/1"
+        >
+          <img
+            alt="Team Alpha"
+            class="w-6 h-6"
+            height="24"
+            src="https://img.kanaliiga.fi/images/by-hash/phash/team-alpha-logo.png"
+            width="24"
+          />
+          <h2
+            class="text-base font-bold"
+          >
+            Team Alpha
+          </h2>
+        </a>
+        <div
+          class="flex gap-1"
+        >
+          <button
+            class="px-2 py-1 text-xs font-medium rounded transition-colors bg-kanaliiga-light-brown/50 text-gray-300 hover:bg-kanaliiga-light-brown/70"
+          >
+            CT
+          </button>
+          <button
+            class="px-2 py-1 text-xs font-medium rounded transition-colors bg-kanaliiga-light-brown/50 text-gray-300 hover:bg-kanaliiga-light-brown/70"
+          >
+            T
+          </button>
+        </div>
+      </div>
+      <div
+        class="grid grid-cols-[2fr_repeat(4,1fr)] md:grid-cols-[2fr_repeat(6,1fr)] lg:grid-cols-[2fr_repeat(8,1fr)] items-center text-muted-foreground p-2 bg-kanaliiga-light-brown/30"
+      >
+        <div
+          class="text-left"
+        >
+          PLAYER
+        </div>
+        <div
+          class="text-center"
+        >
+          K
+        </div>
+        <div
+          class="text-center hidden md:block"
+        >
+          A(f)
+        </div>
+        <div
+          class="text-center"
+        >
+          D
+        </div>
+        <div
+          class="text-center"
+        >
+          +/-
+        </div>
+        <div
+          class="text-center"
+        >
+          ADR
+        </div>
+        <div
+          class="text-center hidden md:block"
+        >
+          KAST
+        </div>
+        <div
+          class="text-center hidden lg:block"
+        >
+          HS%
+        </div>
+        <div
+          class="text-center hidden lg:block"
+        >
+          RATING
+        </div>
+      </div>
+      <a
+        class="cursor-pointer hover:bg-kanaliiga-light-brown/10"
+        href="/players/76561198012345678?teams=1"
+      >
+        <div
+          class="grid grid-cols-[2fr_repeat(4,1fr)] md:grid-cols-[2fr_repeat(6,1fr)] lg:grid-cols-[2fr_repeat(8,1fr)] p-2 border-b border-gray-800 items-center"
+        >
+          <div
+            class="text-left font-bold"
+          >
+            Player1
+          </div>
+          <div
+            class="text-center"
+          >
+            22
+          </div>
+          <div
+            class="text-center hidden md:block"
+          >
+            5
+            (
+            2
+            )
+          </div>
+          <div
+            class="text-center"
+          >
+            15
+          </div>
+          <div
+            class="text-center text-green-500"
+          >
+            +7
+          </div>
+          <div
+            class="text-center"
+          >
+            85.5
+          </div>
+          <div
+            class="text-center hidden md:block"
+          >
+            72.5%
+          </div>
+          <div
+            class="text-center hidden lg:block"
+          >
+            48%
+          </div>
+          <div
+            class="text-center hidden lg:block"
+          >
+            1.25
+          </div>
+        </div>
+      </a>
+      <a
+        class="cursor-pointer hover:bg-kanaliiga-light-brown/10"
+        href="/players/76561198012345679?teams=1"
+      >
+        <div
+          class="grid grid-cols-[2fr_repeat(4,1fr)] md:grid-cols-[2fr_repeat(6,1fr)] lg:grid-cols-[2fr_repeat(8,1fr)] p-2 border-b border-gray-800 items-center"
+        >
+          <div
+            class="text-left font-bold"
+          >
+            Player2
+          </div>
+          <div
+            class="text-center"
+          >
+            18
+          </div>
+          <div
+            class="text-center hidden md:block"
+          >
+            7
+            (
+            3
+            )
+          </div>
+          <div
+            class="text-center"
+          >
+            17
+          </div>
+          <div
+            class="text-center text-green-500"
+          >
+            +1
+          </div>
+          <div
+            class="text-center"
+          >
+            72.3
+          </div>
+          <div
+            class="text-center hidden md:block"
+          >
+            68%
+          </div>
+          <div
+            class="text-center hidden lg:block"
+          >
+            52%
+          </div>
+          <div
+            class="text-center hidden lg:block"
+          >
+            1.05
+          </div>
+        </div>
+      </a>
+    </div>
+    <div
+      class="flex flex-col"
+    >
+      <div
+        class="flex items-center justify-between p-2 mb-[1px] bg-kanaliiga-light-brown/30"
+      >
+        <a
+          class="flex items-center gap-2 hover:bg-kanaliiga-light-brown/40 p-2 rounded transition-colors"
+          href="/teams/2"
+        >
+          <img
+            alt="Team Beta"
+            class="w-6 h-6"
+            height="24"
+            src="https://img.kanaliiga.fi/images/by-hash/phash/team-beta-logo.png"
+            width="24"
+          />
+          <h2
+            class="text-base font-bold"
+          >
+            Team Beta
+          </h2>
+        </a>
+        <div
+          class="flex gap-1"
+        >
+          <button
+            class="px-2 py-1 text-xs font-medium rounded transition-colors bg-kanaliiga-light-brown/50 text-gray-300 hover:bg-kanaliiga-light-brown/70"
+          >
+            CT
+          </button>
+          <button
+            class="px-2 py-1 text-xs font-medium rounded transition-colors bg-kanaliiga-light-brown/50 text-gray-300 hover:bg-kanaliiga-light-brown/70"
+          >
+            T
+          </button>
+        </div>
+      </div>
+      <div
+        class="grid grid-cols-[2fr_repeat(4,1fr)] md:grid-cols-[2fr_repeat(6,1fr)] lg:grid-cols-[2fr_repeat(8,1fr)] items-center text-muted-foreground p-2 bg-kanaliiga-light-brown/30"
+      >
+        <div
+          class="text-left"
+        >
+          PLAYER
+        </div>
+        <div
+          class="text-center"
+        >
+          K
+        </div>
+        <div
+          class="text-center hidden md:block"
+        >
+          A(f)
+        </div>
+        <div
+          class="text-center"
+        >
+          D
+        </div>
+        <div
+          class="text-center"
+        >
+          +/-
+        </div>
+        <div
+          class="text-center"
+        >
+          ADR
+        </div>
+        <div
+          class="text-center hidden md:block"
+        >
+          KAST
+        </div>
+        <div
+          class="text-center hidden lg:block"
+        >
+          HS%
+        </div>
+        <div
+          class="text-center hidden lg:block"
+        >
+          RATING
+        </div>
+      </div>
+      <a
+        class="cursor-pointer hover:bg-kanaliiga-light-brown/10"
+        href="/players/76561198012345680?teams=2"
+      >
+        <div
+          class="grid grid-cols-[2fr_repeat(4,1fr)] md:grid-cols-[2fr_repeat(6,1fr)] lg:grid-cols-[2fr_repeat(8,1fr)] p-2 border-b border-gray-800 items-center"
+        >
+          <div
+            class="text-left font-bold"
+          >
+            Player3
+          </div>
+          <div
+            class="text-center"
+          >
+            20
+          </div>
+          <div
+            class="text-center hidden md:block"
+          >
+            4
+            (
+            1
+            )
+          </div>
+          <div
+            class="text-center"
+          >
+            16
+          </div>
+          <div
+            class="text-center text-green-500"
+          >
+            +4
+          </div>
+          <div
+            class="text-center"
+          >
+            78.2
+          </div>
+          <div
+            class="text-center hidden md:block"
+          >
+            70%
+          </div>
+          <div
+            class="text-center hidden lg:block"
+          >
+            45%
+          </div>
+          <div
+            class="text-center hidden lg:block"
+          >
+            1.15
+          </div>
+        </div>
+      </a>
+    </div>
+  </div>
+</div>
+`;
