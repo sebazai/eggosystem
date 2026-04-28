@@ -214,6 +214,18 @@ export const addMatchTeamMapVetoes = async (
   }
 };
 
+export const deleteMatchTeamMapVetoesByMatchId = async (
+  matchId: number,
+  connection?: PoolConnection
+): Promise<number> => {
+  const result = await runQuery<{ affectedRows: number }>(
+    `DELETE FROM MatchTeamMapVetoes WHERE match_id = ?`,
+    [matchId],
+    connection
+  );
+  return result.affectedRows;
+};
+
 export const getMatchPickedMapsOrderedByVetoOrder = async (
   matchId: number,
   connection?: PoolConnection
