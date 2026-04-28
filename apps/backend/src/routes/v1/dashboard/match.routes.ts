@@ -2,11 +2,13 @@ import { Router } from "express";
 import {
   getFlaggedMatchesController,
   getManualTeamGameScoresController,
+  getUnfinishedMatchesController,
   putManualTeamGameScoresController
 } from "../../../controllers/dashboard/matches.controllers";
 
 const router = Router();
 
+router.get("/unfinished/:season_id", getUnfinishedMatchesController);
 router.get("/flagged", getFlaggedMatchesController);
 
 router.get(
