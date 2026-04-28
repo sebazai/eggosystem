@@ -1,11 +1,13 @@
 import { Router } from "express";
 import {
+  deleteMatchTeamMapVetoesController,
   getFlaggedMatchesController,
   getManualTeamGameScoresController,
   getUnfinishedMatchesController,
   putManualTeamGameScoresController
 } from "../../../controllers/dashboard/matches.controllers";
 import { createMatchVetoStepsController } from "../../../controllers/dashboard/match-vetoes.controllers";
+import { validateNumericParams } from "../../../middlewares/validate-numeric-params";
 
 const router = Router();
 
@@ -26,5 +28,10 @@ router.patch(
 );
 
 router.post("/:match_id/vetoes", createMatchVetoStepsController);
+router.delete(
+  "/:match_id/vetoes",
+  validateNumericParams(["match_id"]),
+  deleteMatchTeamMapVetoesController
+);
 
 export default router;
