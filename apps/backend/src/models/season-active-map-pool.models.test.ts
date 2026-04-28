@@ -158,11 +158,13 @@ describe("season-active-map-pool.models", () => {
       expect(result).toEqual(mockMaps);
       expect(mockRunQuery).toHaveBeenCalledWith(
         expect.stringContaining("SeasonActiveMapPool"),
-        [matchId]
+        [matchId],
+        undefined
       );
       expect(mockRunQuery).toHaveBeenCalledWith(
         expect.stringContaining("Matches"),
-        [matchId]
+        [matchId],
+        undefined
       );
     });
 

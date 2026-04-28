@@ -91,6 +91,8 @@ function getUserFriendlyMessage(
       "You are already registered for this organization",
     SeasonPlayerApprovals: "Player is already approved for this season",
     SeasonTeamRegistrations: "Team is already registered for this season",
+    MatchTeamMapVetoes:
+      "A map veto step already exists for this team and sequence for this match",
     MatchGames: "This match game already exists",
     PlayerStats: "Player statistics for this game already exist",
     TeamGameScores: "Team scores for this game already exist",

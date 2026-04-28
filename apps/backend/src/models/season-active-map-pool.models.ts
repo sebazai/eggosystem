@@ -96,7 +96,8 @@ export const setActiveMapPoolForSeason = async (
  * @returns Array of maps (id + name) in the season's active pool, ordered by name
  */
 export const getSeasonMapPoolForMatch = async (
-  matchId: number
+  matchId: number,
+  connection?: PoolConnection
 ): Promise<Map[]> => {
   const query = `
     SELECT DISTINCT m2.id, m2.name
@@ -107,5 +108,5 @@ export const getSeasonMapPoolForMatch = async (
     ORDER BY m2.name ASC
   `;
 
-  return runQuery<Map[]>(query, [matchId]);
+  return runQuery<Map[]>(query, [matchId], connection);
 };

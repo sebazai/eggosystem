@@ -7,6 +7,7 @@ import {
   getUnfinishedMatchesController,
   putManualTeamGameScoresController
 } from "../../../controllers/dashboard/matches.controllers";
+import { createMatchVetoStepsController } from "../../../controllers/dashboard/match-vetoes.controllers";
 import { validateNumericParams } from "../../../middlewares/validate-numeric-params";
 
 const router = Router();
@@ -33,5 +34,7 @@ router.delete(
   validateNumericParams(["match_id"]),
   deleteMatchTeamMapVetoesController
 );
+
+router.post("/:match_id/vetoes", createMatchVetoStepsController);
 
 export default router;

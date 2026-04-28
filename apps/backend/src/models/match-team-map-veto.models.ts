@@ -7,12 +7,13 @@ import {
 import {
   type ChampionshipDetailsReady,
   type MatchTeamMapVeto,
-  resolveVetoAction
+  resolveVetoAction,
+  getVetoTemplate
 } from "@eggosystem/types";
 import { getSeasonLeagueTeamByExternalId } from "./season-league-team.models";
 import { getConnection } from "../db/mysqlConnection";
 import { getSeasonLeagueExternalIdByExternalIdWithSeasonSettings } from "./season-league-external-id.models";
-import { NotFoundError } from "../utils/errors";
+import { BadRequestError, NotFoundError } from "../utils/errors";
 
 // FACEIT Match History API Response Interfaces
 interface FaceitMatchHistoryEntity {
@@ -232,6 +233,88 @@ export const getMatchPickedMapsOrderedByVetoOrder = async (
   return runQuery<Array<MatchTeamMapVeto>>(
     `SELECT * FROM MatchTeamMapVetoes WHERE match_id = ? AND (action = "pick" OR action = "decider") ORDER BY veto_order ASC;`,
     [matchId],
+    connection
+  );
+};
+
+export interface CreateVetoStepInput {
+  match_id: number;
+  team_id: number;
+  map_id: number;
+  veto_order: number;
+}
+
+/**
+ * Count veto rows already stored for the match (used to reject duplicate submissions).
+ */
+export const countExistingVetoStepsForMatch = async (
+  matchId: number,
+  connection: PoolConnection
+): Promise<number> => {
+  const rows = await runQuery<Array<{ cnt: number }>>(
+    `SELECT COUNT(*) AS cnt FROM MatchTeamMapVetoes WHERE match_id = ?`,
+    [matchId],
+    connection
+  );
+  const raw = rows[0]?.cnt;
+  return typeof raw === "number" ? raw : Number(raw ?? 0);
+};
+
+/**
+ * Bulk-insert admin-provided veto steps inside an existing transaction.
+ * Actions are resolved from the veto template for the match's best_of value.
+ */
+export const createMatchVetoSteps = async (
+  steps: CreateVetoStepInput[],
+  bestOf: number,
+  connection: PoolConnection
+): Promise<MatchTeamMapVeto[]> => {
+  if (steps.length === 0) return [];
+
+  const template = getVetoTemplate(bestOf);
+  if (!template) {
+    throw new BadRequestError(
+      `No veto template registered for best_of=${bestOf}`
+    );
+  }
+
+  const placeholders = steps.map(() => "(?, ?, ?, ?, ?)").join(", ");
+  const params: Array<number | string> = [];
+  for (const step of steps) {
+    const templateStep = template.steps.find(
+      (s) => s.order === step.veto_order
+    );
+    if (!templateStep) {
+      throw new BadRequestError(
+        `Invalid veto_order ${step.veto_order} for best_of=${bestOf}`
+      );
+    }
+    const faceitStatus = templateStep.action === "drop" ? "drop" : "pick";
+    const action = resolveVetoAction(
+      bestOf,
+      step.veto_order,
+      template.steps.length,
+      faceitStatus
+    );
+    params.push(
+      step.match_id,
+      step.team_id,
+      step.map_id,
+      action,
+      step.veto_order
+    );
+  }
+
+  await runQuery(
+    `INSERT INTO MatchTeamMapVetoes (match_id, team_id, map_id, action, veto_order)
+     VALUES ${placeholders}`,
+    params,
+    connection
+  );
+
+  return runQuery<MatchTeamMapVeto[]>(
+    `SELECT * FROM MatchTeamMapVetoes WHERE match_id = ? ORDER BY veto_order ASC`,
+    [steps[0].match_id],
     connection
   );
 };
