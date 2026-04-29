@@ -138,17 +138,30 @@ Also maintain **`implementer_invocation_index`** per task (integer counter for *
 
 ```
 loop:
-  ready = [ t for t in tasks if t.state == "pending" and all(d.state == "completed" for d in t.depends_on) ]
-  if not ready and any(t.state in {"pending"} for t in tasks):
-    # deadlock — should be impossible if DAG is acyclic, but check
-    surface "DAG deadlock" to human and stop
   if all(t.state == "completed" for t in tasks):
     break
 
-  # IMPORTANT: dispatch ALL ready tasks IN PARALLEL via multiple Task calls
-  # in a single message. Do NOT serialize.
-  for t in ready: t.state = "running"
-  parallel_dispatch(ready)
+  ready = [ t for t in tasks if t.state == "pending" and all(d.state == "completed" for d in t.depends_on) ]
+
+  if ready:
+    # IMPORTANT: dispatch ALL ready tasks IN PARALLEL via multiple Task calls
+    # in a single message. Do NOT serialize.
+    for t in ready:
+      t.state = "running"
+    parallel_dispatch(ready)
+    continue
+
+  if any(t.state == "ci" for t in tasks):
+    # Tasks waiting on GitLab CI (see §4d–§4e). Do not treat dependents as deadlock.
+    reconcile_ci_outcomes()
+    continue
+
+  if any(t.state == "pending" for t in tasks) and not any(t.state in {"running", "review", "ci"} for t in tasks):
+    # pending exists but nothing in flight — impossible in a healthy acyclic DAG
+    surface "DAG deadlock" to human and stop
+
+  # Rare: in-flight `running` / `review` work across orchestrator turns; retry loop.
+  continue
 ```
 
 ### Per-task dispatch sequence
@@ -235,20 +248,39 @@ Task(subagent_type=code_review_bot,
 - `verdict="rejected"` and `code_review_rounds < 3` → loop back to 4b with `issues[]` injected; increment counter.
 - `verdict="rejected"` and `code_review_rounds == 3` → HITL gate #2.
 
-#### 4d. DevOps
+#### 4d. DevOps (background — do not block the orchestrator)
 
 When looping **after CI failure**, **`implementer_bot`** already has open Draft MR — use **`SkipMergeRequest: false`**.
 
+After **code review** approves (`state=ci`), CI can take many minutes. Spawn **`devops_bot` in the background** so the orchestrator can keep driving **other** Phase 4 tasks (and the main session is not stuck idle on long polls).
+
 ```
 Task(subagent_type=devops_bot,
+     run_in_background=true,
      prompt="Read /workspace/.cursor/agents/devops_bot.md. MR: !<mr_iid>. Branch: <branch>. Return ONLY the JSON envelope.")
 ```
 
+- Track each task in `ci` as **awaiting** a `devops_bot` envelope (e.g. background agent id / completion notification). Do **not** synchronously await this `Task` before dispatching independent ready tasks.
+- When several MRs need CI at once, issue **one background `devops_bot` per MR** in the **same** message (parallel background tasks).
+
+Apply the envelope when it arrives (same rules as before):
+
 - `status="ready"` → `state=completed`.
 - `status="failed"` → loop back to 4b with `checks[]` failures; increment `gate_rounds`.
-- `status="running"` (timeout) → re-spawn devops_bot once more; if still running, escalate.
+- `status="running"` (timeout) → spawn **one** follow-up `devops_bot` (background or synchronous is OK); if still `running`, escalate / HITL.
 
-#### 4e. Mark task completed and continue the outer loop.
+**Synchronous `devops_bot` is allowed** only when you deliberately need a blocking check (e.g. single-task issue, human asked to wait, or debugging). Default path: **`run_in_background=true`**.
+
+#### 4e. CI reconciliation and outer loop
+
+Tasks stay in **`ci`** until their `devops_bot` outcome is applied. The Phase 4 loop’s **`reconcile_ci_outcomes()`** step MUST:
+
+1. Wait on or collect each outstanding background `devops_bot` completion (platform notification, documented background handoff, or a **short** GitLab MCP poll for MR pipeline status if the envelope was lost).
+2. Parse the JSON envelope and apply §4d transitions (`completed` vs re-enter 4b).
+
+Do **not** enter Phase 5 until every task is **`completed`** (code review done **and** CI green per `devops_bot`).
+
+#### 4f. Mark task completed and continue the outer loop.
 
 ---
 
@@ -362,6 +394,7 @@ If your own JSON parse fails (agent output not envelope-shaped):
 - Approving or merging MRs (`mcp__GitLab__approve_merge_request`, `mcp__GitLab__merge_merge_request`). Always human.
 - Skipping HITL gates because "it looks fine."
 - Running tasks serially that have no dependency on each other (parallel dispatch is REQUIRED — single-message-multi-Task-call).
+- Awaiting **`devops_bot` synchronously** after code review when other independent Phase 4 work could proceed (default: **`run_in_background=true`**; see §4d–§4e).
 - Mutating CLAUDE.md, AGENTS.md, .claude/, .cursor/ — these are harness files; agents must not edit their own definitions.
 
 ---
