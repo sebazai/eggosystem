@@ -1,7 +1,7 @@
 /**
  * Request body for POST /api/v1/dashboard/demos/manual/parse-queue
  */
-export interface ManualDemoParseQueueRequest {
+export interface ManualDemoParseRequest {
   match_game_id?: number;
   match_id?: number;
   map_order?: number;
@@ -40,10 +40,14 @@ export interface ManualDemoParseMarkFinishedResult {
 
 /**
  * Response body for POST /api/v1/dashboard/demos/manual/parse-queue
+ *
+ * `mark_finished` is always present so helpdesk staff can audit whether
+ * the mark-finished step was applied. When not requested:
+ *   applied=false, skipped_reason='not_requested', match_ids=[], end_timestamp=null
  */
-export interface ManualDemoParseQueueResponse {
+export interface ManualDemoParseResponse {
   status: "enqueued";
   match_game_id: number;
-  /** Present when mark_finished was included in the request. */
-  mark_finished?: ManualDemoParseMarkFinishedResult;
+  /** Always present — reflects the outcome of the mark-finished step. */
+  mark_finished: ManualDemoParseMarkFinishedResult;
 }
