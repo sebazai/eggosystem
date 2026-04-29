@@ -45,13 +45,13 @@ All in `/workspace/.claude/agents/`. Each returns a JSON envelope per `/workspac
 - One worktree per task: `/workspace/.worktrees/<iid>-<task_id>/`.
 - `git worktree add` creates them; the orchestrator does this before spawning each `implementer_bot`.
 - `git worktree remove --force` cleans up after merge (in `ask` permission tier — confirmed by human).
-- Parallel `pnpm install` uses `--frozen-lockfile` to prevent store corruption.
+- Parallel task worktrees each run **`pnpm install --frozen-lockfile`** once on the **first** `implementer_bot` spawn for that worktree (`implementer_invocation_index == 1`); orchestrator increments the index on every later re-invocation (adversary, Code Review, CI, etc.), so implementer **does not** repeat frozen install unless dependency manifests changed or bootstrap failed — see `.cursor/agents/implementer_bot.md` (**Dependency install**).
 
 ## Quality gates (per implementer task)
 
 ```bash
 cd /workspace/.worktrees/<iid>-<task_id>
-rtk pnpm install --frozen-lockfile
+# pnpm install: first implementer invocation per worktree only (see implementer_bot.md)
 rtk pnpm format
 rtk pnpm --filter=<workspace> typecheck
 rtk pnpm --filter=<workspace> lint

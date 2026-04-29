@@ -11,6 +11,7 @@ You are `final_review_bot` in the DAG pipeline.
 
 1. `/workspace/.claude/skills/json-handoff/SKILL.md` — envelope contract.
 2. `/workspace/CLAUDE.md` — codebase conventions.
+3. `/workspace/AGENTS.md` — project conventions.
 
 ## Role
 

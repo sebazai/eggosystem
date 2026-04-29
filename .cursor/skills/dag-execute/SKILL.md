@@ -130,6 +130,12 @@ Track per-task state: `pending | running | review | ci | completed | stuck`. Ini
 
 Maintain retry counters per task: `adversary_runs` (capped at **3** completed `adversary_bot` invocations per task), `code_review_rounds`, `gate_rounds` (each capped at 3). **Alignment** is enforced by an **implementer ↔ adversary loop** before the Draft MR exists (see 4b).
 
+Also maintain **`implementer_invocation_index`** per task (integer counter for **this** task’s **`4a`** worktree):
+
+- Initialize to **`0`** once **`4a`** has created `<worktree_path>` (same task dispatch; do not reset between adversary/Code Review/CI loops).
+- Immediately **before every** `Task(implementer_bot)` — including each **4b** pass, stuck retries, **`4c`/`4d`/Final Review loops** — do **`implementer_invocation_index += 1`** and pass the new value into the prompt as **`implementer_invocation_index: <n>`**.
+- **`implementer_bot`** runs **`rtk pnpm install --frozen-lockfile`** only when **`n == 1`** unless dependency manifests changed or bootstrap failed (see `/workspace/.cursor/agents/implementer_bot.md` **Dependency install**).
+
 ```
 loop:
   ready = [ t for t in tasks if t.state == "pending" and all(d.state == "completed" for d in t.depends_on) ]
@@ -186,11 +192,11 @@ Initialize **`adversary_runs = 0`** for each task once per Dispatch sequence. Ma
 
 Repeat until **`adversary_approved`** is true:
 
-1. **Implement + push**
+1. **Implement + push** — **`implementer_invocation_index`** was incremented and included in this prompt (**see Phase 4**).
 
 ```
 Task(subagent_type=implementer_bot,
-     prompt="Read /workspace/.cursor/agents/implementer_bot.md. Implement task <t.id>. Worktree <worktree_path>. Branch <branch>. Base <base>. Architecture (filtered): <…>. Issue IID <iid>. Issue title + stories excerpt: … SkipMergeRequest: true|false. adversary_misalignments: <misalignments_acc or empty>. FIRST iteration or not yet adversary-approved: SkipMergeRequest=true. Return ONLY JSON envelope.")
+     prompt="Read /workspace/.cursor/agents/implementer_bot.md. Implement task <t.id>. Worktree <worktree_path>. Branch <branch>. Base <base>. Architecture (filtered): <…>. Issue IID <iid>. Issue title + stories excerpt: … SkipMergeRequest: true|false. adversary_misalignments: <misalignments_acc or empty>. implementer_invocation_index: <n>. FIRST iteration or not yet adversary-approved: SkipMergeRequest=true. Return ONLY JSON envelope.")
 ```
 
 `SkipMergeRequest` is **`true`** until `adversary_bot` returns `payload.verdict=approved`; set **`false`** only for the final push that opens Draft MR **after** approval.

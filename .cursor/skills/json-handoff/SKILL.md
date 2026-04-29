@@ -150,6 +150,8 @@ Constraints:
 
 Use `mr_opened=false` (and omit `mr_iid` or set `mr_iid` to `null`) when the orchestrator set **`SkipMergeRequest: true`** for an adversary-loop iteration — quality gates ran and branch pushed, but Draft MR waits until `adversary_bot` approves. Final `implementer_bot` invocation for the task MUST set `mr_opened=true`, `mr_iid`, and gate_output `adversary_alignment`: `"pass"` after adversary approval.
 
+**Orchestrator → prompt (not part of envelope):** pass **`implementer_invocation_index`** on every spawn (increment per `/workspace/.cursor/skills/dag-execute/SKILL.md` Phase 4). **`pnpm install --frozen-lockfile`** runs **only when that index first reaches the worktree** (`== 1`) except manifest/bootstrap exceptions — see **`implementer_bot.md`** **Dependency install**.
+
 ### `ui_bot.payload`
 
 ```json

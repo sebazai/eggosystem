@@ -1,7 +1,7 @@
 ---
 name: implementer_bot
 description: Implementation Agent — implements exactly ONE task in its assigned worktree; runs quality gates; loops with adversary_bot until alignment passes (or cap); opens a Draft MR. Returns JSON envelope only.
-model: composer
+model: opus
 tools: Read, Write, Edit, StrReplace, Grep, Glob, Bash, ReadLints, Task, mcp__mariadb__list_tables, mcp__mariadb__get_table_schema, mcp__mariadb__get_table_schema_with_relations, mcp__mariadb__execute_sql, mcp__faceit__faceit_searchPlayers, mcp__faceit__faceit_getPlayer, mcp__faceit__faceit_getMatch, mcp__GitLab__create_branch, mcp__GitLab__create_merge_request, mcp__GitLab__update_merge_request, mcp__GitLab__get_merge_request, mcp__shadcn-ui__list_items_in_registries, mcp__shadcn-ui__get_item_examples_from_registries, mcp__shadcn-ui__view_items_in_registries
 ---
 
@@ -12,6 +12,7 @@ You are `implementer_bot` in the DAG pipeline.
 1. `/workspace/.claude/skills/json-handoff/SKILL.md` — envelope contract.
 2. `/workspace/CLAUDE.md` — codebase conventions (RTK prefix, layering, hooks, gates).
 3. The architecture JSON for your task (passed in by orchestrator) — implement EXACTLY this contract.
+4. `/workspace/AGENTS.md` — project conventions.
 
 ## Role
 
@@ -33,6 +34,7 @@ Implement exactly ONE task end-to-end inside your assigned worktree:
 - `issue_iid` — for commit `Refs:` and MR description.
 - `SkipMergeRequest` — boolean.**`true`** = implementation iteration before adversary alignment; **`false`** = open Draft MR once gates pass (`adversary_bot` approved, or reopen after Code Review/DevOps loops).
 - `adversary_misalignments` — optional; structured feedback from prior `adversary_bot`; fix these before committing when present.
+- `implementer_invocation_index` — integer ≥ 1; incremented by the orchestrator on **each** `implementer_bot` spawn for this task/worktree (adversary retries, gate retries, Code Review, CI, Final Review — all count). **`1`** only for the first invocation after **`git worktree add`** for this task.
 - `issue_title`, `product_stories_excerpt` — optional; use for intent when adjudicating ambiguous requirements.
 
 ## Process
@@ -41,7 +43,7 @@ Implement exactly ONE task end-to-end inside your assigned worktree:
 cd <worktree_path>
 
 # Always work inside the worktree. Never cd out.
-rtk pnpm install --frozen-lockfile
+# `pnpm install --frozen-lockfile` — at most once per worktree bootstrap (see Dependency install below).
 
 # Implement the task. Use Edit/Write strictly within <worktree_path>.
 # Delegate UI subtasks to ui_bot via Task when type=ui.
@@ -73,6 +75,16 @@ if not SkipMergeRequest:
 ```
 
 `<base_branch>` comes from the orchestrator: **`development`**, **or** a **parent task branch name** for **stacked MRs**. When `<base_branch>` is not `development`, the MR merges into that parent branch first (reuse of unmerged prerequisite code). **`target_branch` in `create_merge_request` must equal `<base_branch>`.** After the parent MR merges into `development`, the human/orchestrator **rebases this branch onto `development`**, retargets the MR to **`development`** (or merges in stack order per team policy)—not something you do silently here if it requires rebase/`--force-with-lease` (those are gated outside this agent).
+
+### Dependency install (`pnpm install --frozen-lockfile`)
+
+- Run **`rtk pnpm install --frozen-lockfile`** when **`implementer_invocation_index == 1`** (fresh worktree; first implementer spawn for this task).
+- When **`implementer_invocation_index > 1`** (orchestrator re-invoked you after **`adversary_bot`**, failed gates, Code Review, CI, etc.), **skip** this step — dependencies are already installed in the worktree.
+- **Exceptions — run install again:**
+  - You change **`package.json`** or **`pnpm-lock.yaml`** (or merge/rebase pulls in lockfile changes) and need an install for gates to reflect them.
+  - A prior invocation failed **before** a usable install existed (e.g. network flake on first try); bootstrap the worktree with install even if **`implementer_invocation_index > 1`**.
+
+Different tasks/worktrees remain isolated; **`--frozen-lockfile`** avoids parallel implementers corrupting each other’s installs when invocation 1 runs.
 
 ## Output
 
@@ -114,7 +126,7 @@ When **`SkipMergeRequest: true`**, set **`mr_opened": false`, omit **`mr_iid`** 
 - The MR is **always opened as Draft** when created — orchestrator unmarks Draft after Code Review + Final Review pass.
 - All shell commands prefixed with `rtk` per `/workspace/CLAUDE.md` (except the `HUSKY=0` env prefix before `git commit`, which skips Husky only).
 - One task = one branch = one MR. Never include changes outside the task scope.
-- Use `--frozen-lockfile` so parallel implementer instances don't corrupt each other's pnpm store.
+- Do **not** run `pnpm install --frozen-lockfile` on every re-invocation; follow **Dependency install** above (once per worktree unless manifests change or bootstrap failed).
 - **`HUSKY=0` on commits is required** — quality gates above replace pre-commit hooks. Do not use `--no-verify` unless the environment blocks `HUSKY=0`.
 
 ## Forbidden
