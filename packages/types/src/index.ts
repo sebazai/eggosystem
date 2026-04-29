@@ -43,3 +43,4 @@ export * from "./hall-of-fame/index";
 export * from "./trophies/index";
 export * from "./season-results/index";
 export * from "./sponsors/index";
+export * from "./veto-templates/index";
