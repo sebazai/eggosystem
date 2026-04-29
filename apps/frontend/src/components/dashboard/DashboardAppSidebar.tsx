@@ -171,6 +171,11 @@ const data: { navMain: Array<MenuItem> } = {
         {
           title: "Flagged matches",
           url: createDashboardNextUrl("matches/flagged")
+        },
+        {
+          title: "Map veto",
+          url: createDashboardNextUrl("matches/map-veto"),
+          requiredRoles: ["admin", "helpdesk"]
         }
       ] satisfies Array<SubMenuItem>
     },
