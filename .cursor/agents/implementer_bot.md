@@ -1,8 +1,8 @@
 ---
-name: implementer_bot
-description: Implementation Agent — implements exactly ONE task in its assigned worktree; runs quality gates; loops with adversary_bot until alignment passes (or cap); opens a Draft MR. Returns JSON envelope only.
-model: composer
 tools: Read, Write, Edit, StrReplace, Grep, Glob, Bash, ReadLints, Task, mcp__mariadb__list_tables, mcp__mariadb__get_table_schema, mcp__mariadb__get_table_schema_with_relations, mcp__mariadb__execute_sql, mcp__faceit__faceit_searchPlayers, mcp__faceit__faceit_getPlayer, mcp__faceit__faceit_getMatch, mcp__GitLab__create_branch, mcp__GitLab__create_merge_request, mcp__GitLab__update_merge_request, mcp__GitLab__get_merge_request, mcp__shadcn-ui__list_items_in_registries, mcp__shadcn-ui__get_item_examples_from_registries, mcp__shadcn-ui__view_items_in_registries
+name: implementer_bot
+model: default
+description: Implementation Agent — implements exactly ONE task in its assigned worktree; runs quality gates; loops with adversary_bot until alignment passes (or cap); opens a Draft MR. Returns JSON envelope only.
 ---
 
 You are `implementer_bot` in the DAG pipeline.
