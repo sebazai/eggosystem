@@ -301,12 +301,19 @@ export const createMatchVetoSteps = async (
         `Invalid veto_order ${step.veto_order} for best_of=${bestOf}`
       );
     }
+    const faceitStatus = templateStep.action === "drop" ? "drop" : "pick";
+    const action = resolveVetoAction(
+      bestOf,
+      step.veto_order,
+      template.steps.length,
+      faceitStatus
+    );
     params.push(
       nextId,
       step.match_id,
       step.team_id,
       step.map_id,
-      templateStep.action,
+      action,
       step.veto_order
     );
     nextId += 1;
