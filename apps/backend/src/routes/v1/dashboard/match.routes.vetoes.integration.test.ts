@@ -103,6 +103,17 @@ function buildValidBo3Steps(teamA: number, teamB: number, mapIds: number[]) {
   ];
 }
 
+/** Body for POST …/vetoes — must match `createVetoStepsBodySchema` */
+function buildCreateVetoBody(
+  steps: ReturnType<typeof buildValidBo3Steps>,
+  voteStarterTeamId: number = TEST_TEAM_A_ID
+) {
+  return {
+    vote_starter_team_id: voteStarterTeamId,
+    steps
+  };
+}
+
 describe("dashboard match veto routes (integration)", () => {
   let app: express.Application;
   let cleanupApp: () => void;
@@ -251,7 +262,7 @@ describe("dashboard match veto routes (integration)", () => {
 
     const postRes = await request(app)
       .post(`/api/v1/dashboard/matches/${TEST_MATCH_ID}/vetoes`)
-      .send({ steps });
+      .send(buildCreateVetoBody(steps));
 
     expect(postRes.status).toBe(201);
     expect(postRes.body.match_id).toBe(TEST_MATCH_ID);
@@ -284,10 +295,10 @@ describe("dashboard match veto routes (integration)", () => {
 
     const res = await request(app)
       .post(`/api/v1/dashboard/matches/${TEST_MATCH_ID}/vetoes`)
-      .send({ steps });
+      .send(buildCreateVetoBody(steps));
 
     expect(res.status).toBe(400);
-    expect(String(res.body.detail)).toMatch(/not a participant/);
+    expect(String(res.body.detail)).toMatch(/not a participant/i);
     const countRows = await runQuery<Array<{ c: number }>>(
       "SELECT COUNT(*) AS c FROM MatchTeamMapVetoes WHERE match_id = ?",
       [TEST_MATCH_ID]
@@ -304,12 +315,12 @@ describe("dashboard match veto routes (integration)", () => {
 
     const first = await request(app)
       .post(`/api/v1/dashboard/matches/${TEST_MATCH_ID}/vetoes`)
-      .send({ steps });
+      .send(buildCreateVetoBody(steps));
     expect(first.status).toBe(201);
 
     const second = await request(app)
       .post(`/api/v1/dashboard/matches/${TEST_MATCH_ID}/vetoes`)
-      .send({ steps });
+      .send(buildCreateVetoBody(steps));
     expect(second.status).toBe(409);
     expect(String(second.body.detail)).toMatch(/already exist/);
   });
@@ -323,7 +334,7 @@ describe("dashboard match veto routes (integration)", () => {
 
     await request(app)
       .post(`/api/v1/dashboard/matches/${TEST_MATCH_ID}/vetoes`)
-      .send({ steps })
+      .send(buildCreateVetoBody(steps))
       .expect(201);
 
     await request(app)
@@ -338,7 +349,7 @@ describe("dashboard match veto routes (integration)", () => {
 
     const again = await request(app)
       .post(`/api/v1/dashboard/matches/${TEST_MATCH_ID}/vetoes`)
-      .send({ steps });
+      .send(buildCreateVetoBody(steps));
     expect(again.status).toBe(201);
     expect(again.body.vetoes).toHaveLength(7);
   });
