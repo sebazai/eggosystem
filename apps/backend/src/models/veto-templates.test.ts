@@ -1,7 +1,10 @@
+import type { VetoAction } from "@eggosystem/types";
 import {
+  getDefaultAdminVetoBestOf,
   getExpectedVetoActingTeamId,
-  getVetoTemplate,
+  inferVetoBestOfFromOrderedActions,
   getAllVetoTemplates,
+  getVetoTemplate,
   resolveVetoAction
 } from "@eggosystem/types";
 
@@ -21,6 +24,18 @@ describe("getExpectedVetoActingTeamId", () => {
 
   it("returns null when vote starter is not a participant", () => {
     expect(getExpectedVetoActingTeamId(1, 999, pair)).toBeNull();
+  });
+
+  describe("when stepAction is decider", () => {
+    it("uses the acting team from the prior step (BO3 step 7: other team bans last, decider belongs to same side)", () => {
+      expect(getExpectedVetoActingTeamId(7, 100, pair, "decider")).toBe(200);
+      expect(getExpectedVetoActingTeamId(6, 100, pair)).toBe(200);
+    });
+
+    it("handles vote starter as higher team id", () => {
+      expect(getExpectedVetoActingTeamId(7, 200, pair, "decider")).toBe(100);
+      expect(getExpectedVetoActingTeamId(6, 200, pair)).toBe(100);
+    });
   });
 });
 
@@ -112,6 +127,70 @@ describe("getAllVetoTemplates", () => {
     expect(all.has(2)).toBe(true);
     expect(all.has(3)).toBe(true);
     expect(all.has(5)).toBe(true);
+  });
+});
+
+describe("getDefaultAdminVetoBestOf", () => {
+  it("maps stage-1 BO1 to BO2 when season uses RR as 2xBO1", () => {
+    expect(
+      getDefaultAdminVetoBestOf({
+        storedBestOf: 1,
+        stage: 1,
+        isRoundRobinBo2As2xBo1: true
+      })
+    ).toBe(2);
+  });
+
+  it("keeps BO1 when flag is false", () => {
+    expect(
+      getDefaultAdminVetoBestOf({
+        storedBestOf: 1,
+        stage: 1,
+        isRoundRobinBo2As2xBo1: false
+      })
+    ).toBe(1);
+  });
+
+  it("does not map stage 2 BR BO1 to BO2", () => {
+    expect(
+      getDefaultAdminVetoBestOf({
+        storedBestOf: 1,
+        stage: 2,
+        isRoundRobinBo2As2xBo1: true
+      })
+    ).toBe(1);
+  });
+});
+
+describe("inferVetoBestOfFromOrderedActions", () => {
+  it("infers BO1 from canonical action sequence", () => {
+    const actions = [
+      "drop",
+      "drop",
+      "drop",
+      "drop",
+      "drop",
+      "drop",
+      "decider"
+    ] satisfies readonly VetoAction[];
+    expect(inferVetoBestOfFromOrderedActions(actions)).toBe(1);
+  });
+
+  it("infers BO2 from canonical sequence", () => {
+    const actions = [
+      "drop",
+      "drop",
+      "drop",
+      "drop",
+      "pick",
+      "pick",
+      "drop"
+    ] satisfies readonly VetoAction[];
+    expect(inferVetoBestOfFromOrderedActions(actions)).toBe(2);
+  });
+
+  it("returns null when length mismatches templates", () => {
+    expect(inferVetoBestOfFromOrderedActions(["drop"])).toBeNull();
   });
 });
 

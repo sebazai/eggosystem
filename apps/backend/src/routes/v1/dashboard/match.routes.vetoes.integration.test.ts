@@ -99,7 +99,7 @@ function buildValidBo3Steps(teamA: number, teamB: number, mapIds: number[]) {
     { team_id: teamB, map_id: mapIds[3], veto_order: 4 },
     { team_id: teamA, map_id: mapIds[4], veto_order: 5 },
     { team_id: teamB, map_id: mapIds[5], veto_order: 6 },
-    { team_id: teamA, map_id: mapIds[6], veto_order: 7 }
+    { team_id: teamB, map_id: mapIds[6], veto_order: 7 }
   ];
 }
 
@@ -268,6 +268,12 @@ describe("dashboard match veto routes (integration)", () => {
     expect(postRes.body.match_id).toBe(TEST_MATCH_ID);
     expect(postRes.body.vetoes).toHaveLength(7);
 
+    const statusAfter = await runQuery<Array<{ status: string }>>(
+      "SELECT status FROM Matches WHERE id = ?",
+      [TEST_MATCH_ID]
+    );
+    expect(statusAfter[0]?.status).toBe("ONGOING");
+
     const countRows = await runQuery<Array<{ c: number }>>(
       "SELECT COUNT(*) AS c FROM MatchTeamMapVetoes WHERE match_id = ?",
       [TEST_MATCH_ID]
@@ -279,6 +285,9 @@ describe("dashboard match veto routes (integration)", () => {
     );
     expect(ctxRes.status).toBe(200);
     expect(ctxRes.body.match_id).toBe(TEST_MATCH_ID);
+    expect(ctxRes.body.stored_best_of).toBe(3);
+    expect(ctxRes.body.default_veto_best_of).toBe(3);
+    expect(ctxRes.body.recorded_veto_best_of).toBe(3);
     expect(ctxRes.body.best_of).toBe(3);
     expect(ctxRes.body.vetoes).toHaveLength(7);
     expect(ctxRes.body.template).toMatchObject({ bestOf: 3 });
@@ -360,5 +369,9 @@ describe("dashboard match veto routes (integration)", () => {
     );
     expect(ctxRes.status).toBe(200);
     expect(ctxRes.body.vetoes).toEqual([]);
+    expect(ctxRes.body.stored_best_of).toBe(3);
+    expect(ctxRes.body.default_veto_best_of).toBe(3);
+    expect(ctxRes.body.recorded_veto_best_of).toBeNull();
+    expect(ctxRes.body.external_match_room_id).toBeNull();
   });
 });

@@ -3,22 +3,36 @@ import {
   type MatchVetoContext,
   type MatchVetoContextTeam,
   type MatchVetoContextVeto,
-  getVetoTemplate
+  getDefaultAdminVetoBestOf,
+  getVetoTemplate,
+  inferVetoBestOfFromOrderedActions
 } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
 import { getSeasonMapPoolForMatch } from "./season-active-map-pool.models";
 
 interface MatchMetaRow {
   match_id: Match["id"];
-  best_of: Match["best_of"];
+  stored_best_of: Match["best_of"];
   status: Match["status"];
+  stage: Match["stage"];
+  external_match_room_id: Match["external_match_room_id"];
+  is_round_robin_bo2_as_2xbo1: boolean;
 }
 
-const getMatchVetoMeta = async (
+export const getMatchVetoSeasonMeta = async (
   matchId: number
 ): Promise<MatchMetaRow | null> => {
   const rows = await runQuery<MatchMetaRow[]>(
-    "SELECT id AS match_id, best_of, status FROM Matches WHERE id = ?",
+    `SELECT
+      m.id AS match_id,
+      m.best_of AS stored_best_of,
+      m.status,
+      m.stage,
+      m.external_match_room_id,
+      s.is_round_robin_bo2_as_2xbo1
+    FROM Matches m
+    JOIN Seasons s ON s.id = m.season_id
+    WHERE m.id = ?`,
     [matchId]
   );
   return rows[0] ?? null;
@@ -61,7 +75,7 @@ const getMatchVetoesWithMapNames = async (
 export const getMatchVetoContext = async (
   matchId: number
 ): Promise<MatchVetoContext | null> => {
-  const meta = await getMatchVetoMeta(matchId);
+  const meta = await getMatchVetoSeasonMeta(matchId);
   if (!meta) return null;
 
   const [teams, mapPool, vetoes] = await Promise.all([
@@ -70,11 +84,28 @@ export const getMatchVetoContext = async (
     getMatchVetoesWithMapNames(matchId)
   ]);
 
-  const template = getVetoTemplate(meta.best_of) ?? null;
+  const defaultVetoBestOf = getDefaultAdminVetoBestOf({
+    storedBestOf: meta.stored_best_of,
+    stage: meta.stage,
+    isRoundRobinBo2As2xBo1: meta.is_round_robin_bo2_as_2xbo1
+  });
+
+  const ordered = [...vetoes].sort((a, b) => a.veto_order - b.veto_order);
+  const recordedVetoBestOf =
+    ordered.length === 0
+      ? null
+      : inferVetoBestOfFromOrderedActions(ordered.map((v) => v.action));
+
+  const effectiveBestOf = recordedVetoBestOf ?? defaultVetoBestOf;
+  const template = getVetoTemplate(effectiveBestOf) ?? null;
 
   return {
     match_id: meta.match_id,
-    best_of: meta.best_of,
+    stored_best_of: meta.stored_best_of,
+    default_veto_best_of: defaultVetoBestOf,
+    recorded_veto_best_of: recordedVetoBestOf,
+    external_match_room_id: meta.external_match_room_id,
+    best_of: effectiveBestOf,
     status: meta.status,
     teams,
     map_pool: mapPool,

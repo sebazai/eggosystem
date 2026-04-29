@@ -1,12 +1,15 @@
 import { type NextFunction, type Request, type Response } from "express";
 import { z } from "zod";
 import {
+  getDefaultAdminVetoBestOf,
   getExpectedVetoActingTeamId,
-  getVetoTemplate
+  getVetoTemplate,
+  type Match
 } from "@eggosystem/types";
-import { getMatch } from "../../models/match.models";
+import { updateMatchStatusByMatchId } from "../../models/match.models";
 import { getTeamIdsForMatch } from "../../models/team-game-score.models";
 import { getSeasonMapPoolForMatch } from "../../models/season-active-map-pool.models";
+import { getMatchVetoSeasonMeta } from "../../models/match-veto-context.models";
 import {
   createMatchVetoSteps,
   countExistingVetoStepsForMatch,
@@ -33,7 +36,11 @@ const vetoStepSchema = z.object({
 
 const createVetoStepsBodySchema = z.object({
   vote_starter_team_id: z.number().int().positive(),
-  steps: z.array(vetoStepSchema).min(1)
+  steps: z.array(vetoStepSchema).min(1),
+  /** When set (BO1–BO5), veto template must match this format; omit to use season-aware default. */
+  best_of: z
+    .union([z.literal(1), z.literal(2), z.literal(3), z.literal(5)])
+    .optional()
 });
 
 export const createMatchVetoStepsController = async (
@@ -55,24 +62,35 @@ export const createMatchVetoStepsController = async (
   if (!bodyParsed.success) {
     return next(bodyParsed.error);
   }
-  const { steps, vote_starter_team_id: voteStarterTeamId } = bodyParsed.data;
+  const {
+    steps,
+    vote_starter_team_id: voteStarterTeamId,
+    best_of: bodyBestOf
+  } = bodyParsed.data;
 
-  const [match] = await getMatch(matchId);
-  if (!match) {
+  const meta = await getMatchVetoSeasonMeta(matchId);
+  if (!meta) {
     return next(new NotFoundError(`Match ${matchId} not found`));
   }
 
-  const template = getVetoTemplate(match.best_of);
+  const defaultVetoBestOf = getDefaultAdminVetoBestOf({
+    storedBestOf: meta.stored_best_of,
+    stage: meta.stage,
+    isRoundRobinBo2As2xBo1: meta.is_round_robin_bo2_as_2xbo1
+  });
+  const effectiveBestOf = bodyBestOf ?? defaultVetoBestOf;
+
+  const template = getVetoTemplate(effectiveBestOf);
   if (!template) {
     return next(
-      new BadRequestError(`No veto template for best_of=${match.best_of}`)
+      new BadRequestError(`No veto template for best_of=${effectiveBestOf}`)
     );
   }
 
   if (steps.length !== template.steps.length) {
     return next(
       new BadRequestError(
-        `Expected ${template.steps.length} veto steps for BO${match.best_of}, got ${steps.length}`
+        `Expected ${template.steps.length} veto steps for BO${effectiveBestOf}, got ${steps.length}`
       )
     );
   }
@@ -116,10 +134,21 @@ export const createMatchVetoStepsController = async (
   }
 
   for (const step of steps) {
+    const templateStepDef = template.steps.find(
+      (s) => s.order === step.veto_order
+    );
+    if (templateStepDef === undefined) {
+      return next(
+        new BadRequestError(
+          `Invalid veto_order ${step.veto_order} for template (${template.steps.map((x) => x.order).join(", ")})`
+        )
+      );
+    }
     const expectedTeamId = getExpectedVetoActingTeamId(
       step.veto_order,
       voteStarterTeamId,
-      orderedMatchTeams
+      orderedMatchTeams,
+      templateStepDef.action
     );
     if (expectedTeamId === null) {
       return next(
@@ -186,9 +215,23 @@ export const createMatchVetoStepsController = async (
 
     const created = await createMatchVetoSteps(
       vetoInputs,
-      match.best_of,
+      effectiveBestOf,
       connection
     );
+
+    const terminalStatuses = new Set<Match["status"]>([
+      "FINISHED",
+      "ABORTED",
+      "CANCELLED",
+      "FORFEIT"
+    ] satisfies readonly Match["status"][]);
+    if (!terminalStatuses.has(meta.status)) {
+      await updateMatchStatusByMatchId(
+        matchId,
+        "ONGOING" satisfies Match["status"],
+        connection
+      );
+    }
 
     await connection.commit();
     res.status(201).json({ match_id: matchId, vetoes: created });

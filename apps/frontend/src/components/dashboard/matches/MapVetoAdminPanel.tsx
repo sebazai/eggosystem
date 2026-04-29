@@ -2,11 +2,14 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import type {
-  MatchVetoContext,
-  MatchVetoContextTeam,
-  UnfinishedMatch,
-  VetoAction
+import {
+  type MatchVetoContext,
+  type MatchVetoContextTeam,
+  type UnfinishedMatch,
+  type VetoAction,
+  type VetoTemplateStep,
+  getExpectedVetoActingTeamId,
+  getVetoTemplate
 } from "@eggosystem/types";
 import { ApiError, clientApiFetch } from "@/lib/apiClient";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -62,17 +65,32 @@ function labelForAction(action: VetoAction): string {
   return "Decider";
 }
 
-function teamIdForVetoOrder(
-  vetoOrder: number,
+function orderedMatchTeamTuple(
+  teams: MatchVetoContextTeam[]
+): readonly [number, number] {
+  const ids = [...teams].map((t) => t.team_id).sort((a, b) => a - b);
+  if (ids.length !== 2 || ids[0] === undefined || ids[1] === undefined) {
+    throw new Error("Match must have exactly two teams for map veto");
+  }
+  return [ids[0], ids[1]];
+}
+
+function teamIdForTemplateStep(
+  templateStep: VetoTemplateStep,
   starterTeamId: number,
   teams: MatchVetoContextTeam[]
 ): number {
-  const ids = [...teams].map((t) => t.team_id).sort((a, b) => a - b);
-  const other = ids.find((id) => id !== starterTeamId);
-  if (other === undefined) {
+  const pair = orderedMatchTeamTuple(teams);
+  const teamId = getExpectedVetoActingTeamId(
+    templateStep.order,
+    starterTeamId,
+    pair,
+    templateStep.action
+  );
+  if (teamId === null) {
     throw new Error("Starter team must be one of the two match teams");
   }
-  return vetoOrder % 2 === 1 ? starterTeamId : other;
+  return teamId;
 }
 
 function teamNameById(teams: MatchVetoContextTeam[], teamId: number): string {
@@ -98,6 +116,11 @@ export function MapVetoAdminPanel() {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [busyAction, setBusyAction] = useState<"clear" | "submit" | null>(null);
+
+  /** When null, backend `default_veto_best_of` applies. Cleared when the match selection changes. */
+  const [vetoBestOfOverride, setVetoBestOfOverride] = useState<number | null>(
+    null
+  );
 
   const loadUnfinished = useCallback(async () => {
     if (!selectedSeasonId) {
@@ -160,10 +183,26 @@ export function MapVetoAdminPanel() {
     void loadContext(id);
   }, [selectedMatchId, loadContext]);
 
-  const templateSteps = useMemo(
-    () => context?.template?.steps ?? [],
-    [context?.template]
-  );
+  useEffect(() => {
+    setVetoBestOfOverride(null);
+  }, [selectedMatchId]);
+
+  const vetoesRecorded =
+    context !== null &&
+    Array.isArray(context.vetoes) &&
+    context.vetoes.length > 0;
+
+  const selectedVetoBestOf =
+    context === null
+      ? null
+      : vetoesRecorded
+        ? (context.recorded_veto_best_of ?? context.best_of)
+        : (vetoBestOfOverride ?? context.default_veto_best_of);
+
+  const effectiveTemplate =
+    selectedVetoBestOf === null ? null : getVetoTemplate(selectedVetoBestOf);
+
+  const templateSteps = effectiveTemplate?.steps ?? [];
   const totalSteps = templateSteps.length;
 
   const nextOrderToFill = useMemo(() => {
@@ -222,6 +261,7 @@ export function MapVetoAdminPanel() {
     if (
       !context ||
       starterTeamId === null ||
+      selectedVetoBestOf === null ||
       !draftComplete ||
       templateSteps.length === 0
     ) {
@@ -234,7 +274,7 @@ export function MapVetoAdminPanel() {
 
     try {
       const steps = templateSteps.map((s) => ({
-        team_id: teamIdForVetoOrder(s.order, starterTeamId, context.teams),
+        team_id: teamIdForTemplateStep(s, starterTeamId, context.teams),
         map_id: draftSelections[s.order],
         veto_order: s.order
       }));
@@ -250,7 +290,11 @@ export function MapVetoAdminPanel() {
         `/api/v1/dashboard/matches/${context.match_id}/vetoes`,
         {
           method: "POST",
-          body: JSON.stringify({ steps })
+          body: JSON.stringify({
+            vote_starter_team_id: starterTeamId,
+            best_of: selectedVetoBestOf,
+            steps
+          })
         }
       );
 
@@ -304,21 +348,16 @@ export function MapVetoAdminPanel() {
   const starterChoices =
     sortedTeams.length >= 2 ? sortedTeams.slice(0, 2) : sortedTeams;
 
-  const vetoesRecorded =
-    context !== null &&
-    Array.isArray(context.vetoes) &&
-    context.vetoes.length > 0;
-
   const teamCountInvalid = context !== null && context.teams.length !== 2;
 
   const poolTooSmall =
     context !== null &&
-    context.template !== null &&
+    effectiveTemplate !== null &&
     context.map_pool.length < totalSteps;
 
   const showDraftUi =
     context !== null &&
-    context.template !== null &&
+    effectiveTemplate !== null &&
     !vetoesRecorded &&
     totalSteps > 0 &&
     !teamCountInvalid &&
@@ -427,9 +466,72 @@ export function MapVetoAdminPanel() {
                 <dd className="font-medium">{context.status}</dd>
               </div>
               <div>
-                <dt className="text-muted-foreground">Format</dt>
-                <dd className="font-medium">BO{context.best_of}</dd>
+                <dt className="text-muted-foreground">Match ID</dt>
+                <dd className="font-medium">
+                  {context.external_match_room_id ? (
+                    <a
+                      href={`https://www.faceit.com/en/cs2/room/${context.external_match_room_id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-medium text-kanaliiga-orange underline-offset-4 hover:underline hover:text-kanaliiga-light-brown"
+                    >
+                      {context.match_id}
+                    </a>
+                  ) : (
+                    context.match_id
+                  )}
+                </dd>
               </div>
+              <div>
+                <dt className="text-muted-foreground">
+                  Match format (database)
+                </dt>
+                <dd className="font-medium">BO{context.stored_best_of}</dd>
+              </div>
+              {vetoesRecorded ? (
+                <div className="sm:col-span-2">
+                  <dt className="text-muted-foreground">Map veto format</dt>
+                  <dd className="font-medium">BO{selectedVetoBestOf}</dd>
+                </div>
+              ) : (
+                <div className="sm:col-span-2">
+                  <dt className="mb-1 text-muted-foreground">
+                    Map veto format
+                  </dt>
+                  <dd>
+                    <Select
+                      value={String(
+                        selectedVetoBestOf ?? context.default_veto_best_of
+                      )}
+                      onValueChange={(v) => {
+                        setVetoBestOfOverride(Number.parseInt(v, 10));
+                        setStarterTeamId(null);
+                        setDraftSelections({});
+                      }}
+                    >
+                      <SelectTrigger className="w-full min-h-11 max-w-xs md:max-w-sm">
+                        <SelectValue placeholder="Pick format" />
+                      </SelectTrigger>
+                      <SelectContent position="popper">
+                        {([1, 2, 3, 5] as const).map((bo) => (
+                          <SelectItem key={bo} value={String(bo)}>
+                            BO{bo}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {context.stored_best_of === 1 &&
+                    context.default_veto_best_of === 2 &&
+                    (vetoBestOfOverride === null ||
+                      vetoBestOfOverride === 2) ? (
+                      <p className="mt-2 text-xs text-muted-foreground">
+                        Default BO2 for regular stage when this season uses BO2
+                        as 2×BO1 on FACEIT — same map veto as a single BO2 room.
+                      </p>
+                    ) : null}
+                  </dd>
+                </div>
+              )}
               <div className="sm:col-span-2">
                 <dt className="text-muted-foreground">Teams</dt>
                 <dd className="font-medium">
@@ -461,11 +563,11 @@ export function MapVetoAdminPanel() {
         </Card>
       ) : null}
 
-      {context && !contextLoading && context.template === null ? (
+      {context && !contextLoading && effectiveTemplate === null ? (
         <Alert variant="destructive">
           <AlertDescription>
-            No veto template is registered for BO{context.best_of}. Only BO1,
-            BO3, and BO5 are supported for manual entry.
+            No veto template is registered for BO{selectedVetoBestOf ?? "?"}.
+            Supported manual formats are BO1, BO2, BO3, and BO5.
           </AlertDescription>
         </Alert>
       ) : null}
@@ -488,10 +590,7 @@ export function MapVetoAdminPanel() {
         </Alert>
       ) : null}
 
-      {context &&
-      !contextLoading &&
-      vetoesRecorded &&
-      context.template !== null ? (
+      {context && !contextLoading && vetoesRecorded ? (
         <Card>
           <CardHeader className="flex flex-col gap-4 space-y-0 sm:flex-row sm:items-start sm:justify-between">
             <div className="space-y-1">
@@ -499,7 +598,8 @@ export function MapVetoAdminPanel() {
                 Recorded veto sequence
               </CardTitle>
               <CardDescription>
-                Stored veto rows for this match (BO{context.best_of}).
+                Stored veto rows for this match (BO
+                {selectedVetoBestOf ?? context.best_of}).
               </CardDescription>
             </div>
             <AlertDialog>
@@ -609,8 +709,8 @@ export function MapVetoAdminPanel() {
                     {labelForAction(currentTemplateStep.action)} —{" "}
                     {teamNameById(
                       context.teams,
-                      teamIdForVetoOrder(
-                        currentTemplateStep.order,
+                      teamIdForTemplateStep(
+                        currentTemplateStep,
                         starterTeamId,
                         context.teams
                       )

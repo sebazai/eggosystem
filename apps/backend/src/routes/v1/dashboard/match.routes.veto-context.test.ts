@@ -56,6 +56,10 @@ const mockGetRoles = jest.mocked(getRolesForAccountId);
 
 const mockVetoContext = {
   match_id: 10,
+  stored_best_of: 3,
+  default_veto_best_of: 3,
+  recorded_veto_best_of: null,
+  external_match_room_id: "room-faceit-test",
   best_of: 3,
   status: "READY",
   teams: [

@@ -8,8 +8,9 @@ import {
   authenticateJWT,
   checkPermissions
 } from "../../../middlewares/auth.middleware";
-import { createMockUserPayload } from "@eggosystem/types";
-import { getMatch } from "../../../models/match.models";
+import { createMockUserPayload, MatchStatus } from "@eggosystem/types";
+import * as matchModels from "../../../models/match.models";
+import { getMatchVetoSeasonMeta } from "../../../models/match-veto-context.models";
 import { getTeamIdsForMatch } from "../../../models/team-game-score.models";
 import { getSeasonMapPoolForMatch } from "../../../models/season-active-map-pool.models";
 import {
@@ -22,6 +23,13 @@ import type { PoolConnection } from "mysql2/promise";
 import type { Match } from "@eggosystem/types";
 
 jest.mock("../../../db/mysqlRunQuery");
+
+jest.mock("../../../models/match.models", () => ({
+  ...jest.requireActual<typeof import("../../../models/match.models")>(
+    "../../../models/match.models"
+  ),
+  updateMatchStatusByMatchId: jest.fn().mockResolvedValue(undefined)
+}));
 
 jest.mock("../../../services/auth.services");
 import {
@@ -36,10 +44,15 @@ const mockGetRoles = getRolesForAccountId as jest.MockedFunction<
   typeof getRolesForAccountId
 >;
 
-jest.mock("../../../models/match.models", () => ({
-  ...jest.requireActual("../../../models/match.models"),
-  getMatch: jest.fn()
-}));
+jest.mock("../../../models/match-veto-context.models", () => {
+  const actual = jest.requireActual<
+    typeof import("../../../models/match-veto-context.models")
+  >("../../../models/match-veto-context.models");
+  return {
+    ...actual,
+    getMatchVetoSeasonMeta: jest.fn()
+  };
+});
 
 jest.mock("../../../models/team-game-score.models", () => ({
   ...jest.requireActual("../../../models/team-game-score.models"),
@@ -87,12 +100,15 @@ jest.mock("../../../middlewares/auth.middleware", () => ({
     .checkPermissions
 }));
 
-const mockGetMatch = jest.mocked(getMatch);
+const mockGetSeasonMeta = jest.mocked(getMatchVetoSeasonMeta);
 const mockGetTeamIds = jest.mocked(getTeamIdsForMatch);
 const mockGetSeasonMapPoolForMatch = jest.mocked(getSeasonMapPoolForMatch);
 const mockCountExistingVetoes = jest.mocked(countExistingVetoStepsForMatch);
 const mockCreateSteps = jest.mocked(createMatchVetoSteps);
 const mockGetConnection = jest.mocked(getConnection);
+const mockUpdateMatchStatusByMatchId = jest.mocked(
+  matchModels.updateMatchStatusByMatchId
+);
 
 const bo3Match = {
   id: 10,
@@ -108,6 +124,15 @@ const bo3Match = {
   end_timestamp: null
 } satisfies Match;
 
+const bo3SeasonMeta = {
+  match_id: bo3Match.id,
+  stored_best_of: bo3Match.best_of,
+  status: bo3Match.status,
+  stage: bo3Match.stage,
+  external_match_room_id: bo3Match.external_match_room_id,
+  is_round_robin_bo2_as_2xbo1: false
+};
+
 const validBo3Steps = [
   { team_id: 100, map_id: 1, veto_order: 1 },
   { team_id: 200, map_id: 2, veto_order: 2 },
@@ -115,7 +140,7 @@ const validBo3Steps = [
   { team_id: 200, map_id: 4, veto_order: 4 },
   { team_id: 100, map_id: 5, veto_order: 5 },
   { team_id: 200, map_id: 6, veto_order: 6 },
-  { team_id: 100, map_id: 7, veto_order: 7 }
+  { team_id: 200, map_id: 7, veto_order: 7 }
 ];
 
 const bo3VetoBody = (
@@ -126,9 +151,10 @@ const bo3VetoBody = (
   steps
 });
 
+/** Starter team 200: steps 1,3,5 → 200; 2,4,6 → 100; BO3 decider (7) acts same side as step 6 → 100 */
 const bo3StepsVoteStarter200 = validBo3Steps.map((s) => ({
   ...s,
-  team_id: s.veto_order % 2 === 1 ? 200 : 100
+  team_id: s.veto_order === 7 ? 100 : s.veto_order % 2 === 1 ? 200 : 100
 }));
 
 describe("POST /api/v1/dashboard/matches/:match_id/vetoes", () => {
@@ -154,6 +180,7 @@ describe("POST /api/v1/dashboard/matches/:match_id/vetoes", () => {
 
     mockGetPermissions.mockResolvedValue([]);
     mockGetRoles.mockResolvedValue(["admin"]);
+    mockGetSeasonMeta.mockResolvedValue(bo3SeasonMeta);
 
     mockGetSeasonMapPoolForMatch.mockResolvedValue(
       [1, 2, 3, 4, 5, 6, 7].map((id) => ({ id, name: `Map ${id}` }))
@@ -174,7 +201,6 @@ describe("POST /api/v1/dashboard/matches/:match_id/vetoes", () => {
   });
 
   it("creates veto steps and returns 201", async () => {
-    mockGetMatch.mockResolvedValue([bo3Match]);
     mockGetTeamIds.mockResolvedValue([{ team_id: 100 }, { team_id: 200 }]);
     mockCreateSteps.mockResolvedValue(
       validBo3Steps.map((s, i) => ({
@@ -198,10 +224,14 @@ describe("POST /api/v1/dashboard/matches/:match_id/vetoes", () => {
     expect(mockBeginTransaction).toHaveBeenCalled();
     expect(mockCommit).toHaveBeenCalled();
     expect(mockRelease).toHaveBeenCalled();
+    expect(mockUpdateMatchStatusByMatchId).toHaveBeenCalledWith(
+      10,
+      MatchStatus.ONGOING,
+      expect.any(Object)
+    );
   });
 
   it("creates veto steps when vote_starter_team_id is the higher team id (B starts)", async () => {
-    mockGetMatch.mockResolvedValue([bo3Match]);
     mockGetTeamIds.mockResolvedValue([{ team_id: 100 }, { team_id: 200 }]);
     mockCreateSteps.mockResolvedValue(
       bo3StepsVoteStarter200.map((s, i) => ({
@@ -220,10 +250,40 @@ describe("POST /api/v1/dashboard/matches/:match_id/vetoes", () => {
       .send(bo3VetoBody(bo3StepsVoteStarter200, 200));
 
     expect(res.status).toBe(201);
+    expect(mockUpdateMatchStatusByMatchId).toHaveBeenCalledWith(
+      10,
+      MatchStatus.ONGOING,
+      expect.any(Object)
+    );
+  });
+
+  it("does not set ONGOING when match is in a terminal status", async () => {
+    mockGetSeasonMeta.mockResolvedValue({
+      ...bo3SeasonMeta,
+      status: "FINISHED"
+    });
+    mockGetTeamIds.mockResolvedValue([{ team_id: 100 }, { team_id: 200 }]);
+    mockCreateSteps.mockResolvedValue(
+      validBo3Steps.map((s, i) => ({
+        id: i + 1,
+        match_id: 10,
+        team_id: s.team_id,
+        map_id: s.map_id,
+        action: i < 2 ? "drop" : i < 4 ? "pick" : i < 6 ? "drop" : "decider",
+        veto_order: s.veto_order
+      }))
+    );
+
+    const res = await request(app)
+      .post("/api/v1/dashboard/matches/10/vetoes")
+      .set("Authorization", "Bearer x")
+      .send(bo3VetoBody(validBo3Steps));
+
+    expect(res.status).toBe(201);
+    expect(mockUpdateMatchStatusByMatchId).not.toHaveBeenCalled();
   });
 
   it("returns 400 when veto step team_id breaks alternating order for vote_starter_team_id", async () => {
-    mockGetMatch.mockResolvedValue([bo3Match]);
     mockGetTeamIds.mockResolvedValue([{ team_id: 100 }, { team_id: 200 }]);
 
     const wrongAlternation = validBo3Steps.map((s) =>
@@ -241,8 +301,24 @@ describe("POST /api/v1/dashboard/matches/:match_id/vetoes", () => {
     );
   });
 
+  it("returns 400 when BO3 decider step uses vote starter instead of other team", async () => {
+    mockGetTeamIds.mockResolvedValue([{ team_id: 100 }, { team_id: 200 }]);
+    const wrongDeciderTeam = validBo3Steps.map((s) =>
+      s.veto_order === 7 ? { ...s, team_id: 100 } : s
+    );
+
+    const res = await request(app)
+      .post("/api/v1/dashboard/matches/10/vetoes")
+      .set("Authorization", "Bearer x")
+      .send(bo3VetoBody(wrongDeciderTeam));
+
+    expect(res.status).toBe(400);
+    expect(res.body.detail).toMatch(
+      /veto_order 7 must be performed by team_id 200/
+    );
+  });
+
   it("returns 400 when vote_starter_team_id is not a match participant", async () => {
-    mockGetMatch.mockResolvedValue([bo3Match]);
     mockGetTeamIds.mockResolvedValue([{ team_id: 100 }, { team_id: 200 }]);
 
     const res = await request(app)
@@ -257,7 +333,7 @@ describe("POST /api/v1/dashboard/matches/:match_id/vetoes", () => {
   });
 
   it("returns 404 when match not found", async () => {
-    mockGetMatch.mockResolvedValue([]);
+    mockGetSeasonMeta.mockResolvedValue(null);
 
     const res = await request(app)
       .post("/api/v1/dashboard/matches/999/vetoes")
@@ -268,8 +344,6 @@ describe("POST /api/v1/dashboard/matches/:match_id/vetoes", () => {
   });
 
   it("returns 400 when step count does not match template", async () => {
-    mockGetMatch.mockResolvedValue([bo3Match]);
-
     const res = await request(app)
       .post("/api/v1/dashboard/matches/10/vetoes")
       .set("Authorization", "Bearer x")
@@ -280,7 +354,6 @@ describe("POST /api/v1/dashboard/matches/:match_id/vetoes", () => {
   });
 
   it("returns 400 when team_id is not a match participant", async () => {
-    mockGetMatch.mockResolvedValue([bo3Match]);
     mockGetTeamIds.mockResolvedValue([{ team_id: 100 }, { team_id: 200 }]);
 
     const badSteps = validBo3Steps.map((s, i) =>
@@ -297,7 +370,6 @@ describe("POST /api/v1/dashboard/matches/:match_id/vetoes", () => {
   });
 
   it("returns 400 when map_id is not in the active map pool", async () => {
-    mockGetMatch.mockResolvedValue([bo3Match]);
     mockGetTeamIds.mockResolvedValue([{ team_id: 100 }, { team_id: 200 }]);
     mockGetSeasonMapPoolForMatch.mockResolvedValue(
       [1, 2, 3, 4, 5, 6].map((id) => ({ id, name: `Map ${id}` }))
@@ -315,7 +387,6 @@ describe("POST /api/v1/dashboard/matches/:match_id/vetoes", () => {
   });
 
   it("returns 400 when duplicate map_id values exist", async () => {
-    mockGetMatch.mockResolvedValue([bo3Match]);
     mockGetTeamIds.mockResolvedValue([{ team_id: 100 }, { team_id: 200 }]);
 
     const dupSteps = validBo3Steps.map((s, i) =>
@@ -332,8 +403,6 @@ describe("POST /api/v1/dashboard/matches/:match_id/vetoes", () => {
   });
 
   it("returns 400 when veto_order values are not sequential", async () => {
-    mockGetMatch.mockResolvedValue([bo3Match]);
-
     const badOrders = validBo3Steps.map((s, i) => ({
       ...s,
       veto_order: i === 0 ? 10 : s.veto_order
@@ -349,7 +418,6 @@ describe("POST /api/v1/dashboard/matches/:match_id/vetoes", () => {
   });
 
   it("rolls back the transaction on model error", async () => {
-    mockGetMatch.mockResolvedValue([bo3Match]);
     mockGetTeamIds.mockResolvedValue([{ team_id: 100 }, { team_id: 200 }]);
     mockCreateSteps.mockRejectedValue(new Error("DB error"));
 
@@ -373,7 +441,6 @@ describe("POST /api/v1/dashboard/matches/:match_id/vetoes", () => {
   });
 
   it("returns 409 when veto steps already exist for this match", async () => {
-    mockGetMatch.mockResolvedValue([bo3Match]);
     mockGetTeamIds.mockResolvedValue([{ team_id: 100 }, { team_id: 200 }]);
     mockCountExistingVetoes.mockResolvedValue(3);
 
@@ -389,7 +456,6 @@ describe("POST /api/v1/dashboard/matches/:match_id/vetoes", () => {
   });
 
   it("returns 409 when insert hits duplicate veto key (race)", async () => {
-    mockGetMatch.mockResolvedValue([bo3Match]);
     mockGetTeamIds.mockResolvedValue([{ team_id: 100 }, { team_id: 200 }]);
     mockCreateSteps.mockRejectedValue({
       code: "ER_DUP_ENTRY",
@@ -407,7 +473,10 @@ describe("POST /api/v1/dashboard/matches/:match_id/vetoes", () => {
   });
 
   it("returns 400 when best_of has no template", async () => {
-    mockGetMatch.mockResolvedValue([{ ...bo3Match, best_of: 4 }]);
+    mockGetSeasonMeta.mockResolvedValue({
+      ...bo3SeasonMeta,
+      stored_best_of: 4
+    });
 
     const res = await request(app)
       .post("/api/v1/dashboard/matches/10/vetoes")
