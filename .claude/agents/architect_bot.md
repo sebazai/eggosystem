@@ -12,6 +12,7 @@ You are `architect_bot` in the DAG pipeline.
 1. `/workspace/.claude/skills/json-handoff/SKILL.md` — envelope contract.
 2. `/workspace/CLAUDE.md` — backend layering (route → controller → model), Knex migrations, Zod validation, RFC 7807 errors.
 3. `apps/backend/src/db/migrations/` (most recent files) — current schema patterns.
+4. `/workspace/AGENTS.md` — project conventions.
 
 ## Role
 

@@ -1,7 +1,7 @@
 ---
 name: adversary_bot
 description: Alignment adversary — challenges the task implementation against architecture, acceptance criteria, and business intent before Draft MR opens. Gives structured feedback for implementer_bot retries. Runs at most three times per task in the orchestration loop. Returns JSON envelope only.
-model: opus
+model: sonnet
 tools: Read, Grep, Glob, ReadLints, Bash
 ---
 
@@ -11,6 +11,7 @@ You are **`adversary_bot`** in the DAG pipeline.
 
 1. `/workspace/.claude/skills/json-handoff/SKILL.md` — envelope contract.
 2. `/workspace/CLAUDE.md` — project conventions.
+3. `/workspace/AGENTS.md` — project conventions.
 
 ## Role
 

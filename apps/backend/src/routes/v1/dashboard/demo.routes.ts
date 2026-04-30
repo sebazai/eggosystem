@@ -48,7 +48,12 @@ const manualParseQueueBodySchema = z
     external_match_room_id: z.string().min(1).optional(),
     download_url: httpsUrlSchema,
     priority: z.number().int().min(1).max(10).optional().default(5),
-    reparse: z.boolean().optional().default(false)
+    reparse: z.boolean().optional().default(false),
+    /**
+     * When true, enqueue then mark associated `Matches` FINISHED using
+     * `start_timestamp + best_of` hours per approved architecture (#379).
+     */
+    mark_finished: z.boolean().optional().default(false)
   })
   .superRefine((val, ctx) => {
     const hasAny =
@@ -123,10 +128,14 @@ router.post(
       return next(parsed.error);
     }
 
-    const { match_game_id, download_url, priority } = parsed.data;
-    const { match_id, map_order, external_match_room_id } = parsed.data;
+    const { download_url, priority, reparse, mark_finished, ...identifiers } =
+      parsed.data;
+    const { match_game_id, match_id, map_order, external_match_room_id } =
+      identifiers;
 
     let matchGameId: number;
+    /** When set, finishes these internal Matches.id values (multi-row for external hub rows). */
+    let finishMatchIds: number[] | undefined = undefined;
     const source = external_match_room_id ? "faceit" : "manual";
     if (match_game_id != null) {
       matchGameId = match_game_id;
@@ -136,6 +145,7 @@ router.post(
         demoUrl: download_url,
         mapOrder: map_order
       });
+      finishMatchIds = [match_id];
     } else {
       if (!external_match_room_id) {
         return next(new BadRequestError("Missing match identifier"));
@@ -151,6 +161,8 @@ router.post(
           new NotFoundError("No matches found for external_match_room_id")
         );
       }
+
+      finishMatchIds = hubMatches.map((m) => m.id);
 
       matchGameId = await resolveOrCreateMatchGameIdForDemoUrl({
         externalMatchRoomId: external_match_room_id,
@@ -170,12 +182,15 @@ router.post(
       priority,
       actorAccountId,
       source,
-      reparse: parsed.data.reparse
+      reparse,
+      mark_finished,
+      finishMatchIds
     });
 
     res.status(200).json({
       status: "enqueued",
-      match_game_id: result.match_game_id
+      match_game_id: result.match_game_id,
+      mark_finished: result.mark_finished
     });
   }
 );

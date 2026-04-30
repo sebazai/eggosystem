@@ -10,7 +10,15 @@ import { authenticateJWT } from "../../../middlewares/auth.middleware";
 import { createMockUserPayload } from "@eggosystem/types";
 
 jest.mock("../../../services/manual-demo-parse.services", () => ({
-  enqueueManualDashboardDemoParse: jest.fn(async () => ({ match_game_id: 7 }))
+  enqueueManualDashboardDemoParse: jest.fn(async () => ({
+    match_game_id: 7,
+    mark_finished: {
+      applied: false,
+      match_ids: [],
+      end_timestamp: null,
+      skipped_reason: "not_requested"
+    }
+  }))
 }));
 
 jest.mock("../../../models/failed-parse.models", () => ({

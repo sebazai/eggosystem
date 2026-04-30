@@ -12,6 +12,7 @@ You are `ui_bot` in the DAG pipeline.
 1. `/workspace/.claude/skills/json-handoff/SKILL.md` — envelope contract.
 2. `apps/frontend/src/components/ui/` — existing shadcn primitives in this repo.
 3. `/workspace/CLAUDE.md` — frontend conventions (RSC-first, minimize `use client`, Tailwind tokens).
+4. `/workspace/AGENTS.md` — project conventions.
 
 ## Role
 

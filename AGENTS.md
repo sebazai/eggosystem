@@ -2,7 +2,7 @@
 
 ## Slash commands
 
-- **`/dag-execute <issue_iid>`** — Product → Decompose → Architecture (HITL) → DAG implementation (**each task**: `implementer_bot` ↔ `adversary_bot` ≤3 rounds → Draft MR → CR → CI) → Final Review → human merge.
+- **`/dag-execute <issue_iid>`** — Product → Decompose → Architecture (HITL) → DAG implementation (**each task**: `implementer_bot` ↔ `adversary_bot` ≤3 rounds → Draft MR → CR → **`devops_bot` watches CI in the background** so other tasks can run) → Final Review → human merge. **`implements_after_gates`** (optional on `decomposer_bot` tasks) lowers the bar for starting **implementation** (`impl_ready`; e.g. **`mr_opened`** on stacked parents) while **`final_review_bot` still waits for every task `completed`** (CI green).
 - **`/observe <mr_iid>`** — post-merge analysis (CI logs, optional Grafana/Sentry, git revert detection). Off the critical path.
 
 ## Agents (10)
@@ -44,18 +44,19 @@ All in `/workspace/.claude/agents/`. Each returns a JSON envelope per `/workspac
 
 - One worktree per task: `/workspace/.worktrees/<iid>-<task_id>/`.
 - `git worktree add` creates them; the orchestrator does this before spawning each `implementer_bot`.
+- **Immediately after** `git worktree add` (and after any integration merges for multi-dependency tasks), the orchestrator runs **`cd <worktree_path> && node scripts/bootstrap-worktree-env.mjs && rm -rf node_modules && pnpm install --frozen-lockfile`**: **`bootstrap-worktree-env.mjs`** copies `apps/backend/.env`, repo-root `.env.mcp`, and `apps/backend/*.pem` from the primary checkout once (.gitignored; source path defaults to stripping `/.worktrees/<task>/` or use **`WORKTREE_SECRET_SOURCE`**); then optional native bindings (e.g. `oxc-parser` → `@oxc-parser/binding-*`) install cleanly — incomplete installs otherwise break tools like **`pnpm knip`** only inside that worktree.
 - `git worktree remove --force` cleans up after merge (in `ask` permission tier — confirmed by human).
-- Parallel `pnpm install` uses `--frozen-lockfile` to prevent store corruption.
+- Parallel task worktrees each run **`pnpm install --frozen-lockfile`** once on the **first** `implementer_bot` spawn for that worktree (`implementer_invocation_index == 1`) when needed — redundant but harmless after the orchestrator bootstrap above; orchestrator increments the index on every later re-invocation (adversary, Code Review, CI, etc.), so implementer **does not** repeat frozen install unless dependency manifests changed or bootstrap failed — see `.cursor/agents/implementer_bot.md` (**Dependency install**).
 
 ## Quality gates (per implementer task)
 
 ```bash
 cd /workspace/.worktrees/<iid>-<task_id>
-rtk pnpm install --frozen-lockfile
+# Orchestrator post-worktree bootstrap + first implementer invocation may both run frozen install (see Worktrees above).
 rtk pnpm format
 rtk pnpm --filter=<workspace> typecheck
 rtk pnpm --filter=<workspace> lint
-rtk pnpm --filter=<workspace> test
+# Unit tests: `jest --findRelatedTests` on changed sources (`--coverage=false`); fall back to full `pnpm --filter <workspace> test` when needed — see `.cursor/agents/implementer_bot.md` § Unit tests. CI runs the full suite with coverage.
 rtk pnpm knip
 # Do not run `pnpm test:e2e` here; commit with Husky skipped (see implementer_bot).
 ```
@@ -68,7 +69,7 @@ All must exit 0 before the implementer opens the Draft MR. Commits must use **`H
 
 ## When to use which
 
-- **`/dag-execute`** (new) — multi-MR per issue, structured JSON throughout, formal architecture HITL, parallel task execution. Best for issues that decompose cleanly into 2–8 independent tasks.
+- **`/dag-execute`** (new) — multi-MR per issue, structured JSON throughout, formal architecture HITL, parallel task execution. **`decomposer_bot`** aims for **coarse tasks** (often **1–3**: optional `db`, then `backend` / `frontend`), folding `packages/types` and small helpers into the feature MR; split further only for large diffs or hard dependencies. Cap **8** tasks per issue (HITL if more).
 
 <!-- rtk-instructions v2 -->
 
