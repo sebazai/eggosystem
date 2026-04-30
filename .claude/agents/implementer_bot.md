@@ -49,6 +49,7 @@ cd <worktree_path>
 # Delegate UI subtasks to ui_bot via Task when type=ui.
 
 # Quality gates — ALL must pass before commit (format → typecheck → lint → unit tests → knip).
+# **Stale `dist/`**: `@eggosystem/types` and similar packages expose built `dist/` to consumers. If typecheck, lint, or knip fails in a way that looks like missing/outdated types after you edited `packages/types` (or merged changes that did), run **`rtk pnpm build`** from the worktree root once, then retry the failing gates — before assuming a logic bug.
 # Do not run `pnpm test:e2e` here; browser E2E is out of band for this agent.
 rtk pnpm format
 rtk pnpm --filter=<affected_workspace> typecheck
@@ -81,7 +82,10 @@ if not SkipMergeRequest:
 - **`/dag-execute` orchestrator** runs **`cd <worktree_path> && node scripts/bootstrap-worktree-env.mjs && rm -rf node_modules && rtk pnpm install --frozen-lockfile && rtk pnpm build`** right after **`git worktree add`** (see Phase 4a). **`bootstrap-worktree-env.mjs`** pulls `apps/backend/.env`, `.env.mcp`, and `apps/backend/*.pem` from the primary checkout; then optional native deps (e.g. `@oxc-parser/binding-*`) link correctly.
 - **Manual** worktrees (`git worktree add` outside `/dag-execute`): once from the worktree root, **`node scripts/bootstrap-worktree-env.mjs`** (needs `scripts/` present on checkout) unless you symlink secrets yourself.
 - Run **`rtk pnpm install --frozen-lockfile`** then **`rtk pnpm build`** when **`implementer_invocation_index == 1`** (fresh worktree; first implementer spawn for this task). After orchestrator bootstrap the install is **idempotent** (quick lockfile check); **manual** worktrees without that step still need both; a second **`rtk pnpm build`** after Phase 4a is redundant but harmless (Turbo cache).
-- When **`implementer_invocation_index > 1`** (orchestrator re-invoked you after **`adversary_bot`**, failed gates, Code Review, CI, etc.), **skip** these steps — dependencies are already installed and the workspace already built unless you reinstall.
+- When **`implementer_invocation_index > 1`** (orchestrator re-invoked you after **`adversary_bot`**, failed gates, Code Review, CI, etc.), **skip** full install + build **unless** one of the exceptions below applies — dependencies are already installed and the tree was built after bootstrap.
+- **Re-run `rtk pnpm build` only** (from worktree root; no reinstall) — **do this early** when quality gates fail oddly:
+  - After you change **`packages/types/**`** (or another workspace package consumed via **`dist/`**); consumers read **`dist/`**, not always `src/`.
+  - **`typecheck` / `lint` / `knip`** report missing exports, wrong signatures, or unresolved imports that match **stale** compiled output after a merge/rebase or parallel edit.
 - **Exceptions — run install (and **`rtk pnpm build`** afterward) again:**
   - You change **`package.json`** or **`pnpm-lock.yaml`** (or merge/rebase pulls in lockfile changes) and need an install for gates to reflect them.
   - A prior invocation failed **before** a usable install existed (e.g. network flake on first try); bootstrap the worktree with install + build even if **`implementer_invocation_index > 1`**.
@@ -164,7 +168,7 @@ When **`SkipMergeRequest: true`**, set **`mr_opened": false`, omit **`mr_iid`** 
 - The MR is **always opened as Draft** when created — orchestrator unmarks Draft after Code Review + Final Review pass.
 - All shell commands prefixed with `rtk` per `/workspace/CLAUDE.md` (except the `HUSKY=0` env prefix before `git commit`, which skips Husky only).
 - One task = one branch = one MR. Never include changes outside the task scope.
-- Do **not** run `pnpm install --frozen-lockfile` / **`rtk pnpm build`** on every re-invocation; follow **Dependency install** above (once per worktree unless manifests change or bootstrap failed).
+- Do **not** run **`rtk pnpm install --frozen-lockfile`** on every re-invocation; follow **Dependency install** above. **`rtk pnpm build`** is different: skip it on pure re-invocations, but **run it again** when **`packages/types`** (or **`dist/`**-based packages) change or when **typecheck / lint / knip** failures look like **stale build output** (see **Re-run `rtk pnpm build` only** above).
 - **`HUSKY=0` on commits is required** — quality gates above replace pre-commit hooks. Do not use `--no-verify` unless the environment blocks `HUSKY=0`.
 
 ## Forbidden

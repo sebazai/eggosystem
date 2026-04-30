@@ -46,7 +46,7 @@ All in `/workspace/.claude/agents/`. Each returns a JSON envelope per `/workspac
 - `git worktree add` creates them; the orchestrator does this before spawning each `implementer_bot`.
 - **Immediately after** `git worktree add` (and after any integration merges for multi-dependency tasks), the orchestrator runs **`cd <worktree_path> && node scripts/bootstrap-worktree-env.mjs && rm -rf node_modules && rtk pnpm install --frozen-lockfile && rtk pnpm build`**: **`bootstrap-worktree-env.mjs`** copies `apps/backend/.env`, repo-root `.env.mcp`, and `apps/backend/*.pem` from the primary checkout once (.gitignored; source path defaults to stripping `/.worktrees/<task>/` or use **`WORKTREE_SECRET_SOURCE`**); then optional native bindings (e.g. `oxc-parser` → `@oxc-parser/binding-*`) install cleanly — incomplete installs otherwise break tools like **`pnpm knip`** only inside that worktree.
 - `git worktree remove --force` cleans up after merge (in `ask` permission tier — confirmed by human).
-- Parallel task worktrees each run **`rtk pnpm install --frozen-lockfile`** then **`rtk pnpm build`** once on the **first** `implementer_bot` spawn for that worktree (`implementer_invocation_index == 1`) when needed — redundant but harmless after the orchestrator bootstrap above; orchestrator increments the index on every later re-invocation (adversary, Code Review, CI, etc.), so implementer **does not** repeat install or build unless dependency manifests changed or bootstrap failed — see `.cursor/agents/implementer_bot.md` (**Dependency install**).
+- Parallel task worktrees each run **`rtk pnpm install --frozen-lockfile`** then **`rtk pnpm build`** once on the **first** `implementer_bot` spawn for that worktree (`implementer_invocation_index == 1`) when needed — redundant but harmless after the orchestrator bootstrap above; orchestrator increments the index on every later re-invocation (adversary, Code Review, CI, etc.), so implementer **does not** repeat install unless manifests change or bootstrap failed. **`pnpm build`** from the worktree root may still be needed **again** later: **`@eggosystem/types`** publishes **`dist/`**, so after editing **`packages/types`** or when **typecheck / lint / knip** look like stale compiled output, run **`rtk pnpm build`** and retry gates — see `.cursor/agents/implementer_bot.md` (**Dependency install**).
 
 ## Quality gates (per implementer task)
 
@@ -58,6 +58,7 @@ rtk pnpm --filter=<workspace> typecheck
 rtk pnpm --filter=<workspace> lint
 # Unit tests: `jest --findRelatedTests` on changed sources (`--coverage=false`); fall back to full `pnpm --filter <workspace> test` when needed — see `.cursor/agents/implementer_bot.md` § Unit tests. CI runs the full suite with coverage.
 rtk pnpm knip
+# If typecheck/lint/knip suggest outdated shared types: `rtk pnpm build` at worktree root, then rerun failed gates (.cursor/agents/implementer_bot.md — stale dist/).
 # Do not run `pnpm test:e2e` here; commit with Husky skipped (see implementer_bot).
 ```
 
