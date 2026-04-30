@@ -18,7 +18,7 @@ changed=$(git status --porcelain 2>/dev/null \
 
 [ -z "$changed" ] && exit 0
 
-msg="Reminder: TypeScript files were modified this session. Run the quality gate before finishing: pnpm knip && pnpm typecheck && pnpm format:check && pnpm lint (or 'pnpm quality'), and run pnpm reseed before pnpm test. See CLAUDE.md / AGENTS.md."
+msg="Reminder: TypeScript files were modified this session. Run: pnpm knip && pnpm typecheck && pnpm format:check && pnpm lint (or 'pnpm quality'). Note: typecheck command shapes are enforced by a preToolUse hook."
 
 if echo "$hook_input" | jq -e 'has("loop_count")' >/dev/null 2>&1; then
   printf '%s\n' "$msg" >&2

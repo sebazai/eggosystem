@@ -54,9 +54,10 @@ All in `/workspace/.claude/agents/`. Each returns a JSON envelope per `/workspac
 cd /workspace/.worktrees/<iid>-<task_id>
 # Orchestrator post-worktree bootstrap + first implementer invocation may both run frozen install + build (see Worktrees above).
 rtk pnpm format
-rtk pnpm --filter=<workspace> typecheck
-rtk pnpm --filter=<workspace> lint
-# Unit tests: `jest --findRelatedTests` on changed sources (`--coverage=false`); fall back to full `pnpm --filter <workspace> test` when needed — see `.cursor/agents/implementer_bot.md` § Unit tests. CI runs the full suite with coverage.
+# Typecheck rule: enforced by `preToolUse` hook (don’t fight it).
+# - Never use `--filter` for typecheck
+# - Never run `rtk pnpm typecheck` at repo root
+# - Run typecheck from `apps/frontend`, `apps/backend`, or `packages/types`
 rtk pnpm knip
 # If typecheck/lint/knip suggest outdated shared types: `rtk pnpm build` at worktree root, then rerun failed gates (.cursor/agents/implementer_bot.md — stale dist/).
 # Do not run `pnpm test:e2e` here; commit with Husky skipped (see implementer_bot).
@@ -78,7 +79,7 @@ All must exit 0 before the implementer opens the Draft MR. Commits must use **`H
 
 ## Golden Rule
 
-**Always prefix commands with `rtk`**. If RTK has a dedicated filter, it uses it. If not, it passes through unchanged. This means RTK is always safe to use.
+**Always prefix commands with `rtk`**, except: **repo-root typecheck should be `pnpm typecheck` (no RTK)**. A hook enforces the allowed typecheck command shapes.
 
 **Important**: Even in command chains with `&&`, use `rtk`:
 

@@ -52,8 +52,10 @@ cd <worktree_path>
 # **Stale `dist/`**: `@eggosystem/types` and similar packages expose built `dist/` to consumers. If typecheck, lint, or knip fails in a way that looks like missing/outdated types after you edited `packages/types` (or merged changes that did), run **`rtk pnpm build`** from the worktree root once, then retry the failing gates — before assuming a logic bug.
 # Do not run `pnpm test:e2e` here; browser E2E is out of band for this agent.
 rtk pnpm format
-rtk pnpm --filter=<affected_workspace> typecheck
-rtk pnpm --filter=<affected_workspace> lint
+# Typecheck rule is enforced by a preToolUse hook:
+# - Never use `--filter` for typecheck
+# - Never run `rtk pnpm typecheck` at repo root
+# - Run typecheck from `apps/frontend`, `apps/backend`, or `packages/types`
 # Unit tests: next — follow "### Unit tests (`jest --findRelatedTests`)" below (before knip).
 rtk pnpm knip
 
