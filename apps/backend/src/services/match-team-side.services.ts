@@ -1,41 +1,53 @@
-import type { FaceitMatchTeams } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
 import { logger } from "../utils/app-logger";
 import { getSeasonLeagueTeamByExternalId } from "../models/season-league-team.models";
 import type { PoolConnection } from "mysql2/promise";
 
-function hasDistinctFaceitFactionTeams(details: unknown): details is {
-  teams: FaceitMatchTeams;
-} {
-  if (!details || typeof details !== "object" || !("teams" in details)) {
-    return false;
+function readOwnString(source: object, key: string): string | undefined {
+  if (!Object.prototype.hasOwnProperty.call(source, key)) {
+    return undefined;
   }
-  const teams = (details as { teams: unknown }).teams;
-  if (!teams || typeof teams !== "object") return false;
-  if (!("faction1" in teams) || !("faction2" in teams)) return false;
-  const f1 = (teams as FaceitMatchTeams).faction1?.faction_id;
-  const f2 = (teams as FaceitMatchTeams).faction2?.faction_id;
-  return (
-    typeof f1 === "string" &&
-    typeof f2 === "string" &&
-    f1 !== "" &&
-    f2 !== "" &&
-    f1 !== f2
-  );
+  const value = Reflect.get(source, key);
+  return typeof value === "string" ? value : undefined;
 }
 
-/** Persists faction1→home and faction2→away for every MatchTeams row tied to `external_room_id`. */
-async function syncMatchTeamSidesFromFaceitTeams(
-  externalRoomId: string,
-  teams: FaceitMatchTeams,
-  connection?: PoolConnection
-): Promise<void> {
-  await syncMatchTeamSidesFromFactionIds(
-    externalRoomId,
-    teams.faction1.faction_id,
-    teams.faction2.faction_id,
-    connection
-  );
+function readFaceitFactionId(factionBlock: unknown): string | undefined {
+  if (factionBlock === null || typeof factionBlock !== "object") {
+    return undefined;
+  }
+  return readOwnString(factionBlock, "faction_id");
+}
+
+/** Parses match details payload for two distinct non-empty Faceit faction ids. */
+function extractDistinctFactionPair(details: unknown): {
+  faction1Id: string;
+  faction2Id: string;
+} | null {
+  if (details === null || typeof details !== "object") {
+    return null;
+  }
+  if (!Object.prototype.hasOwnProperty.call(details, "teams")) {
+    return null;
+  }
+  const teams = Reflect.get(details, "teams");
+  if (teams === null || typeof teams !== "object") {
+    return null;
+  }
+  if (!("faction1" in teams) || !("faction2" in teams)) {
+    return null;
+  }
+  const f1 = readFaceitFactionId(Reflect.get(teams, "faction1"));
+  const f2 = readFaceitFactionId(Reflect.get(teams, "faction2"));
+  if (
+    f1 === undefined ||
+    f2 === undefined ||
+    f1 === "" ||
+    f2 === "" ||
+    f1 === f2
+  ) {
+    return null;
+  }
+  return { faction1Id: f1, faction2Id: f2 };
 }
 
 export async function syncMatchTeamSidesFromMatchDetailsPayload(
@@ -43,10 +55,12 @@ export async function syncMatchTeamSidesFromMatchDetailsPayload(
   details: unknown,
   connection?: PoolConnection
 ): Promise<void> {
-  if (!hasDistinctFaceitFactionTeams(details)) return;
-  await syncMatchTeamSidesFromFaceitTeams(
+  const pair = extractDistinctFactionPair(details);
+  if (!pair) return;
+  await syncMatchTeamSidesFromFactionIds(
     externalRoomId,
-    details.teams,
+    pair.faction1Id,
+    pair.faction2Id,
     connection
   );
 }
