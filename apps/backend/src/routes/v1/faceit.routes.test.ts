@@ -2475,7 +2475,7 @@ describe("FaceIT Routes - Webhook", () => {
         );
       });
 
-      it("should for 2xBO1 only update second match start and end time and set both FINISHED", async () => {
+      it("should for 2xBO1 with both siblings non-terminal mark both rows FINISHED via the resolver (Case B)", async () => {
         mockGetSeasonLeagueExternalIdByExternalIdWithSeasonSettings.mockResolvedValue(
           {
             ...createMockSeasonLeagueExternalId({
@@ -2488,8 +2488,8 @@ describe("FaceIT Routes - Webhook", () => {
           }
         );
         mockGetMatchesByExternalId.mockResolvedValue([
-          { id: 101 } as Match,
-          { id: 102 } as Match
+          { id: 101, status: "ONGOING" } as Match,
+          { id: 102, status: "ONGOING" } as Match
         ]);
         mockGetMatchStatusFinishedCountAfterLastConfiguring.mockResolvedValue(
           0
@@ -2504,15 +2504,29 @@ describe("FaceIT Routes - Webhook", () => {
         expect(response.text).toBe("Webhook received");
 
         expect(mockUpdateMatchStartAndEndTimestamp).toHaveBeenCalledWith(
+          101,
+          "2025-07-26T00:25:51Z",
+          "2025-07-26T01:05:18Z",
+          expect.any(Object)
+        );
+        expect(mockUpdateMatchStartAndEndTimestamp).toHaveBeenCalledWith(
           102,
           "2025-07-26T00:25:51Z",
-          "2025-07-26T01:05:18Z"
+          "2025-07-26T01:05:18Z",
+          expect.any(Object)
+        );
+        expect(mockUpdateMatchStatusByMatchId).toHaveBeenCalledWith(
+          101,
+          "FINISHED",
+          expect.any(Object)
+        );
+        expect(mockUpdateMatchStatusByMatchId).toHaveBeenCalledWith(
+          102,
+          "FINISHED",
+          expect.any(Object)
         );
         expect(mockUpdateMatchFinished).not.toHaveBeenCalled();
-        expect(mockUpdateMatchStatus).toHaveBeenCalledWith(
-          "1-dba8981d-5647-466a-be32-12a06fb8fc31",
-          "FINISHED"
-        );
+        expect(mockUpdateMatchStatus).not.toHaveBeenCalled();
 
         // Verify playoff bracket caches were invalidated
         expect(mockInvalidateChampionshipMatchesCache).toHaveBeenCalledWith(
@@ -2671,7 +2685,8 @@ describe("FaceIT Routes - Webhook", () => {
         expect(mockGetFaceITMatchDetails).toHaveBeenCalledTimes(1);
       });
 
-      it("when 2xBO1 and first event is forfeit (gameIndex 0), updates only first match to FORFEIT", async () => {
+      it("forfeit webhook with both siblings non-terminal and neither having a demo marks slot 0 FORFEIT (Case C lower-index)", async () => {
+        // diagnostic only — no longer drives slot selection
         mockGetMatchStatusFinishedCountAfterLastConfiguring.mockResolvedValue(
           0
         );
@@ -2684,18 +2699,21 @@ describe("FaceIT Routes - Webhook", () => {
         expect(response.status).toBe(200);
         expect(mockUpdateMatchEndTimestamp).toHaveBeenCalledWith(
           201,
-          "2025-09-17T18:10:00Z"
+          "2025-09-17T18:10:00Z",
+          expect.any(Object)
         );
         expect(mockUpdateMatchStatusByMatchId).toHaveBeenCalledWith(
           201,
-          "FORFEIT"
+          "FORFEIT",
+          expect.any(Object)
         );
         expect(mockUpdateMatchStatusByMatchId).toHaveBeenCalledTimes(1);
         expect(mockUpdateMatchStatus).not.toHaveBeenCalled();
         expect(mockUpdateMatchEndTime).not.toHaveBeenCalled();
       });
 
-      it("when 2xBO1 and second event is played (gameIndex 1), updates only second match to FINISHED", async () => {
+      it("real finished webhook with both siblings non-terminal marks both FINISHED (Case B), regardless of webhook ordinal", async () => {
+        // diagnostic only; resolver does not consult ordinal for slot selection.
         mockGetMatchStatusFinishedCountAfterLastConfiguring.mockResolvedValue(
           1
         );
@@ -2707,19 +2725,31 @@ describe("FaceIT Routes - Webhook", () => {
 
         expect(response.status).toBe(200);
         expect(mockUpdateMatchStartAndEndTimestamp).toHaveBeenCalledWith(
+          201,
+          "2025-09-17T17:48:48Z",
+          "2025-09-17T18:37:35Z",
+          expect.any(Object)
+        );
+        expect(mockUpdateMatchStartAndEndTimestamp).toHaveBeenCalledWith(
           202,
           "2025-09-17T17:48:48Z",
-          "2025-09-17T18:37:35Z"
+          "2025-09-17T18:37:35Z",
+          expect.any(Object)
+        );
+        expect(mockUpdateMatchStatusByMatchId).toHaveBeenCalledWith(
+          201,
+          "FINISHED",
+          expect.any(Object)
         );
         expect(mockUpdateMatchStatusByMatchId).toHaveBeenCalledWith(
           202,
-          "FINISHED"
+          "FINISHED",
+          expect.any(Object)
         );
-        expect(mockUpdateMatchStatusByMatchId).toHaveBeenCalledTimes(1);
         expect(mockUpdateMatchStatus).not.toHaveBeenCalled();
       });
 
-      it("when 2xBO1 forfeit and target match already FINISHED, skips status update", async () => {
+      it("forfeit webhook with slot 0 already FINISHED assigns FORFEIT to remaining slot 1 (Case A)", async () => {
         mockGetMatchStatusFinishedCountAfterLastConfiguring.mockResolvedValue(
           0
         );
@@ -2734,11 +2764,21 @@ describe("FaceIT Routes - Webhook", () => {
           .send(expectedFaceitWebhookPayloadForfeit);
 
         expect(response.status).toBe(200);
-        expect(mockUpdateMatchStatusByMatchId).not.toHaveBeenCalled();
-        expect(mockUpdateMatchEndTimestamp).not.toHaveBeenCalled();
+        // Already-terminal slot 0 (S1-AC-4) is never overwritten; only slot 1 receives the forfeit write.
+        expect(mockUpdateMatchStatusByMatchId).toHaveBeenCalledTimes(1);
+        expect(mockUpdateMatchStatusByMatchId).toHaveBeenCalledWith(
+          202,
+          "FORFEIT",
+          expect.any(Object)
+        );
+        expect(mockUpdateMatchEndTimestamp).toHaveBeenCalledWith(
+          202,
+          "2025-09-17T18:10:00Z",
+          expect.any(Object)
+        );
       });
 
-      it("restart after forfeit: first played event after configuring has count 0, sets both FINISHED", async () => {
+      it("real finished webhook for fully-played BO2 marks both siblings FINISHED via Case B (room status invariant: no SCHEDULED leftover)", async () => {
         mockGetMatchStatusFinishedCountAfterLastConfiguring.mockResolvedValue(
           0
         );
@@ -2749,59 +2789,24 @@ describe("FaceIT Routes - Webhook", () => {
           .send(expectedFaceitWebhookPayloadPlayed);
 
         expect(response.status).toBe(200);
-        expect(mockUpdateMatchStatus).toHaveBeenCalledWith(
-          externalMatchRoomId,
-          "FINISHED"
-        );
-        expect(mockUpdateMatchStartAndEndTimestamp).toHaveBeenCalledWith(
-          202,
-          "2025-09-17T17:48:48Z",
-          "2025-09-17T18:37:35Z"
-        );
-      });
-
-      it("out-of-order: played then forfeit yields match 0 FINISHED, match 1 FORFEIT (forfeit only updates match 1)", async () => {
-        mockGetMatchStatusFinishedCountAfterLastConfiguring.mockResolvedValue(
-          1
-        );
-
-        const response = await request(app)
-          .post("/api/v1/faceit/webhook")
-          .set("X-API-KEY", TEST_WEBHOOK_API_KEY)
-          .send(expectedFaceitWebhookPayloadForfeit);
-
-        expect(response.status).toBe(200);
         expect(mockUpdateMatchStatusByMatchId).toHaveBeenCalledWith(
-          202,
-          "FORFEIT"
-        );
-        expect(mockUpdateMatchStatus).not.toHaveBeenCalled();
-      });
-
-      it("gameIndex >= 2 (duplicate/extra event): only updates second match, does not set both FINISHED", async () => {
-        mockGetMatchStatusFinishedCountAfterLastConfiguring.mockResolvedValue(
-          2
-        );
-
-        const response = await request(app)
-          .post("/api/v1/faceit/webhook")
-          .set("X-API-KEY", TEST_WEBHOOK_API_KEY)
-          .send(expectedFaceitWebhookPayloadPlayed);
-
-        expect(response.status).toBe(200);
-        expect(mockUpdateMatchStartAndEndTimestamp).toHaveBeenCalledWith(
-          202,
-          "2025-09-17T17:48:48Z",
-          "2025-09-17T18:37:35Z"
+          201,
+          "FINISHED",
+          expect.any(Object)
         );
         expect(mockUpdateMatchStatusByMatchId).toHaveBeenCalledWith(
           202,
-          "FINISHED"
+          "FINISHED",
+          expect.any(Object)
         );
+        // Resolver path now uses match-id writes; the externalMatchroom status
+        // batch update is no longer invoked.
         expect(mockUpdateMatchStatus).not.toHaveBeenCalled();
       });
 
-      it("two forfeits: first event sets match 0 FORFEIT, second event sets match 1 FORFEIT", async () => {
+      it("two-forfeit sequence: first webhook → slot 0 FORFEIT (Case C); second webhook → slot 1 FORFEIT (Case A)", async () => {
+        // First webhook: both ONGOING + neither has demo → resolver picks
+        // lower-index slot 0 FORFEIT.
         mockGetMatchStatusFinishedCountAfterLastConfiguring
           .mockResolvedValueOnce(0)
           .mockResolvedValueOnce(1);
@@ -2811,27 +2816,37 @@ describe("FaceIT Routes - Webhook", () => {
           .set("X-API-KEY", TEST_WEBHOOK_API_KEY)
           .send(expectedFaceitWebhookPayloadForfeit);
         expect(res1.status).toBe(200);
-        expect(mockUpdateMatchStatusByMatchId).toHaveBeenNthCalledWith(
-          1,
+        expect(mockUpdateMatchStatusByMatchId).toHaveBeenCalledWith(
           201,
-          "FORFEIT"
+          "FORFEIT",
+          expect.any(Object)
         );
 
+        // Second webhook: now sibling 0 is already FORFEIT (terminal), sibling
+        // 1 still ONGOING → Case A → slot 1 FORFEIT.
+        mockGetMatchesByExternalId.mockResolvedValue([
+          { id: 201, status: "FORFEIT" } as Match,
+          { id: 202, status: "ONGOING" } as Match
+        ]);
         const res2 = await request(app)
           .post("/api/v1/faceit/webhook")
           .set("X-API-KEY", TEST_WEBHOOK_API_KEY)
           .send(expectedFaceitWebhookPayloadForfeit);
         expect(res2.status).toBe(200);
-        expect(mockUpdateMatchStatusByMatchId).toHaveBeenNthCalledWith(
-          2,
+        expect(mockUpdateMatchStatusByMatchId).toHaveBeenCalledWith(
           202,
-          "FORFEIT"
+          "FORFEIT",
+          expect.any(Object)
         );
       });
 
-      it("forfeit with gameIndex >= 2 (targetMatch undefined): no DB update, 200 OK", async () => {
+      it("S1-AC-4: when both siblings already terminal (FORFEIT, FINISHED), resolver short-circuits and writes nothing", async () => {
+        mockGetMatchesByExternalId.mockResolvedValue([
+          { id: 201, status: "FORFEIT" } as Match,
+          { id: 202, status: "FINISHED" } as Match
+        ]);
         mockGetMatchStatusFinishedCountAfterLastConfiguring.mockResolvedValue(
-          2
+          0
         );
 
         const response = await request(app)

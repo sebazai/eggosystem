@@ -64,10 +64,13 @@ import {
   updateMatchStartTimestamp,
   updateMatchStatusByExternalMatchroomId,
   updateMatchStatusByMatchId,
-  updateMatchStartAndEndTimestamp,
   getMatchesStatusByExternalMatchroomId
 } from "../models/match.models";
 import { hasMatchGameWithDemo } from "../models/match-game.models";
+import {
+  resolveRoundRobinBo2SplitFromFaceitWithVetoCheck,
+  applyRoundRobinBo2SplitDecisions
+} from "../services/faceit-2xbo1-resolver.services";
 import {
   getOrganizerByFaceitIdAndGameAppId,
   getOrganizerFaceitSeasonForApp
@@ -440,17 +443,47 @@ export const handleFaceitWebhook = async (
             seasonLeague?.is_round_robin_bo2_as_2xbo1 &&
             matchesByRoom.length === 2
           ) {
-            const gameIndex =
+            const diagnosticGameIndex =
               await getMatchStatusFinishedCountAfterLastConfiguring(
                 externalMatchRoomId
               );
-            const targetMatch = matchesByRoom[gameIndex];
-            const hasDemo = targetMatch
-              ? await hasMatchGameWithDemo(targetMatch.id)
-              : false;
-            if (targetMatch && targetMatch.status !== "FINISHED" && !hasDemo) {
-              await updateMatchEndTimestamp(targetMatch.id, endTime);
-              await updateMatchStatusByMatchId(targetMatch.id, "FORFEIT");
+            const siblingDemoState = await Promise.all(
+              matchesByRoom.map(async (sibling) => ({
+                matchId: sibling.id,
+                hasDemo: await hasMatchGameWithDemo(sibling.id)
+              }))
+            );
+            logger.info(
+              `[2xBO1 forfeit] room=${externalMatchRoomId} diagnostic gameIndex=${diagnosticGameIndex} ` +
+                `slot statuses=[${matchesByRoom
+                  .map((m) => `${m.id}:${m.status}`)
+                  .join(",")}] demo=[${siblingDemoState
+                  .map((s) => `${s.matchId}:${s.hasDemo}`)
+                  .join(",")}]`
+            );
+            const decisions =
+              await resolveRoundRobinBo2SplitFromFaceitWithVetoCheck({
+                externalMatchRoomId,
+                matchesByRoom,
+                webhookPayload: webhookData.payload,
+                isForfeitWebhook: true,
+                faceitMatchDetails: matchDetails,
+                siblingDemoState
+              });
+            const connection = await getConnection();
+            try {
+              await connection.beginTransaction();
+              await applyRoundRobinBo2SplitDecisions(
+                decisions,
+                connection,
+                externalMatchRoomId
+              );
+              await connection.commit();
+            } catch (error) {
+              await connection.rollback();
+              throw error;
+            } finally {
+              connection.release();
             }
           } else {
             const existingMatchStatus =
@@ -493,37 +526,47 @@ export const handleFaceitWebhook = async (
           seasonLeague?.is_round_robin_bo2_as_2xbo1 &&
           matchesByRoom.length === 2
         ) {
-          const gameIndex =
+          const diagnosticGameIndex =
             await getMatchStatusFinishedCountAfterLastConfiguring(
               externalMatchRoomId
             );
-          if (gameIndex === 1) {
-            // Second game finished; first was forfeited — update only second match.
-            await updateMatchStartAndEndTimestamp(
-              matchesByRoom[1].id,
-              startTime,
-              endTime
-            );
-            await updateMatchStatusByMatchId(matchesByRoom[1].id, "FINISHED");
-          } else if (gameIndex === 0) {
-            // BO2 fully finished (both games played), or first event after restart.
-            await updateMatchStartAndEndTimestamp(
-              matchesByRoom[1].id,
-              startTime,
-              endTime
-            );
-            await updateMatchStatusByExternalMatchroomId(
+          const siblingDemoState = await Promise.all(
+            matchesByRoom.map(async (sibling) => ({
+              matchId: sibling.id,
+              hasDemo: await hasMatchGameWithDemo(sibling.id)
+            }))
+          );
+          logger.info(
+            `[2xBO1 finished] room=${externalMatchRoomId} diagnostic gameIndex=${diagnosticGameIndex} ` +
+              `slot statuses=[${matchesByRoom
+                .map((m) => `${m.id}:${m.status}`)
+                .join(",")}] demo=[${siblingDemoState
+                .map((s) => `${s.matchId}:${s.hasDemo}`)
+                .join(",")}]`
+          );
+          const decisions =
+            await resolveRoundRobinBo2SplitFromFaceitWithVetoCheck({
               externalMatchRoomId,
-              "FINISHED"
+              matchesByRoom,
+              webhookPayload: webhookData.payload,
+              isForfeitWebhook: false,
+              faceitMatchDetails: matchDetails,
+              siblingDemoState
+            });
+          const connection = await getConnection();
+          try {
+            await connection.beginTransaction();
+            await applyRoundRobinBo2SplitDecisions(
+              decisions,
+              connection,
+              externalMatchRoomId
             );
-          } else {
-            // gameIndex >= 2: duplicate/extra events; only update second match, do not overwrite match 0.
-            await updateMatchStartAndEndTimestamp(
-              matchesByRoom[1].id,
-              startTime,
-              endTime
-            );
-            await updateMatchStatusByMatchId(matchesByRoom[1].id, "FINISHED");
+            await connection.commit();
+          } catch (error) {
+            await connection.rollback();
+            throw error;
+          } finally {
+            connection.release();
           }
         } else {
           await updateMatchFinished(webhookData.payload.id, startTime, endTime);
