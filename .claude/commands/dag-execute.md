@@ -132,7 +132,7 @@ Also maintain **`implementer_invocation_index`** per task (integer counter for *
 
 - Initialize to **`0`** once **`4a`** has created `<worktree_path>` (same task dispatch; do not reset between adversary/Code Review/CI loops).
 - Immediately **before every** `Task(implementer_bot)` — including each **4b** pass, stuck retries, **`4c`/`4d`/Final Review loops** — do **`implementer_invocation_index += 1`** and pass the new value into the prompt as **`implementer_invocation_index: <n>`**.
-- **`implementer_bot`** runs **`rtk pnpm install --frozen-lockfile`** only when **`n == 1`** unless dependency manifests changed or bootstrap failed (see `/workspace/.cursor/agents/implementer_bot.md` **Dependency install**).
+- **`implementer_bot`** runs **`rtk pnpm install --frozen-lockfile`** then **`rtk pnpm build`** only when **`n == 1`** unless dependency manifests changed or bootstrap failed (see `/workspace/.cursor/agents/implementer_bot.md` **Dependency install**).
 
 Normalize dependency gates (orchestrator): for each decomposition row **`t`** (tracked with `state` / `branch` in Phase 4) and parent id **`p`** in **`t.depends_on`**, **`gate(t,p)`** = **`t.implements_after_gates[p]`** when present on the decomposition object, else **`"completed"`**. Define **`parent_satisfies_gate(parent, gate)`** for **`parent`** the upstream tracker row:
 
@@ -215,6 +215,7 @@ node scripts/bootstrap-worktree-env.mjs
 # Omitting this can leave incomplete installs where tools like knip fail inside the worktree only.
 rm -rf node_modules
 rtk pnpm install --frozen-lockfile
+rtk pnpm build
 ```
 
 Pass **`base`** to `implementer_bot` as `Base:` so **`create_merge_request.target_branch`** matches **stacked** vs **development** workflows (see `/workspace/.cursor/agents/implementer_bot.md`).

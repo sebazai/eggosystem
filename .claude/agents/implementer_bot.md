@@ -43,7 +43,7 @@ Implement exactly ONE task end-to-end inside your assigned worktree:
 cd <worktree_path>
 
 # Always work inside the worktree. Never cd out.
-# `pnpm install --frozen-lockfile` — at most once per worktree bootstrap (see Dependency install below).
+# `pnpm install --frozen-lockfile` then `pnpm build` — at most once per worktree bootstrap (see Dependency install below).
 
 # Implement the task. Use Edit/Write strictly within <worktree_path>.
 # Delegate UI subtasks to ui_bot via Task when type=ui.
@@ -76,15 +76,15 @@ if not SkipMergeRequest:
 
 `<base_branch>` comes from the orchestrator: **`development`**, **or** a **parent task branch name** for **stacked MRs**. When `<base_branch>` is not `development`, the MR merges into that parent branch first (reuse of unmerged prerequisite code). **`target_branch` in `create_merge_request` must equal `<base_branch>`.** After the parent MR merges into `development`, the human/orchestrator **rebases this branch onto `development`**, retargets the MR to **`development`** (or merges in stack order per team policy)—not something you do silently here if it requires rebase/`--force-with-lease` (those are gated outside this agent).
 
-### Dependency install (`pnpm install --frozen-lockfile`)
+### Dependency install (`pnpm install --frozen-lockfile`) and workspace build (`pnpm build`)
 
-- **`/dag-execute` orchestrator** runs **`cd <worktree_path> && node scripts/bootstrap-worktree-env.mjs && rm -rf node_modules && rtk pnpm install --frozen-lockfile`** right after **`git worktree add`** (see Phase 4a). **`bootstrap-worktree-env.mjs`** pulls `apps/backend/.env`, `.env.mcp`, and `apps/backend/*.pem` from the primary checkout; then optional native deps (e.g. `@oxc-parser/binding-*`) link correctly.
+- **`/dag-execute` orchestrator** runs **`cd <worktree_path> && node scripts/bootstrap-worktree-env.mjs && rm -rf node_modules && rtk pnpm install --frozen-lockfile && rtk pnpm build`** right after **`git worktree add`** (see Phase 4a). **`bootstrap-worktree-env.mjs`** pulls `apps/backend/.env`, `.env.mcp`, and `apps/backend/*.pem` from the primary checkout; then optional native deps (e.g. `@oxc-parser/binding-*`) link correctly.
 - **Manual** worktrees (`git worktree add` outside `/dag-execute`): once from the worktree root, **`node scripts/bootstrap-worktree-env.mjs`** (needs `scripts/` present on checkout) unless you symlink secrets yourself.
-- Run **`rtk pnpm install --frozen-lockfile`** when **`implementer_invocation_index == 1`** (fresh worktree; first implementer spawn for this task). After orchestrator bootstrap this is **idempotent** (quick lockfile check); **manual** worktrees without that step still need it.
-- When **`implementer_invocation_index > 1`** (orchestrator re-invoked you after **`adversary_bot`**, failed gates, Code Review, CI, etc.), **skip** this step — dependencies are already installed in the worktree.
-- **Exceptions — run install again:**
+- Run **`rtk pnpm install --frozen-lockfile`** then **`rtk pnpm build`** when **`implementer_invocation_index == 1`** (fresh worktree; first implementer spawn for this task). After orchestrator bootstrap the install is **idempotent** (quick lockfile check); **manual** worktrees without that step still need both; a second **`rtk pnpm build`** after Phase 4a is redundant but harmless (Turbo cache).
+- When **`implementer_invocation_index > 1`** (orchestrator re-invoked you after **`adversary_bot`**, failed gates, Code Review, CI, etc.), **skip** these steps — dependencies are already installed and the workspace already built unless you reinstall.
+- **Exceptions — run install (and **`rtk pnpm build`** afterward) again:**
   - You change **`package.json`** or **`pnpm-lock.yaml`** (or merge/rebase pulls in lockfile changes) and need an install for gates to reflect them.
-  - A prior invocation failed **before** a usable install existed (e.g. network flake on first try); bootstrap the worktree with install even if **`implementer_invocation_index > 1`**.
+  - A prior invocation failed **before** a usable install existed (e.g. network flake on first try); bootstrap the worktree with install + build even if **`implementer_invocation_index > 1`**.
 
 Different tasks/worktrees remain isolated; **`--frozen-lockfile`** avoids parallel implementers corrupting each other’s installs when invocation 1 runs.
 
@@ -164,7 +164,7 @@ When **`SkipMergeRequest: true`**, set **`mr_opened": false`, omit **`mr_iid`** 
 - The MR is **always opened as Draft** when created — orchestrator unmarks Draft after Code Review + Final Review pass.
 - All shell commands prefixed with `rtk` per `/workspace/CLAUDE.md` (except the `HUSKY=0` env prefix before `git commit`, which skips Husky only).
 - One task = one branch = one MR. Never include changes outside the task scope.
-- Do **not** run `pnpm install --frozen-lockfile` on every re-invocation; follow **Dependency install** above (once per worktree unless manifests change or bootstrap failed).
+- Do **not** run `pnpm install --frozen-lockfile` / **`rtk pnpm build`** on every re-invocation; follow **Dependency install** above (once per worktree unless manifests change or bootstrap failed).
 - **`HUSKY=0` on commits is required** — quality gates above replace pre-commit hooks. Do not use `--no-verify` unless the environment blocks `HUSKY=0`.
 
 ## Forbidden
