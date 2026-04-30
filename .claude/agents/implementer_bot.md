@@ -78,7 +78,8 @@ if not SkipMergeRequest:
 
 ### Dependency install (`pnpm install --frozen-lockfile`)
 
-- **`/dag-execute` orchestrator** runs **`cd <worktree_path> && rm -rf node_modules && rtk pnpm install --frozen-lockfile`** right after **`git worktree add`** (see Phase 4a). That makes optional native deps (e.g. `@oxc-parser/binding-*`) link correctly.
+- **`/dag-execute` orchestrator** runs **`cd <worktree_path> && node scripts/bootstrap-worktree-env.mjs && rm -rf node_modules && rtk pnpm install --frozen-lockfile`** right after **`git worktree add`** (see Phase 4a). **`bootstrap-worktree-env.mjs`** pulls `apps/backend/.env`, `.env.mcp`, and `apps/backend/*.pem` from the primary checkout; then optional native deps (e.g. `@oxc-parser/binding-*`) link correctly.
+- **Manual** worktrees (`git worktree add` outside `/dag-execute`): once from the worktree root, **`node scripts/bootstrap-worktree-env.mjs`** (needs `scripts/` present on checkout) unless you symlink secrets yourself.
 - Run **`rtk pnpm install --frozen-lockfile`** when **`implementer_invocation_index == 1`** (fresh worktree; first implementer spawn for this task). After orchestrator bootstrap this is **idempotent** (quick lockfile check); **manual** worktrees without that step still need it.
 - When **`implementer_invocation_index > 1`** (orchestrator re-invoked you after **`adversary_bot`**, failed gates, Code Review, CI, etc.), **skip** this step — dependencies are already installed in the worktree.
 - **Exceptions — run install again:**
