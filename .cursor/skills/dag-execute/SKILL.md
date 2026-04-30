@@ -75,7 +75,7 @@ Spawn `decomposer_bot`:
 
 ```
 Task(subagent_type=decomposer_bot,
-     prompt="Read /workspace/.cursor/agents/decomposer_bot.md. Given these stories: <inline product_bot.payload.stories>. Workspace map: apps/backend, apps/frontend, packages/types. Return ONLY the JSON envelope.")
+     prompt="Read /workspace/.cursor/agents/decomposer_bot.md. Given these stories: <inline product_bot.payload.stories>. Workspace map: apps/backend, apps/frontend, packages/types. Emit optional implements_after_gates per json-handoff (default parent gate completed); for stacked children use mr_opened unless risk requires completed. Return ONLY the JSON envelope.")
 ```
 
 Parse. Validate the DAG yourself:
@@ -126,6 +126,15 @@ AskQuestion(
 
 ## Phase 4 — DAG Execution
 
+### 4.0 Two-track scheduling (implement start vs finalize)
+
+Orchestration is **two speeds**:
+
+1. **Implement / MR track** — downstream tasks may exit `pending` and run **§4a–§4c** once **upstream dependencies** satisfy **`implements_after_gates`** (see `/workspace/.cursor/skills/json-handoff/SKILL.md` `decomposer_bot.payload`). A **child stacked on a parent branch** SHOULD default to **`mr_opened`** from the parent (not **`completed`**) unless architecture or risk dictates otherwise, so the child MR can iterate **while `devops_bot` watches the parent pipeline in the background**.
+2. **Finalize track** — a task reaches **`completed`** only after **`devops`** returns **`status=ready`** (CI green for that MR/commit). **`final_review_bot` (Phase 5)** waits until **every** task is **`completed`**. **`devops_bot` must stay non-blocking** for unrelated ready work (**§4d**).
+
+Treat **`implements_after_gates`** as **engineering readiness** (“can base / merge prerequisites?”). Merge order and human merge trains (**Phase 6**) stay unchanged.
+
 Track per-task state: `pending | running | review | ci | completed | stuck`. Initialize all to `pending`.
 
 Maintain retry counters per task: `adversary_runs` (capped at **3** completed `adversary_bot` invocations per task), `code_review_rounds`, `gate_rounds` (each capped at 3). **Alignment** is enforced by an **implementer ↔ adversary loop** before the Draft MR exists (see 4b).
@@ -136,12 +145,21 @@ Also maintain **`implementer_invocation_index`** per task (integer counter for *
 - Immediately **before every** `Task(implementer_bot)` — including each **4b** pass, stuck retries, **`4c`/`4d`/Final Review loops** — do **`implementer_invocation_index += 1`** and pass the new value into the prompt as **`implementer_invocation_index: <n>`**.
 - **`implementer_bot`** runs **`rtk pnpm install --frozen-lockfile`** only when **`n == 1`** unless dependency manifests changed or bootstrap failed (see `/workspace/.cursor/agents/implementer_bot.md` **Dependency install**).
 
+Normalize dependency gates (orchestrator): for each decomposition row `t` in `tasks[]` (plus tracked `state` / `branch` during Phase 4) and parent id **`p`** in **`t.depends_on`**, **`gate(t,p)`** = **`t.implements_after_gates[p]`** when the key exists on the decomposition object, else **`"completed"`** (backward compatible). Define **`parent_satisfies_gate(parent, gate)`** for **`parent`** the upstream tracker row:
+
+- **`completed`** ⇒ `parent.state == "completed"`.
+- **`mr_opened`** ⇒ `parent.state in {"review", "ci", "completed"}` (Draft MR opened after adversary §4b).
+- **`code_review_ok`** ⇒ `parent.state in {"ci", "completed"}`.
+- **`branch_published`** ⇒ `origin/<parent.branch>` is fetchable and known (use only when decomposition marks it explicitly).
+
+Then **`impl_ready(t)`** = for every **`p`** in **`t.depends_on`**, **`parent_satisfies_gate(lookup(p), gate(t,p))`** holds.
+
 ```
 loop:
   if all(t.state == "completed" for t in tasks):
     break
 
-  ready = [ t for t in tasks if t.state == "pending" and all(d.state == "completed" for d in t.depends_on) ]
+  ready = [ t for t in tasks if t.state == "pending" and impl_ready(t) ]
 
   if ready:
     # IMPORTANT: dispatch ALL ready tasks IN PARALLEL via multiple Task calls
@@ -157,7 +175,10 @@ loop:
     continue
 
   if any(t.state == "pending" for t in tasks) and not any(t.state in {"running", "review", "ci"} for t in tasks):
-    # pending exists but nothing in flight — impossible in a healthy acyclic DAG
+    # With strict gates (all deps `completed`), this is a deadlock. With relaxed gates, wait for
+    # devops reconciliation or parent pushes (do not falsely stop just because dependents are slower).
+    if any(impl_ready(t) for t in tasks if t.state == "pending"):
+      continue  # transient; next iteration should dispatch ready
     surface "DAG deadlock" to human and stop
 
   # Rare: in-flight `running` / `review` work across orchestrator turns; retry loop.
@@ -173,7 +194,9 @@ Each task `t` runs through these substeps. The orchestrator runs them sequential
 **Goal:** dependents must **reuse prerequisite code**. Two patterns:
 
 1. **Stacked MR (single dependency):** `<base>` **is that task’s branch name** (e.g. `feat-<iid>-T2-slug`). The Draft MR’s **merge target branch = `<base>`**, not `development`, until the parent has merged upstream and you rebase/reparent the child branch onto `development`.
-2. **Integration branch (multiple dependencies):** `<base>` = `development`; after `git worktree add … origin/development`, **merge `origin/<each completed dep branch>`** into `<branch>` (topo-safe order) so the implementation sees all predecessors without waiting for unrelated MRs to merge, **then** run the **`node_modules` bootstrap** below (after merges, before `implementer_bot`).
+2. **Integration branch (multiple dependencies):** `<base>` = `development`; after `git worktree add … origin/development`, **merge `origin/<each dep branch>` for every dependency whose gate is already satisfied when evaluating **`impl_ready` for this task** (topo-safe order). **`branch_published` / `mr_opened`** may merge refs **before** the parent reaches **`completed`** — intentional overlap; gate **`completed`\*\* waits for CI-verified tips.
+
+**Branch discovery:** Resolve parent branch names from **`get_merge_request` / bookkeeping** once the parent satisfies **`mr_opened`** or stricter — **Do not wait for parent CI** when the gate is relaxed (stacked parallelism).
 
 ```bash
 type   = t.type if t.type in {"feat","fix"} else "feat"
@@ -183,8 +206,8 @@ branch = "feat-<iid>-<t.id>-<slug>"
 if t.depends_on == []
   base = "development"
 else if length(t.depends_on) == 1
-  # Stacked MR: branch from completed parent task branch (must exist on origin)
-  base = <completed_dep_branch_name>   # e.g. feat-338-T2-unfinished-matches-model
+  # Stacked MR: branch from parent task branch once impl_ready permits (often before parent CI completes)
+  base = <parent_dep_branch_name_on_origin>
 else
   # Parallel deps merged into feature branch — MR target stays development-oriented
   base = "development"
@@ -284,7 +307,11 @@ Tasks stay in **`ci`** until their `devops_bot` outcome is applied. The Phase 4 
 1. Wait on or collect each outstanding background `devops_bot` completion (platform notification, documented background handoff, or a **short** GitLab MCP poll for MR pipeline status if the envelope was lost).
 2. Parse the JSON envelope and apply §4d transitions (`completed` vs re-enter 4b).
 
-Do **not** enter Phase 5 until every task is **`completed`** (code review done **and** CI green per `devops_bot`).
+When applying **`completed`**, if the **`devops_bot` envelope referenced an older HEAD** than **`get_merge_request` diff head** for that MR, **re-run `devops_bot` (background)** on the latest SHA before marking **`completed`** (or poll until MR pipeline for current head succeeds).
+
+Do **not** enter Phase 5 until every task is **`completed`** (code review done **and** CI green **for the HEAD that will merge** — see rule above).
+
+After a parent **`completed`** flips true, **`impl_ready`** for pending children tightens automatically if those edges used gate **`completed`**; children with **`mr_opened`** gates may already be in flight or **`completed`**.
 
 #### 4f. Mark task completed and continue the outer loop.
 
@@ -401,6 +428,7 @@ If your own JSON parse fails (agent output not envelope-shaped):
 - Skipping HITL gates because "it looks fine."
 - Running tasks serially that have no dependency on each other (parallel dispatch is REQUIRED — single-message-multi-Task-call).
 - Awaiting **`devops_bot` synchronously** after code review when other independent Phase 4 work could proceed (default: **`run_in_background=true`**; see §4d–§4e).
+- Ignoring **`implements_after_gates`** — implement start readiness is **`impl_ready`** per `/workspace/.cursor/skills/json-handoff/SKILL.md`; **`completed`** stays CI-gated.
 - Mutating CLAUDE.md, AGENTS.md, .claude/, .cursor/ — these are harness files; agents must not edit their own definitions.
 
 ---

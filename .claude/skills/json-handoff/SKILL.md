@@ -87,6 +87,16 @@ All agents in the DAG pipeline (`intake_bot`, `product_bot`, `decomposer_bot`, `
       "type": "frontend" | "backend" | "db" | "integration" | "test" | "ui",
       "acceptance_criteria": ["AC-1", "AC-2"],
       "affected_workspace": "backend" | "frontend" | "types" | null
+    },
+    {
+      "id": "T2",
+      "title": "string",
+      "description": "string",
+      "depends_on": ["T1"],
+      "implements_after_gates": { "T1": "mr_opened" },
+      "type": "frontend" | "backend" | "db" | "integration" | "test" | "ui",
+      "acceptance_criteria": ["AC-1", "AC-2"],
+      "affected_workspace": "backend" | "frontend" | "types" | null
     }
   ]
 }
@@ -97,6 +107,13 @@ Constraints:
 - `id` values are unique across the array.
 - Every entry in `depends_on` must reference another task's `id` in the same array.
 - DAG must be acyclic. Orchestrator validates this; cycle → `stuck`.
+- **`implements_after_gates`** (optional, per-task object) — keys are **upstream** task ids (`depends_on`). Each value sets when **this** task may **leave `pending`** and enter **`/dag-execute` §4a** (worktree bootstrap + implement). Omit a parent key ⇒ **`"completed"`** (backward compatible).
+  - **`completed`** — upstream `state=="completed"` (CR + CI green).
+  - **`mr_opened`** — upstream in **`review`**, **`ci`**, or **`completed`** (Draft MR exists after adversary; parent CI may still run).
+  - **`code_review_ok`** — upstream **`ci`** or **`completed`**.
+  - **`branch_published`** — `origin/<upstream.branch>` resolves (risky; use only when decomposition calls for it).
+
+**Phase 5 (`final_review_bot`) still requires every task `completed`**, independent of **`implements_after_gates`**.
 
 ### `architect_bot.payload`
 

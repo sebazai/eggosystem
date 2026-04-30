@@ -2,7 +2,7 @@
 
 ## Slash commands
 
-- **`/dag-execute <issue_iid>`** — Product → Decompose → Architecture (HITL) → DAG implementation (**each task**: `implementer_bot` ↔ `adversary_bot` ≤3 rounds → Draft MR → CR → **`devops_bot` watches CI in the background** so other tasks can run) → Final Review → human merge.
+- **`/dag-execute <issue_iid>`** — Product → Decompose → Architecture (HITL) → DAG implementation (**each task**: `implementer_bot` ↔ `adversary_bot` ≤3 rounds → Draft MR → CR → **`devops_bot` watches CI in the background** so other tasks can run) → Final Review → human merge. **`implements_after_gates`** (optional on `decomposer_bot` tasks) lowers the bar for starting **implementation** (`impl_ready`; e.g. **`mr_opened`** on stacked parents) while **`final_review_bot` still waits for every task `completed`** (CI green).
 - **`/observe <mr_iid>`** — post-merge analysis (CI logs, optional Grafana/Sentry, git revert detection). Off the critical path.
 
 ## Agents (10)

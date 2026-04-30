@@ -49,7 +49,11 @@ Take stories from `product_bot.payload.stories` and emit a flat task DAG. Each t
    - DB migrations **may** precede backend **or** ship in the same backend task — choose **one** coherent story, not both unless two MRs are clearly justified.
    - Backend **usually** precedes or stacks with frontend that consumes new endpoints; parallelize frontend only when the architecture contract is sufficient and parallel work will not thrash shared files.
    - **Do not** force `packages/types` as an upstream task by default — include type changes in the **same** backend or frontend task unless a second consumer MR must land first (rare).
-5. Validate the DAG: no cycles, every `depends_on` ID exists in the task list.
+5. Optionally set **`implements_after_gates`** on a task (see `/workspace/.claude/skills/json-handoff/SKILL.md`): for each **`p`** in **`depends_on`**, declare when **`pending` → Phase 4a** may begin. **Default omission** ⇒ **`completed`** parent (backward compatible).
+   - Stacked downstream MR (single parent branch): prefer **`mr_opened`** so the child can bootstrap while **`devops_bot`** polls the parent.
+   - Use **`completed`** only when the child genuinely needs upstream CI verdict (risky coupling to parent behavior) or **`code_review_ok`** when MR contract must be reviewer-approved before child work begins.
+   - Rarely **`branch_published`** if child only needs **`origin/<parent-branch>`** before Draft MR exists — call out rework risk explicitly in **`description`**.
+6. Validate the DAG: no cycles, every `depends_on` ID exists in the task list.
 
 ## Output
 
@@ -72,9 +76,20 @@ Return ONLY the JSON envelope. `payload` schema:
       "title": "Add GET /v1/stream-url endpoint",
       "description": "Returns stream URL for authed user.",
       "depends_on": ["T1"],
+      "implements_after_gates": { "T1": "completed" },
       "type": "backend",
       "acceptance_criteria": ["AC-2"],
       "affected_workspace": "backend"
+    },
+    {
+      "id": "T3",
+      "title": "Dashboard uses new endpoint",
+      "description": "Stacked frontend MR on T2.",
+      "depends_on": ["T2"],
+      "implements_after_gates": { "T2": "mr_opened" },
+      "type": "frontend",
+      "acceptance_criteria": ["AC-3"],
+      "affected_workspace": "frontend"
     }
   ]
 }
