@@ -6,6 +6,7 @@ import type { MatchTeamInfo, Player, MatchTeamLineup } from "@eggosystem/types";
 import { PlayerCard, PlayerComparisonSection } from "./components";
 import { useMatchTeamLineups } from "@/hooks/data/useMatchTeamLineups";
 import { usePlayerStatsWithFallback } from "@/hooks/data/usePlayerStatsWithFallback";
+import { orderMatchParticipantsBySideHomeLeft } from "@/lib/order-match-teams-home-left-away";
 
 interface TeamLineupsProps {
   teams: MatchTeamInfo[];
@@ -21,9 +22,11 @@ export const TeamLineups = ({
   // Fetch real lineup data
   const { lineups, isLoading } = useMatchTeamLineups(matchId);
 
+  const teamsOrdered = orderMatchParticipantsBySideHomeLeft(teams);
+
   // Get team names safely (teams is now an array)
-  const team1Name = teams?.[0]?.name || "Team 1";
-  const team2Name = teams?.[1]?.name || "Team 2";
+  const team1Name = teamsOrdered[0]?.name || "Team 1";
+  const team2Name = teamsOrdered[1]?.name || "Team 2";
 
   // Convert API data to component format - using available player data
   const convertApiPlayersToPlayers = (
@@ -54,15 +57,14 @@ export const TeamLineups = ({
   };
 
   // Get real players if available
-  const realTeam1Players =
-    lineups && Object.keys(lineups).length > 0
-      ? convertApiPlayersToPlayers(Object.values(lineups)[0]?.players || [])
+  const lineupFor = (teamId: number | undefined) =>
+    teamId != null && lineups?.[String(teamId)]
+      ? convertApiPlayersToPlayers(lineups[String(teamId)]!.players || [])
       : [];
 
-  const realTeam2Players =
-    lineups && Object.keys(lineups).length > 1
-      ? convertApiPlayersToPlayers(Object.values(lineups)[1]?.players || [])
-      : [];
+  const realTeam1Players = lineupFor(teamsOrdered[0]?.id);
+
+  const realTeam2Players = lineupFor(teamsOrdered[1]?.id);
 
   // Use real data only - no mock data
   const team1Players = realTeam1Players;

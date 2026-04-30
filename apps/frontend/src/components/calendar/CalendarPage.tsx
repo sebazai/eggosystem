@@ -51,6 +51,10 @@ import {
 } from "./CalendarMoreEventsDialog";
 import Link from "next/link";
 import { createNextUrl } from "@/lib/utils";
+import {
+  calendarMatchHomeLeftTeamNames,
+  calendarMatchVersusTitle
+} from "@/lib/order-match-teams-home-left-away";
 
 interface EventDetails {
   id: string;
@@ -172,10 +176,11 @@ const transformMatchesToEvents = (matches: MatchWithStreamUrls[]) => {
 
   return sortedMatches.map((match, index) => {
     const hasStream = match.stream_urls && match.stream_urls.length > 0;
+    const { leftName, rightName } = calendarMatchHomeLeftTeamNames(match);
 
     return {
       id: match.match_id,
-      title: match.title,
+      title: calendarMatchVersusTitle(match),
       start: match.match_start,
       end: match.match_end,
       backgroundColor: DIVISIONS[match.league_tier]?.color || "#6b7280", // fallback to gray
@@ -189,8 +194,8 @@ const transformMatchesToEvents = (matches: MatchWithStreamUrls[]) => {
       extendedProps: {
         league: match.league_name,
         streamUrl: match.stream_urls,
-        team1: match.match_team1,
-        team2: match.match_team2,
+        team1: leftName,
+        team2: rightName,
         tier: match.league_tier,
         hasStream: hasStream,
         status: match.match_status,
@@ -512,50 +517,58 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
                   .filter(
                     (match) => match.match_status === MatchStatus.SCHEDULED
                   )
-                  .map((match) => (
-                    <div
-                      key={match.match_id}
-                      className="flex flex-col gap-3 p-3 sm:p-4 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
-                      onClick={() => {
-                        handleEventSelect(
-                          createEventDetails(
-                            match.match_id,
-                            match.title,
-                            match.match_start,
-                            match.match_end,
-                            match.league_name,
-                            match.stream_urls,
-                            match.match_team1,
-                            match.match_team2,
-                            match.match_status
-                          )
-                        );
-                      }}
-                    >
-                      <div className="flex items-start gap-3 sm:gap-4 flex-1 min-w-0">
-                        <div
-                          className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full flex-shrink-0 mt-1"
-                          style={{
-                            backgroundColor: DIVISIONS[match.league_tier]?.color
-                          }}
-                        />
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold break-words text-sm sm:text-base">
-                            {match.title}
-                          </h3>
-                          <p className="text-xs sm:text-sm text-muted-foreground mt-1 break-words">
-                            {formatInTimezone(match.match_start, "PPP 'at' p")}{" "}
-                            - {formatInTimezone(match.match_end, "p")}
-                          </p>
-                          <div className="flex gap-2 mt-2 flex-wrap">
-                            <Badge variant="secondary" className="text-xs">
-                              {match.league_name}
-                            </Badge>
+                  .map((match) => {
+                    const { leftName, rightName } =
+                      calendarMatchHomeLeftTeamNames(match);
+                    return (
+                      <div
+                        key={match.match_id}
+                        className="flex flex-col gap-3 p-3 sm:p-4 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+                        onClick={() => {
+                          handleEventSelect(
+                            createEventDetails(
+                              match.match_id,
+                              calendarMatchVersusTitle(match),
+                              match.match_start,
+                              match.match_end,
+                              match.league_name,
+                              match.stream_urls,
+                              leftName,
+                              rightName,
+                              match.match_status
+                            )
+                          );
+                        }}
+                      >
+                        <div className="flex items-start gap-3 sm:gap-4 flex-1 min-w-0">
+                          <div
+                            className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full flex-shrink-0 mt-1"
+                            style={{
+                              backgroundColor:
+                                DIVISIONS[match.league_tier]?.color
+                            }}
+                          />
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-semibold break-words text-sm sm:text-base">
+                              {calendarMatchVersusTitle(match)}
+                            </h3>
+                            <p className="text-xs sm:text-sm text-muted-foreground mt-1 break-words">
+                              {formatInTimezone(
+                                match.match_start,
+                                "PPP 'at' p"
+                              )}{" "}
+                              - {formatInTimezone(match.match_end, "p")}
+                            </p>
+                            <div className="flex gap-2 mt-2 flex-wrap">
+                              <Badge variant="secondary" className="text-xs">
+                                {match.league_name}
+                              </Badge>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
               </div>
             </CardContent>
           </Card>

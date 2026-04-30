@@ -6,6 +6,7 @@ import type { MatchTeamInfo, MatchHistoryItem } from "@eggosystem/types";
 import { TeamRecentForm } from "./components";
 import { useFilteredTeamMatchHistory } from "@/hooks/data/filtered/useFilteredTeamMatchHistory";
 import { getTeamDataWithFallback } from "./data-utils";
+import { orderMatchParticipantsBySideHomeLeft } from "@/lib/order-match-teams-home-left-away";
 
 interface TeamFormComparisonProps {
   teams: MatchTeamInfo[];
@@ -16,11 +17,12 @@ export const TeamFormComparison = ({
   teams,
   baseFilters
 }: TeamFormComparisonProps) => {
-  // Get team IDs and names
-  const team1Id = teams?.[0]?.id;
-  const team2Id = teams?.[1]?.id;
-  const team1Name = teams?.[0]?.name || "Team 1";
-  const team2Name = teams?.[1]?.name || "Team 2";
+  const teamsOrdered = orderMatchParticipantsBySideHomeLeft(teams);
+
+  const team1Id = teamsOrdered[0]?.id;
+  const team2Id = teamsOrdered[1]?.id;
+  const team1Name = teamsOrdered[0]?.name || "Team 1";
+  const team2Name = teamsOrdered[1]?.name || "Team 2";
 
   // Fetch real match history data - only if we have valid team IDs
   const { teamMatchHistory: team1History, isLoading: isLoadingTeam1 } =

@@ -20,6 +20,10 @@ import {
   CalendarMoreEventsDialog,
   useCalendarMoreLinkDialog
 } from "@/components/calendar/CalendarMoreEventsDialog";
+import {
+  calendarMatchHomeLeftTeamNames,
+  calendarMatchVersusTitle
+} from "@/lib/order-match-teams-home-left-away";
 
 // Division definitions with darker, more readable colors
 const DIVISIONS: Record<number, { color: string; borderColor: string }> = {
@@ -68,10 +72,11 @@ const transformMatchesToEvents = (matches: MatchWithStreamUrls[]) => {
 
   return sortedMatches.map((match, index) => {
     const hasStream = match.stream_urls && match.stream_urls.length > 0;
+    const { leftName, rightName } = calendarMatchHomeLeftTeamNames(match);
 
     return {
       id: match.match_id,
-      title: match.title,
+      title: calendarMatchVersusTitle(match),
       start: match.match_start,
       end: match.match_end,
       backgroundColor: DIVISIONS[match.league_tier]?.color || "#6b7280",
@@ -83,8 +88,8 @@ const transformMatchesToEvents = (matches: MatchWithStreamUrls[]) => {
       extendedProps: {
         league: match.league_name,
         streamUrl: match.stream_urls,
-        team1: match.match_team1,
-        team2: match.match_team2,
+        team1: leftName,
+        team2: rightName,
         tier: match.league_tier,
         hasStream: hasStream,
         status: match.match_status,

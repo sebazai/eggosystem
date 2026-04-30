@@ -8,6 +8,7 @@ import Link from "next/link";
 import React from "react";
 import { useSearchParams } from "next/navigation";
 import { NextImageFallback } from "@/components/layout/NextImageFallback";
+import { orderMatchParticipantsBySideHomeLeft } from "@/lib/order-match-teams-home-left-away";
 
 interface PlayerStatsForTeamFilters {
   seasons: string;
@@ -54,7 +55,16 @@ export const PlayerStatisticsForTeam = ({
       statsMap.get(player.team_id)?.players.push(player);
     }
 
-    return Array.from(statsMap.values());
+    return Array.from(statsMap.values()).sort((a, b) => {
+      const order = orderMatchParticipantsBySideHomeLeft(
+        Object.values(teams)
+      ).map((t) => t.id);
+      const ia = order.indexOf(a.team.id);
+      const ib = order.indexOf(b.team.id);
+      const iaN = ia === -1 ? 999 : ia;
+      const ibN = ib === -1 ? 999 : ib;
+      return iaN - ibN;
+    });
   }, [playerStats, teams]);
 
   const handleStatClick = (stat: "CT" | "T" | undefined) => {

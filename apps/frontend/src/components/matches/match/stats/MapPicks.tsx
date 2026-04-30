@@ -14,6 +14,7 @@ import { useGetMatchGamesByExternalMatchRoomId } from "@/hooks/data/useGetMatchG
 import { useMemo } from "react";
 import { useParams } from "next/navigation";
 import { MatchMapPicksSkeleton } from "@/components/loading";
+import { dualTeamScoresToHomeLeftDisplay } from "@/lib/order-match-teams-home-left-away";
 
 interface MatchMapPicksProps {
   matchId: number;
@@ -69,6 +70,12 @@ export const MatchMapPicks = ({
         {allMatchGameMaps
           .sort((a, b) => (a.map_order ?? 0) - (b.map_order ?? 0))
           .map((mapMatchGame, index) => {
+            const { leftScore, rightScore } = dualTeamScoresToHomeLeftDisplay({
+              team1_score: mapMatchGame.team1_score,
+              team2_score: mapMatchGame.team2_score,
+              team1_side: mapMatchGame.team1_side,
+              team2_side: mapMatchGame.team2_side
+            });
             return (
               <div
                 key={index}
@@ -101,11 +108,11 @@ export const MatchMapPicks = ({
 
                 <div className="flex items-center gap-1 p-3 z-10 w-full justify-end">
                   <span className="text-lg w-6 font-black text-center">
-                    {mapMatchGame.team1_score}
+                    {leftScore}
                   </span>
                   <span className="text-md">-</span>
                   <span className="text-lg w-6 font-black text-center">
-                    {mapMatchGame.team2_score}
+                    {rightScore}
                   </span>
                 </div>
               </div>
