@@ -91,7 +91,7 @@ describe("enqueueManualDashboardDemoParse", () => {
           status: "ONGOING" satisfies Match["status"]
         }
       ])
-      .mockResolvedValue([] as never);
+      .mockResolvedValueOnce({ affectedRows: 1 });
 
     const outcome = await enqueueManualDashboardDemoParse({
       matchGameId: 5,
@@ -211,7 +211,7 @@ describe("finishMatchWithComputedEndTime", () => {
     mockGetConnection.mockResolvedValue(
       mockConn as unknown as Awaited<ReturnType<typeof getConnection>>
     );
-    mockRunQuery.mockResolvedValue([] as never);
+    mockRunQuery.mockResolvedValue({ affectedRows: 1 });
 
     const start = "2025-06-01T10:00:00.000Z";
     const result = await finishMatchWithComputedEndTime([
@@ -252,7 +252,9 @@ describe("finishMatchWithComputedEndTime", () => {
     mockGetConnection.mockResolvedValue(
       mockConn as unknown as Awaited<ReturnType<typeof getConnection>>
     );
-    mockRunQuery.mockResolvedValue([] as never);
+    mockRunQuery
+      .mockResolvedValueOnce({ affectedRows: 1 })
+      .mockResolvedValueOnce({ affectedRows: 1 });
 
     const start = "2025-06-01T10:00:00.000Z";
     const result = await finishMatchWithComputedEndTime([
@@ -277,6 +279,74 @@ describe("finishMatchWithComputedEndTime", () => {
     expect(mockConn.commit).toHaveBeenCalledTimes(1);
   });
 
+  it("returns not applied when UPDATE affects 0 rows (race)", async () => {
+    const mockConn = {
+      beginTransaction: jest.fn(),
+      commit: jest.fn(),
+      rollback: jest.fn(),
+      release: jest.fn()
+    };
+    mockGetConnection.mockResolvedValue(
+      mockConn as unknown as Awaited<ReturnType<typeof getConnection>>
+    );
+    mockRunQuery.mockResolvedValue({ affectedRows: 0 });
+
+    const result = await finishMatchWithComputedEndTime([
+      {
+        id: 3,
+        start_timestamp: "2025-06-01T10:00:00.000Z",
+        best_of: 1,
+        status: "ONGOING" satisfies Match["status"]
+      }
+    ]);
+
+    expect(result).toEqual({
+      applied: false,
+      match_ids: [],
+      end_timestamp: null,
+      skipped_reason:
+        "No rows were updated; matches may have been finished by another request."
+    });
+    expect(mockConn.rollback).toHaveBeenCalledTimes(1);
+    expect(mockConn.commit).not.toHaveBeenCalled();
+    expect(mockConn.release).toHaveBeenCalledTimes(1);
+  });
+
+  it("applies only ids with positive affectedRows when one races", async () => {
+    const mockConn = {
+      beginTransaction: jest.fn(),
+      commit: jest.fn(),
+      rollback: jest.fn(),
+      release: jest.fn()
+    };
+    mockGetConnection.mockResolvedValue(
+      mockConn as unknown as Awaited<ReturnType<typeof getConnection>>
+    );
+    mockRunQuery
+      .mockResolvedValueOnce({ affectedRows: 0 })
+      .mockResolvedValueOnce({ affectedRows: 1 });
+
+    const start = "2025-06-01T10:00:00.000Z";
+    const result = await finishMatchWithComputedEndTime([
+      {
+        id: 20,
+        start_timestamp: start,
+        best_of: 1,
+        status: "ONGOING" satisfies Match["status"]
+      },
+      {
+        id: 21,
+        start_timestamp: start,
+        best_of: 1,
+        status: "ONGOING" satisfies Match["status"]
+      }
+    ]);
+
+    expect(result.applied).toBe(true);
+    expect(result.match_ids).toEqual([21]);
+    expect(mockConn.commit).toHaveBeenCalledTimes(1);
+  });
+
   it("uses caller connection without beginning a new transaction", async () => {
     const mockConn = {
       beginTransaction: jest.fn(),
@@ -284,7 +354,7 @@ describe("finishMatchWithComputedEndTime", () => {
       rollback: jest.fn(),
       release: jest.fn()
     };
-    mockRunQuery.mockResolvedValue([] as never);
+    mockRunQuery.mockResolvedValue({ affectedRows: 1 });
 
     await finishMatchWithComputedEndTime(
       [

@@ -4,8 +4,6 @@ import type {
   Match
 } from "@eggosystem/types";
 import { MatchStatus } from "@eggosystem/types";
-
-const MARK_FINISHED_NOT_REQUESTED_SKIP = "not_requested";
 import type { PoolConnection } from "mysql2/promise";
 import moment from "moment-timezone";
 import { getConnection } from "../db/mysqlConnection";
@@ -21,6 +19,7 @@ import {
 
 type ManualDemoParseSource = "manual" | "faceit";
 
+const MARK_FINISHED_NOT_REQUESTED_SKIP = "not_requested";
 const DEMO_URL_PREFIX_LEN = 64;
 
 type DemoUrlLogFingerprint = {
@@ -181,7 +180,7 @@ export const enqueueManualDashboardDemoParse = async (input: {
 /**
  * Resolved `Matches` row shape for {@link finishMatchWithComputedEndTime}.
  */
-export interface FinishMatchWithComputedEndTimeRowInput {
+interface FinishMatchWithComputedEndTimeRowInput {
   id: number;
   start_timestamp: string | Date | null | undefined;
   best_of: unknown;
@@ -302,13 +301,24 @@ export async function finishMatchWithComputedEndTime(
         .utc(row.startIso)
         .add(row.best_of, "hours")
         .toISOString();
-      await runQuery(
+      const updateResult = await runQuery<{ affectedRows: number }>(
         `UPDATE Matches SET status = ?, end_timestamp = ? WHERE id = ? AND status NOT IN ('FINISHED', 'FORFEIT')`,
         [MatchStatus.FINISHED, formatDateForDatabase(endIso), row.id],
         conn
       );
-      appliedIds.push(row.id);
-      endTimestamps.push(endIso);
+      if (updateResult.affectedRows > 0) {
+        appliedIds.push(row.id);
+        endTimestamps.push(endIso);
+      }
+    }
+
+    if (appliedIds.length === 0) {
+      if (ownTransaction) {
+        await conn.rollback();
+      }
+      return validationResult(
+        "No rows were updated; matches may have been finished by another request."
+      );
     }
 
     if (ownTransaction) {
