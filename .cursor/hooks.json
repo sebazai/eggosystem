@@ -8,6 +8,11 @@
         "timeout": 5
       },
       {
+        "command": ".cursor/hooks/run-claude-project-hook.sh enforce-typecheck-command.sh",
+        "matcher": "Shell",
+        "timeout": 5
+      },
+      {
         "command": ".cursor/hooks/run-claude-project-hook.sh warn-directory-execution.sh",
         "matcher": "Shell",
         "timeout": 5

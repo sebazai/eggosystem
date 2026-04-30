@@ -1,9 +1,13 @@
 import type { NextConfig } from "next";
+import path from "node:path";
 
 const nextConfig: NextConfig = {
   output: "standalone",
   reactStrictMode: true,
   basePath: process.env.NEXT_PUBLIC_BASE_PATH || "",
+  turbopack: {
+    root: path.join(__dirname, "..", "..")
+  },
   transpilePackages: [
     "@eggosystem/types",
     "@eggosystem/eslint",
