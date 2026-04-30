@@ -5,11 +5,7 @@ import request from "supertest";
 import type express from "express";
 import { createExpressTestApp } from "../../test-utils";
 import matchRouter from "./match.routes";
-import type {
-  MatchMapsPlayed,
-  MatchTeamLineup,
-  TeamStatsResponse
-} from "@eggosystem/types";
+import type { MatchTeamLineup, TeamStatsResponse } from "@eggosystem/types";
 import { runQuery } from "../../db/mysqlRunQuery";
 import { getConnection } from "../../db/mysqlConnection";
 import type { PoolConnection } from "mysql2/promise";

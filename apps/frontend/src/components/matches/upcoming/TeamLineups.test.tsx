@@ -19,9 +19,8 @@ const mockUsePlayerStatsWithFallback =
 
 // Mock child components - PlayerCard is in the components subdirectory
 jest.mock("./components", () => {
-  const actual = jest.requireActual<typeof import("./components")>(
-    "./components"
-  );
+  const actual =
+    jest.requireActual<typeof import("./components")>("./components");
   return {
     ...actual,
     PlayerCard: ({ player }: { player: Record<string, unknown> }) => (

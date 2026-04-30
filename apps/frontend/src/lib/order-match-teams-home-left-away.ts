@@ -62,7 +62,7 @@ export function orderMatchParticipantsBySideHomeLeft<
   return [...orderTwoParticipantsBySideHomeLeft(a, b)];
 }
 
-export interface DualTeamRowSlot {
+interface DualTeamRowSlot {
   team1_side: MatchTeamSide;
   team2_side: MatchTeamSide;
   team1_name: string;
@@ -96,32 +96,7 @@ export function dualTeamRowToHomeLeftDisplay(row: DualTeamRowSlot): {
   };
 }
 
-export function dualTeamScoresToHomeLeftDisplay(row: {
-  team1_score: number;
-  team2_score: number;
-  team1_side: MatchTeamSide;
-  team2_side: MatchTeamSide;
-  team1_name?: string;
-  team2_name?: string;
-}): { leftScore: number; rightScore: number } {
-  const a = {
-    side: row.team1_side,
-    score: row.team1_score,
-    name: row.team1_name
-  };
-  const b = {
-    side: row.team2_side,
-    score: row.team2_score,
-    name: row.team2_name
-  };
-  const [l, r] =
-    a.name && b.name
-      ? orderTwoParticipantsBySideHomeLeft(a, b)
-      : orderTwoByMatchTeamSideHomeLeftAway(a, b);
-  return { leftScore: l.score, rightScore: r.score };
-}
-
-export type CalendarMatchHomeLeftInput = {
+type CalendarMatchHomeLeftInput = {
   match_team1: string;
   match_team2: string;
   teams?: MatchWithStreamUrls["teams"];
@@ -194,22 +169,6 @@ export function matchScoreHomeAwayPresentation(input: {
     homeWon: homeScore > awayScore,
     awayWon: awayScore > homeScore
   };
-}
-
-export function focalTeamWonVersusOpponent(input: {
-  focalScore: number;
-  opponentScore: number;
-  focalSide: MatchTeamSide;
-  opponentSide: MatchTeamSide;
-}): boolean {
-  const { homeScore, awayScore } = homeAwayScoresFromFocalVersusOpponent(input);
-  if (input.focalSide === "home" && input.opponentSide === "away") {
-    return homeScore > awayScore;
-  }
-  if (input.focalSide === "away" && input.opponentSide === "home") {
-    return awayScore > homeScore;
-  }
-  return input.focalScore > input.opponentScore;
 }
 
 export function homeLeftVersusLabelFromSides(input: {

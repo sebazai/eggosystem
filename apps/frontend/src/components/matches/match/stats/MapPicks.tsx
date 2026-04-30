@@ -79,16 +79,34 @@ export const MatchMapPicks = ({
           .map((mapMatchGame, index) => {
             const [leftScore, rightScore] = (() => {
               if (!orderedMatchTeams) {
-                return [mapMatchGame.team1_score, mapMatchGame.team2_score] as const;
+                return [
+                  mapMatchGame.team1_score,
+                  mapMatchGame.team2_score
+                ] as const;
               }
               const [left, right] = orderedMatchTeams;
-              if (left.id === mapMatchGame.team1_id && right.id === mapMatchGame.team2_id) {
-                return [mapMatchGame.team1_score, mapMatchGame.team2_score] as const;
+              if (
+                left.id === mapMatchGame.team1_id &&
+                right.id === mapMatchGame.team2_id
+              ) {
+                return [
+                  mapMatchGame.team1_score,
+                  mapMatchGame.team2_score
+                ] as const;
               }
-              if (left.id === mapMatchGame.team2_id && right.id === mapMatchGame.team1_id) {
-                return [mapMatchGame.team2_score, mapMatchGame.team1_score] as const;
+              if (
+                left.id === mapMatchGame.team2_id &&
+                right.id === mapMatchGame.team1_id
+              ) {
+                return [
+                  mapMatchGame.team2_score,
+                  mapMatchGame.team1_score
+                ] as const;
               }
-              return [mapMatchGame.team1_score, mapMatchGame.team2_score] as const;
+              return [
+                mapMatchGame.team1_score,
+                mapMatchGame.team2_score
+              ] as const;
             })();
             return (
               <div

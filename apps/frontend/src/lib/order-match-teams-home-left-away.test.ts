@@ -2,8 +2,6 @@ import {
   calendarMatchHomeLeftTeamNames,
   calendarMatchVersusTitle,
   dualTeamRowToHomeLeftDisplay,
-  dualTeamScoresToHomeLeftDisplay,
-  focalTeamWonVersusOpponent,
   homeAwayScoresFromFocalVersusOpponent,
   matchScoreHomeAwayPresentation,
   homeLeftVersusLabelFromSides,
@@ -90,18 +88,6 @@ describe("dualTeamRowToHomeLeftDisplay", () => {
     const d = dualTeamRowToHomeLeftDisplay(row);
     expect(d.left.name).toBe("Alpha");
     expect(d.right.name).toBe("Beta");
-  });
-});
-
-describe("dualTeamScoresToHomeLeftDisplay", () => {
-  it("orders scores for map strip", () => {
-    const o = dualTeamScoresToHomeLeftDisplay({
-      team1_score: 13,
-      team2_score: 10,
-      team1_side: "away",
-      team2_side: "home"
-    });
-    expect(o).toEqual({ leftScore: 10, rightScore: 13 });
   });
 });
 
@@ -245,19 +231,6 @@ describe("homeAwayScoresFromFocalVersusOpponent", () => {
         opponentSide: null
       })
     ).toEqual({ homeScore: 9, awayScore: 11 });
-  });
-});
-
-describe("focalTeamWonVersusOpponent", () => {
-  it("detects win when focal is away with higher score on the right", () => {
-    expect(
-      focalTeamWonVersusOpponent({
-        focalScore: 16,
-        opponentScore: 14,
-        focalSide: "away",
-        opponentSide: "home"
-      })
-    ).toBe(true);
   });
 });
 

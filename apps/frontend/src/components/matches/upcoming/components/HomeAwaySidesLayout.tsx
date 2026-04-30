@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-export interface HomeAwaySidesLayoutProps {
+interface HomeAwaySidesLayoutProps {
   /** Left column (home) in LTR; first when stacked on small viewports */
   home: ReactNode;
   /** Right column (away) in LTR; second when stacked */
