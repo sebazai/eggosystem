@@ -193,7 +193,19 @@ export const resolveRoundRobinBo2SplitFromFaceit = (
   }
 
   // Short-circuit: nothing to do if both rows are already terminal.
+  // This path is "undocumented" in the sense that FaceIT should not normally
+  // emit another `match_status_finished` webhook after both siblings have been
+  // resolved to terminal — but a webhook retry, manual reprocess, or a rare
+  // FaceIT redelivery can land here. Emit a structured warning so we can
+  // observe and audit such occurrences (S2-AC-3) without mutating any rows.
   if (isTerminal(slot0.status) && isTerminal(slot1.status)) {
+    logger.warn(
+      `[2xBO1 resolver] Both siblings already terminal for room ${externalMatchRoomId} ` +
+        `(slot 0 match_id=${slot0.id} status=${slot0.status}, ` +
+        `slot 1 match_id=${slot1.id} status=${slot1.status}). ` +
+        `Webhook=${isForfeitWebhook ? "forfeit" : "finished"} — no rows mutated. ` +
+        `This usually indicates a retried/replayed webhook delivery.`
+    );
     return [];
   }
 

@@ -5,6 +5,18 @@ import {
   type ResolveRoundRobinBo2SplitFromFaceitParams
 } from "./faceit-2xbo1-resolver.services";
 import type { Match, MatchStatusFinishedWebhook } from "@eggosystem/types";
+import { logger } from "../utils/app-logger";
+
+jest.mock("../utils/app-logger", () => ({
+  logger: {
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+    debug: jest.fn()
+  }
+}));
+
+const mockLoggerWarn = logger.warn as jest.MockedFunction<typeof logger.warn>;
 
 const FACEIT_FORFEIT_STARTED_AT = "1970-01-01T00:00:00Z";
 const REAL_STARTED_AT = "2025-04-29T19:00:00Z";
@@ -79,6 +91,10 @@ const forfeitPayload = (id: string = "1-room-x"): FinishedPayload =>
   });
 
 describe("resolveRoundRobinBo2SplitFromFaceit", () => {
+  beforeEach(() => {
+    mockLoggerWarn.mockClear();
+  });
+
   describe("guard rails", () => {
     it("returns [] when matchesByRoom length !== 2", () => {
       const result = resolveRoundRobinBo2SplitFromFaceit(
@@ -87,7 +103,7 @@ describe("resolveRoundRobinBo2SplitFromFaceit", () => {
       expect(result).toEqual([]);
     });
 
-    it("returns [] when both siblings already terminal (short-circuit)", () => {
+    it("returns [] when both siblings already terminal (short-circuit) and emits a structured warning", () => {
       const result = resolveRoundRobinBo2SplitFromFaceit(
         baseParams({
           matchesByRoom: [
@@ -97,9 +113,18 @@ describe("resolveRoundRobinBo2SplitFromFaceit", () => {
         })
       );
       expect(result).toEqual([]);
+      expect(mockLoggerWarn).toHaveBeenCalledTimes(1);
+      const warnArg = mockLoggerWarn.mock.calls[0][0];
+      expect(typeof warnArg).toBe("string");
+      expect(warnArg).toContain("Both siblings already terminal");
+      expect(warnArg).toContain("match_id=12571");
+      expect(warnArg).toContain("FORFEIT");
+      expect(warnArg).toContain("match_id=12572");
+      expect(warnArg).toContain("FINISHED");
+      expect(warnArg).toContain("no rows mutated");
     });
 
-    it("returns [] when both siblings already terminal even on a forfeit webhook", () => {
+    it("returns [] when both siblings already terminal even on a forfeit webhook (warning emitted)", () => {
       const result = resolveRoundRobinBo2SplitFromFaceit(
         baseParams({
           isForfeitWebhook: true,
@@ -111,6 +136,20 @@ describe("resolveRoundRobinBo2SplitFromFaceit", () => {
         })
       );
       expect(result).toEqual([]);
+      expect(mockLoggerWarn).toHaveBeenCalledTimes(1);
+      expect(mockLoggerWarn.mock.calls[0][0]).toContain("Webhook=forfeit");
+    });
+
+    it("does not warn for terminal-pair short-circuit when only one sibling is terminal (Case A path, no warning)", () => {
+      resolveRoundRobinBo2SplitFromFaceit(
+        baseParams({
+          matchesByRoom: [
+            makeMatch({ id: 12571, status: "FORFEIT" }),
+            makeMatch({ id: 12572, status: "ONGOING" })
+          ]
+        })
+      );
+      expect(mockLoggerWarn).not.toHaveBeenCalled();
     });
   });
 

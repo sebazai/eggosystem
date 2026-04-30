@@ -288,6 +288,198 @@ describe("standings.services", () => {
       expect(teamB?.games_played).toBe(4);
     });
 
+    it("BO2-as-2xBO1 (FORFEIT, FORFEIT): both siblings forfeit in the same room — counts exactly 2 games per team, not 4 (no double-count, S2-AC-1)", async () => {
+      // Slot accounting: each of the two sibling FORFEIT rows contributes one
+      // slot. Without the per-room forfeit cap, each FORFEIT would expand all
+      // `detailed_results` from the FaceIT details API and double-count.
+      mockRunQuery.mockResolvedValue([
+        makeMatchRow({
+          id: 81,
+          external_match_room_id: roomA,
+          status: "FORFEIT",
+          is_round_robin_bo2_as_2xbo1: true
+        }),
+        makeMatchRow({
+          id: 82,
+          external_match_room_id: roomA,
+          status: "FORFEIT",
+          is_round_robin_bo2_as_2xbo1: true
+        })
+      ] as DbMatchRow[]);
+
+      // FaceIT details API typically returns `detailed_results` for both maps
+      // even when the room ended in a double-forfeit (e.g. one team wins both
+      // by walkover). Test fixture mirrors that worst-case shape so the cap is
+      // exercised.
+      mockGetFaceITMatchDetails.mockResolvedValue(
+        championshipDetailsTwoGames as never
+      );
+
+      const result = await getDivStandings("league-1");
+
+      expect(mockGetFaceitMatchStats).not.toHaveBeenCalled();
+      // One details call per sibling row — same FaceIT match id is queried
+      // twice, but each row only consumes one `detailed_results` slot.
+      expect(mockGetFaceITMatchDetails).toHaveBeenCalledTimes(2);
+      expect(mockGetFaceITMatchDetails).toHaveBeenNthCalledWith(1, roomA);
+      expect(mockGetFaceITMatchDetails).toHaveBeenNthCalledWith(2, roomA);
+
+      const teamA = result.find((t) => t.team_name === teamAName);
+      const teamB = result.find((t) => t.team_name === teamBName);
+      expect(teamA?.games_played).toBe(2);
+      expect(teamB?.games_played).toBe(2);
+      // S2-AC-3 documented exception: when both siblings are FORFEIT,
+      // `getFaceitMatchInfoForForfeit` is called twice (once per row) for the
+      // same FaceIT match id. With `{ onlyFirstGame: true }` enforced on both
+      // rows (the slot-accounting cap), each call returns
+      // `detailed_results[0]` — i.e. the same FaceIT-reported slot. The
+      // standings layer therefore credits/debits the same outcome twice. This
+      // is acceptable for league points: a (FORFEIT, FORFEIT) outcome is
+      // typically a no-show by one side, FaceIT reports a single winning
+      // faction, and each forfeited slot gives that faction a 3-point win.
+      // The cap guarantees no points-inflation beyond two slots.
+      expect(teamA?.maps_won).toBe(2);
+      expect(teamB?.maps_won).toBe(0);
+      expect(teamA?.points).toBe(6);
+      expect(teamB?.points).toBe(0);
+    });
+
+    it("BO2-as-2xBO1 (FINISHED, FORFEIT): mirrors room 1-f30abfb4-04e1-4d17-8245-b16614e5cf06 — slot 0 forfeit + slot 1 played, exactly 2 games per team", async () => {
+      // Mirrors the production room from issue #378 / S2-AC-2. SQL groups the
+      // FINISHED row to a single entry; the FORFEIT sibling is processed
+      // separately with `onlyFirstGame: true`. Two slots → two games per team.
+      mockRunQuery.mockResolvedValue([
+        makeMatchRow({
+          id: 12571,
+          external_match_room_id: roomA,
+          status: "FORFEIT",
+          is_round_robin_bo2_as_2xbo1: true
+        }),
+        makeMatchRow({
+          id: 12572,
+          external_match_room_id: roomA,
+          status: MatchStatus.FINISHED,
+          is_round_robin_bo2_as_2xbo1: true
+        })
+      ] as DbMatchRow[]);
+
+      mockGetFaceITMatchDetails.mockResolvedValue(
+        championshipDetailsTwoGames as never
+      );
+      mockGetFaceitMatchStats.mockResolvedValue(
+        faceitMatchStatsOneRound as never
+      );
+
+      const result = await getDivStandings("league-1");
+
+      // Exactly two slots counted, no SCHEDULED stragglers, no double-count.
+      const teamA = result.find((t) => t.team_name === teamAName);
+      const teamB = result.find((t) => t.team_name === teamBName);
+      expect(teamA?.games_played).toBe(2);
+      expect(teamB?.games_played).toBe(2);
+      expect(mockGetFaceITMatchDetails).toHaveBeenCalledTimes(1);
+      expect(mockGetFaceitMatchStats).toHaveBeenCalledTimes(1);
+    });
+
+    it("BO2-as-2xBO1 (FORFEIT, FINISHED): first slot forfeit, second played — same as mixed case, slot order does not matter", async () => {
+      // Reverse order to confirm slot 0 forfeit + slot 1 finished produces the
+      // same total as (FINISHED, FORFEIT). SQL still collapses the FINISHED to
+      // a single grouped row regardless of which sibling holds it.
+      mockRunQuery.mockResolvedValue([
+        makeMatchRow({
+          id: 91,
+          external_match_room_id: roomA,
+          status: MatchStatus.FINISHED,
+          is_round_robin_bo2_as_2xbo1: true
+        }),
+        makeMatchRow({
+          id: 92,
+          external_match_room_id: roomA,
+          status: "FORFEIT",
+          is_round_robin_bo2_as_2xbo1: true
+        })
+      ] as DbMatchRow[]);
+
+      mockGetFaceITMatchDetails.mockResolvedValue(
+        championshipDetailsTwoGames as never
+      );
+      mockGetFaceitMatchStats.mockResolvedValue(
+        faceitMatchStatsOneRound as never
+      );
+
+      const result = await getDivStandings("league-1");
+
+      const teamA = result.find((t) => t.team_name === teamAName);
+      const teamB = result.find((t) => t.team_name === teamBName);
+      expect(teamA?.games_played).toBe(2);
+      expect(teamB?.games_played).toBe(2);
+    });
+
+    it("BO2-as-2xBO1 (FINISHED, FINISHED) regression: both maps played — exactly 2 games per team via grouped FINISHED row", async () => {
+      // Regression coverage for S2-AC-1: the (FINISHED, FINISHED) path is the
+      // baseline both-played scenario; SQL collapses both siblings into a
+      // single grouped row that covers both rounds via `getFaceitMatchStats`.
+      mockRunQuery.mockResolvedValue([
+        makeMatchRow({
+          id: 1,
+          external_match_room_id: roomA,
+          status: "FINISHED",
+          is_round_robin_bo2_as_2xbo1: true
+        })
+      ] as DbMatchRow[]);
+
+      mockGetFaceitMatchStats.mockResolvedValue(
+        faceitMatchStatsTwoRounds as never
+      );
+
+      const result = await getDivStandings("league-1");
+
+      expect(mockGetFaceITMatchDetails).not.toHaveBeenCalled();
+      expect(mockGetFaceitMatchStats).toHaveBeenCalledTimes(1);
+      const teamA = result.find((t) => t.team_name === teamAName);
+      const teamB = result.find((t) => t.team_name === teamBName);
+      expect(teamA?.games_played).toBe(2);
+      expect(teamB?.games_played).toBe(2);
+    });
+
+    it("BO2-as-2xBO1 idempotency (S2-AC-1): repeated invocations against the same DB snapshot produce identical totals — no point inflation", async () => {
+      // Idempotency at the standings layer: the query and aggregation are
+      // pure over a fixed Matches snapshot, so repeated calls (e.g. webhook
+      // replay → recomputed standings) must yield the same totals. Failure
+      // mode this guards: a stateful cache or accumulator persisting between
+      // calls and double-counting on the second run.
+      mockRunQuery.mockResolvedValue([
+        makeMatchRow({
+          id: 12571,
+          external_match_room_id: roomA,
+          status: "FORFEIT",
+          is_round_robin_bo2_as_2xbo1: true
+        }),
+        makeMatchRow({
+          id: 12572,
+          external_match_room_id: roomA,
+          status: MatchStatus.FINISHED,
+          is_round_robin_bo2_as_2xbo1: true
+        })
+      ] as DbMatchRow[]);
+
+      mockGetFaceITMatchDetails.mockResolvedValue(
+        championshipDetailsTwoGames as never
+      );
+      mockGetFaceitMatchStats.mockResolvedValue(
+        faceitMatchStatsOneRound as never
+      );
+
+      const first = await getDivStandings("league-1");
+      const second = await getDivStandings("league-1");
+
+      expect(second).toEqual(first);
+      // Both runs must agree on slot count — repeating the query never
+      // exceeds the per-room two-slot budget.
+      const teamA = second.find((t) => t.team_name === teamAName);
+      expect(teamA?.games_played).toBe(2);
+    });
+
     it("sorts by points then rounds_diff", async () => {
       mockRunQuery.mockResolvedValue([
         makeMatchRow({
