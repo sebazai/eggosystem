@@ -305,8 +305,8 @@ export const getMatchesByFilters = async ({
           t1.team_logo AS team1_logo,
           t2.name AS team2_name,
           t2.team_logo AS team2_logo,
-          mt1.match_side AS team1_side,
-          mt2.match_side AS team2_side,
+          MAX(mt1.match_side) AS team1_side,
+          MAX(mt2.match_side) AS team2_side,
           CASE
             WHEN m.best_of = 1 THEN ${!mapFilterPresent ? "MAX(mmp.id)" : "mmp.id"}
             ELSE NULL
@@ -327,8 +327,16 @@ export const getMatchesByFilters = async ({
       JOIN Teams t1 ON tms1.team_id = t1.id
       JOIN TeamGameScores tms2 ON mmp.id = tms2.match_game_id AND tms1.team_id < tms2.team_id
       JOIN Teams t2 ON tms2.team_id = t2.id
-      LEFT JOIN MatchTeams mt1 ON m.id = mt1.match_id AND mt1.team_id = t1.id
-      LEFT JOIN MatchTeams mt2 ON m.id = mt2.match_id AND mt2.team_id = t2.id
+      LEFT JOIN (
+          SELECT match_id, team_id, MAX(match_side) AS match_side
+          FROM MatchTeams
+          GROUP BY match_id, team_id
+      ) mt1 ON m.id = mt1.match_id AND mt1.team_id = t1.id
+      LEFT JOIN (
+          SELECT match_id, team_id, MAX(match_side) AS match_side
+          FROM MatchTeams
+          GROUP BY match_id, team_id
+      ) mt2 ON m.id = mt2.match_id AND mt2.team_id = t2.id
       WHERE ${query} AND m.status = 'FINISHED'
       GROUP BY 
           ${!mapFilterPresent ? "m.id, DATE(m.start_timestamp), l.name, m.stage, t1.name, t1.team_logo, t2.name, t2.team_logo" : "mmp.id, l.name, m.stage, t1.name, t1.team_logo, t2.name, t2.team_logo"}
