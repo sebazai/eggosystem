@@ -24,7 +24,7 @@
     "lint:fix": "turbo lint --continue -- --fix",
     "clean": "turbo clean",
     "typecheck": "turbo typecheck",
-    "knip": "knip",
+    "knip": "NODE_OPTIONS=--experimental-require-module knip",
     "format": "prettier --write \"**/*.{ts,tsx,md,mjs,js,jsx,json}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,md,mjs,js,jsx,json}\"",
     "prepare": "[ \"$NODE_ENV\" != \"production\" ] && husky || true",
