@@ -39,7 +39,9 @@ export async function seed(knex: Knex): Promise<void> {
 
   const statements = splittableLines.split("#!#");
   for (const statement of statements) {
-    const trimmedSql = statement.trim();
+    const trimmedSql = statement
+      .trim()
+      .replace(/CREATE\s+DEFINER\s*=\s*[^ ]+\s+EVENT/gi, "CREATE EVENT");
     if (trimmedSql) {
       try {
         await knex.raw(trimmedSql);
