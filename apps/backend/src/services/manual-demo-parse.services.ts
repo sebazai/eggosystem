@@ -4,8 +4,6 @@ import type {
   Match
 } from "@eggosystem/types";
 import { MatchStatus } from "@eggosystem/types";
-
-const MARK_FINISHED_NOT_REQUESTED_SKIP = "not_requested";
 import type { PoolConnection } from "mysql2/promise";
 import moment from "moment-timezone";
 import { getConnection } from "../db/mysqlConnection";
