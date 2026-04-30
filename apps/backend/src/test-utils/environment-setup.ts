@@ -22,23 +22,6 @@ export function setupFrontendUrl(testUrl: string = "http://localhost:3000") {
 }
 
 /**
- * Creates a test app with proper environment setup
- * Handles FRONTEND_URL setup and router import timing
- *
- * Note: This function expects the router to be imported directly in the test file
- * and passed as a parameter, rather than using dynamic requires.
- */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function createTestApp(router: any) {
-  const cleanup = setupFrontendUrl();
-
-  return {
-    router,
-    cleanup
-  };
-}
-
-/**
  * Sets up multiple environment variables for tests
  * Returns a cleanup function that should be called in afterEach
  */

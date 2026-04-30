@@ -1,7 +1,8 @@
 import nextJest from "next/jest.js";
+import { fileURLToPath } from "node:url";
 
 const createJestConfig = nextJest({
-  dir: "./"
+  dir: fileURLToPath(new URL(".", import.meta.url))
 });
 
 const customJestConfig = {
