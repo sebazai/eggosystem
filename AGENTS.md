@@ -68,7 +68,7 @@ All must exit 0 before the implementer opens the Draft MR. Commits must use **`H
 
 ## When to use which
 
-- **`/dag-execute`** (new) — multi-MR per issue, structured JSON throughout, formal architecture HITL, parallel task execution. Best for issues that decompose cleanly into 2–8 independent tasks.
+- **`/dag-execute`** (new) — multi-MR per issue, structured JSON throughout, formal architecture HITL, parallel task execution. **`decomposer_bot`** aims for **coarse tasks** (often **1–3**: optional `db`, then `backend` / `frontend`), folding `packages/types` and small helpers into the feature MR; split further only for large diffs or hard dependencies. Cap **8** tasks per issue (HITL if more).
 
 <!-- rtk-instructions v2 -->
 

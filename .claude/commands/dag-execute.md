@@ -64,7 +64,7 @@ Spawn `decomposer_bot`:
 
 ```
 Task(subagent_type=decomposer_bot,
-     prompt="Read /workspace/.cursor/agents/decomposer_bot.md. Given these stories: <inline product_bot.payload.stories>. Workspace map: apps/backend, apps/frontend, packages/types. Return ONLY the JSON envelope.")
+     prompt="Read /workspace/.cursor/agents/decomposer_bot.md. Decompose **liberally** (layer-first: optional db, then backend/frontend; fold packages/types and small helpers into those tasks — no types-only micro-tasks). Given these stories: <inline product_bot.payload.stories>. Workspace map: apps/backend, apps/frontend, packages/types. Return ONLY the JSON envelope.")
 ```
 
 Parse. Validate the DAG yourself:

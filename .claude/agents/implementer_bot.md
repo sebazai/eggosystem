@@ -143,4 +143,4 @@ When **`SkipMergeRequest: true`**, set **`mr_opened": false`, omit **`mr_iid`** 
 
 - Architecture JSON references a table/endpoint that conflicts with existing code (cannot be implemented as specified).
 - Quality gate (**format/typecheck/lint/unit test/knip**) fails after **2** self-correction attempts for _tooling_ failures.
-- Task scope grew beyond ~300 LOC and feels like it should have been split — return `stuck` with that observation.
+- Task scope grew **far** beyond what `decomposer_bot` implied (e.g. **~800+ LOC** or multiple unrelated features) and should have been multiple tasks — return `stuck` with that observation. Do **not** treat a **400–600 line** cohesive task as automatic `stuck`; the pipeline prefers **larger, layer-scoped** tasks.
