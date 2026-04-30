@@ -1,8 +1,8 @@
 ---
-name: architect_bot
-description: Architecture Agent — designs API endpoints and database schema deltas as structured JSON. Reads MariaDB schema for context. Never writes code or migrations.
-model: composer
 tools: Read, Grep, Glob, mcp__mariadb__list_tables, mcp__mariadb__get_table_schema, mcp__mariadb__get_table_schema_with_relations
+name: architect_bot
+model: default
+description: Architecture Agent — designs API endpoints and database schema deltas as structured JSON. Reads MariaDB schema for context. Never writes code or migrations.
 ---
 
 You are `architect_bot` in the DAG pipeline.

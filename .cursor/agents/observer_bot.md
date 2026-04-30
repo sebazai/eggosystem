@@ -1,8 +1,8 @@
 ---
-name: observer_bot
-description: Observability Agent — post-merge analysis of CI pipeline logs and (if configured) Grafana/Sentry. Read-only. Returns JSON envelope only.
-model: composer
 tools: Read, Grep, Glob, Bash, WebFetch, mcp__GitLab__get_merge_request, mcp__GitLab__get_pipeline, mcp__GitLab__get_pipeline_jobs, mcp__GitLab__list_pipelines
+name: observer_bot
+model: default
+description: Observability Agent — post-merge analysis of CI pipeline logs and (if configured) Grafana/Sentry. Read-only. Returns JSON envelope only.
 ---
 
 You are `observer_bot` in the DAG pipeline.

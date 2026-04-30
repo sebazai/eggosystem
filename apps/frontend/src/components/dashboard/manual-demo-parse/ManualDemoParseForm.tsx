@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import type { ManualDemoParseResponse } from "@eggosystem/types";
 import { clientApiFetch, ApiError } from "@/lib/apiClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,11 +15,6 @@ import {
   CardTitle
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-
-type EnqueueSuccess = {
-  status: "enqueued";
-  match_game_id: number;
-};
 
 function formatIssueMessage(issue: {
   path: (string | number)[];
@@ -42,13 +38,14 @@ export function ManualDemoParseForm() {
   const [downloadUrl, setDownloadUrl] = useState("");
   const [priority, setPriority] = useState("5");
   const [reparse, setReparse] = useState(false);
+  const [markFinished, setMarkFinished] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [issues, setIssues] = useState<Array<{
     path: (string | number)[];
     message: string;
   }> | null>(null);
-  const [success, setSuccess] = useState<EnqueueSuccess | null>(null);
+  const [success, setSuccess] = useState<ManualDemoParseResponse | null>(null);
 
   const sourceLabel = mode === "external_match_room_id" ? "faceit" : "manual";
 
@@ -85,10 +82,11 @@ export function ManualDemoParseForm() {
               }),
         download_url: downloadUrl.trim(),
         ...(Number.isFinite(priNum) ? { priority: priNum } : {}),
-        reparse
+        reparse,
+        mark_finished: markFinished
       };
 
-      const data = await clientApiFetch<EnqueueSuccess>(
+      const data = await clientApiFetch<ManualDemoParseResponse>(
         "/api/v1/dashboard/demos/manual/parse-queue",
         {
           method: "POST",
@@ -136,9 +134,35 @@ export function ManualDemoParseForm() {
           ) : null}
           {success ? (
             <Alert>
-              <AlertDescription>
-                Enqueued parse for match game{" "}
-                <strong>{success.match_game_id}</strong>
+              <AlertDescription className="space-y-2">
+                <p>
+                  Enqueued parse for match game{" "}
+                  <strong>{success.match_game_id}</strong>
+                </p>
+                <div className="border-t pt-2 text-sm">
+                  <p className="font-medium">Mark match as finished</p>
+                  {success.mark_finished.applied ? (
+                    <ul className="mt-1 list-inside list-disc text-muted-foreground">
+                      <li>
+                        Applied to match ID(s):{" "}
+                        {success.mark_finished.match_ids.length
+                          ? success.mark_finished.match_ids.join(", ")
+                          : "—"}
+                      </li>
+                      <li>
+                        End time (UTC):{" "}
+                        {success.mark_finished.end_timestamp ?? "—"}
+                      </li>
+                    </ul>
+                  ) : (
+                    <p className="mt-1 text-muted-foreground">
+                      Not applied
+                      {success.mark_finished.skipped_reason
+                        ? `: ${success.mark_finished.skipped_reason}`
+                        : ""}
+                    </p>
+                  )}
+                </div>
               </AlertDescription>
             </Alert>
           ) : null}
@@ -274,6 +298,17 @@ export function ManualDemoParseForm() {
               onCheckedChange={(val) => setReparse(val === true)}
             />
             <Label htmlFor="reparse">Reparse (force re-processing)</Label>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="mark_finished"
+              checked={markFinished}
+              onCheckedChange={(val) => setMarkFinished(val === true)}
+            />
+            <Label htmlFor="mark_finished">
+              Mark match as finished (computed end time)
+            </Label>
           </div>
 
           <Button type="submit" disabled={submitting}>

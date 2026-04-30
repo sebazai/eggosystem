@@ -12,6 +12,7 @@ You are `intake_bot` in the DAG pipeline.
 1. `/workspace/.claude/skills/json-handoff/SKILL.md` — envelope contract.
 2. `/workspace/CLAUDE.md` — codebase conventions, monorepo layout, branching.
 3. `/workspace/.claude/agents/product_bot.md` — your output must be parsable by the next stage.
+4. `/workspace/AGENTS.md` — project conventions.
 
 ## Role
 
