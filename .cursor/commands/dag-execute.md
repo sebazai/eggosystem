@@ -162,7 +162,7 @@ Each task `t` runs through these substeps. The orchestrator runs them sequential
 **Goal:** dependents must **reuse prerequisite code**. Two patterns:
 
 1. **Stacked MR (single dependency):** `<base>` **is that task’s branch name** (e.g. `feat-<iid>-T2-slug`). The Draft MR’s **merge target branch = `<base>`**, not `development`, until the parent has merged upstream and you rebase/reparent the child branch onto `development`.
-2. **Integration branch (multiple dependencies):** `<base>` = `development`; after `git worktree add … origin/development`, **merge `origin/<each completed dep branch>`** into `<branch>` (topo-safe order) so the implementation sees all predecessors without waiting for unrelated MRs to merge.
+2. **Integration branch (multiple dependencies):** `<base>` = `development`; after `git worktree add … origin/development`, **merge `origin/<each completed dep branch>`** into `<branch>` (topo-safe order) so the implementation sees all predecessors without waiting for unrelated MRs to merge, **then** run the **`node_modules` bootstrap** below (after merges, before `implementer_bot`).
 
 ```bash
 type   = t.type if t.type in {"feat","fix"} else "feat"
@@ -182,8 +182,14 @@ worktree_path = "/workspace/.worktrees/<iid>-<t.id>"
 
 rtk git fetch origin
 rtk git worktree add <worktree_path> -b <branch> origin/<base>
-# If multiple deps: then merge sibling dep branches — do NOT omit or gate will fail:
-# git merge origin/feat-<iid>-T1-... && git merge origin/feat-<iid>-T2-... ...
+# If multiple deps: cd <worktree_path> && merge sibling dep branches — do NOT omit or gate will fail:
+# rtk git merge origin/feat-<iid>-T1-... && rtk git merge origin/feat-<iid>-T2-... ...
+
+# Bootstrap node_modules from scratch so optional native deps (e.g. @oxc-parser/binding-*) resolve.
+# Omitting this can leave incomplete installs where tools like knip fail inside the worktree only.
+cd <worktree_path>
+rm -rf node_modules
+rtk pnpm install --frozen-lockfile
 ```
 
 Pass **`base`** to `implementer_bot` as `Base:` so **`create_merge_request.target_branch`** matches **stacked** vs **development** workflows (see `/workspace/.cursor/agents/implementer_bot.md`).
