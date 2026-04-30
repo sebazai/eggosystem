@@ -1,4 +1,5 @@
 import { addMatchToDatabase } from "./match.models";
+import { syncMatchTeamSidesFromMatchDetailsPayload } from "../services/match-team-side.services";
 import { getSeasonLeagueExternalIdByExternalIdWithSeasonSettings } from "./season-league-external-id.models";
 import { getSeasonLeagueTeamByExternalId } from "./season-league-team.models";
 import { runQuery } from "../db/mysqlRunQuery";
@@ -15,6 +16,12 @@ jest.mock("../models/season-league-external-id.models");
 jest.mock("../models/season-league-team.models");
 jest.mock("../db/mysqlRunQuery");
 jest.mock("../db/mysqlConnection");
+jest.mock("../services/match-team-side.services");
+
+const mockSyncMatchTeamSides =
+  syncMatchTeamSidesFromMatchDetailsPayload as jest.MockedFunction<
+    typeof syncMatchTeamSidesFromMatchDetailsPayload
+  >;
 
 const mockGetSeasonLeagueExternalIdByExternalId =
   getSeasonLeagueExternalIdByExternalIdWithSeasonSettings as jest.MockedFunction<
@@ -64,7 +71,7 @@ describe("addMatchToDatabase", () => {
   });
 
   describe("when match already exists", () => {
-    it("should skip processing and return early", async () => {
+    it("should skip processing and sync match sides then return early", async () => {
       const matchDetails = validMatchDetailsMatchCreated;
       const externalLeagueId = "test-league-id";
 
@@ -76,6 +83,10 @@ describe("addMatchToDatabase", () => {
       const result = await addMatchToDatabase(matchDetails, externalLeagueId);
 
       expect(result).toBeUndefined();
+      expect(mockSyncMatchTeamSides).toHaveBeenCalledWith(
+        matchDetails.match_id,
+        matchDetails
+      );
       expect(mockConnection.commit).not.toHaveBeenCalled();
       expect(mockConnection.rollback).not.toHaveBeenCalled();
     });
@@ -559,12 +570,12 @@ describe("addMatchToDatabase", () => {
       // Verify team associations
       expect(mockRunQuery).toHaveBeenCalledWith(
         expect.stringContaining("INSERT INTO MatchTeams"),
-        [1000, 1, 1, 100], // match_id, season_id, league_id, team_id
+        [1000, 1, 1, 100, "home"],
         mockConnection
       );
       expect(mockRunQuery).toHaveBeenCalledWith(
         expect.stringContaining("INSERT INTO MatchTeams"),
-        [1000, 1, 1, 200], // match_id, season_id, league_id, team_id
+        [1000, 1, 1, 200, "away"],
         mockConnection
       );
     });
