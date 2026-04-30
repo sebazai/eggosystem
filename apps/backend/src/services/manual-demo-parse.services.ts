@@ -4,6 +4,8 @@ import type {
   Match
 } from "@eggosystem/types";
 import { MatchStatus } from "@eggosystem/types";
+
+const MARK_FINISHED_NOT_REQUESTED_SKIP = "not_requested";
 import type { PoolConnection } from "mysql2/promise";
 import moment from "moment-timezone";
 import { getConnection } from "../db/mysqlConnection";
@@ -39,6 +41,44 @@ const fingerprintDemoUrlForLog = (
   return { download_url_prefix, download_url_sha256_hex };
 };
 
+function manualParseMarkFinishedNotRequested(): ManualDemoParseMarkFinishedResult {
+  return {
+    applied: false,
+    match_ids: [],
+    end_timestamp: null,
+    skipped_reason: MARK_FINISHED_NOT_REQUESTED_SKIP
+  };
+}
+
+/**
+ * Loads `Matches` rows for {@link finishMatchWithComputedEndTime} in stable id order.
+ */
+async function loadMatchesForComputedFinishByIds(
+  matchIds: number[],
+  conn: PoolConnection
+): Promise<FinishMatchWithComputedEndTimeRowInput[]> {
+  const uniqueSorted = [...new Set(matchIds)].sort((a, b) => a - b);
+  if (uniqueSorted.length === 0) return [];
+
+  const placeholders = uniqueSorted.map(() => "?").join(", ");
+  const rows = await runQuery<
+    Array<{
+      id: number;
+      start_timestamp: string | Date | null;
+      best_of: unknown;
+      status: Match["status"];
+    }>
+  >(
+    `SELECT id, start_timestamp, best_of, status FROM Matches WHERE id IN (${placeholders})`,
+    uniqueSorted,
+    conn
+  );
+  const byId = new Map(rows.map((r) => [r.id, r]));
+  return uniqueSorted
+    .map((id) => byId.get(id))
+    .filter((row): row is NonNullable<(typeof rows)[number]> => row != null);
+}
+
 /**
  * Validates match game then publishes to parse_queue. RabbitMQ failures are not silently treated as
  * success.
@@ -50,14 +90,25 @@ export const enqueueManualDashboardDemoParse = async (input: {
   actorAccountId: number;
   source: ManualDemoParseSource;
   reparse: boolean;
-}): Promise<{ match_game_id: number }> => {
+  /**
+   * When set and `mark_finished` is true, these internal `Matches.id` values are marked finished.
+   * Omitted/`undefined` ⇒ derive from {@link getMatchIdByGameId}.
+   */
+  finishMatchIds?: number[];
+  mark_finished?: boolean;
+}): Promise<{
+  match_game_id: number;
+  mark_finished: ManualDemoParseMarkFinishedResult;
+}> => {
   const {
     matchGameId,
     downloadUrl,
     priority,
     actorAccountId,
     source,
-    reparse
+    reparse,
+    finishMatchIds,
+    mark_finished: markFinished = false
   } = input;
 
   const matchRows = await getMatchIdByGameId(matchGameId);
@@ -84,7 +135,47 @@ export const enqueueManualDashboardDemoParse = async (input: {
     source
   });
 
-  return { match_game_id: matchGameId };
+  if (!markFinished) {
+    return {
+      match_game_id: matchGameId,
+      mark_finished: manualParseMarkFinishedNotRequested()
+    };
+  }
+
+  const targetIdsRaw =
+    finishMatchIds !== undefined && finishMatchIds.length > 0
+      ? finishMatchIds
+      : [matchRow.match_id];
+  const targetIdsSorted = [...new Set(targetIdsRaw)].sort((a, b) => a - b);
+
+  const conn = await getConnection();
+  try {
+    await conn.beginTransaction();
+    const rows = await loadMatchesForComputedFinishByIds(targetIdsSorted, conn);
+    if (rows.length !== targetIdsSorted.length) {
+      await conn.rollback();
+      return {
+        match_game_id: matchGameId,
+        mark_finished: validationResult(
+          `Could not load all Matches rows for ids: ${targetIdsSorted.join(", ")}.`
+        )
+      };
+    }
+
+    const finishResult = await finishMatchWithComputedEndTime(rows, {
+      connection: conn
+    });
+    await conn.commit();
+    return {
+      match_game_id: matchGameId,
+      mark_finished: finishResult
+    };
+  } catch (err) {
+    await conn.rollback();
+    throw err;
+  } finally {
+    conn.release();
+  }
 };
 
 /**

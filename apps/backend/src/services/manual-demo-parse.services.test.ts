@@ -3,7 +3,12 @@ import { MatchStatus } from "@eggosystem/types";
 import { getConnection } from "../db/mysqlConnection";
 import { runQuery } from "../db/mysqlRunQuery";
 import { formatDateForDatabase } from "../utils/date-utils";
-import { finishMatchWithComputedEndTime } from "./manual-demo-parse.services";
+import { getMatchIdByGameId } from "../models/match-game.models";
+import {
+  enqueueManualDashboardDemoParse,
+  finishMatchWithComputedEndTime
+} from "./manual-demo-parse.services";
+import { publishToParseQueue } from "./parse-queue.services";
 
 jest.mock("../db/mysqlRunQuery");
 jest.mock("../db/mysqlConnection");
@@ -19,6 +24,96 @@ const mockRunQuery = runQuery as jest.MockedFunction<typeof runQuery>;
 const mockGetConnection = getConnection as jest.MockedFunction<
   typeof getConnection
 >;
+const mockGetMatchIdByGameId = getMatchIdByGameId as jest.MockedFunction<
+  typeof getMatchIdByGameId
+>;
+const mockPublishToParseQueue = publishToParseQueue as jest.MockedFunction<
+  typeof publishToParseQueue
+>;
+
+describe("enqueueManualDashboardDemoParse", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("does not touch DB mark path when mark_finished is false", async () => {
+    mockGetMatchIdByGameId.mockResolvedValue([
+      { match_id: 12, team_game_scores_staff_lock: 0 }
+    ]);
+    mockPublishToParseQueue.mockResolvedValue(undefined);
+
+    await expect(
+      enqueueManualDashboardDemoParse({
+        matchGameId: 5,
+        downloadUrl: "https://cdn.example/demo.dem.zst",
+        priority: 4,
+        actorAccountId: 1,
+        source: "manual",
+        reparse: false,
+        mark_finished: false
+      })
+    ).resolves.toEqual({
+      match_game_id: 5,
+      mark_finished: {
+        applied: false,
+        match_ids: [],
+        end_timestamp: null,
+        skipped_reason: "not_requested"
+      }
+    });
+
+    expect(mockPublishToParseQueue).toHaveBeenCalledTimes(1);
+    expect(mockGetConnection).not.toHaveBeenCalled();
+  });
+
+  it("runs mark_finished after publish using a DB transaction", async () => {
+    mockGetMatchIdByGameId.mockResolvedValue([
+      { match_id: 12, team_game_scores_staff_lock: 0 }
+    ]);
+    mockPublishToParseQueue.mockResolvedValue(undefined);
+
+    const mockConn = {
+      beginTransaction: jest.fn(),
+      commit: jest.fn(),
+      rollback: jest.fn(),
+      release: jest.fn()
+    };
+    mockGetConnection.mockResolvedValue(
+      mockConn as unknown as Awaited<ReturnType<typeof getConnection>>
+    );
+
+    mockRunQuery
+      .mockResolvedValueOnce([
+        {
+          id: 12,
+          start_timestamp: "2025-06-01T10:00:00.000Z",
+          best_of: 2,
+          status: "ONGOING" satisfies Match["status"]
+        }
+      ])
+      .mockResolvedValue([] as never);
+
+    const outcome = await enqueueManualDashboardDemoParse({
+      matchGameId: 5,
+      downloadUrl: "https://cdn.example/demo.dem.zst",
+      priority: 4,
+      actorAccountId: 1,
+      source: "manual",
+      reparse: false,
+      mark_finished: true,
+      finishMatchIds: [12]
+    });
+
+    expect(outcome.match_game_id).toBe(5);
+    expect(outcome.mark_finished.applied).toBe(true);
+    expect(outcome.mark_finished.match_ids).toEqual([12]);
+
+    expect(mockConn.beginTransaction).toHaveBeenCalledTimes(1);
+    expect(mockConn.commit).toHaveBeenCalledTimes(1);
+    expect(mockConn.release).toHaveBeenCalledTimes(1);
+    expect(mockRunQuery).toHaveBeenCalledTimes(2);
+  });
+});
 
 describe("finishMatchWithComputedEndTime", () => {
   beforeEach(() => {

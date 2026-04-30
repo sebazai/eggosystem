@@ -238,7 +238,13 @@ describe("POST /api/v1/dashboard/demos/manual/parse-queue", () => {
     expect(res.status).toBe(200);
     expect(res.body).toEqual({
       status: "enqueued",
-      match_game_id: 7
+      match_game_id: 7,
+      mark_finished: {
+        applied: false,
+        match_ids: [],
+        end_timestamp: null,
+        skipped_reason: "not_requested"
+      }
     });
 
     expect(mockPublishToParseQueue).toHaveBeenCalledTimes(1);
@@ -278,7 +284,13 @@ describe("POST /api/v1/dashboard/demos/manual/parse-queue", () => {
     expect(res.status).toBe(200);
     expect(res.body).toEqual({
       status: "enqueued",
-      match_game_id: 77
+      match_game_id: 77,
+      mark_finished: {
+        applied: false,
+        match_ids: [],
+        end_timestamp: null,
+        skipped_reason: "not_requested"
+      }
     });
     expect(mockResolveOrCreateMatchGameIdForHubMatchDemo).toHaveBeenCalledWith(
       expect.objectContaining({ matchId: 42, mapOrder: 1 })
@@ -317,7 +329,16 @@ describe("POST /api/v1/dashboard/demos/manual/parse-queue", () => {
       });
 
     expect(res.status).toBe(200);
-    expect(res.body).toEqual({ status: "enqueued", match_game_id: 555 });
+    expect(res.body).toEqual({
+      status: "enqueued",
+      match_game_id: 555,
+      mark_finished: {
+        applied: false,
+        match_ids: [],
+        end_timestamp: null,
+        skipped_reason: "not_requested"
+      }
+    });
     expect(mockResolveOrCreateMatchGameIdForDemoUrl).toHaveBeenCalledWith(
       expect.objectContaining({
         externalMatchRoomId: "room-xyz",
