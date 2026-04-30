@@ -78,8 +78,8 @@ describe("Match Routes", () => {
     it("should return 404 for non-existent match", async () => {
       const response = await request(app).get("/api/v1/matches/999999/lineups");
 
-      // 404 when DB resolves "no match"; 400 when DB/query errors map to generic Error in harness
-      expect([404, 400]).toContain(response.status);
+      // Should be 404 for non-existent match
+      expect(response.status).toBe(404);
       expect(response.headers["content-type"]).toContain(
         "application/problem+json"
       );
@@ -170,12 +170,10 @@ describe("Match Routes", () => {
 
       const response = await request(app)
         .get("/api/v1/matches/7405/mapsplayed")
-        .expect("Content-Type", /json/);
+        .expect("Content-Type", /json/)
+        .expect(200);
 
-      expect([200, 400, 404]).toContain(response.status);
-      if (response.status === 200) {
-        expect(response.body).toMatchObject(expectedMaps);
-      }
+      expect(response.body).toEqual(expectedMaps);
     });
 
     it("should return 404 for non-existent match", async () => {
@@ -183,7 +181,7 @@ describe("Match Routes", () => {
         "/api/v1/matches/999999/mapsplayed"
       );
 
-      expect([404, 400]).toContain(response.status);
+      expect(response.status).toBe(404);
       expect(response.headers["content-type"]).toContain(
         "application/problem+json"
       );
