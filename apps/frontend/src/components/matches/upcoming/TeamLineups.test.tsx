@@ -28,8 +28,8 @@ jest.mock("./components", () => ({
 
 describe("TeamLineups", () => {
   const mockTeams: MatchTeamInfo[] = [
-    { id: 1, name: "Team 1", logo: "", score: 0, rank: null },
-    { id: 2, name: "Team 2", logo: "", score: 0, rank: null }
+    { id: 1, name: "Team 1", logo: "", score: 0, rank: null, side: null },
+    { id: 2, name: "Team 2", logo: "", score: 0, rank: null, side: null }
   ];
 
   const mockLineups: Record<string, MatchTeamLineup> = {
@@ -37,6 +37,7 @@ describe("TeamLineups", () => {
       id: 1,
       name: "Team 1",
       logo: "",
+      side: null,
       players: [
         {
           steam_id: "76561198012345678",
@@ -68,6 +69,7 @@ describe("TeamLineups", () => {
       id: 2,
       name: "Team 2",
       logo: "",
+      side: null,
       players: [
         {
           steam_id: "76561198012345680",
