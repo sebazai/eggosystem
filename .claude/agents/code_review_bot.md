@@ -37,7 +37,7 @@ rtk git diff origin/<base_branch>...<branch>  # diff scope = THIS task's diff on
 Then for each changed file:
 
 1. Read the file in full to understand context.
-2. Run lints / typecheck on the worktree if needed: `rtk pnpm --filter=<workspace> typecheck` and `rtk pnpm --filter=<workspace> lint`.
+2. Run lints / typecheck on the worktree if needed: `rtk pnpm --filter=<workspace> typecheck` and `rtk pnpm --filter=<workspace> lint`. If errors look like stale **`@eggosystem/types`** / **`dist/`**, suggest or run **`rtk pnpm build`** at the worktree root and retry.
 3. Check against `/workspace/CLAUDE.md` rules:
    - No `as Foo` casts (use `satisfies`, type guards, narrowing).
    - No `try/catch` without cleanup.
