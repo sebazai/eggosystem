@@ -14,7 +14,7 @@ import { useGetMatchGamesByExternalMatchRoomId } from "@/hooks/data/useGetMatchG
 import { useMemo } from "react";
 import { useParams } from "next/navigation";
 import { MatchMapPicksSkeleton } from "@/components/loading";
-import { dualTeamScoresToHomeLeftDisplay } from "@/lib/order-match-teams-home-left-away";
+import { orderTwoParticipantsBySideHomeLeft } from "@/lib/order-match-teams-home-left-away";
 
 interface MatchMapPicksProps {
   matchId: number;
@@ -52,6 +52,13 @@ export const MatchMapPicks = ({
     return [...(maps || []), ...(theOtherGameMaps || [])];
   }, [maps, theOtherGameMaps]);
 
+  const orderedMatchTeams = useMemo(() => {
+    if (!matchInfo) return null;
+    const list = Object.values(matchInfo.teams);
+    if (list.length !== 2) return null;
+    return orderTwoParticipantsBySideHomeLeft(list[0]!, list[1]!);
+  }, [matchInfo]);
+
   const isLoading =
     isLoadingMaps ||
     isLoadingVetoes ||
@@ -70,12 +77,19 @@ export const MatchMapPicks = ({
         {allMatchGameMaps
           .sort((a, b) => (a.map_order ?? 0) - (b.map_order ?? 0))
           .map((mapMatchGame, index) => {
-            const { leftScore, rightScore } = dualTeamScoresToHomeLeftDisplay({
-              team1_score: mapMatchGame.team1_score,
-              team2_score: mapMatchGame.team2_score,
-              team1_side: mapMatchGame.team1_side,
-              team2_side: mapMatchGame.team2_side
-            });
+            const [leftScore, rightScore] = (() => {
+              if (!orderedMatchTeams) {
+                return [mapMatchGame.team1_score, mapMatchGame.team2_score] as const;
+              }
+              const [left, right] = orderedMatchTeams;
+              if (left.id === mapMatchGame.team1_id && right.id === mapMatchGame.team2_id) {
+                return [mapMatchGame.team1_score, mapMatchGame.team2_score] as const;
+              }
+              if (left.id === mapMatchGame.team2_id && right.id === mapMatchGame.team1_id) {
+                return [mapMatchGame.team2_score, mapMatchGame.team1_score] as const;
+              }
+              return [mapMatchGame.team1_score, mapMatchGame.team2_score] as const;
+            })();
             return (
               <div
                 key={index}

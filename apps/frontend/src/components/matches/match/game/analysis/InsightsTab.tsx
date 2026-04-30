@@ -11,7 +11,7 @@ import type {
   MatchGameInsightsTeam,
   MatchInfo
 } from "@eggosystem/types";
-import { orderTwoByMatchTeamSideHomeLeftAway } from "@/lib/order-match-teams-home-left-away";
+import { orderTwoParticipantsBySideHomeLeft } from "@/lib/order-match-teams-home-left-away";
 
 /* ─────────────────────────────────────────────────────────────────────────────
  *  Types & constants
@@ -317,7 +317,7 @@ export const InsightsTab = ({
     const fa = matchTeams[a.team_id];
     const fb = matchTeams[b.team_id];
     if (!fa || !fb) return { team1: a, team2: b };
-    const [first, second] = orderTwoByMatchTeamSideHomeLeftAway(fa, fb);
+    const [first, second] = orderTwoParticipantsBySideHomeLeft(fa, fb);
     const firstInsight = first.id === a.team_id ? a : b;
     const secondInsight = second.id === a.team_id ? a : b;
     return { team1: firstInsight, team2: secondInsight };

@@ -3,7 +3,7 @@
 import React from "react";
 import { type FilterParamsQuery } from "@/lib/utils";
 import type { MatchTeamInfo, MatchHistoryItem } from "@eggosystem/types";
-import { TeamRecentForm } from "./components";
+import { HomeAwaySidesLayout, TeamRecentForm } from "./components";
 import { useFilteredTeamMatchHistory } from "@/hooks/data/filtered/useFilteredTeamMatchHistory";
 import { getTeamDataWithFallback } from "./data-utils";
 import { orderMatchParticipantsBySideHomeLeft } from "@/lib/order-match-teams-home-left-away";
@@ -151,24 +151,28 @@ export const TeamFormComparison = ({
       <div className="p-4">
         <h2 className="text-xl font-semibold mb-4">Recent Form</h2>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-          {hasTeam1Data ? (
-            <TeamRecentForm teamName={team1Name} matches={team1LastFive} />
-          ) : (
-            <div className="text-center py-8">
-              <h3 className="text-lg font-semibold mb-2">{team1Name}</h3>
-              <p>No match history available</p>
-            </div>
-          )}
-          {hasTeam2Data ? (
-            <TeamRecentForm teamName={team2Name} matches={team2LastFive} />
-          ) : (
-            <div className="text-center py-8">
-              <h3 className="text-lg font-semibold mb-2">{team2Name}</h3>
-              <p>No match history available</p>
-            </div>
-          )}
-        </div>
+        <HomeAwaySidesLayout
+          home={
+            hasTeam1Data ? (
+              <TeamRecentForm teamName={team1Name} matches={team1LastFive} />
+            ) : (
+              <div className="text-center py-8">
+                <h3 className="text-lg font-semibold mb-2">{team1Name}</h3>
+                <p>No match history available</p>
+              </div>
+            )
+          }
+          away={
+            hasTeam2Data ? (
+              <TeamRecentForm teamName={team2Name} matches={team2LastFive} />
+            ) : (
+              <div className="text-center py-8">
+                <h3 className="text-lg font-semibold mb-2">{team2Name}</h3>
+                <p>No match history available</p>
+              </div>
+            )
+          }
+        />
       </div>
     </div>
   );

@@ -13,7 +13,45 @@ export function orderTwoByMatchTeamSideHomeLeftAway<
   return [first, second];
 }
 
-/** Same rule for a two-element array; longer arrays are returned unchanged. */
+function hasName(value: unknown): value is { name: string } {
+  if (!value || typeof value !== "object") return false;
+  if (!Object.prototype.hasOwnProperty.call(value, "name")) return false;
+  return typeof Reflect.get(value, "name") === "string";
+}
+
+function orderTwoByNameAsc<T extends { name: string }>(a: T, b: T): [T, T] {
+  return a.name.localeCompare(b.name, "en", { sensitivity: "base" }) <= 0
+    ? [a, b]
+    : [b, a];
+}
+
+/**
+ * Orders two participants with a deterministic fallback when sides are unknown.
+ *
+ * - If sides are explicit `home` / `away` → home-left, away-right.
+ * - Otherwise, if both have names → sort by name (case-insensitive).
+ * - Otherwise preserves given order.
+ */
+export function orderTwoParticipantsBySideHomeLeft<
+  T extends { side: MatchTeamSide }
+>(a: T, b: T): [T, T] {
+  const [x, y] = orderTwoByMatchTeamSideHomeLeftAway(a, b);
+  const sidesAreExplicitHomeAway =
+    (x.side === "home" && y.side === "away") ||
+    (x.side === "away" && y.side === "home");
+  if (sidesAreExplicitHomeAway) return [x, y];
+
+  if (hasName(x) && hasName(y)) return orderTwoByNameAsc(x, y);
+  return [x, y];
+}
+
+/**
+ * Same home-left/away-right rule for a two-element array.
+ *
+ * When sides are unknown, applies a deterministic fallback ordering by `name`
+ * (case-insensitive) if both participants have names; otherwise preserves the
+ * given order.
+ */
 export function orderMatchParticipantsBySideHomeLeft<
   T extends { side: MatchTeamSide }
 >(teams: readonly T[]): T[] {
@@ -21,8 +59,7 @@ export function orderMatchParticipantsBySideHomeLeft<
   const a = teams[0];
   const b = teams[1];
   if (a === undefined || b === undefined) return [...teams];
-  const [x, y] = orderTwoByMatchTeamSideHomeLeftAway(a, b);
-  return [x, y];
+  return [...orderTwoParticipantsBySideHomeLeft(a, b)];
 }
 
 export interface DualTeamRowSlot {
@@ -52,7 +89,7 @@ export function dualTeamRowToHomeLeftDisplay(row: DualTeamRowSlot): {
     logo: row.team2_logo,
     score: row.team2_score
   };
-  const [left, right] = orderTwoByMatchTeamSideHomeLeftAway(slot1, slot2);
+  const [left, right] = orderTwoParticipantsBySideHomeLeft(slot1, slot2);
   return {
     left: { name: left.name, logo: left.logo, score: left.score },
     right: { name: right.name, logo: right.logo, score: right.score }
@@ -64,11 +101,23 @@ export function dualTeamScoresToHomeLeftDisplay(row: {
   team2_score: number;
   team1_side: MatchTeamSide;
   team2_side: MatchTeamSide;
+  team1_name?: string;
+  team2_name?: string;
 }): { leftScore: number; rightScore: number } {
-  const [l, r] = orderTwoByMatchTeamSideHomeLeftAway(
-    { side: row.team1_side, score: row.team1_score },
-    { side: row.team2_side, score: row.team2_score }
-  );
+  const a = {
+    side: row.team1_side,
+    score: row.team1_score,
+    name: row.team1_name
+  };
+  const b = {
+    side: row.team2_side,
+    score: row.team2_score,
+    name: row.team2_name
+  };
+  const [l, r] =
+    a.name && b.name
+      ? orderTwoParticipantsBySideHomeLeft(a, b)
+      : orderTwoByMatchTeamSideHomeLeftAway(a, b);
   return { leftScore: l.score, rightScore: r.score };
 }
 
@@ -92,10 +141,11 @@ export function calendarMatchHomeLeftTeamNames(
       rightName: away.name
     };
   }
-  return {
-    leftName: match.match_team1,
-    rightName: match.match_team2
-  };
+  const [left, right] = orderTwoParticipantsBySideHomeLeft(
+    { side: null, name: match.match_team1 },
+    { side: null, name: match.match_team2 }
+  );
+  return { leftName: left.name, rightName: right.name };
 }
 
 /** Title string with home on the left; legacy `match_team1` / `match_team2` order when sides unknown. */
@@ -168,7 +218,7 @@ export function homeLeftVersusLabelFromSides(input: {
   aSide: MatchTeamSide;
   bSide: MatchTeamSide;
 }): { leftName: string; rightName: string } {
-  const [l, r] = orderTwoByMatchTeamSideHomeLeftAway(
+  const [l, r] = orderTwoParticipantsBySideHomeLeft(
     { side: input.aSide, name: input.aName },
     { side: input.bSide, name: input.bName }
   );

@@ -49,6 +49,12 @@ describe("orderMatchParticipantsBySideHomeLeft", () => {
     const one = [{ side: "home" as const }];
     expect(orderMatchParticipantsBySideHomeLeft(one)).toEqual(one);
   });
+
+  it("falls back to deterministic name ordering when sides are unknown", () => {
+    const a: OrderTestRow = { id: 1, side: null, name: "Beta" };
+    const b: OrderTestRow = { id: 2, side: null, name: "Alpha" };
+    expect(orderMatchParticipantsBySideHomeLeft([a, b])).toEqual([b, a]);
+  });
 });
 
 describe("dualTeamRowToHomeLeftDisplay", () => {
@@ -68,6 +74,22 @@ describe("dualTeamRowToHomeLeftDisplay", () => {
     expect(d.left.score).toBe(16);
     expect(d.right.name).toBe("Beta");
     expect(d.right.score).toBe(14);
+  });
+
+  it("uses deterministic name ordering when sides are unknown", () => {
+    const row = {
+      team1_side: null,
+      team2_side: null,
+      team1_name: "Beta",
+      team2_name: "Alpha",
+      team1_logo: "b.png",
+      team2_logo: "a.png",
+      team1_score: 14,
+      team2_score: 16
+    };
+    const d = dualTeamRowToHomeLeftDisplay(row);
+    expect(d.left.name).toBe("Alpha");
+    expect(d.right.name).toBe("Beta");
   });
 });
 
@@ -92,30 +114,30 @@ describe("calendarMatchHomeLeftTeamNames", () => {
     match_status: "SCHEDULED" satisfies Match["status"],
     league_name: "L",
     league_tier: 1,
-    match_team1: "Legacy Left",
-    match_team2: "Legacy Right",
+    match_team1: "Beta",
+    match_team2: "Alpha",
     stream_urls: [],
     teams: { home: null, away: null },
     external_match_room_id: null,
     season_platform: SeasonPlatform.FACEIT
   } satisfies MatchWithStreamUrls;
 
-  it("falls back to match_team1 / match_team2 when teams is absent", () => {
+  it("falls back to deterministic name ordering when teams is absent", () => {
     expect(
       calendarMatchHomeLeftTeamNames({
-        match_team1: "Legacy Left",
-        match_team2: "Legacy Right"
+        match_team1: "Beta",
+        match_team2: "Alpha"
       })
     ).toEqual({
-      leftName: "Legacy Left",
-      rightName: "Legacy Right"
+      leftName: "Alpha",
+      rightName: "Beta"
     });
   });
 
-  it("falls back to match_team1 / match_team2 when sides missing", () => {
+  it("falls back to deterministic name ordering when sides missing", () => {
     expect(calendarMatchHomeLeftTeamNames(base)).toEqual({
-      leftName: "Legacy Left",
-      rightName: "Legacy Right"
+      leftName: "Alpha",
+      rightName: "Beta"
     });
   });
 
@@ -141,16 +163,16 @@ describe("calendarMatchVersusTitle", () => {
     match_status: "SCHEDULED" satisfies Match["status"],
     league_name: "L",
     league_tier: 1,
-    match_team1: "FirstSlot",
-    match_team2: "SecondSlot",
+    match_team1: "Beta",
+    match_team2: "Alpha",
     stream_urls: [],
     teams: { home: null, away: null },
     external_match_room_id: null,
     season_platform: SeasonPlatform.FACEIT
   } satisfies MatchWithStreamUrls;
 
-  it("uses legacy team slots when sides missing", () => {
-    expect(calendarMatchVersusTitle(base)).toBe("FirstSlot vs SecondSlot");
+  it("uses deterministic fallback ordering when sides missing", () => {
+    expect(calendarMatchVersusTitle(base)).toBe("Alpha vs Beta");
   });
 
   it("orders title home-left when sides are known", () => {
