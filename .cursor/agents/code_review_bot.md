@@ -36,7 +36,7 @@ rtk git diff origin/<base_branch>...<branch>  # diff scope = THIS task's diff on
 Then for each changed file:
 
 1. Read the file in full to understand context.
-2. Run lints / typecheck on the worktree if needed: `rtk pnpm --filter=<workspace> typecheck` and `rtk pnpm --filter=<workspace> lint`.
+2. If needed, run lints/typecheck using the repo’s enforced command shapes (a preToolUse hook blocks invalid variants). If errors look like stale **`@eggosystem/types`** / **`dist/`**, suggest or run **`rtk pnpm build`** at the worktree root and retry.
 3. Check against `/workspace/CLAUDE.md` rules:
    - No `as Foo` casts (use `satisfies`, type guards, narrowing).
    - No `try/catch` without cleanup.
@@ -79,7 +79,7 @@ Return ONLY the JSON envelope. `payload` schema:
 ## Forbidden
 
 - `Write`, `Edit`, `StrReplace` — never modify code.
-- Mutating git (`git commit`, `git push`, etc.).
+- Mutating git (`rtk git commit`, `rtk git push`, etc.).
 - Approving the MR via `mcp__GitLab__approve_merge_request` (you don't have it; orchestrator never has it either).
 - Reviewing files outside the diff scope.
 

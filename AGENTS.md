@@ -33,31 +33,33 @@ All in `/workspace/.claude/agents/`. Each returns a JSON envelope per `/workspac
 
 - Branch per task: `feat-<iid>-<task_id>-<slug>` (e.g. `feat-247-T1-stream-route`).
 - **`base_branch` (how implementers reuse upstream code):**
-  - **No dependencies:** `base_branch = development`. Worktree: `git worktree add … -b <branch> origin/development`. Draft MR **target = `development`**.
-  - **Exactly one dependency (stacked MRs):** `base_branch = <parent task branch name>` (e.g. `feat-338-T2-…`). Worktree: `git worktree add … -b <branch> origin/<parent-branch>`. Draft MR **target = parent branch** (not `development`) so the diff is only the child task and CI runs on top of the parent’s tree. **When to use:** the child must compile against unmerged parent work (typical linear chains). After the parent MR merges to `development`, **rebase the child branch onto current `development` and switch the MR target to `development`** (or merge the stack strictly in topo order if your GitLab prefers that — see Merge train below).
-  - **Multiple dependencies:** there is no single “parent-only” base. Prefer **`development` plus merging each completed dependency branch into the task branch before implementation** (`git merge origin/<dep-branch>` for each prerequisite in topo-safe order). Draft MR typically **targets `development`** once that branch carries all merged predecessors, or carries the merged commits locally so CI is faithful. Alternative: introduce a shared integration branch for the issue once and base later tasks on that (manual/orchestrator choice).
+  - **No dependencies:** `base_branch = development`. Worktree: `rtk git worktree add … -b <branch> origin/development`. Draft MR **target = `development`**.
+  - **Exactly one dependency (stacked MRs):** `base_branch = <parent task branch name>` (e.g. `feat-338-T2-…`). Worktree: `rtk git worktree add … -b <branch> origin/<parent-branch>`. Draft MR **target = parent branch** (not `development`) so the diff is only the child task and CI runs on top of the parent’s tree. **When to use:** the child must compile against unmerged parent work (typical linear chains). After the parent MR merges to `development`, **rebase the child branch onto current `development` and switch the MR target to `development`** (or merge the stack strictly in topo order if your GitLab prefers that — see Merge train below).
+  - **Multiple dependencies:** there is no single “parent-only” base. Prefer **`development` plus merging each completed dependency branch into the task branch before implementation** (`rtk git merge origin/<dep-branch>` for each prerequisite in topo-safe order). Draft MR typically **targets `development`** once that branch carries all merged predecessors, or carries the merged commits locally so CI is faithful. Alternative: introduce a shared integration branch for the issue once and base later tasks on that (manual/orchestrator choice).
 - **“Deepest dependency” tie-break** (single-dependency stacks): when tasks are independent until they funnel into one child, choose the dependency whose branch must land first (**topological order** among `depends_on`); linear chains simply use the immediate parent branch.
 - One Draft MR per task; opened by `implementer_bot`. Orchestrator unmarks Draft after Final Review approves.
-- **Merge train (after parents land on `development`):** for dependents that were stacked on a merged parent branch name, orchestrator/human rebases children onto `development` (`git rebase --onto development <old_parent_tip> <child_branch>` or equivalent) and **`--force-with-lease` only after confirmation** (`ask` permission tier — see Phase 6 in `/dag-execute`).
+- **Merge train (after parents land on `development`):** for dependents that were stacked on a merged parent branch name, orchestrator/human rebases children onto `development` (`rtk git rebase --onto development <old_parent_tip> <child_branch>` or equivalent) and **`--force-with-lease` only after confirmation** (`ask` permission tier — see Phase 6 in `/dag-execute`).
 
 ## Worktrees
 
 - One worktree per task: `/workspace/.worktrees/<iid>-<task_id>/`.
-- `git worktree add` creates them; the orchestrator does this before spawning each `implementer_bot`.
-- **Immediately after** `git worktree add` (and after any integration merges for multi-dependency tasks), the orchestrator runs **`cd <worktree_path> && node scripts/bootstrap-worktree-env.mjs && rm -rf node_modules && pnpm install --frozen-lockfile`**: **`bootstrap-worktree-env.mjs`** copies `apps/backend/.env`, repo-root `.env.mcp`, and `apps/backend/*.pem` from the primary checkout once (.gitignored; source path defaults to stripping `/.worktrees/<task>/` or use **`WORKTREE_SECRET_SOURCE`**); then optional native bindings (e.g. `oxc-parser` → `@oxc-parser/binding-*`) install cleanly — incomplete installs otherwise break tools like **`pnpm knip`** only inside that worktree.
-- `git worktree remove --force` cleans up after merge (in `ask` permission tier — confirmed by human).
-- Parallel task worktrees each run **`pnpm install --frozen-lockfile`** once on the **first** `implementer_bot` spawn for that worktree (`implementer_invocation_index == 1`) when needed — redundant but harmless after the orchestrator bootstrap above; orchestrator increments the index on every later re-invocation (adversary, Code Review, CI, etc.), so implementer **does not** repeat frozen install unless dependency manifests changed or bootstrap failed — see `.cursor/agents/implementer_bot.md` (**Dependency install**).
+- `rtk git worktree add` creates them; the orchestrator does this before spawning each `implementer_bot`.
+- **Immediately after** `rtk git worktree add` (and after any integration merges for multi-dependency tasks), the orchestrator runs **`cd <worktree_path> && node scripts/bootstrap-worktree-env.mjs && rm -rf node_modules && rtk pnpm install --frozen-lockfile && rtk pnpm build`**: **`bootstrap-worktree-env.mjs`** copies `apps/backend/.env`, repo-root `.env.mcp`, and `apps/backend/*.pem` from the primary checkout once (.gitignored; source path defaults to stripping `/.worktrees/<task>/` or use **`WORKTREE_SECRET_SOURCE`**); then optional native bindings (e.g. `oxc-parser` → `@oxc-parser/binding-*`) install cleanly — incomplete installs otherwise break tools like **`pnpm knip`** only inside that worktree.
+- `rtk git worktree remove --force` cleans up after merge (in `ask` permission tier — confirmed by human).
+- Parallel task worktrees each run **`rtk pnpm install --frozen-lockfile`** then **`rtk pnpm build`** once on the **first** `implementer_bot` spawn for that worktree (`implementer_invocation_index == 1`) when needed — redundant but harmless after the orchestrator bootstrap above; orchestrator increments the index on every later re-invocation (adversary, Code Review, CI, etc.), so implementer **does not** repeat install unless manifests change or bootstrap failed. **`pnpm build`** from the worktree root may still be needed **again** later: **`@eggosystem/types`** publishes **`dist/`**, so after editing **`packages/types`** or when **typecheck / lint / knip** look like stale compiled output, run **`rtk pnpm build`** and retry gates — see `.cursor/agents/implementer_bot.md` (**Dependency install**).
 
 ## Quality gates (per implementer task)
 
 ```bash
 cd /workspace/.worktrees/<iid>-<task_id>
-# Orchestrator post-worktree bootstrap + first implementer invocation may both run frozen install (see Worktrees above).
+# Orchestrator post-worktree bootstrap + first implementer invocation may both run frozen install + build (see Worktrees above).
 rtk pnpm format
-rtk pnpm --filter=<workspace> typecheck
-rtk pnpm --filter=<workspace> lint
-# Unit tests: `jest --findRelatedTests` on changed sources (`--coverage=false`); fall back to full `pnpm --filter <workspace> test` when needed — see `.cursor/agents/implementer_bot.md` § Unit tests. CI runs the full suite with coverage.
+# Typecheck rule: enforced by `preToolUse` hook (don’t fight it).
+# - Never use `--filter` for typecheck
+# - Never run `rtk pnpm typecheck` at repo root
+# - Run typecheck from `apps/frontend`, `apps/backend`, or `packages/types`
 rtk pnpm knip
+# If typecheck/lint/knip suggest outdated shared types: `rtk pnpm build` at worktree root, then rerun failed gates (.cursor/agents/implementer_bot.md — stale dist/).
 # Do not run `pnpm test:e2e` here; commit with Husky skipped (see implementer_bot).
 ```
 
@@ -77,7 +79,7 @@ All must exit 0 before the implementer opens the Draft MR. Commits must use **`H
 
 ## Golden Rule
 
-**Always prefix commands with `rtk`**. If RTK has a dedicated filter, it uses it. If not, it passes through unchanged. This means RTK is always safe to use.
+**Always prefix commands with `rtk`**, except: **repo-root typecheck should be `pnpm typecheck` (no RTK)**. A hook enforces the allowed typecheck command shapes.
 
 **Important**: Even in command chains with `&&`, use `rtk`:
 

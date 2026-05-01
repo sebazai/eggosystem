@@ -22,8 +22,8 @@
     },
     "apps/frontend": {
       "entry": ["src/app/**/*.{ts,tsx}"],
-      "project": ["src/**/*.{ts,tsx}", "jest.config.js"],
-      "jest": false,
+      "project": ["src/**/*.{ts,tsx}", "jest.config.mjs"],
+      "jest": true,
       "ignoreDependencies": [
         "jest-junit",
         "jsdom",
@@ -54,13 +54,6 @@
     }
   },
   "ignore": [
-    "**/*.test.ts",
-    "**/*.test.tsx",
-    "**/*.spec.ts",
-    "**/*.spec.tsx",
-    "**/test-utils/**",
-    "**/__tests__/**",
-    "**/__mocks__/**",
     "**/dist/**",
     "**/coverage/**",
     "**/node_modules/**",

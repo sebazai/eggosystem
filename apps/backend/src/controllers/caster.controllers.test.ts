@@ -132,7 +132,9 @@ const mockMatchGamesByTeam = {
   map_id: 1,
   map_order: 1,
   team1_score: 16,
-  team2_score: 13
+  team2_score: 13,
+  team1_side: null,
+  team2_side: null
 } satisfies MatchGamesByTeam;
 
 describe("getMatchGamesByTeamController", () => {

@@ -58,6 +58,7 @@ describe("getMatchesBySeasonAndLeagueWithStreamUrls - Unit Tests", () => {
         match_status: "SCHEDULED",
         match_team1: "Team Alpha",
         match_team2: "Team Beta",
+        teams: { home: null, away: null },
         external_match_room_id: "room123",
         season_platform: "kanaliiga"
       }
@@ -111,6 +112,7 @@ describe("getMatchesBySeasonAndLeagueWithStreamUrls - Unit Tests", () => {
         stream_urls: [],
         match_team1: "Team Gamma",
         match_team2: "Team Delta",
+        teams: { home: null, away: null },
         external_match_room_id: "room456",
         season_platform: "kanaliiga"
       }
@@ -181,6 +183,7 @@ describe("getMatchesBySeasonAndLeagueWithStreamUrls - Unit Tests", () => {
         match_status: "SCHEDULED",
         match_team1: "Team Echo",
         match_team2: "Team Foxtrot",
+        teams: { home: null, away: null },
         external_match_room_id: "room789",
         season_platform: "kanaliiga"
       }

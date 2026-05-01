@@ -71,7 +71,11 @@ export const MatchStats = ({
         handleMapSelect={handleMapSelect}
       />
 
-      <TeamStatistics matchId={matchId} teamStatsFilters={baseFilters} />
+      <TeamStatistics
+        matchId={matchId}
+        teamStatsFilters={baseFilters}
+        matchTeams={matchInfo.teams}
+      />
 
       {/* Player Stats Grid */}
       {isLoadingPlayerStats && <PlayerStatisticsSkeleton />}

@@ -14,6 +14,7 @@ import { useGetMatchGamesByExternalMatchRoomId } from "@/hooks/data/useGetMatchG
 import { useMemo } from "react";
 import { useParams } from "next/navigation";
 import { MatchMapPicksSkeleton } from "@/components/loading";
+import { orderTwoParticipantsBySideHomeLeft } from "@/lib/order-match-teams-home-left-away";
 
 interface MatchMapPicksProps {
   matchId: number;
@@ -51,6 +52,13 @@ export const MatchMapPicks = ({
     return [...(maps || []), ...(theOtherGameMaps || [])];
   }, [maps, theOtherGameMaps]);
 
+  const orderedMatchTeams = useMemo(() => {
+    if (!matchInfo) return null;
+    const list = Object.values(matchInfo.teams);
+    if (list.length !== 2) return null;
+    return orderTwoParticipantsBySideHomeLeft(list[0]!, list[1]!);
+  }, [matchInfo]);
+
   const isLoading =
     isLoadingMaps ||
     isLoadingVetoes ||
@@ -69,6 +77,37 @@ export const MatchMapPicks = ({
         {allMatchGameMaps
           .sort((a, b) => (a.map_order ?? 0) - (b.map_order ?? 0))
           .map((mapMatchGame, index) => {
+            const [leftScore, rightScore] = (() => {
+              if (!orderedMatchTeams) {
+                return [
+                  mapMatchGame.team1_score,
+                  mapMatchGame.team2_score
+                ] as const;
+              }
+              const [left, right] = orderedMatchTeams;
+              if (
+                left.id === mapMatchGame.team1_id &&
+                right.id === mapMatchGame.team2_id
+              ) {
+                return [
+                  mapMatchGame.team1_score,
+                  mapMatchGame.team2_score
+                ] as const;
+              }
+              if (
+                left.id === mapMatchGame.team2_id &&
+                right.id === mapMatchGame.team1_id
+              ) {
+                return [
+                  mapMatchGame.team2_score,
+                  mapMatchGame.team1_score
+                ] as const;
+              }
+              return [
+                mapMatchGame.team1_score,
+                mapMatchGame.team2_score
+              ] as const;
+            })();
             return (
               <div
                 key={index}
@@ -101,11 +140,11 @@ export const MatchMapPicks = ({
 
                 <div className="flex items-center gap-1 p-3 z-10 w-full justify-end">
                   <span className="text-lg w-6 font-black text-center">
-                    {mapMatchGame.team1_score}
+                    {leftScore}
                   </span>
                   <span className="text-md">-</span>
                   <span className="text-lg w-6 font-black text-center">
-                    {mapMatchGame.team2_score}
+                    {rightScore}
                   </span>
                 </div>
               </div>

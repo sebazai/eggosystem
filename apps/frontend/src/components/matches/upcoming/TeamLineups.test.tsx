@@ -1,5 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import { TeamLineups } from "./TeamLineups";
+import { HomeAwaySidesLayout } from "./components/HomeAwaySidesLayout";
 import type { Player, MatchTeamInfo, MatchTeamLineup } from "@eggosystem/types";
 import { useMatchTeamLineups } from "@/hooks/data/useMatchTeamLineups";
 import { usePlayerStatsWithFallback } from "@/hooks/data/usePlayerStatsWithFallback";
@@ -17,19 +18,26 @@ const mockUsePlayerStatsWithFallback =
   >;
 
 // Mock child components - PlayerCard is in the components subdirectory
-jest.mock("./components", () => ({
-  PlayerCard: ({ player }: { player: any }) => (
-    <div data-testid={`player-card-${player.id}`}>{player.nickname}</div>
-  ),
-  PlayerComparisonSection: () => (
-    <div data-testid="player-comparison">Comparison</div>
-  )
-}));
+jest.mock("./components", () => {
+  const actual =
+    jest.requireActual<typeof import("./components")>("./components");
+  return {
+    ...actual,
+    PlayerCard: ({ player }: { player: Record<string, unknown> }) => (
+      <div data-testid={`player-card-${String(player.id)}`}>
+        {String(player.nickname ?? "")}
+      </div>
+    ),
+    PlayerComparisonSection: () => (
+      <div data-testid="player-comparison">Comparison</div>
+    )
+  };
+});
 
 describe("TeamLineups", () => {
   const mockTeams: MatchTeamInfo[] = [
-    { id: 1, name: "Team 1", logo: "", score: 0, rank: null },
-    { id: 2, name: "Team 2", logo: "", score: 0, rank: null }
+    { id: 1, name: "Team 1", logo: "", score: 0, rank: null, side: null },
+    { id: 2, name: "Team 2", logo: "", score: 0, rank: null, side: null }
   ];
 
   const mockLineups: Record<string, MatchTeamLineup> = {
@@ -37,6 +45,7 @@ describe("TeamLineups", () => {
       id: 1,
       name: "Team 1",
       logo: "",
+      side: null,
       players: [
         {
           steam_id: "76561198012345678",
@@ -68,6 +77,7 @@ describe("TeamLineups", () => {
       id: 2,
       name: "Team 2",
       logo: "",
+      side: null,
       players: [
         {
           steam_id: "76561198012345680",
@@ -204,5 +214,37 @@ describe("TeamLineups", () => {
       // Should now show players
       expect(screen.getByText("Player 1")).toBeInTheDocument();
     });
+  });
+});
+
+describe("HomeAwaySidesLayout", () => {
+  it("renders grouped home and away regions", () => {
+    render(
+      <HomeAwaySidesLayout
+        home={<div>Alpha roster</div>}
+        away={<div>Bravo roster</div>}
+      />
+    );
+
+    expect(
+      screen.getByRole("group", { name: "Home and away team sides" })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("region", { name: "Home team side" })
+    ).toHaveTextContent("Alpha roster");
+    expect(
+      screen.getByRole("region", { name: "Away team side" })
+    ).toHaveTextContent("Bravo roster");
+  });
+
+  it("renders fullWidthFooter beneath the sides", () => {
+    render(
+      <HomeAwaySidesLayout
+        home={<span>H</span>}
+        away={<span>A</span>}
+        fullWidthFooter={<footer data-testid="footer-slot">Compared</footer>}
+      />
+    );
+    expect(screen.getByTestId("footer-slot")).toHaveTextContent("Compared");
   });
 });

@@ -143,7 +143,7 @@ Also maintain **`implementer_invocation_index`** per task (integer counter for *
 
 - Initialize to **`0`** once **`4a`** has created `<worktree_path>` (same task dispatch; do not reset between adversary/Code Review/CI loops).
 - Immediately **before every** `Task(implementer_bot)` — including each **4b** pass, stuck retries, **`4c`/`4d`/Final Review loops** — do **`implementer_invocation_index += 1`** and pass the new value into the prompt as **`implementer_invocation_index: <n>`**.
-- **`implementer_bot`** runs **`rtk pnpm install --frozen-lockfile`** only when **`n == 1`** unless dependency manifests changed or bootstrap failed (see `/workspace/.cursor/agents/implementer_bot.md` **Dependency install**).
+- **`implementer_bot`** runs **`rtk pnpm install --frozen-lockfile`** then **`rtk pnpm build`** only when **`n == 1`** unless dependency manifests changed or bootstrap failed (see `/workspace/.cursor/agents/implementer_bot.md` **Dependency install**).
 
 Normalize dependency gates (orchestrator): for each decomposition row `t` in `tasks[]` (plus tracked `state` / `branch` during Phase 4) and parent id **`p`** in **`t.depends_on`**, **`gate(t,p)`** = **`t.implements_after_gates[p]`** when the key exists on the decomposition object, else **`"completed"`** (backward compatible). Define **`parent_satisfies_gate(parent, gate)`** for **`parent`** the upstream tracker row:
 
@@ -228,6 +228,7 @@ node scripts/bootstrap-worktree-env.mjs
 # Omitting this can leave incomplete installs where tools like knip fail inside the worktree only.
 rm -rf node_modules
 rtk pnpm install --frozen-lockfile
+rtk pnpm build
 ```
 
 Pass **`base`** to `implementer_bot` as `Base:` so **`create_merge_request.target_branch`** matches **stacked** vs **development** workflows (see `/workspace/.cursor/agents/implementer_bot.md`).
@@ -290,7 +291,7 @@ After **code review** approves (`state=ci`), CI can take many minutes. Spawn **`
 ```
 Task(subagent_type=devops_bot,
      run_in_background=true,
-     prompt="Read /workspace/.cursor/agents/devops_bot.md. MR: !<mr_iid>. Branch: <branch>. Return ONLY the JSON envelope.")
+     prompt="Read /workspace/.cursor/agents/devops_bot.md. Project (GitLab MCP project_id): <group/project>. MR: !<mr_iid>. Branch: <branch>. Return ONLY the JSON envelope.")
 ```
 
 - Track each task in `ci` as **awaiting** a `devops_bot` envelope (e.g. background agent id / completion notification). Do **not** synchronously await this `Task` before dispatching independent ready tasks.

@@ -4,11 +4,12 @@ import React, { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import type {
   MatchGameTradeStats,
+  MatchTeamInfo,
   PlayerTradeStats,
   TradeMatrixEntry
 } from "@eggosystem/types";
-import type { MatchTeamInfo } from "@eggosystem/types";
 import { Button } from "@/components/ui/button";
+import { orderMatchParticipantsBySideHomeLeft } from "@/lib/order-match-teams-home-left-away";
 
 /* ─── colour helpers ────────────────────────── */
 const pct = (n: number, d: number) => (d === 0 ? 0 : Math.round((n / d) * 100));
@@ -777,7 +778,10 @@ interface TradeTabProps {
 export const TradeTab = ({ tradeStats, teams }: TradeTabProps) => {
   const [activeTeam, setActiveTeam] = useState<"A" | "B">("A");
 
-  const teamList = useMemo(() => Object.values(teams), [teams]);
+  const teamList = useMemo(
+    () => orderMatchParticipantsBySideHomeLeft(Object.values(teams)),
+    [teams]
+  );
   const teamA = teamList[0];
   const teamB = teamList[1];
 

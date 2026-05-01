@@ -1,4 +1,5 @@
 // Export all reusable components
+export { HomeAwaySidesLayout } from "./HomeAwaySidesLayout";
 export { MapComparisonCard } from "./MapComparisonCard";
 export { MapPerformanceRadarSection } from "./MapPerformanceRadarSection";
 export { TeamRecentForm } from "./TeamRecentForm";

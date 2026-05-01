@@ -124,8 +124,22 @@ const mockMatchesWithTeamData: MatchesWithTeamDataQuery[] = [
     season_platform: "kanaliiga" as SeasonPlatform,
     stage: 1,
     teams: JSON.stringify({
-      team1: { id: 1, name: "Team A", logo: "logo1.png", score: 16 },
-      team2: { id: 2, name: "Team B", logo: "logo2.png", score: 13 }
+      team1: {
+        id: 1,
+        name: "Team A",
+        logo: "logo1.png",
+        score: 16,
+        rank: null,
+        side: null
+      },
+      team2: {
+        id: 2,
+        name: "Team B",
+        logo: "logo2.png",
+        score: 13,
+        rank: null,
+        side: null
+      }
     })
   }
 ];
@@ -839,8 +853,12 @@ describe("Matches Controllers", () => {
           match_id: 123,
           map_order: null,
           demofile: "demo.dem",
+          team1_id: 10,
+          team2_id: 11,
           team1_score: 16,
-          team2_score: 13
+          team2_score: 13,
+          team1_side: null,
+          team2_side: null
         }
       ];
       mockGetMatchGames.mockResolvedValue(mockGames);

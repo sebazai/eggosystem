@@ -28,6 +28,7 @@ export const createMockMatchTeam = (
     team_id: 1,
     season_id: 1,
     league_id: 1,
+    match_side: null,
     ...overrides
   };
 };

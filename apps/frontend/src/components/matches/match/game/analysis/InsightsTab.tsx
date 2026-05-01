@@ -8,8 +8,10 @@ import { createTeamLogoUrl } from "@/lib/utils";
 import type {
   InsightResult,
   MatchGameInsights,
-  MatchGameInsightsTeam
+  MatchGameInsightsTeam,
+  MatchInfo
 } from "@eggosystem/types";
+import { orderTwoParticipantsBySideHomeLeft } from "@/lib/order-match-teams-home-left-away";
 
 /* ─────────────────────────────────────────────────────────────────────────────
  *  Types & constants
@@ -18,6 +20,7 @@ import type {
 interface InsightsTabProps {
   insights: MatchGameInsights;
   playerNames: Map<string, string>;
+  matchTeams: MatchInfo["teams"];
 }
 
 type Side = "CT" | "T";
@@ -298,14 +301,27 @@ const PlayerFilter = ({
  *  InsightsTab (main export)
  * ─────────────────────────────────────────────────────────────────────────── */
 
-export const InsightsTab = ({ insights, playerNames }: InsightsTabProps) => {
+export const InsightsTab = ({
+  insights,
+  playerNames,
+  matchTeams
+}: InsightsTabProps) => {
   const [side, setSide] = useState<Side>("CT");
   const [activePlayer, setActivePlayer] = useState<string | null>(null);
 
   const { team1, team2 } = useMemo(() => {
-    const [t1, t2] = insights.teams;
-    return { team1: t1, team2: t2 };
-  }, [insights.teams]);
+    const rows = insights.teams;
+    if (rows.length !== 2) return { team1: rows[0], team2: rows[1] };
+    const a = rows[0]!;
+    const b = rows[1]!;
+    const fa = matchTeams[a.team_id];
+    const fb = matchTeams[b.team_id];
+    if (!fa || !fb) return { team1: a, team2: b };
+    const [first, second] = orderTwoParticipantsBySideHomeLeft(fa, fb);
+    const firstInsight = first.id === a.team_id ? a : b;
+    const secondInsight = second.id === a.team_id ? a : b;
+    return { team1: firstInsight, team2: secondInsight };
+  }, [insights.teams, matchTeams]);
 
   const team1Insights = useMemo(
     () => (team1 ? (side === "CT" ? team1.ct : team1.t) : []),
