@@ -291,7 +291,7 @@ After **code review** approves (`state=ci`), CI can take many minutes. Spawn **`
 ```
 Task(subagent_type=devops_bot,
      run_in_background=true,
-     prompt="Read /workspace/.cursor/agents/devops_bot.md. MR: !<mr_iid>. Branch: <branch>. Return ONLY the JSON envelope.")
+     prompt="Read /workspace/.cursor/agents/devops_bot.md. Project (GitLab MCP project_id): <group/project>. MR: !<mr_iid>. Branch: <branch>. Return ONLY the JSON envelope.")
 ```
 
 - Track each task in `ci` as **awaiting** a `devops_bot` envelope (e.g. background agent id / completion notification). Do **not** synchronously await this `Task` before dispatching independent ready tasks.

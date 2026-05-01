@@ -181,7 +181,7 @@ Each task `t` runs through these substeps. The orchestrator runs them sequential
 **Goal:** dependents must **reuse prerequisite code**. Two patterns:
 
 1. **Stacked MR (single dependency):** `<base>` **is that task’s branch name** (e.g. `feat-<iid>-T2-slug`). The Draft MR’s **merge target branch = `<base>`**, not `development`, until the parent has merged upstream and you rebase/reparent the child branch onto `development`.
-2. **Integration branch (multiple dependencies):** `<base>` = `development`; after `git worktree add … origin/development`, **merge `origin/<each dep branch>`** for every dependency whose gate is satisfied by **`impl_ready`** (topo-safe order). Gates **`branch_published` / `mr_opened`** permit merges **before** the parent reaches **`completed`** intentionally; gate **`completed`** waits for CI-verified tips.
+2. **Integration branch (multiple dependencies):** `<base>` = `development`; after `rtk git worktree add … origin/development`, run **`rtk git merge origin/<each dep branch>`** for every dependency whose gate is satisfied by **`impl_ready`** (topo-safe order). Gates **`branch_published` / `mr_opened`** permit merges **before** the parent reaches **`completed`** intentionally; gate **`completed`** waits for CI-verified tips.
 
 **Branch discovery:** Resolve parent branch names from **`get_merge_request` / bookkeeping** once the parent satisfies **`mr_opened`** or stricter — **do not wait for parent CI** when the decomposition used a relaxed gate.
 
@@ -203,7 +203,7 @@ worktree_path = "/workspace/.worktrees/<iid>-<t.id>"
 
 rtk git fetch origin
 rtk git worktree add <worktree_path> -b <branch> origin/<base>
-# If multiple deps: cd <worktree_path> && merge sibling dep branches — do NOT omit or gate will fail:
+# If multiple deps: cd <worktree_path> && rtk git merge origin/<dep1> && rtk git merge origin/<dep2> … — do NOT omit or gate will fail:
 # rtk git merge origin/feat-<iid>-T1-... && rtk git merge origin/feat-<iid>-T2-... ...
 
 # One-off: copy `.env`/`.pem` from primary checkout (.gitignored) into this worktree. Derives source as
@@ -278,7 +278,7 @@ After **code review** approves (`state=ci`), CI can take many minutes. Spawn **`
 ```
 Task(subagent_type=devops_bot,
      run_in_background=true,
-     prompt="Read /workspace/.cursor/agents/devops_bot.md. MR: !<mr_iid>. Branch: <branch>. Return ONLY the JSON envelope.")
+     prompt="Read /workspace/.cursor/agents/devops_bot.md. Project (GitLab MCP project_id): <group/project>. MR: !<mr_iid>. Branch: <branch>. Return ONLY the JSON envelope.")
 ```
 
 - Track each task in `ci` as **awaiting** a `devops_bot` envelope (e.g. background agent id / completion notification). Do **not** synchronously await this `Task` before dispatching independent ready tasks.
@@ -364,7 +364,7 @@ AskQuestion(
    rtk git branch -d <t.branch>
    ```
 
-   `git branch -d` is safe (refuses if not merged); `git worktree remove --force` is in `ask` — confirm.
+   `rtk git branch -d` is safe (refuses if not merged); `rtk git worktree remove --force` is in `ask` — confirm.
 
 When all MRs in topo order are merged or skipped, print the summary card:
 

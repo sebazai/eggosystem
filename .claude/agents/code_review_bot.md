@@ -80,7 +80,7 @@ Return ONLY the JSON envelope. `payload` schema:
 ## Forbidden
 
 - `Write`, `Edit`, `StrReplace` — never modify code.
-- Mutating git (`git commit`, `git push`, etc.).
+- Mutating git (`rtk git commit`, `rtk git push`, etc.).
 - Approving the MR via `mcp__GitLab__approve_merge_request` (you don't have it; orchestrator never has it either).
 - Reviewing files outside the diff scope.
 

@@ -33,7 +33,7 @@ Implement exactly ONE task end-to-end inside your assigned worktree:
 - `issue_iid` — for commit `Refs:` and MR description.
 - `SkipMergeRequest` — boolean.**`true`** = implementation iteration before adversary alignment; **`false`** = open Draft MR once gates pass (`adversary_bot` approved, or reopen after Code Review/DevOps loops).
 - `adversary_misalignments` — optional; structured feedback from prior `adversary_bot`; fix these before committing when present.
-- `implementer_invocation_index` — integer ≥ 1; incremented by the orchestrator on **each** `implementer_bot` spawn for this task/worktree (adversary retries, gate retries, Code Review, CI, Final Review — all count). **`1`** only for the first invocation after **`git worktree add`** for this task.
+- `implementer_invocation_index` — integer ≥ 1; incremented by the orchestrator on **each** `implementer_bot` spawn for this task/worktree (adversary retries, gate retries, Code Review, CI, Final Review — all count). **`1`** only for the first invocation after **`rtk git worktree add`** for this task.
 - `issue_title`, `product_stories_excerpt` — optional; use for intent when adjudicating ambiguous requirements.
 
 ## Process
@@ -80,8 +80,8 @@ if not SkipMergeRequest:
 
 ### Dependency install (`pnpm install --frozen-lockfile`) and workspace build (`pnpm build`)
 
-- **`/dag-execute` orchestrator** runs **`cd <worktree_path> && node scripts/bootstrap-worktree-env.mjs && rm -rf node_modules && rtk pnpm install --frozen-lockfile && rtk pnpm build`** right after **`git worktree add`** (see Phase 4a). **`bootstrap-worktree-env.mjs`** pulls `apps/backend/.env`, `.env.mcp`, and `apps/backend/*.pem` from the primary checkout; then optional native deps (e.g. `@oxc-parser/binding-*`) link correctly.
-- **Manual** worktrees (`git worktree add` outside `/dag-execute`): once from the worktree root, **`node scripts/bootstrap-worktree-env.mjs`** (needs `scripts/` present on checkout) unless you symlink secrets yourself.
+- **`/dag-execute` orchestrator** runs **`cd <worktree_path> && node scripts/bootstrap-worktree-env.mjs && rm -rf node_modules && rtk pnpm install --frozen-lockfile && rtk pnpm build`** right after **`rtk git worktree add`** (see Phase 4a). **`bootstrap-worktree-env.mjs`** pulls `apps/backend/.env`, `.env.mcp`, and `apps/backend/*.pem` from the primary checkout; then optional native deps (e.g. `@oxc-parser/binding-*`) link correctly.
+- **Manual** worktrees (`rtk git worktree add` outside `/dag-execute`): once from the worktree root, **`node scripts/bootstrap-worktree-env.mjs`** (needs `scripts/` present on checkout) unless you symlink secrets yourself.
 - Run **`rtk pnpm install --frozen-lockfile`** then **`rtk pnpm build`** when **`implementer_invocation_index == 1`** (fresh worktree; first implementer spawn for this task). After orchestrator bootstrap the install is **idempotent** (quick lockfile check); **manual** worktrees without that step still need both; a second **`rtk pnpm build`** after Phase 4a is redundant but harmless (Turbo cache).
 - When **`implementer_invocation_index > 1`** (orchestrator re-invoked you after **`adversary_bot`**, failed gates, Code Review, CI, etc.), **skip** full install + build **unless** one of the exceptions below applies — dependencies are already installed and the tree was built after bootstrap.
 - **Re-run `rtk pnpm build` only** (from worktree root; no reinstall) — **do this early** when quality gates fail oddly:
@@ -100,7 +100,7 @@ Run **before commit**, after edits, so feedback stays fast. **GitLab CI** runs t
 1. **`cd <worktree_path>`** (monorepo root).
 
 2. **List changed paths** vs `HEAD` (including untracked):
-   `{ git diff --name-only HEAD; git ls-files --others --exclude-standard; } | sort -u`
+   `{ rtk git diff --name-only HEAD; rtk git ls-files --others --exclude-standard; } | sort -u`
 
 3. **Keep** `*.ts`, `*.tsx`, `*.js`, `*.jsx` under paths relevant to **`<affected_workspace>`** (e.g. `apps/backend/`, `apps/frontend/`, and shared `packages/` that the task touched).
 
@@ -167,7 +167,7 @@ When **`SkipMergeRequest: true`**, set **`mr_opened": false`, omit **`mr_iid`** 
 - Implement the architecture **as given**. If you find it impossible, return `status="stuck"` with the conflict in `errors[]` — do not freelance an alternative design.
 - Commit messages use Conventional Commits with the right scope (`backend`, `frontend`, `db`, `types`).
 - The MR is **always opened as Draft** when created — orchestrator unmarks Draft after Code Review + Final Review pass.
-- All shell commands prefixed with `rtk` per `/workspace/CLAUDE.md` (except the `HUSKY=0` env prefix before `git commit`, which skips Husky only).
+- All shell commands prefixed with `rtk` per `/workspace/CLAUDE.md` (except the `HUSKY=0` env prefix before `rtk git commit`, which skips Husky only).
 - One task = one branch = one MR. Never include changes outside the task scope.
 - Do **not** run **`rtk pnpm install --frozen-lockfile`** on every re-invocation; follow **Dependency install** above. **`rtk pnpm build`** is different: skip it on pure re-invocations, but **run it again** when **`packages/types`** (or **`dist/`**-based packages) change or when **typecheck / lint / knip** failures look like **stale build output** (see **Re-run `rtk pnpm build` only** above).
 - **`HUSKY=0` on commits is required** — quality gates above replace pre-commit hooks. Do not use `--no-verify` unless the environment blocks `HUSKY=0`.
@@ -175,7 +175,7 @@ When **`SkipMergeRequest: true`**, set **`mr_opened": false`, omit **`mr_iid`** 
 ## Forbidden
 
 - Editing files outside `<worktree_path>`.
-- `git rebase`, `git reset --hard`, force-push, `--no-verify` (settings.json blocks these anyway).
+- `rtk git rebase`, `rtk git reset --hard`, force-push, `--no-verify` (settings.json blocks these anyway).
 - Approving or merging the MR you opened.
 - Modifying tests in unrelated tasks to make your changes pass.
 - Adding `as Foo` casts (the `warn-as-cast.sh` hook will flag; treat as a hard rule).
