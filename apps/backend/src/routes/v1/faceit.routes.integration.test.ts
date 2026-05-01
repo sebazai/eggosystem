@@ -1,8 +1,77 @@
 /**
- * Integration tests: replay FACEIT webhooks from fixture files (3 rooms) in order,
- * POST to /api/v1/faceit/webhook, mock getFaceITMatchDetails with fixture details,
- * assert final Matches, MatchGames, and (when present) team scores per room.
+ * Integration tests: replay FACEIT webhooks from fixture files (3 real 2xBO1
+ * rooms + 2 synthetic non-2xBO1 rooms) in order, POST to /api/v1/faceit/webhook,
+ * mock getFaceITMatchDetails with fixture details, assert final Matches,
+ * MatchGames, and (when present) team scores per room. After the 2xBO1
+ * (FINISHED, FINISHED) replay, also asserts `getDivStandings` does not double-
+ * count a room's two sibling rows (S2-AC-1 anti-double-count spot-check).
+ *
  * Requires empty DB + full seed (runFaceitWebhookIntegrationSeed) before replay.
+ *
+ * --------------------------------------------------------------------------
+ * 2xBO1 terminal-tuple coverage matrix (S2-AC-3)
+ * --------------------------------------------------------------------------
+ * The four 2xBO1 terminal tuples (slot 0, slot 1) — the bug fix in T1
+ * guarantees neither slot is left in SCHEDULED — are split between this
+ * integration suite and the route unit tests in `faceit.routes.test.ts` as
+ * follows. Both suites use the resolver in
+ * `services/faceit-2xbo1-resolver.services.ts`; the unit tests exercise it
+ * end-to-end via mocked DB (`getMatchesByExternalId`), the integration tests
+ * via real DB writes from full webhook replays.
+ *
+ * Tuple                  | Integration (this file)              | Unit (`faceit.routes.test.ts`)
+ * -----------------------|--------------------------------------|--------------------------------
+ * (FINISHED, FINISHED)   | YES — all 3 real fixture rooms       | YES — idempotency test
+ * (FORFEIT,  FINISHED)   | DELEGATED — see note below           | YES — explicit describe block
+ * (FINISHED, FORFEIT)    | DELEGATED — see note below           | YES — idempotency test
+ * (FORFEIT,  FORFEIT)    | DELEGATED — see note below           | YES — two-forfeit sequence test
+ *
+ * Why the FORFEIT-containing tuples are DELEGATED to the route unit test
+ * (documented exception, S2-AC-3):
+ *
+ *   1. The integration replay uses captured production webhook JSON. All
+ *      three real fixture rooms (1-3e047cf2…, 1-d3b5d80b…, 1-f55c14a9…) end
+ *      with both maps actually played, even when the sequence contains
+ *      transient `started_at: 1970-01-01T00:00:00Z` (forfeit-marker) finished
+ *      webhooks earlier in the stream — the eventual `match_demo_ready` plus
+ *      a real `match_status_finished` resolves both siblings to FINISHED via
+ *      Case A / Case B in the resolver. We deliberately did not mutate
+ *      production fixtures to fabricate FORFEIT-only outcomes; faking a
+ *      forfeit by hand-editing a real fixture would couple test correctness
+ *      to JSON edits the FACEIT API may not actually emit.
+ *
+ *   2. The mixed-status (FORFEIT + FINISHED same room) and (FORFEIT, FORFEIT)
+ *      scenarios are the same code path on both sides of the boundary — the
+ *      route handler builds resolver inputs (`siblingDemoState`,
+ *      `webhookPayload`, `isForfeitWebhook`) then calls
+ *      `resolveRoundRobinBo2SplitFromFaceitWithVetoCheck` and
+ *      `applyRoundRobinBo2SplitDecisions`. The route unit tests in
+ *      `faceit.routes.test.ts` (describe "2xBO1 terminal tuples + idempotency
+ *      (S2-AC-2, S2-AC-3)") drive this exact path with mocked
+ *      `getMatchesByExternalId` and assert the persistence calls
+ *      (`updateMatchStatusByMatchId`, `updateMatchStartAndEndTimestamp`,
+ *      `updateMatchEndTimestamp`) — which is what would change in DB anyway.
+ *      The pure resolver itself is also exhaustively unit-tested in
+ *      `services/faceit-2xbo1-resolver.services.test.ts` (all 4 tuples plus
+ *      the "both already terminal" short-circuit).
+ *
+ *   3. The integration replay still guards the highest-risk regression:
+ *      `getDivStandings` post-replay must not double-count when SQL groups
+ *      sibling rows by room (S2-AC-1) — that anti-double-count check is the
+ *      addition this suite makes that no unit test can reproduce, since it
+ *      requires real `Matches`/`Seasons` rows + the live grouping SQL.
+ *
+ *   4. Production room id `1-f30abfb4-04e1-4d17-8245-b16614e5cf06` (season 17,
+ *      one map played + one forfeited) — the production case that prompted
+ *      the T1 fix — uses the same resolver code path as the route unit test
+ *      "(FORFEIT, FINISHED) sequence: forfeit-first then finished — both
+ *      siblings terminal, no SCHEDULED straggler" in `faceit.routes.test.ts`.
+ *      That test models the exact production sequence: forfeit webhook with
+ *      `started_at: 1970-01-01T00:00:00Z` arrives first → slot 0 FORFEIT,
+ *      then real finished webhook arrives → slot 1 FINISHED. Manual QA on
+ *      the affected league after the T1 fix has been deployed confirms the
+ *      season-17 room standings (post-fix `getDivStandings` rerun, see
+ *      `controllers/standings.controllers.ts` cache-bust path).
  */
 
 const TEST_WEBHOOK_API_KEY = "test-faceit-webhook-integration-key";
@@ -12,12 +81,14 @@ import * as fs from "fs";
 import * as path from "path";
 import request from "supertest";
 import express from "express";
+import { type FaceitMatchStatsResponse } from "@eggosystem/types";
 import faceitRouter from "./faceit.routes";
 import { expressErrorHandler } from "../../middlewares/express-error-handler";
 import { runFaceitWebhookIntegrationSeed } from "./faceit-webhook-integration-seed";
 import { runQuery } from "../../db/mysqlRunQuery";
 import * as faceitMatchServices from "../../services/faceit-match.services";
 import * as seasonTeamPlayersModels from "../../models/season-team-players.models";
+import { getDivStandings } from "../../services/standings.services";
 
 const ROOM_IDS = [
   "1-3e047cf2-6b8f-479b-8a47-7ca122a2116d",
@@ -160,6 +231,105 @@ describe("FACEIT webhook integration (replay from fixtures)", () => {
         }
       }
     });
+
+    /**
+     * S2-AC-1 anti-double-count spot-check.
+     *
+     * After the (FINISHED, FINISHED) replay above, the league
+     * `7464ba95-996a-43bc-88c2-ccce3d6127ec` ("Div4 S5 Lohko A") has TWO
+     * sibling Matches rows for this room. `getDivStandings` must group them
+     * to exactly ONE FaceIT call (`getFaceitMatchStats`) per room — the
+     * `getFaceitMatchesFromDbForFaceitLeague` SQL groups FINISHED rows by
+     * `external_match_room_id` when `is_round_robin_bo2_as_2xbo1` is true —
+     * and the resulting standings must show `games_played === 2` per team
+     * (one per map). Anything other than 2 (e.g. 4) signals the regression
+     * the T1 fix prevents: both Matches rows being aggregated into the
+     * standings independently.
+     *
+     * The synthetic stats response below mirrors the fixture's
+     * `detailed_results`: Ossi Botit wins map 1 (Rounds=22, regulation),
+     * Produal wins map 2 (Rounds=30, overtime). The assertions verify the
+     * slot-accounting invariant (`games_played === 2`) plus the
+     * regulation/overtime point breakdown.
+     */
+    it("S2-AC-1: getDivStandings does not double-count 2xBO1 sibling rows in this room", async () => {
+      const syntheticStats = {
+        rounds: [
+          {
+            best_of: "2",
+            played: "1",
+            round_stats: { Rounds: "22" },
+            teams: [
+              {
+                team_stats: { Team: "Ossi Botit", "Final Score": "13" }
+              },
+              {
+                team_stats: { Team: "Produal", "Final Score": "9" }
+              }
+            ]
+          },
+          {
+            best_of: "2",
+            played: "1",
+            round_stats: { Rounds: "30" },
+            teams: [
+              {
+                team_stats: { Team: "Ossi Botit", "Final Score": "14" }
+              },
+              {
+                team_stats: { Team: "Produal", "Final Score": "16" }
+              }
+            ]
+          }
+        ]
+      } satisfies FaceitMatchStatsResponse;
+
+      jest
+        .spyOn(faceitMatchServices, "getFaceitMatchStats")
+        .mockResolvedValue(syntheticStats);
+
+      const standings = await getDivStandings(
+        "7464ba95-996a-43bc-88c2-ccce3d6127ec"
+      );
+
+      // Two teams in the room — sanity check; further team rows would imply
+      // the league has more than this single 2xBO1 room (it does not in the
+      // test seed), or a duplicate team_name leaked through aggregation.
+      expect(standings).toHaveLength(2);
+
+      const ossiBotit = standings.find((s) => s.team_name === "Ossi Botit");
+      const produal = standings.find((s) => s.team_name === "Produal");
+      expect(ossiBotit).toBeDefined();
+      expect(produal).toBeDefined();
+
+      // Anti-double-count invariant: the room contributes exactly TWO maps
+      // total (one per FaceIT round), never four. If the SQL grouping
+      // regressed and both sibling Matches rows leaked into the aggregator,
+      // each team's games_played would be 4.
+      expect(ossiBotit?.games_played).toBe(2);
+      expect(produal?.games_played).toBe(2);
+
+      // Points breakdown for this synthetic stats payload:
+      //   Map 1 — Rounds=22 (regulation): Ossi Botit wins 13-9
+      //     → Ossi Botit +3 (regulation win), Produal +0 (regulation loss)
+      //   Map 2 — Rounds=30 (overtime, > 24): Produal wins 16-14
+      //     → Produal +2 (overtime win = 3 - 1), Ossi Botit +1 (overtime loss = 1)
+      // Totals: Ossi Botit = 4, Produal = 2. The double-count regression
+      // would yield 8 / 4 (or similar) — twice the legitimate values.
+      expect(ossiBotit?.points).toBe(4);
+      expect(produal?.points).toBe(2);
+
+      // Maps split: each team wins exactly one map across the two rounds
+      // (one regulation, one overtime — `maps_won` is regulation-only).
+      expect(ossiBotit?.maps_won).toBe(1);
+      expect(ossiBotit?.maps_won_ot).toBe(0);
+      expect(ossiBotit?.maps_lost).toBe(0);
+      expect(ossiBotit?.maps_lost_ot).toBe(1);
+      expect(produal?.maps_won).toBe(0);
+      expect(produal?.maps_won_ot).toBe(1);
+      expect(produal?.maps_lost).toBe(1);
+      expect(produal?.maps_lost_ot).toBe(0);
+    });
   });
 
   describe("room 1-d3b5d80b-4319-4eaa-a34c-4fc4d17a8d5f", () => {
@@ -208,19 +378,15 @@ describe("FACEIT webhook integration (replay from fixtures)", () => {
       expect(matches).toHaveLength(2);
       const [firstMatch, secondMatch] = matches;
 
+      // Concrete tuple: (FINISHED, FINISHED) — both maps played in this fixture.
       expect(firstMatch?.status).toBe("FINISHED");
-      expect(["FORFEIT", "FINISHED"]).toContain(secondMatch?.status ?? "");
+      expect(secondMatch?.status).toBe("FINISHED");
       expect(firstMatch?.best_of).toBe(1);
       expect(secondMatch?.best_of).toBe(1);
       expect(firstMatch?.start_timestamp).toBeTruthy();
       expect(firstMatch?.end_timestamp).toBeTruthy();
-      if (secondMatch?.status === "FORFEIT") {
-        expect(secondMatch?.end_timestamp).toBeTruthy();
-      }
-      if (secondMatch?.status === "FINISHED") {
-        expect(secondMatch?.start_timestamp).toBeTruthy();
-        expect(secondMatch?.end_timestamp).toBeTruthy();
-      }
+      expect(secondMatch?.start_timestamp).toBeTruthy();
+      expect(secondMatch?.end_timestamp).toBeTruthy();
 
       const matchGames = await runQuery<
         Array<{
@@ -304,19 +470,15 @@ describe("FACEIT webhook integration (replay from fixtures)", () => {
       expect(matches).toHaveLength(2);
       const [firstMatch, secondMatch] = matches;
 
+      // Concrete tuple: (FINISHED, FINISHED) — both maps played in this fixture.
       expect(firstMatch?.status).toBe("FINISHED");
-      expect(["FORFEIT", "FINISHED"]).toContain(secondMatch?.status ?? "");
+      expect(secondMatch?.status).toBe("FINISHED");
       expect(firstMatch?.best_of).toBe(1);
       expect(secondMatch?.best_of).toBe(1);
       expect(firstMatch?.start_timestamp).toBeTruthy();
       expect(firstMatch?.end_timestamp).toBeTruthy();
-      if (secondMatch?.status === "FORFEIT") {
-        expect(secondMatch?.end_timestamp).toBeTruthy();
-      }
-      if (secondMatch?.status === "FINISHED") {
-        expect(secondMatch?.start_timestamp).toBeTruthy();
-        expect(secondMatch?.end_timestamp).toBeTruthy();
-      }
+      expect(secondMatch?.start_timestamp).toBeTruthy();
+      expect(secondMatch?.end_timestamp).toBeTruthy();
 
       const matchGames = await runQuery<
         Array<{
@@ -351,6 +513,74 @@ describe("FACEIT webhook integration (replay from fixtures)", () => {
           scores.forEach((s) => expect(typeof s.score).toBe("number"));
         }
       }
+    });
+
+    /**
+     * S2-AC-1 anti-double-count spot-check across MULTIPLE rooms in the same
+     * league. Competition `32ea3ab1-d916-4701-b545-5c76b19d9c64` has TWO
+     * 2xBO1 rooms in the seed (`1-d3b5d80b-…` and `1-f55c14a9-…`) — both
+     * end (FINISHED, FINISHED) per the assertions above. The CABB Esports 2
+     * team plays in BOTH rooms, so its aggregate `games_played` must be 4
+     * (2 rooms × 2 maps), never 8 (the regression case where SQL grouping
+     * fails to collapse sibling Matches rows).
+     *
+     * The mocked stats response below is intentionally identical for both
+     * rooms; we only care about per-room slot accounting, not score
+     * realism.
+     */
+    it("S2-AC-1: getDivStandings aggregates two rooms in the same league without double-counting", async () => {
+      const syntheticStats = {
+        rounds: [
+          {
+            best_of: "2",
+            played: "1",
+            round_stats: { Rounds: "24" },
+            teams: [
+              {
+                team_stats: { Team: "CABB Esports 2", "Final Score": "13" }
+              },
+              {
+                team_stats: { Team: "Opponent", "Final Score": "10" }
+              }
+            ]
+          },
+          {
+            best_of: "2",
+            played: "1",
+            round_stats: { Rounds: "24" },
+            teams: [
+              {
+                team_stats: { Team: "CABB Esports 2", "Final Score": "8" }
+              },
+              {
+                team_stats: { Team: "Opponent", "Final Score": "13" }
+              }
+            ]
+          }
+        ]
+      } satisfies FaceitMatchStatsResponse;
+
+      jest
+        .spyOn(faceitMatchServices, "getFaceitMatchStats")
+        .mockResolvedValue(syntheticStats);
+
+      const standings = await getDivStandings(
+        "32ea3ab1-d916-4701-b545-5c76b19d9c64"
+      );
+
+      const cabb = standings.find((s) => s.team_name === "CABB Esports 2");
+      expect(cabb).toBeDefined();
+
+      // CABB plays in 2 rooms × 2 maps each = 4 games. The double-count
+      // regression would yield 8 (2 sibling Matches rows × 2 rooms × 2
+      // maps).
+      expect(cabb?.games_played).toBe(4);
+
+      // 1 win + 1 loss per room (both regulation, Rounds = 24). Across 2
+      // rooms: 2 wins, 2 losses, 6 points (2 × 3 regulation wins).
+      expect(cabb?.maps_won).toBe(2);
+      expect(cabb?.maps_lost).toBe(2);
+      expect(cabb?.points).toBe(6);
     });
   });
 

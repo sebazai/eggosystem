@@ -175,21 +175,34 @@ export async function runFaceitWebhookIntegrationSeed(): Promise<void> {
       seasonId = ins.insertId as number;
     }
 
-    // 5. Leagues
-    const [leagueRow] = await runQuery<Array<{ id: number }>>(
-      "SELECT id FROM Leagues WHERE name = ? LIMIT 1",
-      ["FACEIT Integration League"],
-      trx
-    );
-    const leagueId =
-      leagueRow?.id ??
-      ((
-        (await runQuery<{ insertId: number }>(
+    // 5. Leagues — one per entity_id so each entity_id resolves to a
+    // distinct league_id, mirroring production where every FACEIT
+    // championship entity belongs to its own Leagues row. Sharing a single
+    // league_id across entities would let the standings query's
+    // (season_id, league_id, stage_id, manual_group) JOIN pull matches from
+    // *every* room in the seed regardless of `slei.external_id`, which
+    // muddies the per-league anti-double-count assertion.
+    const leagueIdByEntity = new Map<string, number>();
+    for (const entityId of ENTITY_IDS) {
+      const leagueName = `FACEIT Integration League ${entityId}`;
+      const [existing] = await runQuery<Array<{ id: number }>>(
+        "SELECT id FROM Leagues WHERE name = ? LIMIT 1",
+        [leagueName],
+        trx
+      );
+      let lid: number;
+      if (existing?.id != null) {
+        lid = existing.id;
+      } else {
+        const ins = await runQuery<{ insertId: number }>(
           "INSERT INTO Leagues (name, sort_priority) VALUES (?, ?)",
-          ["FACEIT Integration League", 99],
+          [leagueName, 99],
           trx
-        )) as { insertId: number }
-      ).insertId as number);
+        );
+        lid = ins.insertId as number;
+      }
+      leagueIdByEntity.set(entityId, lid);
+    }
 
     // 6. Stages
     const [stageRow] = await runQuery<Array<{ id: number }>>(
@@ -207,25 +220,41 @@ export async function runFaceitWebhookIntegrationSeed(): Promise<void> {
         )) as { insertId: number }
       ).insertId as number);
 
-    // 7. SeasonLeagues (PK season_id, league_id)
-    await runQuery(
-      `INSERT IGNORE INTO SeasonLeagues (season_id, league_id, tier) VALUES (?, ?, ?)`,
-      [seasonId, leagueId, 1],
-      trx
-    );
-
-    // 8. SeasonLeagueExternalIds (unique season_id, league_id, external_id)
-    for (const entityId of ENTITY_IDS) {
+    // 7. SeasonLeagues (PK season_id, league_id) — one row per entity-league.
+    for (const lid of leagueIdByEntity.values()) {
       await runQuery(
-        `INSERT INTO SeasonLeagueExternalIds (external_id, external_league_name, season_id, league_id, stage_id, type)
-         VALUES (?, ?, ?, ?, ?, 'roundRobin')
-         ON DUPLICATE KEY UPDATE updated_at = CURRENT_TIMESTAMP`,
-        [entityId, "FACEIT Integration League", seasonId, leagueId, stageId],
+        `INSERT IGNORE INTO SeasonLeagues (season_id, league_id, tier) VALUES (?, ?, ?)`,
+        [seasonId, lid, 1],
         trx
       );
     }
 
-    // 9. Teams (unique on name) and SeasonLeagueTeams (2xBO1 season/league)
+    // 8. SeasonLeagueExternalIds (unique season_id, league_id, external_id).
+    // `manual_group = 1` matches the `group: 1` value baked into all 2xBO1
+    // fixture webhook payloads. Without it the standings query's
+    //   AND (m.group = slei.manual_group OR (m.group IS NULL AND
+    //        slei.manual_group IS NULL))
+    // join clause excludes every replayed match (since `Matches.group = 1`
+    // but `SeasonLeagueExternalIds.manual_group = NULL`), and
+    // `getDivStandings` returns an empty array for the league.
+    for (const entityId of ENTITY_IDS) {
+      const lid = leagueIdByEntity.get(entityId);
+      if (lid == null) throw new Error(`No league_id for entity ${entityId}`);
+      await runQuery(
+        `INSERT INTO SeasonLeagueExternalIds (external_id, external_league_name, season_id, league_id, stage_id, type, manual_group)
+         VALUES (?, ?, ?, ?, ?, 'roundRobin', ?)
+         ON DUPLICATE KEY UPDATE manual_group = VALUES(manual_group), updated_at = CURRENT_TIMESTAMP`,
+        [entityId, "FACEIT Integration League", seasonId, lid, stageId, 1],
+        trx
+      );
+    }
+
+    // 9. Teams (unique on name) and SeasonLeagueTeams (one row per
+    // (season, team, league) — register every team in *every* per-entity
+    // league since fixture-derived faction ids do not preserve which entity
+    // they originally belonged to. A team that never plays in a given
+    // league simply has no Matches there, so duplicate registrations are
+    // harmless for standings.
     for (const [factionId, _teamName] of allFactions) {
       const safeName = `faceit-fixture-${factionId}`.slice(0, 255);
       await runQuery(
@@ -241,11 +270,13 @@ export async function runFaceitWebhookIntegrationSeed(): Promise<void> {
       );
       const teamId = tRow?.id;
       if (teamId == null) throw new Error(`Team not found: ${safeName}`);
-      await runQuery(
-        `INSERT IGNORE INTO SeasonLeagueTeams (season_id, team_id, league_id, external_team_id) VALUES (?, ?, ?, ?)`,
-        [seasonId, teamId, leagueId, factionId],
-        trx
-      );
+      for (const lid of leagueIdByEntity.values()) {
+        await runQuery(
+          `INSERT IGNORE INTO SeasonLeagueTeams (season_id, team_id, league_id, external_team_id) VALUES (?, ?, ?, ?)`,
+          [seasonId, teamId, lid, factionId],
+          trx
+        );
+      }
     }
 
     // 10. Normal league (single Match per room: BO1 or BO3, is_round_robin_bo2_as_2xbo1 = 0)
