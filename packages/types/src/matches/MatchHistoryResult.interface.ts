@@ -8,6 +8,7 @@ import {
   TeamGameScore
 } from "../db";
 import { Nullable } from "../utils";
+import type { MatchTeamSide } from "./MatchTeamSide.types";
 
 export type MatchHistoryResult = {
   match_id: Match["id"];
@@ -28,6 +29,8 @@ export type MatchHistoryResult = {
   opponent_name: Team["name"];
   opponent_logo: Team["team_logo"];
   opponent_score: number;
+  team_side: MatchTeamSide;
+  opponent_side: MatchTeamSide;
   kills: number;
   deaths: number;
   assists: number;

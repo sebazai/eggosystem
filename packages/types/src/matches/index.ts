@@ -5,6 +5,7 @@ export * from "./MatchTopPlayerAwards.interface";
 export * from "./MatchMapsPlayed.interface";
 export * from "./MatchPlayerStats.interface";
 export * from "./MatchTopPlayersQueryResult.interface";
+export * from "./MatchTeamSide.types";
 export * from "./MatchTeamInfo.interface";
 export * from "./MatchHistoryResult.interface";
 export * from "./MatchMapVetoes.interface";

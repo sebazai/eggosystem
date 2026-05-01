@@ -9,6 +9,7 @@ import type {
   MatchInfo,
   MatchPlayerStats
 } from "@eggosystem/types";
+import { orderMatchParticipantsBySideHomeLeft } from "@/lib/order-match-teams-home-left-away";
 
 /* ─────────────────────────────────────────── */
 /*  Types                                      */
@@ -279,7 +280,10 @@ export const KillMatrixTab = ({
 }: KillMatrixTabProps) => {
   const [tab, setTab] = useState<"kills" | "flashes">("kills");
 
-  const teamList = useMemo(() => Object.values(teams), [teams]);
+  const teamList = useMemo(
+    () => orderMatchParticipantsBySideHomeLeft(Object.values(teams)),
+    [teams]
+  );
   const teamA = teamList[0]!;
   const teamB = teamList[1]!;
 

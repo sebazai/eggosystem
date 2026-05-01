@@ -243,9 +243,9 @@ export const validateAndUpdateScheduledMatchTeams = async (): Promise<void> => {
 
         // Insert correct teams
         await runQuery(
-          `INSERT INTO MatchTeams (match_id, team_id, season_id, league_id)
-           VALUES (?, ?, ?, ?),
-                  (?, ?, ?, ?)`,
+          `INSERT INTO MatchTeams (match_id, team_id, season_id, league_id, match_side)
+           VALUES (?, ?, ?, ?, 'home'),
+                  (?, ?, ?, ?, 'away')`,
           [
             match.id,
             dbTeam1.team_id,

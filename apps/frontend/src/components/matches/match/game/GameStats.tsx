@@ -88,6 +88,7 @@ export const GameStats = ({
         teamStatsFilters={baseFilter}
         matchGameId={matchGameId}
         clip={clip}
+        matchTeams={matchInfo.teams}
       />
 
       <RoundInfo

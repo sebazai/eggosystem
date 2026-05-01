@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { ExternalLink, Swords } from "lucide-react";
 import Link from "next/link";
 import { createNextUrl } from "@/lib/utils";
+import { homeLeftVersusLabelFromSides } from "@/lib/order-match-teams-home-left-away";
 import { formatDateShort } from "@/lib/date-utils";
 
 export const UpcomingMatchToast = () => {
@@ -116,7 +117,19 @@ export const UpcomingMatchToast = () => {
               {formatTimeUntilMatch()}
             </div>
             <div className="font-semibold text-sm truncate">
-              {upcomingMatch.team_name} vs {upcomingMatch.opponent_team_name}
+              {(() => {
+                const { leftName, rightName } = homeLeftVersusLabelFromSides({
+                  aName: upcomingMatch.team_name,
+                  bName: upcomingMatch.opponent_team_name,
+                  aSide: upcomingMatch.team_side,
+                  bSide: upcomingMatch.opponent_side
+                });
+                return (
+                  <>
+                    {leftName} vs {rightName}
+                  </>
+                );
+              })()}
             </div>
             <div className="text-xs text-muted-foreground mb-1">
               BO{upcomingMatch.best_of} •{" "}
