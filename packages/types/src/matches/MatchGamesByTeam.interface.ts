@@ -1,4 +1,5 @@
 import { Match, Team, Map, MatchGame, TeamGameScore } from "../db";
+import type { MatchTeamSide } from "./MatchTeamSide.types";
 
 export interface MatchGamesByTeam {
   match_id: Match["id"];
@@ -15,4 +16,6 @@ export interface MatchGamesByTeam {
   map_order: MatchGame["map_order"];
   team1_score: TeamGameScore["score"];
   team2_score: TeamGameScore["score"];
+  team1_side: MatchTeamSide;
+  team2_side: MatchTeamSide;
 }

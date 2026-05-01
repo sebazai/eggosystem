@@ -20,6 +20,7 @@ import {
   type PaginationState
 } from "@tanstack/react-table";
 import type { TeamMatchHistory as TeamMatchHistoryType } from "@eggosystem/types";
+import { matchScoreHomeAwayPresentation } from "@/lib/order-match-teams-home-left-away";
 
 interface TeamMatchHistoryProps {
   teamId: number;
@@ -83,22 +84,44 @@ export const TeamMatchHistory = ({
         id: "score",
         header: "SCORE",
         cell: ({ row }) => {
-          const teamWon = row.original.team_score > row.original.opponent_score;
+          const { homeScore, awayScore, tie, homeWon, awayWon } =
+            matchScoreHomeAwayPresentation({
+              focalScore: row.original.team_score,
+              opponentScore: row.original.opponent_score,
+              focalSide: row.original.team_side,
+              opponentSide: row.original.opponent_side
+            });
           return (
             <>
-              <span className={teamWon ? "text-green-500" : "text-red-500"}>
-                {row.original.team_score}
+              <span
+                className={
+                  tie
+                    ? "text-yellow-500"
+                    : homeWon
+                      ? "text-green-500"
+                      : "text-red-500"
+                }
+              >
+                {homeScore}
               </span>
               -
-              <span className={!teamWon ? "text-green-500" : "text-red-500"}>
-                {row.original.opponent_score}
+              <span
+                className={
+                  tie
+                    ? "text-yellow-500"
+                    : awayWon
+                      ? "text-green-500"
+                      : "text-red-500"
+                }
+              >
+                {awayScore}
               </span>
             </>
           );
         },
         meta: {
           responsive: "table-cell",
-          tooltip: "Match Score",
+          tooltip: "Match score (home left, away right)",
           sortable: true
         }
       },

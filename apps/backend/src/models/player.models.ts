@@ -562,6 +562,9 @@ export const getPlayerMatchHistoryByFilters = async (
         opp_t.name AS opponent_name,
         opp_t.team_logo AS opponent_logo,
 
+        mt.match_side AS team_side,
+        mt_opp.match_side AS opponent_side,
+
         -- Score or Win Count
         CASE
           WHEN m.best_of = 1 THEN MAX(tgs.score)
@@ -599,6 +602,7 @@ export const getPlayerMatchHistoryByFilters = async (
       JOIN Teams t ON t.id = tgs.team_id
       JOIN TeamGameScores opp_tgs ON opp_tgs.match_game_id = mg.id AND opp_tgs.team_id != tgs.team_id
       JOIN Teams opp_t ON opp_t.id = opp_tgs.team_id
+      JOIN MatchTeams mt_opp ON mt_opp.match_id = m.id AND mt_opp.team_id = opp_tgs.team_id
       LEFT JOIN PlayerStats ps ON ps.steam_id = sp.steam_id AND ps.match_game_id = mg.id
       JOIN Seasons s ON s.id = m.season_id
       JOIN Leagues l ON l.id = m.league_id
@@ -620,7 +624,9 @@ export const getPlayerMatchHistoryByFilters = async (
         t.team_logo,
         opp_tgs.team_id,
         opp_t.name,
-        opp_t.team_logo;
+        opp_t.team_logo,
+        mt.match_side,
+        mt_opp.match_side;
   `;
 
   const matchHistory = await runQuery<MatchHistoryResult[]>(

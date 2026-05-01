@@ -270,6 +270,8 @@ export const getTeamMatchesByFilters = async ({
       t1.team_logo as team_logo,
       t2.name AS opponent_name,
       t2.team_logo as opponent_logo,
+      team.match_side AS team_side,
+      opponent.match_side AS opponent_side,
       COUNT(CASE WHEN tgs1.score > tgs2.score THEN 1 END) AS team_game_wins,
       COUNT(CASE WHEN tgs2.score > tgs1.score THEN 1 END) AS opponent_game_wins,
       
@@ -285,7 +287,7 @@ export const getTeamMatchesByFilters = async ({
     JOIN TeamGameScores tgs1 ON mg.id = tgs1.match_game_id AND tgs1.team_id = team.team_id
     JOIN TeamGameScores tgs2 ON mg.id = tgs2.match_game_id AND tgs2.team_id = opponent.team_id
     WHERE ${query} AND m.status = 'FINISHED'
-    GROUP BY m.id, DATE(m.start_timestamp), m.best_of, team.team_id, opponent.team_id, t1.name, t1.team_logo, t2.name, t2.team_logo
+    GROUP BY m.id, DATE(m.start_timestamp), m.best_of, team.team_id, opponent.team_id, team.match_side, opponent.match_side, t1.name, t1.team_logo, t2.name, t2.team_logo
   )
     SELECT 
       mgs.match_id,
@@ -303,6 +305,8 @@ export const getTeamMatchesByFilters = async ({
       mgs.opponent_id, 
       mgs.opponent_name, 
       mgs.opponent_logo,
+      mgs.team_side,
+      mgs.opponent_side,
       CASE
         WHEN best_of = 1 THEN 
           CASE 
@@ -347,6 +351,8 @@ export const getTeamMatchesByFilters = async ({
       t1.team_logo as team_logo,
       t2.name AS opponent_name,
       t2.team_logo as opponent_logo,
+      team.match_side AS team_side,
+      opponent.match_side AS opponent_side,
       tgs1.score AS team_score,
       tgs2.score AS opponent_score,
       CASE

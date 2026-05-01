@@ -307,6 +307,68 @@ describe("addMatchToDatabase", () => {
       // Verify two match insertions
       expect(mockRunQuery).toHaveBeenCalledTimes(7); // 1 check + 2 insertions + 4 team associations
     });
+
+    it("assigns faction1 home and faction2 away on first BO1, swaps sides on second BO1", async () => {
+      const matchDetails = {
+        ...validMatchDetailsMatchCreated,
+        best_of: 2
+      };
+      const externalLeagueId = "test-league-id";
+
+      mockRunQuery.mockResolvedValueOnce([]);
+      mockGetSeasonLeagueExternalIdByExternalId.mockResolvedValueOnce({
+        id: 1,
+        external_id: externalLeagueId,
+        league_id: 1,
+        season_id: 1,
+        stage_id: 1,
+        is_round_robin_bo2_as_2xbo1: true,
+        type: "roundRobin",
+        external_league_name: "Test League"
+      });
+      mockGetSeasonLeagueTeamByExternalId
+        .mockResolvedValueOnce({
+          season_id: 1,
+          team_id: 100,
+          league_id: 1,
+          placement: null,
+          position_offset: null
+        })
+        .mockResolvedValueOnce({
+          season_id: 1,
+          team_id: 200,
+          league_id: 1,
+          placement: null,
+          position_offset: null
+        });
+
+      const firstMatchId = 1001;
+      const secondMatchId = 1002;
+      mockRunQuery.mockResolvedValueOnce({ insertId: firstMatchId });
+      mockRunQuery.mockResolvedValueOnce({ insertId: secondMatchId });
+      mockRunQuery.mockResolvedValueOnce([]);
+      mockRunQuery.mockResolvedValueOnce([]);
+      mockRunQuery.mockResolvedValueOnce([]);
+      mockRunQuery.mockResolvedValueOnce([]);
+
+      await addMatchToDatabase(matchDetails, externalLeagueId);
+
+      const insertMatchTeamsParams = mockRunQuery.mock.calls
+        .filter(
+          ([q]) => typeof q === "string" && q.includes("INSERT INTO MatchTeams")
+        )
+        .map(([, params]) => params);
+
+      expect(insertMatchTeamsParams).toHaveLength(4);
+      expect(insertMatchTeamsParams).toEqual(
+        expect.arrayContaining([
+          [firstMatchId, 1, 1, 100, "home"],
+          [firstMatchId, 1, 1, 200, "away"],
+          [secondMatchId, 1, 1, 100, "away"],
+          [secondMatchId, 1, 1, 200, "home"]
+        ])
+      );
+    });
   });
 
   describe("date and time handling", () => {
@@ -559,12 +621,12 @@ describe("addMatchToDatabase", () => {
       // Verify team associations
       expect(mockRunQuery).toHaveBeenCalledWith(
         expect.stringContaining("INSERT INTO MatchTeams"),
-        [1000, 1, 1, 100], // match_id, season_id, league_id, team_id
+        [1000, 1, 1, 100, "home"],
         mockConnection
       );
       expect(mockRunQuery).toHaveBeenCalledWith(
         expect.stringContaining("INSERT INTO MatchTeams"),
-        [1000, 1, 1, 200], // match_id, season_id, league_id, team_id
+        [1000, 1, 1, 200, "away"],
         mockConnection
       );
     });

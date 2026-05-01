@@ -121,7 +121,11 @@ export const MatchGameAnalysis = ({
       <TabsContent value="insights">
         {(isLoadingInsights || isLoadingPlayers) && <TableSkeleton rows={6} />}
         {!isLoadingInsights && !isLoadingPlayers && insights && (
-          <InsightsTab insights={insights} playerNames={playerNames} />
+          <InsightsTab
+            insights={insights}
+            playerNames={playerNames}
+            matchTeams={matchInfo.teams}
+          />
         )}
       </TabsContent>
 

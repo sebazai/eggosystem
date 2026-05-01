@@ -1,5 +1,5 @@
 ---
-tools: Read, Grep, Glob, Bash, WebFetch, mcp__GitLab__get_merge_request, mcp__GitLab__get_pipeline, mcp__GitLab__get_pipeline_jobs, mcp__GitLab__list_pipelines
+tools: Read, Grep, Glob, Bash, WebFetch, mcp__GitLab__get_merge_request, mcp__GitLab__get_pipeline, mcp__GitLab__list_pipeline_jobs, mcp__GitLab__get_pipeline_job_output, mcp__GitLab__list_pipelines
 name: observer_bot
 model: default
 description: Observability Agent — post-merge analysis of CI pipeline logs and (if configured) Grafana/Sentry. Read-only. Returns JSON envelope only.
@@ -66,7 +66,7 @@ Return ONLY the JSON envelope. `payload` schema:
 ## Forbidden
 
 - `Write`, `Edit`.
-- `git push`, any mutating git.
+- `rtk git push`, any mutating git.
 - Mutating GitLab (issues, MRs, pipelines).
 - Posting alerts to Slack/email/etc. — recommended_followups go in the JSON only; the orchestrator/human decides escalation.
 - WebFetch to localhost or 127.0.0.1 (settings.json blocks; respect it).

@@ -7,6 +7,7 @@ import { type FilterParamsQuery } from "@/lib/utils";
 import { MapPerformanceRadarSection, MapComparisonCard } from "./components";
 import { useTeamMapStats } from "@/hooks/data/useTeamMapStats";
 import { getTeamDataWithFallback } from "./data-utils";
+import { orderMatchParticipantsBySideHomeLeft } from "@/lib/order-match-teams-home-left-away";
 
 interface TeamMapBreakdownProps {
   matchInfo: MatchInfo;
@@ -18,7 +19,9 @@ export const TeamMapBreakdown = ({
   baseFilters
 }: TeamMapBreakdownProps) => {
   // Get team IDs from matchInfo (typed with indexed access)
-  const teams = Object.values(matchInfo.teams);
+  const teams = orderMatchParticipantsBySideHomeLeft(
+    Object.values(matchInfo.teams)
+  );
   const team1Id = teams[0]?.id;
   const team2Id = teams[1]?.id;
 

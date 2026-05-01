@@ -66,8 +66,15 @@ const mockMatchInfo: MatchInfo = {
   match_game_ids: [10340],
   status: "FINISHED",
   teams: {
-    18: { id: 18, name: "Efecte Gaming Club", logo: "", score: 1, rank: 1 },
-    53: { id: 53, name: "Polar Squad", logo: "", score: 2, rank: 2 }
+    18: {
+      id: 18,
+      name: "Efecte Gaming Club",
+      logo: "",
+      score: 1,
+      rank: 1,
+      side: null
+    },
+    53: { id: 53, name: "Polar Squad", logo: "", score: 2, rank: 2, side: null }
   }
 };
 

@@ -12,8 +12,10 @@ import type { MatchInfo } from "@eggosystem/types";
 import Link from "next/link";
 import { Tv } from "lucide-react";
 import { useMatchStreamUrls } from "@/hooks/data/useMatchStreamUrls";
-import { FaceitLink } from "../../ui/FaceitLink";
+import { orderMatchParticipantsBySideHomeLeft } from "@/lib/order-match-teams-home-left-away";
 import { formatDateShort } from "@/lib/date-utils";
+import type { MatchTeamInfo } from "@eggosystem/types";
+import { FaceitLink } from "@/components/ui/FaceitLink";
 
 interface UpcomingMatchHeaderProps {
   matchId: number;
@@ -27,21 +29,26 @@ export function UpcomingMatchHeader({
   // Get teams data safely (teams is now an array)
   // Fetch stream URLs for this match
   const { streamUrls } = useMatchStreamUrls(matchId);
-  const teams = Object.values(matchInfo.teams);
-  const team1 = teams?.[0] ?? {
+  const teamsOrdered = orderMatchParticipantsBySideHomeLeft(
+    Object.values(matchInfo.teams)
+  );
+  const FALLBACK_TEAM: MatchTeamInfo = {
     id: 0,
-    name: "Team 1",
+    name: "",
     logo: "",
     rank: null,
-    organization_name: ""
+    score: 0,
+    side: null
   };
 
-  const team2 = teams?.[1] ?? {
-    id: 0,
-    name: "Team 2",
-    logo: "",
-    rank: null,
-    organization_name: ""
+  const team1 = teamsOrdered[0] ?? {
+    ...FALLBACK_TEAM,
+    name: "Team 1"
+  };
+
+  const team2 = teamsOrdered[1] ?? {
+    ...FALLBACK_TEAM,
+    name: "Team 2"
   };
 
   const matchDate = matchInfo.start_timestamp || "";
