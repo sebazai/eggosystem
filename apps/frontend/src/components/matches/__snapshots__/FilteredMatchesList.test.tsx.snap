@@ -1461,13 +1461,13 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with matches group
               <div
                 class="text-right xs:break-normal break-words text-sm sm:text-base mr-1"
               >
-                Team Gamma
+                Team Delta
               </div>
               <img
-                alt="Team Gamma"
+                alt="Team Delta"
                 class="w-8 h-8 sm:w-10 sm:h-10 ml-1 object-contain hidden xxs:block"
                 height="30"
-                src="https://img.kanaliiga.fi/images/by-hash/phash/gamma-logo.png"
+                src="https://img.kanaliiga.fi/images/by-hash/phash/delta-logo.png"
                 width="30"
               />
             </div>
@@ -1477,7 +1477,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with matches group
               <div
                 class="z-10 w-7 font-black text-md sm:text-lg text-center"
               >
-                13
+                16
               </div>
               <span
                 class="mx-1 md:mx-2"
@@ -1487,23 +1487,23 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with matches group
               <div
                 class="z-10 w-7 font-black text-md sm:text-lg text-center"
               >
-                16
+                13
               </div>
             </div>
             <div
               class="flex items-center justify-start ml-1"
             >
               <img
-                alt="Team Delta"
+                alt="Team Gamma"
                 class="w-6 h-6 sm:w-8 sm:h-8 mr-1 object-contain hidden xxs:block"
                 height="30"
-                src="https://img.kanaliiga.fi/images/by-hash/phash/delta-logo.png"
+                src="https://img.kanaliiga.fi/images/by-hash/phash/gamma-logo.png"
                 width="30"
               />
               <div
                 class="text-left xs:break-normal break-words text-sm sm:text-base ml-1"
               >
-                Team Delta
+                Team Gamma
               </div>
             </div>
           </div>

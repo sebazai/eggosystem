@@ -88,7 +88,6 @@ import { sendDemoForAllStarPOTGClip } from "../services/allstar.services";
 import { publishDemoProcessingRequest } from "../services/match-game.services";
 import { getConnection } from "../db/mysqlConnection";
 import { parseFaceitDemoUrl } from "../utils/faceit-demo-url-parser";
-import { syncMatchTeamSidesFromMatchDetailsPayload } from "../services/match-team-side.services";
 
 type FaceITWebhookData =
   | MatchStatusConfiguringWebhook
@@ -204,18 +203,13 @@ export const handleFaceitWebhook = async (
 
   if (webhookData.event === "match_object_created") {
     if (webhookData.payload.entity.type === "matchmaking") {
-      const { webhookData: validatedWebhook, matchDetails } =
-        await processWebhookWithDetails(
-          webhookData,
-          validateMatchObjectCreatedWebhook,
-          getFaceITMatchDetails<MatchmakingDetailsObjectCreated>,
-          validateMatchmakingDetailsObjectCreated,
-          webhookData.event,
-          manualReprocess
-        );
-      await syncMatchTeamSidesFromMatchDetailsPayload(
-        validatedWebhook.payload.id,
-        matchDetails
+      await processWebhookWithDetails(
+        webhookData,
+        validateMatchObjectCreatedWebhook,
+        getFaceITMatchDetails<MatchmakingDetailsObjectCreated>,
+        validateMatchmakingDetailsObjectCreated,
+        webhookData.event,
+        manualReprocess
       );
       res.status(200).send("Webhook received");
       return;

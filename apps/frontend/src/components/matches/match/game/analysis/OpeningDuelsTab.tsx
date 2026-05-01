@@ -10,6 +10,7 @@ import type {
   MatchPlayerStats,
   OpeningDuelTradeStatus
 } from "@eggosystem/types";
+import { orderMatchParticipantsBySideHomeLeft } from "@/lib/order-match-teams-home-left-away";
 
 /* ─────────────────────────────────────────── */
 /*  Types & constants                          */
@@ -438,7 +439,7 @@ export const OpeningDuelsTab = ({
   );
 
   const { teamA, teamB } = useMemo(() => {
-    const list = Object.values(teams);
+    const list = orderMatchParticipantsBySideHomeLeft(Object.values(teams));
     return { teamA: list[0]!, teamB: list[1]! };
   }, [teams]);
 

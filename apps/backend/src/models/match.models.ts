@@ -42,7 +42,6 @@ import {
 import { type PoolConnection } from "mysql2/promise";
 import { getSeasonLeagueExternalIdByExternalIdWithSeasonSettings } from "./season-league-external-id.models";
 import { getSeasonLeagueTeamByExternalId } from "./season-league-team.models";
-import { syncMatchTeamSidesFromMatchDetailsPayload } from "../services/match-team-side.services";
 
 function normalizeMatchTeamSide(value: unknown): MatchTeamSide {
   if (value === "home" || value === "away") return value;
@@ -353,6 +352,8 @@ export const getMatchGames = async (match_id: number) => {
       mmp.map_order,
       maps.name as map_name,
       mmp.demofile,
+      tgs1.team_id as team1_id,
+      tgs2.team_id as team2_id,
       tgs1.score as team1_score,
       tgs2.score as team2_score,
       mts1.match_side AS team1_side,
@@ -699,10 +700,6 @@ export const addMatchToDatabase = async (
         `${matches.length} matches with external_match_room_id ${matchDetails.match_id} already exists, skipping`,
         matchDetails
       );
-      await syncMatchTeamSidesFromMatchDetailsPayload(
-        matchDetails.match_id,
-        matchDetails
-      );
       return;
     }
 
@@ -830,7 +827,7 @@ export const addMatchToDatabase = async (
           season_id,
           league_id,
           teamOne.team_id,
-          "home",
+          "away",
           connection
         ),
         addTeamToMatch(
@@ -838,7 +835,7 @@ export const addMatchToDatabase = async (
           season_id,
           league_id,
           teamTwo.team_id,
-          "away",
+          "home",
           connection
         )
       ]);

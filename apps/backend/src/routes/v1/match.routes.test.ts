@@ -5,11 +5,7 @@ import request from "supertest";
 import type express from "express";
 import { createExpressTestApp } from "../../test-utils";
 import matchRouter from "./match.routes";
-import type {
-  MatchMapsPlayed,
-  MatchTeamLineup,
-  TeamStatsResponse
-} from "@eggosystem/types";
+import type { MatchTeamLineup, TeamStatsResponse } from "@eggosystem/types";
 import { runQuery } from "../../db/mysqlRunQuery";
 import { getConnection } from "../../db/mysqlConnection";
 import type { PoolConnection } from "mysql2/promise";
@@ -82,8 +78,8 @@ describe("Match Routes", () => {
     it("should return 404 for non-existent match", async () => {
       const response = await request(app).get("/api/v1/matches/999999/lineups");
 
-      // 404 when DB resolves "no match"; 400 when DB/query errors map to generic Error in harness
-      expect([404, 400]).toContain(response.status);
+      // Should be 404 for non-existent match
+      expect(response.status).toBe(404);
       expect(response.headers["content-type"]).toContain(
         "application/problem+json"
       );
@@ -137,6 +133,8 @@ describe("Match Routes", () => {
           demofile: "pug_server30_de_ancient_2023-01-31_22-27-16.dem",
           match_id: 7405,
           map_order: null,
+          team1_id: expect.any(Number),
+          team2_id: expect.any(Number),
           team1_score: 16,
           team2_score: 12,
           team1_side: null,
@@ -148,6 +146,8 @@ describe("Match Routes", () => {
           demofile: "pug_server30_de_inferno_2023-01-31_21-05-16.dem",
           match_id: 7405,
           map_order: null,
+          team1_id: expect.any(Number),
+          team2_id: expect.any(Number),
           team1_score: 16,
           team2_score: 19,
           team1_side: null,
@@ -159,21 +159,21 @@ describe("Match Routes", () => {
           demofile: "pug_server30_de_overpass_2023-01-31_23-26-39.dem",
           match_id: 7405,
           map_order: null,
+          team1_id: expect.any(Number),
+          team2_id: expect.any(Number),
           team1_score: 16,
           team2_score: 14,
           team1_side: null,
           team2_side: null
         }
-      ] satisfies MatchMapsPlayed[];
+      ];
 
       const response = await request(app)
         .get("/api/v1/matches/7405/mapsplayed")
-        .expect("Content-Type", /json/);
+        .expect("Content-Type", /json/)
+        .expect(200);
 
-      expect([200, 400, 404]).toContain(response.status);
-      if (response.status === 200) {
-        expect(response.body).toEqual(expectedMaps);
-      }
+      expect(response.body).toEqual(expectedMaps);
     });
 
     it("should return 404 for non-existent match", async () => {
@@ -181,7 +181,7 @@ describe("Match Routes", () => {
         "/api/v1/matches/999999/mapsplayed"
       );
 
-      expect([404, 400]).toContain(response.status);
+      expect(response.status).toBe(404);
       expect(response.headers["content-type"]).toContain(
         "application/problem+json"
       );

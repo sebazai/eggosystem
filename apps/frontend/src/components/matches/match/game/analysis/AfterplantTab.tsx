@@ -18,6 +18,7 @@ import {
   type MatchInfo,
   type MatchPlayerStats
 } from "@eggosystem/types";
+import { orderMatchParticipantsBySideHomeLeft } from "@/lib/order-match-teams-home-left-away";
 
 const ROUND_END_LABEL: Record<RoundEndReasonInfo, string> = {
   [RoundEndReasonInfo.BombDefused]: "Defused",
@@ -679,7 +680,10 @@ export const AfterplantTab = ({
     return map;
   }, [playerStats]);
 
-  const teamList = useMemo(() => Object.values(teams), [teams]);
+  const teamList = useMemo(
+    () => orderMatchParticipantsBySideHomeLeft(Object.values(teams)),
+    [teams]
+  );
 
   const sorted = useMemo(
     () => [...afterplantRounds].sort((a, b) => a.round_number - b.round_number),

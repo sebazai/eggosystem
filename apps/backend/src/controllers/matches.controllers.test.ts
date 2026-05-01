@@ -853,6 +853,8 @@ describe("Matches Controllers", () => {
           match_id: 123,
           map_order: null,
           demofile: "demo.dem",
+          team1_id: 10,
+          team2_id: 11,
           team1_score: 16,
           team2_score: 13,
           team1_side: null,
