@@ -28,7 +28,17 @@ RUN curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR="/usr/local/
 RUN apt-get update && apt-get install -y --no-install-recommends git xvfb xauth && rm -rf /var/lib/apt/lists/* && \
     git clone --depth 1 https://github.com/MariaDB/mcp.git /usr/local/mariadb-mcp && \
     chown -R node:node /usr/local/mariadb-mcp
+
+# Managed Python via uv (prebuilt; no devcontainers/features/python gpg keyservers).
+# Pins 3.11 for MariaDB MCP venv parity with former feature default.
 USER node
-RUN cd /usr/local/mariadb-mcp && uv venv
+ENV PATH="/home/node/.local/bin:${PATH}"
+RUN uv python install 3.11 && cd /usr/local/mariadb-mcp && uv venv
 RUN mkdir -p /home/node/.claude /home/node/.cursor && rtk init -g && rtk init -g --agent cursor
+
+# Scripts (e.g. setup-mariadb-mcp-server.sh) expect python3.11 on PATH; uv-managed Pythons live under ~/.local/share/uv.
 USER root
+RUN PY311="$(su - node -c 'export PATH="/usr/local/bin:$PATH"; uv python find 3.11 --managed-python')" \
+    && test -x "$PY311" \
+    && ln -sf "$PY311" /usr/local/bin/python3.11
+USER node

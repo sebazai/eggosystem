@@ -28,12 +28,13 @@ nohup bash -c '
 ' >> /tmp/playwright-setup.log 2>&1 &
 disown -h
 
-# FACEIT MCP server for Cursor (pip / PyPI). GitLab MCP uses npx and needs no install here.
-echo "Starting faceit-mcp install (pip, latest from PyPI)..."
+# FACEIT MCP server for Cursor (uv tool; PyPI without gpg-based CPython bootstrap). GitLab MCP uses npx.
+echo "Starting faceit-mcp install (uv tool, latest from PyPI)..."
 touch /tmp/faceit-mcp-setup.log
 nohup bash -c '
-  echo "Installing / upgrading faceit-mcp (python3 -m pip install -U faceit-mcp)..."
-  python3 -m pip install -U faceit-mcp && echo "faceit-mcp installation completed successfully!" || echo "faceit-mcp installation failed. Check the log for details."
+  export PATH="/home/node/.local/bin:/usr/local/bin:$PATH"
+  echo "Installing / upgrading faceit-mcp (uv tool install --upgrade faceit-mcp)..."
+  uv tool install faceit-mcp --upgrade && echo "faceit-mcp installation completed successfully!" || echo "faceit-mcp installation failed. Check the log for details."
 ' >> /tmp/faceit-mcp-setup.log 2>&1 &
 disown -h
 
