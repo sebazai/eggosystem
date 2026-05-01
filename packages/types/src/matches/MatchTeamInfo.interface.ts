@@ -1,4 +1,5 @@
 import { Team } from "@eggosystem/types";
+import type { MatchTeamSide } from "./MatchTeamSide.types";
 
 export interface MatchTeamInfo {
   id: Team["id"];
@@ -6,5 +7,6 @@ export interface MatchTeamInfo {
   logo: Team["team_logo"];
   score: number;
   rank: number | null;
+  side: MatchTeamSide;
   accentColor?: string;
 }

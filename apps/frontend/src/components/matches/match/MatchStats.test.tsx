@@ -72,14 +72,16 @@ const mockMatchInfo: MatchInfo = {
       name: "Team A",
       logo: "logo-a.png",
       score: 2,
-      rank: 1
+      rank: 1,
+      side: null
     },
     2: {
       id: 2,
       name: "Team B",
       logo: "logo-b.png",
       score: 1,
-      rank: 2
+      rank: 2,
+      side: null
     }
   }
 };

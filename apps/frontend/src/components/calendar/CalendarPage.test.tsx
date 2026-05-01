@@ -21,6 +21,7 @@ describe("findMinMaxTimes", () => {
         match_team1: "Team 1",
         match_team2: "Team 2",
         stream_urls: [],
+        teams: { home: null, away: null },
         external_match_room_id: null,
         season_platform: SeasonPlatform.FACEIT
       }
@@ -51,6 +52,7 @@ describe("findMinMaxTimes", () => {
         match_team1: "Team 1",
         match_team2: "Team 2",
         stream_urls: [],
+        teams: { home: null, away: null },
         external_match_room_id: null,
         season_platform: SeasonPlatform.FACEIT
       },
@@ -65,6 +67,7 @@ describe("findMinMaxTimes", () => {
         match_team1: "Team 3",
         match_team2: "Team 4",
         stream_urls: [],
+        teams: { home: null, away: null },
         external_match_room_id: null,
         season_platform: SeasonPlatform.FACEIT
       }
@@ -89,6 +92,7 @@ describe("findMinMaxTimes", () => {
         match_team1: "Team 1",
         match_team2: "Team 2",
         stream_urls: [],
+        teams: { home: null, away: null },
         external_match_room_id: null,
         season_platform: SeasonPlatform.FACEIT
       },
@@ -103,6 +107,7 @@ describe("findMinMaxTimes", () => {
         match_team1: "Team 3",
         match_team2: "Team 4",
         stream_urls: [],
+        teams: { home: null, away: null },
         external_match_room_id: null,
         season_platform: SeasonPlatform.FACEIT
       }
@@ -133,6 +138,7 @@ describe("findMinMaxTimes", () => {
         match_team1: "Team 1",
         match_team2: "Team 2",
         stream_urls: [],
+        teams: { home: null, away: null },
         external_match_room_id: null,
         season_platform: SeasonPlatform.FACEIT
       }
@@ -158,6 +164,7 @@ describe("findMinMaxTimes", () => {
         match_team1: "Team A",
         match_team2: "Team B",
         stream_urls: [],
+        teams: { home: null, away: null },
         external_match_room_id: null,
         season_platform: SeasonPlatform.FACEIT
       }
@@ -193,6 +200,7 @@ describe("findMinMaxTimes", () => {
         match_team1: "Team A",
         match_team2: "Team B",
         stream_urls: [],
+        teams: { home: null, away: null },
         external_match_room_id: null,
         season_platform: SeasonPlatform.FACEIT
       },
@@ -207,6 +215,7 @@ describe("findMinMaxTimes", () => {
         match_team1: "Team C",
         match_team2: "Team D",
         stream_urls: [],
+        teams: { home: null, away: null },
         external_match_room_id: null,
         season_platform: SeasonPlatform.FACEIT
       }
@@ -241,6 +250,7 @@ describe("findMinMaxTimes", () => {
         match_team1: "Team 1",
         match_team2: "Team 2",
         stream_urls: [],
+        teams: { home: null, away: null },
         external_match_room_id: null,
         season_platform: SeasonPlatform.FACEIT
       }
@@ -266,6 +276,7 @@ describe("findMinMaxTimes", () => {
         match_team1: "Team 1",
         match_team2: "Team 2",
         stream_urls: [],
+        teams: { home: null, away: null },
         external_match_room_id: null,
         season_platform: SeasonPlatform.FACEIT
       },
@@ -280,6 +291,7 @@ describe("findMinMaxTimes", () => {
         match_team1: "Team 3",
         match_team2: "Team 4",
         stream_urls: [],
+        teams: { home: null, away: null },
         external_match_room_id: null,
         season_platform: SeasonPlatform.FACEIT
       }
@@ -304,6 +316,7 @@ describe("findMinMaxTimes", () => {
         match_team1: "Team 1",
         match_team2: "Team 2",
         stream_urls: [],
+        teams: { home: null, away: null },
         external_match_room_id: null,
         season_platform: SeasonPlatform.FACEIT
       }
@@ -329,6 +342,7 @@ describe("findMinMaxTimes", () => {
         match_team2: "Team 2",
         match_status: "ONGOING",
         stream_urls: [],
+        teams: { home: null, away: null },
         external_match_room_id: null,
         season_platform: SeasonPlatform.FACEIT
       },
@@ -343,6 +357,7 @@ describe("findMinMaxTimes", () => {
         match_team1: "Team 3",
         match_team2: "Team 4",
         stream_urls: [],
+        teams: { home: null, away: null },
         external_match_room_id: null,
         season_platform: SeasonPlatform.FACEIT
       }

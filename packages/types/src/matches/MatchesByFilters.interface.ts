@@ -7,6 +7,7 @@ import type {
   Nullable,
   MatchGame
 } from "../index";
+import type { MatchTeamSide } from "./MatchTeamSide.types";
 
 export interface MatchesByFilters {
   match_id: Match["id"];
@@ -21,4 +22,6 @@ export interface MatchesByFilters {
   team2_logo: Team["team_logo"];
   team1_score: TeamGameScore["score"];
   team2_score: TeamGameScore["score"];
+  team1_side: MatchTeamSide;
+  team2_side: MatchTeamSide;
 }

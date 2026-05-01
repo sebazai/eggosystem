@@ -303,7 +303,7 @@ describe("getTeamMatchesByFilters", () => {
       map_ids: [8],
       stages: null
     });
-    expect(result).toEqual([
+    expect(result).toMatchObject([
       {
         match_game_id: 104404,
         match_id: 10014,
@@ -360,7 +360,7 @@ describe("getTeamMatchesByFilters", () => {
       map_ids: null,
       stages: null
     });
-    expect(result).toEqual([
+    expect(result).toMatchObject([
       {
         match_id: 10007,
         date: "2024-10-24",

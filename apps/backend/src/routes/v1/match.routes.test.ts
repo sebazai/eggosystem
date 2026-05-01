@@ -5,11 +5,7 @@ import request from "supertest";
 import type express from "express";
 import { createExpressTestApp } from "../../test-utils";
 import matchRouter from "./match.routes";
-import type {
-  MatchMapsPlayed,
-  MatchTeamLineup,
-  TeamStatsResponse
-} from "@eggosystem/types";
+import type { MatchTeamLineup, TeamStatsResponse } from "@eggosystem/types";
 import { runQuery } from "../../db/mysqlRunQuery";
 import { getConnection } from "../../db/mysqlConnection";
 import type { PoolConnection } from "mysql2/promise";
@@ -137,8 +133,12 @@ describe("Match Routes", () => {
           demofile: "pug_server30_de_ancient_2023-01-31_22-27-16.dem",
           match_id: 7405,
           map_order: null,
+          team1_id: expect.any(Number),
+          team2_id: expect.any(Number),
           team1_score: 16,
-          team2_score: 12
+          team2_score: 12,
+          team1_side: null,
+          team2_side: null
         },
         {
           id: 10339,
@@ -146,8 +146,12 @@ describe("Match Routes", () => {
           demofile: "pug_server30_de_inferno_2023-01-31_21-05-16.dem",
           match_id: 7405,
           map_order: null,
+          team1_id: expect.any(Number),
+          team2_id: expect.any(Number),
           team1_score: 16,
-          team2_score: 19
+          team2_score: 19,
+          team1_side: null,
+          team2_side: null
         },
         {
           id: 10340,
@@ -155,10 +159,14 @@ describe("Match Routes", () => {
           demofile: "pug_server30_de_overpass_2023-01-31_23-26-39.dem",
           match_id: 7405,
           map_order: null,
+          team1_id: expect.any(Number),
+          team2_id: expect.any(Number),
           team1_score: 16,
-          team2_score: 14
+          team2_score: 14,
+          team1_side: null,
+          team2_side: null
         }
-      ] satisfies MatchMapsPlayed[];
+      ];
 
       const response = await request(app)
         .get("/api/v1/matches/7405/mapsplayed")

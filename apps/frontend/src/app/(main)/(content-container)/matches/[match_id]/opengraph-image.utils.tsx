@@ -1,6 +1,7 @@
 import { ImageResponse } from "next/og";
 import { getMatchInfo } from "./utils";
 import { createNextUrl, createTeamLogoUrl } from "@/lib/utils";
+import { orderMatchParticipantsBySideHomeLeft } from "@/lib/order-match-teams-home-left-away";
 import { envConfig } from "@/configs/env";
 import type { MatchInfo } from "@eggosystem/types";
 
@@ -105,7 +106,9 @@ export async function createMatchOgImageResponse(
     return NotFoundResponse();
   }
 
-  const teams = Object.values(result.teams);
+  const teams = orderMatchParticipantsBySideHomeLeft(
+    Object.values(result.teams)
+  );
   const team1 = teams[0];
   const team2 = teams[1];
 

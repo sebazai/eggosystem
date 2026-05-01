@@ -107,8 +107,10 @@ export const getMyTeamsUpcomingMatches = async (
       m.id as match_id,
       mt.team_id,
       t.name as team_name,
+      mt.match_side as team_side,
       mt_opp.team_id as opponent_team_id,
       t_opp.name as opponent_team_name,
+      mt_opp.match_side as opponent_side,
       m.start_timestamp,
       m.season_id,
       s.name as season_name,
@@ -134,7 +136,7 @@ export const getMyTeamsUpcomingMatches = async (
         OR (DATE(m.start_timestamp) = CURDATE() AND TIME(m.start_timestamp) >= CURTIME())
         OR m.status IN ('ONGOING', 'READY', 'CONFIGURING', 'VOTING', 'CHECK_IN')
       )
-    GROUP BY m.id, mt.team_id, t.name, mt_opp.team_id, t_opp.name, m.start_timestamp, 
+    GROUP BY m.id, mt.team_id, t.name, mt.match_side, mt_opp.team_id, t_opp.name, mt_opp.match_side, m.start_timestamp, 
              m.season_id, s.name, m.league_id, l.name, m.best_of, m.external_match_room_id, 
              m.status, s.platform
     ORDER BY m.start_timestamp ASC

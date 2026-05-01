@@ -24,6 +24,7 @@ import {
 import Link from "next/link";
 import { createNextUrl, cn } from "@/lib/utils";
 import { isOfficialKanaliigaStream } from "@/lib/official-kanaliiga-stream";
+import { calendarMatchVersusTitle } from "@/lib/order-match-teams-home-left-away";
 import { TwitchIcon, StreamPulseCard, TierDot } from "@/components/kanaliiga";
 
 type HeroSectionProps = {
@@ -39,7 +40,7 @@ const MatchCard = ({ match }: { match: MatchWithStreamUrls }) => {
             <TierDot tier={match.league_tier} className="size-3 mt-1" />
             <div className="flex-1 min-w-0 overflow-hidden">
               <h3 className="text-sm lg:text-base mb-1 group-hover:text-kanaliiga-orange transition-colors break-words leading-tight">
-                {match.title}
+                {calendarMatchVersusTitle(match)}
               </h3>
               <div className="flex items-center gap-2 text-muted-foreground text-xs mb-2">
                 <Clock className="h-3 w-3 flex-shrink-0" />
@@ -206,7 +207,7 @@ const StreamedMatchesTab = ({
                     <TierDot tier={match.league_tier} className="size-3 mt-1" />
                     <div className="flex-1 min-w-0">
                       <h3 className="text-sm lg:text-base mb-1 sm:mb-2 group-hover:text-purple-300 transition-colors break-words leading-tight line-clamp-2">
-                        {match.title}
+                        {calendarMatchVersusTitle(match)}
                       </h3>
 
                       <div className="flex items-center gap-2 text-muted-foreground text-xs mb-2 sm:mb-3">
