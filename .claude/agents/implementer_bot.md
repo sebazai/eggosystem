@@ -173,6 +173,19 @@ When **`SkipMergeRequest: true`**, set **`mr_opened": false`, omit **`mr_iid`** 
 - Do **not** run **`rtk pnpm install --frozen-lockfile`** on every re-invocation; follow **Dependency install** above. **`rtk pnpm build`** is different: skip it on pure re-invocations, but **run it again** when **`packages/types`** (or **`dist/`**-based packages) change or when **typecheck / lint / knip** failures look like **stale build output** (see **Re-run `rtk pnpm build` only** above).
 - **`HUSKY=0` on commits is required** — quality gates above replace pre-commit hooks. Do not use `--no-verify` unless the environment blocks `HUSKY=0`.
 
+## CLAUDE.md Updates
+
+`/workspace/CLAUDE.md` records common mistakes and surprises for future agents. Spawn `claude_md_bot` when you encounter:
+
+- The **same quality-gate failure category on 2nd+ self-correction** — something surprising about the toolchain or config kept you in a loop.
+- **`status="stuck"` due to tooling** (not scope) — describe what blocked you so it can be fixed for the next agent.
+- **Any non-obvious workaround** you had to apply that isn't already in CLAUDE.md (e.g. "had to run `rtk pnpm build` twice because knip cached stale output").
+
+```
+Task(subagent_type=claude_md_bot,
+     prompt="caller: implementer_bot. task_id: <t.id>. note: <1–2 sentence factual description of the surprise and the fix.>")
+```
+
 ## Forbidden
 
 - Editing files outside `<worktree_path>`.

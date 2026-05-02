@@ -31,6 +31,13 @@ const ROOM_IDS = [
   "1-f55c14a9-b708-4abc-8ffb-be4993e469c1"
 ] as const;
 
+/** Synthetic 2xBO1 rooms for forfeit-tuple integration tests. */
+const FORFEIT_ROOM_IDS = [
+  "1-00000003-0003-4000-8000-000000000003",
+  "1-00000004-0004-4000-8000-000000000004",
+  "1-00000005-0005-4000-8000-000000000005"
+] as const;
+
 /** Normal / BO3 single-Match rooms (one Match row per room, league has is_round_robin_bo2_as_2xbo1 = 0). */
 const NORMAL_ROOM_IDS = [
   "1-00000001-0001-4000-8000-000000000001",
@@ -42,6 +49,9 @@ const ENTITY_IDS = [
   "7464ba95-996a-43bc-88c2-ccce3d6127ec",
   "32ea3ab1-d916-4701-b545-5c76b19d9c64"
 ] as const;
+
+/** Forfeit-tuple rooms all live under this single entity (one league). */
+const FORFEIT_ENTITY_ID = "f2f2f2f2-f0ff-4000-8000-000000000001";
 
 const NORMAL_ENTITY_ID = "a1b2c3d4-e5f6-4078-8000-000000000001";
 const CS2_APP_ID = 730;
@@ -89,12 +99,54 @@ export async function runFaceitWebhookIntegrationSeed(): Promise<void> {
   const trx = connection;
   try {
     await trx.beginTransaction();
+
+    // Step 0: clean up Matches/MatchGames/MatchTeams/FaceitWebhooks from prior
+    // runs so standings queries don't accumulate across test reruns.
+    const allRoomIds = [
+      ...ROOM_IDS,
+      ...FORFEIT_ROOM_IDS,
+      ...NORMAL_ROOM_IDS
+    ] as string[];
+    const placeholders = allRoomIds.map(() => "?").join(", ");
+    await runQuery(
+      `DELETE mg FROM MatchGames mg
+       INNER JOIN Matches m ON mg.match_id = m.id
+       WHERE m.external_match_room_id IN (${placeholders})`,
+      allRoomIds,
+      trx
+    );
+    await runQuery(
+      `DELETE mt FROM MatchTeams mt
+       INNER JOIN Matches m ON mt.match_id = m.id
+       WHERE m.external_match_room_id IN (${placeholders})`,
+      allRoomIds,
+      trx
+    );
+    await runQuery(
+      `DELETE FROM Matches WHERE external_match_room_id IN (${placeholders})`,
+      allRoomIds,
+      trx
+    );
+    await runQuery(
+      `DELETE FROM FaceitWebhooks WHERE external_payload_id IN (${placeholders})`,
+      allRoomIds,
+      trx
+    );
+
     const byRoom2xBO1 = loadFactionIdsFromFixtures(ROOM_IDS);
     const byRoomNormal = loadFactionIdsFromFixtures(NORMAL_ROOM_IDS);
+    const byRoomForfeit = loadFactionIdsFromFixtures(FORFEIT_ROOM_IDS);
     const allFactions = new Map<string, string>();
     for (const [, pairs] of byRoom2xBO1) {
       for (const { faction_id, name } of pairs) {
         if (!allFactions.has(faction_id)) allFactions.set(faction_id, name);
+      }
+    }
+    const forfeitFactionIds = new Set<string>();
+    for (const [, pairs] of byRoomForfeit) {
+      for (const { faction_id, name } of pairs) {
+        if (!allFactions.has(faction_id)) allFactions.set(faction_id, name);
+        forfeitFactionIds.add(faction_id);
       }
     }
     const normalFactionIds = new Set<string>();
@@ -175,21 +227,34 @@ export async function runFaceitWebhookIntegrationSeed(): Promise<void> {
       seasonId = ins.insertId as number;
     }
 
-    // 5. Leagues
-    const [leagueRow] = await runQuery<Array<{ id: number }>>(
-      "SELECT id FROM Leagues WHERE name = ? LIMIT 1",
-      ["FACEIT Integration League"],
-      trx
-    );
-    const leagueId =
-      leagueRow?.id ??
-      ((
-        (await runQuery<{ insertId: number }>(
+    // 5. Leagues — one per entity_id so each entity_id resolves to a
+    // distinct league_id, mirroring production where every FACEIT
+    // championship entity belongs to its own Leagues row. Sharing a single
+    // league_id across entities would let the standings query's
+    // (season_id, league_id, stage_id, manual_group) JOIN pull matches from
+    // *every* room in the seed regardless of `slei.external_id`, which
+    // muddies the per-league anti-double-count assertion.
+    const leagueIdByEntity = new Map<string, number>();
+    for (const entityId of ENTITY_IDS) {
+      const leagueName = `FACEIT Integration League ${entityId}`;
+      const [existing] = await runQuery<Array<{ id: number }>>(
+        "SELECT id FROM Leagues WHERE name = ? LIMIT 1",
+        [leagueName],
+        trx
+      );
+      let lid: number;
+      if (existing?.id != null) {
+        lid = existing.id;
+      } else {
+        const ins = await runQuery<{ insertId: number }>(
           "INSERT INTO Leagues (name, sort_priority) VALUES (?, ?)",
-          ["FACEIT Integration League", 99],
+          [leagueName, 99],
           trx
-        )) as { insertId: number }
-      ).insertId as number);
+        );
+        lid = ins.insertId as number;
+      }
+      leagueIdByEntity.set(entityId, lid);
+    }
 
     // 6. Stages
     const [stageRow] = await runQuery<Array<{ id: number }>>(
@@ -207,25 +272,59 @@ export async function runFaceitWebhookIntegrationSeed(): Promise<void> {
         )) as { insertId: number }
       ).insertId as number);
 
-    // 7. SeasonLeagues (PK season_id, league_id)
-    await runQuery(
-      `INSERT IGNORE INTO SeasonLeagues (season_id, league_id, tier) VALUES (?, ?, ?)`,
-      [seasonId, leagueId, 1],
-      trx
-    );
-
-    // 8. SeasonLeagueExternalIds (unique season_id, league_id, external_id)
-    for (const entityId of ENTITY_IDS) {
+    // 7. SeasonLeagues (PK season_id, league_id) — one row per entity-league.
+    for (const lid of leagueIdByEntity.values()) {
       await runQuery(
-        `INSERT INTO SeasonLeagueExternalIds (external_id, external_league_name, season_id, league_id, stage_id, type)
-         VALUES (?, ?, ?, ?, ?, 'roundRobin')
-         ON DUPLICATE KEY UPDATE updated_at = CURRENT_TIMESTAMP`,
-        [entityId, "FACEIT Integration League", seasonId, leagueId, stageId],
+        `INSERT IGNORE INTO SeasonLeagues (season_id, league_id, tier) VALUES (?, ?, ?)`,
+        [seasonId, lid, 1],
         trx
       );
     }
 
-    // 9. Teams (unique on name) and SeasonLeagueTeams (2xBO1 season/league)
+    // 8. SeasonLeagueExternalIds (unique season_id, league_id, external_id).
+    // `manual_group = 1` matches the `group: 1` value baked into all 2xBO1
+    // fixture webhook payloads. Without it the standings query's
+    //   AND (m.group = slei.manual_group OR (m.group IS NULL AND
+    //        slei.manual_group IS NULL))
+    // join clause excludes every replayed match (since `Matches.group = 1`
+    // but `SeasonLeagueExternalIds.manual_group = NULL`), and
+    // `getDivStandings` returns an empty array for the league.
+    //
+    // Delete any SLEI rows that point our test entity IDs at OTHER seasons
+    // (e.g. the real production season 16/17 rows on the dev DB). If left in
+    // place, `getSeasonLeagueExternalIdByExternalIdWithSeasonSettings` picks
+    // those lower-id rows and routes webhook-replayed Matches into the real
+    // season, causing `getDivStandings` to aggregate hundreds of production
+    // matches and fail the games_played assertions.
+    const allTestEntityIds = [
+      ...ENTITY_IDS,
+      FORFEIT_ENTITY_ID,
+      NORMAL_ENTITY_ID
+    ];
+    const sleiPlaceholders = allTestEntityIds.map(() => "?").join(", ");
+    await runQuery(
+      `DELETE FROM SeasonLeagueExternalIds WHERE external_id IN (${sleiPlaceholders})`,
+      allTestEntityIds,
+      trx
+    );
+    for (const entityId of ENTITY_IDS) {
+      const lid = leagueIdByEntity.get(entityId);
+      if (lid == null) throw new Error(`No league_id for entity ${entityId}`);
+      await runQuery(
+        `INSERT INTO SeasonLeagueExternalIds (external_id, external_league_name, season_id, league_id, stage_id, type, manual_group)
+         VALUES (?, ?, ?, ?, ?, 'roundRobin', ?)
+         ON DUPLICATE KEY UPDATE manual_group = VALUES(manual_group), updated_at = CURRENT_TIMESTAMP`,
+        [entityId, "FACEIT Integration League", seasonId, lid, stageId, 1],
+        trx
+      );
+    }
+
+    // 9. Teams (unique on name) and SeasonLeagueTeams (one row per
+    // (season, team, league) — register every team in *every* per-entity
+    // league since fixture-derived faction ids do not preserve which entity
+    // they originally belonged to. A team that never plays in a given
+    // league simply has no Matches there, so duplicate registrations are
+    // harmless for standings.
     for (const [factionId, _teamName] of allFactions) {
       const safeName = `faceit-fixture-${factionId}`.slice(0, 255);
       await runQuery(
@@ -241,14 +340,70 @@ export async function runFaceitWebhookIntegrationSeed(): Promise<void> {
       );
       const teamId = tRow?.id;
       if (teamId == null) throw new Error(`Team not found: ${safeName}`);
+      for (const lid of leagueIdByEntity.values()) {
+        await runQuery(
+          `INSERT IGNORE INTO SeasonLeagueTeams (season_id, team_id, league_id, external_team_id) VALUES (?, ?, ?, ?)`,
+          [seasonId, teamId, lid, factionId],
+          trx
+        );
+      }
+    }
+
+    // 10. Forfeit league — one entity, same 2xBO1 season, manual_group = 1.
+    // Rooms 1-00000003…, 1-00000004…, 1-00000005… use this entity to exercise
+    // (FORFEIT,FINISHED), (FINISHED,FORFEIT), and (FORFEIT,FORFEIT) tuples.
+    const forfeitLeagueName = `FACEIT Integration Forfeit League ${FORFEIT_ENTITY_ID}`;
+    const [forfeitLeagueRow] = await runQuery<Array<{ id: number }>>(
+      "SELECT id FROM Leagues WHERE name = ? LIMIT 1",
+      [forfeitLeagueName],
+      trx
+    );
+    const forfeitLeagueId =
+      forfeitLeagueRow?.id ??
+      ((
+        (await runQuery<{ insertId: number }>(
+          "INSERT INTO Leagues (name, sort_priority) VALUES (?, ?)",
+          [forfeitLeagueName, 97],
+          trx
+        )) as { insertId: number }
+      ).insertId as number);
+
+    await runQuery(
+      `INSERT IGNORE INTO SeasonLeagues (season_id, league_id, tier) VALUES (?, ?, ?)`,
+      [seasonId, forfeitLeagueId, 1],
+      trx
+    );
+    await runQuery(
+      `INSERT INTO SeasonLeagueExternalIds (external_id, external_league_name, season_id, league_id, stage_id, type, manual_group)
+       VALUES (?, ?, ?, ?, ?, 'roundRobin', ?)
+       ON DUPLICATE KEY UPDATE manual_group = VALUES(manual_group), updated_at = CURRENT_TIMESTAMP`,
+      [
+        FORFEIT_ENTITY_ID,
+        "Forfeit League",
+        seasonId,
+        forfeitLeagueId,
+        stageId,
+        1
+      ],
+      trx
+    );
+    for (const factionId of forfeitFactionIds) {
+      const safeName = `faceit-fixture-${factionId}`.slice(0, 255);
+      const [tRow] = await runQuery<Array<{ id: number }>>(
+        "SELECT id FROM Teams WHERE name = ? LIMIT 1",
+        [safeName],
+        trx
+      );
+      const teamId = tRow?.id;
+      if (teamId == null) throw new Error(`Team not found: ${safeName}`);
       await runQuery(
         `INSERT IGNORE INTO SeasonLeagueTeams (season_id, team_id, league_id, external_team_id) VALUES (?, ?, ?, ?)`,
-        [seasonId, teamId, leagueId, factionId],
+        [seasonId, teamId, forfeitLeagueId, factionId],
         trx
       );
     }
 
-    // 10. Normal league (single Match per room: BO1 or BO3, is_round_robin_bo2_as_2xbo1 = 0)
+    // 11. Normal league (single Match per room: BO1 or BO3, is_round_robin_bo2_as_2xbo1 = 0)
     const [normalSeasonRow] = await runQuery<Array<{ id: number }>>(
       "SELECT id FROM Seasons WHERE organizer_id = ? AND platform = 'faceit' AND is_round_robin_bo2_as_2xbo1 = 0 LIMIT 1",
       [organizerId],

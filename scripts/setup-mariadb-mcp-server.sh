@@ -5,11 +5,9 @@ echo "========================================="
 echo "Setting up MariaDB MCP Server..."
 echo "========================================="
 
-# Python 3.11 is installed via devcontainer feature (ghcr.io/devcontainers/features/python:1)
-# Check if Python 3.11 is available
+# Python 3.11 is uv-managed (prebuilt downloads; see .devcontainer/Dockerfile) plus /usr/local/bin/python3.11 symlink.
 if ! command -v python3.11 &> /dev/null; then
-  echo "Error: Python 3.11 not found. It should be installed by the devcontainer Python feature."
-  echo "Please rebuild the devcontainer to ensure Python 3.11 is installed."
+  echo "Error: Python 3.11 not found. Rebuild the devcontainer (Dockerfile installs it via uv python install)."
   exit 0
 fi
 
