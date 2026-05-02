@@ -1,10 +1,24 @@
 import {
   resolveRoundRobinBo2SplitFromFaceit,
+  isForfeitRoundByScore,
   type RoundRobinBo2SplitDecision,
   type SiblingDemoState,
   type ResolveRoundRobinBo2SplitFromFaceitParams
 } from "./faceit-2xbo1-resolver.services";
+import type { FaceitDetailedResultsFinished } from "@eggosystem/types";
 import type { Match, MatchStatusFinishedWebhook } from "@eggosystem/types";
+import { logger } from "../utils/app-logger";
+
+jest.mock("../utils/app-logger", () => ({
+  logger: {
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+    debug: jest.fn()
+  }
+}));
+
+const mockLoggerWarn = logger.warn as jest.MockedFunction<typeof logger.warn>;
 
 const FACEIT_FORFEIT_STARTED_AT = "1970-01-01T00:00:00Z";
 const REAL_STARTED_AT = "2025-04-29T19:00:00Z";
@@ -78,7 +92,57 @@ const forfeitPayload = (id: string = "1-room-x"): FinishedPayload =>
     started_at: FACEIT_FORFEIT_STARTED_AT
   });
 
+const makeDetailedResult = (
+  f1: number,
+  f2: number
+): FaceitDetailedResultsFinished => ({
+  asc_score: false,
+  winner: f1 > f2 ? "faction1" : "faction2",
+  factions: { faction1: { score: f1 }, faction2: { score: f2 } }
+});
+
+describe("isForfeitRoundByScore", () => {
+  it("returns true when max score is exactly half of regulation (12 out of 24)", () => {
+    expect(isForfeitRoundByScore(makeDetailedResult(12, 0))).toBe(true);
+  });
+
+  it("returns true for typical forfeit scores (6-0)", () => {
+    expect(isForfeitRoundByScore(makeDetailedResult(6, 0))).toBe(true);
+    expect(isForfeitRoundByScore(makeDetailedResult(0, 6))).toBe(true);
+  });
+
+  it("returns false for 0-0 (map-score format, cannot determine forfeit)", () => {
+    expect(isForfeitRoundByScore(makeDetailedResult(0, 0))).toBe(false);
+  });
+
+  it("returns false for 1-0 (map-score format, cannot determine forfeit)", () => {
+    expect(isForfeitRoundByScore(makeDetailedResult(1, 0))).toBe(false);
+    expect(isForfeitRoundByScore(makeDetailedResult(0, 1))).toBe(false);
+  });
+
+  it("returns false for a regulation win (13-x)", () => {
+    expect(isForfeitRoundByScore(makeDetailedResult(13, 10))).toBe(false);
+    expect(isForfeitRoundByScore(makeDetailedResult(13, 0))).toBe(false);
+    expect(isForfeitRoundByScore(makeDetailedResult(10, 13))).toBe(false);
+  });
+
+  it("returns false for an overtime win (16-14)", () => {
+    expect(isForfeitRoundByScore(makeDetailedResult(16, 14))).toBe(false);
+  });
+
+  it("respects a custom regulationRounds parameter", () => {
+    // 30-round game: half = 15; score 15-0 is still forfeit
+    expect(isForfeitRoundByScore(makeDetailedResult(15, 0), 30)).toBe(true);
+    // score 16-0 is a real win in that game
+    expect(isForfeitRoundByScore(makeDetailedResult(16, 0), 30)).toBe(false);
+  });
+});
+
 describe("resolveRoundRobinBo2SplitFromFaceit", () => {
+  beforeEach(() => {
+    mockLoggerWarn.mockClear();
+  });
+
   describe("guard rails", () => {
     it("returns [] when matchesByRoom length !== 2", () => {
       const result = resolveRoundRobinBo2SplitFromFaceit(
@@ -87,7 +151,7 @@ describe("resolveRoundRobinBo2SplitFromFaceit", () => {
       expect(result).toEqual([]);
     });
 
-    it("returns [] when both siblings already terminal (short-circuit)", () => {
+    it("returns [] when both siblings already terminal (short-circuit) and emits a structured warning", () => {
       const result = resolveRoundRobinBo2SplitFromFaceit(
         baseParams({
           matchesByRoom: [
@@ -97,9 +161,18 @@ describe("resolveRoundRobinBo2SplitFromFaceit", () => {
         })
       );
       expect(result).toEqual([]);
+      expect(mockLoggerWarn).toHaveBeenCalledTimes(1);
+      const warnArg = mockLoggerWarn.mock.calls[0][0];
+      expect(typeof warnArg).toBe("string");
+      expect(warnArg).toContain("Both siblings already terminal");
+      expect(warnArg).toContain("match_id=12571");
+      expect(warnArg).toContain("FORFEIT");
+      expect(warnArg).toContain("match_id=12572");
+      expect(warnArg).toContain("FINISHED");
+      expect(warnArg).toContain("no rows mutated");
     });
 
-    it("returns [] when both siblings already terminal even on a forfeit webhook", () => {
+    it("returns [] when both siblings already terminal even on a forfeit webhook (warning emitted)", () => {
       const result = resolveRoundRobinBo2SplitFromFaceit(
         baseParams({
           isForfeitWebhook: true,
@@ -111,6 +184,20 @@ describe("resolveRoundRobinBo2SplitFromFaceit", () => {
         })
       );
       expect(result).toEqual([]);
+      expect(mockLoggerWarn).toHaveBeenCalledTimes(1);
+      expect(mockLoggerWarn.mock.calls[0][0]).toContain("Webhook=forfeit");
+    });
+
+    it("does not warn for terminal-pair short-circuit when only one sibling is terminal (Case A path, no warning)", () => {
+      resolveRoundRobinBo2SplitFromFaceit(
+        baseParams({
+          matchesByRoom: [
+            makeMatch({ id: 12571, status: "FORFEIT" }),
+            makeMatch({ id: 12572, status: "ONGOING" })
+          ]
+        })
+      );
+      expect(mockLoggerWarn).not.toHaveBeenCalled();
     });
   });
 
@@ -253,6 +340,213 @@ describe("resolveRoundRobinBo2SplitFromFaceit", () => {
         "FINISHED"
       ]);
       expect(result.map((d) => d.match_id)).toEqual([12571, 12572]);
+    });
+  });
+
+  describe("Case D: both siblings non-terminal + detailedResults (score-based)", () => {
+    const caseDParams = (
+      dr: FaceitDetailedResultsFinished[],
+      extraOverrides: Partial<ResolveRoundRobinBo2SplitFromFaceitParams> = {}
+    ): ResolveRoundRobinBo2SplitFromFaceitParams =>
+      baseParams({
+        isForfeitWebhook: false,
+        detailedResults: dr,
+        ...extraOverrides
+      });
+
+    it("(FORFEIT, FINISHED): slot 0 forfeit score → FORFEIT, slot 1 real score → FINISHED", () => {
+      const result = resolveRoundRobinBo2SplitFromFaceit(
+        caseDParams([makeDetailedResult(0, 6), makeDetailedResult(13, 10)])
+      );
+      expect(result).toHaveLength(2);
+      expect(result[0]).toMatchObject<Partial<RoundRobinBo2SplitDecision>>({
+        match_id: 12571,
+        target_status: "FORFEIT",
+        start_timestamp: null
+      });
+      expect(result[1]).toMatchObject<Partial<RoundRobinBo2SplitDecision>>({
+        match_id: 12572,
+        target_status: "FINISHED",
+        start_timestamp: REAL_STARTED_AT,
+        end_timestamp: FINISHED_AT
+      });
+    });
+
+    it("(FINISHED, FORFEIT): slot 0 real → FINISHED, slot 1 forfeit → FORFEIT", () => {
+      const result = resolveRoundRobinBo2SplitFromFaceit(
+        caseDParams([makeDetailedResult(13, 10), makeDetailedResult(0, 6)])
+      );
+      expect(result).toHaveLength(2);
+      expect(result[0]).toMatchObject<Partial<RoundRobinBo2SplitDecision>>({
+        match_id: 12571,
+        target_status: "FINISHED",
+        start_timestamp: REAL_STARTED_AT
+      });
+      expect(result[1]).toMatchObject<Partial<RoundRobinBo2SplitDecision>>({
+        match_id: 12572,
+        target_status: "FORFEIT",
+        start_timestamp: null
+      });
+    });
+
+    it("(FORFEIT, FORFEIT): both forfeit scores → both FORFEIT with null start_timestamp", () => {
+      const result = resolveRoundRobinBo2SplitFromFaceit(
+        caseDParams([makeDetailedResult(0, 6), makeDetailedResult(6, 0)])
+      );
+      expect(result).toHaveLength(2);
+      expect(result.every((d) => d.target_status === "FORFEIT")).toBe(true);
+      expect(result.every((d) => d.start_timestamp === null)).toBe(true);
+      expect(result.every((d) => d.end_timestamp === FINISHED_AT)).toBe(true);
+    });
+
+    it("(FINISHED, FINISHED): both real scores → both FINISHED with real start_timestamp", () => {
+      const result = resolveRoundRobinBo2SplitFromFaceit(
+        caseDParams([makeDetailedResult(13, 10), makeDetailedResult(16, 14)])
+      );
+      expect(result).toHaveLength(2);
+      expect(result.every((d) => d.target_status === "FINISHED")).toBe(true);
+      expect(result.every((d) => d.start_timestamp === REAL_STARTED_AT)).toBe(
+        true
+      );
+    });
+
+    it("Case D takes priority over Case B when detailedResults present with 2 entries", () => {
+      // isForfeitWebhook=false but detailedResults indicates one forfeit
+      const result = resolveRoundRobinBo2SplitFromFaceit(
+        caseDParams([makeDetailedResult(6, 0), makeDetailedResult(13, 10)])
+      );
+      // Must NOT fall through to Case B (which would mark both FINISHED)
+      expect(result[0]?.target_status).toBe("FORFEIT");
+      expect(result[1]?.target_status).toBe("FINISHED");
+    });
+
+    it("falls through to Case B when detailedResults is undefined", () => {
+      const result = resolveRoundRobinBo2SplitFromFaceit(
+        baseParams({ isForfeitWebhook: false, detailedResults: undefined })
+      );
+      expect(result.every((d) => d.target_status === "FINISHED")).toBe(true);
+    });
+
+    it("falls through to Case B when detailedResults has wrong length (1 entry)", () => {
+      const result = resolveRoundRobinBo2SplitFromFaceit(
+        baseParams({
+          isForfeitWebhook: false,
+          detailedResults: [makeDetailedResult(0, 6)]
+        })
+      );
+      expect(result.every((d) => d.target_status === "FINISHED")).toBe(true);
+    });
+
+    it("falls through to Case B when all detailedResults have map-score format (max ≤ 1)", () => {
+      // Scores like 1-0 / 0-1 are map-win counts, not rounds — forfeit is
+      // indistinguishable, so Case D skips and Case B marks both FINISHED.
+      const result = resolveRoundRobinBo2SplitFromFaceit(
+        baseParams({
+          isForfeitWebhook: false,
+          detailedResults: [makeDetailedResult(1, 0), makeDetailedResult(0, 1)]
+        })
+      );
+      expect(result.every((d) => d.target_status === "FINISHED")).toBe(true);
+    });
+
+    it("falls through to Case C (forfeit) when all detailedResults have map-score format and forfeit webhook", () => {
+      // With map-score format AND a forfeit webhook, the resolver must not fire
+      // Case D; it falls to Case C which marks the no-demo slot FORFEIT.
+      const result = resolveRoundRobinBo2SplitFromFaceit(
+        baseParams({
+          isForfeitWebhook: true,
+          webhookPayload: forfeitPayload(),
+          siblingDemoState: [
+            { matchId: 12571, hasDemo: false },
+            { matchId: 12572, hasDemo: false }
+          ],
+          detailedResults: [makeDetailedResult(1, 0), makeDetailedResult(0, 1)]
+        })
+      );
+      // Case C lower-index rule: slot 0 FORFEIT, only 1 decision emitted
+      expect(result).toHaveLength(1);
+      expect(result[0]).toMatchObject<Partial<RoundRobinBo2SplitDecision>>({
+        match_id: 12571,
+        target_status: "FORFEIT"
+      });
+    });
+  });
+
+  describe("Case A enhanced: one sibling terminal + detailedResults score-based detection", () => {
+    it("uses score-based detection for remaining slot when detailedResults present (forfeit score)", () => {
+      const result = resolveRoundRobinBo2SplitFromFaceit(
+        baseParams({
+          isForfeitWebhook: false,
+          matchesByRoom: [
+            makeMatch({ id: 12571, status: "FINISHED" }),
+            makeMatch({ id: 12572, status: "SCHEDULED" })
+          ],
+          detailedResults: [
+            makeDetailedResult(13, 10),
+            makeDetailedResult(0, 6)
+          ]
+        })
+      );
+      expect(result).toHaveLength(1);
+      expect(result[0]).toMatchObject<Partial<RoundRobinBo2SplitDecision>>({
+        match_id: 12572,
+        target_status: "FORFEIT",
+        start_timestamp: null,
+        end_timestamp: FINISHED_AT
+      });
+    });
+
+    it("uses score-based detection for remaining slot when detailedResults present (real score)", () => {
+      const result = resolveRoundRobinBo2SplitFromFaceit(
+        baseParams({
+          isForfeitWebhook: false,
+          matchesByRoom: [
+            makeMatch({ id: 12571, status: "FORFEIT" }),
+            makeMatch({ id: 12572, status: "SCHEDULED" })
+          ],
+          detailedResults: [
+            makeDetailedResult(0, 6),
+            makeDetailedResult(13, 10)
+          ]
+        })
+      );
+      expect(result).toHaveLength(1);
+      expect(result[0]).toMatchObject<Partial<RoundRobinBo2SplitDecision>>({
+        match_id: 12572,
+        target_status: "FINISHED",
+        start_timestamp: REAL_STARTED_AT,
+        end_timestamp: FINISHED_AT
+      });
+    });
+
+    it("falls back to webhook-type detection when detailedResults absent", () => {
+      const result = resolveRoundRobinBo2SplitFromFaceit(
+        baseParams({
+          isForfeitWebhook: true,
+          matchesByRoom: [
+            makeMatch({ id: 12571, status: "FINISHED" }),
+            makeMatch({ id: 12572, status: "SCHEDULED" })
+          ],
+          webhookPayload: forfeitPayload(),
+          detailedResults: undefined
+        })
+      );
+      expect(result[0]?.target_status).toBe("FORFEIT");
+    });
+
+    it("falls back to webhook-type detection (FORFEIT) when detailedResults has map-score format (max ≤ 1)", () => {
+      const result = resolveRoundRobinBo2SplitFromFaceit(
+        baseParams({
+          isForfeitWebhook: true,
+          matchesByRoom: [
+            makeMatch({ id: 12571, status: "FINISHED" }),
+            makeMatch({ id: 12572, status: "SCHEDULED" })
+          ],
+          webhookPayload: forfeitPayload(),
+          detailedResults: [makeDetailedResult(1, 0), makeDetailedResult(0, 1)]
+        })
+      );
+      expect(result[0]?.target_status).toBe("FORFEIT");
     });
   });
 

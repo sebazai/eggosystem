@@ -18,7 +18,8 @@ import type {
   Match,
   MatchStatusFinishedWebhook,
   MatchStatusFinishedAfterAbortWebhook,
-  ChampionshipDetailsObjectCreated
+  ChampionshipDetailsObjectCreated,
+  FaceitDetailedResultsFinished
 } from "@eggosystem/types";
 import type { PoolConnection } from "mysql2/promise";
 import {
@@ -79,7 +80,39 @@ export interface ResolveRoundRobinBo2SplitFromFaceitParams {
    * Order does not matter — the resolver matches by `matchId`.
    */
   siblingDemoState: SiblingDemoState[];
+  /**
+   * Per-slot outcome scores from the FaceIT match details API
+   * `detailed_results` array, indexed by slot order (slot 0 = index 0).
+   * When present with exactly 2 entries and both siblings are non-terminal,
+   * the resolver uses score-based per-slot FORFEIT detection (Case D) instead
+   * of the webhook-type heuristics in Cases B/C.
+   */
+  detailedResults?: FaceitDetailedResultsFinished[];
 }
+
+/**
+ * Returns true when a `detailed_results` entry represents a forfeited round
+ * (neither team reached more than half of regulation rounds).
+ *
+ * For CS2 (regulationRounds=24): a maximum score ≤ 12 signals no team ever
+ * won regulation, meaning no real game was played — the round was a forfeit.
+ *
+ * When max(f1, f2) ≤ 1 the scores are in map-score format (0 = lost, 1 = won)
+ * rather than round-score format, making forfeit/finish indistinguishable.
+ * In that case the function returns false so the caller falls through to
+ * demo-presence or webhook-type detection instead.
+ */
+export const isForfeitRoundByScore = (
+  result: FaceitDetailedResultsFinished,
+  regulationRounds = 24
+): boolean => {
+  const maxScore = Math.max(
+    result.factions.faction1.score,
+    result.factions.faction2.score
+  );
+  if (maxScore <= 1) return false;
+  return maxScore <= regulationRounds / 2;
+};
 
 /**
  * Look up demo state for a sibling by matchId. Defaults to `false` when the
@@ -177,7 +210,8 @@ export const resolveRoundRobinBo2SplitFromFaceit = (
     matchesByRoom,
     webhookPayload,
     isForfeitWebhook,
-    siblingDemoState
+    siblingDemoState,
+    detailedResults
   } = params;
 
   if (matchesByRoom.length !== 2) {
@@ -193,7 +227,19 @@ export const resolveRoundRobinBo2SplitFromFaceit = (
   }
 
   // Short-circuit: nothing to do if both rows are already terminal.
+  // This path is "undocumented" in the sense that FaceIT should not normally
+  // emit another `match_status_finished` webhook after both siblings have been
+  // resolved to terminal — but a webhook retry, manual reprocess, or a rare
+  // FaceIT redelivery can land here. Emit a structured warning so we can
+  // observe and audit such occurrences (S2-AC-3) without mutating any rows.
   if (isTerminal(slot0.status) && isTerminal(slot1.status)) {
+    logger.warn(
+      `[2xBO1 resolver] Both siblings already terminal for room ${externalMatchRoomId} ` +
+        `(slot 0 match_id=${slot0.id} status=${slot0.status}, ` +
+        `slot 1 match_id=${slot1.id} status=${slot1.status}). ` +
+        `Webhook=${isForfeitWebhook ? "forfeit" : "finished"} — no rows mutated. ` +
+        `This usually indicates a retried/replayed webhook delivery.`
+    );
     return [];
   }
 
@@ -208,24 +254,79 @@ export const resolveRoundRobinBo2SplitFromFaceit = (
   // the remaining sibling.
   if (isTerminal(slot0.status) !== isTerminal(slot1.status)) {
     const remaining = isTerminal(slot0.status) ? slot1 : slot0;
-    const target: RoundRobinBo2SplitDecision["target_status"] = isForfeitWebhook
-      ? "FORFEIT"
-      : "FINISHED";
+    const remainingIdx = isTerminal(slot0.status) ? 1 : 0;
+
+    // Prefer score-based detection when detailed_results are available and
+    // in round-score format (max > 1). Fall back to webhook-type flag for
+    // map-score format (max ≤ 1) where forfeit is indistinguishable from win.
+    let target: RoundRobinBo2SplitDecision["target_status"];
+    let detectionReason: string;
+    if (detailedResults !== undefined && detailedResults.length === 2) {
+      const result = detailedResults[remainingIdx]!;
+      const maxScore = Math.max(
+        result.factions.faction1.score,
+        result.factions.faction2.score
+      );
+      if (maxScore > 1) {
+        const isForfeit = isForfeitRoundByScore(result);
+        target = isForfeit ? "FORFEIT" : "FINISHED";
+        detectionReason = `score-based (f1=${result.factions.faction1.score} f2=${result.factions.faction2.score}) → ${target}`;
+      } else {
+        target = isForfeitWebhook ? "FORFEIT" : "FINISHED";
+        detectionReason = `webhook-type-based (map-score format) → ${target}`;
+      }
+    } else {
+      target = isForfeitWebhook ? "FORFEIT" : "FINISHED";
+      detectionReason = `webhook-type-based → ${target}`;
+    }
+
     return [
       {
         match_id: remaining.id,
         target_status: target,
-        // Forfeit payloads have epoch started_at — never overwrite a real
-        // start timestamp the demo-ready path may have set.
-        start_timestamp: isForfeitWebhook ? null : startedAt,
+        // Never write a start timestamp for forfeited slots (no game started).
+        start_timestamp: target === "FORFEIT" ? null : startedAt,
         end_timestamp: finishedAt,
         reason: `One sibling (match_id=${
           isTerminal(slot0.status) ? slot0.id : slot1.id
         }) already terminal (${
           isTerminal(slot0.status) ? slot0.status : slot1.status
-        }); assigning ${target} to remaining sibling (match_id=${remaining.id}).`
+        }); ${detectionReason} for remaining sibling (match_id=${remaining.id}).`
       }
     ];
+  }
+
+  // Case D: both siblings non-terminal + detailed_results available (2 entries)
+  // AND at least one entry has round-score format (max > 1).
+  // Score-based per-slot detection: max(f1,f2) ≤ regulationRounds/2 → FORFEIT.
+  // When all scores are ≤ 1 (map-score format, where 0=lost/1=won) forfeit is
+  // indistinguishable from a real win, so this case is skipped entirely and the
+  // caller falls through to Case B / Case C.
+  if (detailedResults !== undefined && detailedResults.length === 2) {
+    const maxScoreAcrossAll = Math.max(
+      ...detailedResults.map((r) =>
+        Math.max(r.factions.faction1.score, r.factions.faction2.score)
+      )
+    );
+    if (maxScoreAcrossAll > 1) {
+      return [slot0, slot1].map((slot, idx) => {
+        const result = detailedResults[idx]!;
+        const isForfeit = isForfeitRoundByScore(result);
+        const target: RoundRobinBo2SplitDecision["target_status"] = isForfeit
+          ? "FORFEIT"
+          : "FINISHED";
+        return {
+          match_id: slot.id,
+          target_status: target,
+          start_timestamp: isForfeit ? null : startedAt,
+          end_timestamp: finishedAt,
+          reason:
+            `Both siblings non-terminal; score-based detection via detailed_results[${idx}] ` +
+            `(f1=${result.factions.faction1.score} f2=${result.factions.faction2.score}) → ${target}.`
+        };
+      });
+    }
+    // Map-score format: fall through to Case B / Case C.
   }
 
   // Case B: both siblings non-terminal + real finished webhook → both FINISHED.
