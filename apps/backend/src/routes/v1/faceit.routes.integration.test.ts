@@ -22,56 +22,19 @@
  * Tuple                  | Integration (this file)              | Unit (`faceit.routes.test.ts`)
  * -----------------------|--------------------------------------|--------------------------------
  * (FINISHED, FINISHED)   | YES — all 3 real fixture rooms       | YES — idempotency test
- * (FORFEIT,  FINISHED)   | DELEGATED — see note below           | YES — explicit describe block
- * (FINISHED, FORFEIT)    | DELEGATED — see note below           | YES — idempotency test
- * (FORFEIT,  FORFEIT)    | DELEGATED — see note below           | YES — two-forfeit sequence test
+ * (FORFEIT,  FINISHED)   | YES — room 1-00000003-0003…          | YES — explicit describe block
+ * (FINISHED, FORFEIT)    | YES — room 1-00000004-0004…          | YES — idempotency test
+ * (FORFEIT,  FORFEIT)    | YES — room 1-00000005-0005…          | YES — two-forfeit sequence test
  *
- * Why the FORFEIT-containing tuples are DELEGATED to the route unit test
- * (documented exception, S2-AC-3):
+ * The three synthetic forfeit rooms use the entity / championship ID
+ * `f2f2f2f2-f0ff-4000-8000-000000000001` (seeded as "Forfeit League") and
+ * drive the resolver through real DB writes so that `getDivStandings` can
+ * also be spot-checked against real FORFEIT rows (S2-AC-1 + S2-AC-3).
  *
- *   1. The integration replay uses captured production webhook JSON. All
- *      three real fixture rooms (1-3e047cf2…, 1-d3b5d80b…, 1-f55c14a9…) end
- *      with both maps actually played, even when the sequence contains
- *      transient `started_at: 1970-01-01T00:00:00Z` (forfeit-marker) finished
- *      webhooks earlier in the stream — the eventual `match_demo_ready` plus
- *      a real `match_status_finished` resolves both siblings to FINISHED via
- *      Case A / Case B in the resolver. We deliberately did not mutate
- *      production fixtures to fabricate FORFEIT-only outcomes; faking a
- *      forfeit by hand-editing a real fixture would couple test correctness
- *      to JSON edits the FACEIT API may not actually emit.
- *
- *   2. The mixed-status (FORFEIT + FINISHED same room) and (FORFEIT, FORFEIT)
- *      scenarios are the same code path on both sides of the boundary — the
- *      route handler builds resolver inputs (`siblingDemoState`,
- *      `webhookPayload`, `isForfeitWebhook`) then calls
- *      `resolveRoundRobinBo2SplitFromFaceitWithVetoCheck` and
- *      `applyRoundRobinBo2SplitDecisions`. The route unit tests in
- *      `faceit.routes.test.ts` (describe "2xBO1 terminal tuples + idempotency
- *      (S2-AC-2, S2-AC-3)") drive this exact path with mocked
- *      `getMatchesByExternalId` and assert the persistence calls
- *      (`updateMatchStatusByMatchId`, `updateMatchStartAndEndTimestamp`,
- *      `updateMatchEndTimestamp`) — which is what would change in DB anyway.
- *      The pure resolver itself is also exhaustively unit-tested in
- *      `services/faceit-2xbo1-resolver.services.test.ts` (all 4 tuples plus
- *      the "both already terminal" short-circuit).
- *
- *   3. The integration replay still guards the highest-risk regression:
- *      `getDivStandings` post-replay must not double-count when SQL groups
- *      sibling rows by room (S2-AC-1) — that anti-double-count check is the
- *      addition this suite makes that no unit test can reproduce, since it
- *      requires real `Matches`/`Seasons` rows + the live grouping SQL.
- *
- *   4. Production room id `1-f30abfb4-04e1-4d17-8245-b16614e5cf06` (season 17,
- *      one map played + one forfeited) — the production case that prompted
- *      the T1 fix — uses the same resolver code path as the route unit test
- *      "(FORFEIT, FINISHED) sequence: forfeit-first then finished — both
- *      siblings terminal, no SCHEDULED straggler" in `faceit.routes.test.ts`.
- *      That test models the exact production sequence: forfeit webhook with
- *      `started_at: 1970-01-01T00:00:00Z` arrives first → slot 0 FORFEIT,
- *      then real finished webhook arrives → slot 1 FINISHED. Manual QA on
- *      the affected league after the T1 fix has been deployed confirms the
- *      season-17 room standings (post-fix `getDivStandings` rerun, see
- *      `controllers/standings.controllers.ts` cache-bust path).
+ * Production room id `1-f30abfb4-04e1-4d17-8245-b16614e5cf06` (season 17,
+ * one map played + one forfeited) modelled the original bug; the synthetic
+ * room 1-00000003… replays the same sequence type (forfeit-first → real
+ * finish) in a controlled fixture.
  */
 
 const TEST_WEBHOOK_API_KEY = "test-faceit-webhook-integration-key";
@@ -95,6 +58,14 @@ const ROOM_IDS = [
   "1-d3b5d80b-4319-4eaa-a34c-4fc4d17a8d5f",
   "1-f55c14a9-b708-4abc-8ffb-be4993e469c1"
 ] as const;
+
+/** Synthetic rooms for forfeit-tuple integration tests (all share FORFEIT_ENTITY_ID). */
+const FORFEIT_ROOM_IDS = {
+  FORFEIT_FINISHED: "1-00000003-0003-4000-8000-000000000003",
+  FINISHED_FORFEIT: "1-00000004-0004-4000-8000-000000000004",
+  FORFEIT_FORFEIT: "1-00000005-0005-4000-8000-000000000005"
+} as const;
+const FORFEIT_ENTITY_ID = "f2f2f2f2-f0ff-4000-8000-000000000001";
 
 function getFixturesDir(): string {
   const fromDir = path.join(__dirname, "fixtures", "faceit-webhooks");
@@ -728,6 +699,273 @@ describe("FACEIT webhook integration (replay from fixtures)", () => {
         expect(mg.demofile).toBeTruthy();
         expect(mg.demofile).not.toBe("");
       });
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Forfeit-tuple integration tests (S2-AC-3): synthetic 2xBO1 rooms that
+  // exercise FORFEIT-containing terminal pairs via real DB writes.
+  // -------------------------------------------------------------------------
+
+  describe("room 1-00000003-0003-4000-8000-000000000003 (2xBO1 FORFEIT,FINISHED)", () => {
+    const roomId = FORFEIT_ROOM_IDS.FORFEIT_FINISHED;
+
+    it("replays webhooks and asserts slot 0 FORFEIT, slot 1 FINISHED", async () => {
+      const rows = loadFixtureRows(roomId);
+      const callIndexByRoom = new Map<string, number>();
+
+      jest
+        .spyOn(faceitMatchServices, "getFaceITMatchDetails")
+        .mockImplementation((externalMatchRoomId: string) => {
+          const idx = callIndexByRoom.get(externalMatchRoomId) ?? 0;
+          callIndexByRoom.set(externalMatchRoomId, idx + 1);
+          const row = rows[idx];
+          if (!row?.details) {
+            return Promise.reject(
+              new Error(
+                `No details for room ${externalMatchRoomId} call ${idx}`
+              )
+            );
+          }
+          return Promise.resolve(row.details);
+        });
+
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        const res = await request(app)
+          .post("/api/v1/faceit/webhook")
+          .set("X-API-KEY", TEST_WEBHOOK_API_KEY)
+          .send(row.data);
+        if (res.status !== 200) {
+          throw new Error(
+            `Room3 row ${i} event=${row.event} status=${res.status} body=${JSON.stringify(res.body)}`
+          );
+        }
+      }
+
+      const matches = await runQuery<
+        Array<{ id: number; status: string; best_of: number }>
+      >(
+        "SELECT id, status, best_of FROM Matches WHERE external_match_room_id = ? ORDER BY id",
+        [roomId]
+      );
+      expect(matches).toHaveLength(2);
+      const [firstMatch, secondMatch] = matches;
+
+      // Single finished webhook with detailed_results[0]={0-6} (forfeit, max≤12 → Case D)
+      // and detailed_results[1]={13-10} (real game, max>12 → Case D).
+      expect(firstMatch?.status).toBe("FORFEIT");
+      expect(secondMatch?.status).toBe("FINISHED");
+      expect(firstMatch?.best_of).toBe(1);
+      expect(secondMatch?.best_of).toBe(1);
+    });
+  });
+
+  describe("room 1-00000004-0004-4000-8000-000000000004 (2xBO1 FINISHED,FORFEIT)", () => {
+    const roomId = FORFEIT_ROOM_IDS.FINISHED_FORFEIT;
+
+    it("replays webhooks and asserts slot 0 FINISHED, slot 1 FORFEIT", async () => {
+      const rows = loadFixtureRows(roomId);
+      const callIndexByRoom = new Map<string, number>();
+
+      jest
+        .spyOn(faceitMatchServices, "getFaceITMatchDetails")
+        .mockImplementation((externalMatchRoomId: string) => {
+          const idx = callIndexByRoom.get(externalMatchRoomId) ?? 0;
+          callIndexByRoom.set(externalMatchRoomId, idx + 1);
+          const row = rows[idx];
+          if (!row?.details) {
+            return Promise.reject(
+              new Error(
+                `No details for room ${externalMatchRoomId} call ${idx}`
+              )
+            );
+          }
+          return Promise.resolve(row.details);
+        });
+
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        const res = await request(app)
+          .post("/api/v1/faceit/webhook")
+          .set("X-API-KEY", TEST_WEBHOOK_API_KEY)
+          .send(row.data);
+        if (res.status !== 200) {
+          throw new Error(
+            `Room4 row ${i} event=${row.event} status=${res.status} body=${JSON.stringify(res.body)}`
+          );
+        }
+      }
+
+      const matches = await runQuery<
+        Array<{ id: number; status: string; best_of: number }>
+      >(
+        "SELECT id, status, best_of FROM Matches WHERE external_match_room_id = ? ORDER BY id",
+        [roomId]
+      );
+      expect(matches).toHaveLength(2);
+      const [firstMatch, secondMatch] = matches;
+
+      // Slot 0 finished via match_demo_ready (demo handler sets FINISHED).
+      // Single finished webhook with detailed_results[1]={0-6} (forfeit, max≤12)
+      // → score-based Case A: slot 0 already FINISHED, slot 1 gets FORFEIT.
+      expect(firstMatch?.status).toBe("FINISHED");
+      expect(secondMatch?.status).toBe("FORFEIT");
+      expect(firstMatch?.best_of).toBe(1);
+      expect(secondMatch?.best_of).toBe(1);
+
+      // Slot 0 must have a MatchGame with a demo URL (inserted by match_demo_ready).
+      const matchGames = await runQuery<
+        Array<{ match_id: number; demofile: string }>
+      >(
+        "SELECT mg.match_id, mg.demofile FROM MatchGames mg WHERE mg.match_id = ? ORDER BY mg.map_order",
+        [firstMatch?.id]
+      );
+      expect(matchGames).toHaveLength(1);
+      expect(matchGames[0]?.demofile).toContain(
+        "1-00000004-0004-4000-8000-000000000004-1-1"
+      );
+    });
+  });
+
+  describe("room 1-00000005-0005-4000-8000-000000000005 (2xBO1 FORFEIT,FORFEIT)", () => {
+    const roomId = FORFEIT_ROOM_IDS.FORFEIT_FORFEIT;
+
+    it("replays webhooks and asserts both slots FORFEIT", async () => {
+      const rows = loadFixtureRows(roomId);
+      const callIndexByRoom = new Map<string, number>();
+
+      jest
+        .spyOn(faceitMatchServices, "getFaceITMatchDetails")
+        .mockImplementation((externalMatchRoomId: string) => {
+          const idx = callIndexByRoom.get(externalMatchRoomId) ?? 0;
+          callIndexByRoom.set(externalMatchRoomId, idx + 1);
+          const row = rows[idx];
+          if (!row?.details) {
+            return Promise.reject(
+              new Error(
+                `No details for room ${externalMatchRoomId} call ${idx}`
+              )
+            );
+          }
+          return Promise.resolve(row.details);
+        });
+
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        const res = await request(app)
+          .post("/api/v1/faceit/webhook")
+          .set("X-API-KEY", TEST_WEBHOOK_API_KEY)
+          .send(row.data);
+        if (res.status !== 200) {
+          throw new Error(
+            `Room5 row ${i} event=${row.event} status=${res.status} body=${JSON.stringify(res.body)}`
+          );
+        }
+      }
+
+      const matches = await runQuery<
+        Array<{ id: number; status: string; best_of: number }>
+      >(
+        "SELECT id, status, best_of FROM Matches WHERE external_match_room_id = ? ORDER BY id",
+        [roomId]
+      );
+      expect(matches).toHaveLength(2);
+      const [firstMatch, secondMatch] = matches;
+
+      // Single finished webhook with detailed_results[0]={0-6} and [1]={6-0}
+      // (both max≤12 → forfeit) → score-based Case D → both slots FORFEIT.
+      // No SCHEDULED straggler: this is the exact bug pattern from issue #378.
+      expect(firstMatch?.status).toBe("FORFEIT");
+      expect(secondMatch?.status).toBe("FORFEIT");
+      expect(firstMatch?.best_of).toBe(1);
+      expect(secondMatch?.best_of).toBe(1);
+    });
+  });
+
+  describe("forfeit league (S2-AC-1 + S2-AC-3): getDivStandings across all three forfeit rooms", () => {
+    /**
+     * After all three forfeit rooms have been replayed above, the forfeit
+     * league has 6 total match-slots (3 rooms × 2 slots each). Neither
+     * team should appear with more than 6 games_played — any higher value
+     * would indicate the FORFEIT double-count regression the standings
+     * service's slot-accounting logic prevents.
+     *
+     * Mock strategy:
+     *  - FINISHED rows (rooms 3 and 4 each have one slot FINISHED):
+     *    `getFaceitMatchStats` → synthetic 1-round response.
+     *  - FORFEIT rows (rooms 3, 4, and 5 contribute 4 FORFEIT slots total):
+     *    `getFaceITMatchDetails` → synthetic details with `detailed_results`.
+     */
+    it("S2-AC-1: getDivStandings returns 2 teams with games_played==6, no double-counting", async () => {
+      const syntheticStats = {
+        rounds: [
+          {
+            best_of: "2",
+            played: "1",
+            round_stats: { Rounds: "24" },
+            teams: [
+              {
+                team_stats: { Team: "Forfeit Team A", "Final Score": "13" }
+              },
+              {
+                team_stats: { Team: "Forfeit Team B", "Final Score": "10" }
+              }
+            ]
+          }
+        ]
+      } satisfies FaceitMatchStatsResponse;
+
+      jest
+        .spyOn(faceitMatchServices, "getFaceitMatchStats")
+        .mockResolvedValue(syntheticStats);
+
+      // getFaceitMatchInfoForForfeit calls getFaceITMatchDetails for each
+      // FORFEIT row. All four FORFEIT slots use the same synthetic response:
+      // detailed_results[0].winner = "faction1" (Forfeit Team A wins forfeit).
+      const syntheticForfeitDetails = {
+        detailed_results: [
+          {
+            winner: "faction1",
+            asc_score: false,
+            factions: { faction1: { score: 1 }, faction2: { score: 0 } }
+          },
+          {
+            winner: "faction2",
+            asc_score: false,
+            factions: { faction1: { score: 0 }, faction2: { score: 1 } }
+          }
+        ],
+        teams: {
+          faction1: {
+            name: "Forfeit Team A",
+            faction_id: "f2-faction-a-0001-4000-8000-000000000001"
+          },
+          faction2: {
+            name: "Forfeit Team B",
+            faction_id: "f2-faction-b-0002-4000-8000-000000000002"
+          }
+        }
+      };
+
+      jest
+        .spyOn(faceitMatchServices, "getFaceITMatchDetails")
+        .mockResolvedValue(syntheticForfeitDetails);
+
+      const standings = await getDivStandings(FORFEIT_ENTITY_ID);
+
+      expect(standings).toHaveLength(2);
+
+      const teamA = standings.find((s) => s.team_name === "Forfeit Team A");
+      const teamB = standings.find((s) => s.team_name === "Forfeit Team B");
+      expect(teamA).toBeDefined();
+      expect(teamB).toBeDefined();
+
+      // Anti-double-count invariant: 3 rooms × 2 slots = 6 games per team.
+      // A regression where FORFEIT rows expand all detailed_results entries
+      // (instead of onlyFirstGame) would inflate this to 8 or 12.
+      expect(teamA?.games_played).toBe(6);
+      expect(teamB?.games_played).toBe(6);
     });
   });
 });

@@ -52,7 +52,8 @@ import {
   validateChampionshipCancelledWebhook,
   type RequestWithQueryAndBody,
   type MatchmakingDetailsFinished,
-  validateMatchmakingDetailsFinished
+  validateMatchmakingDetailsFinished,
+  type ChampionshipDetailsFinished
 } from "@eggosystem/types";
 import {
   addMatchToDatabase,
@@ -419,7 +420,11 @@ export const handleFaceitWebhook = async (
     if (webhookData.payload.entity.type === "championship") {
       if (validateMatchStatusFinishedWebhook(webhookData)) {
         const externalMatchRoomId = webhookData.payload.id;
-        const matchDetails = await getFaceITMatchDetails(externalMatchRoomId);
+        const matchDetails =
+          await getFaceITMatchDetails<ChampionshipDetailsFinished>(
+            externalMatchRoomId
+          );
+        const detailedResults = matchDetails?.detailed_results;
         const startTime = webhookData.payload.started_at;
         const externalLeagueId = webhookData.payload.entity.id;
 
@@ -468,7 +473,8 @@ export const handleFaceitWebhook = async (
                 webhookPayload: webhookData.payload,
                 isForfeitWebhook: true,
                 faceitMatchDetails: matchDetails,
-                siblingDemoState
+                siblingDemoState,
+                detailedResults
               });
             const connection = await getConnection();
             try {
@@ -551,7 +557,8 @@ export const handleFaceitWebhook = async (
               webhookPayload: webhookData.payload,
               isForfeitWebhook: false,
               faceitMatchDetails: matchDetails,
-              siblingDemoState
+              siblingDemoState,
+              detailedResults
             });
           const connection = await getConnection();
           try {
