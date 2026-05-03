@@ -34,6 +34,7 @@ import {
   updateMatchEndTime,
   updateMatchEndTimestamp,
   updateMatchFinished,
+  updateMatchFinishedEndOnly,
   updateMatchStartAndEndTimestamp,
   updateMatchStartTimestamp,
   updateMatchStatusByExternalMatchroomId,
@@ -41,6 +42,7 @@ import {
 } from "../../models/match.models";
 import {
   getMatchStatusFinishedCountAfterLastConfiguring,
+  hasSuccessfulFaceitReadyWebhook,
   saveWebhookData
 } from "../../models/faceit.models";
 import { addMatchTeamMapVetoes } from "../../models/match-team-map-veto.models";
@@ -56,7 +58,9 @@ import { sendDemoForAllStarPOTGClip } from "../../services/allstar.services";
 import { publishDemoProcessingRequest } from "../../services/match-game.services";
 import {
   validMatchDetailsMatchDemoReady,
-  validMatchDetailsMatchCreated
+  validMatchDetailsMatchCreated,
+  validMatchDetailsMatchStatusFinished,
+  validMatchDetailsMatchStatusReadyChampionship
 } from "@eggosystem/shared-msw";
 import {
   getSeasonLeagueBySeasonAndFaceitName,
@@ -99,6 +103,10 @@ const mockUpdateMatchStatus =
 const mockUpdateMatchFinished = updateMatchFinished as jest.MockedFunction<
   typeof updateMatchFinished
 >;
+const mockUpdateMatchFinishedEndOnly =
+  updateMatchFinishedEndOnly as jest.MockedFunction<
+    typeof updateMatchFinishedEndOnly
+  >;
 const mockUpdateMatchEndTime = updateMatchEndTime as jest.MockedFunction<
   typeof updateMatchEndTime
 >;
@@ -148,6 +156,10 @@ const mockGetMatchStatusFinishedCountAfterLastConfiguring =
 const mockSaveWebhookData = saveWebhookData as jest.MockedFunction<
   typeof saveWebhookData
 >;
+const mockHasSuccessfulFaceitReadyWebhook =
+  hasSuccessfulFaceitReadyWebhook as jest.MockedFunction<
+    typeof hasSuccessfulFaceitReadyWebhook
+  >;
 const mockAddMatchTeamMapVetoes = addMatchTeamMapVetoes as jest.MockedFunction<
   typeof addMatchTeamMapVetoes
 >;
@@ -1968,6 +1980,83 @@ describe("FaceIT Routes - Webhook", () => {
         expect(mockUpdateMatchStatus).not.toHaveBeenCalled();
       });
     });
+
+    describe("BO3+ hub timing (championship)", () => {
+      let mockGetFaceITMatchDetailsBo3Ready: jest.SpyInstance;
+
+      beforeEach(() => {
+        jest.clearAllMocks();
+        mockGetOrganizerByFaceitIdAndGameAppId.mockResolvedValue(mockOrganizer);
+        mockSaveWebhookData.mockResolvedValue({ insertId: 1 });
+        mockAddMatchTeamMapVetoes.mockResolvedValue(undefined);
+        mockGetSeasonLeagueExternalIdByExternalIdWithSeasonSettings.mockResolvedValue(
+          {
+            ...createMockSeasonLeagueExternalId({
+              external_id: "5227a49c-f172-485e-a19b-a666ddeb3140",
+              external_league_name: "Test League",
+              type: "doubleElimination"
+            }),
+            is_round_robin_bo2_as_2xbo1: false
+          }
+        );
+        mockGetMatchesByExternalId.mockResolvedValue([
+          { id: 701, status: "ONGOING" } as Match
+        ]);
+        mockUpdateMatchStatusByMatchId.mockResolvedValue(undefined);
+        mockInvalidateChampionshipMatchesCache.mockResolvedValue(undefined);
+        mockInvalidateChampionshipBracketMatchesCache.mockResolvedValue(
+          undefined
+        );
+        mockGetFaceITMatchDetailsBo3Ready = jest
+          .spyOn(faceitMatchServices, "getFaceITMatchDetails")
+          .mockResolvedValue({
+            ...validMatchDetailsMatchStatusReadyChampionship,
+            best_of: 3
+          } as never);
+      });
+
+      afterEach(() => {
+        mockGetFaceITMatchDetailsBo3Ready.mockRestore();
+      });
+
+      it("sets start_timestamp from payload.updated_at for single-row BO3 rooms", async () => {
+        const response = await request(app)
+          .post("/api/v1/faceit/webhook")
+          .set("X-API-KEY", TEST_WEBHOOK_API_KEY)
+          .send(validWebhookPayloadMatchStatusReady);
+
+        expect(response.status).toBe(200);
+        expect(mockUpdateMatchStartTimestamp).toHaveBeenCalledWith(
+          701,
+          validWebhookPayloadMatchStatusReady.payload.updated_at
+        );
+      });
+
+      it("does not apply BO3 hub start updates for 2×BO1 twin rows", async () => {
+        mockGetMatchesByExternalId.mockResolvedValue([
+          { id: 1, status: "ONGOING" } as Match,
+          { id: 2, status: "ONGOING" } as Match
+        ]);
+        mockGetSeasonLeagueExternalIdByExternalIdWithSeasonSettings.mockResolvedValue(
+          {
+            ...createMockSeasonLeagueExternalId({
+              external_id: "5227a49c-f172-485e-a19b-a666ddeb3140",
+              external_league_name: "Test League",
+              type: "roundRobin"
+            }),
+            is_round_robin_bo2_as_2xbo1: true
+          }
+        );
+
+        const response = await request(app)
+          .post("/api/v1/faceit/webhook")
+          .set("X-API-KEY", TEST_WEBHOOK_API_KEY)
+          .send(validWebhookPayloadMatchStatusReady);
+
+        expect(response.status).toBe(200);
+        expect(mockUpdateMatchStartTimestamp).not.toHaveBeenCalled();
+      });
+    });
   });
 
   describe("POST /webhook - match_demo_ready", () => {
@@ -2381,6 +2470,8 @@ describe("FaceIT Routes - Webhook", () => {
         mockGetFaceITMatchDetails = jest
           .spyOn(faceitMatchServices, "getFaceITMatchDetails")
           .mockResolvedValue({} as never);
+        mockHasSuccessfulFaceitReadyWebhook.mockResolvedValue(false);
+        mockUpdateMatchFinishedEndOnly.mockResolvedValue(undefined);
       });
 
       afterEach(() => {
@@ -2428,6 +2519,60 @@ describe("FaceIT Routes - Webhook", () => {
         ).toHaveBeenCalledWith(
           validWebhookPayloadMatchStatusFinished.payload.entity.id
         );
+      });
+
+      describe("BO3+ hub timing", () => {
+        beforeEach(() => {
+          mockGetSeasonLeagueExternalIdByExternalIdWithSeasonSettings.mockResolvedValue(
+            {
+              ...createMockSeasonLeagueExternalId({
+                external_id:
+                  validWebhookPayloadMatchStatusFinished.payload.entity.id,
+                external_league_name: "Test League",
+                type: "doubleElimination"
+              }),
+              is_round_robin_bo2_as_2xbo1: false
+            }
+          );
+          mockGetMatchesByExternalId.mockResolvedValue([
+            { id: 1, status: "ONGOING" } as Match
+          ]);
+          mockGetFaceITMatchDetails.mockResolvedValue({
+            ...validMatchDetailsMatchStatusFinished,
+            best_of: 3
+          } as never);
+        });
+
+        it("uses updateMatchFinishedEndOnly when a prior ready webhook exists", async () => {
+          mockHasSuccessfulFaceitReadyWebhook.mockResolvedValue(true);
+          const response = await request(app)
+            .post("/api/v1/faceit/webhook")
+            .set("X-API-KEY", TEST_WEBHOOK_API_KEY)
+            .send(validWebhookPayloadMatchStatusFinished);
+
+          expect(response.status).toBe(200);
+          expect(mockUpdateMatchFinishedEndOnly).toHaveBeenCalledWith(
+            "1-dba8981d-5647-466a-be32-12a06fb8fc31",
+            "2025-07-26T01:05:18Z"
+          );
+          expect(mockUpdateMatchFinished).not.toHaveBeenCalled();
+        });
+
+        it("uses full updateMatchFinished when no prior ready webhook (AC-4)", async () => {
+          mockHasSuccessfulFaceitReadyWebhook.mockResolvedValue(false);
+          const response = await request(app)
+            .post("/api/v1/faceit/webhook")
+            .set("X-API-KEY", TEST_WEBHOOK_API_KEY)
+            .send(validWebhookPayloadMatchStatusFinished);
+
+          expect(response.status).toBe(200);
+          expect(mockUpdateMatchFinished).toHaveBeenCalledWith(
+            "1-dba8981d-5647-466a-be32-12a06fb8fc31",
+            "2025-07-26T00:25:51Z",
+            "2025-07-26T01:05:18Z"
+          );
+          expect(mockUpdateMatchFinishedEndOnly).not.toHaveBeenCalled();
+        });
       });
 
       it("should handle AFK abort case with updateMatchEndTime", async () => {

@@ -39,6 +39,22 @@ export const saveWebhookData = async (
 };
 
 /**
+ * True if we stored a successful `match_status_ready` webhook for this FaceIT room.
+ * Used to decide whether `match_status_finished` should preserve existing start times (BO3+ hub).
+ */
+export const hasSuccessfulFaceitReadyWebhook = async (
+  externalPayloadId: string
+): Promise<boolean> => {
+  const result = await runQuery<Array<{ c: number }>>(
+    `SELECT 1 as c FROM FaceitWebhooks
+     WHERE external_payload_id = ? AND event = 'match_status_ready' AND error_type IS NULL
+     LIMIT 1`,
+    [externalPayloadId]
+  );
+  return result.length > 0;
+};
+
+/**
  * Count of match_status_finished after the last match_status_configuring for this room.
  * Resets the effective game index after a restart (configuring sets matches to ONGOING).
  * Excludes retries and manual reprocess.

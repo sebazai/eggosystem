@@ -6,6 +6,7 @@ import {
 } from "../services/faceit.services";
 import {
   getMatchStatusFinishedCountAfterLastConfiguring,
+  hasSuccessfulFaceitReadyWebhook,
   saveWebhookData,
   updateErrorForWebhook
 } from "../models/faceit.models";
@@ -62,6 +63,7 @@ import {
   updateMatchEndTime,
   updateMatchEndTimestamp,
   updateMatchFinished,
+  updateMatchFinishedEndOnly,
   updateMatchStartTimestamp,
   updateMatchStatusByExternalMatchroomId,
   updateMatchStatusByMatchId,
@@ -92,6 +94,7 @@ import { sendDemoForAllStarPOTGClip } from "../services/allstar.services";
 import { publishDemoProcessingRequest } from "../services/match-game.services";
 import { getConnection } from "../db/mysqlConnection";
 import { parseFaceitDemoUrl } from "../utils/faceit-demo-url-parser";
+import { isChampionshipBo3PlusHubTimingEligible } from "../services/faceit-championship-bo3-hub-timing.services";
 
 type FaceITWebhookData =
   | MatchStatusConfiguringWebhook
@@ -391,6 +394,26 @@ export const handleFaceitWebhook = async (
         }
       }
 
+      const seasonLeagueForBo3Hub =
+        await getSeasonLeagueExternalIdByExternalIdWithSeasonSettings(
+          validatedWebhook.payload.entity.id
+        );
+      if (
+        isChampionshipBo3PlusHubTimingEligible({
+          faceitBestOf: validatedMatchDetails.best_of,
+          isRoundRobinBo2As2xBo1:
+            seasonLeagueForBo3Hub?.is_round_robin_bo2_as_2xbo1 ?? false,
+          matchesInRoomCount: matchesByRoom.length
+        })
+      ) {
+        const playReadyAt = validatedWebhook.payload.updated_at;
+        for (const match of matchesByRoom) {
+          if (match.status !== "FINISHED") {
+            await updateMatchStartTimestamp(match.id, playReadyAt);
+          }
+        }
+      }
+
       await invalidateChampionshipMatchesCache(
         validatedWebhook.payload.entity.id
       );
@@ -576,7 +599,24 @@ export const handleFaceitWebhook = async (
             connection.release();
           }
         } else {
-          await updateMatchFinished(webhookData.payload.id, startTime, endTime);
+          const bo3HubTiming = isChampionshipBo3PlusHubTimingEligible({
+            faceitBestOf: matchDetails?.best_of,
+            isRoundRobinBo2As2xBo1:
+              seasonLeague?.is_round_robin_bo2_as_2xbo1 ?? false,
+            matchesInRoomCount: matchesByRoom.length
+          });
+          const hadReadyWebhook = bo3HubTiming
+            ? await hasSuccessfulFaceitReadyWebhook(externalMatchRoomId)
+            : false;
+          if (bo3HubTiming && hadReadyWebhook) {
+            await updateMatchFinishedEndOnly(externalMatchRoomId, endTime);
+          } else {
+            await updateMatchFinished(
+              webhookData.payload.id,
+              startTime,
+              endTime
+            );
+          }
           await updateMatchStatusByExternalMatchroomId(
             externalMatchRoomId,
             "FINISHED"

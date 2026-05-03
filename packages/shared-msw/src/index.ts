@@ -66,6 +66,7 @@ export {
   validMatchDetailsMatchCreated,
   validMatchDetailsMatchDemoReady,
   validMatchDetailsMatchStatusReadyMatchmaking,
+  validMatchDetailsMatchStatusReadyChampionship,
   validMatchDetailsMatchStatusFinished,
   validMatchDetailsMatchScheduledTeamValidation
 } from "./faceit/MatchDetails-handlers.js";
