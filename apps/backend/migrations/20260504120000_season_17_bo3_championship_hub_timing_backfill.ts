@@ -1,6 +1,11 @@
 import type { Knex } from "knex";
-import { formatDateForDatabase } from "../src/utils/date-utils";
-import { isForfeitPayload } from "../src/utils/faceit-match-status-finished-detection";
+
+import {
+  computeSeason17Bo3FinishedMatchPatch,
+  computeSeason17Bo3ReadyMatchPatch,
+  hasPriorSuccessfulReadyWebhook,
+  parseWebhookDataPayload
+} from "../src/utils/season-17-bo3-championship-hub-timing-backfill";
 
 interface WebhookTimingRow {
   id: number;
@@ -8,26 +13,6 @@ interface WebhookTimingRow {
   event: string;
   received_at: Date;
   data: unknown;
-}
-
-async function hasPriorSuccessfulReadyWebhook(
-  knex: Knex,
-  roomId: string,
-  receivedAt: Date,
-  rowId: number
-): Promise<boolean> {
-  const row = await knex("FaceitWebhooks")
-    .select("id")
-    .where("external_payload_id", roomId)
-    .where("event", "match_status_ready")
-    .whereNull("error_type")
-    .whereRaw("(received_at < ? OR (received_at = ? AND id < ?))", [
-      receivedAt,
-      receivedAt,
-      rowId
-    ])
-    .first();
-  return row !== undefined;
 }
 
 /**
@@ -55,38 +40,23 @@ export async function up(knex: Knex): Promise<void> {
   const roomsWithProcessedReady = new Set<string>();
 
   for (const row of rows) {
-    const rawData = row.data;
-    const data =
-      typeof rawData === "string"
-        ? (JSON.parse(rawData) as { payload?: Record<string, unknown> })
-        : (rawData as { payload?: Record<string, unknown> });
-    const payload = data?.payload;
-    if (!payload || typeof payload !== "object") continue;
+    const payload = parseWebhookDataPayload(row.data);
+    if (!payload) continue;
 
     const roomId = row.external_payload_id;
 
     if (row.event === "match_status_ready") {
-      const updatedAt = payload.updated_at;
-      if (typeof updatedAt !== "string") continue;
+      const patch = computeSeason17Bo3ReadyMatchPatch(payload);
+      if (!patch) continue;
       await knex("Matches")
         .where({
           external_match_room_id: roomId,
           season_id: 17
         })
         .where("best_of", ">=", 3)
-        .update({
-          start_timestamp: formatDateForDatabase(updatedAt)
-        });
+        .update(patch);
       roomsWithProcessedReady.add(roomId);
     } else if (row.event === "match_status_finished") {
-      if (isForfeitPayload(payload)) continue;
-
-      const finishedAt = payload.finished_at;
-      const startedAt = payload.started_at;
-      if (typeof finishedAt !== "string" || typeof startedAt !== "string") {
-        continue;
-      }
-
       let hadReady = roomsWithProcessedReady.has(roomId);
       if (!hadReady) {
         hadReady = await hasPriorSuccessfulReadyWebhook(
@@ -97,30 +67,16 @@ export async function up(knex: Knex): Promise<void> {
         );
       }
 
-      if (hadReady) {
-        await knex("Matches")
-          .where({
-            external_match_room_id: roomId,
-            season_id: 17
-          })
-          .where("best_of", ">=", 3)
-          .update({
-            end_timestamp: formatDateForDatabase(finishedAt),
-            status: "FINISHED"
-          });
-      } else {
-        await knex("Matches")
-          .where({
-            external_match_room_id: roomId,
-            season_id: 17
-          })
-          .where("best_of", ">=", 3)
-          .update({
-            start_timestamp: formatDateForDatabase(startedAt),
-            end_timestamp: formatDateForDatabase(finishedAt),
-            status: "FINISHED"
-          });
-      }
+      const result = computeSeason17Bo3FinishedMatchPatch(payload, hadReady);
+      if (result.action === "skip") continue;
+
+      await knex("Matches")
+        .where({
+          external_match_room_id: roomId,
+          season_id: 17
+        })
+        .where("best_of", ">=", 3)
+        .update(result.patch);
     }
   }
 }
