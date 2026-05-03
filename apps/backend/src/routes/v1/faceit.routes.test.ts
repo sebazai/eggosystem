@@ -80,14 +80,16 @@ import {
   type MatchObjectCreatedWebhook,
   type MatchStatusFinishedWebhook,
   type MatchStatusReadyWebhook,
-  type Season,
-  type SeasonLeague,
   SeasonPlatform,
   createMockSeason,
+  createMockSeasonLeague,
   createMockOrganizer,
   createMockSeasonLeagueExternalId
 } from "@eggosystem/types";
 import { isForfeitPayload } from "../../utils/faceit-match-status-finished-detection";
+
+/** Stub FACEIT championship JSON when tests do not assert on details. */
+const EMPTY_CHAMPIONSHIP_DETAILS: Record<string, unknown> = {};
 
 function stubMatchGame(
   partial: Pick<MatchGame, "id" | "match_id" | "map_order">
@@ -1064,12 +1066,12 @@ describe("FaceIT Routes - Webhook", () => {
         // Championship details fetch is not needed for assertions
         jest
           .spyOn(faceitChampionshipServices, "getFaceITChampionshipDetails")
-          .mockResolvedValue({} as unknown as Record<string, unknown>);
+          .mockResolvedValue(EMPTY_CHAMPIONSHIP_DETAILS);
 
         // Mock active organizer season
-        mockGetOrganizerActiveSeasonForApp.mockResolvedValue({
-          id: 77
-        } as unknown as Season);
+        mockGetOrganizerActiveSeasonForApp.mockResolvedValue(
+          createMockSeason({ id: 77 })
+        );
 
         // League search names for resolveLeagueNameFromChampionshipName
         mockGetSeasonLeagueSearchNames.mockResolvedValue([
@@ -1079,16 +1081,12 @@ describe("FaceIT Routes - Webhook", () => {
         ]);
 
         // Mock league resolution
-        mockGetSeasonLeagueBySeasonAndFaceitName.mockResolvedValue({
-          season_id: 77,
-          league_id: 5,
-          tier: 1
-        } as unknown as SeasonLeague);
+        mockGetSeasonLeagueBySeasonAndFaceitName.mockResolvedValue(
+          createMockSeasonLeague({ season_id: 77, league_id: 5, tier: 1 })
+        );
 
         // Mock DB insert
-        mockInsertSeasonLeagueExternalId.mockResolvedValue({
-          insertId: 1
-        } as unknown as { insertId: number });
+        mockInsertSeasonLeagueExternalId.mockResolvedValue({ insertId: 1 });
       });
 
       afterEach(() => {
@@ -1097,7 +1095,7 @@ describe("FaceIT Routes - Webhook", () => {
 
       it("should set manualProcessed to true when reprocess=true for championship_created", async () => {
         mockGetOrganizerActiveSeasonForApp.mockImplementation(() =>
-          Promise.resolve({ id: 77 } as unknown as Season)
+          Promise.resolve(createMockSeason({ id: 77 }))
         );
         const championshipCreated = {
           transaction_id: "45c6cb33-cb52-40ea-933d-9427034adcf0",
@@ -1166,7 +1164,7 @@ describe("FaceIT Routes - Webhook", () => {
         // Championship details fetch is not needed for assertions; return empty object
         jest
           .spyOn(faceitChampionshipServices, "getFaceITChampionshipDetails")
-          .mockResolvedValue({} as unknown as Record<string, unknown>);
+          .mockResolvedValue(EMPTY_CHAMPIONSHIP_DETAILS);
 
         // No active season exists -> service throws
         // Default: let service run; individual tests can override
@@ -1286,7 +1284,7 @@ describe("FaceIT Routes - Webhook", () => {
 
         // Active organizer season mocked (mockImplementation so return value is not cleared by restoreAllMocks)
         mockGetOrganizerActiveSeasonForApp.mockImplementation(() =>
-          Promise.resolve({ id: 77 } as unknown as Season)
+          Promise.resolve(createMockSeason({ id: 77 }))
         );
 
         mockGetSeasonLeagueSearchNames.mockResolvedValue([
@@ -1296,21 +1294,17 @@ describe("FaceIT Routes - Webhook", () => {
         ]);
 
         // Mock league resolution from faceit name prefix '5'
-        mockGetSeasonLeagueBySeasonAndFaceitName.mockResolvedValueOnce({
-          season_id: 77,
-          league_id: 5,
-          tier: 1
-        } as unknown as SeasonLeague);
+        mockGetSeasonLeagueBySeasonAndFaceitName.mockResolvedValueOnce(
+          createMockSeasonLeague({ season_id: 77, league_id: 5, tier: 1 })
+        );
 
         // DB insert mock
-        mockInsertSeasonLeagueExternalId.mockResolvedValueOnce({
-          insertId: 1
-        } as unknown as { insertId: number });
+        mockInsertSeasonLeagueExternalId.mockResolvedValueOnce({ insertId: 1 });
 
         // Avoid network for championship details fetch
         jest
           .spyOn(faceitChampionshipServices, "getFaceITChampionshipDetails")
-          .mockResolvedValue({} as unknown);
+          .mockResolvedValue(EMPTY_CHAMPIONSHIP_DETAILS);
 
         const response = await request(app)
           .post("/api/v1/faceit/webhook")

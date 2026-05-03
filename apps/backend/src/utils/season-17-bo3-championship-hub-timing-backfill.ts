@@ -8,6 +8,15 @@ const webhookDataEnvelopeSchema = z.object({
   payload: z.record(z.string(), z.unknown()).optional()
 });
 
+const readyPayloadSchema = z.object({
+  updated_at: z.string()
+});
+
+const finishedPlayedPayloadSchema = z.object({
+  started_at: z.string(),
+  finished_at: z.string()
+});
+
 /**
  * Shared logic for Season 17 championship BO3+ hub timing backfill (migration replay)
  * and live {@link handleFaceitWebhook} semantics: ready `updated_at` → start; finished
@@ -47,9 +56,11 @@ function startedAtForForfeitCheck(
 export function computeSeason17Bo3ReadyMatchPatch(
   payload: Record<string, unknown>
 ): { start_timestamp: string } | null {
-  const updatedAt = payload.updated_at;
-  if (typeof updatedAt !== "string") return null;
-  return { start_timestamp: formatDateForDatabase(updatedAt) };
+  const parsed = readyPayloadSchema.safeParse(payload);
+  if (!parsed.success) return null;
+  return {
+    start_timestamp: formatDateForDatabase(parsed.data.updated_at)
+  };
 }
 
 type Season17Bo3FinishedBackfillResult =
@@ -75,11 +86,10 @@ export function computeSeason17Bo3FinishedMatchPatch(
     return { action: "skip" };
   }
 
-  const finishedAt = payload.finished_at;
-  const startedAt = payload.started_at;
-  if (typeof finishedAt !== "string" || typeof startedAt !== "string") {
-    return { action: "skip" };
-  }
+  const parsed = finishedPlayedPayloadSchema.safeParse(payload);
+  if (!parsed.success) return { action: "skip" };
+
+  const { finished_at: finishedAt, started_at: startedAt } = parsed.data;
 
   if (hadReady) {
     return {

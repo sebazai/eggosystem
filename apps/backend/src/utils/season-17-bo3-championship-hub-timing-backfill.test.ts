@@ -45,9 +45,10 @@ describe("season-17-bo3-championship-hub-timing-backfill", () => {
 
     it("returns null when updated_at is not a string", () => {
       expect(
-        computeSeason17Bo3ReadyMatchPatch({
-          updated_at: 123 as unknown as string
-        })
+        computeSeason17Bo3ReadyMatchPatch({ updated_at: 123 } satisfies Record<
+          string,
+          unknown
+        >)
       ).toBeNull();
       expect(computeSeason17Bo3ReadyMatchPatch({})).toBeNull();
     });
@@ -89,7 +90,7 @@ describe("season-17-bo3-championship-hub-timing-backfill", () => {
       ).toEqual({ action: "skip" });
       expect(
         computeSeason17Bo3FinishedMatchPatch(
-          { finished_at: played.finished_at } as Record<string, unknown>,
+          { finished_at: played.finished_at } satisfies Record<string, unknown>,
           true
         )
       ).toEqual({ action: "skip" });
