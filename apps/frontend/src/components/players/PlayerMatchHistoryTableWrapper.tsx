@@ -23,7 +23,7 @@ import {
   type Cell
 } from "@tanstack/react-table";
 import type { MatchHistoryResult } from "@eggosystem/types";
-import { matchScoreHomeAwayPresentation } from "@/lib/order-match-teams-home-left-away";
+import { MatchRowScoreComponents } from "../shared/MatchRowScoreComponents";
 
 interface CustomColumnMeta {
   responsive?: string;
@@ -120,44 +120,24 @@ export const PlayerMatchHistoryTable = ({ steamId }: PlayerDetailsProps) => {
         id: "score",
         header: "SCORE",
         cell: ({ row }) => {
-          const { homeScore, awayScore, tie, homeWon, awayWon } =
-            matchScoreHomeAwayPresentation({
-              focalScore: row.original.score,
-              opponentScore: row.original.opponent_score,
-              focalSide: row.original.team_side,
-              opponentSide: row.original.opponent_side
-            });
+          const teamWon = row.original.score > row.original.opponent_score;
           return (
             <>
-              <span
-                className={
-                  tie
-                    ? "text-yellow-500"
-                    : homeWon
-                      ? "text-green-500"
-                      : "text-red-500"
-                }
-              >
-                {homeScore}
-              </span>
+              <MatchRowScoreComponents
+                score={row.original.score}
+                teamWon={teamWon}
+              />
               -
-              <span
-                className={
-                  tie
-                    ? "text-yellow-500"
-                    : awayWon
-                      ? "text-green-500"
-                      : "text-red-500"
-                }
-              >
-                {awayScore}
-              </span>
+              <MatchRowScoreComponents
+                score={row.original.opponent_score}
+                teamWon={!teamWon}
+              />
             </>
           );
         },
         meta: {
           responsive: "hidden sm:table-cell",
-          tooltip: "Match score (home left, away right)",
+          tooltip: "Match score",
           sortable: true
         }
       },
@@ -321,41 +301,18 @@ export const PlayerMatchHistoryTable = ({ steamId }: PlayerDetailsProps) => {
     row: MatchHistoryResult
   ) => {
     if (cell.column.id === "opponent_name") {
-      const { homeScore, awayScore, tie, homeWon, awayWon } =
-        matchScoreHomeAwayPresentation({
-          focalScore: row.score,
-          opponentScore: row.opponent_score,
-          focalSide: row.team_side,
-          opponentSide: row.opponent_side
-        });
+      const teamWon = row.score > row.opponent_score;
       return (
         <>
           <span>{row.opponent_name}</span>
           {/* Score on mobile - hidden on desktop */}
           <div className="sm:hidden text-xs mt-1">
-            <span
-              className={
-                tie
-                  ? "text-yellow-500"
-                  : homeWon
-                    ? "text-green-500"
-                    : "text-red-500"
-              }
-            >
-              {homeScore}
-            </span>
+            <MatchRowScoreComponents score={row.score} teamWon={teamWon} />
             -
-            <span
-              className={
-                tie
-                  ? "text-yellow-500"
-                  : awayWon
-                    ? "text-green-500"
-                    : "text-red-500"
-              }
-            >
-              {awayScore}
-            </span>
+            <MatchRowScoreComponents
+              score={row.opponent_score}
+              teamWon={!teamWon}
+            />
           </div>
         </>
       );

@@ -3,7 +3,6 @@ import {
   calendarMatchVersusTitle,
   dualTeamRowToHomeLeftDisplay,
   homeAwayScoresFromFocalVersusOpponent,
-  matchScoreHomeAwayPresentation,
   homeLeftVersusLabelFromSides,
   orderMatchParticipantsBySideHomeLeft,
   orderTwoByMatchTeamSideHomeLeftAway
@@ -171,42 +170,6 @@ describe("calendarMatchVersusTitle", () => {
         }
       })
     ).toBe("HomeName vs AwayName");
-  });
-});
-
-describe("matchScoreHomeAwayPresentation", () => {
-  it("matches home-away ordering and tie flag", () => {
-    expect(
-      matchScoreHomeAwayPresentation({
-        focalScore: 14,
-        opponentScore: 16,
-        focalSide: "away",
-        opponentSide: "home"
-      })
-    ).toEqual({
-      homeScore: 16,
-      awayScore: 14,
-      tie: false,
-      homeWon: true,
-      awayWon: false
-    });
-  });
-
-  it("legacy order when sides unknown", () => {
-    expect(
-      matchScoreHomeAwayPresentation({
-        focalScore: 11,
-        opponentScore: 9,
-        focalSide: null,
-        opponentSide: null
-      })
-    ).toEqual({
-      homeScore: 11,
-      awayScore: 9,
-      tie: false,
-      homeWon: true,
-      awayWon: false
-    });
   });
 });
 

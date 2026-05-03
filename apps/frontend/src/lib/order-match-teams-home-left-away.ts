@@ -147,30 +147,6 @@ export function homeAwayScoresFromFocalVersusOpponent(input: {
   return { homeScore: focalScore, awayScore: opponentScore };
 }
 
-/** Same mapping as the score column: home on the left, legacy focal/opponent order when unknown. */
-export function matchScoreHomeAwayPresentation(input: {
-  focalScore: number;
-  opponentScore: number;
-  focalSide: MatchTeamSide;
-  opponentSide: MatchTeamSide;
-}): {
-  homeScore: number;
-  awayScore: number;
-  tie: boolean;
-  homeWon: boolean;
-  awayWon: boolean;
-} {
-  const { homeScore, awayScore } = homeAwayScoresFromFocalVersusOpponent(input);
-  const tie = homeScore === awayScore;
-  return {
-    homeScore,
-    awayScore,
-    tie,
-    homeWon: homeScore > awayScore,
-    awayWon: awayScore > homeScore
-  };
-}
-
 export function homeLeftVersusLabelFromSides(input: {
   aName: string;
   bName: string;
