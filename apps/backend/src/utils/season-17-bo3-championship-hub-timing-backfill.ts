@@ -1,7 +1,12 @@
 import type { Knex } from "knex";
+import { z } from "zod";
 
 import { formatDateForDatabase } from "./date-utils";
 import { isForfeitPayload } from "./faceit-match-status-finished-detection";
+
+const webhookDataEnvelopeSchema = z.object({
+  payload: z.record(z.string(), z.unknown()).optional()
+});
 
 /**
  * Shared logic for Season 17 championship BO3+ hub timing backfill (migration replay)
@@ -12,15 +17,31 @@ import { isForfeitPayload } from "./faceit-match-status-finished-detection";
 export function parseWebhookDataPayload(
   rawData: unknown
 ): Record<string, unknown> | null {
-  const data =
-    typeof rawData === "string"
-      ? (JSON.parse(rawData) as { payload?: Record<string, unknown> })
-      : (rawData as { payload?: Record<string, unknown> });
-  const payload = data?.payload;
-  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
-    return null;
+  let envelope: unknown;
+  if (typeof rawData === "string") {
+    try {
+      envelope = JSON.parse(rawData);
+    } catch {
+      return null;
+    }
+  } else {
+    envelope = rawData;
   }
-  return payload as Record<string, unknown>;
+  const parsed = webhookDataEnvelopeSchema.safeParse(envelope);
+  if (!parsed.success) return null;
+  const { payload } = parsed.data;
+  if (payload === undefined) return null;
+  return payload;
+}
+
+function startedAtForForfeitCheck(
+  payload: Record<string, unknown>
+): string | null | undefined {
+  const s = payload.started_at;
+  if (s === undefined) return undefined;
+  if (s === null) return null;
+  if (typeof s === "string") return s;
+  return undefined;
 }
 
 export function computeSeason17Bo3ReadyMatchPatch(
@@ -50,7 +71,7 @@ export function computeSeason17Bo3FinishedMatchPatch(
   payload: Record<string, unknown>,
   hadReady: boolean
 ): Season17Bo3FinishedBackfillResult {
-  if (isForfeitPayload(payload as { started_at?: string | null })) {
+  if (isForfeitPayload({ started_at: startedAtForForfeitCheck(payload) })) {
     return { action: "skip" };
   }
 

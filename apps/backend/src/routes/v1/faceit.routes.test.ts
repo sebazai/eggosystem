@@ -71,19 +71,37 @@ import {
   getSeasonLeagueExternalIdByExternalIdWithSeasonSettings
 } from "../../models/season-league-external-id.models";
 import {
+  type ChampionshipDetailsDemoReady,
+  type ChampionshipDetailsFinished,
+  type ChampionshipDetailsReady,
   type Match,
-  type MatchObjectCreatedWebhook,
   type MatchDemoReadyWebhook,
+  type MatchGame,
+  type MatchObjectCreatedWebhook,
+  type MatchStatusFinishedWebhook,
   type MatchStatusReadyWebhook,
   type Season,
   type SeasonLeague,
-  type MatchStatusFinishedWebhook,
   SeasonPlatform,
   createMockSeason,
   createMockOrganizer,
   createMockSeasonLeagueExternalId
 } from "@eggosystem/types";
 import { isForfeitPayload } from "../../utils/faceit-match-status-finished-detection";
+
+function stubMatchGame(
+  partial: Pick<MatchGame, "id" | "match_id" | "map_order">
+): MatchGame {
+  return {
+    id: partial.id,
+    match_id: partial.match_id,
+    map_id: 1,
+    demofile: "",
+    map_order: partial.map_order,
+    regulation_rounds: 24,
+    team_game_scores_staff_lock: false
+  };
+}
 
 const mockGetOrganizerByFaceitIdAndGameAppId =
   getOrganizerByFaceitIdAndGameAppId as jest.MockedFunction<
@@ -2012,7 +2030,7 @@ describe("FaceIT Routes - Webhook", () => {
           .mockResolvedValue({
             ...validMatchDetailsMatchStatusReadyChampionship,
             best_of: 3
-          } as never);
+          } satisfies ChampionshipDetailsReady);
       });
 
       afterEach(() => {
@@ -2164,7 +2182,7 @@ describe("FaceIT Routes - Webhook", () => {
           .mockResolvedValue({
             ...validMatchDetailsMatchDemoReady,
             best_of: 2
-          } as never);
+          } satisfies ChampionshipDetailsDemoReady);
         mockAddFaceitMatchGameToDatabase = jest
           .spyOn(faceitMatchServices, "addFaceitMatchGameToDatabase")
           .mockResolvedValue(123);
@@ -2185,7 +2203,7 @@ describe("FaceIT Routes - Webhook", () => {
           { id: 102, status: "ONGOING" }
         ]);
         mockGetMatchGamesByExternalMatchRoomId.mockResolvedValue([
-          { id: 1, match_id: 101, map_order: 1 } as never
+          stubMatchGame({ id: 1, match_id: 101, map_order: 1 })
         ]);
 
         const response = await request(app)
@@ -2214,8 +2232,8 @@ describe("FaceIT Routes - Webhook", () => {
           { id: 102, status: "ONGOING" }
         ]);
         mockGetMatchGamesByExternalMatchRoomId.mockResolvedValue([
-          { id: 1, match_id: 101, map_order: 1 } as never,
-          { id: 2, match_id: 102, map_order: 2 } as never
+          stubMatchGame({ id: 1, match_id: 101, map_order: 1 }),
+          stubMatchGame({ id: 2, match_id: 102, map_order: 2 })
         ]);
 
         const secondDemoWebhook = {
@@ -2258,7 +2276,7 @@ describe("FaceIT Routes - Webhook", () => {
           ...validMatchDetailsMatchDemoReady,
           best_of: 2,
           match_id: externalMatchRoomId
-        };
+        } satisfies ChampionshipDetailsDemoReady;
         const demoReadyForMap2 = {
           ...validWebhookMatchDemoReady,
           payload: {
@@ -2269,7 +2287,7 @@ describe("FaceIT Routes - Webhook", () => {
         };
         const getDetailsSpy = jest
           .spyOn(faceitMatchServices, "getFaceITMatchDetails")
-          .mockResolvedValue(matchDetailsForRoom as never);
+          .mockResolvedValue(matchDetailsForRoom);
 
         try {
           const response = await request(app)
@@ -2305,7 +2323,7 @@ describe("FaceIT Routes - Webhook", () => {
           ...validMatchDetailsMatchDemoReady,
           best_of: 2,
           match_id: externalMatchRoomId
-        };
+        } satisfies ChampionshipDetailsDemoReady;
         const demoReadyForMap2 = {
           ...validWebhookMatchDemoReady,
           payload: {
@@ -2316,7 +2334,7 @@ describe("FaceIT Routes - Webhook", () => {
         };
         const getDetailsSpy = jest
           .spyOn(faceitMatchServices, "getFaceITMatchDetails")
-          .mockResolvedValue(matchDetailsForRoom as never);
+          .mockResolvedValue(matchDetailsForRoom);
 
         try {
           const response = await request(app)
@@ -2346,7 +2364,7 @@ describe("FaceIT Routes - Webhook", () => {
           .mockResolvedValue({
             ...validMatchDetailsMatchDemoReady,
             best_of: 2
-          } as never);
+          } satisfies ChampionshipDetailsDemoReady);
         mockGetHubMatchesByExternalMatchRoomId.mockResolvedValue([
           { id: 101, status: "ONGOING" },
           { id: 102, status: "ONGOING" }
@@ -2377,7 +2395,7 @@ describe("FaceIT Routes - Webhook", () => {
         // The 2xBO1 guard only applies when FaceIT reports best_of === 2.
         jest
           .spyOn(faceitMatchServices, "getFaceITMatchDetails")
-          .mockResolvedValue(validMatchDetailsMatchDemoReady as never);
+          .mockResolvedValue(validMatchDetailsMatchDemoReady);
         mockGetHubMatchesByExternalMatchRoomId.mockResolvedValue([
           { id: 101, status: "ONGOING" }
         ]);
@@ -2469,7 +2487,7 @@ describe("FaceIT Routes - Webhook", () => {
         );
         mockGetFaceITMatchDetails = jest
           .spyOn(faceitMatchServices, "getFaceITMatchDetails")
-          .mockResolvedValue({} as never);
+          .mockResolvedValue(validMatchDetailsMatchStatusFinished);
         mockHasSuccessfulFaceitReadyWebhook.mockResolvedValue(false);
         mockUpdateMatchFinishedEndOnly.mockResolvedValue(undefined);
       });
@@ -2540,7 +2558,7 @@ describe("FaceIT Routes - Webhook", () => {
           mockGetFaceITMatchDetails.mockResolvedValue({
             ...validMatchDetailsMatchStatusFinished,
             best_of: 3
-          } as never);
+          } satisfies ChampionshipDetailsFinished);
         });
 
         it("uses updateMatchFinishedEndOnly when a prior ready webhook exists", async () => {
@@ -2721,51 +2739,6 @@ describe("FaceIT Routes - Webhook", () => {
         }
       };
 
-      /** Mock FACEIT match details API response (ChampionshipDetailsFinished shape). */
-      const expectedChampionshipDetailsFinished = {
-        match_id: externalMatchRoomId,
-        competition_type: "championship" as const,
-        status: "FINISHED" as const,
-        best_of: 2,
-        results: {
-          winner: "faction1" as const,
-          score: { faction1: 1, faction2: 1 }
-        },
-        detailed_results: [
-          {
-            asc_score: false,
-            winner: "faction1" as const,
-            factions: {
-              faction1: { score: 1 },
-              faction2: { score: 0 }
-            }
-          },
-          {
-            asc_score: false,
-            winner: "faction2" as const,
-            factions: {
-              faction1: { score: 0 },
-              faction2: { score: 1 }
-            }
-          }
-        ],
-        round: 1,
-        group: 1,
-        teams: validMatchDetailsMatchCreated?.teams ?? {},
-        voting: {
-          map: { pick: [], entities: [] },
-          voted_entity_types: [],
-          location: { pick: [], entities: [] }
-        },
-        calculate_elo: true,
-        configured_at: 1,
-        finished_at: 1,
-        started_at: 1,
-        demo_url: [],
-        chat_room_id: "",
-        faceit_url: ""
-      };
-
       let mockGetFaceITMatchDetails: jest.SpyInstance;
 
       beforeEach(() => {
@@ -2798,7 +2771,33 @@ describe("FaceIT Routes - Webhook", () => {
         );
         mockGetFaceITMatchDetails = jest
           .spyOn(faceitMatchServices, "getFaceITMatchDetails")
-          .mockResolvedValue(expectedChampionshipDetailsFinished as never);
+          .mockResolvedValue({
+            ...validMatchDetailsMatchStatusFinished,
+            match_id: externalMatchRoomId,
+            best_of: 2,
+            results: {
+              winner: "faction1" as const,
+              score: { faction1: 1, faction2: 1 }
+            },
+            detailed_results: [
+              {
+                asc_score: false,
+                winner: "faction1" as const,
+                factions: {
+                  faction1: { score: 1 },
+                  faction2: { score: 0 }
+                }
+              },
+              {
+                asc_score: false,
+                winner: "faction2" as const,
+                factions: {
+                  faction1: { score: 0 },
+                  faction2: { score: 1 }
+                }
+              }
+            ]
+          } satisfies ChampionshipDetailsFinished);
       });
 
       afterEach(() => {
@@ -3087,7 +3086,10 @@ describe("FaceIT Routes - Webhook", () => {
         );
         jest
           .spyOn(faceitMatchServices, "getFaceITMatchDetails")
-          .mockResolvedValue({} as never);
+          .mockResolvedValue({
+            ...validMatchDetailsMatchStatusFinished,
+            match_id: externalMatchRoomId
+          } satisfies ChampionshipDetailsFinished);
       });
 
       it("(FINISHED, FORFEIT) idempotency: replay finished webhook twice — second invocation does not overwrite already-resolved siblings (S2-AC-2)", async () => {

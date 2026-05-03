@@ -10,9 +10,50 @@ import {
 interface WebhookTimingRow {
   id: number;
   external_payload_id: string;
-  event: string;
+  event: "match_status_ready" | "match_status_finished";
   received_at: Date;
   data: unknown;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function parseRowId(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string" && /^\d+$/.test(value)) return Number(value);
+  return null;
+}
+
+function parseReceivedAt(value: unknown): Date | null {
+  if (value instanceof Date && !Number.isNaN(value.getTime())) return value;
+  if (typeof value === "string") {
+    const d = new Date(value);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+  return null;
+}
+
+function toWebhookTimingRow(row: unknown): WebhookTimingRow | null {
+  if (!isRecord(row)) return null;
+  const id = parseRowId(row.id);
+  if (id === null) return null;
+  const externalPayloadId = row.external_payload_id;
+  if (typeof externalPayloadId !== "string") return null;
+  const event = row.event;
+  if (event !== "match_status_ready" && event !== "match_status_finished") {
+    return null;
+  }
+  const receivedAt = parseReceivedAt(row.received_at);
+  if (receivedAt === null) return null;
+  if (!("data" in row)) return null;
+  return {
+    id,
+    external_payload_id: externalPayloadId,
+    event,
+    received_at: receivedAt,
+    data: row.data
+  };
 }
 
 /**
@@ -36,7 +77,12 @@ export async function up(knex: Knex): Promise<void> {
       )
     ORDER BY fw.received_at ASC, fw.id ASC
   `);
-  const rows = rowsUnknown as WebhookTimingRow[];
+  const rawRows = Array.isArray(rowsUnknown) ? rowsUnknown : [];
+  const rows: WebhookTimingRow[] = [];
+  for (const row of rawRows) {
+    const normalized = toWebhookTimingRow(row);
+    if (normalized) rows.push(normalized);
+  }
   const roomsWithProcessedReady = new Set<string>();
 
   for (const row of rows) {
