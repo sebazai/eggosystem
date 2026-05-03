@@ -20,7 +20,7 @@ import {
   type PaginationState
 } from "@tanstack/react-table";
 import type { TeamMatchHistory as TeamMatchHistoryType } from "@eggosystem/types";
-import { matchScoreHomeAwayPresentation } from "@/lib/order-match-teams-home-left-away";
+import { MatchRowScoreComponents } from "../shared/MatchRowScoreComponents";
 
 interface TeamMatchHistoryProps {
   teamId: number;
@@ -84,44 +84,24 @@ export const TeamMatchHistory = ({
         id: "score",
         header: "SCORE",
         cell: ({ row }) => {
-          const { homeScore, awayScore, tie, homeWon, awayWon } =
-            matchScoreHomeAwayPresentation({
-              focalScore: row.original.team_score,
-              opponentScore: row.original.opponent_score,
-              focalSide: row.original.team_side,
-              opponentSide: row.original.opponent_side
-            });
+          const teamWon = row.original.team_score > row.original.opponent_score;
           return (
             <>
-              <span
-                className={
-                  tie
-                    ? "text-yellow-500"
-                    : homeWon
-                      ? "text-green-500"
-                      : "text-red-500"
-                }
-              >
-                {homeScore}
-              </span>
+              <MatchRowScoreComponents
+                score={row.original.team_score}
+                teamWon={teamWon}
+              />
               -
-              <span
-                className={
-                  tie
-                    ? "text-yellow-500"
-                    : awayWon
-                      ? "text-green-500"
-                      : "text-red-500"
-                }
-              >
-                {awayScore}
-              </span>
+              <MatchRowScoreComponents
+                score={row.original.opponent_score}
+                teamWon={!teamWon}
+              />
             </>
           );
         },
         meta: {
           responsive: "table-cell",
-          tooltip: "Match score (home left, away right)",
+          tooltip: "Match score",
           sortable: true
         }
       },
@@ -159,12 +139,13 @@ export const TeamMatchHistory = ({
         header: "RESULT",
         cell: ({ getValue }) => {
           const result = getValue<string>();
+          console.log(result);
           return (
             <span
               className={
-                result === "win"
+                result === "won"
                   ? "text-green-500"
-                  : result === "loss"
+                  : result === "lost"
                     ? "text-red-500"
                     : "text-yellow-500"
               }
