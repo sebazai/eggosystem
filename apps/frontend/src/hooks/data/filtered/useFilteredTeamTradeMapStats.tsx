@@ -22,7 +22,7 @@ export const useFilteredTeamTradeMapStats = ({
 
   const { data, error, isValidating, isLoading } =
     useSWR<TradeMapStatsResponse>(
-      `/api/v1/filters/stats/teams/${teamId}/trade-map-stats?${sortedQuery}`,
+      `/api/v1/filters/teams/${teamId}/stats/trade-maps?${sortedQuery}`,
       clientApiFetch,
       {
         revalidateOnFocus: false

@@ -12,7 +12,7 @@ import {
 import { getPlayerBySteamIdController } from "../../controllers/players.controllers";
 import parseQueryFilterParams from "../../middlewares/parse-query-filter-params.middleware";
 import { getFilteredTeamIdDetailsController } from "../../controllers/teams.controllers";
-import { getTeamEnhancedMapStatsController } from "../../controllers/team-map-stats.controllers";
+import { getTeamEnhancedMapStatsController } from "../../controllers/team-stats.controllers";
 import { getMatchesBySeasonIdController } from "../../controllers/matches.controllers";
 import { getPlayoffBracketController } from "../../controllers/playoff.controllers";
 

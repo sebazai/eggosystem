@@ -41,7 +41,7 @@ config: # https://mermaid.js.org/schemas/config.schema.json
 erDiagram
   direction BT # TB, BT, LR, RL
 
-"AccountCasterUrls" |o--|| "Accounts" : ""
+"AccountCasterUrls" }o--|| "Accounts" : ""
 "AccountPermissionScopes" }o--|| "Accounts" : ""
 "AccountPermissionScopes" }o--|| "Permissions" : ""
 "AccountPermissionScopes" }o--|| "Seasons" : ""
@@ -76,6 +76,7 @@ erDiagram
 "MapRoundStats" }o--|| "Teams" : ""
 "MapRoundStats" }o--|| "MatchGames" : ""
 "MapRoundStats" }o--|| "Teams" : ""
+"MarketingSponsors" }o--o| "Games" : ""
 "Matches" }o--|| "SeasonLeagues" : ""
 "Matches" }o--|| "Stages" : ""
 "MatchGameClips" }o--o| "SteamPlayers" : ""
@@ -253,6 +254,10 @@ erDiagram
 }
 "Maps" {
   tinyint_3__unsigned id PK
+}
+"MarketingSponsors" {
+  int_10__unsigned id PK
+  int_10__unsigned game_id FK
 }
 "Matches" {
   int_10__unsigned id PK
