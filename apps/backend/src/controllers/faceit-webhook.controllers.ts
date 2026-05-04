@@ -6,6 +6,7 @@ import {
 } from "../services/faceit.services";
 import {
   getMatchStatusFinishedCountAfterLastConfiguring,
+  countSuccessfulFaceitReadyWebhooks,
   hasSuccessfulFaceitReadyWebhook,
   saveWebhookData,
   updateErrorForWebhook
@@ -406,10 +407,15 @@ export const handleFaceitWebhook = async (
           matchesInRoomCount: matchesByRoom.length
         })
       ) {
-        const playReadyAt = validatedWebhook.payload.updated_at;
-        for (const match of matchesByRoom) {
-          if (match.status !== "FINISHED") {
-            await updateMatchStartTimestamp(match.id, playReadyAt);
+        const readyCount = await countSuccessfulFaceitReadyWebhooks(
+          validatedWebhook.payload.id
+        );
+        if (readyCount === 1) {
+          const playReadyAt = validatedWebhook.payload.updated_at;
+          for (const match of matchesByRoom) {
+            if (match.status !== "FINISHED") {
+              await updateMatchStartTimestamp(match.id, playReadyAt);
+            }
           }
         }
       }

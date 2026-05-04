@@ -41,6 +41,7 @@ import {
   updateMatchStatusByMatchId
 } from "../../models/match.models";
 import {
+  countSuccessfulFaceitReadyWebhooks,
   getMatchStatusFinishedCountAfterLastConfiguring,
   hasSuccessfulFaceitReadyWebhook,
   saveWebhookData
@@ -179,6 +180,10 @@ const mockSaveWebhookData = saveWebhookData as jest.MockedFunction<
 const mockHasSuccessfulFaceitReadyWebhook =
   hasSuccessfulFaceitReadyWebhook as jest.MockedFunction<
     typeof hasSuccessfulFaceitReadyWebhook
+  >;
+const mockCountSuccessfulFaceitReadyWebhooks =
+  countSuccessfulFaceitReadyWebhooks as jest.MockedFunction<
+    typeof countSuccessfulFaceitReadyWebhooks
   >;
 const mockAddMatchTeamMapVetoes = addMatchTeamMapVetoes as jest.MockedFunction<
   typeof addMatchTeamMapVetoes
@@ -2001,6 +2006,7 @@ describe("FaceIT Routes - Webhook", () => {
         mockGetOrganizerByFaceitIdAndGameAppId.mockResolvedValue(mockOrganizer);
         mockSaveWebhookData.mockResolvedValue({ insertId: 1 });
         mockAddMatchTeamMapVetoes.mockResolvedValue(undefined);
+        mockCountSuccessfulFaceitReadyWebhooks.mockResolvedValue(1);
         mockGetSeasonLeagueExternalIdByExternalIdWithSeasonSettings.mockResolvedValue(
           {
             ...createMockSeasonLeagueExternalId({
@@ -2042,6 +2048,17 @@ describe("FaceIT Routes - Webhook", () => {
           701,
           validWebhookPayloadMatchStatusReady.payload.updated_at
         );
+      });
+
+      it("does not overwrite start_timestamp when this is not the first stored ready", async () => {
+        mockCountSuccessfulFaceitReadyWebhooks.mockResolvedValue(2);
+        const response = await request(app)
+          .post("/api/v1/faceit/webhook")
+          .set("X-API-KEY", TEST_WEBHOOK_API_KEY)
+          .send(validWebhookPayloadMatchStatusReady);
+
+        expect(response.status).toBe(200);
+        expect(mockUpdateMatchStartTimestamp).not.toHaveBeenCalled();
       });
 
       it("does not apply BO3 hub start updates for 2×BO1 twin rows", async () => {
