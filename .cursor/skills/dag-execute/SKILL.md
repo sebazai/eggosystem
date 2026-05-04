@@ -16,7 +16,7 @@ Open a Cursor chat and ask the agent to run the **dag-execute** skill for GitLab
 
 # /dag-execute — DAG-driven multi-agent pipeline
 
-Orchestrate a GitLab issue end-to-end via 9 specialized agents (`product_bot`, `decomposer_bot`, `architect_bot`, `implementer_bot`, `ui_bot`, `code_review_bot`, `final_review_bot`, `devops_bot`, `observer_bot`). Each agent returns a strict JSON envelope per `/workspace/.cursor/skills/json-handoff/SKILL.md`. You (the orchestrator) parse those envelopes, coordinate worktrees, manage branch dependencies, and gate the human at four HITL points.
+Orchestrate a GitLab issue end-to-end via 10 specialized agents (`product_bot`, `decomposer_bot`, `architect_bot`, `implementer_bot`, `ui_bot`, `adversary_bot`, `code_review_bot`, `final_review_bot`, `devops_bot`, `observer_bot`). Each agent returns a strict JSON envelope per `/workspace/.cursor/skills/json-handoff/SKILL.md`. You (the orchestrator) parse those envelopes, coordinate worktrees, manage branch dependencies, and gate the human at four HITL points. **Pre-MR** `adversary_bot` is spawned **by** `implementer_bot` (not as a separate top-level orchestrator `Task` in §4b).
 
 **Arguments**: `$ARGUMENTS`
 First token = GitLab issue IID. Remaining tokens = optional context appended to every subagent prompt.
@@ -137,12 +137,12 @@ Treat **`implements_after_gates`** as **engineering readiness** (“can base / m
 
 Track per-task state: `pending | running | review | ci | completed | stuck`. Initialize all to `pending`.
 
-Maintain retry counters per task: `adversary_runs` (capped at 3), `code_review_rounds`, `gate_rounds` (each capped at 3). **Alignment** is enforced in two stages: `adversary_bot` pre-MR (fast sanity: AC coverage, tests present, structural rules) then `code_review_bot` post-MR (thorough quality review + GitLab note).
+Maintain retry counters per task: `code_review_rounds`, `gate_rounds` (each capped at 3). **Pre-MR alignment** (up to **3** completed `adversary_bot` **`rejected`** rounds, then HITL gate #2) runs **inside** one orchestrator `Task(implementer_bot)` — the implementer spawns `adversary_bot` via its own `Task` tool. **`code_review_bot`** remains the post-MR quality gate.
 
 Also maintain **`implementer_invocation_index`** per task (integer counter for **this** task’s **`4a`** worktree):
 
 - Initialize to **`0`** once **`4a`** has created `<worktree_path>` (same task dispatch; do not reset between Code Review/CI loops).
-- Immediately **before every** `Task(implementer_bot)` — including each **4b** pass, stuck retries, **`4c`/`4d`/Final Review loops** — do **`implementer_invocation_index += 1`** and pass the new value into the prompt as **`implementer_invocation_index: <n>`**.
+- Immediately **before every orchestrator-issued** `Task(implementer_bot)` — first §4b after worktree bootstrap, stuck retries, **`4c`/`4d`/Final Review loops** — do **`implementer_invocation_index += 1`** and pass the new value into the prompt as **`implementer_invocation_index: <n>`**. **Do not** increment for `adversary_bot` calls that the **implementer** spawns internally.
 - **`implementer_bot`** runs **`rtk pnpm install --frozen-lockfile`** then **`rtk pnpm build`** only when **`n == 1`** unless dependency manifests changed or bootstrap failed (see `/workspace/.cursor/agents/implementer_bot.md` **Dependency install**).
 
 Normalize dependency gates (orchestrator): for each decomposition row `t` in `tasks[]` (plus tracked `state` / `branch` during Phase 4) and parent id **`p`** in **`t.depends_on`**, **`gate(t,p)`** = **`t.implements_after_gates[p]`** when the key exists on the decomposition object, else **`"completed"`** (backward compatible). Define **`parent_satisfies_gate(parent, gate)`** for **`parent`** the upstream tracker row:
@@ -233,46 +233,25 @@ rtk pnpm build
 
 Pass **`base`** to `implementer_bot` as `Base:` so **`create_merge_request.target_branch`** matches **stacked** vs **development** workflows (see `/workspace/.cursor/agents/implementer_bot.md`).
 
-#### 4b. Implementer ↔ adversary (pre-MR fast gate)
+#### 4b. Implementer with internal pre-MR adversary (single orchestrator `Task`)
 
-Initialize **`adversary_runs = 0`** and **`misalignments_acc = []`** per task. Repeat until adversary approves:
-
-1. **Implement + push** (no MR yet). Increment **`implementer_invocation_index`** and dispatch:
+**First time** the task has no Draft MR yet (immediately after §4a): increment **`implementer_invocation_index`** and dispatch **one** `implementer_bot`. **Do not** spawn `adversary_bot` yourself — the implementer runs **implement → push → `Task(adversary_bot)`** (max **3** completed `rejected` envelopes, then implementer returns **`stuck`** / HITL) and then opens the Draft MR. Pass **`acceptance_criteria`**, **stories snippet + KPIs**, **architecture excerpt** filtered to `<t.id>`, **`issue_title`**, plus worktree/branch/base/task id.
 
 ```
 Task(subagent_type=implementer_bot,
-     prompt="Read /workspace/.cursor/agents/implementer_bot.md. Implement task <t.id>. Worktree <worktree_path>. Branch <branch>. Base <base>. Architecture (filtered): <…>. Issue IID <iid>. Issue title + stories excerpt: … SkipMergeRequest: true. implementer_invocation_index: <n>. adversary_misalignments: <misalignments_acc or []>. code_review_issues: <issues[] if looping from §4c, else []>. Return ONLY JSON envelope.")
+     prompt="Read /workspace/.cursor/agents/implementer_bot.md. Implement task <t.id>. Worktree <worktree_path>. Branch <branch>. Base <base>. Architecture (filtered): <…>. Issue IID <iid>. Issue title: <title>. Stories snippet + KPIs: <product_bot excerpt>. acceptance_criteria: <t.acceptance_criteria>. **Omit existing_mr_iid** (no Draft MR yet). code_review_issues: []. implementer_invocation_index: <n>. Return ONLY the JSON envelope.")
 ```
 
-- `status="ok"`, `mr_opened=false` → continue to adversary.
-- `status="stuck"` → re-spawn with `errors[]`; increment `gate_rounds`; at 3 → HITL gate #2.
-- `status="blocked"` → stop pipeline.
+- `status="ok"`, **`mr_opened=true`**, `mr_iid` set → `state=review`, store `mr_iid`. Pre-MR adversary alignment is already reflected in **`payload.gate_output.adversary_alignment`** / optional **`adversary_rounds_used`**.
+- **`hitl_required=true`** with adversary non-convergence, or **`status="stuck"`** with **`errors[].code == "adversary_non_convergence"`** (three `rejected` adversary rounds, no MR) → **HITL gate #2** — do **not** treat as a generic `gate_rounds` retry.
+- **`status="stuck"`** for **quality gates / tooling** (per `errors[]`) → re-spawn implementer; increment `gate_rounds`; at 3 → HITL gate #2.
+- `status="blocked"` (other reasons) → stop pipeline; `hitl_required` → AskQuestion.
 
-2. **Adversary check:**
-
-```
-Task(subagent_type=adversary_bot,
-     prompt="Read /workspace/.cursor/agents/adversary_bot.md. task_id <t.id>. Worktree <worktree_path>. Branch <branch>. Base <base>. acceptance_criteria: <t.acceptance_criteria>. stories_snippet: <…>. architecture_excerpt: <…>. issue_title: … Return ONLY JSON envelope.")
-```
-
-Increment `adversary_runs += 1`.
-
-- `verdict="approved"` → break loop. Proceed to open MR (step 3).
-- `verdict="rejected"` and `adversary_runs < 3` → set `misalignments_acc = payload.misalignments`; loop to step 1.
-- `verdict="rejected"` and `adversary_runs == 3` → HITL gate #2.
-
-3. **Open Draft MR** — adversary approved; increment `implementer_invocation_index` and dispatch implementer one final time with `SkipMergeRequest: false` (gates-only pass + `create_merge_request`):
-
-```
-Task(subagent_type=implementer_bot,
-     prompt="… SkipMergeRequest: false. implementer_invocation_index: <n>. adversary_misalignments: []. Return ONLY JSON envelope.")
-```
-
-- `mr_opened=true`, `mr_iid` set → set `state=review`. Break §4b loop.
-
-**When looping back from §4c** (code review rejection): re-enter §4b step 1 with `SkipMergeRequest: true` and `code_review_issues` injected; the MR already exists so `adversary_runs` is reset to 0 for this new implementation pass before re-running adversary.
+**After Draft MR exists** (§4c rejection, §4d CI failure, Final Review fixes): increment **`implementer_invocation_index`** and dispatch implementer with **`existing_mr_iid: <mr_iid>`**, **`code_review_issues`** and/or CI notes — **no** internal pre-MR adversary; push updates only.
 
 #### 4c. Code Review + post MR note
+
+Re-opens of `implementer_bot` **after** Draft MR creation pass **`existing_mr_iid: !<mr_iid>`** in the prompt — MR already exists; the implementer pushes updates to the existing branch only.
 
 ```
 Task(subagent_type=code_review_bot,
@@ -303,7 +282,7 @@ Task(subagent_type=devops_bot,
 ```
 
 - When several MRs need CI at once, issue **one `devops_bot` per MR** in the **same** message (parallel foreground tasks).
-- When CI failure loops back to §4b, `implementer_bot` uses **`SkipMergeRequest: false`** — MR already exists; push updates.
+- When CI failure loops back to §4b, include **`existing_mr_iid`** in the `implementer_bot` prompt — MR already exists; push updates.
 
 Apply the envelope:
 
@@ -332,7 +311,7 @@ After a parent **`completed`** flips true, **`impl_ready`** for pending children
 
 ## Phase 5 — Final Review (HITL gate #3)
 
-Once all tasks have `state="completed"` (Draft MRs open, code_review approved + CI green per task):
+Once all tasks have `state="completed"` (Draft MRs open, code_review approved + CI green per task; pre-MR adversary ran **inside** each task’s first `implementer_bot` spawn):
 
 ```
 Task(subagent_type=final_review_bot,

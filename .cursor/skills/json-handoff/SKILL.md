@@ -161,13 +161,17 @@ Constraints:
     "e2e": "skipped",
     "adversary_alignment": "pass" | "skipped"
   },
-  "summary": "one-line description for the MR title"
+  "summary": "one-line description for the MR title",
+  "adversary_rounds_used": 2,
+  "adversary_verdict": "approved"
 }
 ```
 
-Use `mr_opened=false` (and omit `mr_iid` or set `mr_iid` to `null`) when the orchestrator set **`SkipMergeRequest: true`** for an adversary-loop iteration — quality gates ran and branch pushed, but Draft MR waits until `adversary_bot` approves. Final `implementer_bot` invocation for the task MUST set `mr_opened=true`, `mr_iid`, and gate_output `adversary_alignment`: `"pass"` after adversary approval.
+`adversary_rounds_used` and `adversary_verdict` are **optional**; `implementer_bot` SHOULD populate them on the **first** pre-MR pass (internal `adversary_bot` loop) for auditability.
 
-**Orchestrator → prompt (not part of envelope):** pass **`implementer_invocation_index`** on every spawn (increment per `/workspace/.cursor/skills/dag-execute/SKILL.md` Phase 4). **`pnpm install --frozen-lockfile`** followed by **`pnpm build`** runs **only when that index first reaches the worktree** (`== 1`) except manifest/bootstrap exceptions — see **`implementer_bot.md`** **Dependency install**. Phase **4a** runs **`pnpm build`** immediately after **`pnpm install`** at worktree bootstrap.
+Successful **`implementer_bot`** responses MUST set **`mr_opened=true`** and **`mr_iid`** once a Draft MR exists (new MR after internal adversary approval, or the same MR when **`existing_mr_iid`** was passed for post-MR iteration). Set **`gate_output.adversary_alignment`** to **`pass`** after path A (pre-MR adversary approved) and **`skipped`** on path B when no adversary ran that spawn.
+
+**Orchestrator → prompt (not part of envelope):** pass **`implementer_invocation_index`** on every **orchestrator-issued** `Task(implementer_bot)` (increment per `/workspace/.cursor/skills/dag-execute/SKILL.md` Phase 4 — **not** for `adversary_bot` sub-tasks the implementer spawns). Pass **`existing_mr_iid`** when the MR already exists. **`pnpm install --frozen-lockfile`** followed by **`pnpm build`** runs **only when that index first reaches the worktree** (`== 1`) except manifest/bootstrap exceptions — see **`implementer_bot.md`** **Dependency install**. Phase **4a** runs **`pnpm build`** immediately after **`pnpm install`** at worktree bootstrap.
 
 ### `ui_bot.payload`
 

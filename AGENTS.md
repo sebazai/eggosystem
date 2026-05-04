@@ -2,30 +2,30 @@
 
 ## Slash commands
 
-- **`/dag-execute <issue_iid>`** — Product → Decompose → Architecture (HITL) → DAG implementation (**each task**: `implementer_bot` ↔ `adversary_bot` ≤3 rounds → Draft MR → CR → **`devops_bot` watches CI in the background** so other tasks can run) → Final Review → human merge. **`implements_after_gates`** (optional on `decomposer_bot` tasks) lowers the bar for starting **implementation** (`impl_ready`; e.g. **`mr_opened`** on stacked parents) while **`final_review_bot` still waits for every task `completed`** (CI green).
+- **`/dag-execute <issue_iid>`** — Product → Decompose → Architecture (HITL) → DAG implementation (**each task**: one orchestrator `implementer_bot` spawn runs **`adversary_bot` internally** ≤3 rounds, then opens Draft MR → CR → **`devops_bot` watches CI in the background** so other tasks can run) → Final Review → human merge. **`implements_after_gates`** (optional on `decomposer_bot` tasks) lowers the bar for starting **implementation** (`impl_ready`; e.g. **`mr_opened`** on stacked parents) while **`final_review_bot` still waits for every task `completed`** (CI green).
 - **`/observe <mr_iid>`** — post-merge analysis (CI logs, optional Grafana/Sentry, git revert detection). Off the critical path.
 
 ## Agents (10)
 
 All in `/workspace/.claude/agents/`. Each returns a JSON envelope per `/workspace/.claude/skills/json-handoff/SKILL.md` — no prose around it.
 
-| Agent              | Role                                                                                                                                             |
-| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `product_bot`      | Issue → stories with KPIs                                                                                                                        |
-| `decomposer_bot`   | Stories → task DAG (`depends_on[]`)                                                                                                              |
-| `architect_bot`    | API + DB schema design (read-only MariaDB)                                                                                                       |
-| `implementer_bot`  | One task → quality gates; loops with **`adversary_bot`** → Draft MR                                                                              |
-| `ui_bot`           | shadcn/Tailwind components (sub-agent of implementer)                                                                                            |
-| `adversary_bot`    | Challenges implementation vs architecture, acceptance criteria, issue intent (**max 3** runs per task, before Draft MR); feeds `implementer_bot` |
-| `code_review_bot`  | Per-task diff review                                                                                                                             |
-| `final_review_bot` | Cross-task business validation                                                                                                                   |
-| `devops_bot`       | CI pipeline monitoring + retry-once                                                                                                              |
-| `observer_bot`     | Post-merge health (manual via `/observe`)                                                                                                        |
+| Agent              | Role                                                                                                                                   |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `product_bot`      | Issue → stories with KPIs                                                                                                              |
+| `decomposer_bot`   | Stories → task DAG (`depends_on[]`)                                                                                                    |
+| `architect_bot`    | API + DB schema design (read-only MariaDB)                                                                                             |
+| `implementer_bot`  | One task → quality gates; **`Task(adversary_bot)`** internally (≤3) before first Draft MR; post-MR pushes without respawning adversary |
+| `ui_bot`           | shadcn/Tailwind components (sub-agent of implementer)                                                                                  |
+| `adversary_bot`    | Pre-MR alignment critic; spawned **by** `implementer_bot` (**max 3** `rejected` rounds per pre-MR implementer session)                 |
+| `code_review_bot`  | Per-task diff review                                                                                                                   |
+| `final_review_bot` | Cross-task business validation                                                                                                         |
+| `devops_bot`       | CI pipeline monitoring + retry-once                                                                                                    |
+| `observer_bot`     | Post-merge health (manual via `/observe`)                                                                                              |
 
 ## HITL gates (4)
 
 1. Architecture sign-off (Phase 3 of `/dag-execute`).
-2. Implementer **`stuck`**, **`adversary_bot` rejects 3 rounds**, Code Review rejects 3 rounds, or gate rounds exhausted.
+2. Implementer **`stuck`** (including **adversary non-convergence** after 3 internal rounds), Code Review rejects 3 rounds, or gate rounds exhausted.
 3. Final Review rejected (cross-cutting or 3 rounds).
 4. Merge approval — every MR is merged by the human via the GitLab UI; orchestrator never calls `mcp__GitLab__merge_merge_request`.
 
@@ -46,7 +46,7 @@ All in `/workspace/.claude/agents/`. Each returns a JSON envelope per `/workspac
 - `rtk git worktree add` creates them; the orchestrator does this before spawning each `implementer_bot`.
 - **Immediately after** `rtk git worktree add` (and after any integration merges for multi-dependency tasks), the orchestrator runs **`cd <worktree_path> && node scripts/bootstrap-worktree-env.mjs && rm -rf node_modules && rtk pnpm install --frozen-lockfile && rtk pnpm build`**: **`bootstrap-worktree-env.mjs`** copies `apps/backend/.env`, repo-root `.env.mcp`, and `apps/backend/*.pem` from the primary checkout once (.gitignored; source path defaults to stripping `/.worktrees/<task>/` or use **`WORKTREE_SECRET_SOURCE`**); then optional native bindings (e.g. `oxc-parser` → `@oxc-parser/binding-*`) install cleanly — incomplete installs otherwise break tools like **`pnpm knip`** only inside that worktree.
 - `rtk git worktree remove --force` cleans up after merge (in `ask` permission tier — confirmed by human).
-- Parallel task worktrees each run **`rtk pnpm install --frozen-lockfile`** then **`rtk pnpm build`** once on the **first** `implementer_bot` spawn for that worktree (`implementer_invocation_index == 1`) when needed — redundant but harmless after the orchestrator bootstrap above; orchestrator increments the index on every later re-invocation (adversary, Code Review, CI, etc.), so implementer **does not** repeat install unless manifests change or bootstrap failed. **`pnpm build`** from the worktree root may still be needed **again** later: **`@eggosystem/types`** publishes **`dist/`**, so after editing **`packages/types`** or when **typecheck / lint / knip** look like stale compiled output, run **`rtk pnpm build`** and retry gates — see `.cursor/agents/implementer_bot.md` (**Dependency install**).
+- Parallel task worktrees each run **`rtk pnpm install --frozen-lockfile`** then **`rtk pnpm build`** once on the **first** `implementer_bot` spawn for that worktree (`implementer_invocation_index == 1`) when needed — redundant but harmless after the orchestrator bootstrap above; orchestrator increments the index on every later **orchestrator-issued** `implementer_bot` re-invocation (Code Review, CI, gate retries, etc.) — **not** for `adversary_bot` sub-tasks the implementer spawns — so implementer **does not** repeat install unless manifests change or bootstrap failed. **`pnpm build`** from the worktree root may still be needed **again** later: **`@eggosystem/types`** publishes **`dist/`**, so after editing **`packages/types`** or when **typecheck / lint / knip** look like stale compiled output, run **`rtk pnpm build`** and retry gates — see `.cursor/agents/implementer_bot.md` (**Dependency install**).
 
 ## Quality gates (per implementer task)
 
@@ -63,7 +63,7 @@ rtk pnpm knip
 # Do not run `pnpm test:e2e` here; commit with Husky skipped (see implementer_bot).
 ```
 
-All must exit 0 before the implementer opens the Draft MR. Commits must use **`HUSKY=0 rtk git commit …`** so Husky does not re-run checks (`implementer_bot`). **`adversary_bot` runs before** that MR (**up to three** attempts per task; orchestrator parses JSON only).
+All must exit 0 before the implementer opens the Draft MR. Commits must use **`HUSKY=0 rtk git commit …`** so Husky does not re-run checks (`implementer_bot`). **`adversary_bot` runs inside `implementer_bot`** before that MR (**up to three** `rejected` rounds per pre-MR orchestrator dispatch; implementer returns one envelope to the orchestrator).
 
 ## Envelope validation
 
