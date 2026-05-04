@@ -5,10 +5,12 @@ import { MatchClientTime } from "./MatchClientTime";
 describe("MatchClient date/time with resolved IANA zone America/New_York", () => {
   beforeEach(() => {
     const base = new Intl.DateTimeFormat().resolvedOptions();
-    jest.spyOn(Intl.DateTimeFormat.prototype, "resolvedOptions").mockReturnValue({
-      ...base,
-      timeZone: "America/New_York"
-    });
+    jest
+      .spyOn(Intl.DateTimeFormat.prototype, "resolvedOptions")
+      .mockReturnValue({
+        ...base,
+        timeZone: "America/New_York"
+      });
   });
 
   afterEach(() => {
