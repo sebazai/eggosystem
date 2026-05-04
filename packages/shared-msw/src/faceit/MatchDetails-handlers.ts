@@ -1023,7 +1023,7 @@ export const validMatchDetailsMatchCreated = {
   group: 2
 } satisfies ChampionshipDetailsObjectCreated;
 
-const validMatchDetailsMatchStatusReadyChampionship = {
+export const validMatchDetailsMatchStatusReadyChampionship = {
   match_id: "1-32a13dfb-e5e7-4b0e-89ef-ab952e6d8191",
   version: 71,
   game: "cs2",

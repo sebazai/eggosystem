@@ -38,10 +38,10 @@ User request
   │  4a. Compute branch/base/worktree                           │
   │       └─ git worktree add, pnpm install, pnpm build        │
   │                                                             │
-  │  4b. implementer_bot ↔ adversary_bot (pre-MR loop)          │
+  │  4b. implementer_bot (pre-MR: internal adversary loop)      │
   │       ├─ implementer implements + pushes (no MR yet)       │
-  │       ├─ adversary checks AC/tests/structure (≤3 rounds)   │
-  │       └─ on approval: implementer opens Draft MR           │
+  │       ├─ Task(adversary_bot): AC/tests/structure (≤3)       │
+  │       └─ on approval: implementer opens Draft MR (one Task)  │
   │           └─ HITL #2 if adversary never converges          │
   │                                                             │
   │  4c. code_review_bot ← line-by-line quality gate           │
@@ -72,20 +72,20 @@ User request
 
 ## Agent Roster
 
-| Agent              | Phase       | Role                                                    |
-| ------------------ | ----------- | ------------------------------------------------------- |
-| `intake_bot`       | `/dag-plan` | Scopes request → GitLab issue                           |
-| `product_bot`      | 1           | Issue → structured stories + KPIs                       |
-| `decomposer_bot`   | 2           | Stories → task DAG                                      |
-| `architect_bot`    | 3           | DAG → API/DB design (HITL)                              |
-| `implementer_bot`  | 4b          | Code + quality gates; opens MR after adversary approves |
-| `adversary_bot`    | 4b          | Fast pre-MR gate: AC coverage, tests, structural rules  |
-| `ui_bot`           | 4b          | Frontend tasks (spawned by implementer)                 |
-| `claude_md_bot`    | any         | Appends agent-discovery notes to CLAUDE.md (utility)    |
-| `code_review_bot`  | 4c          | Line-by-line quality + GitLab MR note                   |
-| `devops_bot`       | 4d          | GitLab CI validation (parallel-foreground)              |
-| `final_review_bot` | 5           | Cross-task business validation                          |
-| `observer_bot`     | 7           | Post-merge observability                                |
+| Agent              | Phase         | Role                                                        |
+| ------------------ | ------------- | ----------------------------------------------------------- |
+| `intake_bot`       | `/dag-plan`   | Scopes request → GitLab issue                               |
+| `product_bot`      | 1             | Issue → structured stories + KPIs                           |
+| `decomposer_bot`   | 2             | Stories → task DAG                                          |
+| `architect_bot`    | 3             | DAG → API/DB design (HITL)                                  |
+| `implementer_bot`  | 4b            | Code + quality gates; spawns adversary internally; opens MR |
+| `adversary_bot`    | 4b (sub-Task) | Fast pre-MR gate: AC coverage, tests, structural rules      |
+| `ui_bot`           | 4b            | Frontend tasks (spawned by implementer)                     |
+| `claude_md_bot`    | any           | Appends agent-discovery notes to CLAUDE.md (utility)        |
+| `code_review_bot`  | 4c            | Line-by-line quality + GitLab MR note                       |
+| `devops_bot`       | 4d            | GitLab CI validation (parallel-foreground)                  |
+| `final_review_bot` | 5             | Cross-task business validation                              |
+| `observer_bot`     | 7             | Post-merge observability                                    |
 
 ## Key Design Decisions
 

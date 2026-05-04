@@ -888,6 +888,37 @@ export const addMatchToDatabase = async (
   }
 };
 
+/**
+ * Sets end time and FINISHED status without changing `start_timestamp`.
+ * Used for championship BO3+ hubs after `match_status_ready` established the start.
+ */
+export const updateMatchFinishedEndOnly = async (
+  externalMatchRoomId: string,
+  finishedAt: string
+): Promise<void> => {
+  const matches = await runQuery<Array<{ id: Match["id"] }>>(
+    "SELECT id FROM Matches WHERE external_match_room_id = ?",
+    [externalMatchRoomId]
+  );
+
+  if (matches.length === 0) {
+    logger.warn(
+      `No matches found with external_match_room_id: ${externalMatchRoomId}`
+    );
+    return;
+  }
+
+  const endTimestamp = formatDateForDatabase(finishedAt);
+
+  await runQuery(
+    "UPDATE Matches SET end_timestamp = ?, status = ? WHERE external_match_room_id = ?",
+    [endTimestamp, MatchStatus.FINISHED, externalMatchRoomId]
+  );
+  logger.info(
+    `Updated end_timestamp to ${endTimestamp} and status FINISHED for ${matches.length} match(es) with external_match_room_id: ${externalMatchRoomId} (start_timestamp unchanged)`
+  );
+};
+
 export const updateMatchFinished = async (
   externalMatchRoomId: string,
   startedAt: string,
