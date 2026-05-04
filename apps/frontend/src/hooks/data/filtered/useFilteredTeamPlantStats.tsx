@@ -23,7 +23,7 @@ export const useFilteredTeamPlantStats = ({
   const sortedQuery = generateFiltersParamQuery(filterQueryParams);
 
   const { data, error, isValidating, isLoading } = useSWR<PlantStatsResponse>(
-    `/api/v1/filters/stats/teams/${teamId}/plant-stats?${sortedQuery}`,
+    `/api/v1/filters/teams/${teamId}/stats/plants?${sortedQuery}`,
     expressFetcher,
     {
       revalidateOnFocus: false

@@ -1,7 +1,5 @@
 import type { Knex } from "knex";
-import { z } from "zod";
-import { formatDateForDatabase } from "../src/utils/date-utils";
-import { isForfeitPayload } from "../src/utils/faceit-match-status-finished-detection";
+
 interface WebhookTimingRow {
   id: number;
   external_payload_id: string;
@@ -10,18 +8,33 @@ interface WebhookTimingRow {
   data: unknown;
 }
 
-const webhookDataEnvelopeSchema = z.object({
-  payload: z.record(z.string(), z.unknown()).optional()
-});
+const FACEIT_FORFEIT_STARTED_AT = "1970-01-01T00:00:00Z" as const;
 
-const readyPayloadSchema = z.object({
-  updated_at: z.string()
-});
+/**
+ * MySQL datetime in UTC. Mirrors {@link formatDateForDatabase} in app code: strings
+ * without a timezone suffix are interpreted as UTC (not host-local).
+ * Kept self-contained so the migration image does not need moment or zod.
+ */
+function stringToUtcDate(value: string): Date {
+  const t = value.trim();
+  if (/Z$/i.test(t)) return new Date(t);
+  if (/[+-]\d{2}:\d{2}$/.test(t) || /[+-]\d{4}$/.test(t)) return new Date(t);
+  const normalized = t.includes("T") ? t : t.replace(" ", "T");
+  return new Date(`${normalized}Z`);
+}
 
-const finishedPlayedPayloadSchema = z.object({
-  started_at: z.string(),
-  finished_at: z.string()
-});
+function formatDateForDatabase(utcDate: Date | string): string {
+  const d = typeof utcDate === "string" ? stringToUtcDate(utcDate) : utcDate;
+  if (Number.isNaN(d.getTime())) {
+    throw new Error(`Invalid date: ${String(utcDate)}`);
+  }
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}:${pad(d.getUTCSeconds())}`;
+}
+
+function isForfeitPayload(payload: { started_at?: string | null }): boolean {
+  return payload.started_at === FACEIT_FORFEIT_STARTED_AT;
+}
 
 /**
  * Shared logic for Season 17 championship BO3+ hub timing backfill (migration replay)
@@ -42,10 +55,11 @@ function parseWebhookDataPayload(
   } else {
     envelope = rawData;
   }
-  const parsed = webhookDataEnvelopeSchema.safeParse(envelope);
-  if (!parsed.success) return null;
-  const { payload } = parsed.data;
+  if (!isRecord(envelope)) return null;
+  if (!("payload" in envelope)) return null;
+  const { payload } = envelope;
   if (payload === undefined) return null;
+  if (!isRecord(payload)) return null;
   return payload;
 }
 
@@ -62,10 +76,10 @@ function startedAtForForfeitCheck(
 function computeSeason17Bo3ReadyMatchPatch(
   payload: Record<string, unknown>
 ): { start_timestamp: string } | null {
-  const parsed = readyPayloadSchema.safeParse(payload);
-  if (!parsed.success) return null;
+  const updatedAt = payload.updated_at;
+  if (typeof updatedAt !== "string") return null;
   return {
-    start_timestamp: formatDateForDatabase(parsed.data.updated_at)
+    start_timestamp: formatDateForDatabase(updatedAt)
   };
 }
 
@@ -92,10 +106,11 @@ function computeSeason17Bo3FinishedMatchPatch(
     return { action: "skip" };
   }
 
-  const parsed = finishedPlayedPayloadSchema.safeParse(payload);
-  if (!parsed.success) return { action: "skip" };
-
-  const { finished_at: finishedAt, started_at: startedAt } = parsed.data;
+  const startedAt = payload.started_at;
+  const finishedAt = payload.finished_at;
+  if (typeof startedAt !== "string" || typeof finishedAt !== "string") {
+    return { action: "skip" };
+  }
 
   if (hadReady) {
     return {
