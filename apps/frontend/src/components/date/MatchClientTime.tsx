@@ -1,8 +1,18 @@
 "use client";
+
+import { useHydrated } from "@/hooks/useHydrated";
+import { parseMatchTimestampToDate } from "@/lib/parse-match-timestamp";
+
 interface ClientTimeProps {
   startTimestamp: string;
   endTimestamp?: string | null;
   className?: string;
+}
+
+function formatLocalTime(date: Date): string {
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  return `${hours}:${minutes}`;
 }
 
 export function MatchClientTime({
@@ -10,30 +20,26 @@ export function MatchClientTime({
   endTimestamp,
   className
 }: ClientTimeProps) {
-  // Parse ISO timestamp as UTC and format as UTC time string
-  const formatTimeUTC = (isoTimestamp: string) => {
-    // If the timestamp lacks an explicit zone (Z or ±hh:mm), treat it as UTC.
-    const hasExplicitZone =
-      /([zZ]|[+-]\d{2}:\d{2})$/.test(isoTimestamp) ||
-      /([+-]\d{4})$/.test(isoTimestamp);
-    const date = new Date(hasExplicitZone ? isoTimestamp : `${isoTimestamp}Z`);
+  const hydrated = useHydrated();
 
-    const hours = String(date.getUTCHours()).padStart(2, "0");
-    const minutes = String(date.getUTCMinutes()).padStart(2, "0");
-    return `${hours}:${minutes}`;
-  };
+  if (!hydrated) {
+    return <span className={className}>{"\u00a0"}</span>;
+  }
 
-  const formattedStartUTC = formatTimeUTC(startTimestamp);
+  const startDate = parseMatchTimestampToDate(startTimestamp);
+  const formattedStartLocal = formatLocalTime(startDate);
 
   if (endTimestamp) {
-    const formattedEndUTC = formatTimeUTC(endTimestamp);
+    const formattedEndLocal = formatLocalTime(
+      parseMatchTimestampToDate(endTimestamp)
+    );
 
     return (
       <span
         className={className}
-      >{`${formattedStartUTC}–${formattedEndUTC}`}</span>
+      >{`${formattedStartLocal}–${formattedEndLocal}`}</span>
     );
-  } else {
-    return <span className={className}>Starts: {formattedStartUTC}</span>;
   }
+
+  return <span className={className}>Starts: {formattedStartLocal}</span>;
 }

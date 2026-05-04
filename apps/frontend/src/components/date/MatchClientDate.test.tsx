@@ -1,33 +1,18 @@
 import { render, screen } from "@testing-library/react";
 import { MatchClientDate } from "./MatchClientDate";
 
-// Mock the date-utils module to control date formatting
-jest.mock("@/lib/date-utils", () => ({
-  formatDateShort: jest.fn((date: Date) => {
-    // Simple mock that formats date as "MON DD, YY" in UTC
-    const monthNames = [
-      "JAN",
-      "FEB",
-      "MAR",
-      "APR",
-      "MAY",
-      "JUN",
-      "JUL",
-      "AUG",
-      "SEP",
-      "OCT",
-      "NOV",
-      "DEC"
-    ];
-    const month = monthNames[date.getUTCMonth()];
-    const day = String(date.getUTCDate()).padStart(2, "0");
-    const year = String(date.getUTCFullYear()).slice(-2);
-    return `${month} ${day}, ${year}`;
-  })
-}));
-
 describe("MatchClientDate", () => {
-  it("should render formatted date", () => {
+  const previousTz = process.env.TZ;
+
+  beforeAll(() => {
+    process.env.TZ = "UTC";
+  });
+
+  afterAll(() => {
+    process.env.TZ = previousTz;
+  });
+
+  it("should render formatted date in local calendar (UTC when TZ=UTC)", () => {
     render(
       <MatchClientDate
         startTimestamp="2024-01-15T00:00:00.000Z"
@@ -40,10 +25,9 @@ describe("MatchClientDate", () => {
     expect(dateElement).toHaveClass("test-class");
   });
 
-  it("should format date with different timestamps", () => {
+  it("should format date with different timestamps on same local day", () => {
     render(<MatchClientDate startTimestamp="2024-01-15T14:30:00.000Z" />);
 
-    // Date should be Jan 15 regardless of time
     expect(screen.getByText(/JAN 15, 24/i)).toBeInTheDocument();
   });
 
@@ -80,7 +64,6 @@ describe("MatchClientDate", () => {
 
     rerender(<MatchClientDate startTimestamp="2024-01-15T18:45:00.000Z" />);
 
-    // Same date, different time - should still show same date
     expect(screen.getByText(/JAN 15, 24/i)).toBeInTheDocument();
   });
 

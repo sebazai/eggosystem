@@ -2,7 +2,17 @@ import { render, screen } from "@testing-library/react";
 import { MatchClientTime } from "./MatchClientTime";
 
 describe("MatchClientTime", () => {
-  it("should render UTC time with startTimestamp only", () => {
+  const previousTz = process.env.TZ;
+
+  beforeAll(() => {
+    process.env.TZ = "UTC";
+  });
+
+  afterAll(() => {
+    process.env.TZ = previousTz;
+  });
+
+  it("should render local time with startTimestamp only", () => {
     render(
       <MatchClientTime
         startTimestamp="2024-01-15T14:30:00.000Z"
@@ -24,7 +34,7 @@ describe("MatchClientTime", () => {
       />
     );
 
-    // Should show UTC time range: 14:30–16:00
+    // Local range matches UTC when TZ=UTC: 14:30–16:00
     const timeElement = screen.getByText(/14:30–16:00/i);
     expect(timeElement).toBeInTheDocument();
     expect(timeElement).toHaveClass("test-class");

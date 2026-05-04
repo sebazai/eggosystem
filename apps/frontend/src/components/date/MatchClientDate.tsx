@@ -1,5 +1,8 @@
 "use client";
+
 import { formatDateShort } from "@/lib/date-utils";
+import { useHydrated } from "@/hooks/useHydrated";
+import { parseMatchTimestampToDate } from "@/lib/parse-match-timestamp";
 import { useMemo } from "react";
 
 interface ClientDateProps {
@@ -11,20 +14,23 @@ export function MatchClientDate({
   startTimestamp,
   className
 }: ClientDateProps) {
-  const date = useMemo(() => {
-    // If the timestamp lacks an explicit zone (Z or ±hh:mm), treat it as UTC.
-    const hasExplicitZone =
-      /([zZ]|[+-]\d{2}:\d{2})$/.test(startTimestamp) ||
-      /([+-]\d{4})$/.test(startTimestamp);
-    return new Date(hasExplicitZone ? startTimestamp : `${startTimestamp}Z`);
-  }, [startTimestamp]);
+  const hydrated = useHydrated();
+
+  const date = useMemo(
+    () => parseMatchTimestampToDate(startTimestamp),
+    [startTimestamp]
+  );
 
   const formattedDate = useMemo(() => {
     return formatDateShort(date, {
-      timezone: "UTC",
+      timezone: null,
       toUpperCase: true
     });
   }, [date]);
+
+  if (!hydrated) {
+    return <span className={className}>{"\u00a0"}</span>;
+  }
 
   return <span className={className}>{formattedDate}</span>;
 }
