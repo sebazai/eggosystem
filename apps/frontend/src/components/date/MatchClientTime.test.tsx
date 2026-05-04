@@ -1,6 +1,14 @@
 import { render, screen } from "@testing-library/react";
 import { MatchClientTime } from "./MatchClientTime";
 
+function restoreProcessTz(previous: string | undefined) {
+  if (previous === undefined) {
+    delete process.env.TZ;
+  } else {
+    process.env.TZ = previous;
+  }
+}
+
 describe("MatchClientTime", () => {
   const previousTz = process.env.TZ;
 
@@ -9,7 +17,7 @@ describe("MatchClientTime", () => {
   });
 
   afterAll(() => {
-    process.env.TZ = previousTz;
+    restoreProcessTz(previousTz);
   });
 
   it("should render local time with startTimestamp only", () => {
@@ -20,9 +28,12 @@ describe("MatchClientTime", () => {
       />
     );
 
-    const timeElement = screen.getByText(/Starts: 14:30/i);
-    expect(timeElement).toBeInTheDocument();
-    expect(timeElement).toHaveClass("test-class");
+    const clock = screen.getByRole("time", { name: "14:30" });
+    const row = clock.closest("span");
+    expect(row).toHaveTextContent("Starts: 14:30");
+    expect(row).toHaveClass("test-class");
+    expect(clock).toHaveAttribute("datetime", "2024-01-15T14:30:00.000Z");
+    expect(clock.getAttribute("title")).toMatch(/^UTC:/);
   });
 
   it("should handle time range with endTimestamp", () => {
@@ -35,9 +46,22 @@ describe("MatchClientTime", () => {
     );
 
     // Local range matches UTC when TZ=UTC: 14:30–16:00
-    const timeElement = screen.getByText(/14:30–16:00/i);
-    expect(timeElement).toBeInTheDocument();
-    expect(timeElement).toHaveClass("test-class");
+    const clocks = screen.getAllByRole("time");
+    if (clocks.length < 2) {
+      throw new Error("expected 2 <time> elements");
+    }
+    const startClock = clocks[0];
+    const endClock = clocks[1];
+    if (startClock === undefined || endClock === undefined) {
+      throw new Error("expected 2 <time> elements");
+    }
+    const row = startClock.closest("span");
+    expect(row).toHaveTextContent("14:30–16:00");
+    expect(row).toHaveClass("test-class");
+    expect(startClock).toHaveAttribute("datetime", "2024-01-15T14:30:00.000Z");
+    expect(endClock).toHaveAttribute("datetime", "2024-01-15T16:00:00.000Z");
+    expect(startClock.getAttribute("title")).toMatch(/^UTC:/);
+    expect(endClock.getAttribute("title")).toMatch(/^UTC:/);
   });
 
   it("should apply className prop", () => {
@@ -57,11 +81,15 @@ describe("MatchClientTime", () => {
       <MatchClientTime startTimestamp="2024-01-15T14:30:00.000Z" />
     );
 
-    expect(screen.getByText(/Starts: 14:30/i)).toBeInTheDocument();
+    expect(
+      screen.getByRole("time", { name: "14:30" }).closest("span")
+    ).toHaveTextContent("Starts: 14:30");
 
     rerender(<MatchClientTime startTimestamp="2024-01-15T18:45:00.000Z" />);
 
-    expect(screen.getByText(/Starts: 18:45/i)).toBeInTheDocument();
+    expect(
+      screen.getByRole("time", { name: "18:45" }).closest("span")
+    ).toHaveTextContent("Starts: 18:45");
   });
 
   it("should update when endTimestamp changes", () => {
@@ -72,7 +100,9 @@ describe("MatchClientTime", () => {
       />
     );
 
-    expect(screen.getByText(/14:30–16:00/i)).toBeInTheDocument();
+    expect(
+      screen.getByRole("time", { name: "14:30" }).closest("span")
+    ).toHaveTextContent("14:30–16:00");
 
     rerender(
       <MatchClientTime
@@ -81,7 +111,9 @@ describe("MatchClientTime", () => {
       />
     );
 
-    expect(screen.getByText(/14:30–17:30/i)).toBeInTheDocument();
+    expect(
+      screen.getByRole("time", { name: "14:30" }).closest("span")
+    ).toHaveTextContent("14:30–17:30");
   });
 
   it("should handle null endTimestamp", () => {
@@ -92,18 +124,24 @@ describe("MatchClientTime", () => {
       />
     );
 
-    expect(screen.getByText(/Starts: 14:30/i)).toBeInTheDocument();
+    expect(
+      screen.getByRole("time", { name: "14:30" }).closest("span")
+    ).toHaveTextContent("Starts: 14:30");
   });
 
   it("should format midnight correctly", () => {
     render(<MatchClientTime startTimestamp="2024-01-15T00:00:00.000Z" />);
 
-    expect(screen.getByText(/Starts: 00:00/i)).toBeInTheDocument();
+    expect(
+      screen.getByRole("time", { name: "00:00" }).closest("span")
+    ).toHaveTextContent("Starts: 00:00");
   });
 
   it("should format late evening times correctly", () => {
     render(<MatchClientTime startTimestamp="2024-01-15T23:59:00.000Z" />);
 
-    expect(screen.getByText(/Starts: 23:59/i)).toBeInTheDocument();
+    expect(
+      screen.getByRole("time", { name: "23:59" }).closest("span")
+    ).toHaveTextContent("Starts: 23:59");
   });
 });

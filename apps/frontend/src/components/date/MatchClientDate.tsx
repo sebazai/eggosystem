@@ -22,8 +22,9 @@ export function MatchClientDate({
   );
 
   const formattedDate = useMemo(() => {
+    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     return formatDateShort(date, {
-      timezone: null,
+      timezone: timeZone,
       toUpperCase: true
     });
   }, [date]);
@@ -32,5 +33,17 @@ export function MatchClientDate({
     return <span className={className}>{"\u00a0"}</span>;
   }
 
-  return <span className={className}>{formattedDate}</span>;
+  const dateTimeUtc = date.toISOString();
+  const titleUtc = `UTC: ${date.toUTCString()}`;
+
+  return (
+    <time
+      className={className}
+      dateTime={dateTimeUtc}
+      title={titleUtc}
+      aria-label={formattedDate}
+    >
+      {formattedDate}
+    </time>
+  );
 }

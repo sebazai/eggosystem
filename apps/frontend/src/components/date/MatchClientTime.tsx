@@ -10,9 +10,17 @@ interface ClientTimeProps {
 }
 
 function formatLocalTime(date: Date): string {
-  const hours = String(date.getHours()).padStart(2, "0");
-  const minutes = String(date.getMinutes()).padStart(2, "0");
-  return `${hours}:${minutes}`;
+  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  return new Intl.DateTimeFormat("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+    timeZone
+  }).format(date);
+}
+
+function utcTitleForInstant(date: Date): string {
+  return `UTC: ${date.toUTCString()}`;
 }
 
 export function MatchClientTime({
@@ -28,18 +36,46 @@ export function MatchClientTime({
 
   const startDate = parseMatchTimestampToDate(startTimestamp);
   const formattedStartLocal = formatLocalTime(startDate);
+  const startDateTimeUtc = startDate.toISOString();
+  const startTitleUtc = utcTitleForInstant(startDate);
 
   if (endTimestamp) {
-    const formattedEndLocal = formatLocalTime(
-      parseMatchTimestampToDate(endTimestamp)
-    );
+    const endDate = parseMatchTimestampToDate(endTimestamp);
+    const formattedEndLocal = formatLocalTime(endDate);
+    const endDateTimeUtc = endDate.toISOString();
+    const endTitleUtc = utcTitleForInstant(endDate);
 
     return (
-      <span
-        className={className}
-      >{`${formattedStartLocal}–${formattedEndLocal}`}</span>
+      <span className={className}>
+        <time
+          dateTime={startDateTimeUtc}
+          title={startTitleUtc}
+          aria-label={formattedStartLocal}
+        >
+          {formattedStartLocal}
+        </time>
+        –
+        <time
+          dateTime={endDateTimeUtc}
+          title={endTitleUtc}
+          aria-label={formattedEndLocal}
+        >
+          {formattedEndLocal}
+        </time>
+      </span>
     );
   }
 
-  return <span className={className}>Starts: {formattedStartLocal}</span>;
+  return (
+    <span className={className}>
+      Starts:{" "}
+      <time
+        dateTime={startDateTimeUtc}
+        title={startTitleUtc}
+        aria-label={formattedStartLocal}
+      >
+        {formattedStartLocal}
+      </time>
+    </span>
+  );
 }

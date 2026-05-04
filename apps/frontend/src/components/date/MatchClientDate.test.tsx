@@ -1,6 +1,14 @@
 import { render, screen } from "@testing-library/react";
 import { MatchClientDate } from "./MatchClientDate";
 
+function restoreProcessTz(previous: string | undefined) {
+  if (previous === undefined) {
+    delete process.env.TZ;
+  } else {
+    process.env.TZ = previous;
+  }
+}
+
 describe("MatchClientDate", () => {
   const previousTz = process.env.TZ;
 
@@ -9,7 +17,7 @@ describe("MatchClientDate", () => {
   });
 
   afterAll(() => {
-    process.env.TZ = previousTz;
+    restoreProcessTz(previousTz);
   });
 
   it("should render formatted date in local calendar (UTC when TZ=UTC)", () => {
@@ -23,6 +31,11 @@ describe("MatchClientDate", () => {
     const dateElement = screen.getByText(/JAN 15, 24/i);
     expect(dateElement).toBeInTheDocument();
     expect(dateElement).toHaveClass("test-class");
+    expect(dateElement).toHaveAttribute("datetime", "2024-01-15T00:00:00.000Z");
+    expect(dateElement).toHaveAttribute(
+      "title",
+      "UTC: Mon, 15 Jan 2024 00:00:00 GMT"
+    );
   });
 
   it("should format date with different timestamps on same local day", () => {
