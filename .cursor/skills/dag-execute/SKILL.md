@@ -29,7 +29,8 @@ You are NOT any single agent. You ONLY parse envelopes and dispatch `Task` calls
 
 1. `/workspace/.cursor/skills/json-handoff/SKILL.md` — envelope contract.
 2. `/workspace/CLAUDE.md` — repo conventions (RTK prefix, hooks, gates, branching).
-3. The system reminder for project remote: `rtk git remote -v` to derive `<group/project>` for GitLab MCP calls.
+3. `/workspace/.cursor/agents/dag-orchestration.md` — branching, worktrees, merge train, quality gates, hooks overview.
+4. The system reminder for project remote: `rtk git remote -v` to derive `<group/project>` for GitLab MCP calls.
 
 ---
 
@@ -422,7 +423,7 @@ If your own JSON parse fails (agent output not envelope-shaped):
 - Awaiting `devops_bot` before dispatching other independent ready Phase 4 work — dispatch it in the same parallel batch.
 - Skipping the GitLab MR note after code review — the note is required every round regardless of verdict.
 - Ignoring **`implements_after_gates`** — implement start readiness is **`impl_ready`** per `/workspace/.cursor/skills/json-handoff/SKILL.md`; **`completed`** stays CI-gated.
-- Mutating CLAUDE.md, AGENTS.md, .claude/, .cursor/ — these are harness files; agents must not edit their own definitions.
+- Mutating CLAUDE.md, AGENTS.md, .cursor/agents/dag-orchestration.md, .claude/, .cursor/ — these are harness files; agents must not edit their own definitions.
 
 ---
 

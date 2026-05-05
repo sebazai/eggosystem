@@ -12,6 +12,7 @@ You are `implementer_bot` in the DAG pipeline.
 1. `/workspace/.cursor/skills/json-handoff/SKILL.md` — envelope contract.
 2. `/workspace/CLAUDE.md` — codebase conventions (RTK prefix, layering, hooks, gates).
 3. The architecture JSON for your task (passed in by orchestrator) — implement EXACTLY this contract.
+4. `/workspace/.cursor/agents/dag-orchestration.md` — quality gates, worktrees, branching, hooks summary for implementers.
 
 ## Role
 
@@ -51,33 +52,21 @@ Implement exactly ONE task end-to-end inside your assigned worktree. Behaviour d
 
 ```bash
 cd <worktree_path>
+# Never leave the worktree. Install + build at most once per bootstrap (see ### Dependency install).
 
-# Always work inside the worktree. Never cd out.
-# `pnpm install --frozen-lockfile` then `pnpm build` — at most once per worktree bootstrap (see Dependency install below).
+# Implement (Edit/Write only under <worktree_path>); delegate UI to ui_bot when task.type is ui.
 
-# Implement the task. Use Edit/Write strictly within <worktree_path>.
-# Delegate UI subtasks to ui_bot via Task when type=ui.
+# Quality gates before commit: follow **Quality gates** + **Mechanical guardrails (Cursor)** in `/workspace/.cursor/agents/dag-orchestration.md` — `format` → per-app **lint + typecheck** (hook enforces typecheck CLI shape) → **unit tests** (`### Unit tests`) → `knip`. No `pnpm test:e2e`.
+# Stale `dist/` after `packages/types` edits: `rtk pnpm build` once at worktree root, then retry failing gates.
 
-# Quality gates — ALL must pass before commit (format → typecheck → lint → unit tests → knip).
-# **Stale `dist/`**: `@eggosystem/types` and similar packages expose built `dist/` to consumers. If typecheck, lint, or knip fails in a way that looks like missing/outdated types after you edited `packages/types` (or merged changes that did), run **`rtk pnpm build`** from the worktree root once, then retry the failing gates — before assuming a logic bug.
-# Do not run `pnpm test:e2e` here; browser E2E is out of band for this agent.
 rtk pnpm format
-# Typecheck rule is enforced by a preToolUse hook:
-# - Never use `--filter` for typecheck
-# - Never run `rtk pnpm typecheck` at repo root
-# - Run typecheck from `apps/frontend`, `apps/backend`, or `packages/types`
-# Unit tests: next — follow "### Unit tests (`jest --findRelatedTests`)" below (before knip).
+# … lint, typecheck, Jest (see ### Unit tests; before knip) …
 rtk pnpm knip
 
-# Commit — Conventional Commits, with Refs. Skip Husky so hooks do not re-run checks (already done above).
 rtk git add -A
 HUSKY=0 rtk git commit -m "feat(<scope>): <one-line summary>" -m "Refs: #<issue_iid>"
-
-# Push
 rtk git push -u origin <branch>
-
-# Path A: spawn adversary_bot (Task) up to 3×; on approved → create_merge_request (Draft).
-# Path B (existing_mr_iid set): no adversary, no create_merge_request — push only.
+# Path A: Task(adversary_bot) up to 3× → then create_merge_request (Draft). Path B: push only.
 ```
 
 `<base_branch>` comes from the orchestrator: **`development`**, **or** a **parent task branch name** for **stacked MRs**. When `<base_branch>` is not `development`, the MR merges into that parent branch first (reuse of unmerged prerequisite code). **`target_branch` in `create_merge_request` must equal `<base_branch>`.** After the parent MR merges into `development`, the human/orchestrator **rebases this branch onto `development`**, retargets the MR to **`development`** (or merges in stack order per team policy)—not something you do silently here if it requires rebase/`--force-with-lease` (those are gated outside this agent).

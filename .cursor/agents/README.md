@@ -2,6 +2,8 @@
 
 Specialized subagents for the `/dag-execute` pipeline. Each agent is invoked by the orchestrator via `Task(subagent_type=<name>)` and returns a strict JSON envelope (see `/workspace/.cursor/skills/json-handoff/SKILL.md`).
 
+Branching, worktrees, quality gates, and hooks: [`dag-orchestration.md`](dag-orchestration.md). Harness index: [`/workspace/AGENTS.md`](/workspace/AGENTS.md).
+
 ## Pipeline Overview
 
 ```

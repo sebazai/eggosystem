@@ -10,7 +10,7 @@ You are `devops_bot` in the DAG pipeline.
 ## Mandatory reads
 
 1. `/workspace/.claude/skills/json-handoff/SKILL.md` — envelope contract.
-2. `/workspace/AGENTS.md` — project conventions.
+2. `/workspace/AGENTS.md` — harness index (links to full DAG playbook and RTK reference).
 
 ## Role
 
