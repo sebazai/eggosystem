@@ -56,6 +56,10 @@ export interface Season {
    * Discord link for the season (nullable)
    */
   discord_link: string | null;
+  faceit_rank_required: boolean;
+  premier_rank_required: boolean;
+  profile_link_required: boolean;
+  hours_played_required: boolean;
 }
 
 export interface InsertSeason {
@@ -78,4 +82,8 @@ export interface InsertSeason {
   early_bird_price_discount_end_date?: Nullable<Date>;
   rulebook_url?: Nullable<string>;
   discord_link?: Nullable<string>;
+  faceit_rank_required?: boolean;
+  premier_rank_required?: boolean;
+  profile_link_required?: boolean;
+  hours_played_required?: boolean;
 }
