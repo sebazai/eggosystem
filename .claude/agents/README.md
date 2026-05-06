@@ -1,6 +1,6 @@
 # DAG Pipeline Agents
 
-Specialized subagents for the `/dag-execute` pipeline. Each agent is invoked by the orchestrator via `Task(subagent_type=<name>)` and returns a strict JSON envelope (see `/workspace/.claude/skills/json-handoff/SKILL.md`).
+Specialized subagents for **gitlab-issue-dag-orchestration**. Each agent is invoked by the orchestrator via `Task(subagent_type=<name>)` and returns a strict JSON envelope (see `/workspace/.claude/skills/json-handoff/SKILL.md`).
 
 ## Pipeline Overview
 
@@ -8,14 +8,14 @@ Specialized subagents for the `/dag-execute` pipeline. Each agent is invoked by 
 User request
      │
      ▼
-┌─────────────┐
-│  /dag-plan  │  intake_bot — scopes request, creates GitLab issue
-└──────┬──────┘
+┌────────────────────────────────────────────────────────────┐
+│ scope-request-to-gitlab-issue → intake_bot → GitLab issue  │
+└────────────────────────────┬───────────────────────────────┘
        │ issue IID
        ▼
-┌──────────────┐
-│ /dag-execute │  Orchestrator drives all phases below
-└──────┬───────┘
+┌─────────────────────────────┐
+│ gitlab-issue-dag-orchestration │  Orchestrator drives all phases below
+└──────────────────┬──────────┘
        │
        ▼
   Phase 1: product_bot
@@ -66,26 +66,26 @@ User request
   Orchestrator un-drafts MRs in topo order; human merges via GitLab UI
        │
        ▼
-  Phase 7: /observe (optional, async)
+  Phase 7: analyze-merged-merge-request-health (optional, async)
   observer_bot — post-merge CI + Sentry/Grafana analysis
 ```
 
 ## Agent Roster
 
-| Agent              | Phase         | Role                                                        |
-| ------------------ | ------------- | ----------------------------------------------------------- |
-| `intake_bot`       | `/dag-plan`   | Scopes request → GitLab issue                               |
-| `product_bot`      | 1             | Issue → structured stories + KPIs                           |
-| `decomposer_bot`   | 2             | Stories → task DAG                                          |
-| `architect_bot`    | 3             | DAG → API/DB design (HITL)                                  |
-| `implementer_bot`  | 4b            | Code + quality gates; spawns adversary internally; opens MR |
-| `adversary_bot`    | 4b (sub-Task) | Fast pre-MR gate: AC coverage, tests, structural rules      |
-| `ui_bot`           | 4b            | Frontend tasks (spawned by implementer)                     |
-| `claude_md_bot`    | any           | Appends agent-discovery notes to CLAUDE.md (utility)        |
-| `code_review_bot`  | 4c            | Line-by-line quality + GitLab MR note                       |
-| `devops_bot`       | 4d            | GitLab CI validation (parallel-foreground)                  |
-| `final_review_bot` | 5             | Cross-task business validation                              |
-| `observer_bot`     | 7             | Post-merge observability                                    |
+| Agent              | Phase                         | Role                                                        |
+| ------------------ | ----------------------------- | ----------------------------------------------------------- |
+| `intake_bot`       | scope-request-to-gitlab-issue | Scopes request → GitLab issue                               |
+| `product_bot`      | 1                             | Issue → structured stories + KPIs                           |
+| `decomposer_bot`   | 2                             | Stories → task DAG                                          |
+| `architect_bot`    | 3                             | DAG → API/DB design (HITL)                                  |
+| `implementer_bot`  | 4b                            | Code + quality gates; spawns adversary internally; opens MR |
+| `adversary_bot`    | 4b (sub-Task)                 | Fast pre-MR gate: AC coverage, tests, structural rules      |
+| `ui_bot`           | 4b                            | Frontend tasks (spawned by implementer)                     |
+| `claude_md_bot`    | any                           | Appends agent-discovery notes to CLAUDE.md (utility)        |
+| `code_review_bot`  | 4c                            | Line-by-line quality + GitLab MR note                       |
+| `devops_bot`       | 4d                            | GitLab CI validation (parallel-foreground)                  |
+| `final_review_bot` | 5                             | Cross-task business validation                              |
+| `observer_bot`     | 7                             | Post-merge observability                                    |
 
 ## Key Design Decisions
 
