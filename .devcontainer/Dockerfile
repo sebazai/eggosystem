@@ -20,11 +20,8 @@ RUN ARCH=$(dpkg --print-architecture) && \
 # Install uv (standalone) so MariaDB MCP server can start before postCreateCommand/postStartCommand run
 RUN curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR="/usr/local/bin" UV_NO_MODIFY_PATH=1 sh
 
-# Clone and set up MariaDB MCP server at build time so it is ready before postCreateCommand/postStartCommand.
-# uv stores managed Python in $HOME/.local/share/uv/python. If we run uv sync as root, the venv's
-# python3 symlink points into /root/.local/..., and at runtime the MCP (running as node) gets
-# "Permission denied" when resolving that path. So we run uv sync as node so all paths are under
-# /home/node and the runtime user can access them.
+# Clone upstream MariaDB MCP at build time; heavy Python deps install at container startup (scripts/install-mariadb-mcp-local-venv.sh).
+# Keep MCP tree owned by node; uv-managed Pythons live under /home/node (avoid root-created .venv pointing at /root).
 RUN apt-get update && apt-get install -y --no-install-recommends git xvfb xauth && rm -rf /var/lib/apt/lists/* && \
     git clone --depth 1 https://github.com/MariaDB/mcp.git /usr/local/mariadb-mcp && \
     chown -R node:node /usr/local/mariadb-mcp
@@ -33,9 +30,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends git xvfb xauth 
 # Pins 3.11 for MariaDB MCP venv parity with former feature default.
 USER node
 ENV PATH="/home/node/.local/bin:${PATH}"
-# sentence-transformers (upstream) pulls PyTorch + CUDA; without a pre-synced venv,
-# uv run installs on first MCP start and Cursor times out (-32001) before stdio handshake.
-RUN uv python install 3.11 && cd /usr/local/mariadb-mcp && uv venv && uv sync --frozen
+# MariaDB MCP deps (PyTorch etc.) are huge — baking them in Dockerfile slows every image build.
+# Install in background after container start: scripts/install-mariadb-mcp-local-venv.sh (see post-start + run-mariadb-mcp.sh).
+RUN uv python install 3.11
 RUN mkdir -p /home/node/.claude /home/node/.cursor && rtk init -g && rtk init -g --agent cursor
 
 # Scripts (e.g. setup-mariadb-mcp-server.sh) expect python3.11 on PATH; uv-managed Pythons live under ~/.local/share/uv.

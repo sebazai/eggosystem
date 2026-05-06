@@ -1,8 +1,9 @@
 {
   "mcpServers": {
     "mariadb": {
-      "command": "uv",
-      "args": ["--directory", "/usr/local/mariadb-mcp", "run", "src/server.py"],
+      "type": "stdio",
+      "command": "bash",
+      "args": ["/workspace/scripts/run-mariadb-mcp.sh"],
       "env": {
         "DB_HOST": "eggo-devdb",
         "DB_PORT": "3306",
