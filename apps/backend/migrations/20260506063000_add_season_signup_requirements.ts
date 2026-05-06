@@ -1,6 +1,8 @@
 // Migration to add signup requirement fields to Seasons table
 import type { Knex } from "knex";
 
+export const config = { transaction: false };
+
 export async function up(knex: Knex): Promise<void> {
   // Add the new boolean columns with default values of FALSE
   await knex.schema.table("Seasons", (table) => {
@@ -14,7 +16,7 @@ export async function up(knex: Knex): Promise<void> {
   // This maintains backward compatibility with current behavior
   await knex("Seasons")
     .whereRaw(
-      "EXISTS (SELECT 1 FROM SeasonPlayers WHERE SeasonPlayers.season_id = Seasons.id)"
+      "EXISTS (SELECT 1 FROM SeasonTeamRegistrations WHERE SeasonTeamRegistrations.season_id = Seasons.id)"
     )
     .update({
       faceit_rank_required: true,
