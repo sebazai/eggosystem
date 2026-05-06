@@ -44,6 +44,10 @@ export const createMockSeason = (overrides?: Partial<Season>): Season => {
     active_map_pool: [1, 2, 3],
     rulebook_url: null,
     discord_link: null,
+    faceit_rank_required: false,
+    premier_rank_required: false,
+    profile_link_required: false,
+    hours_played_required: false,
     ...overrides
   };
 };
