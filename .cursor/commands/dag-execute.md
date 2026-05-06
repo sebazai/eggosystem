@@ -26,12 +26,14 @@ You are NOT any single agent. You ONLY parse envelopes and dispatch `Task` calls
 ## Phase 0 — Preparation
 
 1. Parse `<iid>` from `$ARGUMENTS`.
-2. Derive `<group/project>` from `rtk git remote -v`.
-3. `mcp__GitLab__get_issue(project=<group/project>, issue_iid=<iid>)`.
-4. Refuse to proceed if:
+2. Parse optional **mode tokens** from the remaining `$ARGUMENTS`:
+   - If any token equals `continue` or `resume` (case-insensitive), set `resume_mode=true`.
+3. Derive `<group/project>` from `rtk git remote -v`.
+4. `mcp__GitLab__get_issue(project=<group/project>, issue_iid=<iid>)`.
+5. Refuse to proceed if:
    - Issue not found.
    - Issue has label `needs-human-decision` → print issue summary and stop.
-5. Print a status card:
+6. Print a status card:
 
 ```
 Issue #<iid>: <title>
@@ -39,6 +41,82 @@ Labels: <labels>
 Pipeline: /dag-execute
 Phase: 0 → preparation OK
 ```
+
+---
+
+## Phase 0b — Resume / state reconstruction (ONLY when `resume_mode=true`)
+
+**Goal:** before spawning _any_ agent, reconstruct the pipeline’s last known state from **GitLab Issue notes + GitLab MRs + local git state** so that `... <iid> continue` never restarts from Phase 1 unless the issue has no prior run artifacts.
+
+### 0b.1 Pull canonical state from GitLab Issue notes
+
+1. Fetch issue notes (ascending by creation time).
+2. Identify the most recent notes with these headings (prefer the last occurrence of each):
+   - `## Stories (product_bot)`
+   - `## Task DAG (decomposer_bot)`
+   - `## Architecture (architect_bot)`
+3. If `## Task DAG (decomposer_bot)` exists, **treat it as canonical tasks[]** for the resume run. Do **not** respawn `decomposer_bot` unless the DAG note is missing or obviously malformed.
+4. If `## Stories (product_bot)` exists, reuse it as canonical stories/KPIs. Do **not** respawn `product_bot` unless the note is missing.
+5. Determine whether architecture is approved:
+   - If issue has label `architecture-approved`, treat Phase 3 as complete.
+   - Else if an Architecture note exists but the label is missing, treat as **HITL pending** (do not proceed into Phase 4 automatically).
+
+### 0b.2 Discover existing merge requests for this issue
+
+Use _both_ strategies; union the results:
+
+- **Branch pattern**: list MRs whose `source_branch` matches `feat-<iid>-*`.
+- **Issue linkage**: list MRs that mention or close `#<iid>` (when available in your GitLab).
+
+For each MR found, capture:
+
+- `mr_iid`, `web_url`
+- `source_branch`
+- `target_branch`
+- `draft` status
+- latest head SHA
+- pipeline status (if available)
+
+### 0b.3 Inspect local repo state (detect in-progress work)
+
+Run these from the repo root:
+
+- `rtk git status --porcelain=v1`
+- `rtk git diff`
+- `rtk git diff --staged`
+- `rtk git worktree list`
+
+If any `/workspace/.worktrees/<iid>-<task_id>` worktrees exist, treat them as **active** task workspaces and prefer them over re-creating worktrees in §4a.
+
+### 0b.4 Rehydrate per-task trackers (state / branch / mr_iid)
+
+Given canonical `tasks[]` from the DAG note:
+
+- Compute expected branch name prefix: `feat-<iid>-<t.id>-`
+- Match each `t` to an MR by `source_branch` prefix (preferred), else leave unmatched.
+- Initialize `t.branch` from MR `source_branch` when present; else from the expected scheme.
+- Initialize `t.worktree_path` if a matching worktree exists; else leave empty.
+
+Infer `t.state` conservatively:
+
+- **If MR exists and is Draft**: `review` (unless you have evidence code review already approved and CI running).
+- **If MR exists and code review was approved (via your own MR notes)**: `ci` (until devops says ready).
+- **If MR exists and pipeline for head SHA is green**: `completed`.
+- **If MR does not exist**: `pending` (do not spawn implementer unless `impl_ready`).
+
+### 0b.5 Continue from the correct phase
+
+- If Stories/DAG/Architecture artifacts are missing: continue from the earliest missing phase (1, 2, or 3).
+- If architecture is not approved: stop at HITL gate #1.
+- If architecture is approved: continue at Phase 4 using the reconstructed per-task tracker table.
+
+### 0b.6 Post a checkpoint note (required)
+
+After reconstruction, post a GitLab issue note titled `## DAG Resume Checkpoint` containing:
+
+- Phase you will continue from
+- For each task: `id`, `title`, inferred `state`, `branch`, `mr_iid` (if any), `worktree_path` (if any)
+- Whether local repo has unstaged/staged changes (yes/no; never paste secrets)
 
 ---
 
