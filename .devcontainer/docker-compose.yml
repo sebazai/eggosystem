@@ -2,6 +2,7 @@ services:
   devcontainer:
     build: .
     container_name: devcontainer
+    mem_limit: 6g
     volumes:
       - ..:/workspace
     env_file: "../.env.development"
@@ -15,6 +16,7 @@ services:
     extends:
       file: ../docker-compose.yml
       service: eggo-devdb
+    mem_limit: 4g
     networks:
       - eggo-dev
     volumes:
@@ -27,6 +29,7 @@ services:
     extends:
       file: ../docker-compose.yml
       service: eggo-phpmyadmin-dev
+    mem_limit: 512m
     networks:
       - eggo-dev
     ports:
@@ -36,6 +39,7 @@ services:
     extends:
       file: ../docker-compose.yml
       service: eggo-redis
+    mem_limit: 256m
     networks:
       - eggo-dev
     healthcheck:
@@ -48,6 +52,7 @@ services:
     extends:
       file: ../docker-compose.yml
       service: eggo-bull-monitor
+    mem_limit: 256m
     networks:
       - eggo-dev
     ports:
@@ -60,6 +65,7 @@ services:
     extends:
       file: ../docker-compose.yml
       service: eggo-rabbitmq
+    mem_limit: 256m
     networks:
       - eggo-dev
     ports:
