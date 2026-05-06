@@ -103,7 +103,11 @@ export const seasonFormSchema = z
       .string()
       .url("Discord link must be a valid URL")
       .optional()
-      .nullable()
+      .nullable(),
+    faceit_rank_required: z.boolean().optional(),
+    premier_rank_required: z.boolean().optional(),
+    profile_link_required: z.boolean().optional(),
+    hours_played_required: z.boolean().optional()
   })
   .refine(
     (data) => {
@@ -203,4 +207,8 @@ export interface SeasonFormRaw {
    * Discord link for the season (nullable)
    */
   discord_link: string | null;
+  faceit_rank_required?: boolean;
+  premier_rank_required?: boolean;
+  profile_link_required?: boolean;
+  hours_played_required?: boolean;
 }
