@@ -114,7 +114,11 @@ export function SeasonForm({
       early_bird_price_discount_end_date: null,
       active_map_pool: [],
       rulebook_url: null,
-      discord_link: null
+      discord_link: null,
+      faceit_rank_required: false,
+      premier_rank_required: false,
+      profile_link_required: false,
+      hours_played_required: false
     },
     mode: "onTouched"
   });
@@ -737,6 +741,99 @@ export function SeasonForm({
                       Select at least one map to be active for this season
                     </FormDescription>
                     <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* FaceIt Rank Required */}
+              <FormField
+                control={form.control}
+                name="faceit_rank_required"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value || false}
+                        onCheckedChange={field.onChange}
+                        disabled={isFormDisabled}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>Require FaceIt Rank</FormLabel>
+                      <FormDescription>
+                        Players must have a valid FaceIt rank to sign up
+                      </FormDescription>
+                    </div>
+                  </FormItem>
+                )}
+              />
+
+              {/* Premier Rank Required */}
+              <FormField
+                control={form.control}
+                name="premier_rank_required"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value || false}
+                        onCheckedChange={field.onChange}
+                        disabled={isFormDisabled}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>Require Premier Rank</FormLabel>
+                      <FormDescription>
+                        Players must have a valid CS2 Premier rank to sign up
+                      </FormDescription>
+                    </div>
+                  </FormItem>
+                )}
+              />
+
+              {/* Profile Link Required */}
+              <FormField
+                control={form.control}
+                name="profile_link_required"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value || false}
+                        onCheckedChange={field.onChange}
+                        disabled={isFormDisabled}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>Require Public Profile Link</FormLabel>
+                      <FormDescription>
+                        Players must have a public Steam profile to sign up
+                      </FormDescription>
+                    </div>
+                  </FormItem>
+                )}
+              />
+
+              {/* Hours Played Required */}
+              <FormField
+                control={form.control}
+                name="hours_played_required"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value || false}
+                        onCheckedChange={field.onChange}
+                        disabled={isFormDisabled}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>Require Hours Played</FormLabel>
+                      <FormDescription>
+                        Players must have played sufficient hours in CS2 to sign
+                        up
+                      </FormDescription>
+                    </div>
                   </FormItem>
                 )}
               />

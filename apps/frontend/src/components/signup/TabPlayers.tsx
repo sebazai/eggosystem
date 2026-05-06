@@ -69,6 +69,7 @@ interface TabPlayersProps {
   teamId?: number;
   isEditMode: boolean;
   submitInitiated: boolean;
+  seasonDetails: SeasonDetails;
 }
 
 export const TabPlayers = ({
@@ -121,15 +122,15 @@ export const TabPlayers = ({
   const watchOrganizationId = useWatch({ control, name: "organizationId" });
   const steamIds = watchPlayers.map((p) => p.steamId);
 
-  // Helper function to check if a player is fully valid and eligible
+  // Helper function to check if a player is fully valid and eligible based on season requirements
   const isPlayerFullyValid = (player: SignupPlayerType): boolean => {
     return (
       player.hasValidData === true &&
       player.hasValidWorkEmail === true &&
       player.isEmailVerified === true &&
       player.rank !== -1 &&
-      (player.externalRank !== -1 || platform === SeasonPlatform.Kanaliiga) &&
-      player.hours !== -1
+      (!seasonDetails.premier_rank_required || player.externalRank !== -1) &&
+      (!seasonDetails.hours_played_required || player.hours !== -1)
     );
   };
 
@@ -575,13 +576,14 @@ export const TabPlayers = ({
           player.hasValidData !== true ||
           player.hasValidWorkEmail !== true ||
           player.isEmailVerified !== true ||
-          player.hours === -1 ||
-          player.rank === -1 ||
-          (player.externalRank === -1 &&
+          (seasonDetails.hours_played_required && player.hours === -1) ||
+          (seasonDetails.premier_rank_required && player.rank === -1) ||
+          (seasonDetails.premier_rank_required &&
+            player.externalRank === -1 &&
             platform !== SeasonPlatform.Kanaliiga));
       return error;
     },
-    [platform]
+    [platform, seasonDetails]
   );
 
   // Open accordions if any errors

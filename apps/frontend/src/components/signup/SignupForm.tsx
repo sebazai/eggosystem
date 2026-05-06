@@ -593,6 +593,7 @@ export const SignupForm = ({
                 teamId={watchTeamId}
                 isEditMode={isEditMode}
                 submitInitiated={isSubmittingOrHasSubmitted}
+                seasonDetails={seasonDetails}
               />
             </Tabs>
 
