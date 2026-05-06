@@ -1,5 +1,5 @@
 // Migration to add signup requirement fields to Seasons table
-import { Knex } from "knex";
+import type { Knex } from "knex";
 
 export async function up(knex: Knex): Promise<void> {
   // Add the new boolean columns with default values of FALSE
