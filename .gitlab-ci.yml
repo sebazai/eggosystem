@@ -127,10 +127,10 @@ variables:
 # Define a base Docker build configuration without rules
 .docker-build-base: &docker-build-base
   stage: build-docker
-  image: $DOCKER_IMAGE_TAG
+  image: docker:$DOCKER_IMAGE_TAG
   # Define global services for the entire pipeline
   services:
-    - name: $DOCKER_DIND_IMAGE_TAG
+    - name: docker:$DOCKER_DIND_IMAGE_TAG
       alias: docker
   before_script:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
@@ -806,7 +806,7 @@ deploy-dev:
 
 deploy-ondemand:
   <<: *docker-build-base
-  image: $DOCKER_IMAGE_TAG
+  image: docker:$DOCKER_IMAGE_TAG
   tags:
     - hub # use this so we have whitelisted runner for portainer
   stage: on-demand-env
@@ -901,7 +901,7 @@ stop-ondemand:
   stage: cleanup
   tags:
     - hub
-  image: $DOCKER_IMAGE_TAG
+  image: docker:$DOCKER_IMAGE_TAG
   allow_failure: true # Make on-demand jobs optional for merge requests
   needs: [deploy-ondemand]
   dependencies: []
