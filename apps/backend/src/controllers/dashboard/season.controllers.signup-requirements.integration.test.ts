@@ -82,37 +82,39 @@ describe("Season Controllers Integration Tests - Signup Requirements", () => {
       expect(response.body).toHaveProperty("seasonId");
       const createdSeasonId = response.body.seasonId;
 
-      // Verify signup requirements are stored as false by default
-      const [storedSeason] = await runQuery<
-        Array<{
-          faceit_rank_required: boolean;
-          premier_rank_required: boolean;
-          profile_link_required: boolean;
-          hours_played_required: boolean;
-        }>
-      >(
-        "SELECT faceit_rank_required, premier_rank_required, profile_link_required, hours_played_required FROM Seasons WHERE id = ?",
-        [createdSeasonId],
-        connection
-      );
+      try {
+        // Verify signup requirements are stored as false by default
+        const [storedSeason] = await runQuery<
+          Array<{
+            faceit_rank_required: boolean;
+            premier_rank_required: boolean;
+            profile_link_required: boolean;
+            hours_played_required: boolean;
+          }>
+        >(
+          "SELECT faceit_rank_required, premier_rank_required, profile_link_required, hours_played_required FROM Seasons WHERE id = ?",
+          [createdSeasonId],
+          connection
+        );
 
-      expect(storedSeason).toBeDefined();
-      expect(storedSeason?.faceit_rank_required).toBe(false);
-      expect(storedSeason?.premier_rank_required).toBe(false);
-      expect(storedSeason?.profile_link_required).toBe(false);
-      expect(storedSeason?.hours_played_required).toBe(false);
-
-      // Clean up
-      await runQuery(
-        "DELETE FROM SeasonActiveMapPool WHERE season_id = ?",
-        [createdSeasonId],
-        connection
-      );
-      await runQuery(
-        "DELETE FROM Seasons WHERE id = ?",
-        [createdSeasonId],
-        connection
-      );
+        expect(storedSeason).toBeDefined();
+        expect(storedSeason?.faceit_rank_required).toBe(false);
+        expect(storedSeason?.premier_rank_required).toBe(false);
+        expect(storedSeason?.profile_link_required).toBe(false);
+        expect(storedSeason?.hours_played_required).toBe(false);
+      } finally {
+        // Clean up
+        await runQuery(
+          "DELETE FROM SeasonActiveMapPool WHERE season_id = ?",
+          [createdSeasonId],
+          connection
+        );
+        await runQuery(
+          "DELETE FROM Seasons WHERE id = ?",
+          [createdSeasonId],
+          connection
+        );
+      }
     });
 
     it("should create a season with signup requirements explicitly set to true", async () => {
@@ -144,37 +146,39 @@ describe("Season Controllers Integration Tests - Signup Requirements", () => {
       expect(response.body).toHaveProperty("seasonId");
       const createdSeasonId = response.body.seasonId;
 
-      // Verify signup requirements are stored as true
-      const [storedSeason] = await runQuery<
-        Array<{
-          faceit_rank_required: boolean;
-          premier_rank_required: boolean;
-          profile_link_required: boolean;
-          hours_played_required: boolean;
-        }>
-      >(
-        "SELECT faceit_rank_required, premier_rank_required, profile_link_required, hours_played_required FROM Seasons WHERE id = ?",
-        [createdSeasonId],
-        connection
-      );
+      try {
+        // Verify signup requirements are stored as true
+        const [storedSeason] = await runQuery<
+          Array<{
+            faceit_rank_required: boolean;
+            premier_rank_required: boolean;
+            profile_link_required: boolean;
+            hours_played_required: boolean;
+          }>
+        >(
+          "SELECT faceit_rank_required, premier_rank_required, profile_link_required, hours_played_required FROM Seasons WHERE id = ?",
+          [createdSeasonId],
+          connection
+        );
 
-      expect(storedSeason).toBeDefined();
-      expect(storedSeason?.faceit_rank_required).toBe(true);
-      expect(storedSeason?.premier_rank_required).toBe(true);
-      expect(storedSeason?.profile_link_required).toBe(true);
-      expect(storedSeason?.hours_played_required).toBe(true);
-
-      // Clean up
-      await runQuery(
-        "DELETE FROM SeasonActiveMapPool WHERE season_id = ?",
-        [createdSeasonId],
-        connection
-      );
-      await runQuery(
-        "DELETE FROM Seasons WHERE id = ?",
-        [createdSeasonId],
-        connection
-      );
+        expect(storedSeason).toBeDefined();
+        expect(storedSeason?.faceit_rank_required).toBe(true);
+        expect(storedSeason?.premier_rank_required).toBe(true);
+        expect(storedSeason?.profile_link_required).toBe(true);
+        expect(storedSeason?.hours_played_required).toBe(true);
+      } finally {
+        // Clean up
+        await runQuery(
+          "DELETE FROM SeasonActiveMapPool WHERE season_id = ?",
+          [createdSeasonId],
+          connection
+        );
+        await runQuery(
+          "DELETE FROM Seasons WHERE id = ?",
+          [createdSeasonId],
+          connection
+        );
+      }
     });
   });
 

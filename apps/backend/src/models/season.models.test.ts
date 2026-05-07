@@ -36,7 +36,12 @@ describe("Season Models", () => {
 
   describe("createSeason", () => {
     it("should create a season with all fields", async () => {
-      const seasonData = createMockSeasonFormRaw();
+      const seasonData = createMockSeasonFormRaw({
+        faceit_rank_required: true,
+        premier_rank_required: true,
+        profile_link_required: true,
+        hours_played_required: true
+      });
 
       mockRunQuery.mockResolvedValue({ insertId: 123 });
 
@@ -65,10 +70,10 @@ describe("Season Models", () => {
           seasonData.early_bird_price_discount_end_date,
           seasonData.rulebook_url,
           seasonData.discord_link,
-          seasonData.faceit_rank_required ?? false,
-          seasonData.premier_rank_required ?? false,
-          seasonData.profile_link_required ?? false,
-          seasonData.hours_played_required ?? false
+          true,
+          true,
+          true,
+          true
         ],
         mockConnection
       );
@@ -117,7 +122,11 @@ describe("Season Models", () => {
         is_round_robin_bo2_as_2xbo1: true,
         payment_link: "https://example.com/new-payment",
         registration_price: 200,
-        has_vat: false
+        has_vat: false,
+        faceit_rank_required: true,
+        premier_rank_required: true,
+        profile_link_required: true,
+        hours_played_required: true
       });
 
       mockRunQuery.mockResolvedValue({ affectedRows: 1 });
@@ -147,10 +156,10 @@ describe("Season Models", () => {
           seasonData.early_bird_price_discount_end_date,
           seasonData.rulebook_url,
           seasonData.discord_link,
-          seasonData.faceit_rank_required ?? false,
-          seasonData.premier_rank_required ?? false,
-          seasonData.profile_link_required ?? false,
-          seasonData.hours_played_required ?? false,
+          true,
+          true,
+          true,
+          true,
           seasonId
         ],
         mockConnection
