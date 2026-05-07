@@ -109,6 +109,11 @@
             "type": "command",
             "command": "sh \"$CLAUDE_PROJECT_DIR/.claude/hooks/warn-directory-execution.sh\"",
             "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "sh \"$CLAUDE_PROJECT_DIR/.claude/hooks/enforce-rtk-shell.sh\"",
+            "timeout": 5
           }
         ]
       }

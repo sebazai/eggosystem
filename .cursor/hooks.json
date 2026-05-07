@@ -1,6 +1,13 @@
 {
   "version": 1,
   "hooks": {
+    "beforeShellExecution": [
+      {
+        "command": ".cursor/hooks/run-claude-project-hook.sh enforce-rtk-shell.sh",
+        "matcher": "\\b(git|gh|pnpm|docker|kubectl|docker-compose)\\b",
+        "timeout": 5
+      }
+    ],
     "preToolUse": [
       {
         "command": ".cursor/hooks/run-claude-project-hook.sh block-e2e-wrong-dir.sh",
