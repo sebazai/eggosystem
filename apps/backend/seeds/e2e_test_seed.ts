@@ -114,7 +114,9 @@ export async function seed(knex: Knex): Promise<void> {
     signup_end_date: tomorrow,
     start_date: tenDaysLater,
     end_date: sixtyDaysLater,
-    platform: "faceit"
+    platform: "faceit",
+    faceit_rank_required: 1,
+    hours_played_required: 1
   });
 
   // Update user emails in the Accounts table for NEW account IDs
