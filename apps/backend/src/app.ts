@@ -41,6 +41,7 @@ if (process.env.NODE_ENV === "production") {
 }
 
 import express from "express";
+import { EventEmitter } from "node:events";
 import helmet from "helmet";
 import morgan from "morgan";
 import passport from "./configs/passport";
@@ -54,6 +55,13 @@ import {
 } from "./services/discord.services";
 import { queueConsumerManager } from "./services/queue-consumer-manager";
 import cors from "cors";
+
+/**
+ * Express and middleware (morgan, helmet, audit logging, etc.) attach several
+ * `finish` listeners per {@link import("http").ServerResponse}. The default cap
+ * of 10 triggers MaxListenersExceededWarning under normal operation.
+ */
+EventEmitter.defaultMaxListeners = 32;
 
 const app = express();
 
