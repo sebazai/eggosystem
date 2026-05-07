@@ -3,6 +3,7 @@ import { useForm, FormProvider } from "react-hook-form";
 import { TabPlayers } from "@/components/signup/TabPlayers";
 import {
   AabeSteamId,
+  createMockSeasonDetails,
   NoFaceitRankPlayerSteamId,
   SeasonPlatform,
   ValidationFailurePlayerSteamId
@@ -137,6 +138,7 @@ const TestWrapper = ({
           prefilledPlayerSteamIds={[]}
           isEditMode={false}
           submitInitiated={false}
+          seasonDetails={createMockSeasonDetails({ platform })}
         />
       </Tabs>
     </FormProvider>

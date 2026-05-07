@@ -89,7 +89,11 @@ export function SeasonForm({
       ),
       active_map_pool: season.active_map_pool || [],
       rulebook_url: season.rulebook_url || null,
-      discord_link: season.discord_link || null
+      discord_link: season.discord_link || null,
+      faceit_rank_required: season.faceit_rank_required,
+      premier_rank_required: season.premier_rank_required,
+      profile_link_required: season.profile_link_required,
+      hours_played_required: season.hours_played_required
     };
   };
 
@@ -188,7 +192,11 @@ export function SeasonForm({
         ),
         active_map_pool: data.active_map_pool,
         rulebook_url: data.rulebook_url || null,
-        discord_link: data.discord_link || null
+        discord_link: data.discord_link || null,
+        faceit_rank_required: data.faceit_rank_required ?? false,
+        premier_rank_required: data.premier_rank_required ?? false,
+        profile_link_required: data.profile_link_required ?? false,
+        hours_played_required: data.hours_played_required ?? false
       };
 
       await onSubmit(rawData);

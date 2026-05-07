@@ -38,6 +38,7 @@ import type {
   FaceITCSRank,
   Game,
   PlayerDetailsBySteamId,
+  SeasonDetails,
   SignupFormValues,
   SignupPlayerType
 } from "@eggosystem/types";
@@ -86,7 +87,8 @@ export const TabPlayers = ({
   prefilledPlayerSteamIds,
   teamId,
   isEditMode,
-  submitInitiated
+  submitInitiated,
+  seasonDetails
 }: TabPlayersProps) => {
   const [promiseErrors, setPromiseErrors] = useState<Record<string, string[]>>(
     {}

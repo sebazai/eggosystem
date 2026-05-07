@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { SeasonDetails } from "@eggosystem/types";
-import { clientApiFetch } from "../lib/apiClient";
+import type { SeasonDetails } from "@eggosystem/types";
+import { clientApiFetch } from "@/lib/apiClient";
 
 interface UseSeasonDetailsResult {
   seasonDetails: SeasonDetails | null;
@@ -17,7 +17,7 @@ export const useSeasonDetails = (
   );
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState<Error | null>(null);
-  const [isValidating, setIsValidating] = useState(false);
+  const [isValidating] = useState(false);
 
   useEffect(() => {
     if (!seasonId) return;
