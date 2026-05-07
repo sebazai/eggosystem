@@ -1,0 +1,45 @@
+---
+description: Always use rtk wrapper for shell commands
+alwaysApply: true
+---
+
+# RTK Shell Usage (Always On)
+
+**Type:** Strict rule
+
+## Required Behavior
+
+- **Always run shell commands through `rtk` (including `git` and `gh`)** to reduce output noise and keep logs token-efficient.
+- **Keep the existing monorepo `cd $(git rev-parse --show-toplevel)/... &&` prefix rule** from `Directory Execution Constraints`.
+- **Only exception**: **repo-root typecheck must be `pnpm typecheck` (no `rtk`)**, per `docs/rtk-reference.md`.
+
+## Key Patterns
+
+```bash
+# Repo root
+cd $(git rev-parse --show-toplevel) && rtk pnpm install
+
+# Backend
+cd $(git rev-parse --show-toplevel)/apps/backend && rtk pnpm dev
+cd $(git rev-parse --show-toplevel)/apps/backend && rtk pnpm test
+
+# Frontend
+cd $(git rev-parse --show-toplevel)/apps/frontend && rtk pnpm dev
+cd $(git rev-parse --show-toplevel)/apps/frontend && rtk pnpm test
+
+# Git / GitHub
+cd $(git rev-parse --show-toplevel) && rtk git status
+cd $(git rev-parse --show-toplevel) && rtk gh pr view 123
+
+# Exception: repo-root typecheck (no rtk)
+cd $(git rev-parse --show-toplevel) && pnpm typecheck
+```
+
+## Prohibited Patterns
+
+- ❌ Running `pnpm`, `git`, `gh`, `docker`, `kubectl`, test runners, or other CLI tools without `rtk` when `rtk` passthrough is available.
+- ❌ Mixing wrapped and unwrapped commands in a chain (prefer `rtk ... && rtk ...`).
+
+## Failure Debugging
+
+If `rtk` output is too filtered to diagnose a failure, **read the RTK tee log** as documented in `docs/rtk-reference.md` instead of re-running the command repeatedly.
