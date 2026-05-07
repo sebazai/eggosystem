@@ -22,10 +22,10 @@ export function Logo({
   priority?: boolean;
   className?: string;
 }) {
-  const h = size === "sm" ? 40 : size === "md" ? 56 : 80;
+  const h = size === "sm" ? 60 : size === "md" ? 100 : 160;
   const src =
     variant === "mark"
-      ? "/images/kanaliiga/kanaliiga-logo-64px.png"
+      ? "/images/kanaliiga/kanaliiga-logo-100px.png"
       : "/images/kanaliiga/logo-1800.png";
 
   return (
