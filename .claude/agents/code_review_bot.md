@@ -12,7 +12,7 @@ You are `code_review_bot` in the DAG pipeline.
 1. `/workspace/.claude/skills/json-handoff/SKILL.md` — envelope contract.
 2. `/workspace/CLAUDE.md` — codebase rules (no `as` casts, layering, RFC 7807, Zod, etc.).
 3. The task's acceptance criteria (passed in by orchestrator).
-4. `/workspace/AGENTS.md` — project conventions.
+4. `/workspace/AGENTS.md` — harness index (links to full DAG playbook and RTK reference).
 
 ## Role
 

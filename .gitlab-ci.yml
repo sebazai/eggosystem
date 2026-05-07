@@ -7,8 +7,6 @@ variables:
   DOCKER_DRIVER: overlay2
   # Other global variables
   PNPM_HOME: $CI_PROJECT_DIR/.pnpm-store
-  TRIVY_VERSION: "0.59.1" # Set the Trivy version here
-  TRIVY_SEVERITY: "HIGH,CRITICAL,MEDIUM"
   PNPM_STORE_PATH: .pnpm-store
   TURBO_TOKEN: $TURBO_TOKEN
   TURBO_TEAM: $TURBO_TEAM
@@ -19,6 +17,9 @@ variables:
   BACKEND_TAG: $CI_COMMIT_SHA
   FRONTEND_TAG: $CI_COMMIT_SHA
   MIGRATIONS_TAG: $CI_COMMIT_SHA
+  DOCKER_IMAGE_TAG: 29.4.1-alpine3.23
+  DOCKER_DIND_IMAGE_TAG: 29.4.1-dind-alpine3.23
+  MARIADB_TAG: 12.2.2
 
 # Define on-demand environment variables
 .overwrite-variables: &overwrite-variables
@@ -126,10 +127,10 @@ variables:
 # Define a base Docker build configuration without rules
 .docker-build-base: &docker-build-base
   stage: build-docker
-  image: docker:28.2.2-alpine3.21
+  image: docker:$DOCKER_IMAGE_TAG
   # Define global services for the entire pipeline
   services:
-    - name: docker:28.2.2-dind-alpine3.21
+    - name: docker:$DOCKER_DIND_IMAGE_TAG
       alias: docker
   before_script:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
@@ -289,7 +290,7 @@ test:backend:
   stage: test
   extends: [.mr-backend]
   services:
-    - name: mariadb:12.2.2
+    - name: mariadb:$MARIADB_TAG
       alias: eggo-devdb
     # - name: redis:8-alpine
     #   alias: eggo-redis
@@ -421,7 +422,7 @@ test-e2e:frontend:
     - build:types
     - build:shared-msw
   services:
-    - name: mariadb:12.2.2
+    - name: mariadb:$MARIADB_TAG
       alias: eggo-devdb
     - name: redis:8-alpine
       alias: eggo-redis
@@ -805,7 +806,7 @@ deploy-dev:
 
 deploy-ondemand:
   <<: *docker-build-base
-  image: docker:28.2.2-alpine3.21
+  image: docker:$DOCKER_IMAGE_TAG
   tags:
     - hub # use this so we have whitelisted runner for portainer
   stage: on-demand-env
@@ -900,7 +901,7 @@ stop-ondemand:
   stage: cleanup
   tags:
     - hub
-  image: docker:28.2.2-alpine3.21
+  image: docker:$DOCKER_IMAGE_TAG
   allow_failure: true # Make on-demand jobs optional for merge requests
   needs: [deploy-ondemand]
   dependencies: []

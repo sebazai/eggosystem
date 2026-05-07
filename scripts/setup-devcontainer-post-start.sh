@@ -12,7 +12,19 @@ if [ "$(uname)" = "Darwin" ]; then
   xhost + 127.0.0.1 2>/dev/null || true
 fi
 
-# MariaDB MCP server is baked into the image at /usr/local/mariadb-mcp during Docker build
+# MariaDB MCP: image clones /usr/local/mariadb-mcp; venv + deps install in background (fast rebuilds).
+# If the image has no clone yet, fall back to workspace clone (gitignored).
+if [ -f /usr/local/mariadb-mcp/src/server.py ] && [ ! -f /usr/local/mariadb-mcp/.venv/bin/python ]; then
+  touch /tmp/mariadb-mcp-venv.log
+  nohup /workspace/scripts/install-mariadb-mcp-local-venv.sh >> /tmp/mariadb-mcp-venv.log 2>&1 &
+  disown -h || true
+fi
+
+if [ ! -f /usr/local/mariadb-mcp/src/server.py ] && [ ! -f /workspace/mariadb-mcp/src/server.py ]; then
+  touch /tmp/mariadb-mcp-setup.log
+  nohup bash -c '/workspace/scripts/setup-mariadb-mcp-server.sh' >> /tmp/mariadb-mcp-setup.log 2>&1 &
+  disown -h || true
+fi
 
 echo ""
 echo "Starting background setup tasks..."
@@ -44,6 +56,7 @@ sleep 2
 echo ""
 echo "Background setup tasks started."
 echo "Check progress with:"
+echo "  tail -f /tmp/mariadb-mcp-venv.log"
 echo "  tail -f /tmp/playwright-setup.log"
 echo "  tail -f /tmp/faceit-mcp-setup.log"
 echo "========================================="

@@ -1,6 +1,6 @@
 ---
 name: json-handoff
-description: Shared JSON envelope contract for all DAG-pipeline agents. Every agent return value MUST conform to this schema. The orchestrator (/dag-execute) and downstream agents parse return values strictly — non-conforming output is treated as a stuck task.
+description: Shared JSON envelope contract for all DAG-pipeline agents. Every agent return value MUST conform to this schema. The orchestrator (**gitlab-issue-dag-orchestration** playbook) and downstream agents parse return values strictly — non-conforming output is treated as a stuck task.
 ---
 
 # JSON Envelope Contract
@@ -52,9 +52,11 @@ All agents in the DAG pipeline (`intake_bot`, `product_bot`, `decomposer_bot`, `
   "labels": ["feat", "frontend"],
   "acceptance_criteria_count": 3,
   "ready_for_dag_execute": true,
-  "next_command": "/dag-execute 247"
+  "next_command": "gitlab-issue-dag-orchestration 247"
 }
 ```
+
+`next_command` is a human-readable hint for the operator — typically **`gitlab-issue-dag-orchestration <issue_iid>`**, i.e. the playbook `.cursor/skills/gitlab-issue-dag-orchestration/SKILL.md` (see also optional wrappers in `.cursor/commands/` / `.claude/commands/` listed from [`AGENTS.md`](/workspace/AGENTS.md)).
 
 `ready_for_dag_execute` is `true` when title is set, body has `## Acceptance criteria` with ≥1 unchecked checkbox, and the issue does not carry `needs-human-decision`.
 
@@ -107,7 +109,7 @@ Constraints:
 - `id` values are unique across the array.
 - Every entry in `depends_on` must reference another task's `id` in the same array.
 - DAG must be acyclic. Orchestrator validates this; cycle → `stuck`.
-- **`implements_after_gates`** (optional, per-task object) — keys are **upstream** task ids (`depends_on`). Each value sets when **this** task may **leave `pending`** and enter **`/dag-execute` §4a** (worktree bootstrap + implement). Omit a parent key ⇒ **`"completed"`** (backward compatible).
+- **`implements_after_gates`** (optional, per-task object) — keys are **upstream** task ids (`depends_on`). Each value sets when **this** task may **leave `pending`** and enter **`gitlab-issue-dag-orchestration`** §4a (worktree bootstrap + implement). Omit a parent key ⇒ **`"completed"`** (backward compatible).
   - **`completed`** — upstream `state=="completed"` (CR + CI green).
   - **`mr_opened`** — upstream in **`review`**, **`ci`**, or **`completed`** (Draft MR exists after adversary; parent CI may still run).
   - **`code_review_ok`** — upstream **`ci`** or **`completed`**.
@@ -171,7 +173,7 @@ Constraints:
 
 Successful **`implementer_bot`** responses MUST set **`mr_opened=true`** and **`mr_iid`** once a Draft MR exists (new MR after internal adversary approval, or the same MR when **`existing_mr_iid`** was passed for post-MR iteration). Set **`gate_output.adversary_alignment`** to **`pass`** after path A (pre-MR adversary approved) and **`skipped`** on path B when no adversary ran that spawn.
 
-**Orchestrator → prompt (not part of envelope):** pass **`implementer_invocation_index`** on every **orchestrator-issued** `Task(implementer_bot)` (increment per `/workspace/.cursor/skills/dag-execute/SKILL.md` Phase 4 — **not** for `adversary_bot` sub-tasks the implementer spawns). Pass **`existing_mr_iid`** when the MR already exists. **`pnpm install --frozen-lockfile`** followed by **`pnpm build`** runs **only when that index first reaches the worktree** (`== 1`) except manifest/bootstrap exceptions — see **`implementer_bot.md`** **Dependency install**. Phase **4a** runs **`pnpm build`** immediately after **`pnpm install`** at worktree bootstrap.
+**Orchestrator → prompt (not part of envelope):** pass **`implementer_invocation_index`** on every **orchestrator-issued** `Task(implementer_bot)` (increment per **`/workspace/.cursor/skills/gitlab-issue-dag-orchestration/SKILL.md`** Phase 4 — **not** for `adversary_bot` sub-tasks the implementer spawns). Pass **`existing_mr_iid`** when the MR already exists. **`pnpm install --frozen-lockfile`** followed by **`pnpm build`** runs **only when that index first reaches the worktree** (`== 1`) except manifest/bootstrap exceptions — see **`implementer_bot.md`** **Dependency install**. Phase **4a** runs **`pnpm build`** immediately after **`pnpm install`** at worktree bootstrap.
 
 ### `ui_bot.payload`
 

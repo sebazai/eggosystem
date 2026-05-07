@@ -1,25 +1,31 @@
 ---
-name: dag-execute
-description: Execute a GitLab issue through the DAG-driven multi-agent pipeline — Product → Decompose → Architecture (HITL) → DAG implementation (parallel) → Final Review → human merge. Strict JSON envelope contract; one MR per task.
+name: gitlab-issue-dag-orchestration
+description: Orchestrates a GitLab issue end-to-end via the multi-agent DAG harness (product → decompose → architecture HITL → parallel MR implementation with CI gates → final review → human merge). Parses strict JSON envelopes; one MR per task. Invoked by skill name; optional client wrappers live under .cursor/commands and .claude/commands.
 disable-model-invocation: true
 ---
 
-# dag-execute (Cursor skill)
+# GitLab issue DAG orchestration
 
-Orchestration playbook for **`/dag-execute`**; same behavior as [.claude/commands/dag-execute.md](../../../.claude/commands/dag-execute.md). Under Cursor this skill is the user-invoked entry point (slash commands are a Claude Code feature).
+**Client wrappers:** Some setups expose a slash or palette command as a one-line pointer to this file under `.cursor/commands/` or `.claude/commands/`. Prefer naming this skill explicitly in agent prompts.
+
+**Canonical copy:** `.cursor/skills/gitlab-issue-dag-orchestration/SKILL.md`; mirror: `.claude/skills/gitlab-issue-dag-orchestration/SKILL.md`.
 
 ## How to invoke
 
-Open a Cursor chat and ask the agent to run the **dag-execute** skill for GitLab issue IID `<iid>`, or paste the issue link. Optional extra tokens after the IID are passed as context to every subagent prompt (same as `$ARGUMENTS` in the command file).
+- **Via client wrapper (if present):** same `$ARGUMENTS` as below (issue IID first, optional trailing context).
+- **Via skill name:** issue IID is the **first token**; remaining tokens are optional context copied into every nested agent prompt.
+
+**Agent specs:** Prefer **`/workspace/.cursor/agents/<agent>.md`** (`.claude/agents/` mirrors the same harness when present).
+
+**GitLab MCP:** Tool/function names vary by wiring (`mcp__GitLab__*` vs `mcp__gitlab_mcp__*`; `project` vs `project_id`). Use the MCP schema exposed in **your** session; examples below use `mcp__gitlab_mcp__*`/`project_id` — substitute equivalent calls when your server uses different identifiers.
 
 ---
 
-# /dag-execute — DAG-driven multi-agent pipeline
+# Playbook
 
 Orchestrate a GitLab issue end-to-end via 10 specialized agents (`product_bot`, `decomposer_bot`, `architect_bot`, `implementer_bot`, `ui_bot`, `adversary_bot`, `code_review_bot`, `final_review_bot`, `devops_bot`, `observer_bot`). Each agent returns a strict JSON envelope per `/workspace/.cursor/skills/json-handoff/SKILL.md`. You (the orchestrator) parse those envelopes, coordinate worktrees, manage branch dependencies, and gate the human at four HITL points. **Pre-MR** `adversary_bot` is spawned **by** `implementer_bot` (not as a separate top-level orchestrator `Task` in §4b).
 
-**Arguments**: `$ARGUMENTS`
-First token = GitLab issue IID. Remaining tokens = optional context appended to every subagent prompt.
+**Arguments**: `$ARGUMENTS` — first token = GitLab issue IID; remainder = optional context for every subagent prompt.
 
 You are NOT any single agent. You ONLY parse envelopes and dispatch `Task` calls.
 
@@ -29,26 +35,105 @@ You are NOT any single agent. You ONLY parse envelopes and dispatch `Task` calls
 
 1. `/workspace/.cursor/skills/json-handoff/SKILL.md` — envelope contract.
 2. `/workspace/CLAUDE.md` — repo conventions (RTK prefix, hooks, gates, branching).
-3. The system reminder for project remote: `rtk git remote -v` to derive `<group/project>` for GitLab MCP calls.
+3. `/workspace/.cursor/agents/dag-orchestration.md` — branching, worktrees, merge train, quality gates, hooks overview.
+4. The system reminder for project remote: `rtk git remote -v` to derive `<group/project>` for GitLab MCP calls.
 
 ---
 
 ## Phase 0 — Preparation
 
 1. Parse `<iid>` from `$ARGUMENTS`.
-2. Derive `<group/project>` from `rtk git remote -v`.
-3. `mcp__gitlab_mcp__get_issue(project_id=<group/project>, issue_iid=<iid>)`.
-4. Refuse to proceed if:
+2. Parse optional **mode tokens** from the remaining `$ARGUMENTS`:
+   - If any token equals `continue` or `resume` (case-insensitive), set `resume_mode=true`.
+3. Derive `<group/project>` from `rtk git remote -v`.
+4. `mcp__gitlab_mcp__get_issue(project_id=<group/project>, issue_iid=<iid>)`.
+5. Refuse to proceed if:
    - Issue not found.
    - Issue has label `needs-human-decision` → print issue summary and stop.
-5. Print a status card:
+6. Print a status card:
 
 ```
 Issue #<iid>: <title>
 Labels: <labels>
-Pipeline: /dag-execute
+Pipeline: gitlab-issue-dag-orchestration
 Phase: 0 → preparation OK
 ```
+
+---
+
+## Phase 0b — Resume / state reconstruction (ONLY when `resume_mode=true`)
+
+**Goal:** before spawning _any_ agent, reconstruct the pipeline’s last known state from **GitLab Issue notes + GitLab MRs + local git state** so that `... <iid> continue` never restarts from Phase 1 unless the issue has no prior run artifacts.
+
+### 0b.1 Pull canonical state from GitLab Issue notes
+
+1. Fetch issue notes (ascending by creation time).
+2. Identify the most recent notes with these headings (prefer the last occurrence of each):
+   - `## Stories (product_bot)`
+   - `## Task DAG (decomposer_bot)`
+   - `## Architecture (architect_bot)`
+3. If `## Task DAG (decomposer_bot)` exists, **treat it as canonical tasks[]** for the resume run. Do **not** respawn `decomposer_bot` unless the DAG note is missing or obviously malformed.
+4. If `## Stories (product_bot)` exists, reuse it as canonical stories/KPIs. Do **not** respawn `product_bot` unless the note is missing.
+5. Determine whether architecture is approved:
+   - If issue has label `architecture-approved`, treat Phase 3 as complete.
+   - Else if an Architecture note exists but the label is missing, treat as **HITL pending** (do not proceed into Phase 4 automatically).
+
+### 0b.2 Discover existing merge requests for this issue
+
+Use _both_ strategies; union the results:
+
+- **Branch pattern**: list MRs whose `source_branch` matches `feat-<iid>-*`.
+- **Issue linkage**: list MRs that mention or close `#<iid>` (when available in your GitLab).
+
+For each MR found, capture:
+
+- `mr_iid`, `web_url`
+- `source_branch`
+- `target_branch`
+- `draft` status
+- latest head SHA
+- pipeline status (if available)
+
+### 0b.3 Inspect local repo state (detect in-progress work)
+
+Run these from the repo root:
+
+- `rtk git status --porcelain=v1`
+- `rtk git diff`
+- `rtk git diff --staged`
+- `rtk git worktree list`
+
+If any `/workspace/.worktrees/<iid>-<task_id>` worktrees exist, treat them as **active** task workspaces and prefer them over re-creating worktrees in §4a.
+
+### 0b.4 Rehydrate per-task trackers (state / branch / mr_iid)
+
+Given canonical `tasks[]` from the DAG note:
+
+- Compute expected branch name prefix: `feat-<iid>-<t.id>-`
+- Match each `t` to an MR by `source_branch` prefix (preferred), else leave unmatched.
+- Initialize `t.branch` from MR `source_branch` when present; else from the expected scheme.
+- Initialize `t.worktree_path` if a matching worktree exists; else leave empty.
+
+Infer `t.state` conservatively:
+
+- **If MR exists and is Draft**: `review` (unless you have evidence code review already approved and CI running).
+- **If MR exists and code review was approved (via your own MR notes)**: `ci` (until devops says ready).
+- **If MR exists and pipeline for head SHA is green**: `completed`.
+- **If MR does not exist**: `pending` (do not spawn implementer unless `impl_ready`).
+
+### 0b.5 Continue from the correct phase
+
+- If Stories/DAG/Architecture artifacts are missing: continue from the earliest missing phase (1, 2, or 3).
+- If architecture is not approved: stop at HITL gate #1.
+- If architecture is approved: continue at Phase 4 using the reconstructed per-task tracker table.
+
+### 0b.6 Post a checkpoint note (required)
+
+After reconstruction, post a GitLab issue note titled `## DAG Resume Checkpoint` containing:
+
+- Phase you will continue from
+- For each task: `id`, `title`, inferred `state`, `branch`, `mr_iid` (if any), `worktree_path` (if any)
+- Whether local repo has unstaged/staged changes (yes/no; never paste secrets)
 
 ---
 
@@ -75,7 +160,7 @@ Spawn `decomposer_bot`:
 
 ```
 Task(subagent_type=decomposer_bot,
-     prompt="Read /workspace/.cursor/agents/decomposer_bot.md. Given these stories: <inline product_bot.payload.stories>. Workspace map: apps/backend, apps/frontend, packages/types. Emit optional implements_after_gates per json-handoff (default parent gate completed); for stacked children use mr_opened unless risk requires completed. Return ONLY the JSON envelope.")
+     prompt="Read /workspace/.cursor/agents/decomposer_bot.md. Decompose **liberally** (layer-first: optional db, then backend/frontend; fold packages/types and small helpers into those tasks — no types-only micro-tasks). Given these stories: <inline product_bot.payload.stories>. Workspace map: apps/backend, apps/frontend, packages/types. Emit optional implements_after_gates per json-handoff (default parent gate completed); for stacked children use mr_opened unless risk requires completed. Return ONLY the JSON envelope.")
 ```
 
 Parse. Validate the DAG yourself:
@@ -143,7 +228,7 @@ Also maintain **`implementer_invocation_index`** per task (integer counter for *
 
 - Initialize to **`0`** once **`4a`** has created `<worktree_path>` (same task dispatch; do not reset between Code Review/CI loops).
 - Immediately **before every orchestrator-issued** `Task(implementer_bot)` — first §4b after worktree bootstrap, stuck retries, **`4c`/`4d`/Final Review loops** — do **`implementer_invocation_index += 1`** and pass the new value into the prompt as **`implementer_invocation_index: <n>`**. **Do not** increment for `adversary_bot` calls that the **implementer** spawns internally.
-- **`implementer_bot`** runs **`rtk pnpm install --frozen-lockfile`** then **`rtk pnpm build`** only when **`n == 1`** unless dependency manifests changed or bootstrap failed (see `/workspace/.cursor/agents/implementer_bot.md` **Dependency install**).
+- **`implementer_bot`** runs **`rtk pnpm install --frozen-lockfile`** then **`rtk pnpm build`** only when **`n == 1`** unless dependency manifests changed or bootstrap failed (see `/workspace/.cursor/agents/implementer_bot.md` **Dependency install**). Independently, the implementer should **`rtk pnpm build`** again from the worktree root when **`packages/types`** (or other **`dist/`** consumers) change or when **typecheck / lint / knip** failures look like **stale build output** — not only on **`n == 1`**.
 
 Normalize dependency gates (orchestrator): for each decomposition row `t` in `tasks[]` (plus tracked `state` / `branch` during Phase 4) and parent id **`p`** in **`t.depends_on`**, **`gate(t,p)`** = **`t.implements_after_gates[p]`** when the key exists on the decomposition object, else **`"completed"`** (backward compatible). Define **`parent_satisfies_gate(parent, gate)`** for **`parent`** the upstream tracker row:
 
@@ -194,7 +279,7 @@ Each task `t` runs through these substeps. The orchestrator runs them sequential
 **Goal:** dependents must **reuse prerequisite code**. Two patterns:
 
 1. **Stacked MR (single dependency):** `<base>` **is that task’s branch name** (e.g. `feat-<iid>-T2-slug`). The Draft MR’s **merge target branch = `<base>`**, not `development`, until the parent has merged upstream and you rebase/reparent the child branch onto `development`.
-2. **Integration branch (multiple dependencies):** `<base>` = `development`; after `git worktree add … origin/development`, **merge `origin/<each dep branch>` for every dependency whose gate is already satisfied when evaluating **`impl_ready` for this task** (topo-safe order). **`branch_published` / `mr_opened`** may merge refs **before** the parent reaches **`completed`** — intentional overlap; gate **`completed`\*\* waits for CI-verified tips.
+2. **Integration branch (multiple dependencies):** `<base>` = `development`; after `git worktree add … origin/development`, **merge `origin/<each dep branch>`** for every dependency whose gate is satisfied by **`impl_ready`** (topo-safe order). Gates **`branch_published` / `mr_opened`** permit merges **before** the parent reaches **`completed`** intentionally; gate **`completed`** waits for CI-verified tips.
 
 **Branch discovery:** Resolve parent branch names from **`get_merge_request` / bookkeeping** once the parent satisfies **`mr_opened`** or stricter — **Do not wait for parent CI** when the gate is relaxed (stacked parallelism).
 
@@ -272,34 +357,43 @@ mcp__gitlab_mcp__create_merge_request_note(
 - `verdict="rejected"` and `code_review_rounds < 3` → loop back to §4b with `issues[]` injected; increment counter.
 - `verdict="rejected"` and `code_review_rounds == 3` → HITL gate #2.
 
-#### 4d. DevOps (parallel-foreground — do not block unrelated work)
+#### 4d. DevOps — do not block unrelated Phase 4 work
 
-After **code review** approves (`state=ci`), dispatch `devops_bot` as a **foreground Task in the same parallel batch** as any other independent ready work. Do not await it before dispatching other tasks — send all in one message.
+After **code review** approves (`state=ci`), drive CI to completion **without** serializing the whole orchestrator:
+
+1. **Prefer background dispatch** when nested `Task` supports **`run_in_background=true`:**
 
 ```
 Task(subagent_type=devops_bot,
+     run_in_background=true,
      prompt="Read /workspace/.cursor/agents/devops_bot.md. Project (GitLab MCP project_id): <group/project>. MR: !<mr_iid>. Branch: <branch>. Return ONLY the JSON envelope.")
 ```
 
-- When several MRs need CI at once, issue **one `devops_bot` per MR** in the **same** message (parallel foreground tasks).
-- When CI failure loops back to §4b, include **`existing_mr_iid`** in the `implementer_bot` prompt — MR already exists; push updates.
+- Track tasks in `ci` as **awaiting** a `devops_bot` envelope (notification or handoff). **Do not** synchronously block the main session if other independent tasks can proceed.
 
-Apply the envelope:
+2. **Otherwise** (no background tasks): dispatch **`devops_bot` as a foreground nested `Task` in the same parallel batch** as any other independent ready work — send all `Task` calls in **one** message; do not await one before issuing the rest.
+
+- When several MRs need CI at once, issue **one `devops_bot` per MR** in the **same** message (parallel background tasks **or** parallel foreground tasks, per above).
+- When CI failure loops back to §4b, include **`existing_mr_iid`** in the `implementer_bot` prompt — MR already exists; push updates only.
+
+Apply each `devops_bot` envelope when it arrives:
 
 - `status="ready"` → `state=completed`.
 - `status="failed"` → loop back to §4b with `checks[]` failures; increment `gate_rounds`.
-- `status="running"` (timeout) → spawn one follow-up `devops_bot`; if still `running`, escalate / HITL.
+- `status="running"` (timeout) → spawn one follow-up `devops_bot` (background or foreground per platform); if still `running`, escalate / HITL.
 
-**Fallback**: if `devops_bot` cannot reach GitLab MCP, the orchestrator may poll CI directly using `mcp__gitlab_mcp__get_merge_request` and inspect `deployment_summary[0].pipeline.status` for the MR's head SHA.
+**Fallback:** if `devops_bot` cannot reach GitLab MCP, poll CI via **`get_merge_request`** and inspect `deployment_summary[0].pipeline.status` for the MR head SHA.
+
+**Synchronous blocking `devops_bot`** is allowed only when deliberately waiting (single-task issue, human asked to wait, debugging). Default: **non-blocking** paths above.
 
 #### 4e. CI reconciliation and outer loop
 
 Tasks stay in **`ci`** until their `devops_bot` outcome is applied. The Phase 4 loop’s **`reconcile_ci_outcomes()`** step MUST:
 
-1. Wait on or collect each outstanding background `devops_bot` completion (platform notification, documented background handoff, or a **short** GitLab MCP poll for MR pipeline status if the envelope was lost).
-2. Parse the JSON envelope and apply §4d transitions (`completed` vs re-enter 4b).
+1. Collect each outstanding `devops_bot` result (background completion, parallel foreground return, or **short** GitLab MCP poll if an envelope was lost).
+2. Parse the JSON envelope and apply §4d transitions (`completed` vs re-enter §4b).
 
-When applying **`completed`**, if the **`devops_bot` envelope referenced an older HEAD** than **`get_merge_request` diff head** for that MR, **re-run `devops_bot` (background)** on the latest SHA before marking **`completed`** (or poll until MR pipeline for current head succeeds).
+When applying **`completed`**, if the **`devops_bot` envelope referenced an older HEAD** than **`get_merge_request` diff head** for that MR, **re-run `devops_bot`** on the latest SHA (background if supported) before marking **`completed`** (or poll until the MR pipeline for the current head succeeds).
 
 Do **not** enter Phase 5 until every task is **`completed`** (code review done **and** CI green **for the HEAD that will merge** — see rule above).
 
@@ -375,14 +469,14 @@ Pipeline done.
 Issue: #<iid>
 Tasks: <count> total, <merged> merged, <skipped> skipped, <stuck> stuck
 Worktrees cleaned: yes
-Run /observe <mr_iid> to analyze post-merge health (optional).
+Run skill **`analyze-merged-merge-request-health`** for post-merge analysis (optional; client may expose a wrapper in `.cursor/commands/` / `.claude/commands/`).
 ```
 
 ---
 
-## Phase 7 — Observe (manual, async)
+## Phase 7 — Post-merge MR health (manual, async)
 
-NOT auto-invoked. The user runs `/observe <mr_iid>` later if they want post-merge analysis.
+NOT auto-invoked. The user runs skill **`analyze-merged-merge-request-health`** with `<mr_iid>` later for post-merge analysis (or the matching client wrapper, if configured).
 
 ---
 
@@ -419,10 +513,10 @@ If your own JSON parse fails (agent output not envelope-shaped):
 - Approving or merging MRs (`mcp__gitlab_mcp__approve_merge_request`, `mcp__gitlab_mcp__merge_merge_request`). Always human.
 - Skipping HITL gates because "it looks fine."
 - Running tasks serially that have no dependency on each other (parallel dispatch is REQUIRED — single-message-multi-Task-call).
-- Awaiting `devops_bot` before dispatching other independent ready Phase 4 work — dispatch it in the same parallel batch.
+- Awaiting **`devops_bot` synchronously** when other independent Phase 4 work could proceed — default to **background `devops_bot`** when supported, else **parallel foreground batch** (§4d–§4e).
 - Skipping the GitLab MR note after code review — the note is required every round regardless of verdict.
 - Ignoring **`implements_after_gates`** — implement start readiness is **`impl_ready`** per `/workspace/.cursor/skills/json-handoff/SKILL.md`; **`completed`** stays CI-gated.
-- Mutating CLAUDE.md, AGENTS.md, .claude/, .cursor/ — these are harness files; agents must not edit their own definitions.
+- Mutating CLAUDE.md, AGENTS.md, .cursor/agents/dag-orchestration.md, .claude/, .cursor/ — these are harness files; agents must not edit their own definitions.
 
 ---
 

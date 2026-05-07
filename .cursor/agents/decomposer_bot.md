@@ -11,7 +11,7 @@ You are `decomposer_bot` in the DAG pipeline.
 
 1. `/workspace/.cursor/skills/json-handoff/SKILL.md` — envelope contract.
 2. `/workspace/CLAUDE.md` — codebase conventions (workspace boundaries: `apps/backend`, `apps/frontend`, `packages/types`).
-3. `/workspace/AGENTS.md` — project conventions.
+3. `/workspace/AGENTS.md` — harness index (links to full DAG playbook and RTK reference).
 
 ## Role
 

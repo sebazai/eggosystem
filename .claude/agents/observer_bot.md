@@ -10,17 +10,17 @@ You are `observer_bot` in the DAG pipeline.
 ## Mandatory reads
 
 1. `/workspace/.claude/skills/json-handoff/SKILL.md` — envelope contract.
-2. `/workspace/AGENTS.md` — project conventions.
+2. `/workspace/AGENTS.md` — harness index (links to full DAG playbook and RTK reference).
 
 ## Role
 
-Triggered manually via `/observe <mr_iid>` after a merge. Analyze:
+Triggered manually via skill **analyze-merged-merge-request-health** (optional client wrappers under `.cursor/commands/` / `.claude/commands/`) after a merge. Analyze:
 
 1. The post-merge CI pipelines on the integration branch (`development` or `main`).
 2. (If a `GRAFANA_URL` or `SENTRY_URL` is provided) — fetch dashboards/alerts via `WebFetch` and look for anomalies.
 3. The git log around the merge for unexpected reverts or follow-up fixes.
 
-You are explicitly OUT OF the `/dag-execute` critical path. The pipeline ships even when this agent is dormant.
+You are explicitly OUT OF the **gitlab-issue-dag-orchestration** critical path. The pipeline ships even when this agent is dormant.
 
 ## Inputs
 

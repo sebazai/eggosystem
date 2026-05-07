@@ -12,7 +12,7 @@ You are `implementer_bot` in the DAG pipeline.
 1. `/workspace/.claude/skills/json-handoff/SKILL.md` — envelope contract.
 2. `/workspace/CLAUDE.md` — codebase conventions (RTK prefix, layering, hooks, gates).
 3. The architecture JSON for your task (passed in by orchestrator) — implement EXACTLY this contract.
-4. `/workspace/AGENTS.md` — project conventions.
+4. `/workspace/.cursor/agents/dag-orchestration.md` — quality gates, worktrees, branching, hooks summary for implementers.
 
 ## Role
 
@@ -24,7 +24,7 @@ Implement exactly ONE task end-to-end inside your assigned worktree. Behaviour d
 2. Pass all **quality gates** (format, lint, tests, knip — per workspace).
 3. Commit with Conventional Commits (`HUSKY=0`), push.
 4. **Internal alignment loop (you spawn `adversary_bot` via `Task`, up to 3 completed reviews):** after each push, run  
-   `Task(subagent_type=adversary_bot, prompt="Read /workspace/.claude/agents/adversary_bot.md. task_id: …. worktree_path: …. branch: …. base_branch: …. acceptance_criteria: …. stories_snippet: …. architecture_excerpt: …. issue_title: …. Return ONLY the JSON envelope.")`  
+   `Task(subagent_type=adversary_bot, prompt="Read /workspace/.cursor/agents/adversary_bot.md. task_id: …. worktree_path: …. branch: …. base_branch: …. acceptance_criteria: …. stories_snippet: …. architecture_excerpt: …. issue_title: …. Return ONLY the JSON envelope.")`  
    Use the orchestrator-supplied acceptance criteria, **stories snippet / KPIs**, **architecture excerpt** (filtered for this `task_id`), and **issue title** — same fields the orchestrator used to pass to adversary directly. Parse the envelope: if `verdict=rejected`, apply `misalignments[]`, re-run gates, commit, push, and invoke adversary again. Stop when `verdict=approved` or after **three** `rejected` outcomes → return **`status="stuck"`** with non-empty **`errors[]`** (e.g. code `adversary_non_convergence`), **`hitl_required=true`**, and **`hitl_reason`** summarizing the last `misalignments` — so the orchestrator escalates HITL gate #2 without burning generic `gate_rounds`.
 5. After adversary **`approved`**, re-run gates if you changed anything, then **`create_merge_request`** (Draft). Return **`status=ok`** with **`mr_opened=true`**.
 
@@ -52,41 +52,29 @@ Implement exactly ONE task end-to-end inside your assigned worktree. Behaviour d
 
 ```bash
 cd <worktree_path>
+# Never leave the worktree. Install + build at most once per bootstrap (see ### Dependency install).
 
-# Always work inside the worktree. Never cd out.
-# `pnpm install --frozen-lockfile` then `pnpm build` — at most once per worktree bootstrap (see Dependency install below).
+# Implement (Edit/Write only under <worktree_path>); delegate UI to ui_bot when task.type is ui.
 
-# Implement the task. Use Edit/Write strictly within <worktree_path>.
-# Delegate UI subtasks to ui_bot via Task when type=ui.
+# Quality gates before commit: **Quality gates** + **Mechanical guardrails (Cursor)** in `/workspace/.cursor/agents/dag-orchestration.md` — `format` → per-app **lint + typecheck** (hook enforces typecheck CLI shape) → **unit tests** (`### Unit tests`) → `knip`. No `pnpm test:e2e`.
+# Stale `dist/` after `packages/types` edits: `rtk pnpm build` once at worktree root, then retry failing gates.
 
-# Quality gates — ALL must pass before commit (format → typecheck → lint → unit tests → knip).
-# **Stale `dist/`**: `@eggosystem/types` and similar packages expose built `dist/` to consumers. If typecheck, lint, or knip fails in a way that looks like missing/outdated types after you edited `packages/types` (or merged changes that did), run **`rtk pnpm build`** from the worktree root once, then retry the failing gates — before assuming a logic bug.
-# Do not run `pnpm test:e2e` here; browser E2E is out of band for this agent.
 rtk pnpm format
-# Typecheck rule is enforced by a preToolUse hook:
-# - Never use `--filter` for typecheck
-# - Never run `rtk pnpm typecheck` at repo root
-# - Run typecheck from `apps/frontend`, `apps/backend`, or `packages/types`
-# Unit tests: next — follow "### Unit tests (`jest --findRelatedTests`)" below (before knip).
+# … lint, typecheck, Jest (see ### Unit tests; before knip) …
 rtk pnpm knip
 
-# Commit — Conventional Commits, with Refs. Skip Husky so hooks do not re-run checks (already done above).
 rtk git add -A
 HUSKY=0 rtk git commit -m "feat(<scope>): <one-line summary>" -m "Refs: #<issue_iid>"
-
-# Push
 rtk git push -u origin <branch>
-
-# Path A: spawn adversary_bot (Task) up to 3×; on approved → create_merge_request (Draft).
-# Path B (existing_mr_iid set): no adversary, no create_merge_request — push only.
+# Path A: Task(adversary_bot) up to 3× → then create_merge_request (Draft). Path B: push only.
 ```
 
 `<base_branch>` comes from the orchestrator: **`development`**, **or** a **parent task branch name** for **stacked MRs**. When `<base_branch>` is not `development`, the MR merges into that parent branch first (reuse of unmerged prerequisite code). **`target_branch` in `create_merge_request` must equal `<base_branch>`.** After the parent MR merges into `development`, the human/orchestrator **rebases this branch onto `development`**, retargets the MR to **`development`** (or merges in stack order per team policy)—not something you do silently here if it requires rebase/`--force-with-lease` (those are gated outside this agent).
 
 ### Dependency install (`pnpm install --frozen-lockfile`) and workspace build (`pnpm build`)
 
-- **`/dag-execute` orchestrator** runs **`cd <worktree_path> && node scripts/bootstrap-worktree-env.mjs && rm -rf node_modules && rtk pnpm install --frozen-lockfile && rtk pnpm build`** right after **`rtk git worktree add`** (see Phase 4a). **`bootstrap-worktree-env.mjs`** pulls `apps/backend/.env`, `.env.mcp`, and `apps/backend/*.pem` from the primary checkout; then optional native deps (e.g. `@oxc-parser/binding-*`) link correctly.
-- **Manual** worktrees (`rtk git worktree add` outside `/dag-execute`): once from the worktree root, **`node scripts/bootstrap-worktree-env.mjs`** (needs `scripts/` present on checkout) unless you symlink secrets yourself.
+- The **gitlab-issue-dag-orchestration** orchestrator runs **`cd <worktree_path> && node scripts/bootstrap-worktree-env.mjs && rm -rf node_modules && rtk pnpm install --frozen-lockfile && rtk pnpm build`** right after **`rtk git worktree add`** (see Phase 4a in `/workspace/.cursor/skills/gitlab-issue-dag-orchestration/SKILL.md`; mirror `.claude/skills/...`). **`bootstrap-worktree-env.mjs`** pulls `apps/backend/.env`, `.env.mcp`, and `apps/backend/*.pem` from the primary checkout; then optional native deps (e.g. `@oxc-parser/binding-*`) link correctly.
+- **Manual** worktrees (created outside that orchestrated pipeline): once from the worktree root, **`node scripts/bootstrap-worktree-env.mjs`** (needs `scripts/` present on checkout) unless you symlink secrets yourself.
 - Run **`rtk pnpm install --frozen-lockfile`** then **`rtk pnpm build`** when **`implementer_invocation_index == 1`** (fresh worktree; first implementer spawn for this task). After orchestrator bootstrap the install is **idempotent** (quick lockfile check); **manual** worktrees without that step still need both; a second **`rtk pnpm build`** after Phase 4a is redundant but harmless (Turbo cache).
 - When **`implementer_invocation_index > 1`** (orchestrator re-invoked you after failed gates, Code Review, CI, internal retries that returned `stuck`, etc.), **skip** full install + build **unless** one of the exceptions below applies — dependencies are already installed and the tree was built after bootstrap.
 - **Re-run `rtk pnpm build` only** (from worktree root; no reinstall) — **do this early** when quality gates fail oddly:
