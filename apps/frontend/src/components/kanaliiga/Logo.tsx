@@ -26,7 +26,7 @@ export function Logo({
   const src =
     variant === "mark"
       ? "/images/kanaliiga/kanaliiga-logo-250px.png"
-      : "/images/kanaliiga/kanaliiga-logo-1000px.png";
+      : "/images/kanaliiga/kanaliiga-logo-500px.png";
 
   return (
     <Image
