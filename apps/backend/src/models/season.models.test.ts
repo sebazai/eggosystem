@@ -64,7 +64,11 @@ describe("Season Models", () => {
           seasonData.early_bird_price_discount,
           seasonData.early_bird_price_discount_end_date,
           seasonData.rulebook_url,
-          seasonData.discord_link
+          seasonData.discord_link,
+          seasonData.faceit_rank_required ?? false,
+          seasonData.premier_rank_required ?? false,
+          seasonData.profile_link_required ?? false,
+          seasonData.hours_played_required ?? false
         ],
         mockConnection
       );
@@ -143,6 +147,10 @@ describe("Season Models", () => {
           seasonData.early_bird_price_discount_end_date,
           seasonData.rulebook_url,
           seasonData.discord_link,
+          seasonData.faceit_rank_required ?? false,
+          seasonData.premier_rank_required ?? false,
+          seasonData.profile_link_required ?? false,
+          seasonData.hours_played_required ?? false,
           seasonId
         ],
         mockConnection
