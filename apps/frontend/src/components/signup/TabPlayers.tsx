@@ -130,8 +130,8 @@ export const TabPlayers = ({
       player.hasValidData === true &&
       player.hasValidWorkEmail === true &&
       player.isEmailVerified === true &&
-      player.rank !== -1 &&
-      (!seasonDetails.premier_rank_required || player.externalRank !== -1) &&
+      (!seasonDetails.premier_rank_required || player.rank !== -1) &&
+      (!seasonDetails.faceit_rank_required || player.externalRank !== -1) &&
       (!seasonDetails.hours_played_required || player.hours !== -1)
     );
   };
@@ -580,7 +580,7 @@ export const TabPlayers = ({
           player.isEmailVerified !== true ||
           (seasonDetails.hours_played_required && player.hours === -1) ||
           (seasonDetails.premier_rank_required && player.rank === -1) ||
-          (seasonDetails.premier_rank_required &&
+          (seasonDetails.faceit_rank_required &&
             player.externalRank === -1 &&
             platform !== SeasonPlatform.Kanaliiga));
       return error;

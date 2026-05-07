@@ -20,28 +20,43 @@ export const useSeasonDetails = (
   const [isValidating] = useState(false);
 
   useEffect(() => {
-    if (!seasonId) return;
+    if (!seasonId) {
+      setIsLoading(false);
+      return;
+    }
+
+    let stale = false;
 
     const fetchSeasonDetails = async () => {
       setIsLoading(true);
       setIsError(null);
       try {
         const data: SeasonDetails = await clientApiFetch<SeasonDetails>(
-          `/api/v1/dashboard/seasons/${seasonId}`
+          `/api/v1/seasons/${seasonId}/details`
         );
-        setSeasonDetails(data);
+        if (!stale) {
+          setSeasonDetails(data);
+        }
       } catch (error) {
-        if (error instanceof Error) {
-          setIsError(error);
-        } else {
-          setIsError(new Error("Unknown error occurred"));
+        if (!stale) {
+          if (error instanceof Error) {
+            setIsError(error);
+          } else {
+            setIsError(new Error("Unknown error occurred"));
+          }
         }
       } finally {
-        setIsLoading(false);
+        if (!stale) {
+          setIsLoading(false);
+        }
       }
     };
 
     fetchSeasonDetails();
+
+    return () => {
+      stale = true;
+    };
   }, [seasonId]);
 
   return {
