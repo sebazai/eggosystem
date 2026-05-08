@@ -95,4 +95,4 @@ User request
 - **devops_bot runs foreground-parallel** — dispatched in the same `Task` batch as other ready work; never blocks the orchestrator loop.
 - **Code review posts to GitLab** — orchestrator calls `mcp__gitlab_mcp__create_merge_request_note` after every `code_review_bot` response, regardless of verdict.
 - **Stacked MRs** — child tasks targeting a parent branch merge into `development` after parent merges (orchestrator rebases and retargets).
-- **All GitLab MCP tools use `mcp__gitlab_mcp__*` names** (not `mcp__GitLab__*`).
+- **All GitLab MCP tools use `mcp__gitlab_mcp__*` names** (not `mcp__gitlab_mcp__*`).

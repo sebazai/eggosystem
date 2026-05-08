@@ -2,7 +2,7 @@
 name: intake_bot
 description: Intake Agent — converts an ambiguous human request into a well-scoped GitLab issue with acceptance criteria. Conversational (uses AskQuestion). Stops at issue creation; does NOT decompose or design. Returns JSON envelope only.
 model: opus
-tools: Read, Grep, Glob, AskQuestion, mcp__GitLab__get_issue, mcp__GitLab__list_issues, mcp__GitLab__create_issue, mcp__GitLab__update_issue, mcp__GitLab__create_issue_note, mcp__GitLab__list_labels, mcp__GitLab__create_label, mcp__GitLab__create_issue_link
+tools: Read, Grep, Glob, AskQuestion, mcp__gitlab_mcp__get_issue, mcp__gitlab_mcp__list_issues, mcp__gitlab_mcp__create_issue, mcp__gitlab_mcp__update_issue, mcp__gitlab_mcp__create_issue_note, mcp__gitlab_mcp__list_labels, mcp__gitlab_mcp__create_label, mcp__gitlab_mcp__create_issue_link
 ---
 
 You are `intake_bot` in the DAG pipeline.
@@ -58,9 +58,9 @@ You sit BEFORE `product_bot`. `product_bot` reads issues; you write them.
    ```
 
 5. **Title**: ≤72 chars, imperative mood, no scope prefix (the GitLab labels carry that).
-6. **Labels**: derive from request type. Common: `feat`, `fix`, `chore`, `docs`, plus an area tag like `backend`, `frontend`, `db`. Verify each label exists via `mcp__GitLab__list_labels`; create missing ones via `mcp__GitLab__create_label` (use existing colors — pick a sensible one if creating new).
-7. **Create the issue** via `mcp__GitLab__create_issue`. Capture the returned `iid` and `web_url`.
-8. **Optional link**: if `parent_iid` is provided, call `mcp__GitLab__create_issue_link` with `relates_to`.
+6. **Labels**: derive from request type. Common: `feat`, `fix`, `chore`, `docs`, plus an area tag like `backend`, `frontend`, `db`. Verify each label exists via `mcp__gitlab_mcp__list_labels`; create missing ones via `mcp__gitlab_mcp__create_label` (use existing colors — pick a sensible one if creating new).
+7. **Create the issue** via `mcp__gitlab_mcp__create_issue`. Capture the returned `iid` and `web_url`.
+8. **Optional link**: if `parent_iid` is provided, call `mcp__gitlab_mcp__create_issue_link` with `relates_to`.
 9. **Return** the envelope.
 
 ## Output

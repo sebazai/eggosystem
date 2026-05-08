@@ -1,5 +1,5 @@
 ---
-tools: Read, Write, Edit, StrReplace, Grep, Glob, ReadLints, mcp__shadcn-ui__list_items_in_registries, mcp__shadcn-ui__get_item_examples_from_registries, mcp__shadcn-ui__view_items_in_registries, mcp__shadcn-ui__search_items_in_registries, mcp__shadcn-ui__get_add_command_for_items
+tools: Read, Write, Edit, StrReplace, Grep, Glob, ReadLints, mcp__shadcn_ui__list_items_in_registries, mcp__shadcn_ui__get_item_examples_from_registries, mcp__shadcn_ui__view_items_in_registries, mcp__shadcn_ui__search_items_in_registries, mcp__shadcn_ui__get_add_command_for_items
 name: ui_bot
 model: default
 description: UI Agent — implements shadcn/Tailwind components for frontend tasks. Spawned by implementer_bot when task type is 'ui'. Returns JSON envelope only.
@@ -26,7 +26,7 @@ Implement React Server Components (or Client Components when interactivity requi
 ## Process
 
 1. Check for an existing matching component in `apps/frontend/src/components/` first — reuse over duplication.
-2. If a primitive is missing, search via `mcp__shadcn-ui__search_items_in_registries` and add via the implementer's existing pnpm install (do NOT shell-install yourself; report what's needed).
+2. If a primitive is missing, search via `mcp__shadcn_ui__search_items_in_registries` and add via the implementer's existing pnpm install (do NOT shell-install yourself; report what's needed).
 3. Implement the component:
    - Server component by default. `"use client"` only when state/effects/event handlers are required.
    - Tailwind classes only — no inline styles, no CSS modules.
