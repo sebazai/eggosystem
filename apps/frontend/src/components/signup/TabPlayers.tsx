@@ -599,7 +599,17 @@ export const TabPlayers = ({
           (p) => p.steamId === player.steamId && p.steamId !== ""
         ).length > 1;
 
-      if (loadingStates[index] === undefined && !isDuplicate) {
+      // Skip rows we have not yet processed: no loading transition has been
+      // observed AND no validation data has been loaded AND it is not a
+      // duplicate. Treating prefilled `hasValidData` as "loading completed"
+      // ensures the open-on-error effect also fires in edit mode and in unit
+      // tests where players are seeded with validation data directly.
+      const hasLoadedData = player.hasValidData !== undefined;
+      if (
+        loadingStates[index] === undefined &&
+        !hasLoadedData &&
+        !isDuplicate
+      ) {
         continue;
       }
 

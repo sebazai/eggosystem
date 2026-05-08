@@ -255,6 +255,10 @@ export const SignupForm = ({
     validTeamExternalIdInForm.success &&
     !!validExternalTeamId;
 
+  // validPlayerSelection is the actual submit-blocking gate (combined into
+  // canSubmit below). It must mirror TabPlayers.playerHasErrors so that
+  // disabled season requirement flags do not falsely block submission
+  // (S1-AC-1: form is submittable when an optional check is turned off).
   const validPlayerSelection =
     validPlayers.success &&
     watchPlayers.every(
@@ -262,10 +266,12 @@ export const SignupForm = ({
         p.hasValidData &&
         p.hasValidWorkEmail === true &&
         p.isEmailVerified === true &&
-        p.rank !== -1 &&
-        (p.externalRank !== -1 ||
+        (!seasonDetails?.premier_rank_required || p.rank !== -1) &&
+        (!seasonDetails?.faceit_rank_required ||
+          p.externalRank !== -1 ||
           seasonDetails?.platform === SeasonPlatform.Kanaliiga) &&
-        p.hours !== -1
+        (!seasonDetails?.hours_played_required || p.hours !== -1) &&
+        (!seasonDetails?.profile_link_required || p.hours !== -1)
     );
 
   // Real-time captain/co-captain validation
