@@ -1110,8 +1110,7 @@ export const TabPlayers = ({
                     )}
 
                   {player.hours === -1 &&
-                    (seasonDetails.hours_played_required ||
-                      seasonDetails.profile_link_required) && (
+                    seasonDetails.hours_played_required && (
                       <SignupPlayerNotification
                         data-testid={`hours-error-${index}`}
                       >
@@ -1133,6 +1132,36 @@ export const TabPlayers = ({
                             users can see my game details&quot;
                           </strong>{" "}
                           option is <strong>unchecked</strong>.<br />
+                          <em>
+                            Note: Changes to Steam privacy settings may take a
+                            few minutes to take effect.
+                          </em>
+                          <br />
+                          If the profile is correctly set to public and the
+                          issue persists, please open a ticket in the Kanaliiga
+                          Discord.
+                        </span>
+                      </SignupPlayerNotification>
+                    )}
+
+                  {player.hours === -1 &&
+                    seasonDetails.profile_link_required &&
+                    !seasonDetails.hours_played_required && (
+                      <SignupPlayerNotification
+                        data-testid={`profile-link-error-${index}`}
+                      >
+                        <span>
+                          Steam profile must be public. Please ensure that the{" "}
+                          <Link
+                            href="https://help.steampowered.com/en/faqs/view/588C-C67D-0251-C276"
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline text-kanaliiga-orange"
+                          >
+                            Steam profile is set to public
+                          </Link>{" "}
+                          so the organizer can verify the player.
+                          <br />
                           <em>
                             Note: Changes to Steam privacy settings may take a
                             few minutes to take effect.

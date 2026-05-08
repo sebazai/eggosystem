@@ -103,13 +103,17 @@ const TestWrapper = ({
   platform = SeasonPlatform.FACEIT,
   seasonSteamAppId = 730,
   seasonId = "16",
-  faceitRankRequired = true
+  faceitRankRequired = true,
+  profileLinkRequired = false,
+  hoursPlayedRequired = false
 }: {
   players: SignupFormValues["players"];
   platform?: SeasonPlatform;
   seasonSteamAppId?: number;
   seasonId?: string;
   faceitRankRequired?: boolean;
+  profileLinkRequired?: boolean;
+  hoursPlayedRequired?: boolean;
 }) => {
   const methods = useForm<SignupFormValues>({
     defaultValues: {
@@ -142,7 +146,9 @@ const TestWrapper = ({
           submitInitiated={false}
           seasonDetails={createMockSeasonDetails({
             platform,
-            faceit_rank_required: faceitRankRequired
+            faceit_rank_required: faceitRankRequired,
+            profile_link_required: profileLinkRequired,
+            hours_played_required: hoursPlayedRequired
           })}
         />
       </Tabs>
@@ -474,5 +480,212 @@ describe("External Rank Error", () => {
         /or open a ticket in the Kanaliiga Discord if the problem persists/
       )
     ).toBeInTheDocument();
+  });
+
+  it("should NOT show external rank error when faceit_rank_required is disabled", () => {
+    const players = [
+      {
+        accountId: 15014,
+        steamId: NoFaceitRankPlayerSteamId,
+        nickname: "NoFaceitRankPlayer",
+        discord: "",
+        captain: false,
+        coCaptain: false,
+        hasValidData: true,
+        hasValidWorkEmail: true,
+        isEmailVerified: true,
+        hours: 1200,
+        rank: 13,
+        externalRank: -1
+      }
+    ];
+
+    render(
+      <TestWrapper
+        players={players}
+        platform={SeasonPlatform.FACEIT}
+        faceitRankRequired={false}
+      />
+    );
+
+    // The external rank notification must not be present in the document at all,
+    // regardless of accordion state.
+    expect(
+      screen.queryByTestId("external-rank-error-0")
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/Could not detect external.*rank for the player/)
+    ).not.toBeInTheDocument();
+  });
+
+  it("should show green/valid visual state when faceit_rank_required is disabled and externalRank is -1", () => {
+    const players = [
+      {
+        accountId: 15014,
+        steamId: NoFaceitRankPlayerSteamId,
+        nickname: "NoFaceitRankPlayer",
+        discord: "",
+        captain: false,
+        coCaptain: false,
+        hasValidData: true,
+        hasValidWorkEmail: true,
+        isEmailVerified: true,
+        hours: 1200,
+        rank: 13,
+        externalRank: -1
+      }
+    ];
+
+    render(
+      <TestWrapper
+        players={players}
+        platform={SeasonPlatform.FACEIT}
+        faceitRankRequired={false}
+      />
+    );
+
+    // The steam-id-input should display the green/valid border class because the
+    // disabled requirement must not contribute to an error state.
+    const steamIdInput = screen.getByTestId("steam-id-input-0");
+    expect(steamIdInput.className).toContain("border-green-500");
+    expect(steamIdInput.className).not.toContain("border-red-500");
+
+    // The accordion item must NOT have been forced open by the error effect —
+    // because there is no error, the open-on-error logic should not trigger.
+    const accordionItem = screen.getByTestId("player-accordion-0");
+    expect(accordionItem.getAttribute("data-state")).toBe("closed");
+  });
+
+  it("should NOT show hours/profile notification when profile_link_required is disabled and hours is -1", () => {
+    const players = [
+      {
+        accountId: 15014,
+        steamId: NoFaceitRankPlayerSteamId,
+        nickname: "NoFaceitRankPlayer",
+        discord: "",
+        captain: false,
+        coCaptain: false,
+        hasValidData: true,
+        hasValidWorkEmail: true,
+        isEmailVerified: true,
+        hours: -1,
+        rank: 13,
+        externalRank: 5
+      }
+    ];
+
+    render(
+      <TestWrapper
+        players={players}
+        platform={SeasonPlatform.FACEIT}
+        profileLinkRequired={false}
+        hoursPlayedRequired={false}
+      />
+    );
+
+    // Neither the hours-played notification nor the profile-link notification
+    // should appear when both flags are disabled.
+    expect(screen.queryByTestId("hours-error-0")).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId("profile-link-error-0")
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/Could not detect the hours for the player/)
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/Steam profile must be public/)
+    ).not.toBeInTheDocument();
+  });
+
+  it("should show distinct profile-link notification when only profile_link_required is enabled and hours is -1", async () => {
+    const players = [
+      {
+        accountId: 15014,
+        steamId: NoFaceitRankPlayerSteamId,
+        nickname: "NoFaceitRankPlayer",
+        discord: "",
+        captain: false,
+        coCaptain: false,
+        hasValidData: true,
+        hasValidWorkEmail: true,
+        isEmailVerified: true,
+        hours: -1,
+        rank: 13,
+        externalRank: 5
+      }
+    ];
+
+    render(
+      <TestWrapper
+        players={players}
+        platform={SeasonPlatform.FACEIT}
+        profileLinkRequired={true}
+        hoursPlayedRequired={false}
+      />
+    );
+
+    // Open the accordion to see the notification
+    const accordionTrigger = screen.getByTestId("player-accordion-triggers");
+    fireEvent.click(accordionTrigger);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("profile-link-error-0")).toBeInTheDocument();
+    });
+
+    // Wording must be distinct from the hours-played notification — it should
+    // mention the public Steam profile, not the hours-detection wording.
+    expect(
+      screen.getByText(/Steam profile must be public/)
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText(/Could not detect the hours for the player/)
+    ).not.toBeInTheDocument();
+
+    // The hours-error notification must NOT be rendered when only
+    // profile_link_required is active.
+    expect(screen.queryByTestId("hours-error-0")).not.toBeInTheDocument();
+  });
+
+  it("should show hours notification (not profile-link) when only hours_played_required is enabled", async () => {
+    const players = [
+      {
+        accountId: 15014,
+        steamId: NoFaceitRankPlayerSteamId,
+        nickname: "NoFaceitRankPlayer",
+        discord: "",
+        captain: false,
+        coCaptain: false,
+        hasValidData: true,
+        hasValidWorkEmail: true,
+        isEmailVerified: true,
+        hours: -1,
+        rank: 13,
+        externalRank: 5
+      }
+    ];
+
+    render(
+      <TestWrapper
+        players={players}
+        platform={SeasonPlatform.FACEIT}
+        profileLinkRequired={false}
+        hoursPlayedRequired={true}
+      />
+    );
+
+    const accordionTrigger = screen.getByTestId("player-accordion-triggers");
+    fireEvent.click(accordionTrigger);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("hours-error-0")).toBeInTheDocument();
+    });
+
+    expect(
+      screen.getByText(/Could not detect the hours for the player/)
+    ).toBeInTheDocument();
+    // The distinct profile-link branch must not render in this configuration.
+    expect(
+      screen.queryByTestId("profile-link-error-0")
+    ).not.toBeInTheDocument();
   });
 });
