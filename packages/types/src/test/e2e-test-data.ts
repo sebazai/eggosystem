@@ -11,6 +11,10 @@ import {
   AddTeamSignupSteamId4,
   AddTeamSignupSteamId5,
   ApprovalOnlySubmitSteamId,
+  ConfigurableReqsAuthSteamId,
+  ConfigurableReqsExternalRankMissingSteamId,
+  ConfigurableReqsHoursMissingSteamId,
+  ConfigurableReqsInternalRankMissingSteamId,
   DraftReturnUserSteamId,
   EligiblePlayerForValidationSteamId,
   heppajpgSteamId,
@@ -271,6 +275,59 @@ export const e2eSteamPlayerData: E2ESteamPlayerData[] = [
     work_email_verified: 1,
     is_work_email_personal_email: false,
     discord: "a5signup5#1234"
+  },
+  // S1-AC-4 "Configurable signup requirements" – dedicated lineup slots whose
+  // missing-data scenarios are driven end-to-end via seed + MSW (third-party
+  // API mocks). No Playwright page.route is used for these IDs, so the
+  // frontend → backend → external-API path runs for real.
+  //
+  // FACEIT GameRank MSW returns skill_level=0/elo=0 for this Steam ID
+  // (handlers add an explicit branch). Otherwise the account is fully valid
+  // (verified work email, Discord, valid full name) so the only thing that
+  // distinguishes the index-0 slot in the externalRank test is externalRank=0.
+  {
+    account_id: 15031,
+    steam_id: ConfigurableReqsExternalRankMissingSteamId,
+    nickname: "ConfigurableReqsExtRankMissing",
+    work_email: "test+15031@kanaliiga.fi",
+    work_email_verified: 1,
+    is_work_email_personal_email: false,
+    discord: "configurablereqsextrank#1234"
+  },
+  // Dedicated auth user. Reserved for these tests so a prior team registration
+  // cannot redirect the form into edit mode (useSignupStatus →
+  // /signup/team/:teamId/edit) and starve the org-dropdown wait.
+  {
+    account_id: 15032,
+    steam_id: ConfigurableReqsAuthSteamId,
+    nickname: "ConfigurableReqsAuth",
+    work_email: "test+15032@kanaliiga.fi",
+    work_email_verified: 1,
+    is_work_email_personal_email: false,
+    discord: "configurablereqsauth#1234"
+  },
+  // Leetify MSW returns `games: []` for this Steam ID so the backend's
+  // `getCSRank` returns no rank and the frontend records rank=-1.
+  {
+    account_id: 15033,
+    steam_id: ConfigurableReqsInternalRankMissingSteamId,
+    nickname: "ConfigurableReqsIntRankMissing",
+    work_email: "test+15033@kanaliiga.fi",
+    work_email_verified: 1,
+    is_work_email_personal_email: false,
+    discord: "configurablereqsintrank#1234"
+  },
+  // Steam GetOwnedGames MSW returns an empty games array for this Steam ID so
+  // the backend's `getPlayerHoursForCS` returns hours=-1 (also the proxy for
+  // a non-public Steam profile in the profile_link_required test).
+  {
+    account_id: 15034,
+    steam_id: ConfigurableReqsHoursMissingSteamId,
+    nickname: "ConfigurableReqsHoursMissing",
+    work_email: "test+15034@kanaliiga.fi",
+    work_email_verified: 1,
+    is_work_email_personal_email: false,
+    discord: "configurablereqshours#1234"
   }
 ];
 

@@ -14,6 +14,10 @@ import {
   AddTeamSignupSteamId4,
   AddTeamSignupSteamId5,
   ApprovalOnlySubmitSteamId,
+  ConfigurableReqsAuthSteamId,
+  ConfigurableReqsExternalRankMissingSteamId,
+  ConfigurableReqsHoursMissingSteamId,
+  ConfigurableReqsInternalRankMissingSteamId,
   createMockSeasonDetails,
   DraftReturnUserSteamId,
   heppajpgSteamId,
@@ -51,24 +55,30 @@ async function assignPlayerRole(
   );
 
   const trigger = accordionTriggers.nth(playerIndex);
-  if (await trigger.isVisible()) {
-    const isOpen = await trigger.getAttribute("data-state");
-    if (isOpen === "closed") {
-      await trigger.click();
-    }
+  await trigger.waitFor({ state: "visible", timeout: 10000 });
 
-    const checkboxSelector =
-      role === "captain"
-        ? `[data-testid="captain-checkbox-${playerIndex}"]`
-        : `[data-testid="co-captain-checkbox-${playerIndex}"]`;
+  const checkboxSelector =
+    role === "captain"
+      ? `[data-testid="captain-checkbox-${playerIndex}"]`
+      : `[data-testid="co-captain-checkbox-${playerIndex}"]`;
 
-    const checkbox = page.locator(checkboxSelector);
-    if (await checkbox.isVisible()) {
-      const isAlreadyAssigned = await checkbox.getAttribute("aria-checked");
-      if (isAlreadyAssigned !== "true") {
-        await checkbox.click();
-      }
-    }
+  const checkbox = page.locator(checkboxSelector);
+  if (!(await checkbox.isVisible().catch(() => false))) {
+    await trigger.focus();
+    await page.keyboard.press("Enter");
+  }
+
+  if (!(await checkbox.isVisible().catch(() => false))) {
+    const box = await trigger.boundingBox();
+    if (!box) throw new Error(`Player ${playerIndex} trigger is not visible`);
+
+    await page.mouse.click(box.x + box.width - 12, box.y + box.height / 2);
+  }
+
+  await checkbox.waitFor({ state: "visible", timeout: 10000 });
+  const isAlreadyAssigned = await checkbox.getAttribute("aria-checked");
+  if (isAlreadyAssigned !== "true") {
+    await checkbox.click();
   }
 }
 
@@ -85,6 +95,16 @@ async function assignCaptain(page: Page) {
     "There must be exactly one captain and one co-captain"
   );
   await expect(validationError).not.toBeVisible({ timeout: 5000 });
+}
+
+async function fillSteamIdLineup(page: Page, lineup: string[]) {
+  for (let i = 0; i < lineup.length; i++) {
+    const input = page.locator(`[data-testid="steam-id-input-${i}"]`);
+    await expect(input).toBeVisible();
+    await expect(input).toBeEnabled({ timeout: 15000 });
+    await input.fill(lineup[i]!);
+    await input.blur();
+  }
 }
 
 // Helper function to set up the form to the team FACEIT ID input stage
@@ -149,17 +169,15 @@ async function setupFormToPlayersSectionWithTeam(
   await page.goto("/seasons/16/signup/registration");
 
   // Form may load on Team or Players step (draft, or redirect to edit when user has existing registration).
-  // Wait for form to be ready, then ensure we're on Organization step before using the org dropdown.
-  await page
-    .getByRole("heading", { name: /Sign up Form|Edit signup/i })
-    .waitFor({ state: "visible", timeout: 15000 });
+  // Wait for form tabs/controls directly; the heading can be present while the
+  // tab content is still settling after auth/signup status checks.
   const orgDropdown = page.locator(
     '[data-testid="organizations-dropdown-toggle"]'
   );
   const orgVisible = await orgDropdown.isVisible().catch(() => false);
   if (!orgVisible) {
     const orgTab = page.getByRole("tab", { name: /Organization/i });
-    await orgTab.waitFor({ state: "visible", timeout: 10000 });
+    await orgTab.waitFor({ state: "visible", timeout: 60000 });
     await orgTab.click();
   }
   await orgDropdown.waitFor({ state: "visible", timeout: 60000 });
@@ -731,7 +749,7 @@ test.describe("Signup Form", () => {
 
       // Test 3: Check for validation error about missing captain/co-captain
       const validationError = page.locator(
-        "text=There must be exactly one captain and one co-captain"
+        '[data-testid="captain-validation-error"]'
       );
       await expect(validationError).toBeVisible();
 
@@ -1296,6 +1314,8 @@ test.describe("Signup Form", () => {
   });
 
   test.describe("Admin registration", () => {
+    test.describe.configure({ timeout: 90000 });
+
     // Design: wrongful data (seed) → user opens signup → we assert the error is visible and submit disabled
     //        → we fix (admin panel OR DB injection) → user opens signup again → we assert error gone and submit succeeds.
     // When admin act is enough: the dashboard writes the same state the backend validation reads (e.g. manual approval
@@ -1327,12 +1347,7 @@ test.describe("Signup Form", () => {
       await page
         .locator('[data-testid="steam-id-input-0"]')
         .waitFor({ state: "visible", timeout: 10000 });
-      for (let i = 0; i < 5; i++) {
-        const input = page.locator(`[data-testid="steam-id-input-${i}"]`);
-        await expect(input).toBeVisible();
-        await input.fill(a1Lineup[i]!);
-        await page.keyboard.press("Tab");
-      }
+      await fillSteamIdLineup(page, a1Lineup);
       await expect(
         page.locator('[data-testid="steam-id-input-4"]')
       ).toHaveClass(/border-green-500/, { timeout: 20000 });
@@ -1388,12 +1403,7 @@ test.describe("Signup Form", () => {
       await page
         .locator('[data-testid="steam-id-input-0"]')
         .waitFor({ state: "visible", timeout: 10000 });
-      for (let i = 0; i < 5; i++) {
-        const input = page.locator(`[data-testid="steam-id-input-${i}"]`);
-        await expect(input).toBeVisible();
-        await input.fill(a1Lineup[i]!);
-        await page.keyboard.press("Tab");
-      }
+      await fillSteamIdLineup(page, a1Lineup);
       await expect(
         page.locator('[data-testid="steam-id-input-4"]')
       ).toHaveClass(/border-green-500/, { timeout: 20000 });
@@ -1450,12 +1460,7 @@ test.describe("Signup Form", () => {
       await page
         .locator('[data-testid="steam-id-input-0"]')
         .waitFor({ state: "visible", timeout: 10000 });
-      for (let i = 0; i < 5; i++) {
-        const input = page.locator(`[data-testid="steam-id-input-${i}"]`);
-        await expect(input).toBeVisible();
-        await input.fill(a2Lineup[i]!);
-        await page.keyboard.press("Tab");
-      }
+      await fillSteamIdLineup(page, a2Lineup);
       await expect(
         page.locator('[data-testid="steam-id-input-4"]')
       ).toHaveClass(/border-green-500/, { timeout: 20000 });
@@ -1509,12 +1514,7 @@ test.describe("Signup Form", () => {
       await page
         .locator('[data-testid="steam-id-input-0"]')
         .waitFor({ state: "visible", timeout: 10000 });
-      for (let i = 0; i < 5; i++) {
-        const input = page.locator(`[data-testid="steam-id-input-${i}"]`);
-        await expect(input).toBeVisible();
-        await input.fill(a2Lineup[i]!);
-        await page.keyboard.press("Tab");
-      }
+      await fillSteamIdLineup(page, a2Lineup);
       await expect(
         page.locator('[data-testid="steam-id-input-4"]')
       ).toHaveClass(/border-green-500/, { timeout: 20000 });
@@ -1705,14 +1705,25 @@ test.describe("Signup Form", () => {
   });
 
   // S1-AC-4: Configurable signup requirements (faceit_rank_required,
-  // premier_rank_required, hours_played_required, profile_link_required)
-  // Strategy: page.route() mocks GET /api/v1/seasons/16/details so we can flip
-  // requirement flags without depending on the seed. We additionally mock the
-  // player rank/hours endpoint for the FIRST lineup slot so its value is -1
-  // — that lets us assert that disabling a flag truly turns the matching
-  // notification off and unblocks submit. Mock payload shape stays in sync
-  // with SeasonDetails via createMockSeasonDetails().
+  // premier_rank_required, hours_played_required, profile_link_required).
+  //
+  // Strategy: end-to-end through the real frontend → backend → external-API
+  // path. Each "missing" precondition for the index-0 lineup slot is driven
+  // by a *dedicated* Steam ID whose third-party API response is overridden
+  // in the shared MSW layer (FACEIT, Leetify, Steam). No page.route mock is
+  // used for /api/v1/players/* — those endpoints are exercised for real and
+  // legitimately produce externalRank=0/rank=-1/hours=-1 because the
+  // upstream service returned the empty/missing payload.
+  //
+  // The single page.route override that remains is GET
+  // /api/v1/seasons/16/details, used to flip individual signup-requirement
+  // flags. That endpoint has no third-party dependency (frontend → backend
+  // → DB only), so seeding multiple seasons just to toggle a boolean would
+  // be needless overhead; the override keeps the SeasonDetails contract in
+  // sync via createMockSeasonDetails().
   test.describe("Configurable signup requirements", () => {
+    test.describe.configure({ timeout: 90000 });
+
     // Override season 16's details to flip individual signup-requirement flags.
     // Pre-condition: must run before page.goto so the first details fetch hits
     // the mock. Real backend response shape (Season + app_id) is reproduced via
@@ -1753,66 +1764,43 @@ test.describe("Signup Form", () => {
       });
     };
 
-    // Force the rank/hours endpoint for a single Steam ID to return a "missing"
-    // payload, so the frontend records value === -1 for that field.
-    const mockPlayerHoursMissing = async (page: Page, steamId: string) => {
-      await page.route(
-        `**/api/v1/players/${steamId}/app/*/hours**`,
-        async (route) => {
-          await route.fulfill({
-            status: 200,
-            contentType: "application/json",
-            body: JSON.stringify({ hours: -1 })
-          });
-        }
-      );
-    };
-
-    const mockPlayerInternalRankMissing = async (
+    // Index-0 uses a per-test dedicated "missing"-target Steam ID. Each
+    // target's missing-data scenario is driven end-to-end through the seed
+    // and MSW (third-party API mocks) — see the constants in
+    // packages/types/src/test/fixtures.ts and the explicit branches in:
+    //   - packages/shared-msw/src/faceit/GameRank-handlers.ts
+    //   - packages/shared-msw/src/leetify/handlers.ts
+    //   - packages/shared-msw/src/steam/GetOwnedGames-handlers.ts
+    // so the frontend → backend → external-API path is exercised for real.
+    //
+    // Index-1 uses ConfigurableReqsAuthSteamId, the dedicated auth user —
+    // keeping that account out of every other test prevents a prior team
+    // registration from redirecting the form into edit mode
+    // (useSignupStatus → /signup/team/:teamId/edit). Indices 2–4 keep their
+    // existing valid players because assertions only target the index-0 slot.
+    const fillConfigurableReqsLineup = async (
       page: Page,
-      steamId: string
+      indexZeroSteamId: string
     ) => {
-      await page.route(
-        `**/api/v1/players/${steamId}/app/*/rank**`,
-        async (route) => {
-          await route.fulfill({
-            status: 200,
-            contentType: "application/json",
-            body: JSON.stringify({ average_rank: 0 })
-          });
-        }
-      );
-    };
-
-    const mockPlayerExternalRankMissing = async (
-      page: Page,
-      steamId: string
-    ) => {
-      await page.route(
-        `**/api/v1/players/${steamId}/platform/*/rank**`,
-        async (route) => {
-          await route.fulfill({
-            status: 200,
-            contentType: "application/json",
-            // FaceITCSRank shape — faceit_level === 0 is treated as missing
-            body: JSON.stringify({ faceit_level: 0, faceit_elo: 0 })
-          });
-        }
-      );
+      await fillSteamIdLineup(page, [
+        indexZeroSteamId,
+        ConfigurableReqsAuthSteamId,
+        ValidWorkEmail3SteamId,
+        ValidWorkEmail4SteamId,
+        ValidWorkEmail5SteamId
+      ]);
     };
 
     test("faceit_rank_required=false: player with externalRank=-1 has green border, no faceit-rank notification, submit is enabled", async ({
       page
     }) => {
       await mockSeasonDetailsRoute(page, { faceit_rank_required: false });
-      // Force index-0 player's FACEIT level to look missing regardless of seed
-      await mockPlayerExternalRankMissing(page, ValidWorkEmail1SteamId);
 
       await setupAuthForUser(
         page,
-        15015,
-        ValidWorkEmail2SteamId,
-        "ValidWorkEmail2"
+        15032,
+        ConfigurableReqsAuthSteamId,
+        "ConfigurableReqsAuth"
       );
 
       await setupCompleteRegistrationForm(
@@ -1821,8 +1809,13 @@ test.describe("Signup Form", () => {
         generateUniqueTeamName("Faceit Disabled Team")
       );
 
-      await fillValidPlayers(page, ValidWorkEmail2SteamId);
-      await page.waitForTimeout(3000);
+      // Index-0's FACEIT level comes back as 0 from FACEIT's MSW handler for
+      // ConfigurableReqsExternalRankMissingSteamId, exercising the real
+      // backend path that resolves and forwards faceit_level.
+      await fillConfigurableReqsLineup(
+        page,
+        ConfigurableReqsExternalRankMissingSteamId
+      );
 
       // S1-AC-4: When faceit_rank_required=false, missing FACEIT level must
       // not paint the input red and must not render the external-rank error.
@@ -1853,14 +1846,12 @@ test.describe("Signup Form", () => {
       page
     }) => {
       await mockSeasonDetailsRoute(page, { premier_rank_required: false });
-      // Force index-0 player's internal CS2 rank to look missing
-      await mockPlayerInternalRankMissing(page, ValidWorkEmail1SteamId);
 
       await setupAuthForUser(
         page,
-        15015,
-        ValidWorkEmail2SteamId,
-        "ValidWorkEmail2"
+        15032,
+        ConfigurableReqsAuthSteamId,
+        "ConfigurableReqsAuth"
       );
 
       await setupCompleteRegistrationForm(
@@ -1869,8 +1860,14 @@ test.describe("Signup Form", () => {
         generateUniqueTeamName("Premier Disabled Team")
       );
 
-      await fillValidPlayers(page, ValidWorkEmail2SteamId);
-      await page.waitForTimeout(3000);
+      // Index-0's premier rank legitimately resolves to "no rank" because
+      // Leetify's MSW handler returns `games: []` for
+      // ConfigurableReqsInternalRankMissingSteamId — backend's getCSRank
+      // hits every fallback and returns no rank, frontend records rank=-1.
+      await fillConfigurableReqsLineup(
+        page,
+        ConfigurableReqsInternalRankMissingSteamId
+      );
 
       const steamIdInput0 = page.locator('[data-testid="steam-id-input-0"]');
       await expect(steamIdInput0).toHaveClass(/border-green-500/, {
@@ -1906,13 +1903,12 @@ test.describe("Signup Form", () => {
         hours_played_required: false,
         profile_link_required: false
       });
-      await mockPlayerHoursMissing(page, ValidWorkEmail1SteamId);
 
       await setupAuthForUser(
         page,
-        15015,
-        ValidWorkEmail2SteamId,
-        "ValidWorkEmail2"
+        15032,
+        ConfigurableReqsAuthSteamId,
+        "ConfigurableReqsAuth"
       );
 
       await setupCompleteRegistrationForm(
@@ -1921,8 +1917,14 @@ test.describe("Signup Form", () => {
         generateUniqueTeamName("Hours Disabled Team")
       );
 
-      await fillValidPlayers(page, ValidWorkEmail2SteamId);
-      await page.waitForTimeout(3000);
+      // Index-0's hours legitimately come back as -1 because Steam's MSW
+      // handler returns an empty games array for
+      // ConfigurableReqsHoursMissingSteamId — backend's getPlayerHoursForCS
+      // returns hours=-1 along the same path as a non-public Steam profile.
+      await fillConfigurableReqsLineup(
+        page,
+        ConfigurableReqsHoursMissingSteamId
+      );
 
       const steamIdInput0 = page.locator('[data-testid="steam-id-input-0"]');
       await expect(steamIdInput0).toHaveClass(/border-green-500/, {
@@ -1960,13 +1962,12 @@ test.describe("Signup Form", () => {
         profile_link_required: false,
         hours_played_required: false
       });
-      await mockPlayerHoursMissing(page, ValidWorkEmail1SteamId);
 
       await setupAuthForUser(
         page,
-        15015,
-        ValidWorkEmail2SteamId,
-        "ValidWorkEmail2"
+        15032,
+        ConfigurableReqsAuthSteamId,
+        "ConfigurableReqsAuth"
       );
 
       await setupCompleteRegistrationForm(
@@ -1975,8 +1976,13 @@ test.describe("Signup Form", () => {
         generateUniqueTeamName("ProfileLink Off Team")
       );
 
-      await fillValidPlayers(page, ValidWorkEmail2SteamId);
-      await page.waitForTimeout(3000);
+      // Index-0's hours legitimately come back as -1 (Steam MSW returns no
+      // games for ConfigurableReqsHoursMissingSteamId) — the same path the
+      // frontend treats as "Steam profile not public".
+      await fillConfigurableReqsLineup(
+        page,
+        ConfigurableReqsHoursMissingSteamId
+      );
 
       const steamIdInput0 = page.locator('[data-testid="steam-id-input-0"]');
       await expect(steamIdInput0).toHaveClass(/border-green-500/, {
@@ -2012,13 +2018,12 @@ test.describe("Signup Form", () => {
         profile_link_required: true,
         hours_played_required: false
       });
-      await mockPlayerHoursMissing(page, ValidWorkEmail1SteamId);
 
       await setupAuthForUser(
         page,
-        15015,
-        ValidWorkEmail2SteamId,
-        "ValidWorkEmail2"
+        15032,
+        ConfigurableReqsAuthSteamId,
+        "ConfigurableReqsAuth"
       );
 
       await setupCompleteRegistrationForm(
@@ -2027,8 +2032,12 @@ test.describe("Signup Form", () => {
         generateUniqueTeamName("ProfileLink On Team")
       );
 
-      await fillValidPlayers(page, ValidWorkEmail2SteamId);
-      await page.waitForTimeout(3000);
+      // Index-0's hours come back as -1 (Steam MSW returns no games for
+      // ConfigurableReqsHoursMissingSteamId), tripping the profile-link gate.
+      await fillConfigurableReqsLineup(
+        page,
+        ConfigurableReqsHoursMissingSteamId
+      );
 
       const profileLinkError = page.locator(
         '[data-testid="profile-link-error-0"]'

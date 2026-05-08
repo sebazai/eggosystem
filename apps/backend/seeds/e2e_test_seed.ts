@@ -22,10 +22,37 @@ import {
   ValidWorkEmail5SteamId,
   ValidWorkEmail1SteamId,
   ApprovalOnlySubmitSteamId,
+  ConfigurableReqsAuthSteamId,
+  ConfigurableReqsExternalRankMissingSteamId,
+  ConfigurableReqsHoursMissingSteamId,
+  ConfigurableReqsInternalRankMissingSteamId,
   ManualApprovalTargetSteamId,
   ManualRankTargetSteamId
 } from "@eggosystem/types";
+import Redis from "ioredis";
 import { type Knex } from "knex";
+
+async function clearE2ERedisCache(steamIds: string[]) {
+  const redis = new Redis({
+    host: process.env.REDIS_HOST ?? "eggo-redis",
+    port: parseInt(process.env.REDIS_PORT ?? "6379", 10),
+    lazyConnect: true
+  });
+
+  try {
+    await redis.connect();
+    const keys = steamIds.flatMap((steamId) => [
+      `730-${steamId}-hours`,
+      `730-${steamId}-rank`,
+      `730-${steamId}-faceit-cs2-rank`,
+      `faceit-player-${steamId}-cs2`
+    ]);
+
+    if (keys.length > 0) await redis.del(...keys);
+  } finally {
+    redis.disconnect();
+  }
+}
 
 /**
  * E2E Test Seed
@@ -38,6 +65,8 @@ export async function seed(knex: Knex): Promise<void> {
   const privacyPolicyVersion = process.env.PRIVACY_POLICY_VERSION || "1";
 
   const testSteamIds = e2eSteamPlayerData.map((player) => player.steam_id);
+  await clearE2ERedisCache(testSteamIds);
+
   // Clean up team 2263 specifically - this team contains conflicting Steam IDs from regular seed
   await knex("SeasonTeamPlayers").where({ team_id: 2263 }).del();
   await knex("SeasonTeamRegistrations").where({ team_id: 2263 }).del();
@@ -54,6 +83,9 @@ export async function seed(knex: Knex): Promise<void> {
 
     // remove all manual approvals
     await knex("SeasonPlayerApprovals").where({ steam_id: steamId }).del();
+
+    // remove cached/manual rank data so missing-data e2e fixtures exercise MSW
+    await knex("SeasonPlayerRanks").where({ steam_id: steamId }).del();
   }
 
   // Clean up existing E2E test data
@@ -116,6 +148,8 @@ export async function seed(knex: Knex): Promise<void> {
     end_date: sixtyDaysLater,
     platform: "faceit",
     faceit_rank_required: 1,
+    premier_rank_required: 1,
+    profile_link_required: 1,
     hours_played_required: 1
   });
 
@@ -149,7 +183,22 @@ export async function seed(knex: Knex): Promise<void> {
     }, // EligiblePlayerForValidation
     {
       id: getE2ESteamPlayerBySteamId(ValidationFailurePlayerSteamId)?.account_id
-    } // ValidationFailurePlayer
+    }, // ValidationFailurePlayer
+    {
+      id: getE2ESteamPlayerBySteamId(ConfigurableReqsExternalRankMissingSteamId)
+        ?.account_id
+    }, // S1-AC-4 lineup slot whose FACEIT rank comes back missing via MSW
+    {
+      id: getE2ESteamPlayerBySteamId(ConfigurableReqsAuthSteamId)?.account_id
+    }, // S1-AC-4 dedicated auth user (no prior registration)
+    {
+      id: getE2ESteamPlayerBySteamId(ConfigurableReqsInternalRankMissingSteamId)
+        ?.account_id
+    }, // S1-AC-4 lineup slot whose Leetify rank comes back missing via MSW
+    {
+      id: getE2ESteamPlayerBySteamId(ConfigurableReqsHoursMissingSteamId)
+        ?.account_id
+    } // S1-AC-4 lineup slot whose Steam playtime comes back missing via MSW
   ];
 
   for (const user of users) {
@@ -599,7 +648,11 @@ export async function seed(knex: Knex): Promise<void> {
     { account_id: 15027, username: "a5signup2" },
     { account_id: 15028, username: "a5signup3" },
     { account_id: 15029, username: "a5signup4" },
-    { account_id: 15030, username: "a5signup5" }
+    { account_id: 15030, username: "a5signup5" },
+    { account_id: 15031, username: "configurablereqsextrank" }, // S1-AC-4 external-rank-missing target
+    { account_id: 15032, username: "configurablereqsauth" }, // S1-AC-4 dedicated auth user
+    { account_id: 15033, username: "configurablereqsintrank" }, // S1-AC-4 internal-rank-missing target
+    { account_id: 15034, username: "configurablereqshours" } // S1-AC-4 hours-missing target
   ];
 
   for (const player of playersWithDiscord) {
