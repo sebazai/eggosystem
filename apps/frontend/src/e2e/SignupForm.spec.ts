@@ -14,6 +14,7 @@ import {
   AddTeamSignupSteamId4,
   AddTeamSignupSteamId5,
   ApprovalOnlySubmitSteamId,
+  createMockSeasonDetails,
   DraftReturnUserSteamId,
   heppajpgSteamId,
   HoolyzSteamId,
@@ -25,6 +26,7 @@ import {
   QuattraSteamId,
   RealPlayer1SteamId,
   RealPlayer2SteamId,
+  SeasonPlatform,
   TrevSteamId,
   ValidWorkEmail1SteamId,
   ValidWorkEmail2SteamId,
@@ -1699,6 +1701,359 @@ test.describe("Signup Form", () => {
       const adminResponse = await adminSignupPromise;
       expect(adminResponse.status()).toBeGreaterThanOrEqual(200);
       expect(adminResponse.status()).toBeLessThan(300);
+    });
+  });
+
+  // S1-AC-4: Configurable signup requirements (faceit_rank_required,
+  // premier_rank_required, hours_played_required, profile_link_required)
+  // Strategy: page.route() mocks GET /api/v1/seasons/16/details so we can flip
+  // requirement flags without depending on the seed. We additionally mock the
+  // player rank/hours endpoint for the FIRST lineup slot so its value is -1
+  // — that lets us assert that disabling a flag truly turns the matching
+  // notification off and unblocks submit. Mock payload shape stays in sync
+  // with SeasonDetails via createMockSeasonDetails().
+  test.describe("Configurable signup requirements", () => {
+    // Override season 16's details to flip individual signup-requirement flags.
+    // Pre-condition: must run before page.goto so the first details fetch hits
+    // the mock. Real backend response shape (Season + app_id) is reproduced via
+    // createMockSeasonDetails so the contract stays in sync with the type.
+    const mockSeasonDetailsRoute = async (
+      page: Page,
+      flagOverrides: Partial<{
+        faceit_rank_required: boolean;
+        premier_rank_required: boolean;
+        profile_link_required: boolean;
+        hours_played_required: boolean;
+      }>
+    ) => {
+      await page.route("**/api/v1/seasons/16/details", async (route) => {
+        const seasonDetails = createMockSeasonDetails({
+          id: 16,
+          game_id: 1,
+          game_type_id: 1,
+          organizer_id: 1,
+          name: "Season 4",
+          full_name: "CS2 Season 4",
+          app_id: 730,
+          platform: SeasonPlatform.FACEIT,
+          // Default to "all enabled" matching the post-backfill production
+          // behaviour, then apply flag overrides for the specific test.
+          faceit_rank_required: true,
+          premier_rank_required: true,
+          profile_link_required: true,
+          hours_played_required: true,
+          ...flagOverrides
+        });
+
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify(seasonDetails)
+        });
+      });
+    };
+
+    // Force the rank/hours endpoint for a single Steam ID to return a "missing"
+    // payload, so the frontend records value === -1 for that field.
+    const mockPlayerHoursMissing = async (page: Page, steamId: string) => {
+      await page.route(
+        `**/api/v1/players/${steamId}/app/*/hours**`,
+        async (route) => {
+          await route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify({ hours: -1 })
+          });
+        }
+      );
+    };
+
+    const mockPlayerInternalRankMissing = async (
+      page: Page,
+      steamId: string
+    ) => {
+      await page.route(
+        `**/api/v1/players/${steamId}/app/*/rank**`,
+        async (route) => {
+          await route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify({ average_rank: 0 })
+          });
+        }
+      );
+    };
+
+    const mockPlayerExternalRankMissing = async (
+      page: Page,
+      steamId: string
+    ) => {
+      await page.route(
+        `**/api/v1/players/${steamId}/platform/*/rank**`,
+        async (route) => {
+          await route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            // FaceITCSRank shape — faceit_level === 0 is treated as missing
+            body: JSON.stringify({ faceit_level: 0, faceit_elo: 0 })
+          });
+        }
+      );
+    };
+
+    test("faceit_rank_required=false: player with externalRank=-1 has green border, no faceit-rank notification, submit is enabled", async ({
+      page
+    }) => {
+      await mockSeasonDetailsRoute(page, { faceit_rank_required: false });
+      // Force index-0 player's FACEIT level to look missing regardless of seed
+      await mockPlayerExternalRankMissing(page, ValidWorkEmail1SteamId);
+
+      await setupAuthForUser(
+        page,
+        15015,
+        ValidWorkEmail2SteamId,
+        "ValidWorkEmail2"
+      );
+
+      await setupCompleteRegistrationForm(
+        page,
+        generateUniqueOrgName("Faceit Disabled Org"),
+        generateUniqueTeamName("Faceit Disabled Team")
+      );
+
+      await fillValidPlayers(page, ValidWorkEmail2SteamId);
+      await page.waitForTimeout(3000);
+
+      // S1-AC-4: When faceit_rank_required=false, missing FACEIT level must
+      // not paint the input red and must not render the external-rank error.
+      const steamIdInput0 = page.locator('[data-testid="steam-id-input-0"]');
+      await expect(steamIdInput0).toHaveClass(/border-green-500/, {
+        timeout: 20000
+      });
+      await expect(
+        page.locator('[data-testid="external-rank-error-0"]')
+      ).not.toBeVisible();
+
+      await assignCaptain(page);
+
+      const finalTermsCheckbox = page.locator(
+        '[data-testid="terms-conditions-checkbox"]'
+      );
+      if (!(await finalTermsCheckbox.isChecked().catch(() => false))) {
+        await finalTermsCheckbox.click();
+      }
+
+      const submitButton = page
+        .locator('button[type="submit"]')
+        .filter({ hasText: /Submit/i });
+      await expect(submitButton).toBeEnabled({ timeout: 10000 });
+    });
+
+    test("premier_rank_required=false: player with rank=-1 has green border, no premier-rank notification, submit is enabled", async ({
+      page
+    }) => {
+      await mockSeasonDetailsRoute(page, { premier_rank_required: false });
+      // Force index-0 player's internal CS2 rank to look missing
+      await mockPlayerInternalRankMissing(page, ValidWorkEmail1SteamId);
+
+      await setupAuthForUser(
+        page,
+        15015,
+        ValidWorkEmail2SteamId,
+        "ValidWorkEmail2"
+      );
+
+      await setupCompleteRegistrationForm(
+        page,
+        generateUniqueOrgName("Premier Disabled Org"),
+        generateUniqueTeamName("Premier Disabled Team")
+      );
+
+      await fillValidPlayers(page, ValidWorkEmail2SteamId);
+      await page.waitForTimeout(3000);
+
+      const steamIdInput0 = page.locator('[data-testid="steam-id-input-0"]');
+      await expect(steamIdInput0).toHaveClass(/border-green-500/, {
+        timeout: 20000
+      });
+      await expect(
+        page.locator('[data-testid="rank-error-0"]')
+      ).not.toBeVisible();
+
+      await assignCaptain(page);
+
+      const finalTermsCheckbox = page.locator(
+        '[data-testid="terms-conditions-checkbox"]'
+      );
+      if (!(await finalTermsCheckbox.isChecked().catch(() => false))) {
+        await finalTermsCheckbox.click();
+      }
+
+      const submitButton = page
+        .locator('button[type="submit"]')
+        .filter({ hasText: /Submit/i });
+      await expect(submitButton).toBeEnabled({ timeout: 10000 });
+    });
+
+    test("hours_played_required=false: player with hours=-1 has green border, no hours notification, submit is enabled", async ({
+      page
+    }) => {
+      // Disable both hours_played_required AND profile_link_required so the
+      // hours=-1 player does not trip the profile-link gate either (this test
+      // is scoped to the hours flag; profile_link_required is exercised in the
+      // dedicated tests below).
+      await mockSeasonDetailsRoute(page, {
+        hours_played_required: false,
+        profile_link_required: false
+      });
+      await mockPlayerHoursMissing(page, ValidWorkEmail1SteamId);
+
+      await setupAuthForUser(
+        page,
+        15015,
+        ValidWorkEmail2SteamId,
+        "ValidWorkEmail2"
+      );
+
+      await setupCompleteRegistrationForm(
+        page,
+        generateUniqueOrgName("Hours Disabled Org"),
+        generateUniqueTeamName("Hours Disabled Team")
+      );
+
+      await fillValidPlayers(page, ValidWorkEmail2SteamId);
+      await page.waitForTimeout(3000);
+
+      const steamIdInput0 = page.locator('[data-testid="steam-id-input-0"]');
+      await expect(steamIdInput0).toHaveClass(/border-green-500/, {
+        timeout: 20000
+      });
+      await expect(
+        page.locator('[data-testid="hours-error-0"]')
+      ).not.toBeVisible();
+      await expect(
+        page.locator('[data-testid="profile-link-error-0"]')
+      ).not.toBeVisible();
+
+      await assignCaptain(page);
+
+      const finalTermsCheckbox = page.locator(
+        '[data-testid="terms-conditions-checkbox"]'
+      );
+      if (!(await finalTermsCheckbox.isChecked().catch(() => false))) {
+        await finalTermsCheckbox.click();
+      }
+
+      const submitButton = page
+        .locator('button[type="submit"]')
+        .filter({ hasText: /Submit/i });
+      await expect(submitButton).toBeEnabled({ timeout: 10000 });
+    });
+
+    test("profile_link_required=false: player with hours=-1 (proxy for non-public profile) has no profile-link notification and submit is enabled", async ({
+      page
+    }) => {
+      // Same proxy: hours=-1 stands in for "profile not public" because the
+      // frontend uses player.hours === -1 to drive the profile-link gate.
+      // Disable hours_played_required so hours error does not block the submit.
+      await mockSeasonDetailsRoute(page, {
+        profile_link_required: false,
+        hours_played_required: false
+      });
+      await mockPlayerHoursMissing(page, ValidWorkEmail1SteamId);
+
+      await setupAuthForUser(
+        page,
+        15015,
+        ValidWorkEmail2SteamId,
+        "ValidWorkEmail2"
+      );
+
+      await setupCompleteRegistrationForm(
+        page,
+        generateUniqueOrgName("ProfileLink Off Org"),
+        generateUniqueTeamName("ProfileLink Off Team")
+      );
+
+      await fillValidPlayers(page, ValidWorkEmail2SteamId);
+      await page.waitForTimeout(3000);
+
+      const steamIdInput0 = page.locator('[data-testid="steam-id-input-0"]');
+      await expect(steamIdInput0).toHaveClass(/border-green-500/, {
+        timeout: 20000
+      });
+      await expect(
+        page.locator('[data-testid="profile-link-error-0"]')
+      ).not.toBeVisible();
+
+      await assignCaptain(page);
+
+      const finalTermsCheckbox = page.locator(
+        '[data-testid="terms-conditions-checkbox"]'
+      );
+      if (!(await finalTermsCheckbox.isChecked().catch(() => false))) {
+        await finalTermsCheckbox.click();
+      }
+
+      const submitButton = page
+        .locator('button[type="submit"]')
+        .filter({ hasText: /Submit/i });
+      await expect(submitButton).toBeEnabled({ timeout: 10000 });
+    });
+
+    test("profile_link_required=true (with hours_played_required=false): player with hours=-1 shows profile-link notification and submit is blocked", async ({
+      page
+    }) => {
+      // hours_played_required=false ensures the hours-error notification is
+      // hidden, so the profile-link error is the ONLY blocker driven by
+      // hours=-1 — verifying that profile_link_required is independently
+      // enforced by the frontend when enabled.
+      await mockSeasonDetailsRoute(page, {
+        profile_link_required: true,
+        hours_played_required: false
+      });
+      await mockPlayerHoursMissing(page, ValidWorkEmail1SteamId);
+
+      await setupAuthForUser(
+        page,
+        15015,
+        ValidWorkEmail2SteamId,
+        "ValidWorkEmail2"
+      );
+
+      await setupCompleteRegistrationForm(
+        page,
+        generateUniqueOrgName("ProfileLink On Org"),
+        generateUniqueTeamName("ProfileLink On Team")
+      );
+
+      await fillValidPlayers(page, ValidWorkEmail2SteamId);
+      await page.waitForTimeout(3000);
+
+      const profileLinkError = page.locator(
+        '[data-testid="profile-link-error-0"]'
+      );
+      await expect(profileLinkError).toBeVisible({ timeout: 20000 });
+
+      // hours_played_required=false ⇒ hours notification must NOT render even
+      // though hours === -1 (S2-AC: gate per-flag).
+      await expect(
+        page.locator('[data-testid="hours-error-0"]')
+      ).not.toBeVisible();
+
+      await assignCaptain(page);
+
+      const finalTermsCheckbox = page.locator(
+        '[data-testid="terms-conditions-checkbox"]'
+      );
+      if (!(await finalTermsCheckbox.isChecked().catch(() => false))) {
+        await finalTermsCheckbox.click();
+      }
+
+      const submitButton = page
+        .locator('button[type="submit"]')
+        .filter({ hasText: /Submit/i });
+      await expect(submitButton).toBeDisabled({ timeout: 10000 });
     });
   });
 });
