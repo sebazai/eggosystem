@@ -6,6 +6,15 @@ set -eu
 
 cmd=$(jq -r '.tool_input.command // ""')
 
+# Extra hint: `pnpm typecheck --filter ...` is blocked by enforce-typecheck-command.sh,
+# but this file is advisory and can surface the guidance even when the command is
+# prefixed with `cd ... &&` (which bypasses the "starts with pnpm" check below).
+case "$cmd" in
+  *"pnpm "*"typecheck"*"--filter"*)
+    echo "Hint: avoid 'pnpm typecheck --filter ...' (blocked). Run typecheck from the package directory instead, e.g. 'cd \$(git rev-parse --show-toplevel)/apps/frontend && rtk pnpm typecheck' or repo root 'cd \$(git rev-parse --show-toplevel) && pnpm typecheck'." >&2
+    ;;
+esac
+
 # Only match bare pnpm/knex/turbo invocations at the start of the (sub)command.
 case "$cmd" in
   "pnpm "*|"knex "*|"turbo "*)
