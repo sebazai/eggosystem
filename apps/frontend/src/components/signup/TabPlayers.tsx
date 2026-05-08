@@ -132,7 +132,8 @@ export const TabPlayers = ({
       player.isEmailVerified === true &&
       (!seasonDetails.premier_rank_required || player.rank !== -1) &&
       (!seasonDetails.faceit_rank_required || player.externalRank !== -1) &&
-      (!seasonDetails.hours_played_required || player.hours !== -1)
+      (!seasonDetails.hours_played_required || player.hours !== -1) &&
+      (!seasonDetails.profile_link_required || player.hours !== -1)
     );
   };
 
@@ -579,6 +580,7 @@ export const TabPlayers = ({
           player.hasValidWorkEmail !== true ||
           player.isEmailVerified !== true ||
           (seasonDetails.hours_played_required && player.hours === -1) ||
+          (seasonDetails.profile_link_required && player.hours === -1) ||
           (seasonDetails.premier_rank_required && player.rank === -1) ||
           (seasonDetails.faceit_rank_required &&
             player.externalRank === -1 &&
@@ -1107,52 +1109,57 @@ export const TabPlayers = ({
                       </SignupPlayerNotification>
                     )}
 
-                  {player.hours === -1 && (
-                    <SignupPlayerNotification
-                      data-testid={`hours-error-${index}`}
-                    >
-                      <span>
-                        Could not detect the hours for the player. Please ensure
-                        that the{" "}
-                        <Link
-                          href="https://help.steampowered.com/en/faqs/view/588C-C67D-0251-C276"
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline text-kanaliiga-orange"
-                        >
-                          Steam profile and Game details are set to public
-                        </Link>
-                        .<br />
-                        Also, make sure the{" "}
-                        <strong>
-                          &quot;Always keep my total playtime private even if
-                          users can see my game details&quot;
-                        </strong>{" "}
-                        option is <strong>unchecked</strong>.<br />
-                        <em>
-                          Note: Changes to Steam privacy settings may take a few
-                          minutes to take effect.
-                        </em>
-                        <br />
-                        If the profile is correctly set to public and the issue
-                        persists, please open a ticket in the Kanaliiga Discord.
-                      </span>
-                    </SignupPlayerNotification>
-                  )}
+                  {player.hours === -1 &&
+                    (seasonDetails.hours_played_required ||
+                      seasonDetails.profile_link_required) && (
+                      <SignupPlayerNotification
+                        data-testid={`hours-error-${index}`}
+                      >
+                        <span>
+                          Could not detect the hours for the player. Please
+                          ensure that the{" "}
+                          <Link
+                            href="https://help.steampowered.com/en/faqs/view/588C-C67D-0251-C276"
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline text-kanaliiga-orange"
+                          >
+                            Steam profile and Game details are set to public
+                          </Link>
+                          .<br />
+                          Also, make sure the{" "}
+                          <strong>
+                            &quot;Always keep my total playtime private even if
+                            users can see my game details&quot;
+                          </strong>{" "}
+                          option is <strong>unchecked</strong>.<br />
+                          <em>
+                            Note: Changes to Steam privacy settings may take a
+                            few minutes to take effect.
+                          </em>
+                          <br />
+                          If the profile is correctly set to public and the
+                          issue persists, please open a ticket in the Kanaliiga
+                          Discord.
+                        </span>
+                      </SignupPlayerNotification>
+                    )}
 
-                  {player.rank === -1 && (
-                    <SignupPlayerNotification
-                      data-testid={`rank-error-${index}`}
-                    >
-                      Could not detect internal game rank for the player. This
-                      could be due to temporary service issues or missing rank
-                      data. Please try removing the steam id and adding it
-                      again, or open a ticket in the Kanaliiga Discord if the
-                      problem persists.
-                    </SignupPlayerNotification>
-                  )}
+                  {player.rank === -1 &&
+                    seasonDetails.premier_rank_required && (
+                      <SignupPlayerNotification
+                        data-testid={`rank-error-${index}`}
+                      >
+                        Could not detect internal game rank for the player. This
+                        could be due to temporary service issues or missing rank
+                        data. Please try removing the steam id and adding it
+                        again, or open a ticket in the Kanaliiga Discord if the
+                        problem persists.
+                      </SignupPlayerNotification>
+                    )}
 
                   {player.externalRank === -1 &&
+                    seasonDetails.faceit_rank_required &&
                     platform !== SeasonPlatform.Kanaliiga && (
                       <SignupPlayerNotification
                         data-testid={`external-rank-error-${index}`}

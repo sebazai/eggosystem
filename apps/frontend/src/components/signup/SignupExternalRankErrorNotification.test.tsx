@@ -102,12 +102,14 @@ const TestWrapper = ({
   players,
   platform = SeasonPlatform.FACEIT,
   seasonSteamAppId = 730,
-  seasonId = "16"
+  seasonId = "16",
+  faceitRankRequired = true
 }: {
   players: SignupFormValues["players"];
   platform?: SeasonPlatform;
   seasonSteamAppId?: number;
   seasonId?: string;
+  faceitRankRequired?: boolean;
 }) => {
   const methods = useForm<SignupFormValues>({
     defaultValues: {
@@ -138,7 +140,10 @@ const TestWrapper = ({
           prefilledPlayerSteamIds={[]}
           isEditMode={false}
           submitInitiated={false}
-          seasonDetails={createMockSeasonDetails({ platform })}
+          seasonDetails={createMockSeasonDetails({
+            platform,
+            faceit_rank_required: faceitRankRequired
+          })}
         />
       </Tabs>
     </FormProvider>

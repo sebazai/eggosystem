@@ -207,8 +207,8 @@ export interface SeasonFormRaw {
    * Discord link for the season (nullable)
    */
   discord_link: string | null;
-  faceit_rank_required?: boolean;
-  premier_rank_required?: boolean;
-  profile_link_required?: boolean;
-  hours_played_required?: boolean;
+  faceit_rank_required: boolean;
+  premier_rank_required: boolean;
+  profile_link_required: boolean;
+  hours_played_required: boolean;
 }
