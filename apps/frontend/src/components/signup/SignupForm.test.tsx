@@ -175,42 +175,10 @@ describe("SignupForm submit-gating (S1-AC-1, S2-AC-2)", () => {
     });
   });
 
-  it("disables submit when profile_link_required=true and a player has hours=-1", () => {
-    mockUseSeasonDetails.mockReturnValue({
-      seasonDetails: createMockSeasonDetails({
-        platform: SeasonPlatform.Kanaliiga,
-        profile_link_required: true,
-        hours_played_required: false,
-        faceit_rank_required: false,
-        premier_rank_required: false
-      }),
-      isLoading: false,
-      isError: null,
-      isValidating: false
-    });
-
-    // Flag is enabled and one player has hours=-1 → canSubmit must be false.
-    const editValues = buildValidEditValues((player, index) =>
-      index === 0 ? { ...player, hours: -1 } : player
-    );
-
-    render(
-      <SignupForm
-        seasonId="1"
-        platform={SeasonPlatform.Kanaliiga}
-        editValues={editValues}
-      />
-    );
-
-    const submitButton = screen.getByTestId("signup-submit-button");
-    expect(submitButton).toBeDisabled();
-  });
-
   it("disables submit when hours_played_required=true and a player has hours=-1", () => {
     mockUseSeasonDetails.mockReturnValue({
       seasonDetails: createMockSeasonDetails({
         platform: SeasonPlatform.Kanaliiga,
-        profile_link_required: false,
         hours_played_required: true,
         faceit_rank_required: false,
         premier_rank_required: false
@@ -235,11 +203,10 @@ describe("SignupForm submit-gating (S1-AC-1, S2-AC-2)", () => {
     expect(screen.getByTestId("signup-submit-button")).toBeDisabled();
   });
 
-  it("enables submit when profile_link_required=false even though a player has hours=-1 (S1-AC-1)", () => {
+  it("enables submit when hours_played_required=false even though a player has hours=-1 (S1-AC-1)", () => {
     mockUseSeasonDetails.mockReturnValue({
       seasonDetails: createMockSeasonDetails({
         platform: SeasonPlatform.Kanaliiga,
-        profile_link_required: false,
         hours_played_required: false,
         faceit_rank_required: false,
         premier_rank_required: false
@@ -269,7 +236,6 @@ describe("SignupForm submit-gating (S1-AC-1, S2-AC-2)", () => {
     mockUseSeasonDetails.mockReturnValue({
       seasonDetails: createMockSeasonDetails({
         platform: SeasonPlatform.Kanaliiga,
-        profile_link_required: false,
         hours_played_required: false,
         faceit_rank_required: false,
         premier_rank_required: false
@@ -298,7 +264,6 @@ describe("SignupForm submit-gating (S1-AC-1, S2-AC-2)", () => {
     mockUseSeasonDetails.mockReturnValue({
       seasonDetails: createMockSeasonDetails({
         platform: SeasonPlatform.Kanaliiga,
-        profile_link_required: false,
         hours_played_required: false,
         faceit_rank_required: false,
         premier_rank_required: false
@@ -327,7 +292,6 @@ describe("SignupForm submit-gating (S1-AC-1, S2-AC-2)", () => {
     mockUseSeasonDetails.mockReturnValue({
       seasonDetails: createMockSeasonDetails({
         platform: SeasonPlatform.Kanaliiga,
-        profile_link_required: false,
         hours_played_required: false,
         faceit_rank_required: false,
         premier_rank_required: true

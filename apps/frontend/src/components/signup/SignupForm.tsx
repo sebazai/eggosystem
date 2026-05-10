@@ -270,8 +270,7 @@ export const SignupForm = ({
         (!seasonDetails?.faceit_rank_required ||
           p.externalRank !== -1 ||
           seasonDetails?.platform === SeasonPlatform.Kanaliiga) &&
-        (!seasonDetails?.hours_played_required || p.hours !== -1) &&
-        (!seasonDetails?.profile_link_required || p.hours !== -1)
+        (!seasonDetails?.hours_played_required || p.hours !== -1)
     );
 
   // Real-time captain/co-captain validation

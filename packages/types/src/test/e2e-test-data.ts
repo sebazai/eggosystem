@@ -3,6 +3,9 @@
  * This data is used by both the backend seed files and MSW handlers
  */
 
+/** Matches `Seasons.id` inserted by `apps/backend/seeds/e2e_test_seed.ts` (relaxed signup flags). */
+export const E2E_SIGNUP_SEASON_RELAXED_REQUIREMENTS_ID = 996;
+
 import {
   AabeSteamId,
   AddTeamSignupSteamId1,
@@ -319,7 +322,7 @@ export const e2eSteamPlayerData: E2ESteamPlayerData[] = [
   },
   // Steam GetOwnedGames MSW returns an empty games array for this Steam ID so
   // the backend's `getPlayerHoursForCS` returns hours=-1 (also the proxy for
-  // a non-public Steam profile in the profile_link_required test).
+  // missing Steam playtime via empty owned-games payload).
   {
     account_id: 15034,
     steam_id: ConfigurableReqsHoursMissingSteamId,

@@ -22,7 +22,7 @@ export const getOwnedGamesHandlers = [
       // S1-AC-4 "Configurable signup requirements" hours-missing target also
       // takes this branch so the backend's `getPlayerHoursForCS` returns
       // hours=-1 — same code path as a player whose Steam profile is not
-      // public, which is also the proxy used by profile_link_required.
+      // public (signup hours/playtime scenarios).
       if (
         steam_id === InsufficientHoursPlayerSteamId ||
         steam_id === RaceConditionPlayerSteamId ||

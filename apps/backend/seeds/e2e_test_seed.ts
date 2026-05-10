@@ -99,6 +99,10 @@ export async function seed(knex: Knex): Promise<void> {
   await knex("SeasonTeamRegistrations").where({ season_id: 16 }).del();
   await knex("Teams").whereIn("id", [999, 998, 997]).del();
   await knex("Organizations").whereIn("id", [999, 998, 997]).del();
+  await knex("SeasonTeamPlayers").where({ season_id: 996 }).del();
+  await knex("SeasonTeamRegistrationPlayers").where({ season_id: 996 }).del();
+  await knex("SeasonTeamRegistrations").where({ season_id: 996 }).del();
+  await knex("Seasons").where({ id: 996 }).del();
   await knex("Seasons").where({ id: 16 }).del();
 
   // Clean up NEW test accounts and related data if they exist
@@ -149,8 +153,24 @@ export async function seed(knex: Knex): Promise<void> {
     platform: "faceit",
     faceit_rank_required: 1,
     premier_rank_required: 1,
-    profile_link_required: 1,
     hours_played_required: 1
+  });
+
+  // Dedicated season for end-to-end “all signup requirements OFF” flows (matches production DB flags;
+  // does not rely on route-mocking `/seasons/*/details`).
+  await knex("Seasons").insert({
+    id: 996,
+    game_id: 1,
+    name: "E2E Season Relaxed signup reqs",
+    full_name: "E2E CS2 Relaxed signup requirements",
+    signup_start_date: now,
+    signup_end_date: tomorrow,
+    start_date: tenDaysLater,
+    end_date: sixtyDaysLater,
+    platform: "faceit",
+    faceit_rank_required: 0,
+    premier_rank_required: 0,
+    hours_played_required: 0
   });
 
   // Update user emails in the Accounts table for NEW account IDs

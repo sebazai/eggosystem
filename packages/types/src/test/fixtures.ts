@@ -49,5 +49,5 @@ export const ConfigurableReqsAuthSteamId = "66561198999999935";
 export const ConfigurableReqsInternalRankMissingSteamId = "66561198999999936";
 // Hours missing: Steam GetOwnedGames MSW returns an empty games array, so the
 // backend's `getPlayerHoursForCS` returns hours=-1. Doubles as the
-// non-public-profile proxy for the profile_link_required test.
+// Missing Steam owned-games / playtime (hours path) proxy for signup tests.
 export const ConfigurableReqsHoursMissingSteamId = "66561198999999937";

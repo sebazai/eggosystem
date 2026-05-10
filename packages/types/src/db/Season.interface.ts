@@ -58,7 +58,6 @@ export interface Season {
   discord_link: string | null;
   faceit_rank_required: boolean;
   premier_rank_required: boolean;
-  profile_link_required: boolean;
   hours_played_required: boolean;
 }
 
@@ -84,6 +83,5 @@ export interface InsertSeason {
   discord_link?: Nullable<string>;
   faceit_rank_required?: boolean;
   premier_rank_required?: boolean;
-  profile_link_required?: boolean;
   hours_played_required?: boolean;
 }

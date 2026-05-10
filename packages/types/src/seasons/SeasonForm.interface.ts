@@ -106,7 +106,6 @@ export const seasonFormSchema = z
       .nullable(),
     faceit_rank_required: z.boolean().optional(),
     premier_rank_required: z.boolean().optional(),
-    profile_link_required: z.boolean().optional(),
     hours_played_required: z.boolean().optional()
   })
   .refine(
@@ -209,6 +208,5 @@ export interface SeasonFormRaw {
   discord_link: string | null;
   faceit_rank_required: boolean;
   premier_rank_required: boolean;
-  profile_link_required: boolean;
   hours_played_required: boolean;
 }

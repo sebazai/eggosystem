@@ -39,7 +39,6 @@ describe("Season Models", () => {
       const seasonData = createMockSeasonFormRaw({
         faceit_rank_required: true,
         premier_rank_required: true,
-        profile_link_required: true,
         hours_played_required: true
       });
 
@@ -70,7 +69,6 @@ describe("Season Models", () => {
           seasonData.early_bird_price_discount_end_date,
           seasonData.rulebook_url,
           seasonData.discord_link,
-          true,
           true,
           true,
           true
@@ -125,7 +123,6 @@ describe("Season Models", () => {
         has_vat: false,
         faceit_rank_required: true,
         premier_rank_required: true,
-        profile_link_required: true,
         hours_played_required: true
       });
 
@@ -156,7 +153,6 @@ describe("Season Models", () => {
           seasonData.early_bird_price_discount_end_date,
           seasonData.rulebook_url,
           seasonData.discord_link,
-          true,
           true,
           true,
           true,

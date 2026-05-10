@@ -88,11 +88,10 @@ describe("Season Controllers Integration Tests - Signup Requirements", () => {
           Array<{
             faceit_rank_required: boolean;
             premier_rank_required: boolean;
-            profile_link_required: boolean;
             hours_played_required: boolean;
           }>
         >(
-          "SELECT faceit_rank_required, premier_rank_required, profile_link_required, hours_played_required FROM Seasons WHERE id = ?",
+          "SELECT faceit_rank_required, premier_rank_required, hours_played_required FROM Seasons WHERE id = ?",
           [createdSeasonId],
           connection
         );
@@ -100,7 +99,6 @@ describe("Season Controllers Integration Tests - Signup Requirements", () => {
         expect(storedSeason).toBeDefined();
         expect(storedSeason?.faceit_rank_required).toBe(false);
         expect(storedSeason?.premier_rank_required).toBe(false);
-        expect(storedSeason?.profile_link_required).toBe(false);
         expect(storedSeason?.hours_played_required).toBe(false);
       } finally {
         // Clean up
@@ -133,7 +131,6 @@ describe("Season Controllers Integration Tests - Signup Requirements", () => {
         active_map_pool: [1, 2, 3],
         faceit_rank_required: true,
         premier_rank_required: true,
-        profile_link_required: true,
         hours_played_required: true
       };
 
@@ -152,11 +149,10 @@ describe("Season Controllers Integration Tests - Signup Requirements", () => {
           Array<{
             faceit_rank_required: boolean;
             premier_rank_required: boolean;
-            profile_link_required: boolean;
             hours_played_required: boolean;
           }>
         >(
-          "SELECT faceit_rank_required, premier_rank_required, profile_link_required, hours_played_required FROM Seasons WHERE id = ?",
+          "SELECT faceit_rank_required, premier_rank_required, hours_played_required FROM Seasons WHERE id = ?",
           [createdSeasonId],
           connection
         );
@@ -164,7 +160,6 @@ describe("Season Controllers Integration Tests - Signup Requirements", () => {
         expect(storedSeason).toBeDefined();
         expect(storedSeason?.faceit_rank_required).toBe(true);
         expect(storedSeason?.premier_rank_required).toBe(true);
-        expect(storedSeason?.profile_link_required).toBe(true);
         expect(storedSeason?.hours_played_required).toBe(true);
       } finally {
         // Clean up
@@ -189,10 +184,10 @@ describe("Season Controllers Integration Tests - Signup Requirements", () => {
         `INSERT INTO Seasons (
           id, game_id, game_type_id, organizer_id, name, full_name,
           start_date, end_date, platform, is_round_robin_bo2_as_2xbo1, has_vat,
-          faceit_rank_required, premier_rank_required, profile_link_required, hours_played_required
+          faceit_rank_required, premier_rank_required, hours_played_required
         ) VALUES (?, 1, 1, 1, 'Test Season', 'Test Season Full Name',
           '2024-01-01', '2024-12-31', 'faceit', false, true,
-          false, false, false, false)`,
+          false, false, false)`,
         [testSeasonId],
         connection
       );
@@ -220,7 +215,6 @@ describe("Season Controllers Integration Tests - Signup Requirements", () => {
         active_map_pool: [3, 4, 5],
         faceit_rank_required: true,
         premier_rank_required: true,
-        profile_link_required: true,
         hours_played_required: true
       };
 
@@ -235,11 +229,10 @@ describe("Season Controllers Integration Tests - Signup Requirements", () => {
         Array<{
           faceit_rank_required: boolean;
           premier_rank_required: boolean;
-          profile_link_required: boolean;
           hours_played_required: boolean;
         }>
       >(
-        "SELECT faceit_rank_required, premier_rank_required, profile_link_required, hours_played_required FROM Seasons WHERE id = ?",
+        "SELECT faceit_rank_required, premier_rank_required, hours_played_required FROM Seasons WHERE id = ?",
         [testSeasonId],
         connection
       );
@@ -247,7 +240,6 @@ describe("Season Controllers Integration Tests - Signup Requirements", () => {
       expect(storedSeason).toBeDefined();
       expect(storedSeason?.faceit_rank_required).toBe(true);
       expect(storedSeason?.premier_rank_required).toBe(true);
-      expect(storedSeason?.profile_link_required).toBe(true);
       expect(storedSeason?.hours_played_required).toBe(true);
     });
 
@@ -258,7 +250,6 @@ describe("Season Controllers Integration Tests - Signup Requirements", () => {
         `UPDATE Seasons SET 
           faceit_rank_required = true,
           premier_rank_required = true,
-          profile_link_required = true,
           hours_played_required = true
         WHERE id = ?`,
         [testSeasonId],
@@ -279,7 +270,6 @@ describe("Season Controllers Integration Tests - Signup Requirements", () => {
         active_map_pool: [3, 4, 5],
         faceit_rank_required: false,
         premier_rank_required: false,
-        profile_link_required: false,
         hours_played_required: false
       };
 
@@ -294,11 +284,10 @@ describe("Season Controllers Integration Tests - Signup Requirements", () => {
         Array<{
           faceit_rank_required: boolean;
           premier_rank_required: boolean;
-          profile_link_required: boolean;
           hours_played_required: boolean;
         }>
       >(
-        "SELECT faceit_rank_required, premier_rank_required, profile_link_required, hours_played_required FROM Seasons WHERE id = ?",
+        "SELECT faceit_rank_required, premier_rank_required, hours_played_required FROM Seasons WHERE id = ?",
         [testSeasonId],
         connection
       );
@@ -306,7 +295,6 @@ describe("Season Controllers Integration Tests - Signup Requirements", () => {
       expect(storedSeason).toBeDefined();
       expect(storedSeason?.faceit_rank_required).toBe(false);
       expect(storedSeason?.premier_rank_required).toBe(false);
-      expect(storedSeason?.profile_link_required).toBe(false);
       expect(storedSeason?.hours_played_required).toBe(false);
     });
   });
@@ -318,10 +306,10 @@ describe("Season Controllers Integration Tests - Signup Requirements", () => {
         `INSERT INTO Seasons (
           id, game_id, game_type_id, organizer_id, name, full_name,
           start_date, end_date, platform, is_round_robin_bo2_as_2xbo1, has_vat,
-          faceit_rank_required, premier_rank_required, profile_link_required, hours_played_required
+          faceit_rank_required, premier_rank_required, hours_played_required
         ) VALUES (?, 1, 1, 1, 'Test Season', 'Test Season Full Name',
           '2024-01-01', '2024-12-31', 'faceit', false, true,
-          true, false, true, false)`,
+          true, false, false)`,
         [testSeasonId],
         connection
       );
@@ -343,12 +331,10 @@ describe("Season Controllers Integration Tests - Signup Requirements", () => {
 
       expect(response.body).toHaveProperty("faceit_rank_required");
       expect(response.body).toHaveProperty("premier_rank_required");
-      expect(response.body).toHaveProperty("profile_link_required");
       expect(response.body).toHaveProperty("hours_played_required");
 
       expect(response.body.faceit_rank_required).toBe(true);
       expect(response.body.premier_rank_required).toBe(false);
-      expect(response.body.profile_link_required).toBe(true);
       expect(response.body.hours_played_required).toBe(false);
     });
   });

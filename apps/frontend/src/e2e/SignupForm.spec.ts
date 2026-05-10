@@ -20,6 +20,7 @@ import {
   ConfigurableReqsInternalRankMissingSteamId,
   createMockSeasonDetails,
   DraftReturnUserSteamId,
+  E2E_SIGNUP_SEASON_RELAXED_REQUIREMENTS_ID,
   heppajpgSteamId,
   HoolyzSteamId,
   IncompleteDetailsPlayerSteamId,
@@ -198,10 +199,11 @@ async function setupFormToPlayersSectionWithTeam(
 async function setupCompleteRegistrationForm(
   page: Page,
   orgName: string,
-  teamName: string
+  teamName: string,
+  seasonId: number = 16
 ) {
   // Navigate to the registration form
-  await page.goto("/seasons/16/signup/registration");
+  await page.goto(`/seasons/${seasonId}/signup/registration`);
 
   // Wait for signup status check and form to be ready (org dropdown is the first interactive element)
   await page
@@ -1705,7 +1707,7 @@ test.describe("Signup Form", () => {
   });
 
   // S1-AC-4: Configurable signup requirements (faceit_rank_required,
-  // premier_rank_required, hours_played_required, profile_link_required).
+  // premier_rank_required, hours_played_required).
   //
   // Strategy: end-to-end through the real frontend → backend → external-API
   // path. Each "missing" precondition for the index-0 lineup slot is driven
@@ -1733,7 +1735,6 @@ test.describe("Signup Form", () => {
       flagOverrides: Partial<{
         faceit_rank_required: boolean;
         premier_rank_required: boolean;
-        profile_link_required: boolean;
         hours_played_required: boolean;
       }>
     ) => {
@@ -1751,7 +1752,6 @@ test.describe("Signup Form", () => {
           // behaviour, then apply flag overrides for the specific test.
           faceit_rank_required: true,
           premier_rank_required: true,
-          profile_link_required: true,
           hours_played_required: true,
           ...flagOverrides
         });
@@ -1895,13 +1895,8 @@ test.describe("Signup Form", () => {
     test("hours_played_required=false: player with hours=-1 has green border, no hours notification, submit is enabled", async ({
       page
     }) => {
-      // Disable both hours_played_required AND profile_link_required so the
-      // hours=-1 player does not trip the profile-link gate either (this test
-      // is scoped to the hours flag; profile_link_required is exercised in the
-      // dedicated tests below).
       await mockSeasonDetailsRoute(page, {
-        hours_played_required: false,
-        profile_link_required: false
+        hours_played_required: false
       });
 
       await setupAuthForUser(
@@ -1933,9 +1928,6 @@ test.describe("Signup Form", () => {
       await expect(
         page.locator('[data-testid="hours-error-0"]')
       ).not.toBeVisible();
-      await expect(
-        page.locator('[data-testid="profile-link-error-0"]')
-      ).not.toBeVisible();
 
       await assignCaptain(page);
 
@@ -1952,15 +1944,17 @@ test.describe("Signup Form", () => {
       await expect(submitButton).toBeEnabled({ timeout: 10000 });
     });
 
-    test("profile_link_required=false: player with hours=-1 (proxy for non-public profile) has no profile-link notification and submit is enabled", async ({
+    test("AC-5: strict season (real `/details`) — missing required hours prevents signup POST", async ({
       page
     }) => {
-      // Same proxy: hours=-1 stands in for "profile not public" because the
-      // frontend uses player.hours === -1 to drive the profile-link gate.
-      // Disable hours_played_required so hours error does not block the submit.
-      await mockSeasonDetailsRoute(page, {
-        profile_link_required: false,
-        hours_played_required: false
+      const signupPosts: string[] = [];
+      page.on("request", (req) => {
+        if (
+          req.method() === "POST" &&
+          req.url().includes("/api/v1/dashboard/registration/season/16/signup")
+        ) {
+          signupPosts.push(req.url());
+        }
       });
 
       await setupAuthForUser(
@@ -1972,25 +1966,23 @@ test.describe("Signup Form", () => {
 
       await setupCompleteRegistrationForm(
         page,
-        generateUniqueOrgName("ProfileLink Off Org"),
-        generateUniqueTeamName("ProfileLink Off Team")
+        generateUniqueOrgName("AC5 Strict Hours Org"),
+        generateUniqueTeamName("AC5 Strict Hours Team"),
+        16
       );
 
-      // Index-0's hours legitimately come back as -1 (Steam MSW returns no
-      // games for ConfigurableReqsHoursMissingSteamId) — the same path the
-      // frontend treats as "Steam profile not public".
       await fillConfigurableReqsLineup(
         page,
         ConfigurableReqsHoursMissingSteamId
       );
 
       const steamIdInput0 = page.locator('[data-testid="steam-id-input-0"]');
-      await expect(steamIdInput0).toHaveClass(/border-green-500/, {
+      await expect(steamIdInput0).toHaveClass(/border-red-500/, {
         timeout: 20000
       });
-      await expect(
-        page.locator('[data-testid="profile-link-error-0"]')
-      ).not.toBeVisible();
+      await expect(page.locator('[data-testid="hours-error-0"]')).toBeVisible({
+        timeout: 20000
+      });
 
       await assignCaptain(page);
 
@@ -2004,20 +1996,14 @@ test.describe("Signup Form", () => {
       const submitButton = page
         .locator('button[type="submit"]')
         .filter({ hasText: /Submit/i });
-      await expect(submitButton).toBeEnabled({ timeout: 10000 });
+      await expect(submitButton).toBeDisabled({ timeout: 15000 });
+      expect(signupPosts.length).toBe(0);
     });
 
-    test("profile_link_required=true (with hours_played_required=false): player with hours=-1 shows profile-link notification and submit is blocked", async ({
+    test("AC-2 / AC-5 positive: relaxed season (DB seed) completes signup POST with missing FaceIT rank", async ({
       page
     }) => {
-      // hours_played_required=false ensures the hours-error notification is
-      // hidden, so the profile-link error is the ONLY blocker driven by
-      // hours=-1 — verifying that profile_link_required is independently
-      // enforced by the frontend when enabled.
-      await mockSeasonDetailsRoute(page, {
-        profile_link_required: true,
-        hours_played_required: false
-      });
+      const relaxedSeasonId = E2E_SIGNUP_SEASON_RELAXED_REQUIREMENTS_ID;
 
       await setupAuthForUser(
         page,
@@ -2026,29 +2012,27 @@ test.describe("Signup Form", () => {
         "ConfigurableReqsAuth"
       );
 
+      const signupPromise = page.waitForResponse((res) => {
+        return (
+          res
+            .url()
+            .includes(
+              `/api/v1/dashboard/registration/season/${relaxedSeasonId}/signup`
+            ) && res.request().method() === "POST"
+        );
+      });
+
       await setupCompleteRegistrationForm(
         page,
-        generateUniqueOrgName("ProfileLink On Org"),
-        generateUniqueTeamName("ProfileLink On Team")
+        generateUniqueOrgName("Relaxed Full Signup Org"),
+        generateUniqueTeamName("Relaxed Full Signup Team"),
+        relaxedSeasonId
       );
 
-      // Index-0's hours come back as -1 (Steam MSW returns no games for
-      // ConfigurableReqsHoursMissingSteamId), tripping the profile-link gate.
       await fillConfigurableReqsLineup(
         page,
-        ConfigurableReqsHoursMissingSteamId
+        ConfigurableReqsExternalRankMissingSteamId
       );
-
-      const profileLinkError = page.locator(
-        '[data-testid="profile-link-error-0"]'
-      );
-      await expect(profileLinkError).toBeVisible({ timeout: 20000 });
-
-      // hours_played_required=false ⇒ hours notification must NOT render even
-      // though hours === -1 (S2-AC: gate per-flag).
-      await expect(
-        page.locator('[data-testid="hours-error-0"]')
-      ).not.toBeVisible();
 
       await assignCaptain(page);
 
@@ -2062,7 +2046,12 @@ test.describe("Signup Form", () => {
       const submitButton = page
         .locator('button[type="submit"]')
         .filter({ hasText: /Submit/i });
-      await expect(submitButton).toBeDisabled({ timeout: 10000 });
+      await expect(submitButton).toBeEnabled({ timeout: 15000 });
+      await submitButton.click();
+
+      const response = await signupPromise;
+      expect(response.status()).toBeGreaterThanOrEqual(200);
+      expect(response.status()).toBeLessThan(300);
     });
   });
 });

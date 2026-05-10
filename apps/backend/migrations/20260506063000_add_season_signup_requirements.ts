@@ -8,7 +8,6 @@ export async function up(knex: Knex): Promise<void> {
   await knex.schema.table("Seasons", (table) => {
     table.boolean("faceit_rank_required").notNullable().defaultTo(false);
     table.boolean("premier_rank_required").notNullable().defaultTo(false);
-    table.boolean("profile_link_required").notNullable().defaultTo(false);
     table.boolean("hours_played_required").notNullable().defaultTo(false);
   });
 
@@ -21,7 +20,6 @@ export async function up(knex: Knex): Promise<void> {
     .update({
       faceit_rank_required: true,
       premier_rank_required: true,
-      profile_link_required: true,
       hours_played_required: true
     });
 }
@@ -31,7 +29,6 @@ export async function down(knex: Knex): Promise<void> {
   await knex.schema.table("Seasons", (table) => {
     table.dropColumn("faceit_rank_required");
     table.dropColumn("premier_rank_required");
-    table.dropColumn("profile_link_required");
     table.dropColumn("hours_played_required");
   });
 }

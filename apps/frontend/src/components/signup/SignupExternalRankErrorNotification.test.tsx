@@ -104,7 +104,6 @@ const TestWrapper = ({
   seasonSteamAppId = 730,
   seasonId = "16",
   faceitRankRequired = true,
-  profileLinkRequired = false,
   hoursPlayedRequired = false
 }: {
   players: SignupFormValues["players"];
@@ -112,7 +111,6 @@ const TestWrapper = ({
   seasonSteamAppId?: number;
   seasonId?: string;
   faceitRankRequired?: boolean;
-  profileLinkRequired?: boolean;
   hoursPlayedRequired?: boolean;
 }) => {
   const methods = useForm<SignupFormValues>({
@@ -147,7 +145,6 @@ const TestWrapper = ({
           seasonDetails={createMockSeasonDetails({
             platform,
             faceit_rank_required: faceitRankRequired,
-            profile_link_required: profileLinkRequired,
             hours_played_required: hoursPlayedRequired
           })}
         />
@@ -542,7 +539,7 @@ describe("External Rank Error", () => {
     expect(accordionItem.getAttribute("data-state")).toBe("closed");
   });
 
-  it("should NOT show hours/profile notification when profile_link_required is disabled and hours is -1", () => {
+  it("should NOT show hours notification when hours_played_required is disabled and hours is -1", () => {
     const players = [
       {
         accountId: 15014,
@@ -564,26 +561,17 @@ describe("External Rank Error", () => {
       <TestWrapper
         players={players}
         platform={SeasonPlatform.FACEIT}
-        profileLinkRequired={false}
         hoursPlayedRequired={false}
       />
     );
 
-    // Neither the hours-played notification nor the profile-link notification
-    // should appear when both flags are disabled.
     expect(screen.queryByTestId("hours-error-0")).not.toBeInTheDocument();
-    expect(
-      screen.queryByTestId("profile-link-error-0")
-    ).not.toBeInTheDocument();
     expect(
       screen.queryByText(/Could not detect the hours for the player/)
     ).not.toBeInTheDocument();
-    expect(
-      screen.queryByText(/Steam profile must be public/)
-    ).not.toBeInTheDocument();
   });
 
-  it("should show distinct profile-link notification when only profile_link_required is enabled and hours is -1", async () => {
+  it("should show hours notification when hours_played_required is enabled and hours is -1", async () => {
     const players = [
       {
         accountId: 15014,
@@ -605,59 +593,10 @@ describe("External Rank Error", () => {
       <TestWrapper
         players={players}
         platform={SeasonPlatform.FACEIT}
-        profileLinkRequired={true}
-        hoursPlayedRequired={false}
-      />
-    );
-
-    // The accordion is auto-opened by the open-on-error effect because the
-    // player has loaded validation data with hours=-1 + profile_link_required.
-    await waitFor(() => {
-      expect(screen.getByTestId("profile-link-error-0")).toBeInTheDocument();
-    });
-
-    // Wording must be distinct from the hours-played notification — it should
-    // mention the public Steam profile, not the hours-detection wording.
-    expect(
-      screen.getByText(/Steam profile must be public/)
-    ).toBeInTheDocument();
-    expect(
-      screen.queryByText(/Could not detect the hours for the player/)
-    ).not.toBeInTheDocument();
-
-    // The hours-error notification must NOT be rendered when only
-    // profile_link_required is active.
-    expect(screen.queryByTestId("hours-error-0")).not.toBeInTheDocument();
-  });
-
-  it("should show hours notification (not profile-link) when only hours_played_required is enabled", async () => {
-    const players = [
-      {
-        accountId: 15014,
-        steamId: NoFaceitRankPlayerSteamId,
-        nickname: "NoFaceitRankPlayer",
-        discord: "",
-        captain: false,
-        coCaptain: false,
-        hasValidData: true,
-        hasValidWorkEmail: true,
-        isEmailVerified: true,
-        hours: -1,
-        rank: 13,
-        externalRank: 5
-      }
-    ];
-
-    render(
-      <TestWrapper
-        players={players}
-        platform={SeasonPlatform.FACEIT}
-        profileLinkRequired={false}
         hoursPlayedRequired={true}
       />
     );
 
-    // The accordion is auto-opened by the open-on-error effect.
     await waitFor(() => {
       expect(screen.getByTestId("hours-error-0")).toBeInTheDocument();
     });
@@ -665,13 +604,9 @@ describe("External Rank Error", () => {
     expect(
       screen.getByText(/Could not detect the hours for the player/)
     ).toBeInTheDocument();
-    // The distinct profile-link branch must not render in this configuration.
-    expect(
-      screen.queryByTestId("profile-link-error-0")
-    ).not.toBeInTheDocument();
   });
 
-  it("should show red/invalid visual state and force accordion open when profile_link_required=true and hours=-1 (S2-AC-1)", async () => {
+  it("should show red/invalid visual state and force accordion open when hours_played_required=true and hours=-1", async () => {
     const players = [
       {
         accountId: 15014,
@@ -693,30 +628,22 @@ describe("External Rank Error", () => {
       <TestWrapper
         players={players}
         platform={SeasonPlatform.FACEIT}
-        profileLinkRequired={true}
-        hoursPlayedRequired={false}
+        hoursPlayedRequired={true}
         faceitRankRequired={false}
       />
     );
 
-    // The steam-id-input should display the red/invalid border class because
-    // the enabled profile_link_required + hours sentinel must surface as an
-    // error visual state.
     const steamIdInput = screen.getByTestId("steam-id-input-0");
     await waitFor(() => {
       expect(steamIdInput.className).toContain("border-red-500");
     });
     expect(steamIdInput.className).not.toContain("border-green-500");
 
-    // The accordion must be forced open by the open-on-error effect so the
-    // error notification is visible without manual interaction.
     const accordionItem = screen.getByTestId("player-accordion-0");
     await waitFor(() => {
       expect(accordionItem.getAttribute("data-state")).toBe("open");
     });
 
-    // The distinct profile-link notification should render inside the now-open
-    // accordion content.
-    expect(screen.getByTestId("profile-link-error-0")).toBeInTheDocument();
+    expect(screen.getByTestId("hours-error-0")).toBeInTheDocument();
   });
 });

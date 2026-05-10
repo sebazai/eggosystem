@@ -179,6 +179,33 @@ const updatePlayersFaceitData = async (
   }
 };
 
+interface SeasonSignupRankRequirements {
+  faceit_rank_required: boolean;
+  premier_rank_required: boolean;
+  hours_played_required: boolean;
+}
+
+/**
+ * Requirement flags persisted on Seasons; callers must resolve the season row.
+ * Conservative default preserves legacy behaviour if data is unexpectedly missing.
+ */
+function pickSignupRankRequirements(
+  season: SeasonDetails | undefined | null
+): SeasonSignupRankRequirements {
+  if (!season) {
+    return {
+      faceit_rank_required: true,
+      premier_rank_required: true,
+      hours_played_required: true
+    };
+  }
+  return {
+    faceit_rank_required: !!season.faceit_rank_required,
+    premier_rank_required: !!season.premier_rank_required,
+    hours_played_required: !!season.hours_played_required
+  };
+}
+
 /**
  * Creates and saves a player rank entry for a season.
  * This includes fetching rank data, validating it, and optionally updating FaceIT data.
@@ -189,6 +216,7 @@ const createAndSavePlayerRankForSeason = async (
   seasonId: number,
   appId: number,
   platform: SeasonPlatform | null,
+  requirements: SeasonSignupRankRequirements,
   connection?: PoolConnection
 ): Promise<void> => {
   // Fetch rank, hours, and external rank
@@ -198,42 +226,56 @@ const createAndSavePlayerRankForSeason = async (
     getPlayerRankForPlatform(steamId, platform, seasonId)
   ]);
 
-  // Validate hours
-  if (hours === -1) {
+  if (requirements.hours_played_required && hours === -1) {
     throw new BadRequestError(`Player ${steamId} hours not found.`);
   }
 
-  // Validate rank
-  if (rank.average_rank === -1 || !isValidRank(rank.average_rank)) {
+  if (rank.average_rank === null || rank.average_rank === undefined) {
     throw new BadRequestError(
       `Player ${steamId} has no app id rank. Found ${rank.average_rank}.`
     );
   }
 
-  // Validate external rank (FaceIT) - optional for Kanaliiga platform
+  const hasValidPremierRank =
+    rank.average_rank !== -1 && isValidRank(rank.average_rank);
+
+  if (requirements.premier_rank_required && !hasValidPremierRank) {
+    throw new BadRequestError(
+      `Player ${steamId} has no app id rank. Found ${rank.average_rank}.`
+    );
+  }
+
+  const cs2RankToStore = hasValidPremierRank ? rank.average_rank : null;
+  const csHoursToStore = hours === -1 ? null : hours;
+
+  const mustHaveFaceitRank =
+    requirements.faceit_rank_required && platform !== SeasonPlatform.Kanaliiga;
+
   if (
+    mustHaveFaceitRank &&
     externalRank &&
     "faceit_elo" in externalRank &&
-    externalRank.faceit_elo === -1 &&
-    platform !== SeasonPlatform.Kanaliiga
+    externalRank.faceit_elo === -1
   ) {
     throw new BadRequestError(`Player ${steamId} has no ${platform} rank.`);
   }
+
+  const faceitRankForInsert = isFaceITCSRank(externalRank)
+    ? externalRank
+    : {
+        faceit_elo: undefined,
+        faceit_level: undefined,
+        faceit_kd: undefined,
+        faceit_date: undefined
+      };
 
   // Insert the rank entry
   await insertPlayerRankForSeason(
     steamId,
     seasonId,
-    rank.average_rank,
-    hours,
-    isFaceITCSRank(externalRank)
-      ? externalRank
-      : {
-          faceit_elo: undefined,
-          faceit_level: undefined,
-          faceit_kd: undefined,
-          faceit_date: undefined
-        },
+    cs2RankToStore,
+    csHoursToStore,
+    faceitRankForInsert,
     { connection }
   );
 
@@ -267,6 +309,12 @@ export const addPlayersForTeamInSeason = async (
   playerInsertData: InsertSeasonTeamRegistrationPlayer[],
   connection?: PoolConnection
 ) => {
+  const seasonRecord = await getSeasonDetailsById(seasonId);
+  if (!seasonRecord) {
+    throw new NotFoundError("Season not found");
+  }
+  const signupRankRequirements = pickSignupRankRequirements(seasonRecord);
+
   for (const player of playerInsertData) {
     await insertSeasonTeamRegistrationPlayer(
       seasonId,
@@ -285,6 +333,7 @@ export const addPlayersForTeamInSeason = async (
       seasonId,
       appId,
       platform,
+      signupRankRequirements,
       connection
     );
   }
@@ -396,6 +445,7 @@ const handleUpdateSeasonTeamRegistration = async (
   if (season && playersUpdateResult.added.length > 0) {
     const appId = season.app_id;
     const platform = season.platform;
+    const signupRankRequirements = pickSignupRankRequirements(season);
 
     for (const newPlayerSteamId of playersUpdateResult.added) {
       // Find the player data to get captain/co-captain status
@@ -413,6 +463,7 @@ const handleUpdateSeasonTeamRegistration = async (
         seasonId,
         appId,
         platform,
+        signupRankRequirements,
         connection
       );
     }

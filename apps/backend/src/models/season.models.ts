@@ -284,9 +284,8 @@ const createSeasonWithMapPool = async (
       discord_link,
       faceit_rank_required,
       premier_rank_required,
-      profile_link_required,
       hours_played_required
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   const result = await runQuery<{ insertId: number }>(
@@ -312,7 +311,6 @@ const createSeasonWithMapPool = async (
       seasonData.discord_link,
       seasonData.faceit_rank_required ?? false,
       seasonData.premier_rank_required ?? false,
-      seasonData.profile_link_required ?? false,
       seasonData.hours_played_required ?? false
     ],
     connection
@@ -392,7 +390,6 @@ const updateSeasonWithMapPool = async (
       discord_link = ?,
       faceit_rank_required = ?,
       premier_rank_required = ?,
-      profile_link_required = ?,
       hours_played_required = ?
     WHERE id = ?
   `;
@@ -420,7 +417,6 @@ const updateSeasonWithMapPool = async (
       seasonData.discord_link,
       seasonData.faceit_rank_required ?? false,
       seasonData.premier_rank_required ?? false,
-      seasonData.profile_link_required ?? false,
       seasonData.hours_played_required ?? false,
       seasonId
     ],
