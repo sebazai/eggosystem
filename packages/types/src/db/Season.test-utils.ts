@@ -92,9 +92,9 @@ export const createMockInsertSeason = (
     has_vat: true,
     early_bird_price_discount: null,
     early_bird_price_discount_end_date: null,
-    faceit_rank_required: true,
-    premier_rank_required: true,
-    hours_played_required: true,
+    faceit_rank_required: false,
+    premier_rank_required: false,
+    hours_played_required: false,
     ...overrides
   };
 };

@@ -59,7 +59,10 @@ describe("Season team registration services", () => {
     signup_start_date: yesterday,
     signup_end_date: tomorrow,
     platform: SeasonPlatform.FACEIT,
-    start_date: tomorrow
+    start_date: tomorrow,
+    faceit_rank_required: true,
+    premier_rank_required: true,
+    hours_played_required: true
   });
 
   const seasonDetails = {
@@ -74,7 +77,10 @@ describe("Season team registration services", () => {
       platform: insertSeason.platform,
       start_date:
         insertSeason?.start_date?.toISOString().split("T")[0] ?? "2024-01-01",
-      end_date: insertSeason?.end_date?.toISOString().split("T")[0] ?? null
+      end_date: insertSeason?.end_date?.toISOString().split("T")[0] ?? null,
+      faceit_rank_required: insertSeason.faceit_rank_required,
+      premier_rank_required: insertSeason.premier_rank_required,
+      hours_played_required: insertSeason.hours_played_required
     }),
     app_id: 730
   } satisfies SeasonDetails;
