@@ -18,8 +18,10 @@ import {
   ConfigurableReqsExternalRankMissingSteamId,
   ConfigurableReqsHoursMissingSteamId,
   ConfigurableReqsInternalRankMissingSteamId,
-  createMockSeasonDetails,
   DraftReturnUserSteamId,
+  E2E_SIGNUP_SEASON_FACEIT_RANK_OPTIONAL_ID,
+  E2E_SIGNUP_SEASON_HOURS_OPTIONAL_ID,
+  E2E_SIGNUP_SEASON_PREMIER_RANK_OPTIONAL_ID,
   E2E_SIGNUP_SEASON_RELAXED_REQUIREMENTS_ID,
   heppajpgSteamId,
   HoolyzSteamId,
@@ -31,7 +33,6 @@ import {
   QuattraSteamId,
   RealPlayer1SteamId,
   RealPlayer2SteamId,
-  SeasonPlatform,
   TrevSteamId,
   ValidWorkEmail1SteamId,
   ValidWorkEmail2SteamId,
@@ -1712,57 +1713,15 @@ test.describe("Signup Form", () => {
   // Strategy: end-to-end through the real frontend → backend → external-API
   // path. Each "missing" precondition for the index-0 lineup slot is driven
   // by a *dedicated* Steam ID whose third-party API response is overridden
-  // in the shared MSW layer (FACEIT, Leetify, Steam). No page.route mock is
-  // used for /api/v1/players/* — those endpoints are exercised for real and
+  // in the shared MSW layer (FACEIT, Leetify, Steam). No route mocks for
+  // /api/v1/players/* — those endpoints are exercised for real and
   // legitimately produce externalRank=0/rank=-1/hours=-1 because the
   // upstream service returned the empty/missing payload.
   //
-  // The single page.route override that remains is GET
-  // /api/v1/seasons/16/details, used to flip individual signup-requirement
-  // flags. That endpoint has no third-party dependency (frontend → backend
-  // → DB only), so seeding multiple seasons just to toggle a boolean would
-  // be needless overhead; the override keeps the SeasonDetails contract in
-  // sync via createMockSeasonDetails().
+  // Per-flag signup rules use dedicated `Seasons` rows from `e2e_test_seed.ts`
+  // (991–993) instead of mocking `/seasons/*/details`.
   test.describe("Configurable signup requirements", () => {
     test.describe.configure({ timeout: 90000 });
-
-    // Override season 16's details to flip individual signup-requirement flags.
-    // Pre-condition: must run before page.goto so the first details fetch hits
-    // the mock. Real backend response shape (Season + app_id) is reproduced via
-    // createMockSeasonDetails so the contract stays in sync with the type.
-    const mockSeasonDetailsRoute = async (
-      page: Page,
-      flagOverrides: Partial<{
-        faceit_rank_required: boolean;
-        premier_rank_required: boolean;
-        hours_played_required: boolean;
-      }>
-    ) => {
-      await page.route("**/api/v1/seasons/16/details", async (route) => {
-        const seasonDetails = createMockSeasonDetails({
-          id: 16,
-          game_id: 1,
-          game_type_id: 1,
-          organizer_id: 1,
-          name: "Season 4",
-          full_name: "CS2 Season 4",
-          app_id: 730,
-          platform: SeasonPlatform.FACEIT,
-          // Default to "all enabled" matching the post-backfill production
-          // behaviour, then apply flag overrides for the specific test.
-          faceit_rank_required: true,
-          premier_rank_required: true,
-          hours_played_required: true,
-          ...flagOverrides
-        });
-
-        await route.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify(seasonDetails)
-        });
-      });
-    };
 
     // Index-0 uses a per-test dedicated "missing"-target Steam ID. Each
     // target's missing-data scenario is driven end-to-end through the seed
@@ -1794,8 +1753,6 @@ test.describe("Signup Form", () => {
     test("faceit_rank_required=false: player with externalRank=-1 has green border, no faceit-rank notification, submit is enabled", async ({
       page
     }) => {
-      await mockSeasonDetailsRoute(page, { faceit_rank_required: false });
-
       await setupAuthForUser(
         page,
         15032,
@@ -1806,7 +1763,8 @@ test.describe("Signup Form", () => {
       await setupCompleteRegistrationForm(
         page,
         generateUniqueOrgName("Faceit Disabled Org"),
-        generateUniqueTeamName("Faceit Disabled Team")
+        generateUniqueTeamName("Faceit Disabled Team"),
+        E2E_SIGNUP_SEASON_FACEIT_RANK_OPTIONAL_ID
       );
 
       // Index-0's FACEIT level comes back as 0 from FACEIT's MSW handler for
@@ -1845,8 +1803,6 @@ test.describe("Signup Form", () => {
     test("premier_rank_required=false: player with rank=-1 has green border, no premier-rank notification, submit is enabled", async ({
       page
     }) => {
-      await mockSeasonDetailsRoute(page, { premier_rank_required: false });
-
       await setupAuthForUser(
         page,
         15032,
@@ -1857,7 +1813,8 @@ test.describe("Signup Form", () => {
       await setupCompleteRegistrationForm(
         page,
         generateUniqueOrgName("Premier Disabled Org"),
-        generateUniqueTeamName("Premier Disabled Team")
+        generateUniqueTeamName("Premier Disabled Team"),
+        E2E_SIGNUP_SEASON_PREMIER_RANK_OPTIONAL_ID
       );
 
       // Index-0's premier rank legitimately resolves to "no rank" because
@@ -1895,10 +1852,6 @@ test.describe("Signup Form", () => {
     test("hours_played_required=false: player with hours=-1 has green border, no hours notification, submit is enabled", async ({
       page
     }) => {
-      await mockSeasonDetailsRoute(page, {
-        hours_played_required: false
-      });
-
       await setupAuthForUser(
         page,
         15032,
@@ -1909,7 +1862,8 @@ test.describe("Signup Form", () => {
       await setupCompleteRegistrationForm(
         page,
         generateUniqueOrgName("Hours Disabled Org"),
-        generateUniqueTeamName("Hours Disabled Team")
+        generateUniqueTeamName("Hours Disabled Team"),
+        E2E_SIGNUP_SEASON_HOURS_OPTIONAL_ID
       );
 
       // Index-0's hours legitimately come back as -1 because Steam's MSW
@@ -2012,13 +1966,16 @@ test.describe("Signup Form", () => {
         "ConfigurableReqsAuth"
       );
 
+      // Public registration flow (not admin dashboard) — matches SignupForm POST when !isAdminMode.
       const signupPromise = page.waitForResponse((res) => {
         return (
           res
             .url()
             .includes(
-              `/api/v1/dashboard/registration/season/${relaxedSeasonId}/signup`
-            ) && res.request().method() === "POST"
+              `/api/v1/registrations/season/${relaxedSeasonId}/signup`
+            ) &&
+          !res.url().includes("/signup/team/") &&
+          res.request().method() === "POST"
         );
       });
 

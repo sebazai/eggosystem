@@ -6,6 +6,15 @@
 /** Matches `Seasons.id` inserted by `apps/backend/seeds/e2e_test_seed.ts` (relaxed signup flags). */
 export const E2E_SIGNUP_SEASON_RELAXED_REQUIREMENTS_ID = 996;
 
+/** Same signup window as season 16; `faceit_rank_required` off, premier + hours on. */
+export const E2E_SIGNUP_SEASON_FACEIT_RANK_OPTIONAL_ID = 991;
+
+/** Same signup window as season 16; `premier_rank_required` off, faceit + hours on. */
+export const E2E_SIGNUP_SEASON_PREMIER_RANK_OPTIONAL_ID = 992;
+
+/** Same signup window as season 16; `hours_played_required` off, faceit + premier on. */
+export const E2E_SIGNUP_SEASON_HOURS_OPTIONAL_ID = 993;
+
 import {
   AabeSteamId,
   AddTeamSignupSteamId1,

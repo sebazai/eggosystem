@@ -102,7 +102,12 @@ export async function seed(knex: Knex): Promise<void> {
   await knex("SeasonTeamPlayers").where({ season_id: 996 }).del();
   await knex("SeasonTeamRegistrationPlayers").where({ season_id: 996 }).del();
   await knex("SeasonTeamRegistrations").where({ season_id: 996 }).del();
-  await knex("Seasons").where({ id: 996 }).del();
+  for (const sid of [991, 992, 993] as const) {
+    await knex("SeasonTeamPlayers").where({ season_id: sid }).del();
+    await knex("SeasonTeamRegistrationPlayers").where({ season_id: sid }).del();
+    await knex("SeasonTeamRegistrations").where({ season_id: sid }).del();
+  }
+  await knex("Seasons").whereIn("id", [991, 992, 993, 996]).del();
   await knex("Seasons").where({ id: 16 }).del();
 
   // Clean up NEW test accounts and related data if they exist
@@ -170,6 +175,43 @@ export async function seed(knex: Knex): Promise<void> {
     platform: "faceit",
     faceit_rank_required: 0,
     premier_rank_required: 0,
+    hours_played_required: 0
+  });
+
+  // Per-flag optional seasons for S1-AC-4 (same window as 16; no Playwright mock of `/details`).
+  const optionalSeasonBase = {
+    game_id: 1,
+    signup_start_date: now,
+    signup_end_date: tomorrow,
+    start_date: tenDaysLater,
+    end_date: sixtyDaysLater,
+    platform: "faceit" as const
+  };
+  await knex("Seasons").insert({
+    ...optionalSeasonBase,
+    id: 991,
+    name: "E2E Season FaceIT rank optional",
+    full_name: "E2E CS2 FaceIT rank optional",
+    faceit_rank_required: 0,
+    premier_rank_required: 1,
+    hours_played_required: 1
+  });
+  await knex("Seasons").insert({
+    ...optionalSeasonBase,
+    id: 992,
+    name: "E2E Season Premier rank optional",
+    full_name: "E2E CS2 Premier rank optional",
+    faceit_rank_required: 1,
+    premier_rank_required: 0,
+    hours_played_required: 1
+  });
+  await knex("Seasons").insert({
+    ...optionalSeasonBase,
+    id: 993,
+    name: "E2E Season Hours optional",
+    full_name: "E2E CS2 Hours optional",
+    faceit_rank_required: 1,
+    premier_rank_required: 1,
     hours_played_required: 0
   });
 
