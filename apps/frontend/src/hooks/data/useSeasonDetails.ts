@@ -1,4 +1,6 @@
-import { useState, useEffect } from "react";
+"use client";
+
+import useSWR from "swr";
 import type { SeasonDetails } from "@eggosystem/types";
 import { clientApiFetch } from "@/lib/apiClient";
 
@@ -12,57 +14,22 @@ interface UseSeasonDetailsResult {
 export const useSeasonDetails = (
   seasonId: string | number
 ): UseSeasonDetailsResult => {
-  const [seasonDetails, setSeasonDetails] = useState<SeasonDetails | null>(
-    null
-  );
-  const [isLoading, setIsLoading] = useState(true);
-  const [isError, setIsError] = useState<Error | null>(null);
-  const [isValidating] = useState(false);
+  const key = seasonId
+    ? (`/api/v1/seasons/${seasonId}/details` as const)
+    : null;
 
-  useEffect(() => {
-    if (!seasonId) {
-      setIsLoading(false);
-      return;
+  const { data, error, isLoading, isValidating } = useSWR<SeasonDetails, Error>(
+    key,
+    clientApiFetch,
+    {
+      revalidateOnFocus: false
     }
-
-    let stale = false;
-
-    const fetchSeasonDetails = async () => {
-      setIsLoading(true);
-      setIsError(null);
-      try {
-        const data: SeasonDetails = await clientApiFetch<SeasonDetails>(
-          `/api/v1/seasons/${seasonId}/details`
-        );
-        if (!stale) {
-          setSeasonDetails(data);
-        }
-      } catch (error) {
-        if (!stale) {
-          if (error instanceof Error) {
-            setIsError(error);
-          } else {
-            setIsError(new Error("Unknown error occurred"));
-          }
-        }
-      } finally {
-        if (!stale) {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    fetchSeasonDetails();
-
-    return () => {
-      stale = true;
-    };
-  }, [seasonId]);
+  );
 
   return {
-    seasonDetails,
-    isLoading,
-    isError,
+    seasonDetails: data ?? null,
+    isLoading: Boolean(key && isLoading),
+    isError: error ?? null,
     isValidating
   };
 };

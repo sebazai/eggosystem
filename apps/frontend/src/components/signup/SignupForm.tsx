@@ -16,6 +16,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TabOrganization } from "./TabOrganization";
 import { TabPlayers } from "./TabPlayers";
 import { TabTeam } from "./TabTeam";
+import { playerMeetsSeasonRankAndHoursRequirements } from "./playerSeasonSignupRequirements";
 import { ErrorMessage } from "@hookform/error-message";
 import { CheckCheck } from "lucide-react";
 import {
@@ -144,7 +145,7 @@ export const SignupForm = ({
   const watchNewTeam = useWatch({ control, name: "newTeam" });
   const watchPlayers = useWatch({ control, name: "players" });
 
-  const { seasonDetails, isLoading, isError, isValidating } =
+  const { seasonDetails, isLoading, isError } =
     useSeasonDetails(effectiveSeasonId);
 
   const validOrgId = useMemo(
@@ -266,11 +267,7 @@ export const SignupForm = ({
         p.hasValidData &&
         p.hasValidWorkEmail === true &&
         p.isEmailVerified === true &&
-        (!seasonDetails?.premier_rank_required || p.rank !== -1) &&
-        (!seasonDetails?.faceit_rank_required ||
-          p.externalRank !== -1 ||
-          seasonDetails?.platform === SeasonPlatform.Kanaliiga) &&
-        (!seasonDetails?.hours_played_required || p.hours !== -1)
+        playerMeetsSeasonRankAndHoursRequirements(seasonDetails, p)
     );
 
   // Real-time captain/co-captain validation
@@ -448,7 +445,9 @@ export const SignupForm = ({
     return <RequiresSteamLogin />;
   }
 
-  if (isLoading || isValidating || loadingUser) {
+  // Initial load only: SWR sets isValidating during background revalidation; the
+  // old hook always returned false for validating—gating on it hid the form (E2E flakiness).
+  if (isLoading || loadingUser) {
     return (
       <div className="w-full space-y-4">
         <CardSkeleton showHeader={true} contentLines={4} />

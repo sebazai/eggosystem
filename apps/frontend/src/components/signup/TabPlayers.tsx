@@ -43,6 +43,7 @@ import type {
   SignupPlayerType
 } from "@eggosystem/types";
 import { playerSchema, SeasonPlatform } from "@eggosystem/types";
+import { playerMeetsSeasonRankAndHoursRequirements } from "./playerSeasonSignupRequirements";
 import { AlertTriangle, Search, TriangleAlert } from "lucide-react";
 import { ApiError, clientApiFetch } from "@/lib/apiClient";
 import { SignupPlayerNotification } from "./SignupPlayerNotification";
@@ -130,9 +131,7 @@ export const TabPlayers = ({
       player.hasValidData === true &&
       player.hasValidWorkEmail === true &&
       player.isEmailVerified === true &&
-      (!seasonDetails.premier_rank_required || player.rank !== -1) &&
-      (!seasonDetails.faceit_rank_required || player.externalRank !== -1) &&
-      (!seasonDetails.hours_played_required || player.hours !== -1)
+      playerMeetsSeasonRankAndHoursRequirements(seasonDetails, player)
     );
   };
 
@@ -578,14 +577,10 @@ export const TabPlayers = ({
           player.hasValidData !== true ||
           player.hasValidWorkEmail !== true ||
           player.isEmailVerified !== true ||
-          (seasonDetails.hours_played_required && player.hours === -1) ||
-          (seasonDetails.premier_rank_required && player.rank === -1) ||
-          (seasonDetails.faceit_rank_required &&
-            player.externalRank === -1 &&
-            platform !== SeasonPlatform.Kanaliiga));
+          !playerMeetsSeasonRankAndHoursRequirements(seasonDetails, player));
       return error;
     },
-    [platform, seasonDetails]
+    [seasonDetails]
   );
 
   // Open accordions if any errors

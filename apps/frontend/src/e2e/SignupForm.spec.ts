@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 import {
   generateTestJWTForUser,
   generateUniqueOrgCode,
@@ -290,6 +290,38 @@ async function setupAuthForUser(
 
     await route.continue({ headers });
   });
+}
+
+async function expectPublicSignupSuccessUi(page: Page) {
+  await expect(page.getByTestId("success-message")).toBeVisible({
+    timeout: 20000
+  });
+  await expect(page.getByTestId("success-message")).toContainText(
+    /Team registered/i
+  );
+  await expect(
+    page
+      .locator("[data-sonner-toast]")
+      .filter({ hasText: /Team registered successfully/i })
+  ).toBeVisible({ timeout: 10000 });
+}
+
+/** POST public season signup, then assert HTTP 2xx and success banner + toast. */
+async function clickSubmitAndAssertPublicSignupSuccess(
+  page: Page,
+  submitButton: Locator
+) {
+  const signupResponsePromise = page.waitForResponse(
+    (res) =>
+      res.url().includes("/api/v1/registrations/season/") &&
+      res.request().method() === "POST" &&
+      !res.url().includes("/draft")
+  );
+  await submitButton.click();
+  const signupResponse = await signupResponsePromise;
+  expect(signupResponse.status()).toBeGreaterThanOrEqual(200);
+  expect(signupResponse.status()).toBeLessThan(300);
+  await expectPublicSignupSuccessUi(page);
 }
 
 test.describe("Signup Form", () => {
@@ -1798,6 +1830,7 @@ test.describe("Signup Form", () => {
         .locator('button[type="submit"]')
         .filter({ hasText: /Submit/i });
       await expect(submitButton).toBeEnabled({ timeout: 10000 });
+      await clickSubmitAndAssertPublicSignupSuccess(page, submitButton);
     });
 
     test("premier_rank_required=false: player with rank=-1 has green border, no premier-rank notification, submit is enabled", async ({
@@ -1847,6 +1880,7 @@ test.describe("Signup Form", () => {
         .locator('button[type="submit"]')
         .filter({ hasText: /Submit/i });
       await expect(submitButton).toBeEnabled({ timeout: 10000 });
+      await clickSubmitAndAssertPublicSignupSuccess(page, submitButton);
     });
 
     test("hours_played_required=false: player with hours=-1 has green border, no hours notification, submit is enabled", async ({
@@ -1896,6 +1930,7 @@ test.describe("Signup Form", () => {
         .locator('button[type="submit"]')
         .filter({ hasText: /Submit/i });
       await expect(submitButton).toBeEnabled({ timeout: 10000 });
+      await clickSubmitAndAssertPublicSignupSuccess(page, submitButton);
     });
 
     test("AC-5: strict season (real `/details`) — missing required hours prevents signup POST", async ({
@@ -2009,6 +2044,7 @@ test.describe("Signup Form", () => {
       const response = await signupPromise;
       expect(response.status()).toBeGreaterThanOrEqual(200);
       expect(response.status()).toBeLessThan(300);
+      await expectPublicSignupSuccessUi(page);
     });
   });
 });
