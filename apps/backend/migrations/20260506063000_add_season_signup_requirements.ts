@@ -11,17 +11,12 @@ export async function up(knex: Knex): Promise<void> {
     table.boolean("hours_played_required").notNullable().defaultTo(false);
   });
 
-  // Update existing seasons to have all requirements enabled (TRUE)
-  // This maintains backward compatibility with current behavior
-  await knex("Seasons")
-    .whereRaw(
-      "EXISTS (SELECT 1 FROM SeasonTeamRegistrations WHERE SeasonTeamRegistrations.season_id = Seasons.id)"
-    )
-    .update({
-      faceit_rank_required: true,
-      premier_rank_required: true,
-      hours_played_required: true
-    });
+  // Existing seasons keep strict defaults (all requirements on). Organizers may turn flags off afterward.
+  await knex("Seasons").update({
+    faceit_rank_required: true,
+    premier_rank_required: true,
+    hours_played_required: true
+  });
 }
 
 export async function down(knex: Knex): Promise<void> {
