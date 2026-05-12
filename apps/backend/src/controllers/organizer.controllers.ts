@@ -72,7 +72,7 @@ const defaultGameTypeForAppId = (app_id: number) => {
     case 730:
       return "comp";
     default:
-      throw new Error(`No default game type found for app ${app_id}`);
+      throw new BadRequestError(`No default game type found for app ${app_id}`);
   }
 };
 
