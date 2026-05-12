@@ -330,5 +330,17 @@ describe("Seasons Controllers", () => {
       expect(mockGetTeamCaptainsBySeasonId).toHaveBeenCalledWith(999);
       expect(mockJson).toHaveBeenCalledWith([]);
     });
+
+    it("should propagate model errors", async () => {
+      mockRequest.params = { season_id: "14" };
+      mockGetTeamCaptainsBySeasonId.mockRejectedValue(new Error("DB error"));
+
+      await expect(
+        getTeamCaptainsBySeasonIdController(
+          mockRequest as TestRequestWithParams<{ season_id: string }>,
+          mockResponse as Response
+        )
+      ).rejects.toThrow("DB error");
+    });
   });
 });
