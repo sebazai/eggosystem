@@ -140,7 +140,10 @@ export const createSeasonController = async (
         validatedData.early_bird_price_discount_end_date ?? null,
       active_map_pool: validatedData.active_map_pool,
       rulebook_url: validatedData.rulebook_url || null,
-      discord_link: validatedData.discord_link || null
+      discord_link: validatedData.discord_link || null,
+      faceit_rank_required: validatedData.faceit_rank_required ?? false,
+      premier_rank_required: validatedData.premier_rank_required ?? false,
+      hours_played_required: validatedData.hours_played_required ?? false
     };
 
     // Create the season in the database
@@ -206,7 +209,10 @@ export const updateSeasonController = async (
         validatedData.early_bird_price_discount_end_date ?? null,
       active_map_pool: validatedData.active_map_pool,
       rulebook_url: validatedData.rulebook_url || null,
-      discord_link: validatedData.discord_link || null
+      discord_link: validatedData.discord_link || null,
+      faceit_rank_required: validatedData.faceit_rank_required ?? false,
+      premier_rank_required: validatedData.premier_rank_required ?? false,
+      hours_played_required: validatedData.hours_played_required ?? false
     };
 
     // Update the season in the database

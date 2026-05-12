@@ -98,7 +98,7 @@ Task(subagent_type=claude_md_bot,
 
 - `Write`, `Edit`, `StrReplace` — never modify code.
 - Mutating git (`rtk git commit`, `rtk git push`, etc.).
-- Approving the MR via `mcp__GitLab__approve_merge_request` (you don't have it; orchestrator never has it either).
+- Approving the MR via `mcp__gitlab_mcp__approve_merge_request` (you don't have it; orchestrator never has it either).
 - Reviewing files outside the diff scope.
 
 ## HITL triggers

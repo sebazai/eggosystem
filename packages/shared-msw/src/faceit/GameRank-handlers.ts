@@ -34,7 +34,8 @@ import {
   AddTeamSignupSteamId2,
   AddTeamSignupSteamId3,
   AddTeamSignupSteamId4,
-  AddTeamSignupSteamId5
+  AddTeamSignupSteamId5,
+  ConfigurableReqsExternalRankMissingSteamId
 } from "@eggosystem/types";
 
 const createFaceitRank = (
@@ -187,6 +188,14 @@ export const faceitPlayerGameRankHandlers = [
     if (gamePlayerId === ManualRankTargetSteamId) {
       return HttpResponse.json(createFaceitRank(gamePlayerId, "cs2", 1500, 10));
     }
+    // S1-AC-4 "Configurable signup requirements" – external rank missing.
+    // Returning skill_level=0 mirrors a player who has signed up to FACEIT
+    // but has not been levelled yet; the backend forwards faceit_level=0 to
+    // the frontend and the form records externalRank=0.
+    if (gamePlayerId === ConfigurableReqsExternalRankMissingSteamId) {
+      return HttpResponse.json(createFaceitRank(gamePlayerId, "cs2", 0, 0));
+    }
+
     // A5 add-team signup only
     if (gamePlayerId === AddTeamSignupSteamId1) {
       return HttpResponse.json(createFaceitRank(gamePlayerId, "cs2", 1500, 10));

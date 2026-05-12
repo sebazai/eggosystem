@@ -29,7 +29,7 @@ Definitions live under [`/workspace/.cursor/agents/`](/workspace/.cursor/agents/
 1. Architecture sign-off (Phase 3 of **gitlab-issue-dag-orchestration**).
 2. Implementer **`stuck`** (including **adversary non-convergence** after 3 internal rounds), Code Review rejects 3 rounds, or gate rounds exhausted.
 3. Final Review rejected (cross-cutting or 3 rounds).
-4. Merge approval — every MR is merged by the human via the GitLab UI; orchestrator never calls `mcp__GitLab__merge_merge_request`.
+4. Merge approval — every MR is merged by the human via the GitLab UI; orchestrator never calls `mcp__gitlab_mcp__merge_merge_request`.
 
 ## Branching
 

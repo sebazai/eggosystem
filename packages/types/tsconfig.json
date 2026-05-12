@@ -4,7 +4,7 @@
     "rootDir": "./src", // Source directory for TypeScript
     "outDir": "./dist", // Output directory for compiled JavaScript
     "declaration": true, // Ensure type declaration files are generated
-    "moduleResolution": "bundler",
+    // "moduleResolution": "bundler",
     "module": "CommonJS", // Use CommonJS module format
     "target": "ES2018", // Target ES2018 for good Node.js compatibility
     "esModuleInterop": true, // Allows default imports for CommonJS modules
@@ -17,8 +17,9 @@
     "noEmit": false, // Ensure files are emitted
     "paths": {
       "@eggosystem/types": ["./src"]
-    }
+    },
+    "types": ["jest"]
   },
-  "include": ["**/*.ts"], // Include all TypeScript files
-  "exclude": ["node_modules", "dist"] // Exclude node_modules and dist from compilation
+  "include": ["**/*.ts"], // Include all TypeScript files (tests use Jest globals like frontend/backend)
+  "exclude": ["node_modules", "dist"]
 }

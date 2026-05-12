@@ -17,7 +17,8 @@ import {
   ValidWorkEmail4SteamId,
   ValidWorkEmail5SteamId,
   EligiblePlayerForValidationSteamId,
-  ManualRankTargetSteamId
+  ManualRankTargetSteamId,
+  ConfigurableReqsInternalRankMissingSteamId
 } from "@eggosystem/types";
 
 const createLeetifyResponse = (
@@ -71,7 +72,14 @@ export const getLeetifyHandlers = [
 
       if (
         steamId === leetifyNoPremierRankSteamId ||
-        steamId === ManualRankTargetSteamId
+        steamId === ManualRankTargetSteamId ||
+        // S1-AC-4 "Configurable signup requirements" – internal (premier)
+        // rank missing. Empty games array forces `getCSRank` through every
+        // fallback (no SeasonPlayerRanks row, no Redis cache after reseed,
+        // Leetify empty), so the backend returns no rank and the frontend
+        // records rank=-1 — exactly the precondition for the
+        // premier_rank_required=false test.
+        steamId === ConfigurableReqsInternalRankMissingSteamId
       ) {
         return HttpResponse.json({
           games: []
