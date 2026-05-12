@@ -1,5 +1,5 @@
 import { runQuery } from "../db/mysqlRunQuery";
-import { getActiveSeasonChampionshipIds } from "./season-league-external-id.models";
+import { getOngoingFaceitCSSeasonChampionshipIds } from "./season-league-external-id.models";
 
 // Mock the database connection
 jest.mock("../db/mysqlRunQuery");
@@ -11,9 +11,8 @@ describe("season-league-external-id.models", () => {
     jest.clearAllMocks();
   });
 
-  describe("getActiveSeasonChampionshipIds", () => {
-    it("should return championship IDs for active seasons", async () => {
-      // Mock data for active seasons
+  describe("getOngoingFaceitCSSeasonChampionshipIds", () => {
+    it("should return championship IDs for ongoing CS2 FACEIT seasons", async () => {
       const mockResults = [
         { external_id: "active_champ_1", is_round_robin_bo2_as_2xbo1: true },
         { external_id: "active_champ_2", is_round_robin_bo2_as_2xbo1: false }
@@ -21,25 +20,48 @@ describe("season-league-external-id.models", () => {
 
       mockRunQuery.mockResolvedValue(mockResults);
 
-      const result = await getActiveSeasonChampionshipIds();
+      const result = await getOngoingFaceitCSSeasonChampionshipIds();
 
       expect(result).toEqual(mockResults);
+    });
+
+    it("should scope query to FACEIT platform only", async () => {
+      mockRunQuery.mockResolvedValue([]);
+
+      await getOngoingFaceitCSSeasonChampionshipIds();
+
       expect(mockRunQuery).toHaveBeenCalledWith(
-        expect.stringContaining("WHERE (")
+        expect.stringContaining("s.platform = 'faceit'")
       );
     });
 
-    it("should return championship IDs for seasons in signup period", async () => {
-      // Mock data for seasons in signup period
-      const mockResults = [
-        { external_id: "signup_champ_1", is_round_robin_bo2_as_2xbo1: true }
-      ];
+    it("should scope query to CS2 game (game_id = 730)", async () => {
+      mockRunQuery.mockResolvedValue([]);
 
-      mockRunQuery.mockResolvedValue(mockResults);
+      await getOngoingFaceitCSSeasonChampionshipIds();
 
-      const result = await getActiveSeasonChampionshipIds();
+      expect(mockRunQuery).toHaveBeenCalledWith(
+        expect.stringContaining("s.game_id = 730")
+      );
+    });
 
-      expect(result).toEqual(mockResults);
+    it("should include seasons currently running (between start_date and end_date)", async () => {
+      mockRunQuery.mockResolvedValue([]);
+
+      await getOngoingFaceitCSSeasonChampionshipIds();
+
+      expect(mockRunQuery).toHaveBeenCalledWith(
+        expect.stringContaining(
+          "s.start_date <= NOW() AND (s.end_date IS NULL OR s.end_date >= NOW())"
+        )
+      );
+    });
+
+    it("should include seasons in signup period (signup open, not yet started)", async () => {
+      mockRunQuery.mockResolvedValue([]);
+
+      await getOngoingFaceitCSSeasonChampionshipIds();
+
       expect(mockRunQuery).toHaveBeenCalledWith(
         expect.stringContaining(
           "signup_end_date IS NOT NULL AND s.signup_end_date <= NOW() AND s.start_date > NOW()"
@@ -47,35 +69,19 @@ describe("season-league-external-id.models", () => {
       );
     });
 
-    it("should return championship IDs for both active and signup period seasons", async () => {
-      // Mock data for both types of seasons
-      const mockResults = [
-        { external_id: "active_champ_1", is_round_robin_bo2_as_2xbo1: true },
-        { external_id: "signup_champ_1", is_round_robin_bo2_as_2xbo1: false },
-        { external_id: "active_champ_2", is_round_robin_bo2_as_2xbo1: true }
-      ];
-
-      mockRunQuery.mockResolvedValue(mockResults);
-
-      const result = await getActiveSeasonChampionshipIds();
-
-      expect(result).toEqual(mockResults);
-      expect(mockRunQuery).toHaveBeenCalledWith(expect.stringContaining("OR"));
-    });
-
-    it("should return empty array when no seasons match criteria", async () => {
+    it("should return empty array when no CS2 FACEIT seasons are active or in signup", async () => {
       mockRunQuery.mockResolvedValue([]);
 
-      const result = await getActiveSeasonChampionshipIds();
+      const result = await getOngoingFaceitCSSeasonChampionshipIds();
 
       expect(result).toEqual([]);
     });
 
-    it("should handle database errors", async () => {
+    it("should propagate database errors", async () => {
       const error = new Error("Database connection failed");
       mockRunQuery.mockRejectedValue(error);
 
-      await expect(getActiveSeasonChampionshipIds()).rejects.toThrow(
+      await expect(getOngoingFaceitCSSeasonChampionshipIds()).rejects.toThrow(
         "Database connection failed"
       );
     });

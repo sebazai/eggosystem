@@ -85,13 +85,14 @@ export const getSeasonChampionshipIds = async (
   return results;
 };
 
-export const getActiveSeasonChampionshipIds = async (): Promise<
+export const getOngoingFaceitCSSeasonChampionshipIds = async (): Promise<
   { external_id: string; is_round_robin_bo2_as_2xbo1: boolean }[]
 > => {
   const query = `
     SELECT slei.external_id, s.is_round_robin_bo2_as_2xbo1
     FROM SeasonLeagueExternalIds slei
     JOIN Seasons s ON slei.season_id = s.id
+    JOIN Games g ON s.game_id = g.id
     WHERE (
       -- Active seasons (between start_date and end_date)
       (s.start_date <= NOW() AND (s.end_date IS NULL OR s.end_date >= NOW()))
@@ -99,6 +100,8 @@ export const getActiveSeasonChampionshipIds = async (): Promise<
       -- Seasons in signup period (between signup_end_date and start_date)
       (s.signup_end_date IS NOT NULL AND s.signup_end_date <= NOW() AND s.start_date > NOW())
     )
+    AND g.app_id = 730
+    AND s.platform = 'faceit'
   `;
 
   const results =

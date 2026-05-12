@@ -15,17 +15,22 @@ export const getPlayerHistoricalData = async (
   let limitClause = "";
 
   if (period === "this_season") {
+    // TODO: accept organizer_id and app_id as params; hardcoded app_id=730 assumes a single
+    // CS2 organizer and resolves the season by date order, which is ambiguous when multiple
+    // organizers run overlapping CS2 seasons.
     periodClause = `AND m.season_id = (
       SELECT s.id
       FROM Seasons s
       JOIN Games g ON s.game_id = g.id
       WHERE g.app_id = 730
-        AND s.start_date <= NOW() 
+        AND s.start_date <= NOW()
         AND (s.end_date IS NULL OR s.end_date >= NOW())
       ORDER BY s.id DESC
       LIMIT 1
     )`;
   } else if (period === "last_season") {
+    // TODO: same as this_season — hardcoded app_id=730, no organizer_id scope,
+    // picks the most-recently-ended season by date across all organizers.
     periodClause = `AND m.season_id = (
       SELECT s.id
       FROM Seasons s
