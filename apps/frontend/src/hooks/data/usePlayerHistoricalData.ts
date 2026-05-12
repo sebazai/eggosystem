@@ -28,6 +28,9 @@ export function usePlayerHistoricalData(
     const searchParams = new URLSearchParams();
     if (params.games) searchParams.append("games", params.games.toString());
     if (params.period) searchParams.append("period", params.period);
+    if (params.app_id) searchParams.append("app_id", params.app_id.toString());
+    if (params.organizer_id)
+      searchParams.append("organizer_id", params.organizer_id.toString());
 
     return searchParams.toString() ? `?${searchParams.toString()}` : "";
   };

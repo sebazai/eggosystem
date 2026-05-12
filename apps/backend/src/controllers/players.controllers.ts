@@ -546,7 +546,14 @@ export const getPlayerHistoricalDataController = async (
 ): Promise<void> => {
   try {
     const { steam_id } = req.params;
-    const params = parseHistoricalParams(req.query); // No default games - returns all data
+    const params = parseHistoricalParams(req.query);
+    if (params.period && (!params.app_id || !params.organizer_id)) {
+      return next(
+        new BadRequestError(
+          "app_id and organizer_id are required when period is this_season or last_season"
+        )
+      );
+    }
     const historicalData = await getPlayerHistoricalData(steam_id, params);
     res.json(historicalData);
   } catch (error) {
@@ -555,23 +562,33 @@ export const getPlayerHistoricalDataController = async (
 };
 
 const parseHistoricalParams = (
-  query: { games?: string; period?: string },
+  query: {
+    games?: string;
+    period?: string;
+    app_id?: string;
+    organizer_id?: string;
+  },
   defaultGames?: number
 ): HistoricalDataParams => {
   const games = query.games ? parseInt(query.games) : defaultGames;
   const period = query.period;
 
-  // Validate games parameter
   const validGames = [5, 10, 15, 20, 30, 40, 50];
   const finalGames = games && validGames.includes(games) ? games : defaultGames;
 
-  // Validate period parameter
   const finalPeriod =
     period === "this_season" || period === "last_season" ? period : undefined;
 
+  const app_id = query.app_id ? parseInt(query.app_id) : undefined;
+  const organizer_id = query.organizer_id
+    ? parseInt(query.organizer_id)
+    : undefined;
+
   return {
     games: finalGames,
-    period: finalPeriod
+    period: finalPeriod,
+    app_id,
+    organizer_id
   };
 };
 

@@ -95,7 +95,10 @@ describe("Historical Average Controllers", () => {
 
       expect(
         mockPlayerModels.getPlayerHistoricalAverageByRank
-      ).toHaveBeenCalledWith(15000, { games: 15, period: "this_season" });
+      ).toHaveBeenCalledWith(
+        15000,
+        expect.objectContaining({ games: 15, period: "this_season" })
+      );
     });
 
     it("should handle database errors", async () => {
@@ -187,7 +190,10 @@ describe("Historical Average Controllers", () => {
 
       expect(
         mockPlayerModels.getPlayerHistoricalAverageByLevel
-      ).toHaveBeenCalledWith(5, { games: 20, period: "last_season" });
+      ).toHaveBeenCalledWith(
+        5,
+        expect.objectContaining({ games: 20, period: "last_season" })
+      );
     });
 
     it("should handle database errors", async () => {
@@ -242,10 +248,9 @@ describe("Historical Average Controllers", () => {
         mockNext
       );
 
-      expect(mockPlayerModels.getPlayerHistoricalAverage).toHaveBeenCalledWith({
-        games: 50,
-        period: "this_season"
-      });
+      expect(mockPlayerModels.getPlayerHistoricalAverage).toHaveBeenCalledWith(
+        expect.objectContaining({ games: 50, period: "this_season" })
+      );
     });
 
     it("should handle invalid games parameter by using default", async () => {

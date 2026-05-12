@@ -42,6 +42,7 @@ import {
   usePlayerHistoricalAverage,
   parsePeriodToParams
 } from "@/hooks/data/usePlayerHistoricalData";
+import { DEFAULT_APP_ID, DEFAULT_ORGANIZER_ID } from "@/config/organizer";
 
 interface PlayerHistoricalTabProps {
   steamId: string;
@@ -423,8 +424,15 @@ export const PlayerHistoricalTab = ({ steamId }: PlayerHistoricalTabProps) => {
 
   const compareOptionGroups = getCompareOptionGroups();
 
-  // Parse period to API parameters
-  const params = useMemo(() => parsePeriodToParams(period), [period]);
+  // Parse period to API parameters, always include org context for season-relative periods
+  const params = useMemo(
+    () => ({
+      ...parsePeriodToParams(period),
+      app_id: DEFAULT_APP_ID,
+      organizer_id: DEFAULT_ORGANIZER_ID
+    }),
+    [period]
+  );
 
   // Fetch player historical data
   const {

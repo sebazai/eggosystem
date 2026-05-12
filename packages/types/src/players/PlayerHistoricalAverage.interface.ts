@@ -34,4 +34,10 @@ export interface HistoricalDataParams {
 
   /** Season period filter */
   period?: "this_season" | "last_season";
+
+  /** Steam app_id (required when period is set) */
+  app_id?: number;
+
+  /** Internal organizer id (required when period is set) */
+  organizer_id?: number;
 }
