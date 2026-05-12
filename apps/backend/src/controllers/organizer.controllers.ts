@@ -1,5 +1,5 @@
 import { type Response, type NextFunction } from "express";
-import { getActiveSeason } from "../models/season.models";
+import { getOrganizerActiveSeasonForAppId } from "../models/season.models";
 import {
   type RequestWithParamsAndQuery,
   type RequestWithParams
@@ -22,7 +22,10 @@ export const getActiveSeasonForApp = async (
     res.json({ season_id: Number(dataInRedis) });
     return;
   }
-  const activeSeason = await getActiveSeason(organizer_id, app_id);
+  const activeSeason = await getOrganizerActiveSeasonForAppId(
+    organizer_id,
+    app_id
+  );
   if (!activeSeason) {
     return next(
       new NotFoundError(
@@ -59,7 +62,7 @@ export const getActiveSignupOrActiveSeasonForAppController = async (
     );
   }
 
-  const ActiveSignupOrActiveSeason = await getActiveSeason(
+  const ActiveSignupOrActiveSeason = await getOrganizerActiveSeasonForAppId(
     organizer_id,
     app_id,
     gametype
@@ -102,7 +105,7 @@ export const redirectToActiveSignup = async (
   const gametype = req.query.gametype ?? defaultGameTypeForAppId(app_id);
 
   // Get active signup season
-  const activeSignupSeason = await getActiveSeason(
+  const activeSignupSeason = await getOrganizerActiveSeasonForAppId(
     organizer_id,
     app_id,
     gametype

@@ -6,7 +6,7 @@ import {
 } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
 import { type PoolConnection } from "mysql2/promise";
-import { getActiveSeason } from "./season.models";
+import { getOrganizerActiveSeasonForAppId } from "./season.models";
 
 export const getPlayerHoursForSeason = async (
   steam_id: string,
@@ -157,7 +157,7 @@ export const getPlayerKanaElo = async (steam_id: string) => {
 
 export const getTopXPlayersKanaElo = async (x: number) => {
   // TODO(#220): accept organizer_id and app_id as params for multi-org support
-  const activeSeason = await getActiveSeason(1, 730);
+  const activeSeason = await getOrganizerActiveSeasonForAppId(1, 730);
 
   if (!activeSeason) {
     return [];

@@ -1,11 +1,20 @@
-import { createSeason, updateSeason, getSeasonById } from "./season.models";
+import {
+  createSeason,
+  updateSeason,
+  getSeasonById,
+  getOrganizerActiveSeasonForAppId
+} from "./season.models";
 import { runQuery } from "../db/mysqlRunQuery";
 import { getConnection } from "../db/mysqlConnection";
+import { getGameTypeIdByName } from "./game.models";
 import { SeasonPlatform, createMockSeasonFormRaw } from "@eggosystem/types";
 import type { PoolConnection } from "mysql2/promise";
 
 jest.mock("../db/mysqlRunQuery");
 jest.mock("../db/mysqlConnection");
+jest.mock("./game.models", () => ({
+  getGameTypeIdByName: jest.fn().mockResolvedValue(1)
+}));
 jest.mock("./season-active-map-pool.models", () => ({
   setActiveMapPoolForSeason: jest.fn().mockResolvedValue(undefined),
   getActiveMapPoolBySeasonId: jest.fn().mockResolvedValue([1, 2, 3])
@@ -212,5 +221,122 @@ describe("Season Models", () => {
       );
       expect(result).toBeUndefined();
     });
+  });
+});
+
+const mockGetGameTypeIdByName = getGameTypeIdByName as jest.MockedFunction<
+  typeof getGameTypeIdByName
+>;
+
+describe("getOrganizerActiveSeasonForAppId", () => {
+  const mockRunQuery = runQuery as jest.MockedFunction<typeof runQuery>;
+
+  const activeSeason = {
+    season_id: 10,
+    platform: SeasonPlatform.FACEIT,
+    signup_end_date: null,
+    full_name: "Spring 2025"
+  };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockGetGameTypeIdByName.mockResolvedValue(1);
+  });
+
+  it("should return a currently running season (start_date past, end_date future)", async () => {
+    mockRunQuery.mockResolvedValue([activeSeason]);
+
+    const result = await getOrganizerActiveSeasonForAppId(1, 730);
+
+    expect(result).toEqual(activeSeason);
+    expect(mockRunQuery).toHaveBeenCalledWith(
+      expect.stringContaining(
+        "s.start_date <= NOW() AND (s.end_date IS NULL OR s.end_date >= NOW())"
+      ),
+      [730, 1, 1]
+    );
+  });
+
+  it("should return a signup-open season (start_date future, signup window open)", async () => {
+    mockRunQuery.mockResolvedValue([activeSeason]);
+
+    const result = await getOrganizerActiveSeasonForAppId(1, 730);
+
+    expect(result).toEqual(activeSeason);
+    expect(mockRunQuery).toHaveBeenCalledWith(
+      expect.stringContaining(
+        "s.start_date > NOW() AND s.signup_start_date <= NOW() AND (s.signup_end_date IS NULL OR s.signup_end_date >= NOW())"
+      ),
+      [730, 1, 1]
+    );
+  });
+
+  it("should return undefined when no matching season exists", async () => {
+    mockRunQuery.mockResolvedValue([undefined]);
+
+    const result = await getOrganizerActiveSeasonForAppId(1, 730);
+
+    expect(result).toBeUndefined();
+  });
+
+  it("should return undefined when season has ended (end_date past)", async () => {
+    // The SQL WHERE clause excludes ended seasons; simulate no rows returned
+    mockRunQuery.mockResolvedValue([]);
+
+    const result = await getOrganizerActiveSeasonForAppId(1, 730);
+
+    expect(result).toBeUndefined();
+  });
+
+  it("should return undefined when future season signup is closed (signup_end_date past)", async () => {
+    mockRunQuery.mockResolvedValue([]);
+
+    const result = await getOrganizerActiveSeasonForAppId(1, 730);
+
+    expect(result).toBeUndefined();
+  });
+
+  it("should prefer the most recently created season when multiple match (ORDER BY id DESC)", async () => {
+    const newerSeason = {
+      ...activeSeason,
+      season_id: 20,
+      full_name: "Summer 2025"
+    };
+    // runQuery returns only the first row (LIMIT 1) — the most recently created
+    mockRunQuery.mockResolvedValue([newerSeason]);
+
+    const result = await getOrganizerActiveSeasonForAppId(1, 730);
+
+    expect(result?.season_id).toBe(20);
+    expect(mockRunQuery).toHaveBeenCalledWith(
+      expect.stringContaining("ORDER BY s.id DESC"),
+      expect.any(Array)
+    );
+  });
+
+  it("should use 'comp' as the default gametype", async () => {
+    mockRunQuery.mockResolvedValue([activeSeason]);
+
+    await getOrganizerActiveSeasonForAppId(1, 730);
+
+    expect(mockGetGameTypeIdByName).toHaveBeenCalledWith("comp");
+  });
+
+  it("should pass the resolved game_type_id to the query", async () => {
+    mockGetGameTypeIdByName.mockResolvedValue(99);
+    mockRunQuery.mockResolvedValue([activeSeason]);
+
+    await getOrganizerActiveSeasonForAppId(1, 730, "5v5");
+
+    expect(mockGetGameTypeIdByName).toHaveBeenCalledWith("5v5");
+    expect(mockRunQuery).toHaveBeenCalledWith(expect.any(String), [730, 1, 99]);
+  });
+
+  it("should propagate database errors", async () => {
+    mockRunQuery.mockRejectedValue(new Error("DB connection lost"));
+
+    await expect(getOrganizerActiveSeasonForAppId(1, 730)).rejects.toThrow(
+      "DB connection lost"
+    );
   });
 });

@@ -35,13 +35,13 @@ describe("season-league-external-id.models", () => {
       );
     });
 
-    it("should scope query to CS2 game (game_id = 730)", async () => {
+    it("should scope query to CS2 game via Games join (g.app_id = 730)", async () => {
       mockRunQuery.mockResolvedValue([]);
 
       await getOngoingFaceitCSSeasonChampionshipIds();
 
       expect(mockRunQuery).toHaveBeenCalledWith(
-        expect.stringContaining("s.game_id = 730")
+        expect.stringContaining("g.app_id = 730")
       );
     });
 

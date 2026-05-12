@@ -1,6 +1,6 @@
 import { type Request, type Response } from "express";
 import { getMatchesBySeasonAndLeagueWithStreamUrls } from "../models/match.models";
-import { getActiveSeason } from "../models/season.models";
+import { getOrganizerActiveSeasonForAppId } from "../models/season.models";
 import { type RequestWithParamsAndQuery } from "@eggosystem/types";
 
 export const getMatchesBySeasonAndLeagueController = async (
@@ -43,7 +43,11 @@ export const getMatchesByOrganizerAndAppController = async (
     return;
   }
 
-  const season = await getActiveSeason(organizerId, appId, gametype);
+  const season = await getOrganizerActiveSeasonForAppId(
+    organizerId,
+    appId,
+    gametype
+  );
 
   if (!season) {
     res.status(404).json({

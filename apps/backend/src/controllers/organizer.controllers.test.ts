@@ -1,5 +1,5 @@
 import { type Response } from "express";
-import { getActiveSeason } from "../models/season.models";
+import { getOrganizerActiveSeasonForAppId } from "../models/season.models";
 import { redisClient } from "../utils/redisClient";
 import type { RequestWithParams } from "@eggosystem/types";
 import { SeasonPlatform } from "@eggosystem/types";
@@ -13,9 +13,10 @@ jest.mock("../models/season.models");
 jest.mock("../models/game.models");
 jest.mock("../utils/redisClient");
 
-const mockGetActiveSeason = getActiveSeason as jest.MockedFunction<
-  typeof getActiveSeason
->;
+const mockGetActiveSeason =
+  getOrganizerActiveSeasonForAppId as jest.MockedFunction<
+    typeof getOrganizerActiveSeasonForAppId
+  >;
 const mockRedisClient = redisClient as jest.Mocked<typeof redisClient>;
 
 // Type definitions for test requests

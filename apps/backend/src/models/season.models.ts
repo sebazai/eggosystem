@@ -102,15 +102,15 @@ export const getSeasonPlatformAndAppId = async (
  *
  * @param organizer_id - The organizer ID
  * @param app_id - The app ID
- * @returns Active signup season for the given app and organizer, or undefined if none found
+ * @returns The active or signup-open season for the given app and organizer, or undefined if none found
  */
-export const getActiveSeason = async (
+export const getOrganizerActiveSeasonForAppId = async (
   organizer_id: number,
   app_id: number,
   gametype: string = "comp"
 ) => {
   const game_type_id = await getGameTypeIdByName(gametype);
-  const [activeSignupSeason] = await runQuery<
+  const [activeSeason] = await runQuery<
     Array<ActiveSeasonSignupForAppId | undefined>
   >(
     `SELECT s.id AS season_id, s.platform, s.signup_end_date, s.full_name
@@ -118,15 +118,17 @@ export const getActiveSeason = async (
      JOIN Games g ON s.game_id = g.id
      JOIN GameTypes gt ON s.game_type_id = gt.id
      JOIN Organizers o ON s.organizer_id = o.id
-     -- TODO: start_date >= NOW() restricts results to signup-phase seasons only; running seasons
-     -- (start_date < NOW() < end_date) are never returned. The GET /seasons/active endpoint
-     -- will return 404 for any season that has already started.
-     WHERE g.app_id = ? AND o.id = ? AND gt.id = ? AND s.start_date >= NOW() AND s.signup_start_date <= NOW() AND (s.signup_end_date IS NULL OR s.signup_end_date >= NOW())
+     WHERE g.app_id = ? AND o.id = ? AND gt.id = ?
+       AND (
+         (s.start_date <= NOW() AND (s.end_date IS NULL OR s.end_date >= NOW()))
+         OR
+         (s.start_date > NOW() AND s.signup_start_date <= NOW() AND (s.signup_end_date IS NULL OR s.signup_end_date >= NOW()))
+       )
      ORDER BY s.id DESC
      LIMIT 1;`,
     [app_id, organizer_id, game_type_id]
   );
-  return activeSignupSeason;
+  return activeSeason;
 };
 
 /**

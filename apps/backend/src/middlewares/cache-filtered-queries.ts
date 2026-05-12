@@ -1,7 +1,7 @@
 import type { Response, NextFunction } from "express";
 import { createHash } from "crypto";
 import { expireIn7Days, redisClient } from "../utils/redisClient";
-import { getActiveSeason } from "../models/season.models";
+import { getOrganizerActiveSeasonForAppId } from "../models/season.models";
 import { logger } from "../utils/app-logger";
 import { normalizeParsedParams } from "../utils/normalize-parsed-params";
 import { type RequestWithQuery } from "@eggosystem/types";
@@ -42,7 +42,9 @@ export function cacheResponseMiddleware({
 
     // If active season is present, do not cache
     const activeSeason =
-      organizer_id && app_id ? await getActiveSeason(organizerId, appId) : null;
+      organizer_id && app_id
+        ? await getOrganizerActiveSeasonForAppId(organizerId, appId)
+        : null;
     if (activeSeason) {
       const filtersHasActiveSeason = searchParams.season_ids?.find(
         (id) => id === activeSeason.season_id
