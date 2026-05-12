@@ -156,6 +156,7 @@ export const getPlayerKanaElo = async (steam_id: string) => {
 };
 
 export const getTopXPlayersKanaElo = async (x: number) => {
+  // TODO(#220): accept organizer_id and app_id as params for multi-org support
   const activeSeason = await getActiveSeason(1, 730);
 
   if (!activeSeason) {
