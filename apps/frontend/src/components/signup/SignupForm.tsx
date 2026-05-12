@@ -16,7 +16,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TabOrganization } from "./TabOrganization";
 import { TabPlayers } from "./TabPlayers";
 import { TabTeam } from "./TabTeam";
-import { playerMeetsSeasonRankAndHoursRequirements } from "./playerSeasonSignupRequirements";
+import { playerMeetsSeasonRankAndHoursRequirements } from "@eggosystem/types";
 import { ErrorMessage } from "@hookform/error-message";
 import { CheckCheck } from "lucide-react";
 import {

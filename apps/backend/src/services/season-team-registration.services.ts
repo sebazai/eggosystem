@@ -8,7 +8,9 @@ import {
   type PlayerDetailsBySteamId,
   type InsertSeasonTeamRegistrationPlayer,
   type UpdateSeasonTeamRegistrationPlayer,
-  isFaceITCSRank
+  isFaceITCSRank,
+  type SeasonSignupRankRequirements,
+  pickSignupRankRequirements
 } from "@eggosystem/types";
 import {
   insertSeasonTeamRegistration,
@@ -178,33 +180,6 @@ const updatePlayersFaceitData = async (
     }
   }
 };
-
-interface SeasonSignupRankRequirements {
-  faceit_rank_required: boolean;
-  premier_rank_required: boolean;
-  hours_played_required: boolean;
-}
-
-/**
- * Requirement flags persisted on Seasons; callers must resolve the season row.
- * Conservative default preserves legacy behaviour if data is unexpectedly missing.
- */
-function pickSignupRankRequirements(
-  season: SeasonDetails | undefined | null
-): SeasonSignupRankRequirements {
-  if (!season) {
-    return {
-      faceit_rank_required: true,
-      premier_rank_required: true,
-      hours_played_required: true
-    };
-  }
-  return {
-    faceit_rank_required: !!season.faceit_rank_required,
-    premier_rank_required: !!season.premier_rank_required,
-    hours_played_required: !!season.hours_played_required
-  };
-}
 
 /**
  * Creates and saves a player rank entry for a season.

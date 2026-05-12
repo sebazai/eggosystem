@@ -1,5 +1,7 @@
-import { SeasonPlatform } from "@eggosystem/types";
-import { playerMeetsSeasonRankAndHoursRequirements } from "./playerSeasonSignupRequirements";
+import {
+  SeasonPlatform,
+  playerMeetsSeasonRankAndHoursRequirements
+} from "@eggosystem/types";
 
 describe("playerMeetsSeasonRankAndHoursRequirements", () => {
   const basePlayer = { rank: 1, externalRank: 1, hours: 100 };

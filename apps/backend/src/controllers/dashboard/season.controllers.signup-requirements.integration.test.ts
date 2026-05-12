@@ -1,4 +1,5 @@
 // Integration tests for season signup requirements functionality
+import { createMockSeasonFormRequestBody } from "@eggosystem/types";
 import request from "supertest";
 import express from "express";
 import { runQuery } from "../../db/mysqlRunQuery";
@@ -59,19 +60,7 @@ describe("Season Controllers Integration Tests - Signup Requirements", () => {
   describe("POST /api/v1/dashboard/seasons - Signup Requirements", () => {
     it("should create a season with signup requirements defaulting to false", async () => {
       const adminJWT = generateTestJWT();
-      const seasonData = {
-        game_id: 1,
-        game_type_id: 1,
-        organizer_id: 1,
-        name: "Test Season",
-        full_name: "Test Season Full Name",
-        start_date: "2024-02-01",
-        end_date: "2024-12-31",
-        platform: "faceit",
-        is_round_robin_bo2_as_2xbo1: false,
-        has_vat: true,
-        active_map_pool: [1, 2, 3]
-      };
+      const seasonData = createMockSeasonFormRequestBody();
 
       const response = await request(app)
         .post("/api/v1/dashboard/seasons")
@@ -83,7 +72,7 @@ describe("Season Controllers Integration Tests - Signup Requirements", () => {
       const createdSeasonId = response.body.seasonId;
 
       try {
-        // Verify signup requirements are stored as false by default
+        // Verify signup requirements are stored as false
         const [storedSeason] = await runQuery<
           Array<{
             faceit_rank_required: boolean;
@@ -117,22 +106,11 @@ describe("Season Controllers Integration Tests - Signup Requirements", () => {
 
     it("should create a season with signup requirements explicitly set to true", async () => {
       const adminJWT = generateTestJWT();
-      const seasonData = {
-        game_id: 1,
-        game_type_id: 1,
-        organizer_id: 1,
-        name: "Test Season",
-        full_name: "Test Season Full Name",
-        start_date: "2024-02-01",
-        end_date: "2024-12-31",
-        platform: "faceit",
-        is_round_robin_bo2_as_2xbo1: false,
-        has_vat: true,
-        active_map_pool: [1, 2, 3],
+      const seasonData = createMockSeasonFormRequestBody({
         faceit_rank_required: true,
         premier_rank_required: true,
         hours_played_required: true
-      };
+      });
 
       const response = await request(app)
         .post("/api/v1/dashboard/seasons")
@@ -201,22 +179,15 @@ describe("Season Controllers Integration Tests - Signup Requirements", () => {
 
     it("should update signup requirements to true", async () => {
       const adminJWT = generateTestJWT();
-      const seasonData = {
-        game_id: 1,
-        game_type_id: 1,
-        organizer_id: 1,
+      const seasonData = createMockSeasonFormRequestBody({
         name: "Updated Season",
         full_name: "Updated Season Full Name",
         start_date: "2024-01-01",
-        end_date: "2024-12-31",
-        platform: "faceit",
-        is_round_robin_bo2_as_2xbo1: false,
-        has_vat: true,
         active_map_pool: [3, 4, 5],
         faceit_rank_required: true,
         premier_rank_required: true,
         hours_played_required: true
-      };
+      });
 
       await request(app)
         .put(`/api/v1/dashboard/seasons/${testSeasonId}`)
@@ -256,22 +227,15 @@ describe("Season Controllers Integration Tests - Signup Requirements", () => {
         connection
       );
 
-      const seasonData = {
-        game_id: 1,
-        game_type_id: 1,
-        organizer_id: 1,
+      const seasonData = createMockSeasonFormRequestBody({
         name: "Updated Season",
         full_name: "Updated Season Full Name",
         start_date: "2024-01-01",
-        end_date: "2024-12-31",
-        platform: "faceit",
-        is_round_robin_bo2_as_2xbo1: false,
-        has_vat: true,
         active_map_pool: [3, 4, 5],
         faceit_rank_required: false,
         premier_rank_required: false,
         hours_played_required: false
-      };
+      });
 
       await request(app)
         .put(`/api/v1/dashboard/seasons/${testSeasonId}`)

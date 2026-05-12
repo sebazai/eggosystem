@@ -43,7 +43,7 @@ import type {
   SignupPlayerType
 } from "@eggosystem/types";
 import { playerSchema, SeasonPlatform } from "@eggosystem/types";
-import { playerMeetsSeasonRankAndHoursRequirements } from "./playerSeasonSignupRequirements";
+import { playerMeetsSeasonRankAndHoursRequirements } from "@eggosystem/types";
 import { AlertTriangle, Search, TriangleAlert } from "lucide-react";
 import { ApiError, clientApiFetch } from "@/lib/apiClient";
 import { SignupPlayerNotification } from "./SignupPlayerNotification";

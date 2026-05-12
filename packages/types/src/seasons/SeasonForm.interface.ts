@@ -104,9 +104,9 @@ export const seasonFormSchema = z
       .url("Discord link must be a valid URL")
       .optional()
       .nullable(),
-    faceit_rank_required: z.boolean().optional(),
-    premier_rank_required: z.boolean().optional(),
-    hours_played_required: z.boolean().optional()
+    faceit_rank_required: z.boolean(),
+    premier_rank_required: z.boolean(),
+    hours_played_required: z.boolean()
   })
   .refine(
     (data) => {
@@ -156,6 +156,9 @@ export const seasonFormSchema = z
 
 // TypeScript type inferred from the Zod schema
 export type SeasonFormValues = z.infer<typeof seasonFormSchema>;
+
+/** JSON body for dashboard season create/update before Zod transforms. */
+export type SeasonFormRequestBody = z.input<typeof seasonFormSchema>;
 
 // Raw database interface (for database operations)
 export interface SeasonFormRaw {
