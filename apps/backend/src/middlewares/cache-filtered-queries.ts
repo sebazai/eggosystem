@@ -41,7 +41,8 @@ export function cacheResponseMiddleware({
     const appId = Number(app_id);
 
     // If active season is present, do not cache
-    const activeSeason = await getActiveSeason(organizerId ?? 1, appId ?? 730);
+    const activeSeason =
+      organizer_id && app_id ? await getActiveSeason(organizerId, appId) : null;
     if (activeSeason) {
       const filtersHasActiveSeason = searchParams.season_ids?.find(
         (id) => id === activeSeason.season_id
