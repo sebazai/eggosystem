@@ -1,5 +1,5 @@
 # Base image
-FROM node:25-slim@sha256:44bcbf493408a824104e74976ae5539f596c46cbe75ed0423a137552a555e2de AS base
+FROM node:25-slim@sha256:e49fd70491eb042270f974167c874d6245287263ffc16422fcf93b3c150409d8 AS base
 RUN apt update && apt upgrade -y
 WORKDIR /usr/src/app
 # Install pnpm globally - do this first as it changes least often

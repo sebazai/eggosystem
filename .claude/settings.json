@@ -102,6 +102,11 @@
         "hooks": [
           {
             "type": "command",
+            "command": "sh \"$CLAUDE_PROJECT_DIR/.claude/hooks/block-github-cli.sh\"",
+            "timeout": 5
+          },
+          {
+            "type": "command",
             "command": "sh \"$CLAUDE_PROJECT_DIR/.claude/hooks/block-e2e-wrong-dir.sh\"",
             "timeout": 5
           },

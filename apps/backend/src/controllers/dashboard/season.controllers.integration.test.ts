@@ -1,3 +1,4 @@
+import { createMockSeasonFormRequestBody } from "@eggosystem/types";
 import request from "supertest";
 import express from "express";
 import { runQuery } from "../../db/mysqlRunQuery";
@@ -58,19 +59,7 @@ describe("Season Controllers Integration Tests - Active Map Pool", () => {
   describe("POST /api/v1/dashboard/seasons", () => {
     it("should create a season with active_map_pool", async () => {
       const adminJWT = generateTestJWT();
-      const seasonData = {
-        game_id: 1,
-        game_type_id: 1,
-        organizer_id: 1,
-        name: "Test Season",
-        full_name: "Test Season Full Name",
-        start_date: "2024-02-01",
-        end_date: "2024-12-31",
-        platform: "faceit",
-        is_round_robin_bo2_as_2xbo1: false,
-        has_vat: true,
-        active_map_pool: [1, 2, 3]
-      };
+      const seasonData = createMockSeasonFormRequestBody();
 
       const response = await request(app)
         .post("/api/v1/dashboard/seasons")
@@ -104,19 +93,9 @@ describe("Season Controllers Integration Tests - Active Map Pool", () => {
 
     it("should reject empty active_map_pool array", async () => {
       const adminJWT = generateTestJWT();
-      const seasonData = {
-        game_id: 1,
-        game_type_id: 1,
-        organizer_id: 1,
-        name: "Test Season",
-        full_name: "Test Season Full Name",
-        start_date: "2024-02-01",
-        end_date: "2024-12-31",
-        platform: "faceit",
-        is_round_robin_bo2_as_2xbo1: false,
-        has_vat: true,
+      const seasonData = createMockSeasonFormRequestBody({
         active_map_pool: []
-      };
+      });
 
       const response = await request(app)
         .post("/api/v1/dashboard/seasons")
@@ -132,19 +111,8 @@ describe("Season Controllers Integration Tests - Active Map Pool", () => {
 
     it("should reject missing active_map_pool field", async () => {
       const adminJWT = generateTestJWT();
-      const seasonData = {
-        game_id: 1,
-        game_type_id: 1,
-        organizer_id: 1,
-        name: "Test Season",
-        full_name: "Test Season Full Name",
-        start_date: "2024-02-01",
-        end_date: "2024-12-31",
-        platform: "faceit",
-        is_round_robin_bo2_as_2xbo1: false,
-        has_vat: true
-        // active_map_pool is missing
-      };
+      const { active_map_pool: _ignored, ...seasonData } =
+        createMockSeasonFormRequestBody();
 
       const response = await request(app)
         .post("/api/v1/dashboard/seasons")
@@ -175,19 +143,12 @@ describe("Season Controllers Integration Tests - Active Map Pool", () => {
 
     it("should update a season with new active_map_pool", async () => {
       const adminJWT = generateTestJWT();
-      const seasonData = {
-        game_id: 1,
-        game_type_id: 1,
-        organizer_id: 1,
+      const seasonData = createMockSeasonFormRequestBody({
         name: "Updated Season",
         full_name: "Updated Season Full Name",
         start_date: "2024-01-01",
-        end_date: "2024-12-31",
-        platform: "faceit",
-        is_round_robin_bo2_as_2xbo1: false,
-        has_vat: true,
         active_map_pool: [3, 4, 5]
-      };
+      });
 
       await request(app)
         .put(`/api/v1/dashboard/seasons/${testSeasonId}`)
@@ -208,19 +169,12 @@ describe("Season Controllers Integration Tests - Active Map Pool", () => {
 
     it("should reject empty active_map_pool array when updating", async () => {
       const adminJWT = generateTestJWT();
-      const seasonData = {
-        game_id: 1,
-        game_type_id: 1,
-        organizer_id: 1,
+      const seasonData = createMockSeasonFormRequestBody({
         name: "Updated Season",
         full_name: "Updated Season Full Name",
         start_date: "2024-01-01",
-        end_date: "2024-12-31",
-        platform: "faceit",
-        is_round_robin_bo2_as_2xbo1: false,
-        has_vat: true,
         active_map_pool: []
-      };
+      });
 
       const response = await request(app)
         .put(`/api/v1/dashboard/seasons/${testSeasonId}`)
@@ -312,22 +266,13 @@ describe("Season Controllers Integration Tests - Date/Time UTC Conversion", () =
       const adminJWT = generateTestJWT();
       // Frontend sends UTC ISO strings (already converted from local time)
       // Example: User in Helsinki (UTC+2) selects 20:30 local time, frontend converts to 18:30 UTC
-      const seasonData = {
-        game_id: 1,
-        game_type_id: 1,
-        organizer_id: 1,
+      const seasonData = createMockSeasonFormRequestBody({
         name: "Test Season UTC",
         full_name: "Test Season UTC Full Name",
-        start_date: "2024-02-01",
-        end_date: "2024-12-31",
         signup_start_date: "2024-01-15T18:30:00.000Z", // 18:30 UTC
         signup_end_date: "2024-01-20T20:45:00.000Z", // 20:45 UTC
-        early_bird_price_discount_end_date: "2024-01-10T16:00:00.000Z", // 16:00 UTC
-        platform: "faceit",
-        is_round_robin_bo2_as_2xbo1: false,
-        has_vat: true,
-        active_map_pool: [1, 2, 3]
-      };
+        early_bird_price_discount_end_date: "2024-01-10T16:00:00.000Z" // 16:00 UTC
+      });
 
       const response = await request(app)
         .post("/api/v1/dashboard/seasons")
@@ -423,22 +368,14 @@ describe("Season Controllers Integration Tests - Date/Time UTC Conversion", () =
     it("should update UTC ISO date strings and store as UTC in database", async () => {
       const adminJWT = generateTestJWT();
       // Frontend sends updated UTC ISO strings (already converted from local time)
-      const seasonData = {
-        game_id: 1,
-        game_type_id: 1,
-        organizer_id: 1,
+      const seasonData = createMockSeasonFormRequestBody({
         name: "Updated Season UTC",
         full_name: "Updated Season UTC Full Name",
-        start_date: "2024-02-01",
-        end_date: "2024-12-31",
         signup_start_date: "2024-01-20T14:30:00.000Z", // Updated to 14:30 UTC
         signup_end_date: "2024-01-25T16:15:00.000Z", // Updated to 16:15 UTC
         early_bird_price_discount_end_date: "2024-01-12T10:00:00.000Z", // New field
-        platform: "faceit",
-        is_round_robin_bo2_as_2xbo1: false,
-        has_vat: true,
         active_map_pool: [3, 4, 5]
-      };
+      });
 
       await request(app)
         .put(`/api/v1/dashboard/seasons/${testSeasonId}`)

@@ -59,7 +59,10 @@ describe("Season team registration services", () => {
     signup_start_date: yesterday,
     signup_end_date: tomorrow,
     platform: SeasonPlatform.FACEIT,
-    start_date: tomorrow
+    start_date: tomorrow,
+    faceit_rank_required: true,
+    premier_rank_required: true,
+    hours_played_required: true
   });
 
   const seasonDetails = {
@@ -74,7 +77,10 @@ describe("Season team registration services", () => {
       platform: insertSeason.platform,
       start_date:
         insertSeason?.start_date?.toISOString().split("T")[0] ?? "2024-01-01",
-      end_date: insertSeason?.end_date?.toISOString().split("T")[0] ?? null
+      end_date: insertSeason?.end_date?.toISOString().split("T")[0] ?? null,
+      faceit_rank_required: insertSeason.faceit_rank_required,
+      premier_rank_required: insertSeason.premier_rank_required,
+      hours_played_required: insertSeason.hours_played_required
     }),
     app_id: 730
   } satisfies SeasonDetails;
@@ -1683,6 +1689,93 @@ describe("Season team registration services", () => {
       await expect(
         registrationServices.handleSignupFormForSeason(seasonDetails, formData)
       ).rejects.toThrow(/Team does not belong to the selected organization/);
+    });
+  });
+
+  describe("addPlayersForTeamInSeason — optional signup requirement flags", () => {
+    const relaxedSteamId = "55555555555555555";
+    const relaxedAccountId = 9999920;
+
+    beforeEach(async () => {
+      await unsetSeasonTeamRegistration();
+      await setSeasonTeamRegistration();
+      await clearSeasonPlayerRanks();
+      await insertOneTestUser(
+        relaxedAccountId,
+        relaxedSteamId,
+        "RelaxedSignup"
+      );
+      await runQuery(
+        `UPDATE Seasons SET faceit_rank_required = 0, premier_rank_required = 0, hours_played_required = 0 WHERE id = ?`,
+        [seasonDetails.id]
+      );
+    });
+
+    afterEach(async () => {
+      await cleanUpTestUser(relaxedAccountId);
+      await runQuery(
+        "DELETE FROM SeasonPlayerRanks WHERE steam_id = ? AND season_id = ?",
+        [relaxedSteamId, seasonDetails.id]
+      );
+      await runQuery(
+        `UPDATE Seasons SET faceit_rank_required = 1, premier_rank_required = 1, hours_played_required = 1 WHERE id = ?`,
+        [seasonDetails.id]
+      );
+    });
+
+    it("stores null rank/hours when fetches yield -1 but all requirement flags are off", async () => {
+      const mockHours = jest
+        .spyOn(playerRanksServices, "getPlayerHoursForSteamAppId")
+        .mockResolvedValue({ hours: -1 });
+      const mockAppRank = jest
+        .spyOn(playerRanksServices, "getPlayerAppIdRank")
+        .mockResolvedValue({
+          average_rank: -1,
+          rank_updated_at: null
+        });
+      const mockExt = jest
+        .spyOn(playerRanksServices, "getPlayerRankForPlatform")
+        .mockResolvedValue({
+          faceit_elo: -1,
+          faceit_level: 0,
+          faceit_kd: 1.0,
+          faceit_date: Date.now(),
+          metadata: {
+            faceit_matches_played: undefined,
+            faceit_last_match: undefined,
+            faceit_decay: false,
+            faceit_fallback: undefined
+          }
+        });
+
+      try {
+        await registrationServices.addPlayersForTeamInSeason(
+          seasonDetails.id,
+          seasonDetails.app_id,
+          SeasonPlatform.FACEIT,
+          validSignupData.teamId,
+          [
+            {
+              steam_id: relaxedSteamId,
+              is_captain: false,
+              is_co_captain: false
+            }
+          ]
+        );
+
+        const [row] = await runQuery<[SeasonPlayerRank | undefined]>(
+          "SELECT * FROM SeasonPlayerRanks WHERE steam_id = ? AND season_id = ?",
+          [relaxedSteamId, seasonDetails.id]
+        );
+        expect(row).toBeDefined();
+        expect(row?.cs2_rank).toBeNull();
+        expect(row?.cs_hours).toBeNull();
+        expect(row?.faceit_elo).toBeNull();
+      } finally {
+        mockHours.mockRestore();
+        mockAppRank.mockRestore();
+        mockExt.mockRestore();
+      }
     });
   });
 

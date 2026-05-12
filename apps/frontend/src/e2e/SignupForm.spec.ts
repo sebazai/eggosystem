@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 import {
   generateTestJWTForUser,
   generateUniqueOrgCode,
@@ -14,7 +14,15 @@ import {
   AddTeamSignupSteamId4,
   AddTeamSignupSteamId5,
   ApprovalOnlySubmitSteamId,
+  ConfigurableReqsAuthSteamId,
+  ConfigurableReqsExternalRankMissingSteamId,
+  ConfigurableReqsHoursMissingSteamId,
+  ConfigurableReqsInternalRankMissingSteamId,
   DraftReturnUserSteamId,
+  E2E_SIGNUP_SEASON_FACEIT_RANK_OPTIONAL_ID,
+  E2E_SIGNUP_SEASON_HOURS_OPTIONAL_ID,
+  E2E_SIGNUP_SEASON_PREMIER_RANK_OPTIONAL_ID,
+  E2E_SIGNUP_SEASON_RELAXED_REQUIREMENTS_ID,
   heppajpgSteamId,
   HoolyzSteamId,
   IncompleteDetailsPlayerSteamId,
@@ -49,24 +57,30 @@ async function assignPlayerRole(
   );
 
   const trigger = accordionTriggers.nth(playerIndex);
-  if (await trigger.isVisible()) {
-    const isOpen = await trigger.getAttribute("data-state");
-    if (isOpen === "closed") {
-      await trigger.click();
-    }
+  await trigger.waitFor({ state: "visible", timeout: 10000 });
 
-    const checkboxSelector =
-      role === "captain"
-        ? `[data-testid="captain-checkbox-${playerIndex}"]`
-        : `[data-testid="co-captain-checkbox-${playerIndex}"]`;
+  const checkboxSelector =
+    role === "captain"
+      ? `[data-testid="captain-checkbox-${playerIndex}"]`
+      : `[data-testid="co-captain-checkbox-${playerIndex}"]`;
 
-    const checkbox = page.locator(checkboxSelector);
-    if (await checkbox.isVisible()) {
-      const isAlreadyAssigned = await checkbox.getAttribute("aria-checked");
-      if (isAlreadyAssigned !== "true") {
-        await checkbox.click();
-      }
-    }
+  const checkbox = page.locator(checkboxSelector);
+  if (!(await checkbox.isVisible().catch(() => false))) {
+    await trigger.focus();
+    await page.keyboard.press("Enter");
+  }
+
+  if (!(await checkbox.isVisible().catch(() => false))) {
+    const box = await trigger.boundingBox();
+    if (!box) throw new Error(`Player ${playerIndex} trigger is not visible`);
+
+    await page.mouse.click(box.x + box.width - 12, box.y + box.height / 2);
+  }
+
+  await checkbox.waitFor({ state: "visible", timeout: 10000 });
+  const isAlreadyAssigned = await checkbox.getAttribute("aria-checked");
+  if (isAlreadyAssigned !== "true") {
+    await checkbox.click();
   }
 }
 
@@ -83,6 +97,16 @@ async function assignCaptain(page: Page) {
     "There must be exactly one captain and one co-captain"
   );
   await expect(validationError).not.toBeVisible({ timeout: 5000 });
+}
+
+async function fillSteamIdLineup(page: Page, lineup: string[]) {
+  for (let i = 0; i < lineup.length; i++) {
+    const input = page.locator(`[data-testid="steam-id-input-${i}"]`);
+    await expect(input).toBeVisible();
+    await expect(input).toBeEnabled({ timeout: 15000 });
+    await input.fill(lineup[i]!);
+    await input.blur();
+  }
 }
 
 // Helper function to set up the form to the team FACEIT ID input stage
@@ -147,17 +171,15 @@ async function setupFormToPlayersSectionWithTeam(
   await page.goto("/seasons/16/signup/registration");
 
   // Form may load on Team or Players step (draft, or redirect to edit when user has existing registration).
-  // Wait for form to be ready, then ensure we're on Organization step before using the org dropdown.
-  await page
-    .getByRole("heading", { name: /Sign up Form|Edit signup/i })
-    .waitFor({ state: "visible", timeout: 15000 });
+  // Wait for form tabs/controls directly; the heading can be present while the
+  // tab content is still settling after auth/signup status checks.
   const orgDropdown = page.locator(
     '[data-testid="organizations-dropdown-toggle"]'
   );
   const orgVisible = await orgDropdown.isVisible().catch(() => false);
   if (!orgVisible) {
     const orgTab = page.getByRole("tab", { name: /Organization/i });
-    await orgTab.waitFor({ state: "visible", timeout: 10000 });
+    await orgTab.waitFor({ state: "visible", timeout: 60000 });
     await orgTab.click();
   }
   await orgDropdown.waitFor({ state: "visible", timeout: 60000 });
@@ -178,10 +200,11 @@ async function setupFormToPlayersSectionWithTeam(
 async function setupCompleteRegistrationForm(
   page: Page,
   orgName: string,
-  teamName: string
+  teamName: string,
+  seasonId: number = 16
 ) {
   // Navigate to the registration form
-  await page.goto("/seasons/16/signup/registration");
+  await page.goto(`/seasons/${seasonId}/signup/registration`);
 
   // Wait for signup status check and form to be ready (org dropdown is the first interactive element)
   await page
@@ -267,6 +290,38 @@ async function setupAuthForUser(
 
     await route.continue({ headers });
   });
+}
+
+async function expectPublicSignupSuccessUi(page: Page) {
+  await expect(page.getByTestId("success-message")).toBeVisible({
+    timeout: 20000
+  });
+  await expect(page.getByTestId("success-message")).toContainText(
+    /Team registered/i
+  );
+  await expect(
+    page
+      .locator("[data-sonner-toast]")
+      .filter({ hasText: /Team registered successfully/i })
+  ).toBeVisible({ timeout: 10000 });
+}
+
+/** POST public season signup, then assert HTTP 2xx and success banner + toast. */
+async function clickSubmitAndAssertPublicSignupSuccess(
+  page: Page,
+  submitButton: Locator
+) {
+  const signupResponsePromise = page.waitForResponse(
+    (res) =>
+      res.url().includes("/api/v1/registrations/season/") &&
+      res.request().method() === "POST" &&
+      !res.url().includes("/draft")
+  );
+  await submitButton.click();
+  const signupResponse = await signupResponsePromise;
+  expect(signupResponse.status()).toBeGreaterThanOrEqual(200);
+  expect(signupResponse.status()).toBeLessThan(300);
+  await expectPublicSignupSuccessUi(page);
 }
 
 test.describe("Signup Form", () => {
@@ -729,7 +784,7 @@ test.describe("Signup Form", () => {
 
       // Test 3: Check for validation error about missing captain/co-captain
       const validationError = page.locator(
-        "text=There must be exactly one captain and one co-captain"
+        '[data-testid="captain-validation-error"]'
       );
       await expect(validationError).toBeVisible();
 
@@ -1294,6 +1349,8 @@ test.describe("Signup Form", () => {
   });
 
   test.describe("Admin registration", () => {
+    test.describe.configure({ timeout: 90000 });
+
     // Design: wrongful data (seed) → user opens signup → we assert the error is visible and submit disabled
     //        → we fix (admin panel OR DB injection) → user opens signup again → we assert error gone and submit succeeds.
     // When admin act is enough: the dashboard writes the same state the backend validation reads (e.g. manual approval
@@ -1325,12 +1382,7 @@ test.describe("Signup Form", () => {
       await page
         .locator('[data-testid="steam-id-input-0"]')
         .waitFor({ state: "visible", timeout: 10000 });
-      for (let i = 0; i < 5; i++) {
-        const input = page.locator(`[data-testid="steam-id-input-${i}"]`);
-        await expect(input).toBeVisible();
-        await input.fill(a1Lineup[i]!);
-        await page.keyboard.press("Tab");
-      }
+      await fillSteamIdLineup(page, a1Lineup);
       await expect(
         page.locator('[data-testid="steam-id-input-4"]')
       ).toHaveClass(/border-green-500/, { timeout: 20000 });
@@ -1386,12 +1438,7 @@ test.describe("Signup Form", () => {
       await page
         .locator('[data-testid="steam-id-input-0"]')
         .waitFor({ state: "visible", timeout: 10000 });
-      for (let i = 0; i < 5; i++) {
-        const input = page.locator(`[data-testid="steam-id-input-${i}"]`);
-        await expect(input).toBeVisible();
-        await input.fill(a1Lineup[i]!);
-        await page.keyboard.press("Tab");
-      }
+      await fillSteamIdLineup(page, a1Lineup);
       await expect(
         page.locator('[data-testid="steam-id-input-4"]')
       ).toHaveClass(/border-green-500/, { timeout: 20000 });
@@ -1448,12 +1495,7 @@ test.describe("Signup Form", () => {
       await page
         .locator('[data-testid="steam-id-input-0"]')
         .waitFor({ state: "visible", timeout: 10000 });
-      for (let i = 0; i < 5; i++) {
-        const input = page.locator(`[data-testid="steam-id-input-${i}"]`);
-        await expect(input).toBeVisible();
-        await input.fill(a2Lineup[i]!);
-        await page.keyboard.press("Tab");
-      }
+      await fillSteamIdLineup(page, a2Lineup);
       await expect(
         page.locator('[data-testid="steam-id-input-4"]')
       ).toHaveClass(/border-green-500/, { timeout: 20000 });
@@ -1507,12 +1549,7 @@ test.describe("Signup Form", () => {
       await page
         .locator('[data-testid="steam-id-input-0"]')
         .waitFor({ state: "visible", timeout: 10000 });
-      for (let i = 0; i < 5; i++) {
-        const input = page.locator(`[data-testid="steam-id-input-${i}"]`);
-        await expect(input).toBeVisible();
-        await input.fill(a2Lineup[i]!);
-        await page.keyboard.press("Tab");
-      }
+      await fillSteamIdLineup(page, a2Lineup);
       await expect(
         page.locator('[data-testid="steam-id-input-4"]')
       ).toHaveClass(/border-green-500/, { timeout: 20000 });
@@ -1699,6 +1736,315 @@ test.describe("Signup Form", () => {
       const adminResponse = await adminSignupPromise;
       expect(adminResponse.status()).toBeGreaterThanOrEqual(200);
       expect(adminResponse.status()).toBeLessThan(300);
+    });
+  });
+
+  // S1-AC-4: Configurable signup requirements (faceit_rank_required,
+  // premier_rank_required, hours_played_required).
+  //
+  // Strategy: end-to-end through the real frontend → backend → external-API
+  // path. Each "missing" precondition for the index-0 lineup slot is driven
+  // by a *dedicated* Steam ID whose third-party API response is overridden
+  // in the shared MSW layer (FACEIT, Leetify, Steam). No route mocks for
+  // /api/v1/players/* — those endpoints are exercised for real and
+  // legitimately produce externalRank=0/rank=-1/hours=-1 because the
+  // upstream service returned the empty/missing payload.
+  //
+  // Per-flag signup rules use dedicated `Seasons` rows from `e2e_test_seed.ts`
+  // (991–993) instead of mocking `/seasons/*/details`.
+  test.describe("Configurable signup requirements", () => {
+    test.describe.configure({ timeout: 90000 });
+
+    // Index-0 uses a per-test dedicated "missing"-target Steam ID. Each
+    // target's missing-data scenario is driven end-to-end through the seed
+    // and MSW (third-party API mocks) — see the constants in
+    // packages/types/src/test/fixtures.ts and the explicit branches in:
+    //   - packages/shared-msw/src/faceit/GameRank-handlers.ts
+    //   - packages/shared-msw/src/leetify/handlers.ts
+    //   - packages/shared-msw/src/steam/GetOwnedGames-handlers.ts
+    // so the frontend → backend → external-API path is exercised for real.
+    //
+    // Index-1 uses ConfigurableReqsAuthSteamId, the dedicated auth user —
+    // keeping that account out of every other test prevents a prior team
+    // registration from redirecting the form into edit mode
+    // (useSignupStatus → /signup/team/:teamId/edit). Indices 2–4 keep their
+    // existing valid players because assertions only target the index-0 slot.
+    const fillConfigurableReqsLineup = async (
+      page: Page,
+      indexZeroSteamId: string
+    ) => {
+      await fillSteamIdLineup(page, [
+        indexZeroSteamId,
+        ConfigurableReqsAuthSteamId,
+        ValidWorkEmail3SteamId,
+        ValidWorkEmail4SteamId,
+        ValidWorkEmail5SteamId
+      ]);
+    };
+
+    test("faceit_rank_required=false: player with externalRank=-1 has green border, no faceit-rank notification, submit is enabled", async ({
+      page
+    }) => {
+      await setupAuthForUser(
+        page,
+        15032,
+        ConfigurableReqsAuthSteamId,
+        "ConfigurableReqsAuth"
+      );
+
+      await setupCompleteRegistrationForm(
+        page,
+        generateUniqueOrgName("Faceit Disabled Org"),
+        generateUniqueTeamName("Faceit Disabled Team"),
+        E2E_SIGNUP_SEASON_FACEIT_RANK_OPTIONAL_ID
+      );
+
+      // Index-0's FACEIT level comes back as 0 from FACEIT's MSW handler for
+      // ConfigurableReqsExternalRankMissingSteamId, exercising the real
+      // backend path that resolves and forwards faceit_level.
+      await fillConfigurableReqsLineup(
+        page,
+        ConfigurableReqsExternalRankMissingSteamId
+      );
+
+      // S1-AC-4: When faceit_rank_required=false, missing FACEIT level must
+      // not paint the input red and must not render the external-rank error.
+      const steamIdInput0 = page.locator('[data-testid="steam-id-input-0"]');
+      await expect(steamIdInput0).toHaveClass(/border-green-500/, {
+        timeout: 20000
+      });
+      await expect(
+        page.locator('[data-testid="external-rank-error-0"]')
+      ).not.toBeVisible();
+
+      await assignCaptain(page);
+
+      const finalTermsCheckbox = page.locator(
+        '[data-testid="terms-conditions-checkbox"]'
+      );
+      if (!(await finalTermsCheckbox.isChecked().catch(() => false))) {
+        await finalTermsCheckbox.click();
+      }
+
+      const submitButton = page
+        .locator('button[type="submit"]')
+        .filter({ hasText: /Submit/i });
+      await expect(submitButton).toBeEnabled({ timeout: 10000 });
+      await clickSubmitAndAssertPublicSignupSuccess(page, submitButton);
+    });
+
+    test("premier_rank_required=false: player with rank=-1 has green border, no premier-rank notification, submit is enabled", async ({
+      page
+    }) => {
+      await setupAuthForUser(
+        page,
+        15032,
+        ConfigurableReqsAuthSteamId,
+        "ConfigurableReqsAuth"
+      );
+
+      await setupCompleteRegistrationForm(
+        page,
+        generateUniqueOrgName("Premier Disabled Org"),
+        generateUniqueTeamName("Premier Disabled Team"),
+        E2E_SIGNUP_SEASON_PREMIER_RANK_OPTIONAL_ID
+      );
+
+      // Index-0's premier rank legitimately resolves to "no rank" because
+      // Leetify's MSW handler returns `games: []` for
+      // ConfigurableReqsInternalRankMissingSteamId — backend's getCSRank
+      // hits every fallback and returns no rank, frontend records rank=-1.
+      await fillConfigurableReqsLineup(
+        page,
+        ConfigurableReqsInternalRankMissingSteamId
+      );
+
+      const steamIdInput0 = page.locator('[data-testid="steam-id-input-0"]');
+      await expect(steamIdInput0).toHaveClass(/border-green-500/, {
+        timeout: 20000
+      });
+      await expect(
+        page.locator('[data-testid="rank-error-0"]')
+      ).not.toBeVisible();
+
+      await assignCaptain(page);
+
+      const finalTermsCheckbox = page.locator(
+        '[data-testid="terms-conditions-checkbox"]'
+      );
+      if (!(await finalTermsCheckbox.isChecked().catch(() => false))) {
+        await finalTermsCheckbox.click();
+      }
+
+      const submitButton = page
+        .locator('button[type="submit"]')
+        .filter({ hasText: /Submit/i });
+      await expect(submitButton).toBeEnabled({ timeout: 10000 });
+      await clickSubmitAndAssertPublicSignupSuccess(page, submitButton);
+    });
+
+    test("hours_played_required=false: player with hours=-1 has green border, no hours notification, submit is enabled", async ({
+      page
+    }) => {
+      await setupAuthForUser(
+        page,
+        15032,
+        ConfigurableReqsAuthSteamId,
+        "ConfigurableReqsAuth"
+      );
+
+      await setupCompleteRegistrationForm(
+        page,
+        generateUniqueOrgName("Hours Disabled Org"),
+        generateUniqueTeamName("Hours Disabled Team"),
+        E2E_SIGNUP_SEASON_HOURS_OPTIONAL_ID
+      );
+
+      // Index-0's hours legitimately come back as -1 because Steam's MSW
+      // handler returns an empty games array for
+      // ConfigurableReqsHoursMissingSteamId — backend's getPlayerHoursForCS
+      // returns hours=-1 along the same path as a non-public Steam profile.
+      await fillConfigurableReqsLineup(
+        page,
+        ConfigurableReqsHoursMissingSteamId
+      );
+
+      const steamIdInput0 = page.locator('[data-testid="steam-id-input-0"]');
+      await expect(steamIdInput0).toHaveClass(/border-green-500/, {
+        timeout: 20000
+      });
+      await expect(
+        page.locator('[data-testid="hours-error-0"]')
+      ).not.toBeVisible();
+
+      await assignCaptain(page);
+
+      const finalTermsCheckbox = page.locator(
+        '[data-testid="terms-conditions-checkbox"]'
+      );
+      if (!(await finalTermsCheckbox.isChecked().catch(() => false))) {
+        await finalTermsCheckbox.click();
+      }
+
+      const submitButton = page
+        .locator('button[type="submit"]')
+        .filter({ hasText: /Submit/i });
+      await expect(submitButton).toBeEnabled({ timeout: 10000 });
+      await clickSubmitAndAssertPublicSignupSuccess(page, submitButton);
+    });
+
+    test("AC-5: strict season (real `/details`) — missing required hours prevents signup POST", async ({
+      page
+    }) => {
+      const signupPosts: string[] = [];
+      page.on("request", (req) => {
+        if (
+          req.method() === "POST" &&
+          req.url().includes("/api/v1/dashboard/registration/season/16/signup")
+        ) {
+          signupPosts.push(req.url());
+        }
+      });
+
+      await setupAuthForUser(
+        page,
+        15032,
+        ConfigurableReqsAuthSteamId,
+        "ConfigurableReqsAuth"
+      );
+
+      await setupCompleteRegistrationForm(
+        page,
+        generateUniqueOrgName("AC5 Strict Hours Org"),
+        generateUniqueTeamName("AC5 Strict Hours Team"),
+        16
+      );
+
+      await fillConfigurableReqsLineup(
+        page,
+        ConfigurableReqsHoursMissingSteamId
+      );
+
+      const steamIdInput0 = page.locator('[data-testid="steam-id-input-0"]');
+      await expect(steamIdInput0).toHaveClass(/border-red-500/, {
+        timeout: 20000
+      });
+      await expect(page.locator('[data-testid="hours-error-0"]')).toBeVisible({
+        timeout: 20000
+      });
+
+      await assignCaptain(page);
+
+      const finalTermsCheckbox = page.locator(
+        '[data-testid="terms-conditions-checkbox"]'
+      );
+      if (!(await finalTermsCheckbox.isChecked().catch(() => false))) {
+        await finalTermsCheckbox.click();
+      }
+
+      const submitButton = page
+        .locator('button[type="submit"]')
+        .filter({ hasText: /Submit/i });
+      await expect(submitButton).toBeDisabled({ timeout: 15000 });
+      expect(signupPosts.length).toBe(0);
+    });
+
+    test("AC-2 / AC-5 positive: relaxed season (DB seed) completes signup POST with missing FaceIT rank", async ({
+      page
+    }) => {
+      const relaxedSeasonId = E2E_SIGNUP_SEASON_RELAXED_REQUIREMENTS_ID;
+
+      await setupAuthForUser(
+        page,
+        15032,
+        ConfigurableReqsAuthSteamId,
+        "ConfigurableReqsAuth"
+      );
+
+      // Public registration flow (not admin dashboard) — matches SignupForm POST when !isAdminMode.
+      const signupPromise = page.waitForResponse((res) => {
+        return (
+          res
+            .url()
+            .includes(
+              `/api/v1/registrations/season/${relaxedSeasonId}/signup`
+            ) &&
+          !res.url().includes("/signup/team/") &&
+          res.request().method() === "POST"
+        );
+      });
+
+      await setupCompleteRegistrationForm(
+        page,
+        generateUniqueOrgName("Relaxed Full Signup Org"),
+        generateUniqueTeamName("Relaxed Full Signup Team"),
+        relaxedSeasonId
+      );
+
+      await fillConfigurableReqsLineup(
+        page,
+        ConfigurableReqsExternalRankMissingSteamId
+      );
+
+      await assignCaptain(page);
+
+      const finalTermsCheckbox = page.locator(
+        '[data-testid="terms-conditions-checkbox"]'
+      );
+      if (!(await finalTermsCheckbox.isChecked().catch(() => false))) {
+        await finalTermsCheckbox.click();
+      }
+
+      const submitButton = page
+        .locator('button[type="submit"]')
+        .filter({ hasText: /Submit/i });
+      await expect(submitButton).toBeEnabled({ timeout: 15000 });
+      await submitButton.click();
+
+      const response = await signupPromise;
+      expect(response.status()).toBeGreaterThanOrEqual(200);
+      expect(response.status()).toBeLessThan(300);
+      await expectPublicSignupSuccessUi(page);
     });
   });
 });

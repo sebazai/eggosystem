@@ -18,7 +18,7 @@ changed=$(git status --porcelain 2>/dev/null \
 
 [ -z "$changed" ] && exit 0
 
-msg="Reminder: TypeScript files were modified this session. Run: pnpm knip && pnpm typecheck && pnpm format:check && pnpm lint (or 'pnpm quality'). Note: typecheck command shapes are enforced by a preToolUse hook."
+msg="Reminder: TypeScript files were modified this session. Run: pnpm knip && pnpm typecheck && pnpm format:check && pnpm lint (or 'pnpm quality'). Note: typecheck command shapes are enforced by a preToolUse hook. If you generated build artifacts you don’t intend to commit (e.g. stray .js files), prefer a preview clean first: rtk git clean -ndf -- '**/*.js' (then drop -n once you’re sure)."
 
 if echo "$hook_input" | jq -e 'has("loop_count")' >/dev/null 2>&1; then
   printf '%s\n' "$msg" >&2

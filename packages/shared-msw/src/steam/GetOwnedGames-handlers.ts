@@ -3,6 +3,7 @@ import {
   IPlayerServiceResponse,
   InsufficientHoursPlayerSteamId,
   RaceConditionPlayerSteamId,
+  ConfigurableReqsHoursMissingSteamId,
   e2eSteamPlayerData
 } from "@eggosystem/types";
 
@@ -17,10 +18,15 @@ export const getOwnedGamesHandlers = [
         return new HttpResponse("Bad Request MSW", { status: 400 });
       }
 
-      // Players with insufficient hours (should return empty games array)
+      // Players with insufficient hours (should return empty games array).
+      // S1-AC-4 "Configurable signup requirements" hours-missing target also
+      // takes this branch so the backend's `getPlayerHoursForCS` returns
+      // hours=-1 — same code path as a player whose Steam profile is not
+      // public (signup hours/playtime scenarios).
       if (
         steam_id === InsufficientHoursPlayerSteamId ||
-        steam_id === RaceConditionPlayerSteamId
+        steam_id === RaceConditionPlayerSteamId ||
+        steam_id === ConfigurableReqsHoursMissingSteamId
       ) {
         return HttpResponse.json({
           response: {

@@ -16,6 +16,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TabOrganization } from "./TabOrganization";
 import { TabPlayers } from "./TabPlayers";
 import { TabTeam } from "./TabTeam";
+import { playerMeetsSeasonRankAndHoursRequirements } from "@eggosystem/types";
 import { ErrorMessage } from "@hookform/error-message";
 import { CheckCheck } from "lucide-react";
 import {
@@ -144,7 +145,7 @@ export const SignupForm = ({
   const watchNewTeam = useWatch({ control, name: "newTeam" });
   const watchPlayers = useWatch({ control, name: "players" });
 
-  const { seasonDetails, isLoading, isError, isValidating } =
+  const { seasonDetails, isLoading, isError } =
     useSeasonDetails(effectiveSeasonId);
 
   const validOrgId = useMemo(
@@ -255,6 +256,10 @@ export const SignupForm = ({
     validTeamExternalIdInForm.success &&
     !!validExternalTeamId;
 
+  // validPlayerSelection is the actual submit-blocking gate (combined into
+  // canSubmit below). It must mirror TabPlayers.playerHasErrors so that
+  // disabled season requirement flags do not falsely block submission
+  // (S1-AC-1: form is submittable when an optional check is turned off).
   const validPlayerSelection =
     validPlayers.success &&
     watchPlayers.every(
@@ -262,10 +267,7 @@ export const SignupForm = ({
         p.hasValidData &&
         p.hasValidWorkEmail === true &&
         p.isEmailVerified === true &&
-        p.rank !== -1 &&
-        (p.externalRank !== -1 ||
-          seasonDetails?.platform === SeasonPlatform.Kanaliiga) &&
-        p.hours !== -1
+        playerMeetsSeasonRankAndHoursRequirements(seasonDetails, p)
     );
 
   // Real-time captain/co-captain validation
@@ -443,7 +445,9 @@ export const SignupForm = ({
     return <RequiresSteamLogin />;
   }
 
-  if (isLoading || isValidating || loadingUser) {
+  // Initial load only: SWR sets isValidating during background revalidation; the
+  // old hook always returned false for validating—gating on it hid the form (E2E flakiness).
+  if (isLoading || loadingUser) {
     return (
       <div className="w-full space-y-4">
         <CardSkeleton showHeader={true} contentLines={4} />
@@ -593,6 +597,7 @@ export const SignupForm = ({
                 teamId={watchTeamId}
                 isEditMode={isEditMode}
                 submitInitiated={isSubmittingOrHasSubmitted}
+                seasonDetails={seasonDetails}
               />
             </Tabs>
 

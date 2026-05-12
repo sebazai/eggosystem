@@ -1,5 +1,5 @@
 ---
-tools: Read, Grep, Glob, Bash, WebFetch, mcp__GitLab__get_merge_request, mcp__GitLab__get_pipeline, mcp__GitLab__list_pipeline_jobs, mcp__GitLab__get_pipeline_job_output, mcp__GitLab__list_pipelines
+tools: Read, Grep, Glob, Bash, WebFetch, mcp__gitlab_mcp__get_merge_request, mcp__gitlab_mcp__get_pipeline, mcp__gitlab_mcp__list_pipeline_jobs, mcp__gitlab_mcp__get_pipeline_job_output, mcp__gitlab_mcp__list_pipelines
 name: observer_bot
 model: default
 description: Observability Agent — post-merge analysis of CI pipeline logs and (if configured) Grafana/Sentry. Read-only. Returns JSON envelope only.
@@ -30,7 +30,7 @@ You are explicitly OUT OF the **gitlab-issue-dag-orchestration** critical path. 
 ## Process
 
 1. Fetch the merged MR; confirm it's actually merged (`merge_status: merged`). If not → `status="blocked"`.
-2. List pipelines on the integration branch since the merge (`mcp__GitLab__list_pipelines` filtered by branch + ref).
+2. List pipelines on the integration branch since the merge (`mcp__gitlab_mcp__list_pipelines` filtered by branch + ref).
 3. For each post-merge pipeline: pull job statuses; flag any failures.
 4. If `grafana_url` provided: `WebFetch(grafana_url)` and look for high-severity alert markers in the response.
 5. If `sentry_url` provided: same — look for new error groups since the merge time.

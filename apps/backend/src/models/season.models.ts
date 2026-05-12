@@ -281,8 +281,11 @@ const createSeasonWithMapPool = async (
       early_bird_price_discount,
       early_bird_price_discount_end_date,
       rulebook_url,
-      discord_link
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      discord_link,
+      faceit_rank_required,
+      premier_rank_required,
+      hours_played_required
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   const result = await runQuery<{ insertId: number }>(
@@ -305,7 +308,10 @@ const createSeasonWithMapPool = async (
       seasonData.early_bird_price_discount,
       seasonData.early_bird_price_discount_end_date,
       seasonData.rulebook_url,
-      seasonData.discord_link
+      seasonData.discord_link,
+      seasonData.faceit_rank_required ?? false,
+      seasonData.premier_rank_required ?? false,
+      seasonData.hours_played_required ?? false
     ],
     connection
   );
@@ -381,7 +387,10 @@ const updateSeasonWithMapPool = async (
       early_bird_price_discount = ?,
       early_bird_price_discount_end_date = ?,
       rulebook_url = ?,
-      discord_link = ?
+      discord_link = ?,
+      faceit_rank_required = ?,
+      premier_rank_required = ?,
+      hours_played_required = ?
     WHERE id = ?
   `;
 
@@ -406,6 +415,9 @@ const updateSeasonWithMapPool = async (
       seasonData.early_bird_price_discount_end_date,
       seasonData.rulebook_url,
       seasonData.discord_link,
+      seasonData.faceit_rank_required ?? false,
+      seasonData.premier_rank_required ?? false,
+      seasonData.hours_played_required ?? false,
       seasonId
     ],
     connection

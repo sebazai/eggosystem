@@ -48,11 +48,11 @@ const calculateEarlyBirdPricing = (
 };
 
 export const SignupWelcome = ({ seasonId }: SignupWelcomeProps) => {
-  const { seasonDetails, isLoading, isError, isValidating } =
-    useSeasonDetails(seasonId);
+  const { seasonDetails, isLoading, isError } = useSeasonDetails(seasonId);
   const { user } = useAuth();
 
-  if (isLoading || isValidating) {
+  // Match SignupForm: only block initial load, not SWR background revalidation.
+  if (isLoading) {
     return (
       <div className="space-y-6">
         <CardSkeleton showHeader={true} contentLines={5} />
