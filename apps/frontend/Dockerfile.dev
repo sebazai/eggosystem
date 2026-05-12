@@ -1,5 +1,5 @@
 # Base image
-FROM node:25-slim@sha256:f9e63fcfea470fdfd6ffeb0d6a4307ecf99f7b3292707897f82ba9088aa181e5
+FROM node:25-slim@sha256:e49fd70491eb042270f974167c874d6245287263ffc16422fcf93b3c150409d8
 ENV NODE_ENV=development
 WORKDIR /usr/src/app
 RUN npm install -g pnpm
@@ -27,7 +27,7 @@ ARG NEXT_PUBLIC_API_URL=https://hubdev.kanaliiga.fi
 ARG NEXT_PUBLIC_VIEWER_API_URL=https://cs2ddev.kanaliiga.fi
 ARG NEXT_PUBLIC_CLIENT_API_URL=https://hubdev.kanaliiga.fi
 ARG NEXT_PUBLIC_BASE_URL=https://hubdev.kanaliiga.fi
-ARG NEXT_PUBLIC_IMAGE_SERVICE_URL=https://imgdev.kanaliiga.fi
+ARG NEXT_PUBLIC_IMAGE_SERVICE_URL=https://img.kanaliiga.fi
 ARG NEXT_PUBLIC_GIT_SHA
 ARG NEXT_PUBLIC_GITLAB_URL
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}

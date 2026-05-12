@@ -6,6 +6,7 @@ import { mutate } from "swr";
 interface AddPlayerPayload {
   kana_elo: number;
   calculus: Record<string, unknown>;
+  ticket_number?: string;
 }
 
 export const useAddPlayer = () => {

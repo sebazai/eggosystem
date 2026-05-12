@@ -22,7 +22,11 @@ import {
   FaceitMatchStatus,
   type MatchGamesByTeam,
   type MatchWithStreamUrls,
-  type SeasonLeague
+  type SeasonLeague,
+  type UnfinishedMatch,
+  type UnfinishedMatchQuery,
+  type CalendarMatchTeamsBySide,
+  type MatchTeamSide
 } from "@eggosystem/types";
 import {
   fetchPlayerStatsForMatchOrGame,
@@ -38,6 +42,11 @@ import {
 import { type PoolConnection } from "mysql2/promise";
 import { getSeasonLeagueExternalIdByExternalIdWithSeasonSettings } from "./season-league-external-id.models";
 import { getSeasonLeagueTeamByExternalId } from "./season-league-team.models";
+
+function normalizeMatchTeamSide(value: unknown): MatchTeamSide {
+  if (value === "home" || value === "away") return value;
+  return null;
+}
 
 export const getMatches = async (): Promise<Match[]> => {
   const matches = await runQuery<Match[]>("SELECT * FROM Matches");
@@ -66,7 +75,8 @@ export const getMatchesWithTeamDataBySeasonId = async (
         JSON_OBJECT(
           'id', t.id,
           'name', t.name,
-          'logo', t.team_logo
+          'logo', t.team_logo,
+          'side', mt.match_side
         )
       ) AS teams
     FROM Matches m
@@ -123,7 +133,7 @@ export const getMatchPlayerStats = async (
   `;
 
   // Fields that change based on stat parameter
-  let statFields = "";
+  let statFields: string;
   if (stat === "CT") {
     statFields = `
       SUM(ps.kills_ct) as kills,
@@ -179,7 +189,24 @@ export const getMatchPlayerStats = async (
       INNER JOIN SteamPlayers p ON p.steam_id = ps.steam_id
       INNER JOIN MatchGames mg ON mg.id = ps.match_game_id
       INNER JOIN Matches m ON m.id = mg.match_id
-      INNER JOIN SeasonTeamPlayers stp ON stp.season_id = m.season_id AND stp.steam_id = p.steam_id
+      INNER JOIN SeasonTeamPlayers stp ON stp.season_id = m.season_id
+        AND stp.steam_id = p.steam_id
+        AND stp.discarded_at IS NULL
+        AND (
+          stp.match_id = m.id
+          OR (
+            stp.match_id IS NULL
+            AND NOT EXISTS (
+              SELECT 1
+              FROM SeasonTeamPlayers stp2
+              WHERE stp2.season_id = m.season_id
+                AND stp2.steam_id = p.steam_id
+                AND stp2.team_id = stp.team_id
+                AND stp2.discarded_at IS NULL
+                AND stp2.match_id = m.id
+            )
+          )
+        )
       INNER JOIN MatchTeams mt ON mt.match_id = m.id AND mt.team_id = stp.team_id
       WHERE mg.match_id = ?
       GROUP BY p.steam_id, p.nickname, stp.team_id
@@ -277,6 +304,8 @@ export const getMatchesByFilters = async ({
           t1.team_logo AS team1_logo,
           t2.name AS team2_name,
           t2.team_logo AS team2_logo,
+          MAX(mt1.match_side) AS team1_side,
+          MAX(mt2.match_side) AS team2_side,
           CASE
             WHEN m.best_of = 1 THEN ${!mapFilterPresent ? "MAX(mmp.id)" : "mmp.id"}
             ELSE NULL
@@ -297,7 +326,17 @@ export const getMatchesByFilters = async ({
       JOIN Teams t1 ON tms1.team_id = t1.id
       JOIN TeamGameScores tms2 ON mmp.id = tms2.match_game_id AND tms1.team_id < tms2.team_id
       JOIN Teams t2 ON tms2.team_id = t2.id
-      WHERE ${query}
+      LEFT JOIN (
+          SELECT match_id, team_id, MAX(match_side) AS match_side
+          FROM MatchTeams
+          GROUP BY match_id, team_id
+      ) mt1 ON m.id = mt1.match_id AND mt1.team_id = t1.id
+      LEFT JOIN (
+          SELECT match_id, team_id, MAX(match_side) AS match_side
+          FROM MatchTeams
+          GROUP BY match_id, team_id
+      ) mt2 ON m.id = mt2.match_id AND mt2.team_id = t2.id
+      WHERE ${query} AND m.status = 'FINISHED'
       GROUP BY 
           ${!mapFilterPresent ? "m.id, DATE(m.start_timestamp), l.name, m.stage, t1.name, t1.team_logo, t2.name, t2.team_logo" : "mmp.id, l.name, m.stage, t1.name, t1.team_logo, t2.name, t2.team_logo"}
       ORDER BY 
@@ -313,12 +352,18 @@ export const getMatchGames = async (match_id: number) => {
       mmp.map_order,
       maps.name as map_name,
       mmp.demofile,
+      tgs1.team_id as team1_id,
+      tgs2.team_id as team2_id,
       tgs1.score as team1_score,
-      tgs2.score as team2_score
+      tgs2.score as team2_score,
+      mts1.match_side AS team1_side,
+      mts2.match_side AS team2_side
     FROM MatchGames mmp
     JOIN Maps maps ON maps.id = mmp.map_id
     JOIN TeamGameScores tgs1 ON tgs1.match_game_id = mmp.id
     JOIN TeamGameScores tgs2 ON tgs2.match_game_id = mmp.id AND tgs1.team_id < tgs2.team_id
+    LEFT JOIN MatchTeams mts1 ON mmp.match_id = mts1.match_id AND mts1.team_id = tgs1.team_id
+    LEFT JOIN MatchTeams mts2 ON mmp.match_id = mts2.match_id AND mts2.team_id = tgs2.team_id
     WHERE mmp.match_id = ?
     ORDER BY mmp.map_order ASC`;
 
@@ -345,7 +390,8 @@ export const getMatchInfo = async (
               mg.id AS match_game_id,
               tgs1.score AS team_score,
               tgs2.score AS opponent_score,
-              m.status
+              m.status,
+              mt.match_side AS team_match_side
           FROM Matches m
           JOIN MatchTeams mt ON m.id = mt.match_id
           JOIN Teams t ON mt.team_id = t.id
@@ -361,6 +407,7 @@ export const getMatchInfo = async (
               team_name,
               team_logo,
               best_of,
+              MAX(team_match_side) AS team_match_side,
               CASE 
                   WHEN best_of = 1 THEN COALESCE(MAX(team_score), 0)
                   ELSE COALESCE(SUM(team_score > opponent_score), 0)
@@ -411,7 +458,8 @@ export const getMatchInfo = async (
                   'id', a.team_id,
                   'name', a.team_name,
                   'logo', a.team_logo,
-                  'score', a.team_final_score
+                  'score', a.team_final_score,
+                  'side', a.team_match_side
               )
           ) AS teams
       FROM AggregatedScores a
@@ -471,7 +519,9 @@ export const getMatchGamesByTeam = async (
       map.id as map_id,
       mg.map_order,
       COALESCE(tgs_t.score, 0) as team1_score,
-      COALESCE(tgs_ct.score, 0) as team2_score
+      COALESCE(tgs_ct.score, 0) as team2_score,
+      mt_side_t.match_side AS team1_side,
+      mt_side_ct.match_side AS team2_side
     FROM Matches m
     JOIN MatchTeams mt1 ON m.id = mt1.match_id
     JOIN MatchTeams mt2 ON m.id = mt2.match_id AND mt2.team_id != mt1.team_id
@@ -481,6 +531,8 @@ export const getMatchGamesByTeam = async (
     JOIN TeamGameScores tgs_ct ON mg.id = tgs_ct.match_game_id AND tgs_ct.starting_side = 'CT'
     JOIN Teams t_t ON tgs_t.team_id = t_t.id
     JOIN Teams t_ct ON tgs_ct.team_id = t_ct.id
+    LEFT JOIN MatchTeams mt_side_t ON mt_side_t.match_id = m.id AND mt_side_t.team_id = tgs_t.team_id
+    LEFT JOIN MatchTeams mt_side_ct ON mt_side_ct.match_id = m.id AND mt_side_ct.team_id = tgs_ct.team_id
     WHERE (mt1.team_id = ? OR mt2.team_id = ?)
     ${seasonFilter}
     ORDER BY m.start_timestamp DESC, m.id DESC, mg.map_order ASC
@@ -494,12 +546,13 @@ const addTeamToMatch = async (
   seasonId: number,
   leagueId: number,
   teamId: number,
+  matchSide: "home" | "away",
   connection?: PoolConnection
 ): Promise<void> => {
-  const addMatchTeamsQuery = `INSERT INTO MatchTeams (match_id, season_id, league_id, team_id) VALUES (?, ?, ?, ?)`;
+  const addMatchTeamsQuery = `INSERT INTO MatchTeams (match_id, season_id, league_id, team_id, match_side) VALUES (?, ?, ?, ?, ?)`;
   await runQuery(
     addMatchTeamsQuery,
-    [matchId, seasonId, leagueId, teamId],
+    [matchId, seasonId, leagueId, teamId, matchSide],
     connection
   );
 };
@@ -508,16 +561,43 @@ export const getHubMatchesByExternalMatchRoomId = async (
   externalMatchRoomId: string,
   connection?: PoolConnection
 ) => {
-  const query = `SELECT id FROM Matches WHERE external_match_room_id = ? ORDER BY id ASC`;
-  const matches = await runQuery<Array<{ id: Match["id"] }> | undefined>(
-    query,
-    [externalMatchRoomId],
-    connection
-  );
+  const query = `SELECT id, status FROM Matches WHERE external_match_room_id = ? ORDER BY id ASC`;
+  const matches = await runQuery<
+    Array<{ id: Match["id"]; status: Match["status"] }> | undefined
+  >(query, [externalMatchRoomId], connection);
   if (!matches || matches.length === 0) {
     return null;
   }
   return matches;
+};
+
+/**
+ * Returns a map of external_match_room_id -> our Match.id for playoff matches.
+ * Used to link FaceIT bracket matches to our match room pages (first match id when 2xBO1).
+ */
+export const getPlayoffMatchIdsByExternalRoomIds = async (
+  seasonId: number,
+  leagueId: number,
+  externalRoomIds: string[]
+): Promise<Map<string, number>> => {
+  if (externalRoomIds.length === 0) return new Map();
+  const placeholders = externalRoomIds.map(() => "?").join(", ");
+  const query = `
+    SELECT id, external_match_room_id
+    FROM Matches
+    WHERE season_id = ? AND league_id = ? AND stage = 2 AND external_match_room_id IN (${placeholders})
+    ORDER BY external_match_room_id, id ASC
+  `;
+  const rows = await runQuery<
+    Array<{ id: Match["id"]; external_match_room_id: string }>
+  >(query, [seasonId, leagueId, ...externalRoomIds]);
+  const map = new Map<string, number>();
+  for (const row of rows) {
+    if (!map.has(row.external_match_room_id)) {
+      map.set(row.external_match_room_id, row.id);
+    }
+  }
+  return map;
 };
 
 /**
@@ -532,16 +612,54 @@ export const getHubMatchesByExternalMatchRoomId = async (
  */
 export const updateMatchStartTimestamp = async (
   matchId: number,
-  timestamp: string | Date
+  timestamp: string | Date,
+  connection?: PoolConnection
 ): Promise<void> => {
-  await runQuery("UPDATE Matches SET start_timestamp = ? WHERE id = ?", [
-    formatDateForDatabase(timestamp),
-    matchId
-  ]);
+  await runQuery(
+    "UPDATE Matches SET start_timestamp = ? WHERE id = ?",
+    [formatDateForDatabase(timestamp), matchId],
+    connection
+  );
+};
+
+export const updateMatchStartAndEndTimestamp = async (
+  matchId: number,
+  startTimestamp: string | Date,
+  endTimestamp: string | Date | null,
+  connection?: PoolConnection
+): Promise<void> => {
+  await runQuery(
+    "UPDATE Matches SET start_timestamp = ?, end_timestamp = ? WHERE id = ?",
+    [
+      formatDateForDatabase(startTimestamp),
+      endTimestamp ? formatDateForDatabase(endTimestamp) : null,
+      matchId
+    ],
+    connection
+  );
+};
+
+/**
+ * Updates a single match's end timestamp (for 2xBO1: only the second game on match_status_finished).
+ *
+ * @param matchId - The match ID to update
+ * @param timestamp - ISO 8601 timestamp string (UTC) or Date object
+ */
+export const updateMatchEndTimestamp = async (
+  matchId: number,
+  timestamp: string | Date,
+  connection?: PoolConnection
+): Promise<void> => {
+  await runQuery(
+    "UPDATE Matches SET end_timestamp = ? WHERE id = ?",
+    [formatDateForDatabase(timestamp), matchId],
+    connection
+  );
 };
 
 export const getMatchesByExternalId = async (
-  externalMatchRoomId: string
+  externalMatchRoomId: string,
+  connection?: PoolConnection
 ): Promise<Match[]> => {
   const query = `
     SELECT *
@@ -550,7 +668,11 @@ export const getMatchesByExternalId = async (
     ORDER BY id, start_timestamp ASC
   `;
 
-  const matches = await runQuery<Match[]>(query, [externalMatchRoomId]);
+  const matches = await runQuery<Match[]>(
+    query,
+    [externalMatchRoomId],
+    connection
+  );
   return matches;
 };
 
@@ -689,6 +811,7 @@ export const addMatchToDatabase = async (
           season_id,
           league_id,
           teamOne.team_id,
+          "home",
           connection
         ),
         addTeamToMatch(
@@ -696,6 +819,7 @@ export const addMatchToDatabase = async (
           season_id,
           league_id,
           teamTwo.team_id,
+          "away",
           connection
         ),
         addTeamToMatch(
@@ -703,6 +827,7 @@ export const addMatchToDatabase = async (
           season_id,
           league_id,
           teamOne.team_id,
+          "away",
           connection
         ),
         addTeamToMatch(
@@ -710,6 +835,7 @@ export const addMatchToDatabase = async (
           season_id,
           league_id,
           teamTwo.team_id,
+          "home",
           connection
         )
       ]);
@@ -734,6 +860,7 @@ export const addMatchToDatabase = async (
           season_id,
           league_id,
           teamOne.team_id,
+          "home",
           connection
         ),
         addTeamToMatch(
@@ -741,6 +868,7 @@ export const addMatchToDatabase = async (
           season_id,
           league_id,
           teamTwo.team_id,
+          "away",
           connection
         )
       ]);
@@ -758,6 +886,37 @@ export const addMatchToDatabase = async (
   } finally {
     connection.release();
   }
+};
+
+/**
+ * Sets end time and FINISHED status without changing `start_timestamp`.
+ * Used for championship BO3+ hubs after `match_status_ready` established the start.
+ */
+export const updateMatchFinishedEndOnly = async (
+  externalMatchRoomId: string,
+  finishedAt: string
+): Promise<void> => {
+  const matches = await runQuery<Array<{ id: Match["id"] }>>(
+    "SELECT id FROM Matches WHERE external_match_room_id = ?",
+    [externalMatchRoomId]
+  );
+
+  if (matches.length === 0) {
+    logger.warn(
+      `No matches found with external_match_room_id: ${externalMatchRoomId}`
+    );
+    return;
+  }
+
+  const endTimestamp = formatDateForDatabase(finishedAt);
+
+  await runQuery(
+    "UPDATE Matches SET end_timestamp = ?, status = ? WHERE external_match_room_id = ?",
+    [endTimestamp, MatchStatus.FINISHED, externalMatchRoomId]
+  );
+  logger.info(
+    `Updated end_timestamp to ${endTimestamp} and status FINISHED for ${matches.length} match(es) with external_match_room_id: ${externalMatchRoomId} (start_timestamp unchanged)`
+  );
 };
 
 export const updateMatchFinished = async (
@@ -817,7 +976,17 @@ export const updateMatchEndTime = async (
   );
 };
 
-export const updateMatchStatus = async (
+export const getMatchesStatusByExternalMatchroomId = async (
+  externalMatchRoomId: string
+): Promise<Match["status"][]> => {
+  const matches = await runQuery<Array<{ status: Match["status"] }>>(
+    "SELECT status FROM Matches WHERE external_match_room_id = ?",
+    [externalMatchRoomId]
+  );
+  return matches.map((match) => match.status);
+};
+
+export const updateMatchStatusByExternalMatchroomId = async (
   externalMatchRoomId: string,
   status: keyof typeof MatchStatus,
   connection?: PoolConnection
@@ -825,6 +994,18 @@ export const updateMatchStatus = async (
   await runQuery(
     "UPDATE Matches SET status = ? WHERE external_match_room_id = ?",
     [status, externalMatchRoomId],
+    connection
+  );
+};
+
+export const updateMatchStatusByMatchId = async (
+  matchId: number,
+  status: keyof typeof MatchStatus,
+  connection?: PoolConnection
+) => {
+  await runQuery(
+    "UPDATE Matches SET status = ? WHERE id = ?",
+    [status, matchId],
     connection
   );
 };
@@ -850,6 +1031,10 @@ export const getMatchesBySeasonAndLeagueWithStreamUrls = async (
       l.name as league_name,
       sl.tier as league_tier,
       GROUP_CONCAT(DISTINCT t.name ORDER BY t.name SEPARATOR ' vs ') as team_names,
+      MAX(CASE WHEN mt.match_side = 'home' THEN t.id END) AS home_team_id,
+      MAX(CASE WHEN mt.match_side = 'away' THEN t.id END) AS away_team_id,
+      MAX(CASE WHEN mt.match_side = 'home' THEN t.name END) AS home_team_name,
+      MAX(CASE WHEN mt.match_side = 'away' THEN t.name END) AS away_team_name,
       JSON_ARRAYAGG(DISTINCT CASE WHEN r.stream_url IS NOT NULL THEN r.stream_url END) as stream_urls
     FROM Matches m
     LEFT JOIN Leagues l ON m.league_id = l.id
@@ -857,7 +1042,7 @@ export const getMatchesBySeasonAndLeagueWithStreamUrls = async (
     LEFT JOIN Seasons s ON m.season_id = s.id
     LEFT JOIN MatchTeams mt ON m.id = mt.match_id
     LEFT JOIN Teams t ON mt.team_id = t.id
-    LEFT JOIN Reservations r ON m.id = r.match_id AND m.status NOT IN ('FINISHED', 'CANCELLED', 'FORFEIT', 'ABORTED')
+    LEFT JOIN Reservations r ON m.id = r.match_id AND m.status NOT IN ('CANCELLED', 'FORFEIT', 'ABORTED')
     WHERE m.season_id = ? AND (? IS NULL OR m.league_id = ?) AND m.status NOT IN ('CANCELLED', 'ABORTED')
     GROUP BY m.id, m.league_id, m.season_id, m.stage, m.start_timestamp, m.end_timestamp, m.best_of, m.external_match_room_id, m.status, m.round, m.group, l.name, sl.tier
     ORDER BY m.start_timestamp ASC, COUNT(CASE WHEN r.stream_url IS NOT NULL THEN r.stream_url END) DESC, sl.tier ASC
@@ -880,6 +1065,10 @@ export const getMatchesBySeasonAndLeagueWithStreamUrls = async (
       league_name: League["name"];
       league_tier: SeasonLeague["tier"];
       team_names: string | null;
+      home_team_id: number | null;
+      away_team_id: number | null;
+      home_team_name: string | null;
+      away_team_name: string | null;
       stream_urls: string | null;
     }>
   >(query, [seasonId, leagueId, leagueId]);
@@ -887,6 +1076,17 @@ export const getMatchesBySeasonAndLeagueWithStreamUrls = async (
   return results.map((match) => {
     const teamNames = match.team_names || "Unknown vs Unknown";
     const teams = teamNames.split(" vs ");
+
+    const teamsBySide: CalendarMatchTeamsBySide =
+      match.home_team_id != null &&
+      match.home_team_name != null &&
+      match.away_team_id != null &&
+      match.away_team_name != null
+        ? {
+            home: { id: match.home_team_id, name: match.home_team_name },
+            away: { id: match.away_team_id, name: match.away_team_name }
+          }
+        : { home: null, away: null };
 
     const startTimestampISO = new Date(match.start_timestamp);
 
@@ -925,6 +1125,7 @@ export const getMatchesBySeasonAndLeagueWithStreamUrls = async (
         : [],
       match_team1: teams[0] || "Unknown",
       match_team2: teams[1] || "Unknown",
+      teams: teamsBySide,
       external_match_room_id: match.external_match_room_id,
       season_platform: match.platform
     } satisfies MatchWithStreamUrls;
@@ -1008,7 +1209,8 @@ export const getMatchTeamLineups = async (matchId: number) => {
         COALESCE(pgc.games_played, 0) as games_played,
         COALESCE(pgc.games_played, lpmc.maps_played, 0) as maps_played,
         COALESCE(pgc.kana_rating, 0) as kana_rating,
-        ROW_NUMBER() OVER (PARTITION BY t.id ORDER BY COALESCE(pgc.games_played, lpmc.maps_played, 0) DESC, sp.nickname) as player_rank
+        ROW_NUMBER() OVER (PARTITION BY t.id ORDER BY COALESCE(pgc.games_played, lpmc.maps_played, 0) DESC, sp.nickname) as player_rank,
+        mt.match_side AS match_side
       FROM Matches m
       JOIN MatchTeams mt ON m.id = mt.match_id
       JOIN Teams t ON mt.team_id = t.id
@@ -1024,6 +1226,7 @@ export const getMatchTeamLineups = async (matchId: number) => {
       team_id,
       team_name,
       team_logo,
+      match_side,
       steam_id,
       player_name,
       player_nickname,
@@ -1032,7 +1235,8 @@ export const getMatchTeamLineups = async (matchId: number) => {
       faceit_elo,
       cs_hours,
       games_played,
-      maps_played
+      maps_played,
+      kana_rating
     FROM RankedPlayers
     WHERE player_rank <= 5
     ORDER BY team_id, player_rank
@@ -1059,6 +1263,7 @@ export const getMatchTeamLineups = async (matchId: number) => {
         id: row.team_id,
         name: row.team_name,
         logo: row.team_logo,
+        side: normalizeMatchTeamSide(row.match_side),
         players: []
       } satisfies MatchTeamLineup;
     }
@@ -1078,6 +1283,40 @@ export const getMatchTeamLineups = async (matchId: number) => {
   });
 
   return teams;
+};
+
+export const getUnfinishedMatchesBySeason = async (
+  seasonId: number
+): Promise<UnfinishedMatch[]> => {
+  const query = `
+    SELECT
+      m.id AS match_id,
+      l.name AS league_name,
+      t1.name AS team1_name,
+      t2.name AS team2_name,
+      m.best_of,
+      m.status,
+      m.start_timestamp
+    FROM Matches m
+    JOIN Leagues l ON l.id = m.league_id
+    JOIN MatchTeams mt1 ON mt1.match_id = m.id
+    JOIN Teams t1 ON t1.id = mt1.team_id
+    JOIN MatchTeams mt2 ON mt2.match_id = m.id AND mt2.team_id > mt1.team_id
+    JOIN Teams t2 ON t2.id = mt2.team_id
+    WHERE m.season_id = ?
+      AND m.status NOT IN ('FINISHED', 'ABORTED', 'CANCELLED', 'FORFEIT')
+    ORDER BY m.start_timestamp ASC
+  `;
+
+  const rows = await runQuery<UnfinishedMatchQuery[]>(query, [seasonId]);
+
+  return rows.map((row) => ({
+    match_id: row.match_id,
+    label: `${row.league_name} ${row.team1_name} vs. ${row.team2_name}`,
+    best_of: row.best_of,
+    status: row.status,
+    start_timestamp: row.start_timestamp
+  }));
 };
 
 export const ensureMatchIdAndTeamIdMatches = async (

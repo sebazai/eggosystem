@@ -78,6 +78,11 @@ export const config = [
     }
   },
   {
-    ignores: ["coverage/**", "eslint.config.mjs", "jest.config.js"]
+    ignores: [
+      "coverage/**",
+      "eslint.config.mjs",
+      "jest.config.js",
+      "jest.config.mjs"
+    ]
   }
 ];

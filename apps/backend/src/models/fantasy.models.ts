@@ -132,8 +132,8 @@ interface FantasyTeamWithPlayers extends FantasyTeam {
 export interface SubstitutionData {
   remove_steam_id: string;
   add_steam_id: string;
-  new_player_value: number;
-  week_number: number;
+  // new_player_value removed - server fetches actual value from database
+  // week_number removed - server calculates current week
   role?: PlayerRole | null; // Optional role for the new player
 }
 
@@ -210,6 +210,7 @@ export const getFantasyPlayersByLeague = async (
     SELECT 
       p.steam_id,
       p.nickname,
+      p.avatar,
       spr.kana_elo,
       stp.team_id,
       t.name as team_name,
@@ -246,7 +247,7 @@ export const getFantasyPlayersByLeague = async (
     LEFT JOIN previous_season_stats pss ON pss.steam_id = p.steam_id
     WHERE stp.season_id = ? 
       AND slt.league_id = ?
-    GROUP BY p.steam_id, p.nickname, spr.kana_elo, stp.team_id, t.name, t.team_logo, lv.value, lv.tier, pss.prev_kana_rating, pss.prev_kd, pss.prev_kills
+    GROUP BY p.steam_id, p.nickname, p.avatar, spr.kana_elo, stp.team_id, t.name, t.team_logo, lv.value, lv.tier, pss.prev_kana_rating, pss.prev_kd, pss.prev_kills
     ORDER BY t.name ASC, COALESCE(kana_rating, pss.prev_kana_rating, 0) DESC
   `;
 
@@ -254,6 +255,7 @@ export const getFantasyPlayersByLeague = async (
     Array<{
       steam_id: string;
       nickname: string;
+      avatar: string | null;
       kana_elo: number | null;
       team_id: number;
       team_name: string;
@@ -281,7 +283,7 @@ export const getFantasyPlayersByLeague = async (
   >(query, [seasonId, seasonId, seasonId, leagueId]);
 
   // Calculate values with Redis caching (same logic as top players)
-  const playersWithValues = await Promise.all(
+  const playersWithValues: FantasyPlayerStats[] = await Promise.all(
     results.map(async (row) => {
       // Determine which stats to use:
       // 1. Current season stats if maps_played > 0
@@ -326,6 +328,7 @@ export const getFantasyPlayersByLeague = async (
         return {
           steam_id: row.steam_id,
           nickname: row.nickname,
+          avatar: row.avatar,
           team_id: row.team_id,
           team_name: row.team_name,
           team_logo: row.team_logo,
@@ -364,6 +367,7 @@ export const getFantasyPlayersByLeague = async (
         return {
           steam_id: row.steam_id,
           nickname: row.nickname,
+          avatar: row.avatar,
           team_id: row.team_id,
           team_name: row.team_name,
           team_logo: row.team_logo,
@@ -414,6 +418,7 @@ export const getFantasyPlayersByLeague = async (
       return {
         steam_id: row.steam_id,
         nickname: row.nickname,
+        avatar: row.avatar,
         team_id: row.team_id,
         team_name: row.team_name,
         team_logo: row.team_logo,
@@ -443,6 +448,62 @@ export const getFantasyPlayersByLeague = async (
 };
 
 /**
+ * Get current player value from database (server-side source of truth)
+ * Prevents client from manipulating player prices
+ */
+const getPlayerCurrentValue = async (
+  steamId: string,
+  seasonId: number,
+  connection?: PoolConnection
+): Promise<number> => {
+  // Get latest value from FantasyPlayerValues
+  const [valueRow] = await runQuery<Array<{ value: number }>>(
+    `SELECT value FROM FantasyPlayerValues 
+     WHERE steam_id = ? AND season_id = ?
+     ORDER BY created_at DESC
+     LIMIT 1`,
+    [steamId, seasonId],
+    connection
+  );
+
+  if (valueRow?.value) {
+    return valueRow.value;
+  }
+
+  // If no value exists, calculate from player stats (same logic as getFantasyPlayersByLeague)
+  const [statsRow] = await runQuery<
+    Array<{
+      kana_rating: number | null;
+      kd: number | null;
+      kills: number | null;
+    }>
+  >(
+    `SELECT 
+      COALESCE(AVG(ps.kana_rating), 0.7) as kana_rating,
+      COALESCE(SUM(ps.kills) / NULLIF(SUM(ps.deaths), 0), 1.0) as kd,
+      COALESCE(SUM(ps.kills), 0) as kills
+    FROM PlayerStats ps
+    INNER JOIN MatchGames mg ON mg.id = ps.match_game_id
+    INNER JOIN Matches m ON m.id = mg.match_id
+    WHERE ps.steam_id = ? AND m.season_id = ? AND m.status = 'finished'`,
+    [steamId, seasonId],
+    connection
+  );
+
+  if (statsRow) {
+    const initialValue = calculateInitialPlayerValue(
+      statsRow.kana_rating || 0.7,
+      statsRow.kd || 1.0,
+      statsRow.kills || 0
+    );
+    return initialValue;
+  }
+
+  // Fallback: default value for new players
+  return 185000;
+};
+
+/**
  * Create a fantasy team for a user
  */
 export const createFantasyTeam = async (
@@ -465,8 +526,26 @@ export const createFantasyTeam = async (
       throw new BadRequestError("Each role can only be assigned to one player");
     }
 
-    // Calculate total cost
-    const totalCost = data.players.reduce((sum, p) => sum + p.player_value, 0);
+    // SECURITY: Fetch actual player values from database (don't trust client)
+    const playersWithActualValues = await Promise.all(
+      data.players.map(async (p) => {
+        const actualValue = await getPlayerCurrentValue(
+          p.steam_id,
+          data.season_id,
+          connection
+        );
+        return {
+          ...p,
+          player_value: actualValue // Override client value with server value
+        };
+      })
+    );
+
+    // Calculate total cost using ACTUAL values
+    const totalCost = playersWithActualValues.reduce(
+      (sum, p) => sum + p.player_value,
+      0
+    );
     const budgetRemaining = 1000000 - totalCost;
 
     if (totalCost > 1000000) {
@@ -504,8 +583,8 @@ export const createFantasyTeam = async (
 
     const fantasyTeamId = teamResult.insertId;
 
-    // Insert players
-    for (const player of data.players) {
+    // Insert players with ACTUAL values (not client-provided values)
+    for (const player of playersWithActualValues) {
       await runQuery(
         `INSERT INTO FantasyTeamPlayers
          (fantasy_team_id, steam_id, role, player_value, is_active)
@@ -514,7 +593,7 @@ export const createFantasyTeam = async (
           fantasyTeamId,
           player.steam_id,
           player.role || null,
-          player.player_value
+          player.player_value // Using server-validated value
         ],
         connection
       );
@@ -562,6 +641,31 @@ export const getFantasyTeamByUser = async (
     return null;
   }
 
+  // Calculate correct total points from ALL FantasyPointsLog entries (including removed players)
+  // Only count points where the match was played while the player was on the team
+  // (match.start_timestamp between added_at and removed_at)
+  const [totalPointsResult] = await runQuery<Array<{ total_points: number }>>(
+    `SELECT COALESCE(SUM(
+      CASE 
+        WHEN m.start_timestamp >= ftp.added_at 
+         AND (ftp.removed_at IS NULL OR m.start_timestamp <= ftp.removed_at)
+        THEN fpl.points_earned 
+        ELSE 0 
+      END
+    ), 0) as total_points
+     FROM FantasyPointsLog fpl
+     INNER JOIN FantasyTeamPlayers ftp ON ftp.id = fpl.fantasy_team_player_id
+     INNER JOIN MatchGames mg ON mg.id = fpl.match_game_id
+     INNER JOIN Matches m ON m.id = mg.match_id
+     WHERE ftp.fantasy_team_id = ?`,
+    [team.id],
+    connection
+  );
+
+  // Override team.total_points with the correctly calculated value
+  // This handles backward compatibility for teams that had players removed
+  team.total_points = totalPointsResult?.total_points || 0;
+
   // Calculate current week number and remaining swaps/substitutions
   const weekNumber = await getCurrentWeekNumberForSeason(seasonId, connection);
   const remainingRoleSwaps = await getRemainingRoleSwaps(
@@ -591,6 +695,7 @@ export const getFantasyTeamByUser = async (
       id: number;
       steam_id: string;
       nickname: string;
+      avatar: string | null;
       team_name: string | null;
       team_logo: string | null;
       role: PlayerRole | null;
@@ -622,16 +727,69 @@ export const getFantasyTeamByUser = async (
        ftp.id,
        ftp.steam_id,
        sp.nickname,
+       sp.avatar,
        t.name as team_name,
        t.team_logo,
        ftp.role,
        ftp.player_value,
        lv.value as current_value,
        lv.tier as current_tier,
-       ftp.points_earned,
-       ftp.individual_points,
-       ftp.team_points,
-       ftp.role_points,
+       COALESCE((
+         SELECT SUM(
+           CASE 
+             WHEN m_log.start_timestamp >= ftp.added_at 
+              AND (ftp.removed_at IS NULL OR m_log.start_timestamp <= ftp.removed_at)
+             THEN fpl.points_earned 
+             ELSE 0 
+           END
+         )
+         FROM FantasyPointsLog fpl
+         INNER JOIN MatchGames mg_log ON mg_log.id = fpl.match_game_id
+         INNER JOIN Matches m_log ON m_log.id = mg_log.match_id
+         WHERE fpl.fantasy_team_player_id = ftp.id
+       ), 0) as points_earned,
+       COALESCE((
+         SELECT SUM(
+           CASE 
+             WHEN m_log.start_timestamp >= ftp.added_at 
+              AND (ftp.removed_at IS NULL OR m_log.start_timestamp <= ftp.removed_at)
+             THEN fpl.individual_points 
+             ELSE 0 
+           END
+         )
+         FROM FantasyPointsLog fpl
+         INNER JOIN MatchGames mg_log ON mg_log.id = fpl.match_game_id
+         INNER JOIN Matches m_log ON m_log.id = mg_log.match_id
+         WHERE fpl.fantasy_team_player_id = ftp.id
+       ), 0) as individual_points,
+       COALESCE((
+         SELECT SUM(
+           CASE 
+             WHEN m_log.start_timestamp >= ftp.added_at 
+              AND (ftp.removed_at IS NULL OR m_log.start_timestamp <= ftp.removed_at)
+             THEN fpl.team_points 
+             ELSE 0 
+           END
+         )
+         FROM FantasyPointsLog fpl
+         INNER JOIN MatchGames mg_log ON mg_log.id = fpl.match_game_id
+         INNER JOIN Matches m_log ON m_log.id = mg_log.match_id
+         WHERE fpl.fantasy_team_player_id = ftp.id
+       ), 0) as team_points,
+       COALESCE((
+         SELECT SUM(
+           CASE 
+             WHEN m_log.start_timestamp >= ftp.added_at 
+              AND (ftp.removed_at IS NULL OR m_log.start_timestamp <= ftp.removed_at)
+             THEN fpl.role_points 
+             ELSE 0 
+           END
+         )
+         FROM FantasyPointsLog fpl
+         INNER JOIN MatchGames mg_log ON mg_log.id = fpl.match_game_id
+         INNER JOIN Matches m_log ON m_log.id = mg_log.match_id
+         WHERE fpl.fantasy_team_player_id = ftp.id
+       ), 0) as role_points,
        ftp.is_active,
        COALESCE((
          SELECT COUNT(*) > 0
@@ -686,9 +844,8 @@ export const getFantasyTeamByUser = async (
        ) latest ON latest.steam_id = fpv.steam_id AND latest.max_created = fpv.created_at
      ) lv ON lv.steam_id = ftp.steam_id
      WHERE ftp.fantasy_team_id = ? AND ftp.is_active = TRUE
-     GROUP BY ftp.id, ftp.steam_id, sp.nickname, t.name, t.team_logo, ftp.role,
-              ftp.player_value, lv.value, lv.tier, ftp.points_earned, ftp.individual_points,
-              ftp.team_points, ftp.role_points, ftp.is_active
+     GROUP BY ftp.id, ftp.steam_id, sp.nickname, sp.avatar, t.name, t.team_logo, ftp.role,
+              ftp.player_value, lv.value, lv.tier, ftp.is_active, ftp.added_at, ftp.removed_at
      ORDER BY ftp.added_at ASC`,
     [
       seasonId, // for week calculation
@@ -777,8 +934,12 @@ export const getFantasyTeamByUser = async (
   );
 
   return {
-    ...team, // Includes steam_id from FantasyTeam interface
-    players: playersWithCurrentValues,
+    ...team,
+    steam_id: String(team.steam_id),
+    players: playersWithCurrentValues.map((p) => ({
+      ...p,
+      steam_id: String(p.steam_id)
+    })),
     remaining_role_swaps: remainingRoleSwaps,
     remaining_substitutions: remainingSubstitutions,
     current_week_number: weekNumber
@@ -850,11 +1011,17 @@ export const substitutePlayer = async (
       throw new BadRequestError("Fantasy team not found");
     }
 
+    // Use server-side current week so counts match getFantasyTeamByUser / getRemainingSubstitutions
+    const weekNumber = await getCurrentWeekNumberForSeason(
+      team.season_id,
+      connection
+    );
+
     // Check substitution limit (2 per week)
     const [subsCount] = await runQuery<Array<{ count: number }>>(
       `SELECT COUNT(*) as count FROM FantasyPlayerHistory 
        WHERE fantasy_team_id = ? AND action = 'removed' AND week_number = ?`,
-      [fantasyTeamId, data.week_number],
+      [fantasyTeamId, weekNumber],
       connection
     );
 
@@ -862,12 +1029,15 @@ export const substitutePlayer = async (
       throw new BadRequestError("Maximum 2 substitutions per week allowed");
     }
 
+    const removeSteamId = String(data.remove_steam_id);
+    const addSteamId = String(data.add_steam_id);
+
     // Get player being removed
     const [removedPlayer] = await runQuery<
       Array<{ player_value: number; role: PlayerRole | null }>
     >(
       "SELECT player_value, role FROM FantasyTeamPlayers WHERE fantasy_team_id = ? AND steam_id = ? AND is_active = TRUE",
-      [fantasyTeamId, data.remove_steam_id],
+      [fantasyTeamId, removeSteamId],
       connection
     );
 
@@ -877,9 +1047,9 @@ export const substitutePlayer = async (
 
     // Check if the player being removed has already played in the current week
     const hasPlayed = await hasPlayerPlayedInWeek(
-      data.remove_steam_id,
+      removeSteamId,
       team.season_id,
-      data.week_number,
+      weekNumber,
       connection
     );
 
@@ -889,8 +1059,15 @@ export const substitutePlayer = async (
       );
     }
 
-    // Calculate budget impact (sell at current value, buy at current value)
-    const budgetChange = removedPlayer.player_value - data.new_player_value;
+    // SECURITY: Fetch actual value for new player from database (don't trust client)
+    const actualNewPlayerValue = await getPlayerCurrentValue(
+      addSteamId,
+      team.season_id,
+      connection
+    );
+
+    // Calculate budget impact (sell at current value, buy at ACTUAL current value)
+    const budgetChange = removedPlayer.player_value - actualNewPlayerValue;
     const newBudget = team.budget_remaining + budgetChange;
 
     if (newBudget < 0) {
@@ -902,7 +1079,7 @@ export const substitutePlayer = async (
       `UPDATE FantasyTeamPlayers 
        SET is_active = FALSE, removed_at = NOW()
        WHERE fantasy_team_id = ? AND steam_id = ?`,
-      [fantasyTeamId, data.remove_steam_id],
+      [fantasyTeamId, removeSteamId],
       connection
     );
 
@@ -910,17 +1087,12 @@ export const substitutePlayer = async (
     const newPlayerRole =
       data.role !== undefined ? data.role : removedPlayer.role;
 
-    // Add new player
+    // Add new player with ACTUAL value (not client-provided value)
     await runQuery(
       `INSERT INTO FantasyTeamPlayers 
        (fantasy_team_id, steam_id, role, player_value, is_active)
        VALUES (?, ?, ?, ?, TRUE)`,
-      [
-        fantasyTeamId,
-        data.add_steam_id,
-        newPlayerRole || null,
-        data.new_player_value
-      ],
+      [fantasyTeamId, addSteamId, newPlayerRole || null, actualNewPlayerValue],
       connection
     );
 
@@ -931,16 +1103,16 @@ export const substitutePlayer = async (
       connection
     );
 
-    // Log to history
+    // Log to history (use server week so getRemainingSubstitutions counts match)
     await runQuery(
       `INSERT INTO FantasyPlayerHistory 
        (fantasy_team_id, steam_id, action, old_value, week_number)
        VALUES (?, ?, 'removed', ?, ?)`,
       [
         fantasyTeamId,
-        data.remove_steam_id,
+        removeSteamId,
         JSON.stringify({ value: removedPlayer.player_value }),
-        data.week_number
+        weekNumber
       ],
       connection
     );
@@ -951,18 +1123,18 @@ export const substitutePlayer = async (
        VALUES (?, ?, 'added', ?, ?)`,
       [
         fantasyTeamId,
-        data.add_steam_id,
-        JSON.stringify({ value: data.new_player_value, role: newPlayerRole }),
-        data.week_number
+        addSteamId,
+        JSON.stringify({ value: actualNewPlayerValue, role: newPlayerRole }),
+        weekNumber
       ],
       connection
     );
 
-    // Calculate remaining substitutions
+    // Calculate remaining substitutions (same week used for insert)
     const [finalSubsCount] = await runQuery<Array<{ count: number }>>(
       `SELECT COUNT(*) as count FROM FantasyPlayerHistory 
        WHERE fantasy_team_id = ? AND action = 'removed' AND week_number = ?`,
-      [fantasyTeamId, data.week_number],
+      [fantasyTeamId, weekNumber],
       connection
     );
 
@@ -984,8 +1156,7 @@ export const substitutePlayer = async (
 export const updatePlayerRoles = async (
   fantasyTeamId: number,
   roleUpdates: Array<{ steam_id: string; role: PlayerRole | null }>,
-  weekNumber: number,
-  skipSwapLimit: boolean = false
+  weekNumber: number
 ): Promise<{ success: boolean; remaining_swaps: number }> => {
   const connection = await getConnection();
 
@@ -1052,8 +1223,16 @@ export const updatePlayerRoles = async (
       }
     }
 
-    // Check role swap limit (2 per week) unless skipping
-    if (!skipSwapLimit) {
+    // Check role swap limit (2 per week)
+    // Count actual swaps (where player already has a role) - determined SERVER-SIDE
+    const actualSwaps = roleUpdates.filter((update) => {
+      const currentRole = currentRolesMap.get(update.steam_id);
+      // It's a swap if player currently has a role (not null/undefined)
+      return currentRole !== null && currentRole !== undefined;
+    });
+
+    if (actualSwaps.length > 0) {
+      // Check current swap count for the week
       const [swapCount] = await runQuery<Array<{ count: number }>>(
         `SELECT COUNT(*) as count FROM FantasyPlayerHistory 
          WHERE fantasy_team_id = ? AND action = 'role_changed' AND week_number = ?`,
@@ -1063,13 +1242,7 @@ export const updatePlayerRoles = async (
 
       const currentSwaps = swapCount?.count || 0;
 
-      // Count how many are actual swaps (player already has a role)
-      const actualSwaps = roleUpdates.filter((update) => {
-        const currentRole = currentRolesMap.get(update.steam_id);
-        return currentRole !== null && currentRole !== undefined;
-      }).length;
-
-      if (currentSwaps + actualSwaps > 2) {
+      if (currentSwaps + actualSwaps.length > 2) {
         throw new BadRequestError(
           `Maximum 2 role swaps per week allowed. You have ${2 - currentSwaps} remaining.`
         );
@@ -1088,6 +1261,7 @@ export const updatePlayerRoles = async (
 
       // Only log to history if it's an actual role change (not initial assignment)
       // Initial assignments have currentRole === null
+      // We determine this SERVER-SIDE, not from client
       if (currentRole !== null) {
         await runQuery(
           `INSERT INTO FantasyPlayerHistory 
@@ -1145,19 +1319,39 @@ export const getFantasyOverallLeaderboard = async (
   leaderboard: Array<LeaderboardEntry & { league_name: string }>;
   currentUserRank: number | null;
 }> => {
+  // Calculate correct total points from ALL FantasyPointsLog entries (including removed players)
+  // Only count points where the match was played while the player was on the team
   const query = `
-    WITH ranked_teams AS (
+    WITH team_points AS (
+      SELECT 
+        ftp.fantasy_team_id,
+        COALESCE(SUM(
+          CASE 
+            WHEN m.start_timestamp >= ftp.added_at 
+             AND (ftp.removed_at IS NULL OR m.start_timestamp <= ftp.removed_at)
+            THEN fpl.points_earned 
+            ELSE 0 
+          END
+        ), 0) as total_points
+      FROM FantasyTeamPlayers ftp
+      LEFT JOIN FantasyPointsLog fpl ON fpl.fantasy_team_player_id = ftp.id
+      LEFT JOIN MatchGames mg ON mg.id = fpl.match_game_id
+      LEFT JOIN Matches m ON m.id = mg.match_id
+      GROUP BY ftp.fantasy_team_id
+    ),
+    ranked_teams AS (
       SELECT 
         ft.id as fantasy_team_id,
         ft.steam_id,
         ft.team_name,
         sp.nickname as owner_name,
-        ft.total_points,
+        COALESCE(tp.total_points, 0) as total_points,
         l.name as league_name,
-        RANK() OVER (ORDER BY ft.total_points DESC) as rank
+        RANK() OVER (ORDER BY COALESCE(tp.total_points, 0) DESC) as rank
       FROM FantasyTeams ft
       INNER JOIN SteamPlayers sp ON sp.steam_id = ft.steam_id
       INNER JOIN Leagues l ON l.id = ft.league_id
+      LEFT JOIN team_points tp ON tp.fantasy_team_id = ft.id
       WHERE ft.season_id = ?
     )
     SELECT * FROM ranked_teams
@@ -1196,11 +1390,29 @@ export const getFantasyOverallLeaderboard = async (
     const userInTop50 = leaderboard.find((entry) => entry.is_current_user);
     if (!userInTop50) {
       const [userTeam] = await runQuery<Array<{ rank: number }>>(
-        `WITH ranked_teams AS (
+        `WITH team_points AS (
+          SELECT 
+            ftp.fantasy_team_id,
+            COALESCE(SUM(
+              CASE 
+                WHEN m.start_timestamp >= ftp.added_at 
+                 AND (ftp.removed_at IS NULL OR m.start_timestamp <= ftp.removed_at)
+                THEN fpl.points_earned 
+                ELSE 0 
+              END
+            ), 0) as total_points
+          FROM FantasyTeamPlayers ftp
+          LEFT JOIN FantasyPointsLog fpl ON fpl.fantasy_team_player_id = ftp.id
+          LEFT JOIN MatchGames mg ON mg.id = fpl.match_game_id
+          LEFT JOIN Matches m ON m.id = mg.match_id
+          GROUP BY ftp.fantasy_team_id
+        ),
+        ranked_teams AS (
           SELECT 
             ft.steam_id,
-            RANK() OVER (ORDER BY ft.total_points DESC) as rank
+            RANK() OVER (ORDER BY COALESCE(tp.total_points, 0) DESC) as rank
           FROM FantasyTeams ft
+          LEFT JOIN team_points tp ON tp.fantasy_team_id = ft.id
           WHERE ft.season_id = ?
         )
         SELECT rank FROM ranked_teams
@@ -1227,17 +1439,37 @@ export const getFantasyLeaderboard = async (
   currentUserRank: number | null;
   totalTeams: number;
 }> => {
+  // Calculate correct total points from ALL FantasyPointsLog entries (including removed players)
+  // Only count points where the match was played while the player was on the team
   const query = `
-    WITH ranked_teams AS (
+    WITH team_points AS (
+      SELECT 
+        ftp.fantasy_team_id,
+        COALESCE(SUM(
+          CASE 
+            WHEN m.start_timestamp >= ftp.added_at 
+             AND (ftp.removed_at IS NULL OR m.start_timestamp <= ftp.removed_at)
+            THEN fpl.points_earned 
+            ELSE 0 
+          END
+        ), 0) as total_points
+      FROM FantasyTeamPlayers ftp
+      LEFT JOIN FantasyPointsLog fpl ON fpl.fantasy_team_player_id = ftp.id
+      LEFT JOIN MatchGames mg ON mg.id = fpl.match_game_id
+      LEFT JOIN Matches m ON m.id = mg.match_id
+      GROUP BY ftp.fantasy_team_id
+    ),
+    ranked_teams AS (
       SELECT 
         ft.id as fantasy_team_id,
         ft.steam_id,
         ft.team_name,
         sp.nickname as owner_name,
-        ft.total_points,
-        RANK() OVER (ORDER BY ft.total_points DESC) as rank
+        COALESCE(tp.total_points, 0) as total_points,
+        RANK() OVER (ORDER BY COALESCE(tp.total_points, 0) DESC) as rank
       FROM FantasyTeams ft
       INNER JOIN SteamPlayers sp ON sp.steam_id = ft.steam_id
+      LEFT JOIN team_points tp ON tp.fantasy_team_id = ft.id
       WHERE ft.season_id = ? AND ft.league_id = ?
     )
     SELECT * FROM ranked_teams
@@ -1275,10 +1507,28 @@ export const getFantasyLeaderboard = async (
 
     if (!userInTop50) {
       const [userTeam] = await runQuery<Array<{ rank: number }>>(
-        `SELECT 
-          RANK() OVER (ORDER BY ft.total_points DESC) as rank
-         FROM FantasyTeams ft
-         WHERE ft.season_id = ? AND ft.league_id = ? AND ft.steam_id = ?`,
+        `WITH team_points AS (
+          SELECT 
+            ftp.fantasy_team_id,
+            COALESCE(SUM(
+              CASE 
+                WHEN m.start_timestamp >= ftp.added_at 
+                 AND (ftp.removed_at IS NULL OR m.start_timestamp <= ftp.removed_at)
+                THEN fpl.points_earned 
+                ELSE 0 
+              END
+            ), 0) as total_points
+          FROM FantasyTeamPlayers ftp
+          LEFT JOIN FantasyPointsLog fpl ON fpl.fantasy_team_player_id = ftp.id
+          LEFT JOIN MatchGames mg ON mg.id = fpl.match_game_id
+          LEFT JOIN Matches m ON m.id = mg.match_id
+          GROUP BY ftp.fantasy_team_id
+        )
+        SELECT 
+          RANK() OVER (ORDER BY COALESCE(tp.total_points, 0) DESC) as rank
+        FROM FantasyTeams ft
+        LEFT JOIN team_points tp ON tp.fantasy_team_id = ft.id
+        WHERE ft.season_id = ? AND ft.league_id = ? AND ft.steam_id = ?`,
         [seasonId, leagueId, currentUserSteamId],
         connection
       );
@@ -1579,11 +1829,13 @@ export const getTopPerformingPlayers = async (
 
 /**
  * Get point history for a specific fantasy team player
- * Shows detailed breakdown of points earned per match
+ * Shows detailed breakdown of points earned per match for that team only.
+ * Filters by fantasyTeamId so the same player in multiple teams only shows points from the requested team.
  */
 export const getPlayerPointHistory = async (
   steamId: string,
   seasonId: number,
+  fantasyTeamId: number,
   connection?: PoolConnection
 ): Promise<
   Array<{
@@ -1660,6 +1912,7 @@ export const getPlayerPointHistory = async (
     LEFT JOIN Teams opponent_team ON opponent_team.id = opponent_match_team.team_id
     WHERE ftp.steam_id = ?
       AND ft.season_id = ?
+      AND ft.id = ?
       AND ftp.is_active = TRUE
     ORDER BY m.start_timestamp DESC, fpl.match_game_id DESC
   `;
@@ -1678,7 +1931,7 @@ export const getPlayerPointHistory = async (
       stats_breakdown: string; // JSON string
       points_breakdown: string; // JSON string
     }>
-  >(query, [seasonId, steamId, seasonId], connection);
+  >(query, [seasonId, steamId, seasonId, fantasyTeamId], connection);
 
   return results.map((row) => ({
     match_game_id: row.match_game_id,

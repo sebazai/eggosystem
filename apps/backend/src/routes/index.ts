@@ -22,23 +22,27 @@ import discordRouter from "./v1/discord.routes";
 import eloRouter from "./v1/elo.routes";
 import { checkDiscordHealth } from "../services/discord.services";
 import { queueConsumerManager } from "../services/queue-consumer-manager";
+import { getPoolStats } from "../db/mysqlConnection";
 import {
   verifyEmailController,
   unsubscribeNewsletterController
 } from "../controllers/account.controllers";
-import { removeReservationByHashController } from "../controllers/match-streams.controllers";
+import { removeReservationByRemovalTokenController } from "../controllers/match-streams.controllers";
 import { landingPageStatistics } from "../services/landing-page.services";
 import parseQueryFilterParams from "../middlewares/parse-query-filter-params.middleware";
 import { cacheResponseMiddleware } from "../middlewares/cache-filtered-queries";
+import { BadRequestError } from "../utils/errors";
 import kanahautomoRouter from "./v1/kanahautomo.routes";
 import stageRouter from "./v1/stage.routes";
 import standingsRouter from "./v1/standings.routes";
 import casterRouter from "./v1/caster.routes";
 import organizerRouter from "./v1/organizer.routes";
+import casterApplicationsRouter from "./v1/caster-applications.routes";
 import calendarRouter from "./v1/calendar.routes";
 import gameRouter from "./v1/game.routes";
 import hallOfFameRouter from "./v1/hall-of-fame.routes";
 import seasonResultsRouter from "./v1/season-results.routes";
+import sponsorsRouter from "./v1/sponsors.routes";
 
 // Create a new Router instance
 const v1Router = Router();
@@ -67,11 +71,20 @@ v1Router.use("/dashboard", corsMiddleware, authenticateJWT, dashboardRouter);
 v1Router.use("/kanahautomo", corsMiddleware, kanahautomoRouter);
 v1Router.use("/discord", corsMiddleware, discordRouter);
 v1Router.post("/verify-email", corsMiddleware, verifyEmailController);
-v1Router.get(
-  "/reservations/remove/:hash",
+v1Router.post(
+  "/reservations/remove",
   corsMiddleware,
-  removeReservationByHashController
+  removeReservationByRemovalTokenController
 );
+v1Router.get("/reservations/remove", corsMiddleware, (_req, _res, next) => {
+  next(
+    new BadRequestError(
+      "Use POST to remove a reservation.",
+      405,
+      "Method Not Allowed"
+    )
+  );
+});
 v1Router.use("/registrations", corsMiddleware, registrationsRouter);
 v1Router.use("/faceit", corsMiddleware, faceitRouter);
 v1Router.use("/players", playerRouter);
@@ -79,6 +92,12 @@ v1Router.use("/players", playerRouter);
 // Mount the routers
 v1Router.use("/calendar", calendarRouter);
 v1Router.use("/organizers", organizerRouter);
+v1Router.use(
+  "/caster-applications",
+  corsMiddleware,
+  authenticateJWT,
+  casterApplicationsRouter
+);
 v1Router.use("/matches", matchRouter);
 v1Router.use("/match-games", matchGameRouter);
 v1Router.use("/games", gameRouter);
@@ -103,6 +122,7 @@ v1Router.use("/elo", eloRouter);
 v1Router.use("/standings", standingsRouter);
 v1Router.use("/hall-of-fame", hallOfFameRouter);
 v1Router.use("/season-results", seasonResultsRouter);
+v1Router.use("/sponsors", sponsorsRouter);
 
 v1Router.get("/stats", async (req, res) => {
   const stats = await landingPageStatistics();
@@ -156,6 +176,37 @@ v1Router.get("/health/rabbitmq", async (req, res) => {
       service: "rabbitmq",
       message: "RabbitMQ consumers are not connected or unhealthy",
       consumerCount: healthStatus.consumerCount
+    });
+  }
+});
+
+v1Router.get("/health/database", async (req, res) => {
+  try {
+    const poolStats = getPoolStats();
+    const isHealthy =
+      poolStats.utilizationPercent < 95 && poolStats.queued === 0;
+
+    if (isHealthy) {
+      res.status(200).json({
+        status: "healthy",
+        service: "database",
+        message: "Database connection pool is healthy",
+        pool: poolStats
+      });
+    } else {
+      res.status(503).json({
+        status: "unhealthy",
+        service: "database",
+        message: "Database connection pool is under high load",
+        pool: poolStats
+      });
+    }
+  } catch (error) {
+    res.status(503).json({
+      status: "error",
+      service: "database",
+      message: "Failed to check database pool health",
+      error: error instanceof Error ? error.message : "Unknown error"
     });
   }
 });

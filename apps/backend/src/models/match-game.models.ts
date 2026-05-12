@@ -19,7 +19,9 @@ import { upsertTeamGameScore } from "./team-game-score.models";
 import { upsertPlayerStatsForGame } from "./player-stats.models";
 import { upsertPlayerTradesForGame } from "./player-trades.models";
 import { upsertMapRoundStats } from "./map-round-stat.models";
-import { upsertKillLogsForGame } from "./kill-log.models";
+import { upsertPlayerKillLogsForGame } from "./player-kill-logs.models";
+import { upsertPlayerClutchesForGame } from "./player-clutches.models";
+import { upsertPlayerRoundImpactsForGame } from "./player-round-impacts.models";
 
 export const getGameTeamRoundBreakdown = async (match_game_id: number) => {
   const query = `
@@ -92,7 +94,7 @@ export const getGamePlayerStats = async (
   `;
 
   // Fields that change based on stat parameter
-  let statFields = "";
+  let statFields: string;
   if (stat === "CT") {
     statFields = `
       ps.kills_ct as kills,
@@ -201,16 +203,65 @@ export const getMatchGamesByExternalMatchRoomId = async (
   return games;
 };
 
+/**
+ * True if the match has at least one MatchGame with a non-empty demofile (demo was ready).
+ * Used to avoid overwriting a played game with FORFEIT when match_status_finished (forfeit) arrives after match_demo_ready.
+ */
+export const hasMatchGameWithDemo = async (
+  matchId: number,
+  connection?: PoolConnection
+): Promise<boolean> => {
+  const query = `SELECT 1 FROM MatchGames WHERE match_id = ? AND demofile IS NOT NULL AND demofile != '' LIMIT 1`;
+  const rows = await runQuery<Array<{ "1": number }>>(
+    query,
+    [matchId],
+    connection
+  );
+  return Array.isArray(rows) && rows.length > 0;
+};
+
+type MatchGameStaffLockRow = {
+  match_id: number;
+  team_game_scores_staff_lock: number | boolean;
+};
+
+/**
+ * Returns parent `match_id` and `team_game_scores_staff_lock` (staff authority over
+ * team scores) for a MatchGame row.
+ */
 export const getMatchIdByGameId = async (
   matchGameId: number,
   connection?: PoolConnection
 ) => {
-  const query = `SELECT match_id FROM MatchGames WHERE id = ?`;
-  return runQuery<Array<{ match_id: number } | undefined>>(
+  const query = `SELECT match_id, team_game_scores_staff_lock FROM MatchGames WHERE id = ?`;
+  return runQuery<Array<MatchGameStaffLockRow | undefined>>(
     query,
     [matchGameId],
     connection
   );
+};
+
+type MatchGameTeamScoresMeta = {
+  id: number;
+  match_id: number;
+  regulation_rounds: number;
+  team_game_scores_staff_lock: number | boolean;
+};
+
+/**
+ * MatchGames row for dashboard team-score read/write: regulation rounds, staff lock, identity.
+ */
+export const getMatchGameMetaForTeamScores = async (
+  matchGameId: number,
+  connection?: PoolConnection
+): Promise<MatchGameTeamScoresMeta | undefined> => {
+  const query = `SELECT id, match_id, COALESCE(regulation_rounds, 24) AS regulation_rounds, team_game_scores_staff_lock FROM MatchGames WHERE id = ? LIMIT 1`;
+  const rows = await runQuery<MatchGameTeamScoresMeta[]>(
+    query,
+    [matchGameId],
+    connection
+  );
+  return rows[0];
 };
 
 export const upsertMatchGameForMatch = async ({
@@ -232,6 +283,7 @@ export const upsertMatchGameForMatch = async ({
     INSERT INTO MatchGames (match_id, map_id, map_order, demofile, regulation_rounds) 
     VALUES (?, ?, ?, ?, ?)
     ON DUPLICATE KEY UPDATE 
+      id = LAST_INSERT_ID(id),
       demofile = VALUES(demofile),
       regulation_rounds = VALUES(regulation_rounds)
   `;
@@ -279,8 +331,8 @@ export const saveParsedDemoDataForGame = async (
     Players,
     NewRoundInfo: RoundInfo,
     Trades,
-    Clutches: _Clutches,
-    RoundImpacts: _RoundImpacts,
+    Clutches,
+    RoundImpacts,
     KillLog
   } = parsed_payload;
 
@@ -293,6 +345,8 @@ export const saveParsedDemoDataForGame = async (
     if (!match) {
       throw new Error(`Could not find parent match for game ${matchGameId}`);
     }
+
+    const skipTeamGameScoreUpsert = Boolean(match.team_game_scores_staff_lock);
 
     const team1PlayerSteamIds = Object.values(Players)
       .filter((player) => player.Team === 1)
@@ -322,27 +376,33 @@ export const saveParsedDemoDataForGame = async (
       );
     }
 
+    const teamScoreWrites = skipTeamGameScoreUpsert
+      ? []
+      : [
+          upsertTeamGameScore({
+            match_id: match.match_id,
+            team_id: terroristTeam.team_id,
+            match_game_id: matchGameId,
+            starting_side: "T",
+            score: Score.Team1Score,
+            halftime_score: Score.Team1HTScore,
+            overtime_score: Score.Team1OTScore,
+            connection
+          }),
+          upsertTeamGameScore({
+            match_id: match.match_id,
+            team_id: counterTerroristTeam.team_id,
+            match_game_id: matchGameId,
+            starting_side: "CT",
+            score: Score.Team2Score,
+            halftime_score: Score.Team2HTScore,
+            overtime_score: Score.Team2OTScore,
+            connection
+          })
+        ];
+
     await Promise.all([
-      upsertTeamGameScore({
-        match_id: match.match_id,
-        team_id: terroristTeam.team_id,
-        match_game_id: matchGameId,
-        starting_side: "T",
-        score: Score.Team1Score,
-        halftime_score: Score.Team1HTScore,
-        overtime_score: Score.Team1OTScore,
-        connection
-      }),
-      upsertTeamGameScore({
-        match_id: match.match_id,
-        team_id: counterTerroristTeam.team_id,
-        match_game_id: matchGameId,
-        starting_side: "CT",
-        score: Score.Team2Score,
-        halftime_score: Score.Team2HTScore,
-        overtime_score: Score.Team2OTScore,
-        connection
-      }),
+      ...teamScoreWrites,
       ...Object.values(Players).map((player) =>
         upsertPlayerStatsForGame({
           matchGameId: matchGameId,
@@ -355,6 +415,16 @@ export const saveParsedDemoDataForGame = async (
         playerTrades: Trades,
         connection
       }),
+      upsertPlayerClutchesForGame({
+        matchGameId,
+        clutches: Clutches,
+        connection
+      }),
+      upsertPlayerRoundImpactsForGame({
+        matchGameId,
+        roundImpacts: RoundImpacts,
+        connection
+      }),
       upsertMapRoundStats({
         matchGameId,
         tTeamIdTeam1: terroristTeam.team_id,
@@ -365,7 +435,7 @@ export const saveParsedDemoDataForGame = async (
       // Save kill logs if present (new field from parser)
       ...(KillLog && KillLog.length > 0
         ? [
-            upsertKillLogsForGame({
+            upsertPlayerKillLogsForGame({
               matchGameId,
               killLogs: KillLog,
               connection

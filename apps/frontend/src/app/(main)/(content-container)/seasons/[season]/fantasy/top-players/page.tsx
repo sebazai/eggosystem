@@ -7,13 +7,7 @@ import { expressFetcher, cn, createTeamLogoUrl } from "@/lib/utils";
 import { AutoBreadcrumbs } from "@/components/layout/AutoBreadcrumbs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from "@/components/ui/select";
+import { LeagueSelector } from "@/components/league/LeagueSelector";
 import {
   Table,
   TableBody,
@@ -26,6 +20,7 @@ import { useSeasonLeagues } from "@/hooks/data/useSeasonLeagues";
 import { useState } from "react";
 import { Trophy, TrendingUp } from "lucide-react";
 import { NextImageFallback } from "@/components/layout/NextImageFallback";
+import { TableSkeleton } from "@/components/loading";
 
 type PlayerTier = "bronze" | "silver" | "gold";
 
@@ -90,16 +85,20 @@ export default function TopPlayersPage() {
 
   if (error) {
     return (
-      <div className="container mx-auto py-8">
+      <>
         <AutoBreadcrumbs />
-        <Card>
-          <CardContent className="py-8">
-            <p className="text-center text-destructive">
-              Error loading top players: {error.message}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+        <div className="fantasy-content-scale">
+          <div className="py-8">
+            <Card>
+              <CardContent className="py-8">
+                <p className="text-center text-destructive">
+                  Error loading top players: {error.message}
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </>
     );
   }
 
@@ -107,7 +106,7 @@ export default function TopPlayersPage() {
     <>
       <AutoBreadcrumbs />
       <div className="fantasy-content-scale">
-        <div className="container mx-auto py-8 space-y-6">
+        <div className="space-y-6">
           {/* Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
@@ -122,21 +121,16 @@ export default function TopPlayersPage() {
 
             {/* League Selector */}
             {seasonLeagues && seasonLeagues.length > 0 && (
-              <Select
-                value={selectedLeagueId}
+              <LeagueSelector
+                value={selectedLeagueId ?? null}
                 onValueChange={setSelectedLeagueId}
-              >
-                <SelectTrigger className="w-[200px]">
-                  <SelectValue placeholder="Select league" />
-                </SelectTrigger>
-                <SelectContent>
-                  {seasonLeagues.map((league: { id: number; name: string }) => (
-                    <SelectItem key={league.id} value={String(league.id)}>
-                      {league.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                triggerClassName="w-[200px]"
+                leagues={seasonLeagues.map((l) => ({
+                  id: String(l.id),
+                  name: l.name,
+                  tier: l.tier
+                }))}
+              />
             )}
           </div>
 
@@ -266,13 +260,8 @@ export default function TopPlayersPage() {
           {/* Loading State */}
           {isLoading && (
             <Card>
-              <CardContent className="py-8">
-                <div className="flex items-center justify-center gap-2">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-                  <span className="text-muted-foreground">
-                    Loading players...
-                  </span>
-                </div>
+              <CardContent className="p-0">
+                <TableSkeleton rows={10} columns={8} showHeader={false} />
               </CardContent>
             </Card>
           )}

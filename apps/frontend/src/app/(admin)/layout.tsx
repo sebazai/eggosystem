@@ -10,6 +10,7 @@ import { AcceptPolicyProvider } from "@/context/AcceptPolicyContext";
 import { ThemeProvider } from "@/providers/ThemeProvider";
 import { createPageMetadata } from "@/lib/metadata";
 import { WithRoleProtection } from "@/components/dashboard/WithRoleProtection";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 const META_THEME_COLORS = {
   light: "#ffffff",
@@ -112,15 +113,21 @@ export default function RootLayout({
           poppinsFont.variable
         )}
       >
-        <ThemeProvider attribute="class" enableSystem disableTransitionOnChange>
+        <ThemeProvider
+          attribute="class"
+          forcedTheme="light"
+          disableTransitionOnChange
+        >
           <Suspense>
             <div className="flex flex-col min-h-svh min-w-[200px] w-full">
               <AuthProvider>
-                <AcceptPolicyProvider>
-                  <WithRoleProtection allowedRoles={["admin", "helpdesk"]}>
-                    <main id="main-content">{children}</main>
-                  </WithRoleProtection>
-                </AcceptPolicyProvider>
+                <TooltipProvider delayDuration={0}>
+                  <AcceptPolicyProvider>
+                    <WithRoleProtection allowedRoles={["admin", "helpdesk"]}>
+                      <main id="main-content">{children}</main>
+                    </WithRoleProtection>
+                  </AcceptPolicyProvider>
+                </TooltipProvider>
               </AuthProvider>
             </div>
           </Suspense>

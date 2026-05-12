@@ -1,5 +1,5 @@
 # Base image
-FROM node:25-slim@sha256:f9e63fcfea470fdfd6ffeb0d6a4307ecf99f7b3292707897f82ba9088aa181e5 AS base
+FROM node:25-slim@sha256:e49fd70491eb042270f974167c874d6245287263ffc16422fcf93b3c150409d8 AS base
 RUN apt update && apt upgrade -y
 WORKDIR /usr/src/app
 # Install pnpm globally - do this first as it changes least often
@@ -31,8 +31,8 @@ RUN pnpm build --filter=backend
 FROM base AS leaner
 ENV NODE_ENV=production
 RUN pnpm install --filter='!frontend' --prod --frozen-lockfile
-# Remove the turbo cache, it is not needed in the final image and makes image leaner
-RUN rm -r node_modules/.pnpm/turbo-*
+# Remove turbo from the pnpm store if present (devDependency; often absent with --prod)
+RUN rm -rf node_modules/.pnpm/turbo-*
 
 # Finally the runner stage as final stage
 FROM base AS runner

@@ -196,8 +196,8 @@ function GeneralStats({
 }: {
   mapStat: TeamMapStats;
   pistolStat?: TeamPistolWinStat;
-  tKd: string;
-  ctKd: string;
+  tKd: number;
+  ctKd: number;
 }) {
   return (
     <div className="space-y-3">
@@ -217,13 +217,13 @@ function GeneralStats({
         <div>
           <div className="flex justify-between text-xs mb-1">
             <span className="font-medium">K/D on T side</span>
-            <span>{tKd}</span>
+            <span>{tKd.toFixed(2)}</span>
           </div>
           <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
             <div
               className="h-full bg-amber-300/50"
               style={{
-                width: `${Math.min(100, parseFloat(tKd) * 50)}%`
+                width: `${Math.min(100, tKd * 50)}%`
               }}
             />
           </div>
@@ -233,13 +233,13 @@ function GeneralStats({
         <div>
           <div className="flex justify-between text-xs mb-1">
             <span className="font-medium">K/D on CT side</span>
-            <span>{ctKd}</span>
+            <span>{ctKd.toFixed(2)}</span>
           </div>
           <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
             <div
               className="h-full bg-sky-400/50"
               style={{
-                width: `${Math.min(100, parseFloat(ctKd) * 50)}%`
+                width: `${Math.min(100, ctKd * 50)}%`
               }}
             />
           </div>

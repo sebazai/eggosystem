@@ -6,6 +6,7 @@ import { MapVetoRadar } from "./MapVetoRadar";
 import { useFilteredTeamMapStats } from "@/hooks/data/filtered/useFilteredTeamMapStats";
 import { useFilteredTeamMapVetoStats } from "@/hooks/data/filtered/useFilteredTeamMapVetoStats";
 import type { FilterParamsQuery } from "@/lib/utils";
+import { CardSkeleton } from "@/components/loading";
 
 interface TeamMapStatsTabProps {
   teamId: number;
@@ -29,12 +30,15 @@ export const TeamMapStatsTab = ({
   // Show loading state while data is being fetched
   if (isLoading || isVetoLoading) {
     return (
-      <div className="flex justify-center items-center py-12">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">
-            Loading map statistics...
-          </p>
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <CardSkeleton showHeader={true} contentLines={4} />
+          <CardSkeleton showHeader={true} contentLines={4} />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <CardSkeleton key={index} showHeader={false} contentLines={3} />
+          ))}
         </div>
       </div>
     );

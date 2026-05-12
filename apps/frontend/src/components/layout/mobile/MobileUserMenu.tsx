@@ -32,7 +32,7 @@ export const MobileUserMenu = ({ setIsSheetOpen }: MobileUserMenuProps) => {
                 href={createNextUrl("/my-team")}
                 onClick={() => setIsSheetOpen(false)}
               >
-                My Team
+                Your Team
               </Link>
             </div>
             {user.provider_id && (
@@ -42,7 +42,7 @@ export const MobileUserMenu = ({ setIsSheetOpen }: MobileUserMenuProps) => {
                   href={createNextUrl(`/players/${user.provider_id}`)}
                   onClick={() => setIsSheetOpen(false)}
                 >
-                  My Page
+                  Your Stats
                 </Link>
               </div>
             )}

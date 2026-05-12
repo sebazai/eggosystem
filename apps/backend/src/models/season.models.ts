@@ -54,6 +54,18 @@ export const getSeasonByIdOrThrow = async (
   return season;
 };
 
+export const getOrganizerIdBySeasonId = async (
+  seasonId: number,
+  connection?: PoolConnection
+): Promise<number | undefined> => {
+  const [row] = await runQuery<Array<{ organizer_id: number }>>(
+    "SELECT organizer_id FROM Seasons WHERE id = ?",
+    [seasonId],
+    connection
+  );
+  return row?.organizer_id;
+};
+
 export const getSeasonDetailsById = async (id: number) => {
   const [data] = await runQuery<Array<SeasonDetails | undefined>>(
     "SELECT s.*, g.app_id FROM Seasons s JOIN Games g ON s.game_id = g.id WHERE s.id = ?",
@@ -149,8 +161,11 @@ const createSeasonWithMapPool = async (
       early_bird_price_discount,
       early_bird_price_discount_end_date,
       rulebook_url,
-      discord_link
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      discord_link,
+      faceit_rank_required,
+      premier_rank_required,
+      hours_played_required
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   const result = await runQuery<{ insertId: number }>(
@@ -173,7 +188,10 @@ const createSeasonWithMapPool = async (
       seasonData.early_bird_price_discount,
       seasonData.early_bird_price_discount_end_date,
       seasonData.rulebook_url,
-      seasonData.discord_link
+      seasonData.discord_link,
+      seasonData.faceit_rank_required ?? false,
+      seasonData.premier_rank_required ?? false,
+      seasonData.hours_played_required ?? false
     ],
     connection
   );
@@ -249,7 +267,10 @@ const updateSeasonWithMapPool = async (
       early_bird_price_discount = ?,
       early_bird_price_discount_end_date = ?,
       rulebook_url = ?,
-      discord_link = ?
+      discord_link = ?,
+      faceit_rank_required = ?,
+      premier_rank_required = ?,
+      hours_played_required = ?
     WHERE id = ?
   `;
 
@@ -274,6 +295,9 @@ const updateSeasonWithMapPool = async (
       seasonData.early_bird_price_discount_end_date,
       seasonData.rulebook_url,
       seasonData.discord_link,
+      seasonData.faceit_rank_required ?? false,
+      seasonData.premier_rank_required ?? false,
+      seasonData.hours_played_required ?? false,
       seasonId
     ],
     connection

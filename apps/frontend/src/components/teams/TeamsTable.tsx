@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { useFilters } from "@/context/FilterContext";
 import { useMultiplePlayersStats } from "@/hooks/data/filtered/useMultiplePlayersStats";
 import { ContentContainer } from "../layout/ContentContainer";
+import { TableSkeleton, CardSkeleton } from "@/components/loading";
 
 export const TeamsTable = () => {
   const params = useParams();
@@ -22,7 +23,24 @@ export const TeamsTable = () => {
   }
 
   if (isLoading || isValidating) {
-    return <ContentContainer>Loading player stats...</ContentContainer>;
+    return (
+      <div className="space-y-3">
+        <div>
+          <div className="h-6 w-32 bg-accent animate-pulse rounded mb-4" />
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <CardSkeleton key={index} showHeader={false} contentLines={2} />
+            ))}
+          </div>
+        </div>
+        <div className="bg-card rounded-md overflow-hidden mb-3">
+          <div className="h-6 w-32 bg-accent animate-pulse rounded mb-2 p-4" />
+          <div className="p-4">
+            <TableSkeleton rows={5} columns={8} showHeader={false} />
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (!players) {

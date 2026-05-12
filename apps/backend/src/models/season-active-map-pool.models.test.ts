@@ -1,6 +1,7 @@
 import {
   getActiveMapPoolBySeasonId,
-  setActiveMapPoolForSeason
+  setActiveMapPoolForSeason,
+  getSeasonMapPoolForMatch
 } from "./season-active-map-pool.models";
 import { runQuery } from "../db/mysqlRunQuery";
 
@@ -138,6 +139,41 @@ describe("season-active-map-pool.models", () => {
         expect.any(Array),
         undefined
       );
+    });
+  });
+
+  describe("getSeasonMapPoolForMatch", () => {
+    it("should return map pool for a match's season", async () => {
+      const matchId = 42;
+      const mockMaps = [
+        { id: 1, name: "de_ancient" },
+        { id: 2, name: "de_dust2" },
+        { id: 3, name: "de_inferno" }
+      ];
+
+      mockRunQuery.mockResolvedValue(mockMaps);
+
+      const result = await getSeasonMapPoolForMatch(matchId);
+
+      expect(result).toEqual(mockMaps);
+      expect(mockRunQuery).toHaveBeenCalledWith(
+        expect.stringContaining("SeasonActiveMapPool"),
+        [matchId],
+        undefined
+      );
+      expect(mockRunQuery).toHaveBeenCalledWith(
+        expect.stringContaining("Matches"),
+        [matchId],
+        undefined
+      );
+    });
+
+    it("should return empty array when match has no season map pool", async () => {
+      mockRunQuery.mockResolvedValue([]);
+
+      const result = await getSeasonMapPoolForMatch(999);
+
+      expect(result).toEqual([]);
     });
   });
 });

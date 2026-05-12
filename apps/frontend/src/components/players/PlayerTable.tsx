@@ -13,6 +13,7 @@ import {
   type PaginationState,
   type Cell
 } from "@tanstack/react-table";
+import { ContentContainer } from "../layout/ContentContainer";
 
 interface CustomColumnMeta {
   responsive?: string;
@@ -231,6 +232,10 @@ export const PlayerTable: React.FC<PlayerTableProps> = ({
       cell.column.id === "kana_rating" && "text-muted-foreground"
     );
   };
+
+  if (players.length === 0) {
+    return <ContentContainer>No data found</ContentContainer>;
+  }
 
   return (
     <TanStackTableWrapper

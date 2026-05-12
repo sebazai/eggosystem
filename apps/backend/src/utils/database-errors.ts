@@ -3,14 +3,14 @@ import { ConflictError } from "./errors";
 /**
  * Type guard to check if an error is a MariaDB/MySQL database error
  */
-interface DatabaseError {
+export interface DatabaseError {
   code?: string;
   sqlState?: string;
   sqlMessage?: string;
   message?: string;
 }
 
-function isDatabaseError(err: unknown): err is DatabaseError {
+export function isDatabaseError(err: unknown): err is DatabaseError {
   return (
     typeof err === "object" &&
     err !== null &&
@@ -91,11 +91,15 @@ function getUserFriendlyMessage(
       "You are already registered for this organization",
     SeasonPlayerApprovals: "Player is already approved for this season",
     SeasonTeamRegistrations: "Team is already registered for this season",
+    MatchTeamMapVetoes:
+      "A map veto step already exists for this team and sequence for this match",
     MatchGames: "This match game already exists",
     PlayerStats: "Player statistics for this game already exist",
     TeamGameScores: "Team scores for this game already exist",
     PlayerTrades: "This trade record already exists",
-    KillLogs: "This kill log entry already exists",
+    PlayerKillLogs: "This kill log entry already exists",
+    PlayerClutches: "This clutch record already exists",
+    PlayerRoundImpacts: "This round impact record already exists",
     FantasyPlayerValues: "Fantasy player values already exist for this season",
     FantasyPlayerHistory:
       "Fantasy player history already exists for this match",
@@ -145,6 +149,47 @@ function getUserFriendlyMessage(
 
   // Fallback to generic message
   return "This record already exists";
+}
+
+/**
+ * Checks if an error is Error 1020: Record has changed since last read
+ * This occurs when innodb_snapshot_isolation is enabled and a row changes
+ * between when a transaction reads it and when it tries to update it
+ */
+function isRecordChangedError(err: unknown): boolean {
+  if (!isDatabaseError(err)) {
+    return false;
+  }
+  // Error code 1020 or error number 1020
+  const dbErr = err as DatabaseError & { errno?: number };
+  return !!(
+    err.code === "ER_RECORD_CHANGED" ||
+    dbErr.errno === 1020 ||
+    (err.message && err.message.includes("Record has changed since last read"))
+  );
+}
+
+/**
+ * Checks if an error is a deadlock error (ER_LOCK_DEADLOCK)
+ */
+function isDeadlockError(err: unknown): boolean {
+  if (!isDatabaseError(err)) {
+    return false;
+  }
+  const dbErr = err as DatabaseError & { errno?: number };
+  return !!(
+    err.code === "ER_LOCK_DEADLOCK" ||
+    dbErr.errno === 1213 ||
+    (err.message && err.message.includes("Deadlock found"))
+  );
+}
+
+/**
+ * Checks if an error is a transient database error that should be retried
+ * Includes deadlocks and snapshot isolation conflicts
+ */
+export function isTransientDatabaseError(err: unknown): boolean {
+  return isDeadlockError(err) || isRecordChangedError(err);
 }
 
 /**

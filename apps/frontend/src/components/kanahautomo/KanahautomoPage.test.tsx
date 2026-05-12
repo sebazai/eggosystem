@@ -218,7 +218,7 @@ describe("KanahautomoPage", () => {
     it("renders the submit button", () => {
       renderKanahautomoPage();
       expect(
-        screen.getByRole("button", { name: "Join Kanahautomo" })
+        screen.getByRole("button", { name: /Join Kanahautomo/i })
       ).toBeInTheDocument();
     });
   });
@@ -245,8 +245,9 @@ describe("KanahautomoPage", () => {
         logout: jest.fn()
       });
       renderKanahautomoPage();
-      const loadingSpinner = document.querySelector(".animate-spin");
-      expect(loadingSpinner).toBeInTheDocument();
+      // CardSkeleton is used for loading state
+      const skeleton = document.querySelector('[class*="animate-pulse"]');
+      expect(skeleton).toBeInTheDocument();
     });
 
     it("shows form when user is authenticated", () => {
@@ -265,8 +266,9 @@ describe("KanahautomoPage", () => {
         isValidating: false
       });
       renderKanahautomoPage();
-      const loadingSpinner = document.querySelector(".animate-spin");
-      expect(loadingSpinner).toBeInTheDocument();
+      // CardSkeleton is used for loading state
+      const skeleton = document.querySelector('[class*="animate-pulse"]');
+      expect(skeleton).toBeInTheDocument();
     });
 
     it("shows error state when organizations fail to load", () => {
@@ -565,20 +567,28 @@ describe("KanahautomoPage", () => {
 
       // 5. Submit the form
       const submitButton = screen.getByRole("button", {
-        name: "Join Kanahautomo"
+        name: /Join Kanahautomo/i
       });
       await act(async () => {
         await user.click(submitButton);
       });
 
-      // Should show error message - wait for the error to appear
+      // Wait for the error message to appear (this also indicates submission is complete)
+      // Use findByText which automatically waits and retries
+      const errorText = await screen.findByText(
+        "Registration failed",
+        {},
+        { timeout: 5000 }
+      );
+      expect(errorText).toBeInTheDocument();
+      expect(errorText).toHaveClass("text-red-500", "text-sm");
+
+      // Also verify button is re-enabled after error
       await waitFor(
         () => {
-          const errorText = screen.getByText("Registration failed");
-          expect(errorText).toBeInTheDocument();
-          expect(errorText).toHaveClass("text-red-500", "text-sm");
+          expect(submitButton).not.toBeDisabled();
         },
-        { timeout: 3000 }
+        { timeout: 5000 }
       );
     });
   });
@@ -642,7 +652,7 @@ describe("KanahautomoPage", () => {
 
       // Try to submit without selecting organization
       const submitButton = screen.getByRole("button", {
-        name: "Join Kanahautomo"
+        name: /Join Kanahautomo/i
       });
       await act(async () => {
         await user.click(submitButton);
@@ -670,7 +680,7 @@ describe("KanahautomoPage", () => {
       await user.click(orgOptions[0]!);
 
       const submitButton = screen.getByRole("button", {
-        name: "Join Kanahautomo"
+        name: /Join Kanahautomo/i
       });
       await act(async () => {
         await user.click(submitButton);
@@ -701,7 +711,7 @@ describe("KanahautomoPage", () => {
       await user.click(cs2Checkbox);
 
       const submitButton = screen.getByRole("button", {
-        name: "Join Kanahautomo"
+        name: /Join Kanahautomo/i
       });
       await act(async () => {
         await user.click(submitButton);

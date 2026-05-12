@@ -4,7 +4,8 @@ import {
   type Match,
   type StandingsFaceitTeamStats,
   type StandingsLeagues,
-  type Season
+  type Season,
+  MatchStatus
 } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
 import { logger } from "../utils/app-logger";
@@ -121,30 +122,30 @@ export const getFaceitMatchesForFaceitLeague = async (
 };
 
 const getFaceitMatchInfoForForfeit = async (
-  faceitMatchId: string
+  faceitMatchId: string,
+  options?: { onlyFirstGame?: boolean }
 ): Promise<StandingsFaceitTeamStats[]> => {
   const matchDetails =
     await getFaceITMatchDetails<ChampionshipDetailsFinished>(faceitMatchId);
-  const data: StandingsFaceitTeamStats[] = Object.values(
-    matchDetails.detailed_results
-  ).flatMap((result) => {
+  const results =
+    options?.onlyFirstGame && matchDetails.detailed_results.length > 0
+      ? [matchDetails.detailed_results[0]]
+      : matchDetails.detailed_results;
+  const data: StandingsFaceitTeamStats[] = results.flatMap((result) => {
     const winnerFaction = result.winner;
     const winnerTeamName = matchDetails.teams[winnerFaction].name;
-    const data = Object.values(matchDetails.teams).map((team) => {
-      return {
-        team_name: team.name,
-        games_played: 1,
-        maps_won: winnerTeamName === team.name ? 1 : 0,
-        maps_won_ot: 0,
-        maps_lost: winnerTeamName === team.name ? 0 : 1,
-        maps_lost_ot: 0,
-        points: winnerTeamName === team.name ? 3 : 0,
-        rounds_won: winnerTeamName === team.name ? 6 : -6,
-        rounds_lost: 0,
-        rounds_diff: winnerTeamName === team.name ? 6 : -6
-      };
-    });
-    return data;
+    return Object.values(matchDetails.teams).map((team) => ({
+      team_name: team.name,
+      games_played: 1,
+      maps_won: winnerTeamName === team.name ? 1 : 0,
+      maps_won_ot: 0,
+      maps_lost: winnerTeamName === team.name ? 0 : 1,
+      maps_lost_ot: 0,
+      points: winnerTeamName === team.name ? 3 : 0,
+      rounds_won: winnerTeamName === team.name ? 6 : -6,
+      rounds_lost: 0,
+      rounds_diff: winnerTeamName === team.name ? 6 : -6
+    }));
   });
   return data;
 };
@@ -213,22 +214,79 @@ export const getDivStandings = async (
       match.external_match_room_id !== null
   );
 
-  const matchExternalIdParsed: Map<string, true> = new Map();
+  // For BO2-as-2xBO1: only skip when we already processed a FINISHED match for
+  // this room (SQL groups FINISHED by room, so at most one FINISHED row per
+  // room). We must always process FORFEIT matches and never skip a FINISHED
+  // match just because we already processed a FORFEIT for the same room.
+  //
+  // Slot accounting (S2-AC-1): for 2xBO1 a single FaceIT room maps to two
+  // sibling Matches rows (slot 0 + slot 1). The DB stores the room split as a
+  // status pair (`Matches.status`), but FaceIT's match details API exposes the
+  // outcome via `detailed_results` keyed off the same room id. Each row must
+  // therefore contribute exactly ONE FaceIT game (one entry from
+  // `detailed_results`) to the standings — never zero, never two.
+  // Mixed FINISHED + FORFEIT rooms: SQL collapses the FINISHED row to a single
+  // entry processed via `getFaceitMatchStats` (one round = the played map);
+  // the FORFEIT sibling is processed separately with `{ onlyFirstGame: true }`
+  // so the two siblings contribute exactly two slots.
+  // FORFEIT + FORFEIT rooms (no FINISHED): SQL returns BOTH rows. Both call
+  // `getFaceitMatchInfoForForfeit` against the same FaceIT match id. Without
+  // `onlyFirstGame`, each call would expand all `detailed_results` (typically
+  // both maps), double-counting. We pin the second FORFEIT in the same room to
+  // `{ onlyFirstGame: true }` so each FORFEIT contributes exactly one slot.
+  const roomFinishedProcessed: Map<string, true> = new Map();
+  const roomForfeitProcessedCount: Map<string, number> = new Map();
 
-  // Get stats for each match
   const teamStatsArray: StandingsFaceitTeamStats[][] = [];
   for (const match of matches) {
     if (
-      matchExternalIdParsed.has(match.external_match_room_id) &&
-      match.is_round_robin_bo2_as_2xbo1
+      match.is_round_robin_bo2_as_2xbo1 &&
+      match.status === MatchStatus.FINISHED
     ) {
-      continue;
+      if (roomFinishedProcessed.has(match.external_match_room_id)) {
+        continue;
+      }
+      roomFinishedProcessed.set(match.external_match_room_id, true);
     }
-    if (match.status === "FORFEIT") {
+
+    if (match.status === MatchStatus.FORFEIT) {
+      const roomAlsoHasFinished =
+        match.is_round_robin_bo2_as_2xbo1 &&
+        matches.some(
+          (m) =>
+            m.external_match_room_id === match.external_match_room_id &&
+            m.status === MatchStatus.FINISHED
+        );
+      const roomAlsoHasOtherForfeit =
+        match.is_round_robin_bo2_as_2xbo1 &&
+        matches.some(
+          (m) =>
+            m !== match &&
+            m.external_match_room_id === match.external_match_room_id &&
+            m.status === MatchStatus.FORFEIT
+        );
+      // 2xBO1 slot accounting: each FORFEIT row must contribute exactly one
+      // detailed_result entry whenever the same room contributes another row
+      // to standings — either a sibling FINISHED row (mixed case) or a
+      // sibling FORFEIT row (both-forfeit case). Without this cap, each
+      // FORFEIT row would expand all `detailed_results` returned by the
+      // FaceIT details API and double-count the slot. The map below
+      // tracks per-room forfeit counts only for telemetry / future use; the
+      // cap itself is purely structural (room has another contributing row).
+      const useOnlyFirstGame =
+        match.is_round_robin_bo2_as_2xbo1 &&
+        (roomAlsoHasFinished || roomAlsoHasOtherForfeit);
+      const priorForfeitsForRoom =
+        roomForfeitProcessedCount.get(match.external_match_room_id) ?? 0;
       const stats = await getFaceitMatchInfoForForfeit(
-        match.external_match_room_id
+        match.external_match_room_id,
+        useOnlyFirstGame ? { onlyFirstGame: true } : undefined
       );
       teamStatsArray.push(stats);
+      roomForfeitProcessedCount.set(
+        match.external_match_room_id,
+        priorForfeitsForRoom + 1
+      );
     } else {
       const faceitMatchStats = await getFaceitMatchStats(
         match.external_match_room_id
@@ -236,10 +294,6 @@ export const getDivStandings = async (
       const stats =
         await extractPointsFromFaceitMatchStatsResponse(faceitMatchStats);
       teamStatsArray.push(stats);
-    }
-    if (match.is_round_robin_bo2_as_2xbo1) {
-      matchExternalIdParsed.set(match.external_match_room_id, true);
-      continue;
     }
   }
 

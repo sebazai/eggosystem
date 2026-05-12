@@ -32,17 +32,18 @@ import {
 
 import { useCallback, useEffect, useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
-import type { CheckedState } from "@radix-ui/react-checkbox";
 import Image from "next/image";
 import type {
   CS2LeetifyAvgRank,
   FaceITCSRank,
   Game,
   PlayerDetailsBySteamId,
+  SeasonDetails,
   SignupFormValues,
   SignupPlayerType
 } from "@eggosystem/types";
 import { playerSchema, SeasonPlatform } from "@eggosystem/types";
+import { playerMeetsSeasonRankAndHoursRequirements } from "@eggosystem/types";
 import { AlertTriangle, Search, TriangleAlert } from "lucide-react";
 import { ApiError, clientApiFetch } from "@/lib/apiClient";
 import { SignupPlayerNotification } from "./SignupPlayerNotification";
@@ -54,6 +55,7 @@ import Link from "next/link";
 import { ConfirmationModal } from "../ui/ConfirmationModal";
 import { RosterImportModal } from "./RosterImportModal";
 
+type CheckedState = boolean | "indeterminate";
 interface TabPlayersProps {
   control: Control<SignupFormValues>;
   resetField: UseFormResetField<SignupFormValues>;
@@ -69,6 +71,7 @@ interface TabPlayersProps {
   teamId?: number;
   isEditMode: boolean;
   submitInitiated: boolean;
+  seasonDetails: SeasonDetails;
 }
 
 export const TabPlayers = ({
@@ -85,7 +88,8 @@ export const TabPlayers = ({
   prefilledPlayerSteamIds,
   teamId,
   isEditMode,
-  submitInitiated
+  submitInitiated,
+  seasonDetails
 }: TabPlayersProps) => {
   const [promiseErrors, setPromiseErrors] = useState<Record<string, string[]>>(
     {}
@@ -121,15 +125,13 @@ export const TabPlayers = ({
   const watchOrganizationId = useWatch({ control, name: "organizationId" });
   const steamIds = watchPlayers.map((p) => p.steamId);
 
-  // Helper function to check if a player is fully valid and eligible
+  // Helper function to check if a player is fully valid and eligible based on season requirements
   const isPlayerFullyValid = (player: SignupPlayerType): boolean => {
     return (
       player.hasValidData === true &&
       player.hasValidWorkEmail === true &&
       player.isEmailVerified === true &&
-      player.rank !== -1 &&
-      (player.externalRank !== -1 || platform === SeasonPlatform.Kanaliiga) &&
-      player.hours !== -1
+      playerMeetsSeasonRankAndHoursRequirements(seasonDetails, player)
     );
   };
 
@@ -268,19 +270,27 @@ export const TabPlayers = ({
           const isValidWorkEmail = Boolean(data.is_valid_work_email);
           setValue(`players.${index}.hasValidWorkEmail`, isValidWorkEmail);
 
-          if (!isValidWorkEmail) {
-            // Check if organizer has approved manually
-            if (watchTeamId) {
-              const approvedByOrganizer = await clientApiFetch<{
-                approved_by_organizer: boolean;
-              }>(
-                `/api/v1/registrations/season/${seasonId}/player/${steam_id}/approved-manually?team_id=${watchTeamId}&organization_id=${watchOrganizationId}`
-              );
-
-              setValue(
-                `players.${index}.hasValidWorkEmail`,
-                approvedByOrganizer.approved_by_organizer
-              );
+          // Backend allows manual approval to bypass both unverified email and invalid work email
+          const needsApprovalCheck =
+            !isValidWorkEmail || !data.work_email_verified;
+          const hasTeamOrOrg =
+            watchTeamId != null || watchOrganizationId != null;
+          if (needsApprovalCheck && hasTeamOrOrg) {
+            const params = new URLSearchParams();
+            if (watchTeamId != null) params.set("team_id", String(watchTeamId));
+            if (watchOrganizationId != null)
+              params.set("organization_id", String(watchOrganizationId));
+            const approvedByOrganizer = await clientApiFetch<{
+              approved_by_organizer: boolean;
+            }>(
+              `/api/v1/registrations/season/${seasonId}/player/${steam_id}/approved-manually?${params.toString()}`
+            );
+            const approved = approvedByOrganizer.approved_by_organizer;
+            if (!isValidWorkEmail) {
+              setValue(`players.${index}.hasValidWorkEmail`, approved);
+            }
+            if (!data.work_email_verified) {
+              setValue(`players.${index}.isEmailVerified`, approved);
             }
           }
 
@@ -567,13 +577,10 @@ export const TabPlayers = ({
           player.hasValidData !== true ||
           player.hasValidWorkEmail !== true ||
           player.isEmailVerified !== true ||
-          player.hours === -1 ||
-          player.rank === -1 ||
-          (player.externalRank === -1 &&
-            platform !== SeasonPlatform.Kanaliiga));
+          !playerMeetsSeasonRankAndHoursRequirements(seasonDetails, player));
       return error;
     },
-    [platform]
+    [seasonDetails]
   );
 
   // Open accordions if any errors
@@ -585,7 +592,17 @@ export const TabPlayers = ({
           (p) => p.steamId === player.steamId && p.steamId !== ""
         ).length > 1;
 
-      if (loadingStates[index] === undefined && !isDuplicate) {
+      // Skip rows we have not yet processed: no loading transition has been
+      // observed AND no validation data has been loaded AND it is not a
+      // duplicate. Treating prefilled `hasValidData` as "loading completed"
+      // ensures the open-on-error effect also fires in edit mode and in unit
+      // tests where players are seeded with validation data directly.
+      const hasLoadedData = player.hasValidData !== undefined;
+      if (
+        loadingStates[index] === undefined &&
+        !hasLoadedData &&
+        !isDuplicate
+      ) {
         continue;
       }
 
@@ -1095,52 +1112,56 @@ export const TabPlayers = ({
                       </SignupPlayerNotification>
                     )}
 
-                  {player.hours === -1 && (
-                    <SignupPlayerNotification
-                      data-testid={`hours-error-${index}`}
-                    >
-                      <span>
-                        Could not detect the hours for the player. Please ensure
-                        that the{" "}
-                        <Link
-                          href="https://help.steampowered.com/en/faqs/view/588C-C67D-0251-C276"
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline text-kanaliiga-orange"
-                        >
-                          Steam profile and Game details are set to public
-                        </Link>
-                        .<br />
-                        Also, make sure the{" "}
-                        <strong>
-                          &quot;Always keep my total playtime private even if
-                          users can see my game details&quot;
-                        </strong>{" "}
-                        option is <strong>unchecked</strong>.<br />
-                        <em>
-                          Note: Changes to Steam privacy settings may take a few
-                          minutes to take effect.
-                        </em>
-                        <br />
-                        If the profile is correctly set to public and the issue
-                        persists, please open a ticket in the Kanaliiga Discord.
-                      </span>
-                    </SignupPlayerNotification>
-                  )}
+                  {player.hours === -1 &&
+                    seasonDetails.hours_played_required && (
+                      <SignupPlayerNotification
+                        data-testid={`hours-error-${index}`}
+                      >
+                        <span>
+                          Could not detect the hours for the player. Please
+                          ensure that the{" "}
+                          <Link
+                            href="https://help.steampowered.com/en/faqs/view/588C-C67D-0251-C276"
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline text-kanaliiga-orange"
+                          >
+                            Steam profile and Game details are set to public
+                          </Link>
+                          .<br />
+                          Also, make sure the{" "}
+                          <strong>
+                            &quot;Always keep my total playtime private even if
+                            users can see my game details&quot;
+                          </strong>{" "}
+                          option is <strong>unchecked</strong>.<br />
+                          <em>
+                            Note: Changes to Steam privacy settings may take a
+                            few minutes to take effect.
+                          </em>
+                          <br />
+                          If the profile is correctly set to public and the
+                          issue persists, please open a ticket in the Kanaliiga
+                          Discord.
+                        </span>
+                      </SignupPlayerNotification>
+                    )}
 
-                  {player.rank === -1 && (
-                    <SignupPlayerNotification
-                      data-testid={`rank-error-${index}`}
-                    >
-                      Could not detect internal game rank for the player. This
-                      could be due to temporary service issues or missing rank
-                      data. Please try removing the steam id and adding it
-                      again, or open a ticket in the Kanaliiga Discord if the
-                      problem persists.
-                    </SignupPlayerNotification>
-                  )}
+                  {player.rank === -1 &&
+                    seasonDetails.premier_rank_required && (
+                      <SignupPlayerNotification
+                        data-testid={`rank-error-${index}`}
+                      >
+                        Could not detect internal game rank for the player. This
+                        could be due to temporary service issues or missing rank
+                        data. Please try removing the steam id and adding it
+                        again, or open a ticket in the Kanaliiga Discord if the
+                        problem persists.
+                      </SignupPlayerNotification>
+                    )}
 
                   {player.externalRank === -1 &&
+                    seasonDetails.faceit_rank_required &&
                     platform !== SeasonPlatform.Kanaliiga && (
                       <SignupPlayerNotification
                         data-testid={`external-rank-error-${index}`}

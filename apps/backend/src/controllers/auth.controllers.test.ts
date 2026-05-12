@@ -268,6 +268,7 @@ describe("AuthControllers", () => {
       jest
         .spyOn(authServices, "getPermissionsForAccountId")
         .mockResolvedValue([]);
+      jest.spyOn(authServices, "getRolesForAccountId").mockResolvedValue([]);
 
       const mockNext = jest.fn();
       await authControllers.refreshToken(req, res, mockNext);
@@ -275,6 +276,7 @@ describe("AuthControllers", () => {
       expect(authServices.generateTokens).toHaveBeenCalledWith({
         steamId: "12345",
         permissions: [],
+        roles: [],
         jti: "123123"
       });
 
@@ -330,6 +332,9 @@ describe("AuthControllers", () => {
         jest
           .spyOn(authServices, "getPermissionsForAccountId")
           .mockResolvedValue(["captain:edit:season-1:team-2"]);
+        jest
+          .spyOn(authServices, "getRolesForAccountId")
+          .mockResolvedValue(["captain"]);
         (jest.spyOn(jwt, "verify") as jest.Mock).mockImplementation(() => {
           return { steamId: "12345", jti: "123123" };
         });
@@ -342,7 +347,8 @@ describe("AuthControllers", () => {
         expect(authServices.generateTokens).toHaveBeenCalledWith({
           steamId: "12345",
           jti: "123123",
-          permissions: ["captain:edit:season-1:team-2"]
+          permissions: ["captain:edit:season-1:team-2"],
+          roles: ["captain"]
         });
 
         expect(redisClient.set as jest.Mock).toHaveBeenCalledWith(

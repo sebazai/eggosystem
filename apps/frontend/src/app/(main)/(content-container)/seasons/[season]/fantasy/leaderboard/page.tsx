@@ -1,8 +1,9 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useCallback, useState } from "react";
 import useSWR from "swr";
+import React from "react";
 import { expressFetcher } from "@/lib/utils";
 import { AutoBreadcrumbs } from "@/components/layout/AutoBreadcrumbs";
 import {
@@ -23,18 +24,14 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from "@/components/ui/select";
 import { Trophy, Medal, Award, Globe } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSeasonLeagues } from "@/hooks/data/useSeasonLeagues";
 import TeamViewDialog from "@/components/fantasy/TeamViewDialog";
 import type { MyFantasyTeam } from "@/hooks/data/useMyFantasyTeam";
+import { TableSkeleton } from "@/components/loading";
+import { useLeaderboardViewMode } from "@/hooks/data/fantasy/useLeaderboardViewMode";
+import { LeagueSelector } from "@/components/league/LeagueSelector";
 
 interface LeaderboardEntry {
   rank: number;
@@ -51,6 +48,111 @@ interface LeaderboardResponse {
   leaderboard: LeaderboardEntry[];
   currentUserRank: number | null;
 }
+
+// Memoized table row component to prevent unnecessary re-renders
+const LeaderboardTableRow = React.memo(
+  ({
+    entry,
+    getRankIcon,
+    onViewTeam
+  }: {
+    entry: LeaderboardEntry;
+    getRankIcon: (rank: number) => React.ReactNode;
+    onViewTeam: (entry: LeaderboardEntry) => void;
+  }) => (
+    <TableRow
+      className={cn(
+        entry.is_current_user && "bg-blue-50 dark:bg-blue-950 font-semibold",
+        "cursor-pointer hover:bg-neutral-800/50 transition-colors"
+      )}
+      onClick={() => onViewTeam(entry)}
+    >
+      <TableCell className="font-medium">
+        <div className="flex items-center gap-2">
+          {getRankIcon(entry.rank)}
+          <span className={cn(entry.rank <= 3 && "font-bold text-lg")}>
+            #{entry.rank}
+          </span>
+        </div>
+      </TableCell>
+      <TableCell>
+        <div className="flex items-center gap-2">
+          {entry.owner_name}
+          {entry.is_current_user && (
+            <Badge variant="outline" className="text-xs">
+              You
+            </Badge>
+          )}
+        </div>
+      </TableCell>
+      <TableCell>
+        {entry.team_name || (
+          <span className="text-muted-foreground italic">Unnamed Team</span>
+        )}
+      </TableCell>
+      <TableCell className="text-right font-mono">
+        {entry.total_points.toLocaleString()}
+      </TableCell>
+    </TableRow>
+  )
+);
+
+LeaderboardTableRow.displayName = "LeaderboardTableRow";
+
+// Memoized overall table row component
+const OverallLeaderboardTableRow = React.memo(
+  ({
+    entry,
+    getRankIcon,
+    onViewTeam
+  }: {
+    entry: LeaderboardEntry;
+    getRankIcon: (rank: number) => React.ReactNode;
+    onViewTeam: (entry: LeaderboardEntry) => void;
+  }) => (
+    <TableRow
+      className={cn(
+        entry.is_current_user && "bg-blue-50 dark:bg-blue-950 font-semibold",
+        "cursor-pointer hover:bg-neutral-800/50 transition-colors"
+      )}
+      onClick={() => onViewTeam(entry)}
+    >
+      <TableCell className="font-medium">
+        <div className="flex items-center gap-2">
+          {getRankIcon(entry.rank)}
+          <span className={cn(entry.rank <= 3 && "font-bold text-lg")}>
+            #{entry.rank}
+          </span>
+        </div>
+      </TableCell>
+      <TableCell>
+        <div className="flex items-center gap-2">
+          {entry.owner_name}
+          {entry.is_current_user && (
+            <Badge variant="outline" className="text-xs">
+              You
+            </Badge>
+          )}
+        </div>
+      </TableCell>
+      <TableCell>
+        {entry.team_name || (
+          <span className="text-muted-foreground italic">Unnamed Team</span>
+        )}
+      </TableCell>
+      <TableCell>
+        <Badge variant="secondary" className="text-xs">
+          {entry.league_name || "Unknown"}
+        </Badge>
+      </TableCell>
+      <TableCell className="text-right font-mono">
+        {entry.total_points.toLocaleString()}
+      </TableCell>
+    </TableRow>
+  )
+);
+
+OverallLeaderboardTableRow.displayName = "OverallLeaderboardTableRow";
 
 export default function FantasyLeaderboardPage() {
   const params = useParams();
@@ -80,34 +182,21 @@ export default function FantasyLeaderboardPage() {
     );
   }, [myTeam, seasonLeagues]);
 
-  const [viewMode, setViewMode] = useState<"division" | "overall">("division");
+  const { viewMode, setViewMode } = useLeaderboardViewMode();
   const [hasUserSelectedLeague, setHasUserSelectedLeague] = useState(false);
-
-  // Initialize selectedLeagueId with default
-  const [selectedLeagueId, setSelectedLeagueId] =
-    useState<number>(defaultLeagueId);
+  const [userSelectedLeagueId, setUserSelectedLeagueId] = useState<
+    number | null
+  >(null);
 
   // Use derived value for selectedLeagueId when user hasn't manually selected
   // Otherwise use the manually selected value
   const effectiveSelectedLeagueId = hasUserSelectedLeague
-    ? selectedLeagueId
+    ? (userSelectedLeagueId ?? defaultLeagueId)
     : defaultLeagueId;
 
   // Team view dialog state
   const [selectedTeam, setSelectedTeam] = useState<MyFantasyTeam | null>(null);
   const [teamViewDialogOpen, setTeamViewDialogOpen] = useState(false);
-
-  // Update selectedLeagueId when default changes, but only if user hasn't made a manual selection
-  // Use a ref to track if we should update
-  const prevDefaultRef = useRef(defaultLeagueId);
-  useEffect(() => {
-    if (!hasUserSelectedLeague && defaultLeagueId !== prevDefaultRef.current) {
-      prevDefaultRef.current = defaultLeagueId;
-      if (selectedLeagueId !== defaultLeagueId) {
-        setSelectedLeagueId(defaultLeagueId);
-      }
-    }
-  }, [defaultLeagueId, hasUserSelectedLeague, selectedLeagueId]);
 
   // Fetch division-specific leaderboard
   const {
@@ -137,7 +226,7 @@ export default function FantasyLeaderboardPage() {
   const error = viewMode === "division" ? divisionError : overallError;
   const isLoading = viewMode === "division" ? divisionLoading : overallLoading;
 
-  const getRankIcon = (rank: number) => {
+  const getRankIcon = useCallback((rank: number) => {
     switch (rank) {
       case 1:
         return <Trophy className="h-5 w-5 text-yellow-500" />;
@@ -148,36 +237,52 @@ export default function FantasyLeaderboardPage() {
       default:
         return null;
     }
-  };
+  }, []);
 
-  const handleViewTeam = async (entry: LeaderboardEntry) => {
-    if (!entry.steam_id) {
-      console.error("No steam_id in entry:", entry);
-      return;
-    }
+  const handleViewTeam = useCallback(
+    async (entry: LeaderboardEntry) => {
+      if (!entry.steam_id) {
+        console.error("No steam_id in entry:", entry);
+        return;
+      }
 
-    const url = `/api/v1/seasons/${seasonId}/fantasy/teams/${entry.steam_id}`;
+      const url = `/api/v1/seasons/${seasonId}/fantasy/teams/${entry.steam_id}`;
 
-    try {
-      const teamData = await expressFetcher<MyFantasyTeam>(url);
-      setSelectedTeam(teamData);
-      setTeamViewDialogOpen(true);
-    } catch (error) {
-      console.error("Failed to fetch team details:", error);
-    }
-  };
+      try {
+        const teamData = await expressFetcher<MyFantasyTeam>(url);
+        setSelectedTeam(teamData);
+        setTeamViewDialogOpen(true);
+      } catch (error) {
+        console.error("Failed to fetch team details:", error);
+      }
+    },
+    [seasonId]
+  );
+
+  const selectedLeague = useMemo(() => {
+    return seasonLeagues?.find(
+      (l: { id: number }) => l.id === effectiveSelectedLeagueId
+    );
+  }, [seasonLeagues, effectiveSelectedLeagueId]);
 
   if (isLoading) {
     return (
       <>
         <AutoBreadcrumbs />
         <div className="fantasy-content-scale">
-          <div className="container mx-auto py-8">
+          <div className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Fantasy League Leaderboard</CardTitle>
-                <CardDescription>Loading...</CardDescription>
+                <CardTitle className="text-3xl font-bold">
+                  Fantasy League Leaderboard
+                </CardTitle>
+                <CardDescription>
+                  Top 50 fantasy teams ranked by total points
+                </CardDescription>
               </CardHeader>
+              <CardContent>
+                <TableSkeleton rows={10} columns={6} showHeader={false} />
+              </CardContent>
             </Card>
           </div>
         </div>
@@ -190,7 +295,7 @@ export default function FantasyLeaderboardPage() {
       <>
         <AutoBreadcrumbs />
         <div className="fantasy-content-scale">
-          <div className="container mx-auto py-8">
+          <div className="py-8">
             <Card>
               <CardHeader>
                 <CardTitle>Fantasy League Leaderboard</CardTitle>
@@ -210,7 +315,7 @@ export default function FantasyLeaderboardPage() {
       <>
         <AutoBreadcrumbs />
         <div className="fantasy-content-scale">
-          <div className="container mx-auto py-8">
+          <div className="py-8">
             <Card>
               <CardHeader>
                 <CardTitle>Fantasy League Leaderboard</CardTitle>
@@ -226,15 +331,11 @@ export default function FantasyLeaderboardPage() {
     );
   }
 
-  const selectedLeague = seasonLeagues?.find(
-    (l: { id: number }) => l.id === selectedLeagueId
-  );
-
   return (
     <>
       <AutoBreadcrumbs />
       <div className="fantasy-content-scale">
-        <div className="container mx-auto py-8 space-y-6">
+        <div className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle className="text-3xl font-bold">
@@ -244,7 +345,7 @@ export default function FantasyLeaderboardPage() {
                 Top 50 fantasy teams ranked by total points
               </CardDescription>
               <div className="mt-2 text-sm text-muted-foreground">
-                💡 Click on any team row to view their full roster and details
+                Click on any team row to view their full roster and details
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -267,44 +368,32 @@ export default function FantasyLeaderboardPage() {
                     seasonLeagues.length > 0 && (
                       <div className="flex items-center gap-2">
                         <label className="text-sm font-medium">Division:</label>
-                        <Select
-                          value={selectedLeagueId.toString()}
+                        <LeagueSelector
+                          value={effectiveSelectedLeagueId.toString()}
                           onValueChange={(v) => {
-                            setSelectedLeagueId(parseInt(v));
+                            setUserSelectedLeagueId(parseInt(v));
                             setHasUserSelectedLeague(true);
                           }}
-                        >
-                          <SelectTrigger className="w-[200px]">
-                            <SelectValue placeholder="Select division" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {seasonLeagues.map(
-                              (league: { id: number; name: string }) => (
-                                <SelectItem
-                                  key={league.id}
-                                  value={league.id.toString()}
-                                >
-                                  {league.name}
-                                  {myTeam &&
-                                  league.id ===
-                                    (myTeam as { league_id?: number })
-                                      ?.league_id
-                                    ? " (Your Division)"
-                                    : ""}
-                                </SelectItem>
-                              )
-                            )}
-                          </SelectContent>
-                        </Select>
+                          placeholder="Select division"
+                          triggerClassName="w-[200px]"
+                          leagues={seasonLeagues.map((l) => ({
+                            id: String(l.id),
+                            name:
+                              myTeam &&
+                              l.id ===
+                                (myTeam as { league_id?: number })?.league_id
+                                ? `${l.name} (Your Division)`
+                                : l.name,
+                            tier: l.tier
+                          }))}
+                        />
                       </div>
                     )}
                 </div>
 
                 <TabsContent value="division" className="mt-6">
                   {divisionLoading ? (
-                    <p className="text-center text-muted-foreground py-8">
-                      Loading...
-                    </p>
+                    <TableSkeleton rows={10} columns={4} showHeader={false} />
                   ) : divisionError ? (
                     <p className="text-center text-red-500 py-8">
                       Error loading leaderboard
@@ -342,51 +431,12 @@ export default function FantasyLeaderboardPage() {
                         </TableHeader>
                         <TableBody>
                           {divisionData.leaderboard.map((entry) => (
-                            <TableRow
+                            <LeaderboardTableRow
                               key={entry.fantasy_team_id}
-                              className={cn(
-                                entry.is_current_user &&
-                                  "bg-blue-50 dark:bg-blue-950 font-semibold",
-                                "cursor-pointer hover:bg-neutral-800/50 transition-colors"
-                              )}
-                              onClick={() => handleViewTeam(entry)}
-                            >
-                              <TableCell className="font-medium">
-                                <div className="flex items-center gap-2">
-                                  {getRankIcon(entry.rank)}
-                                  <span
-                                    className={cn(
-                                      entry.rank <= 3 && "font-bold text-lg"
-                                    )}
-                                  >
-                                    #{entry.rank}
-                                  </span>
-                                </div>
-                              </TableCell>
-                              <TableCell>
-                                <div className="flex items-center gap-2">
-                                  {entry.owner_name}
-                                  {entry.is_current_user && (
-                                    <Badge
-                                      variant="outline"
-                                      className="text-xs"
-                                    >
-                                      You
-                                    </Badge>
-                                  )}
-                                </div>
-                              </TableCell>
-                              <TableCell>
-                                {entry.team_name || (
-                                  <span className="text-muted-foreground italic">
-                                    Unnamed Team
-                                  </span>
-                                )}
-                              </TableCell>
-                              <TableCell className="text-right font-mono">
-                                {entry.total_points.toLocaleString()}
-                              </TableCell>
-                            </TableRow>
+                              entry={entry}
+                              getRankIcon={getRankIcon}
+                              onViewTeam={handleViewTeam}
+                            />
                           ))}
                         </TableBody>
                       </Table>
@@ -396,9 +446,7 @@ export default function FantasyLeaderboardPage() {
 
                 <TabsContent value="overall" className="mt-6">
                   {overallLoading ? (
-                    <p className="text-center text-muted-foreground py-8">
-                      Loading...
-                    </p>
+                    <TableSkeleton rows={10} columns={5} showHeader={false} />
                   ) : overallError ? (
                     <p className="text-center text-red-500 py-8">
                       Error loading overall leaderboard
@@ -437,56 +485,12 @@ export default function FantasyLeaderboardPage() {
                         </TableHeader>
                         <TableBody>
                           {overallData.leaderboard.map((entry) => (
-                            <TableRow
+                            <OverallLeaderboardTableRow
                               key={entry.fantasy_team_id}
-                              className={cn(
-                                entry.is_current_user &&
-                                  "bg-blue-50 dark:bg-blue-950 font-semibold",
-                                "cursor-pointer hover:bg-neutral-800/50 transition-colors"
-                              )}
-                              onClick={() => handleViewTeam(entry)}
-                            >
-                              <TableCell className="font-medium">
-                                <div className="flex items-center gap-2">
-                                  {getRankIcon(entry.rank)}
-                                  <span
-                                    className={cn(
-                                      entry.rank <= 3 && "font-bold text-lg"
-                                    )}
-                                  >
-                                    #{entry.rank}
-                                  </span>
-                                </div>
-                              </TableCell>
-                              <TableCell>
-                                <div className="flex items-center gap-2">
-                                  {entry.owner_name}
-                                  {entry.is_current_user && (
-                                    <Badge
-                                      variant="outline"
-                                      className="text-xs"
-                                    >
-                                      You
-                                    </Badge>
-                                  )}
-                                </div>
-                              </TableCell>
-                              <TableCell>
-                                {entry.team_name || (
-                                  <span className="text-muted-foreground italic">
-                                    Unnamed Team
-                                  </span>
-                                )}
-                              </TableCell>
-                              <TableCell>
-                                <Badge variant="secondary" className="text-xs">
-                                  {entry.league_name || "Unknown"}
-                                </Badge>
-                              </TableCell>
-                              <TableCell className="text-right font-mono">
-                                {entry.total_points.toLocaleString()}
-                              </TableCell>
-                            </TableRow>
+                              entry={entry}
+                              getRankIcon={getRankIcon}
+                              onViewTeam={handleViewTeam}
+                            />
                           ))}
                         </TableBody>
                       </Table>

@@ -12,6 +12,7 @@ import { TanStackTableWrapper } from "../tables/TanStackTableWrapper";
 import { usePlayerMatchHistory } from "@/hooks/data/filtered/usePlayerMatchHistory";
 
 import { useFilters } from "@/context/FilterContext";
+import { TableSkeleton } from "@/components/loading";
 import {
   getSortedRowModel,
   getPaginationRowModel,
@@ -22,6 +23,7 @@ import {
   type Cell
 } from "@tanstack/react-table";
 import type { MatchHistoryResult } from "@eggosystem/types";
+import { MatchRowScoreComponents } from "../shared/MatchRowScoreComponents";
 
 interface CustomColumnMeta {
   responsive?: string;
@@ -121,19 +123,21 @@ export const PlayerMatchHistoryTable = ({ steamId }: PlayerDetailsProps) => {
           const teamWon = row.original.score > row.original.opponent_score;
           return (
             <>
-              <span className={teamWon ? "text-green-500" : "text-red-500"}>
-                {row.original.score}
-              </span>
+              <MatchRowScoreComponents
+                score={row.original.score}
+                teamWon={teamWon}
+              />
               -
-              <span className={!teamWon ? "text-green-500" : "text-red-500"}>
-                {row.original.opponent_score}
-              </span>
+              <MatchRowScoreComponents
+                score={row.original.opponent_score}
+                teamWon={!teamWon}
+              />
             </>
           );
         },
         meta: {
           responsive: "hidden sm:table-cell",
-          tooltip: "Match Score (Opponent score on right)",
+          tooltip: "Match score",
           sortable: true
         }
       },
@@ -303,13 +307,12 @@ export const PlayerMatchHistoryTable = ({ steamId }: PlayerDetailsProps) => {
           <span>{row.opponent_name}</span>
           {/* Score on mobile - hidden on desktop */}
           <div className="sm:hidden text-xs mt-1">
-            <span className={teamWon ? "text-green-500" : "text-red-500"}>
-              {row.score}
-            </span>
+            <MatchRowScoreComponents score={row.score} teamWon={teamWon} />
             -
-            <span className={!teamWon ? "text-green-500" : "text-red-500"}>
-              {row.opponent_score}
-            </span>
+            <MatchRowScoreComponents
+              score={row.opponent_score}
+              teamWon={!teamWon}
+            />
           </div>
         </>
       );
@@ -332,10 +335,7 @@ export const PlayerMatchHistoryTable = ({ steamId }: PlayerDetailsProps) => {
   if (isLoading) {
     return (
       <PlayerMatchHistoryTableWrapper>
-        <div className="text-center">
-          <div className="h-6 w-40 bg-kanaliiga-light-brown/30 animate-pulse rounded mx-auto mb-3" />
-          <div className="h-4 w-60 bg-kanaliiga-light-brown/30 animate-pulse rounded mx-auto" />
-        </div>
+        <TableSkeleton rows={10} columns={8} />
       </PlayerMatchHistoryTableWrapper>
     );
   }
@@ -343,7 +343,7 @@ export const PlayerMatchHistoryTable = ({ steamId }: PlayerDetailsProps) => {
   if (matchHistory?.length === 0) {
     return (
       <PlayerMatchHistoryTableWrapper>
-        <div className="text-center text-muted-foreground">
+        <div className="text-center text-muted-foreground py-4">
           No match history available for this player with the current filters.
         </div>
       </PlayerMatchHistoryTableWrapper>

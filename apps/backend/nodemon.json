@@ -13,7 +13,7 @@
     "OTEL_METRICS_EXPORTER": "otlp",
     "OTEL_LOGS_EXPORTER": "otlp",
     "OTEL_RESOURCE_ATTRIBUTES": "deployment.environment=development,service.namespace=eggosystem,service.version=1.0.0,service.instance.id=backend-dev",
-    "NODE_OPTIONS": "--require @opentelemetry/auto-instrumentations-node/register"
+    "NODE_OPTIONS": "--trace-warnings --require @opentelemetry/auto-instrumentations-node/register"
   },
   "ext": "js,json,ts"
 }

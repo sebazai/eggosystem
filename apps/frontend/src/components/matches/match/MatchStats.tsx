@@ -12,6 +12,8 @@ import { useMatchPlayerStats } from "@/hooks/data/useMatchPlayerStats";
 import { useMatchTopPlayers } from "@/hooks/data/useMatchTopPlayers";
 import _ from "lodash";
 import { MatchMapsHeader } from "./stats/MatchMapsHeader";
+import { PlayerStatisticsSkeleton } from "@/components/loading";
+import { TopPlayersSkeleton } from "@/components/loading";
 
 interface MatchStatsProps {
   matchId: number;
@@ -43,8 +45,12 @@ export const MatchStats = ({
     router.push(newUrl, { scroll: false });
   };
 
-  const { playerStats } = useMatchPlayerStats(matchId, selectedStat);
-  const { topPlayers } = useMatchTopPlayers(matchId);
+  const { playerStats, isLoading: isLoadingPlayerStats } = useMatchPlayerStats(
+    matchId,
+    selectedStat
+  );
+  const { topPlayers, isLoading: isLoadingTopPlayers } =
+    useMatchTopPlayers(matchId);
 
   const baseFilters = {
     seasons: matchInfo.season_id.toString(),
@@ -65,10 +71,15 @@ export const MatchStats = ({
         handleMapSelect={handleMapSelect}
       />
 
-      <TeamStatistics matchId={matchId} teamStatsFilters={baseFilters} />
+      <TeamStatistics
+        matchId={matchId}
+        teamStatsFilters={baseFilters}
+        matchTeams={matchInfo.teams}
+      />
 
       {/* Player Stats Grid */}
-      {playerStats && playerStats.length > 0 && (
+      {isLoadingPlayerStats && <PlayerStatisticsSkeleton />}
+      {!isLoadingPlayerStats && playerStats && playerStats.length > 0 && (
         <PlayerStatisticsForTeam
           playerStats={playerStats}
           teams={matchInfo.teams}
@@ -78,7 +89,8 @@ export const MatchStats = ({
         />
       )}
       {/* Top Players */}
-      {topPlayers && !_.isEmpty(topPlayers) && (
+      {isLoadingTopPlayers && <TopPlayersSkeleton />}
+      {!isLoadingTopPlayers && topPlayers && !_.isEmpty(topPlayers) && (
         <TopPlayers
           topPlayers={topPlayers}
           teams={matchInfo.teams}

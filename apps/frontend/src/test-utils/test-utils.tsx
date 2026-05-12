@@ -31,7 +31,7 @@ let mockAuthState = {
  * Sets the mock auth state for tests
  * Call this in your tests to control what useAuth returns
  */
-export const setMockAuthState = (state: Partial<typeof mockAuthState>) => {
+const setMockAuthState = (state: Partial<typeof mockAuthState>) => {
   mockAuthState = { ...mockAuthState, ...state };
 };
 
@@ -169,14 +169,6 @@ export const clearAllMocks = () => {
   }
 };
 
-// Export common mock patterns
-export const MOCK_RESPONSES = {
-  EMPTY_ARRAY: [],
-  EMPTY_OBJECT: {},
-  SUCCESS_MESSAGE: { message: "Success" },
-  ERROR_RESPONSE: { error: "Something went wrong" }
-};
-
 // =============================================================================
 // AUTH CONTEXT TESTING UTILITIES
 // =============================================================================
@@ -196,18 +188,6 @@ export const createMockUser = (overrides = {}): UserFullPayload => ({
   discordLinked: false,
   ...overrides
 });
-
-/**
- * Mock WithRoleProtection component for testing
- * Bypasses role checking for easier testing of protected components
- */
-export const MockWithRoleProtection: React.FC<{
-  children: React.ReactNode;
-  allowedRoles?: string[];
-  requireAuth?: boolean;
-}> = ({ children }) => {
-  return <>{children}</>;
-};
 
 /**
  * Comprehensive test wrapper that includes SWR and sets up auth mocking
@@ -254,42 +234,4 @@ export function renderWithAuthAndSWR(
   );
 
   return render(ui, { wrapper: Wrapper, ...renderOptions });
-}
-
-/**
- * Simple wrapper for components that need auth but not SWR
- *
- * IMPORTANT: Before using this, you must mock useAuth in your test file.
- * See .cursor/rules/testing.mdc for complete setup instructions.
- *
- * @param ui - React component to render
- * @param options - Render options including user and loading state
- *
- * @example
- * ```typescript
- * renderWithAuth(<MyComponent />, {
- *   user: createMockUser({ roles: ['admin'] })
- * });
- * ```
- */
-export function renderWithAuth(
-  ui: React.ReactElement,
-  {
-    user = createMockUser(),
-    isAuthLoading = false,
-    ...renderOptions
-  }: {
-    user?: UserFullPayload | null;
-    isAuthLoading?: boolean;
-  } & RenderOptions = {}
-): RenderResult {
-  // Set the mock auth state before rendering
-  setMockAuthState({
-    user,
-    loading: isAuthLoading,
-    checkAuth: jest.fn(),
-    logout: jest.fn()
-  });
-
-  return render(ui, renderOptions);
 }

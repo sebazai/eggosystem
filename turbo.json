@@ -57,7 +57,9 @@
         "IMAGE_SERVICE_URL",
         "IMAGE_SERVICE_API_KEY",
         "IMAGE_SERVICE_BASE_URL",
-        "EMAIL_SEND_DELAY_MS"
+        "EMAIL_SEND_DELAY_MS",
+        "DB_CONNECTION_LIMIT",
+        "DISCORD_KANABOT_BOT_TOKEN"
       ],
       "dependsOn": ["^build"],
       "inputs": [
@@ -77,12 +79,11 @@
       "outputs": [".next/**", "!.next/cache/**", "dist/**", "dist/**/*.d.ts"]
     },
     "@eggosystem/types#build": {
-      "outputs": [
-        "dist/**",
-        "dist/**/*.js",
-        "dist/**/*.d.ts",
-        "node_modules/**"
-      ]
+      "outputs": ["dist/**", "dist/**/*.js", "dist/**/*.d.ts"]
+    },
+    "@eggosystem/shared-msw#build": {
+      "dependsOn": ["@eggosystem/types#build"],
+      "outputs": ["dist/**", "dist/**/*.js", "dist/**/*.d.ts"]
     },
     "backend#build": {
       "dependsOn": ["@eggosystem/types#build", "@eggosystem/shared-msw#build"],
@@ -98,6 +99,22 @@
       ],
       "outputs": ["dist/**", "node_modules/**"]
     },
+    "frontend#build": {
+      "dependsOn": ["@eggosystem/types#build", "@eggosystem/viewer#build"],
+      "inputs": [
+        "src/**/*.{ts,tsx,js,jsx}",
+        "!src/**/*.test.{ts,tsx,js,jsx}",
+        "!src/**/*.spec.{ts,tsx,js,jsx}",
+        "!src/__tests__/**/*",
+        "!src/__mocks__/**/*",
+        "public/**",
+        "package.json",
+        "tsconfig*.json",
+        "next.config.*",
+        ".env*"
+      ],
+      "outputs": [".next/**", "!.next/cache/**", "dist/**"]
+    },
     "lint": {
       "dependsOn": ["^lint"]
     },
@@ -105,11 +122,7 @@
       "dependsOn": ["^format:check"]
     },
     "typecheck": {
-      "dependsOn": [
-        "^typecheck",
-        "@eggosystem/types#build",
-        "@eggosystem/shared-msw#build"
-      ]
+      "dependsOn": ["^build", "^typecheck"]
     },
     "dev": {
       "dependsOn": ["@eggosystem/types#build", "@eggosystem/shared-msw#build"],
@@ -122,6 +135,9 @@
       "persistent": true
     },
     "shadcn:add": {
+      "cache": false
+    },
+    "clean": {
       "cache": false
     },
     "migrate": {
@@ -138,6 +154,10 @@
       "cache": false
     },
     "migrate:make": {
+      "cache": false
+    },
+    "migrate:status": {
+      "env": ["NODE_ENV", "DB_HOST", "DB_USER", "DB_PASSWORD", "DB_NAME"],
       "cache": false
     },
     "seed": {

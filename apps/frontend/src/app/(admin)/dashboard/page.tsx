@@ -1,25 +1,43 @@
 import { KanaEloCalculateButton } from "@/components/dashboard/KanaEloCalculateButton";
 import { FaceitSyncSection } from "./FaceitSyncSection";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { StatCard } from "@/components/kanaliiga";
 
 export default async function Page() {
   return (
-    <div className="flex flex-1 flex-col gap-4 p-4">
-      <div className="grid auto-rows-min gap-4 md:grid-cols-3">
-        <div className="rounded-xl bg-muted/50 p-4">
-          <h2 className="mb-4 text-lg font-semibold">FACEIT Integration</h2>
-          <FaceitSyncSection />
-        </div>
-        <div className="rounded-xl bg-muted/50 p-4">
-          <h2 className="mb-4 text-lg font-semibold">KanaElo Calculation</h2>
-          <p className="mb-4 text-sm text-muted-foreground">
-            Calculate kana_elo for all players using CSRankker API and update
-            SteamPlayerKanaElo table
-          </p>
-          <KanaEloCalculateButton />
-        </div>
-        <div className="aspect-video rounded-xl bg-muted/50" />
+    <div className="flex flex-1 flex-col gap-6 p-4">
+      {/* KPI row */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4">
+        <StatCard value="—" label="Active Seasons" />
+        <StatCard value="—" label="Registered Teams" />
+        <StatCard value="—" label="Total Players" />
+        <StatCard value="—" label="Pending Applications" />
       </div>
-      <div className="min-h-[100vh] flex-1 rounded-xl bg-muted/50 md:min-h-min" />
+
+      {/* Tool panels */}
+      <div className="grid auto-rows-min gap-4 md:grid-cols-3">
+        <Card className="shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-base">FACEIT Integration</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <FaceitSyncSection />
+          </CardContent>
+        </Card>
+        <Card className="shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-base">KanaElo Calculation</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="mb-4 text-sm text-muted-foreground">
+              Calculate kana_elo for all players using CSRankker API and update
+              SteamPlayerKanaElo table
+            </p>
+            <KanaEloCalculateButton />
+          </CardContent>
+        </Card>
+        <Card className="shadow-sm aspect-video" />
+      </div>
     </div>
   );
 }

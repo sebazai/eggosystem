@@ -2,6 +2,7 @@
 import { RequiresSteamLogin } from "@/components/layout/RequiresSteamLogin";
 import { ContentContainer } from "@/components/layout/ContentContainer";
 import { Button } from "@/components/ui/button";
+import { CardSkeleton } from "@/components/loading";
 import { Card, CardContent } from "@/components/ui/card";
 import Link from "next/link";
 import { FormControl, FormField, FormItem } from "@/components/ui/form";
@@ -15,6 +16,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TabOrganization } from "./TabOrganization";
 import { TabPlayers } from "./TabPlayers";
 import { TabTeam } from "./TabTeam";
+import { playerMeetsSeasonRankAndHoursRequirements } from "@eggosystem/types";
 import { ErrorMessage } from "@hookform/error-message";
 import { CheckCheck } from "lucide-react";
 import {
@@ -106,7 +108,6 @@ export const SignupForm = ({
   const baseSchema = baseSignupFormSchema({ platform });
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [editUrl, setEditUrl] = useState<string>("");
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [fetchingExternalData, setFetchingExternalData] = useState(false);
   const [validExternalTeamId, setValidExternalTeamId] = useState(
     platform !== SeasonPlatform.Kanaliiga ? null : true
@@ -144,7 +145,7 @@ export const SignupForm = ({
   const watchNewTeam = useWatch({ control, name: "newTeam" });
   const watchPlayers = useWatch({ control, name: "players" });
 
-  const { seasonDetails, isLoading, isError, isValidating } =
+  const { seasonDetails, isLoading, isError } =
     useSeasonDetails(effectiveSeasonId);
 
   const validOrgId = useMemo(
@@ -255,17 +256,18 @@ export const SignupForm = ({
     validTeamExternalIdInForm.success &&
     !!validExternalTeamId;
 
+  // validPlayerSelection is the actual submit-blocking gate (combined into
+  // canSubmit below). It must mirror TabPlayers.playerHasErrors so that
+  // disabled season requirement flags do not falsely block submission
+  // (S1-AC-1: form is submittable when an optional check is turned off).
   const validPlayerSelection =
     validPlayers.success &&
     watchPlayers.every(
       (p) =>
         p.hasValidData &&
-        p.hasValidWorkEmail &&
-        p.isEmailVerified &&
-        p.rank !== -1 &&
-        (p.externalRank !== -1 ||
-          seasonDetails?.platform === SeasonPlatform.Kanaliiga) &&
-        p.hours !== -1
+        p.hasValidWorkEmail === true &&
+        p.isEmailVerified === true &&
+        playerMeetsSeasonRankAndHoursRequirements(seasonDetails, p)
     );
 
   // Real-time captain/co-captain validation
@@ -294,7 +296,6 @@ export const SignupForm = ({
 
   const onSubmit = async (data: SignupFormValues) => {
     setSuccessMessage(null);
-    setErrorMessage(null);
     try {
       // Convert all Steam IDs to SteamID64 format before submitting
       const convertedData = await convertSteamIdsToSteamId64(data);
@@ -344,10 +345,10 @@ export const SignupForm = ({
       });
     } catch (error: unknown) {
       if (error instanceof ApiError) {
-        setErrorMessage(error.message);
+        toast.error(error.message);
         return;
       }
-      setErrorMessage("Something went wrong... Please contact organizer.");
+      toast.error("Something went wrong. Contact the organizer.");
     }
   };
 
@@ -444,8 +445,16 @@ export const SignupForm = ({
     return <RequiresSteamLogin />;
   }
 
-  if (isLoading || isValidating || loadingUser) {
-    return <ContentContainer classNames="w-full">Loading...</ContentContainer>;
+  // Initial load only: SWR sets isValidating during background revalidation; the
+  // old hook always returned false for validating—gating on it hid the form (E2E flakiness).
+  if (isLoading || loadingUser) {
+    return (
+      <div className="w-full space-y-4">
+        <CardSkeleton showHeader={true} contentLines={4} />
+        <CardSkeleton showHeader={true} contentLines={6} />
+        <CardSkeleton showHeader={true} contentLines={5} />
+      </div>
+    );
   }
 
   if (isError || !seasonDetails) {
@@ -588,6 +597,7 @@ export const SignupForm = ({
                 teamId={watchTeamId}
                 isEditMode={isEditMode}
                 submitInitiated={isSubmittingOrHasSubmitted}
+                seasonDetails={seasonDetails}
               />
             </Tabs>
 
@@ -620,19 +630,15 @@ export const SignupForm = ({
                 )}
               </div>
             )}
-            {errorMessage && (
-              <div className="text-red-500 font-semibold">{errorMessage}</div>
-            )}
-
             <Button
               type="submit"
-              variant="outline"
-              className="w-full"
+              className="w-full md:w-auto"
               disabled={isSubmittingOrHasSubmitted || !canSubmit}
+              data-testid="signup-submit-button"
             >
               {form.formState.isSubmitting
-                ? "Processing submission..."
-                : "Submit"}
+                ? "Processing Submission..."
+                : "Submit Application →"}
             </Button>
 
             <FormField
@@ -653,7 +659,7 @@ export const SignupForm = ({
                       data-testid="terms-conditions-checkbox"
                     />
                   </FormControl>
-                  <RequiredFormLabel className="flex flex-wrap items-center gap-2">
+                  <RequiredFormLabel className="flex flex-wrap items-center gap-2 normal-case font-body font-normal text-foreground">
                     I have read and understood the
                     <Link
                       className="text-kanaliiga-orange hover:underline whitespace-nowrap"

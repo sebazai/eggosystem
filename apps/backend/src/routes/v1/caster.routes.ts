@@ -2,6 +2,7 @@ import { Router } from "express";
 import { validateNumericParams } from "../../middlewares/validate-numeric-params";
 import {
   getLeaguesBySeasonController,
+  getSeasonActiveMapPoolController,
   getMatchGamesByTeamController,
   getTeamsByLeagueController,
   getTeamKeyPlayersController,
@@ -11,8 +12,9 @@ import {
 import { getPlayerBySteamIdController } from "../../controllers/players.controllers";
 import parseQueryFilterParams from "../../middlewares/parse-query-filter-params.middleware";
 import { getFilteredTeamIdDetailsController } from "../../controllers/teams.controllers";
-import { getTeamEnhancedMapStatsController } from "../../controllers/team-map-stats.controllers";
+import { getTeamEnhancedMapStatsController } from "../../controllers/team-stats.controllers";
 import { getMatchesBySeasonIdController } from "../../controllers/matches.controllers";
+import { getPlayoffBracketController } from "../../controllers/playoff.controllers";
 
 const router = Router();
 
@@ -20,6 +22,16 @@ router.get(
   "/seasons/:season_id/leagues",
   validateNumericParams(),
   getLeaguesBySeasonController
+);
+router.get(
+  "/seasons/:season_id/map-pool",
+  validateNumericParams(),
+  getSeasonActiveMapPoolController
+);
+router.get(
+  "/seasons/:season_id/leagues/:league_id/playoff/bracket",
+  validateNumericParams(["season_id", "league_id"]),
+  getPlayoffBracketController
 );
 router.get(
   "/seasons/:season_id/league/:league_id/teams",

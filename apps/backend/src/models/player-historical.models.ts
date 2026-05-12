@@ -45,7 +45,7 @@ export const getPlayerHistoricalData = async (
     SELECT 
       m.id as match_id,
       mg.id as match_game_id,
-      DATE(m.match_date) as match_date,
+      DATE(m.start_timestamp) as match_date,
       ps.kana_rating,
       CASE 
         WHEN ps.deaths = 0 THEN ps.kills 
@@ -64,7 +64,7 @@ export const getPlayerHistoricalData = async (
     INNER JOIN Matches m ON m.id = mg.match_id
     WHERE ps.steam_id = ?
       ${periodClause}
-    ORDER BY m.match_date DESC
+    ORDER BY m.start_timestamp DESC
     ${limitClause}
   `;
 

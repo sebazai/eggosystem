@@ -4,6 +4,7 @@
   "service": "devcontainer",
   "workspaceFolder": "/workspace",
   "shutdownAction": "stopCompose",
+  "remoteUser": "node",
   "customizations": {
     // Configure properties specific to VS Code.
     "vscode": {
@@ -72,7 +73,7 @@
   "hostRequirements": {
     "cli": ["xhost"]
   },
-  "postStartCommand": "[ \"$(uname)\" = \"Darwin\" ] && (xhost + 127.0.0.1 || true) || true",
+  "postStartCommand": "/workspace/scripts/setup-devcontainer-post-start.sh",
   "runServices": [
     "devcontainer",
     "eggo-devdb",

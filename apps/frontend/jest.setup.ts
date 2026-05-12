@@ -1,6 +1,10 @@
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 require("@testing-library/jest-dom");
 
+// Set default environment variables for tests to match development environment
+process.env.NEXT_PUBLIC_IMAGE_SERVICE_URL =
+  process.env.NEXT_PUBLIC_IMAGE_SERVICE_URL ?? "https://img.kanaliiga.fi";
+
 // Suppress React act() warnings in tests
 const originalError = console.error;
 beforeAll(() => {

@@ -25,7 +25,17 @@ import {
   ValidWorkEmail3SteamId,
   ValidWorkEmail4SteamId,
   ValidWorkEmail5SteamId,
-  EligiblePlayerForValidationSteamId
+  EligiblePlayerForValidationSteamId,
+  DraftReturnUserSteamId,
+  ApprovalOnlySubmitSteamId,
+  ManualApprovalTargetSteamId,
+  ManualRankTargetSteamId,
+  AddTeamSignupSteamId1,
+  AddTeamSignupSteamId2,
+  AddTeamSignupSteamId3,
+  AddTeamSignupSteamId4,
+  AddTeamSignupSteamId5,
+  ConfigurableReqsExternalRankMissingSteamId
 } from "@eggosystem/types";
 
 const createFaceitRank = (
@@ -163,6 +173,44 @@ export const faceitPlayerGameRankHandlers = [
     }
     if (gamePlayerId === EligiblePlayerForValidationSteamId) {
       return HttpResponse.json(createFaceitRank(gamePlayerId, "cs2", 1800, 10));
+    }
+
+    // E2E critical-workflow IDs (S2, S3, A1, A2)
+    if (gamePlayerId === DraftReturnUserSteamId) {
+      return HttpResponse.json(createFaceitRank(gamePlayerId, "cs2", 1500, 10));
+    }
+    if (gamePlayerId === ApprovalOnlySubmitSteamId) {
+      return HttpResponse.json(createFaceitRank(gamePlayerId, "cs2", 1500, 10));
+    }
+    if (gamePlayerId === ManualApprovalTargetSteamId) {
+      return HttpResponse.json(createFaceitRank(gamePlayerId, "cs2", 1500, 10));
+    }
+    if (gamePlayerId === ManualRankTargetSteamId) {
+      return HttpResponse.json(createFaceitRank(gamePlayerId, "cs2", 1500, 10));
+    }
+    // S1-AC-4 "Configurable signup requirements" – external rank missing.
+    // Returning skill_level=0 mirrors a player who has signed up to FACEIT
+    // but has not been levelled yet; the backend forwards faceit_level=0 to
+    // the frontend and the form records externalRank=0.
+    if (gamePlayerId === ConfigurableReqsExternalRankMissingSteamId) {
+      return HttpResponse.json(createFaceitRank(gamePlayerId, "cs2", 0, 0));
+    }
+
+    // A5 add-team signup only
+    if (gamePlayerId === AddTeamSignupSteamId1) {
+      return HttpResponse.json(createFaceitRank(gamePlayerId, "cs2", 1500, 10));
+    }
+    if (gamePlayerId === AddTeamSignupSteamId2) {
+      return HttpResponse.json(createFaceitRank(gamePlayerId, "cs2", 1500, 10));
+    }
+    if (gamePlayerId === AddTeamSignupSteamId3) {
+      return HttpResponse.json(createFaceitRank(gamePlayerId, "cs2", 1500, 10));
+    }
+    if (gamePlayerId === AddTeamSignupSteamId4) {
+      return HttpResponse.json(createFaceitRank(gamePlayerId, "cs2", 1500, 10));
+    }
+    if (gamePlayerId === AddTeamSignupSteamId5) {
+      return HttpResponse.json(createFaceitRank(gamePlayerId, "cs2", 1500, 10));
     }
 
     // Test Steam ID for partial data bug test (AppIdRank in DB, hours and FaceIT rank from API)

@@ -25,14 +25,14 @@ import {
   getFilteredAllPlayersStatsController
 } from "../../controllers/players.controllers";
 import { getFilteredMatchesController } from "../../controllers/matches.controllers";
-import { getTeamPistolWinsController } from "../../controllers/pistol-wins.controllers";
-import { getTeamPlantStatsController } from "../../controllers/plant-stats.controllers";
-import { getTeamRetakeStatsController } from "../../controllers/retake-stats.controllers";
+import { getTeamMapVetoStatsController } from "../../controllers/team-map-veto-stats.controllers";
 import {
   getTeamEnhancedMapStatsController,
+  getTeamPistolWinStatsController,
+  getTeamPlantStatsController,
+  getTeamRetakeStatsController,
   getTeamTradeMapStatsController
-} from "../../controllers/team-map-stats.controllers";
-import { getTeamMapVetoStatsController } from "../../controllers/team-map-veto-stats.controllers";
+} from "../../controllers/team-stats.controllers";
 
 const router = Router();
 
@@ -357,23 +357,23 @@ router.get(
 );
 
 router.get(
-  "/stats/teams/:teamId/pistol-wins",
+  "/teams/:team_id/stats/pistol-wins",
   validateNumericParams(),
-  getTeamPistolWinsController
+  getTeamPistolWinStatsController
 );
 router.get(
-  "/stats/teams/:teamId/plant-stats",
+  "/teams/:team_id/stats/plants",
   validateNumericParams(),
   getTeamPlantStatsController
 );
 router.get(
-  "/stats/teams/:teamId/retake-stats",
+  "/teams/:team_id/stats/retakes",
   validateNumericParams(),
   getTeamRetakeStatsController
 );
 router.get(
-  "/stats/teams/:team_id/trade-map-stats",
-  validateNumericParams(["team_id"]),
+  "/teams/:team_id/stats/trade-maps",
+  validateNumericParams(),
   getTeamTradeMapStatsController
 );
 

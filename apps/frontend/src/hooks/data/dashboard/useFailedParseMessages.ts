@@ -5,7 +5,9 @@ import useSWR from "swr";
 import type {
   FailedParseMessagesResponse,
   ReparseRequest,
-  ReparseResponse
+  ReparseResponse,
+  Requeue2ddataRequest,
+  Requeue2ddataResponse
 } from "@eggosystem/types";
 import { clientApiFetch } from "@/lib/apiClient";
 
@@ -24,7 +26,7 @@ export const useFailedParseMessages = (
   filters: FailedParseMessagesResponse["filters"] | undefined;
   isLoading: boolean;
   error: unknown;
-  mutate: () => void;
+  mutate: () => Promise<FailedParseMessagesResponse | undefined>;
 } => {
   // Memoize the endpoint to prevent unnecessary re-renders
   const endpoint = useMemo(() => {
@@ -50,7 +52,8 @@ export const useFailedParseMessages = (
     filters: data?.filters,
     isLoading,
     error,
-    mutate
+    mutate: async () =>
+      (await mutate()) as FailedParseMessagesResponse | undefined
   };
 };
 
@@ -81,6 +84,73 @@ export const useReparseMessages = () => {
 
   return {
     submitReparse,
+    isSubmitting,
+    lastResult
+  };
+};
+
+export const useRequeue2ddataMessages = () => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [lastResult, setLastResult] = useState<Requeue2ddataResponse | null>(
+    null
+  );
+
+  const submitRequeue2ddata = useCallback(
+    async (request: Requeue2ddataRequest): Promise<Requeue2ddataResponse> => {
+      setIsSubmitting(true);
+      try {
+        const result = await clientApiFetch<Requeue2ddataResponse>(
+          "/api/v1/dashboard/demos/failed/parse/requeue-2ddata",
+          {
+            method: "POST",
+            body: JSON.stringify(request)
+          }
+        );
+        setLastResult(result);
+        return result;
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    []
+  );
+
+  return {
+    submitRequeue2ddata,
+    isSubmitting,
+    lastResult
+  };
+};
+
+export const useRequeueAllFailedMessages = () => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [lastResult, setLastResult] = useState<ReparseResponse | null>(null);
+
+  const submitRequeueAll = useCallback(
+    async (request: {
+      queue_name: string;
+      priority?: number;
+    }): Promise<ReparseResponse> => {
+      setIsSubmitting(true);
+      try {
+        const result = await clientApiFetch<ReparseResponse>(
+          "/api/v1/dashboard/demos/failed/parse/requeue-all",
+          {
+            method: "POST",
+            body: JSON.stringify(request)
+          }
+        );
+        setLastResult(result);
+        return result;
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    []
+  );
+
+  return {
+    submitRequeueAll,
     isSubmitting,
     lastResult
   };

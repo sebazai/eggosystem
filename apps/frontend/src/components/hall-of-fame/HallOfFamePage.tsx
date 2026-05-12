@@ -16,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue
 } from "@/components/ui/select";
+import { RowSkeleton } from "@/components/loading";
 import type {
   HallOfFameCategory,
   HallOfFameOrganization,
@@ -347,9 +348,12 @@ export const HallOfFamePage = () => {
 
       <CardContainer classNames="p-2 md:p-4">
         {isLoading ? (
-          <ContentContainer classNames="min-h-[30vh]">
-            Loading...
-          </ContentContainer>
+          <RowSkeleton
+            rows={10}
+            showRank={true}
+            showAvatar={true}
+            showRightContent={true}
+          />
         ) : !data || data.length === 0 ? (
           <ContentContainer classNames="min-h-[30vh]">
             No trophy data available for this category.

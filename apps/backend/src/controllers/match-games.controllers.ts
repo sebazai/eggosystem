@@ -7,6 +7,13 @@ import {
   getGameTopPlayers,
   getGameClip
 } from "../models/match-game.models";
+import {
+  getMatchGameAfterplantAnalysis,
+  getMatchGameOpeningDuels,
+  getMatchGameKillMatrix,
+  getMatchGameTradeStats,
+  getMatchGameInsights
+} from "../models/match-game-analysis.models";
 import { BadRequestError, NotFoundError } from "../utils/errors";
 import { getTeamStats } from "../models/match.models";
 
@@ -17,7 +24,9 @@ export const getGameTeamRoundBreakdownController = async (
   const match_game_id = parseInt(req.params.match_game_id, 10);
   const teamBreakdown = await getGameTeamRoundBreakdown(match_game_id);
   if (teamBreakdown.length !== 2) {
-    throw new Error("Did not find exactly two teams for game round breakdown");
+    throw new Error(
+      `Did not find exactly two teams for game round breakdown: ${match_game_id}`
+    );
   }
   res.json(teamBreakdown);
 };
@@ -68,6 +77,51 @@ export const getGameTopPlayersController = async (
     );
   }
   res.json(topplayers);
+};
+
+export const getMatchGameAfterplantAnalysisController = async (
+  req: RequestWithParams<{ match_game_id: string }>,
+  res: Response
+) => {
+  const match_game_id = parseInt(req.params.match_game_id, 10);
+  const data = await getMatchGameAfterplantAnalysis(match_game_id);
+  res.json(data);
+};
+
+export const getMatchGameKillMatrixController = async (
+  req: RequestWithParams<{ match_game_id: string }>,
+  res: Response
+) => {
+  const match_game_id = parseInt(req.params.match_game_id, 10);
+  const data = await getMatchGameKillMatrix(match_game_id);
+  res.json(data);
+};
+
+export const getMatchGameOpeningDuelsController = async (
+  req: RequestWithParams<{ match_game_id: string }>,
+  res: Response
+) => {
+  const match_game_id = parseInt(req.params.match_game_id, 10);
+  const data = await getMatchGameOpeningDuels(match_game_id);
+  res.json(data);
+};
+
+export const getMatchGameTradeStatsController = async (
+  req: RequestWithParams<{ match_game_id: string }>,
+  res: Response
+) => {
+  const match_game_id = parseInt(req.params.match_game_id, 10);
+  const data = await getMatchGameTradeStats(match_game_id);
+  res.json(data);
+};
+
+export const getMatchGameInsightsController = async (
+  req: RequestWithParams<{ match_game_id: string }>,
+  res: Response
+) => {
+  const match_game_id = parseInt(req.params.match_game_id, 10);
+  const data = await getMatchGameInsights(match_game_id);
+  res.json(data);
 };
 
 export const getGameClipController = async (

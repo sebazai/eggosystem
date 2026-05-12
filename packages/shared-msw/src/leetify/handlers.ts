@@ -16,7 +16,9 @@ import {
   ValidWorkEmail3SteamId,
   ValidWorkEmail4SteamId,
   ValidWorkEmail5SteamId,
-  EligiblePlayerForValidationSteamId
+  EligiblePlayerForValidationSteamId,
+  ManualRankTargetSteamId,
+  ConfigurableReqsInternalRankMissingSteamId
 } from "@eggosystem/types";
 
 const createLeetifyResponse = (
@@ -68,7 +70,17 @@ export const getLeetifyHandlers = [
         return HttpResponse.text("Invalid JSON");
       }
 
-      if (steamId === leetifyNoPremierRankSteamId) {
+      if (
+        steamId === leetifyNoPremierRankSteamId ||
+        steamId === ManualRankTargetSteamId ||
+        // S1-AC-4 "Configurable signup requirements" – internal (premier)
+        // rank missing. Empty games array forces `getCSRank` through every
+        // fallback (no SeasonPlayerRanks row, no Redis cache after reseed,
+        // Leetify empty), so the backend returns no rank and the frontend
+        // records rank=-1 — exactly the precondition for the
+        // premier_rank_required=false test.
+        steamId === ConfigurableReqsInternalRankMissingSteamId
+      ) {
         return HttpResponse.json({
           games: []
         } satisfies LeetifyResponse);
@@ -87,53 +99,41 @@ export const getLeetifyHandlers = [
 
       if (steamId === leetifyMultipleGamesSteamId) {
         const now = new Date();
-        const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
         const multipleGamesResponse = {
           games: [
             createLeetifyResponse(15000, 11, true, now.toISOString()),
-            createLeetifyResponse(17000, 11, true, yesterday.toISOString())
+            createLeetifyResponse(17000, 11, true, now.toISOString())
           ]
         };
         return HttpResponse.json(multipleGamesResponse);
       }
 
-      // Player with AVG premier skill level 22000 within last year.
+      // Player with weighted AVG premier skill level 22000 within last 1.5 years.
+      // Two qualifying games (both 22000) + one outside the boundary (filtered out).
       if (steamId === "11111111111111111") {
-        const oneAndHalfYearAgoAndADayAbove = new Date();
-        oneAndHalfYearAgoAndADayAbove.setFullYear(
-          oneAndHalfYearAgoAndADayAbove.getFullYear() - 1
+        const sixMonthsAgo = new Date();
+        sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+        const oneAndHalfYearAgoAndADayOutside = new Date();
+        oneAndHalfYearAgoAndADayOutside.setFullYear(
+          oneAndHalfYearAgoAndADayOutside.getFullYear() - 1
         );
-        oneAndHalfYearAgoAndADayAbove.setMonth(
-          oneAndHalfYearAgoAndADayAbove.getMonth() - 6
+        oneAndHalfYearAgoAndADayOutside.setMonth(
+          oneAndHalfYearAgoAndADayOutside.getMonth() - 6
         );
-        oneAndHalfYearAgoAndADayAbove.setDate(
-          oneAndHalfYearAgoAndADayAbove.getDate() - 1
-        );
-        const oneAndHalfYearAgoAndADayBelow = new Date();
-        oneAndHalfYearAgoAndADayBelow.setFullYear(
-          oneAndHalfYearAgoAndADayBelow.getFullYear() - 1
-        );
-        oneAndHalfYearAgoAndADayBelow.setMonth(
-          oneAndHalfYearAgoAndADayBelow.getMonth() - 6
-        );
-        oneAndHalfYearAgoAndADayBelow.setDate(
-          oneAndHalfYearAgoAndADayBelow.getDate() + 1
+        oneAndHalfYearAgoAndADayOutside.setDate(
+          oneAndHalfYearAgoAndADayOutside.getDate() - 1
         );
         return HttpResponse.json({
           games: [
-            createLeetifyResponse(23000, 11, true, new Date().toISOString()),
+            createLeetifyResponse(22000, 11, true, new Date().toISOString()),
+            createLeetifyResponse(22000, 11, true, sixMonthsAgo.toISOString()),
             createLeetifyResponse(
-              21000,
+              15000,
               11,
               true,
-              oneAndHalfYearAgoAndADayBelow.toISOString()
-            ),
-            createLeetifyResponse(
-              21000,
-              11,
-              true,
-              oneAndHalfYearAgoAndADayAbove.toISOString()
+              oneAndHalfYearAgoAndADayOutside.toISOString()
             )
           ]
         } satisfies LeetifyResponse);

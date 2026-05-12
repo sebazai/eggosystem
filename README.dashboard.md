@@ -114,12 +114,13 @@ router.use(
 
 ```typescript
 // apps/backend/src/utils/role-permissions.ts
-export const ROLE_HIERARCHY = {
+const ROLE_HIERARCHY = {
   superadmin: 200, // Future implementation - can manage admin roles
   admin: 100, // Full dashboard access
   helpdesk: 50, // Limited dashboard access
   caster: 10, // Casting-related permissions
-  captain: 10 // Team management permissions
+  captain: 10, // Team management permissions
+  "co-captain": 10 // Secondary team management
 } as const;
 ```
 
@@ -136,25 +137,31 @@ export const ROLE_HIERARCHY = {
 
 ### Dashboard Routes and Required Permissions
 
-| Route                        | Required Roles      | Special Permissions | Notes                            |
-| ---------------------------- | ------------------- | ------------------- | -------------------------------- |
-| `/dashboard/`                | `admin`             | `read:dashboard`    | Dashboard root - admin only      |
-| `/dashboard/seasons`         | `admin`, `helpdesk` | -                   | Season management                |
-| `/dashboard/players`         | `admin`, `helpdesk` | -                   | Player validation and management |
-| `/dashboard/teams`           | `admin`, `helpdesk` | -                   | Team management                  |
-| `/dashboard/organizations`   | `admin`, `helpdesk` | -                   | Organization management          |
-| `/dashboard/registration`    | `admin`, `helpdesk` | -                   | Registration management          |
-| `/dashboard/sortter`         | `admin`             | -                   | **Admin only** - team sorting    |
-| `/dashboard/matches`         | `admin`, `helpdesk` | -                   | Match management                 |
-| `/dashboard/role-management` | `admin`, `helpdesk` | -                   | Role and permission management   |
-| `/dashboard/redis`           | `admin`, `helpdesk` | -                   | Redis cache management           |
-| `/dashboard/demos`           | `admin`, `helpdesk` | -                   | Demo file management             |
+| Route                             | Required Roles      | Special Permissions | Notes                                            |
+| --------------------------------- | ------------------- | ------------------- | ------------------------------------------------ |
+| `/dashboard/`                     | `admin`             | `read:dashboard`    | Dashboard root - admin only                      |
+| `/dashboard/seasons`              | `admin`, `helpdesk` | -                   | Season management                                |
+| `/dashboard/players`              | `admin`, `helpdesk` | -                   | Player validation and management                 |
+| `/dashboard/teams`                | `admin`, `helpdesk` | -                   | Team management                                  |
+| `/dashboard/organizations`        | `admin`, `helpdesk` | -                   | Organization management                          |
+| `/dashboard/registration`         | `admin`, `helpdesk` | -                   | Registration management                          |
+| `/dashboard/sortter`              | `admin`             | -                   | **Admin only** - team sorting                    |
+| `/dashboard/matches`              | `admin`, `helpdesk` | -                   | Match management                                 |
+| `/dashboard/role-management`      | `admin`, `helpdesk` | -                   | Role and permission management                   |
+| `/dashboard/redis`                | `admin`, `helpdesk` | -                   | Redis cache management                           |
+| `/dashboard/demos`                | `admin`, `helpdesk` | -                   | Demo file management                             |
+| `/dashboard/season-league-mapper` | `admin`             | -                   | **Admin only** - map external leagues to seasons |
+| `/dashboard/faceit-validation`    | `admin`, `helpdesk` | -                   | FACEIT roster validation                         |
+| `/dashboard/email-verification`   | `admin`, `helpdesk` | -                   | Email verification tools                         |
+| `/dashboard/caster-applications`  | `admin`, `helpdesk` | -                   | Caster application review                        |
+| `/dashboard/playoff-seeds`        | `admin`, `helpdesk` | -                   | Playoff seeding                                  |
 
 ### Special Access Controls
 
 1. **Sortter Access**: Only `admin` role can access team sorting functionality
-2. **Dashboard Root**: Requires `read:dashboard` permission or `admin` role
-3. **Role Management**: Both `admin` and `helpdesk` can manage roles (with hierarchy restrictions)
+2. **Season League Mapper**: Only `admin` role can map external leagues to internal seasons
+3. **Dashboard Root**: Requires `read:dashboard` permission or `admin` role
+4. **Role Management**: Both `admin` and `helpdesk` can manage roles (with hierarchy restrictions)
 
 ## 🔧 Permission System
 
@@ -380,6 +387,6 @@ All security violations return RFC 7807 compliant error responses:
 ## 🔗 Related Documentation
 
 - [Frontend Development](README.frontend.md) - Component patterns and responsive design
-- [Testing Strategy](README.testing.md) - Authentication testing patterns
+- [Testing strategy](.cursor/skills/testing-strategy/SKILL.md) — authentication testing patterns
 - [Backend API Documentation](README.api.md) - API security patterns
 - [Database Schema](README.database.md) - Role and permission tables

@@ -15,13 +15,18 @@
     "apps/backend": {
       "entry": ["server.ts", "migrations/**/*.ts", "seeds/**/*.ts"],
       "project": ["src/**/*.ts"],
-      "ignoreDependencies": ["@opentelemetry/auto-instrumentations-node"]
+      "ignoreDependencies": [
+        "@opentelemetry/auto-instrumentations-node",
+        "@opentelemetry/otlp-exporter-base"
+      ]
     },
     "apps/frontend": {
       "entry": ["src/app/**/*.{ts,tsx}"],
-      "project": ["src/**/*.{ts,tsx}", "jest.config.js"],
-      "jest": false,
+      "project": ["src/**/*.{ts,tsx}", "jest.config.mjs"],
+      "jest": true,
       "ignoreDependencies": [
+        "jest-junit",
+        "jsdom",
         "tailwindcss",
         "tailwindcss-animate",
         "jest-environment-jsdom"
@@ -32,7 +37,7 @@
       "project": ["*.js"]
     },
     "packages/shared-msw": {
-      "entry": [],
+      "entry": ["src/index.ts"],
       "project": ["src/**/*.ts"]
     },
     "packages/tsconfig": {
@@ -49,17 +54,11 @@
     }
   },
   "ignore": [
-    "**/*.test.ts",
-    "**/*.test.tsx",
-    "**/*.spec.ts",
-    "**/*.spec.tsx",
-    "**/test-utils/**",
-    "**/__tests__/**",
-    "**/__mocks__/**",
     "**/dist/**",
     "**/coverage/**",
     "**/node_modules/**",
-    "**/apps/frontend/src/components/ui/**",
+    "**/src/components/ui/**",
+    "**/.lintstagedrc.mjs",
     "**/apps/frontend/jest.config.js"
   ]
 }

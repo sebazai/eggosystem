@@ -2,17 +2,18 @@ import { type PoolConnection } from "mysql2/promise";
 import { runQuery } from "../db/mysqlRunQuery";
 import {
   getHubMatchesByExternalMatchRoomId,
-  updateMatchStatus
+  updateMatchStatusByExternalMatchroomId
 } from "./match.models";
 import {
   type ChampionshipDetailsReady,
-  type MatchTeamMapVeto
+  type MatchTeamMapVeto,
+  resolveVetoAction,
+  getVetoTemplate
 } from "@eggosystem/types";
 import { getSeasonLeagueTeamByExternalId } from "./season-league-team.models";
 import { getConnection } from "../db/mysqlConnection";
-import { logger } from "../utils/app-logger";
 import { getSeasonLeagueExternalIdByExternalIdWithSeasonSettings } from "./season-league-external-id.models";
-import { NotFoundError } from "../utils/errors";
+import { BadRequestError, NotFoundError } from "../utils/errors";
 
 // FACEIT Match History API Response Interfaces
 interface FaceitMatchHistoryEntity {
@@ -111,19 +112,19 @@ const addMatchTeamMapVeto = async (
           ? faction1_hub_team_id
           : faction2_hub_team_id;
 
-      // If the veto is the last one and the round is the best of, set it to decider
-      const action =
-        entity.round === vetoAmount &&
-        (best_of % 3 === 0 || best_of % 5 === 0) &&
-        entity.status === "pick"
-          ? "decider"
-          : entity.status;
+      const action = resolveVetoAction(
+        best_of,
+        entity.round,
+        vetoAmount,
+        entity.status
+      );
 
       const vetoOrder = entity.round;
 
       const mapId = await mapFaceitGuidToMapId(entity.guid, connection);
 
-      const query = `INSERT INTO MatchTeamMapVetoes (match_id, team_id, map_id, action, veto_order) VALUES (?, ?, ?, ?, ?)`;
+      const query = `INSERT INTO MatchTeamMapVetoes (match_id, team_id, map_id, action, veto_order) VALUES (?, ?, ?, ?, ?)
+                      ON DUPLICATE KEY UPDATE action = VALUES(action)`;
       return runQuery<{ insertId: number }>(
         query,
         [matchId, teamId, mapId, action, vetoOrder],
@@ -133,31 +134,10 @@ const addMatchTeamMapVeto = async (
   await Promise.all(vetoPromises);
 };
 
-const getHubMatchMapVetoesByExternalMatchRoomId = async (
-  externalMatchRoomId: string,
-  connection?: PoolConnection
-) => {
-  const query = `SELECT * FROM MatchTeamMapVetoes mtmv JOIN Matches m ON m.id = mtmv.match_id WHERE m.external_match_room_id = ?`;
-  const mapVetoes = await runQuery<Array<MatchTeamMapVeto>>(
-    query,
-    [externalMatchRoomId],
-    connection
-  );
-  return mapVetoes;
-};
-
 export const addMatchTeamMapVetoes = async (
   details: ChampionshipDetailsReady,
   externalLeagueId: string
 ) => {
-  const hasAlreadyMapVetoesInDb =
-    await getHubMatchMapVetoesByExternalMatchRoomId(details.match_id);
-  if (hasAlreadyMapVetoesInDb && hasAlreadyMapVetoesInDb.length > 0) {
-    logger.info(
-      `Match ${details.match_id} already has map vetoes in db, skipping`
-    );
-    return;
-  }
   const connection = await getConnection();
   try {
     await connection.beginTransaction();
@@ -218,7 +198,13 @@ export const addMatchTeamMapVetoes = async (
         )
       )
     );
-    await updateMatchStatus(match_id, "ONGOING", connection);
+    if (!matches.some((m) => m.status === "FINISHED")) {
+      await updateMatchStatusByExternalMatchroomId(
+        match_id,
+        "ONGOING",
+        connection
+      );
+    }
     await connection.commit();
   } catch (error) {
     await connection.rollback();
@@ -228,6 +214,18 @@ export const addMatchTeamMapVetoes = async (
   }
 };
 
+export const deleteMatchTeamMapVetoesByMatchId = async (
+  matchId: number,
+  connection?: PoolConnection
+): Promise<number> => {
+  const result = await runQuery<{ affectedRows: number }>(
+    `DELETE FROM MatchTeamMapVetoes WHERE match_id = ?`,
+    [matchId],
+    connection
+  );
+  return result.affectedRows;
+};
+
 export const getMatchPickedMapsOrderedByVetoOrder = async (
   matchId: number,
   connection?: PoolConnection
@@ -235,6 +233,88 @@ export const getMatchPickedMapsOrderedByVetoOrder = async (
   return runQuery<Array<MatchTeamMapVeto>>(
     `SELECT * FROM MatchTeamMapVetoes WHERE match_id = ? AND (action = "pick" OR action = "decider") ORDER BY veto_order ASC;`,
     [matchId],
+    connection
+  );
+};
+
+export interface CreateVetoStepInput {
+  match_id: number;
+  team_id: number;
+  map_id: number;
+  veto_order: number;
+}
+
+/**
+ * Count veto rows already stored for the match (used to reject duplicate submissions).
+ */
+export const countExistingVetoStepsForMatch = async (
+  matchId: number,
+  connection: PoolConnection
+): Promise<number> => {
+  const rows = await runQuery<Array<{ cnt: number }>>(
+    `SELECT COUNT(*) AS cnt FROM MatchTeamMapVetoes WHERE match_id = ?`,
+    [matchId],
+    connection
+  );
+  const raw = rows[0]?.cnt;
+  return typeof raw === "number" ? raw : Number(raw ?? 0);
+};
+
+/**
+ * Bulk-insert admin-provided veto steps inside an existing transaction.
+ * Actions are resolved from the veto template for the match's best_of value.
+ */
+export const createMatchVetoSteps = async (
+  steps: CreateVetoStepInput[],
+  bestOf: number,
+  connection: PoolConnection
+): Promise<MatchTeamMapVeto[]> => {
+  if (steps.length === 0) return [];
+
+  const template = getVetoTemplate(bestOf);
+  if (!template) {
+    throw new BadRequestError(
+      `No veto template registered for best_of=${bestOf}`
+    );
+  }
+
+  const placeholders = steps.map(() => "(?, ?, ?, ?, ?)").join(", ");
+  const params: Array<number | string> = [];
+  for (const step of steps) {
+    const templateStep = template.steps.find(
+      (s) => s.order === step.veto_order
+    );
+    if (!templateStep) {
+      throw new BadRequestError(
+        `Invalid veto_order ${step.veto_order} for best_of=${bestOf}`
+      );
+    }
+    const faceitStatus = templateStep.action === "drop" ? "drop" : "pick";
+    const action = resolveVetoAction(
+      bestOf,
+      step.veto_order,
+      template.steps.length,
+      faceitStatus
+    );
+    params.push(
+      step.match_id,
+      step.team_id,
+      step.map_id,
+      action,
+      step.veto_order
+    );
+  }
+
+  await runQuery(
+    `INSERT INTO MatchTeamMapVetoes (match_id, team_id, map_id, action, veto_order)
+     VALUES ${placeholders}`,
+    params,
+    connection
+  );
+
+  return runQuery<MatchTeamMapVeto[]>(
+    `SELECT * FROM MatchTeamMapVetoes WHERE match_id = ? ORDER BY veto_order ASC`,
+    [steps[0].match_id],
     connection
   );
 };

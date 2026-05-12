@@ -14,6 +14,7 @@ import {
   Users2
 } from "lucide-react";
 import { SteamLoginButton } from "../profile/SteamLoginButton";
+import { CardSkeleton } from "@/components/loading";
 
 interface FaceitLinkCardProps {
   link: {
@@ -243,12 +244,15 @@ export const FaceitLinksPage = ({
 
   if (data.isLoading || data.isValidating) {
     return (
-      <div className="mx-auto">
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-card border rounded-lg p-8 text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-400 mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Loading Faceit links...</p>
-          </div>
+      <div className="max-w-6xl mx-auto">
+        <div className="text-center mb-8">
+          <div className="h-10 w-64 bg-accent animate-pulse rounded mx-auto mb-4" />
+          <div className="h-6 w-96 bg-accent animate-pulse rounded mx-auto mb-4" />
+          <div className="h-10 w-48 bg-accent animate-pulse rounded mx-auto" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <CardSkeleton showHeader={true} contentLines={4} />
+          <CardSkeleton showHeader={true} contentLines={4} />
         </div>
       </div>
     );

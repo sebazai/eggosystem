@@ -1,4 +1,4 @@
-import type { GameClip } from "@eggosystem/types";
+import type { GameClip, MatchInfo } from "@eggosystem/types";
 import { TeamStatBox } from "./TeamStatBox";
 import { useGameTeamRoundBreakdowns } from "@/hooks/data/useGameTeamRoundBreakdowns";
 import { useTeamStats } from "@/hooks/data/useTeamStats";
@@ -6,6 +6,9 @@ import { cn } from "@/lib/utils";
 import { ProcessingSpinner } from "@/components/ui/icons";
 import { useAuth } from "@/context/AuthContext";
 import Image from "next/image";
+import { useMemo } from "react";
+import { TeamStatisticsSkeleton } from "@/components/loading";
+import { orderMatchParticipantsBySideHomeLeft } from "@/lib/order-match-teams-home-left-away";
 
 export interface TeamStatsFilters {
   seasons: string;
@@ -17,26 +20,52 @@ interface TeamStatisticsProps {
   clip?: GameClip;
   matchId?: number;
   matchGameId?: number;
+  /** When set, team stat columns follow home-left / away-right (legacy order when sides unknown). */
+  matchTeams?: MatchInfo["teams"];
 }
 
 export const TeamStatistics = ({
   teamStatsFilters,
   clip,
   matchId,
-  matchGameId
+  matchGameId,
+  matchTeams
 }: TeamStatisticsProps) => {
   const auth = useAuth();
 
   // Fetch team stats based on whether we have matchId or matchGameId
-  const { teamStats } = useTeamStats({ matchId, matchGameId });
+  const { teamStats, isLoading } = useTeamStats({ matchId, matchGameId });
   const { teamsRoundBreakdown } = useGameTeamRoundBreakdowns(matchGameId);
+
+  const orderedTeamStats = useMemo(() => {
+    if (!teamStats || teamStats.length === 0) return [];
+    if (!matchTeams) return teamStats;
+    const orderIds = orderMatchParticipantsBySideHomeLeft(
+      Object.values(matchTeams)
+    ).map((t) => t.id);
+    const byId = new Map(teamStats.map((row) => [row.team_id, row]));
+    return orderIds
+      .map((id) => byId.get(id))
+      .filter((row): row is NonNullable<typeof row> => row != null);
+  }, [teamStats, matchTeams]);
+
+  // Show skeleton while loading
+  if (isLoading) {
+    return (
+      <TeamStatisticsSkeleton
+        showVideo={!!clip && clip.clip_status !== "Error"}
+      />
+    );
+  }
 
   // Early return if no stats available yet
   if (!teamStats || teamStats.length === 0) {
     return null;
   }
 
-  const [teamOneStats, teamTwoStats] = teamStats;
+  const statsRows = orderedTeamStats.length >= 2 ? orderedTeamStats : teamStats;
+
+  const [teamOneStats, teamTwoStats] = statsRows;
   const teamOneId = teamOneStats?.team_id;
   const teamTwoId = teamTwoStats?.team_id;
   const clipAndClipStatusNotError = clip && clip.clip_status !== "Error";

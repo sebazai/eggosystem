@@ -170,6 +170,19 @@ const setupAddPlayerQueryMocks = (options?: {
 
     if (
       query.includes("SELECT steam_id FROM SeasonTeamPlayers") &&
+      query.includes("discarded_at IS NULL") &&
+      !query.includes("role = 'primary'")
+    ) {
+      return Promise.resolve([]);
+    }
+    if (
+      query.includes("SELECT id FROM SeasonTeamPlayers") &&
+      query.includes("discarded_at IS NOT NULL")
+    ) {
+      return Promise.resolve([]);
+    }
+    if (
+      query.includes("SELECT steam_id FROM SeasonTeamPlayers") &&
       query.includes("role = 'primary'")
     ) {
       return Promise.resolve(primaryPlayers);
@@ -360,6 +373,149 @@ describe("addPlayerToTeamController", () => {
     expect(mockNext).not.toHaveBeenCalled();
   });
 
+  it("should reactivate a discarded player with UPDATE instead of INSERT", async () => {
+    const playerProfile = createMockPlayerProfile();
+
+    setupAddPlayerQueryMocks({ playerProfile });
+
+    mockSeasonModelsBase.getSeasonPlatformAndAppId.mockResolvedValueOnce({
+      platform: "FACEIT" as never,
+      app_id: 730
+    });
+
+    mockPlayerRankServices.ensurePlayerRankDataExists.mockResolvedValueOnce(
+      undefined
+    );
+
+    setupEligibilityMock({
+      canAddPlayer: true,
+      newPlayerKanaElo: 200,
+      newAvgWithPlayer: 204
+    });
+
+    mockPlayerModels.setPlayerKanaElo.mockResolvedValueOnce(true);
+
+    const mockImpl = (mockRunQuery as jest.Mock).getMockImplementation();
+    (mockRunQuery as jest.Mock).mockImplementation((query: string) => {
+      if (
+        query.includes("SELECT id FROM SeasonTeamPlayers") &&
+        query.includes("discarded_at IS NOT NULL")
+      ) {
+        return Promise.resolve([{ id: 999 }]);
+      }
+      if (typeof mockImpl === "function") {
+        return mockImpl(query);
+      }
+      return Promise.resolve([]);
+    });
+
+    await addPlayerToTeamController(mockRequest, mockResponse, mockNext);
+
+    expect(mockRunQuery).toHaveBeenCalledWith(
+      expect.stringMatching(
+        /UPDATE SeasonTeamPlayers SET[\s\S]*discarded_at = NULL/
+      ),
+      [null, 999],
+      expect.any(Object)
+    );
+    const insertCalls = (mockRunQuery as jest.Mock).mock.calls.filter(
+      (call) =>
+        call[0] &&
+        typeof call[0] === "string" &&
+        call[0].includes("INSERT INTO SeasonTeamPlayers")
+    );
+    expect(insertCalls.length).toBe(0);
+
+    expect(mockNext).not.toHaveBeenCalled();
+  });
+
+  it("should reject when player is already an active roster member", async () => {
+    const playerProfile = createMockPlayerProfile();
+
+    setupAddPlayerQueryMocks({ playerProfile });
+
+    mockSeasonModelsBase.getSeasonPlatformAndAppId.mockResolvedValueOnce({
+      platform: "FACEIT" as never,
+      app_id: 730
+    });
+
+    mockPlayerRankServices.ensurePlayerRankDataExists.mockResolvedValueOnce(
+      undefined
+    );
+
+    setupEligibilityMock({
+      canAddPlayer: true,
+      newPlayerKanaElo: 200,
+      newAvgWithPlayer: 204
+    });
+
+    const mockImpl = (mockRunQuery as jest.Mock).getMockImplementation();
+    (mockRunQuery as jest.Mock).mockImplementation((query: string) => {
+      if (
+        query.includes("SELECT steam_id FROM SeasonTeamPlayers") &&
+        query.includes("discarded_at IS NULL") &&
+        !query.includes("role = 'primary'")
+      ) {
+        return Promise.resolve([
+          { steam_id: EligiblePlayerForValidationSteamId }
+        ]);
+      }
+      if (typeof mockImpl === "function") {
+        return mockImpl(query);
+      }
+      return Promise.resolve([]);
+    });
+
+    await addPlayerToTeamController(mockRequest, mockResponse, mockNext);
+
+    expect(mockNext).toHaveBeenCalledWith(expect.any(Error));
+    const err = mockNext.mock.calls[0][0] as Error;
+    expect(err.message).toContain("already on this team");
+    expect(mockPlayerModels.setPlayerKanaElo).not.toHaveBeenCalled();
+  });
+
+  it("should persist optional ticket_number when adding a player", async () => {
+    const playerProfile = createMockPlayerProfile();
+
+    setupAddPlayerQueryMocks({ playerProfile });
+
+    mockSeasonModelsBase.getSeasonPlatformAndAppId.mockResolvedValueOnce({
+      platform: "FACEIT" as never,
+      app_id: 730
+    });
+
+    mockPlayerRankServices.ensurePlayerRankDataExists.mockResolvedValueOnce(
+      undefined
+    );
+
+    setupEligibilityMock({
+      canAddPlayer: true,
+      newPlayerKanaElo: 200,
+      newAvgWithPlayer: 204
+    });
+
+    mockPlayerModels.setPlayerKanaElo.mockResolvedValueOnce(true);
+
+    const requestWithTicket = {
+      ...mockRequest,
+      body: {
+        kana_elo: 200,
+        calculus: { test: "data" },
+        ticket_number: "HD-777"
+      }
+    } as typeof mockRequest;
+
+    await addPlayerToTeamController(requestWithTicket, mockResponse, mockNext);
+
+    expect(mockRunQuery).toHaveBeenCalledWith(
+      expect.stringContaining("INSERT INTO SeasonTeamPlayers"),
+      [14, 1650, EligiblePlayerForValidationSteamId, "HD-777"],
+      expect.any(Object)
+    );
+
+    expect(mockNext).not.toHaveBeenCalled();
+  });
+
   it("should create player data if missing in SeasonPlayerRanks", async () => {
     setupAddPlayerQueryMocks();
 
@@ -406,15 +562,12 @@ describe("addPlayerToTeamController", () => {
       undefined
     );
 
-    // Mock queries for checkPlayerAdditionEligibility -> ensureSeasonMaxPlayersForTeam -> getSeasonById -> getActiveMapPoolBySeasonId
+    // ensureSeasonMaxPlayersForTeam -> getPrimaryPlayersForTeam runs first (consumes first runQuery)
     mockRunQuery.mockResolvedValueOnce([{ steam_id: "76561198000000001" }]);
-    mockRunQuery.mockResolvedValueOnce([{ id: 14, max_players: 9 }]);
-    mockRunQuery.mockResolvedValueOnce([
-      { map_id: 1 },
-      { map_id: 2 },
-      { map_id: 3 }
-    ]);
-    mockRunQuery.mockResolvedValueOnce([{ league_id: 1 }]);
+    // getPlayerDetailsForDashboardBySteamId (profile validation) must return valid profile so flow reaches "not eligible" path
+    mockRunQuery.mockResolvedValueOnce(createMockPlayerProfile());
+    // Tier query (controller runs after profile check)
+    mockRunQuery.mockResolvedValueOnce([{ tier: 2 }]);
 
     setupEligibilityMock({
       canAddPlayer: false,

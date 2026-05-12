@@ -38,7 +38,7 @@ import { useTeamsForSeason } from "@/hooks/data/dashboard/useTeamsForSeason";
 import { useCheckCaptain } from "@/hooks/data/dashboard/useCheckCaptain";
 
 export default function RoleManagementPage() {
-  const { selectedSeasonId, setSelectedSeasonId } = useDashboardSeason();
+  const { selectedSeasonId } = useDashboardSeason();
   const [selectedRole, setSelectedRole] = useState<string>("");
   const [steamId, setSteamId] = useState<string>("");
   const [selectedTeamId, setSelectedTeamId] = useState<string>("");
@@ -104,8 +104,7 @@ export default function RoleManagementPage() {
           : `${selectedRole} role added successfully`
       );
       setSteamId(""); // Clear the input
-      setSelectedSeasonId(null); // Clear season
-      setSelectedTeamId(""); // Clear team
+      setSelectedTeamId(""); // Clear team; keep sidebar season for next assignment
       refetchUsers(); // Refresh the user list
     } catch (err) {
       // Error is handled by the hook
@@ -131,18 +130,15 @@ export default function RoleManagementPage() {
 
   const handleRoleChange = (value: string) => {
     setSelectedRole(value);
-    setSelectedSeasonId(null); // Clear season when role changes
-    setSelectedTeamId(""); // Clear team when role changes
+    setSelectedTeamId(""); // Clear team; season stays from sidebar for captain roles
     setSuccess(null);
     clearError();
   };
 
-  // Reset team when season changes
+  // Reset team when the sidebar season changes (team list is season-scoped).
   useEffect(() => {
     setSelectedTeamId("");
-    setSuccess(null);
-    clearError();
-  }, [selectedSeasonId, clearError]);
+  }, [selectedSeasonId]);
 
   const handleTeamChange = (value: string) => {
     setSelectedTeamId(value);

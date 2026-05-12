@@ -6,6 +6,7 @@ import Image from "next/image";
 import { createNextUrl } from "@/lib/utils";
 import { TanStackTableWrapper } from "@/components/tables/TanStackTableWrapper";
 import type { ColumnDef } from "@tanstack/react-table";
+import { TableSkeleton } from "@/components/loading";
 
 interface LiveTeamPlayersPopupProps {
   players: LivePlayerValues[];
@@ -220,11 +221,8 @@ export function LiveTeamPlayersPopup({
       </div>
 
       {isLoading ? (
-        <div className="p-6 text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-kanaliiga-orange mx-auto"></div>
-          <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-            Loading player data...
-          </p>
+        <div className="p-6">
+          <TableSkeleton rows={5} columns={7} showHeader={false} />
         </div>
       ) : (
         <div className="overflow-auto max-h-[70vh] pb-4">

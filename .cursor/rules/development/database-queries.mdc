@@ -1,0 +1,61 @@
+---
+description: Use MariaDB MCP server for database queries and exploration
+alwaysApply: true
+---
+
+# Database Query Patterns
+
+## Primary Tool: MariaDB MCP Server
+
+**Rule**: When asked about database information, queries, or data exploration, **primarily use the MariaDB MCP server** instead of writing code or using other methods.
+
+### Available MCP Tools
+
+The MariaDB MCP server provides read-only access to the database with these tools:
+
+- `execute_sql` - Execute SQL queries against the database
+- `list_databases` - List available databases
+- `list_tables` - List tables in a database
+- `get_table_schema` - Get schema information for a table
+- `get_table_schema_with_relations` - Get schema with foreign key relationships
+
+### Usage Pattern
+
+1. **Explore schema first**: Use `list_tables` and `get_table_schema` to understand table structure
+2. **Query data**: Use `execute_sql` with the `kanaliiga` database
+3. **Verify relationships**: Use `get_table_schema_with_relations` to understand foreign keys
+
+### Example
+
+```typescript
+// ❌ Don't write code to query database
+const kills = await db.query("SELECT COUNT(*) FROM PlayerKillLogs...");
+
+// ✅ Use MCP server instead
+call_mcp_tool({
+  server: "project-0-workspace-mariadb",
+  toolName: "execute_sql",
+  arguments: {
+    database_name: "kanaliiga",
+    sql_query: "SELECT COUNT(*) FROM PlayerKillLogs..."
+  }
+});
+```
+
+### When to Use MCP Server
+
+- **Data exploration**: Understanding what data exists
+- **Query verification**: Testing SQL queries before implementing
+- **Schema investigation**: Understanding table structures and relationships
+- **Ad-hoc queries**: Quick data lookups and statistics
+- **Troubleshooting**: Investigating data issues
+
+### When NOT to Use MCP Server
+
+- **Writing application code**: Use Knex.js queries in backend code
+- **Migrations**: Use Knex.js migration files
+- **Production queries**: Application code should use the standard database connection
+
+### Database Name
+
+The primary database is **`kanaliiga`**. Always specify this when using MCP tools.

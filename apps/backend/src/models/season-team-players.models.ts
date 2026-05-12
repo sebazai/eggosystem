@@ -9,9 +9,13 @@ import type {
 } from "@eggosystem/types";
 import { buildInsertQueryParts } from "../db/utils";
 import { getSeasonLeagueTeamByExternalId } from "./season-league-team.models";
+import { getOrganizerIdBySeasonId } from "./season.models";
 import { redisClient } from "../utils/redisClient";
 import { getHubMatchesByExternalMatchRoomId } from "./match.models";
 import { BadRequestError } from "../utils/errors";
+import { notifyFlaggedMatchInDiscord } from "../services/discord-organizer.services";
+import { logger } from "../utils/app-logger";
+import { getTeamById } from "./team.models";
 
 /**
  * Check if player exists in SeasonTeamPlayers
@@ -33,6 +37,36 @@ export const playerExistsInSeasonTeam = async (
   return players && players.length > 0;
 };
 
+/**
+ * Captain/co-captain flags for a player on an active finalized roster row.
+ * Returns null if the player is not on the team for this season.
+ */
+export const getSeasonTeamPlayerCaptainFlags = async (
+  steamId: string,
+  seasonId: number,
+  teamId: number,
+  connection?: PoolConnection
+): Promise<{ is_captain: boolean; is_co_captain: boolean } | null> => {
+  const rows = await runQuery<
+    Array<{ is_captain: number | boolean; is_co_captain: number | boolean }>
+  >(
+    `SELECT is_captain, is_co_captain FROM SeasonTeamPlayers 
+     WHERE season_id = ? AND team_id = ? AND steam_id = ? AND discarded_at IS NULL`,
+    [seasonId, teamId, steamId],
+    connection
+  );
+
+  if (!rows || rows.length === 0) {
+    return null;
+  }
+
+  const row = rows[0];
+  return {
+    is_captain: Boolean(row.is_captain),
+    is_co_captain: Boolean(row.is_co_captain)
+  };
+};
+
 export const insertSeasonTeamPlayer = async (
   seasonId: number,
   teamId: number,
@@ -44,6 +78,53 @@ export const insertSeasonTeamPlayer = async (
   return runQuery<{ insertId: number }>(
     query,
     [seasonId, teamId, ...values],
+    connection
+  );
+};
+
+/**
+ * When re-adding a primary player after discard, prefer the primary roster row (match_id IS NULL),
+ * otherwise the oldest discarded row (e.g. substitute history).
+ */
+export const getDiscardedSeasonTeamPlayerIdForReactivation = async (
+  seasonId: number,
+  teamId: number,
+  steamId: string,
+  connection?: PoolConnection
+): Promise<number | undefined> => {
+  const [row] = await runQuery<Array<{ id: number }>>(
+    `SELECT id FROM SeasonTeamPlayers
+     WHERE season_id = ? AND team_id = ? AND steam_id = ? AND discarded_at IS NOT NULL
+     ORDER BY (match_id IS NULL) DESC, id ASC
+     LIMIT 1`,
+    [seasonId, teamId, steamId],
+    connection
+  );
+  return row?.id;
+};
+
+/**
+ * Clears soft-delete and normalizes row to a primary roster slot (add-player flow).
+ */
+export const reactivateSeasonTeamPlayerAsPrimary = async (
+  id: number,
+  options: { ticketNumber: string | null | undefined },
+  connection?: PoolConnection
+) => {
+  const ticket =
+    options.ticketNumber !== undefined && options.ticketNumber !== null
+      ? options.ticketNumber.trim() || null
+      : null;
+  await runQuery(
+    `UPDATE SeasonTeamPlayers SET
+       discarded_at = NULL,
+       discarded_by = NULL,
+       role = 'primary',
+       match_id = NULL,
+       replaces_steam_id = NULL,
+       ticket_number = ?
+     WHERE id = ?`,
+    [ticket, id],
     connection
   );
 };
@@ -93,7 +174,8 @@ export const discardSeasonTeamPlayer = async (
   teamId: number,
   steamId: string,
   discardedByAccountId: number,
-  connection?: PoolConnection
+  connection?: PoolConnection,
+  ticketNumber?: string | null
 ) => {
   // First verify the player exists and is not already discarded
   const [existingPlayer] = await runQuery<Array<SeasonTeamPlayer>>(
@@ -121,12 +203,20 @@ export const discardSeasonTeamPlayer = async (
     );
   }
 
-  // Update the player to mark as discarded
-  await runQuery(
-    `UPDATE SeasonTeamPlayers SET discarded_at = NOW(), discarded_by = ? WHERE season_id = ? AND team_id = ? AND steam_id = ?`,
-    [discardedByAccountId, seasonId, teamId, steamId],
-    connection
-  );
+  const trimmedTicket = ticketNumber?.trim();
+  if (trimmedTicket) {
+    await runQuery(
+      `UPDATE SeasonTeamPlayers SET discarded_at = NOW(), discarded_by = ?, ticket_number = ? WHERE season_id = ? AND team_id = ? AND steam_id = ?`,
+      [discardedByAccountId, trimmedTicket, seasonId, teamId, steamId],
+      connection
+    );
+  } else {
+    await runQuery(
+      `UPDATE SeasonTeamPlayers SET discarded_at = NOW(), discarded_by = ? WHERE season_id = ? AND team_id = ? AND steam_id = ?`,
+      [discardedByAccountId, seasonId, teamId, steamId],
+      connection
+    );
+  }
 };
 
 export const validatePlayersInTeams = async (
@@ -164,23 +254,56 @@ export const validatePlayersInTeams = async (
       playerSteamIds
     );
 
-    // check if any player has match_id other then null, if it does, it should be in the matchIds array
-    const playersWithMatchId = playersInSeasonTeamPlayers.filter(
+    // Substitute rows (match_id set) are only relevant for validation when the player
+    // does not also have an active primary roster row. Otherwise a past substitute
+    // record plus a current primary row would incorrectly flag the match.
+    const steamIdsWithPrimaryRosterRow = new Set(
+      playersInSeasonTeamPlayers
+        .filter((p) => p.match_id === null)
+        .map((p) => p.steam_id)
+    );
+    const substituteRowsWithoutPrimary = playersInSeasonTeamPlayers.filter(
       (player): player is SeasonTeamPlayer & { match_id: number } =>
-        player.match_id !== null
+        player.match_id !== null &&
+        !steamIdsWithPrimaryRosterRow.has(player.steam_id)
     );
 
     const uniquePlayerSteamIds = [
       ...new Set(playersInSeasonTeamPlayers.map((player) => player.steam_id))
     ];
 
+    const faceitRosterSteamIdSet = new Set(
+      playerSteamIds.map((id) => String(id))
+    );
+
+    // Substitute for this hub match: the replaced player must not appear on the Faceit roster
+    // (otherwise both sub and replaced primary are listed as playing).
+    const substituteReplacedPlayerAlsoOnFaceitRoster =
+      playersInSeasonTeamPlayers.some((p) => {
+        if (
+          p.match_id === null ||
+          !matchIdsArray.includes(p.match_id) ||
+          p.replaces_steam_id === null
+        ) {
+          return false;
+        }
+        return faceitRosterSteamIdSet.has(String(p.replaces_steam_id));
+      });
+
     if (
       uniquePlayerSteamIds.length !== playerSteamIds.length ||
-      (playersWithMatchId.length > 0 &&
-        !playersWithMatchId.some((stp) => matchIdsArray.includes(stp.match_id)))
+      (substituteRowsWithoutPrimary.length > 0 &&
+        !substituteRowsWithoutPrimary.some((stp) =>
+          matchIdsArray.includes(stp.match_id)
+        )) ||
+      substituteReplacedPlayerAlsoOnFaceitRoster
     ) {
       // Add to redis as flag that players are not in SeasonTeamPlayers
       const key = `match:invalid_players:${externalMatchId}`;
+      const alreadyFlaggedInRedis = (await redisClient.get(key)) !== null;
+
+      const [teamRow] = await getTeamById(teamFromDb.team_id);
+
       const objectToSave = {
         external_match_id: externalMatchId,
         steam_ids: playerSteamIds,
@@ -188,12 +311,23 @@ export const validatePlayersInTeams = async (
           (stp) => stp.steam_id
         ),
         team_id: teamFromDb.team_id,
+        ...(teamRow?.name ? { team_name: teamRow.name } : {}),
         match_ids: matchIdsArray,
-        players_added_for_this_match: playersWithMatchId.map(
+        players_added_for_this_match: substituteRowsWithoutPrimary.map(
           (stp) => stp.steam_id
         )
       } satisfies FlaggedMatches;
       await redisClient.set(key, JSON.stringify(objectToSave));
+
+      const organizerId = await getOrganizerIdBySeasonId(seasonId);
+      if (organizerId !== undefined && !alreadyFlaggedInRedis) {
+        notifyFlaggedMatchInDiscord(organizerId, objectToSave).catch((err) => {
+          logger.error(
+            `Failed to notify Discord of flagged match ${externalMatchId}`,
+            err
+          );
+        });
+      }
     }
   }
 };

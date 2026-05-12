@@ -1,11 +1,13 @@
 import type { Request, Response, NextFunction } from "express";
 import { redisClient } from "../../utils/redisClient";
+import { scanKeysMatchingPattern } from "../../utils/redisScanKeys";
 import { BadRequestError } from "../../utils/errors";
 import type {
   RedisKey,
   RedisKeysResponse,
   RedisKeyDataResponse,
-  RedisDeleteResponse
+  RedisDeleteResponse,
+  RedisFlushStandingsCacheResponse
 } from "@eggosystem/types";
 
 /**
@@ -36,7 +38,7 @@ export const getRedisKeys = async (
     return next(new BadRequestError("Limit must be between 1 and 1000"));
   }
 
-  const allKeys = await redisClient.keys(pattern);
+  const allKeys = await scanKeysMatchingPattern(redisClient, pattern);
   const total = allKeys.length;
   const totalPages = Math.ceil(total / limit);
 
@@ -118,4 +120,48 @@ export const deleteRedisKey = async (
   };
 
   res.json(response);
+};
+
+/**
+ * Redis keys used to build the standings table in the frontend.
+ * getDivStandings() uses getFaceitMatchStats(match_id), which caches Faceit API
+ * match stats in Redis when the match has completed rounds (best_of === played).
+ * Flushing these forces the next standings load to refetch from the Faceit API.
+ */
+const STANDINGS_CACHE_PATTERNS = ["faceit-match-stats-*"];
+
+/**
+ * Flush standings caches (admin only).
+ * Deletes Faceit match stats cache so the standings table refetches from the Faceit API.
+ */
+export const flushStandingsCaches = async (
+  _req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const keysToDelete: string[] = [];
+    for (const pattern of STANDINGS_CACHE_PATTERNS) {
+      const keys = await scanKeysMatchingPattern(redisClient, pattern);
+      keysToDelete.push(...keys);
+    }
+
+    let deletedCount = 0;
+    if (keysToDelete.length > 0) {
+      deletedCount = await redisClient.del(...keysToDelete);
+    }
+
+    const response: RedisFlushStandingsCacheResponse = {
+      success: true,
+      deletedCount,
+      message:
+        deletedCount > 0
+          ? `Flushed ${deletedCount} Faceit standings cache key(s).`
+          : "No Faceit standings cache keys found."
+    };
+
+    res.json(response);
+  } catch (err) {
+    next(err);
+  }
 };

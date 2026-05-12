@@ -30,16 +30,17 @@ describe("Kanahautomo Models Integration Tests", () => {
   const testSteamId9 = "76561198999999999";
   const testSteamId10 = "76561198999999990";
 
-  const testAccountId1 = 9991;
-  const testAccountId2 = 9992;
-  const testAccountId3 = 9993;
-  const testAccountId4 = 9994;
-  const testAccountId5 = 9995;
-  const testAccountId6 = 9996;
-  const testAccountId7 = 9997;
-  const testAccountId8 = 9998;
-  const testAccountId9 = 9999;
-  const testAccountId10 = 9990;
+  // Pick IDs that are unlikely to collide with seeded data.
+  const testAccountId1 = 9_900_001;
+  const testAccountId2 = 9_900_002;
+  const testAccountId3 = 9_900_003;
+  const testAccountId4 = 9_900_004;
+  const testAccountId5 = 9_900_005;
+  const testAccountId6 = 9_900_006;
+  const testAccountId7 = 9_900_007;
+  const testAccountId8 = 9_900_008;
+  const testAccountId9 = 9_900_009;
+  const testAccountId10 = 9_900_010;
 
   // Test organization IDs (will be set after creation)
   let testOrganizationId: number;

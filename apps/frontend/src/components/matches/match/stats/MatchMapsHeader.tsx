@@ -3,6 +3,9 @@ import { createNextUrl, mapToReadableName } from "@/lib/utils";
 import { SeasonPlatform } from "@eggosystem/types";
 import Link from "next/link";
 import Image from "next/image";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { BarChart2 } from "lucide-react";
 
 interface MatchMapsHeaderProps {
   matchId: number;
@@ -34,11 +37,28 @@ export const MatchMapsHeader = ({
   externalMatchRoomUrl,
   handleMapSelect
 }: MatchMapsHeaderProps) => {
-  const { maps } = useMatchMaps(matchId);
-  return (
-    <>
+  const { maps, isLoading } = useMatchMaps(matchId);
+
+  if (isLoading) {
+    return (
       <div className="flex flex-col sm:flex-row justify-between">
         <div className="flex flex-row gap-2 mb-5 sm:mb-0">
+          <Skeleton className="h-7 w-32" />
+          {externalMatchRoomUrl && <Skeleton className="h-5 w-20" />}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Skeleton className="h-8 w-20" />
+          <Skeleton className="h-8 w-24" />
+          <Skeleton className="h-8 w-24" />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-col sm:flex-row justify-between">
+        <div className="flex flex-row items-center gap-2 mb-5 sm:mb-0">
           <h1>MATCH STATS</h1>
           {externalMatchRoomUrl && (
             <Link
@@ -75,6 +95,16 @@ export const MatchMapsHeader = ({
           </div>
         )}
       </div>
-    </>
+      {matchGameId && (
+        <div>
+          <Button variant="kanaliigaOrange" size="xs" asChild>
+            <Link href={`/matches/${matchId}/games/${matchGameId}/analysis`}>
+              <BarChart2 className="size-3 mr-1" />
+              Detailed Analysis
+            </Link>
+          </Button>
+        </div>
+      )}
+    </div>
   );
 };

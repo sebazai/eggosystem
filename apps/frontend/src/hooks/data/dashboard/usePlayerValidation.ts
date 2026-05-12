@@ -5,7 +5,7 @@ import { clientApiFetch } from "@/lib/apiClient";
 import { isValidSteamId, convertSteamIdToSteamId64 } from "@/lib/utils";
 import type { PlayerValidationResult } from "@eggosystem/types";
 
-export interface UsePlayerValidationReturn {
+interface UsePlayerValidationReturn {
   validationResult: PlayerValidationResult | null;
   isValidating: boolean;
   error: string | null;

@@ -8,7 +8,9 @@ import {
   type PlayerDetailsBySteamId,
   type InsertSeasonTeamRegistrationPlayer,
   type UpdateSeasonTeamRegistrationPlayer,
-  isFaceITCSRank
+  isFaceITCSRank,
+  type SeasonSignupRankRequirements,
+  pickSignupRankRequirements
 } from "@eggosystem/types";
 import {
   insertSeasonTeamRegistration,
@@ -179,6 +181,101 @@ const updatePlayersFaceitData = async (
   }
 };
 
+/**
+ * Creates and saves a player rank entry for a season.
+ * This includes fetching rank data, validating it, and optionally updating FaceIT data.
+ * Used by both initial signup and team edit flows.
+ */
+const createAndSavePlayerRankForSeason = async (
+  steamId: string,
+  seasonId: number,
+  appId: number,
+  platform: SeasonPlatform | null,
+  requirements: SeasonSignupRankRequirements,
+  connection?: PoolConnection
+): Promise<void> => {
+  // Fetch rank, hours, and external rank
+  const [rank, { hours }, externalRank] = await Promise.all([
+    getPlayerAppIdRank(steamId, appId, seasonId),
+    getPlayerHoursForSteamAppId(steamId, appId, seasonId),
+    getPlayerRankForPlatform(steamId, platform, seasonId)
+  ]);
+
+  if (requirements.hours_played_required && hours === -1) {
+    throw new BadRequestError(`Player ${steamId} hours not found.`);
+  }
+
+  if (rank.average_rank === null || rank.average_rank === undefined) {
+    throw new BadRequestError(
+      `Player ${steamId} has no app id rank. Found ${rank.average_rank}.`
+    );
+  }
+
+  const hasValidPremierRank =
+    rank.average_rank !== -1 && isValidRank(rank.average_rank);
+
+  if (requirements.premier_rank_required && !hasValidPremierRank) {
+    throw new BadRequestError(
+      `Player ${steamId} has no app id rank. Found ${rank.average_rank}.`
+    );
+  }
+
+  const cs2RankToStore = hasValidPremierRank ? rank.average_rank : null;
+  const csHoursToStore = hours === -1 ? null : hours;
+
+  const mustHaveFaceitRank =
+    requirements.faceit_rank_required && platform !== SeasonPlatform.Kanaliiga;
+
+  if (
+    mustHaveFaceitRank &&
+    externalRank &&
+    "faceit_elo" in externalRank &&
+    externalRank.faceit_elo === -1
+  ) {
+    throw new BadRequestError(`Player ${steamId} has no ${platform} rank.`);
+  }
+
+  const faceitRankForInsert = isFaceITCSRank(externalRank)
+    ? externalRank
+    : {
+        faceit_elo: undefined,
+        faceit_level: undefined,
+        faceit_kd: undefined,
+        faceit_date: undefined
+      };
+
+  // Insert the rank entry
+  await insertPlayerRankForSeason(
+    steamId,
+    seasonId,
+    cs2RankToStore,
+    csHoursToStore,
+    faceitRankForInsert,
+    { connection }
+  );
+
+  // Fetch and save FaceIT nickname and ID when platform is FaceIT
+  if (platform === SeasonPlatform.FACEIT) {
+    try {
+      const faceitData = await fetchFaceitPlayerData(steamId, "cs2");
+      if (faceitData && faceitData.nickname && faceitData.player_id) {
+        await updateSteamPlayerFaceitData(
+          steamId,
+          faceitData.nickname,
+          faceitData.player_id,
+          connection
+        );
+        logger.info(
+          `Updated FaceIT data for player ${steamId}: ${faceitData.nickname} (${faceitData.player_id})`
+        );
+      }
+    } catch (error) {
+      // Log error but don't fail if FaceIT data fetch fails
+      logger.warn(`Failed to fetch FaceIT data for player ${steamId}:`, error);
+    }
+  }
+};
+
 export const addPlayersForTeamInSeason = async (
   seasonId: number,
   appId: number,
@@ -187,6 +284,12 @@ export const addPlayersForTeamInSeason = async (
   playerInsertData: InsertSeasonTeamRegistrationPlayer[],
   connection?: PoolConnection
 ) => {
+  const seasonRecord = await getSeasonDetailsById(seasonId);
+  if (!seasonRecord) {
+    throw new NotFoundError("Season not found");
+  }
+  const signupRankRequirements = pickSignupRankRequirements(seasonRecord);
+
   for (const player of playerInsertData) {
     await insertSeasonTeamRegistrationPlayer(
       seasonId,
@@ -199,72 +302,15 @@ export const addPlayersForTeamInSeason = async (
       connection
     );
 
-    const [rank, { hours }, externalRank] = await Promise.all([
-      getPlayerAppIdRank(player.steam_id, appId, seasonId),
-      getPlayerHoursForSteamAppId(player.steam_id, appId, seasonId),
-      getPlayerRankForPlatform(player.steam_id, platform, seasonId)
-    ]);
-
-    if (hours === -1) {
-      throw new BadRequestError(`Player ${player.steam_id} hours not found.`);
-    }
-
-    if (rank.average_rank === -1 || !isValidRank(rank.average_rank)) {
-      throw new BadRequestError(
-        `Player ${player.steam_id} has no app id rank. Found ${rank.average_rank}.`
-      );
-    }
-
-    if (
-      externalRank &&
-      "faceit_elo" in externalRank &&
-      externalRank.faceit_elo === -1 &&
-      platform !== SeasonPlatform.Kanaliiga
-    ) {
-      throw new BadRequestError(
-        `Player ${player.steam_id} has no ${platform} rank.`
-      );
-    }
-
-    await insertPlayerRankForSeason(
+    // Create and save player rank using shared helper
+    await createAndSavePlayerRankForSeason(
       player.steam_id,
       seasonId,
-      rank.average_rank,
-      hours,
-      isFaceITCSRank(externalRank)
-        ? externalRank
-        : {
-            faceit_elo: undefined,
-            faceit_level: undefined,
-            faceit_kd: undefined,
-            faceit_date: undefined
-          },
-      { connection }
+      appId,
+      platform,
+      signupRankRequirements,
+      connection
     );
-
-    // Fetch and save FaceIT nickname and ID when platform is FaceIT
-    if (platform === SeasonPlatform.FACEIT) {
-      try {
-        const faceitData = await fetchFaceitPlayerData(player.steam_id, "cs2");
-        if (faceitData && faceitData.nickname && faceitData.player_id) {
-          await updateSteamPlayerFaceitData(
-            player.steam_id,
-            faceitData.nickname,
-            faceitData.player_id,
-            connection
-          );
-          logger.info(
-            `Updated FaceIT data for player ${player.steam_id}: ${faceitData.nickname} (${faceitData.player_id})`
-          );
-        }
-      } catch (error) {
-        // Log error but don't fail the signup if FaceIT data fetch fails
-        logger.warn(
-          `Failed to fetch FaceIT data for player ${player.steam_id}:`,
-          error
-        );
-      }
-    }
   }
 };
 
@@ -303,9 +349,18 @@ export const validatePlayersFromDBForSignup = async (
 
   for (const playerData of filteredData) {
     if (!playerData.work_email_verified) {
-      throw new BadRequestError(
-        `Player ${playerData.steam_id} has not verified e-mail their e-mail.`
+      const manuallyApprovedPlayer = await isPlayerApprovedForSeasonManually(
+        seasonId,
+        playerData.steam_id,
+        teamId,
+        organizationId,
+        connection
       );
+      if (!manuallyApprovedPlayer.approved_by_organizer) {
+        throw new BadRequestError(
+          `Player ${playerData.steam_id} has not verified e-mail their e-mail.`
+        );
+      }
     }
     if (!playerData.is_valid_full_name) {
       throw new BadRequestError(
@@ -339,10 +394,10 @@ const handleUpdateSeasonTeamRegistration = async (
 ) => {
   const playerSteamIds = playerUpdateData.map((player) => player.steam_id);
 
-  // Get season to check platform
+  // Get season to check platform and app_id
   const season = await getSeasonDetailsById(seasonId);
 
-  await Promise.all([
+  const [_, __, playersUpdateResult] = await Promise.all([
     validatePlayersFromDBForSignup(
       seasonId,
       teamId,
@@ -359,6 +414,35 @@ const handleUpdateSeasonTeamRegistration = async (
     )
     // Captain permissions are now handled automatically by database triggers
   ]);
+
+  // Create SeasonPlayerRank entries for newly added players
+  // Uses the same shared logic as addPlayersForTeamInSeason
+  if (season && playersUpdateResult.added.length > 0) {
+    const appId = season.app_id;
+    const platform = season.platform;
+    const signupRankRequirements = pickSignupRankRequirements(season);
+
+    for (const newPlayerSteamId of playersUpdateResult.added) {
+      // Find the player data to get captain/co-captain status
+      const newPlayerData = playerUpdateData.find(
+        (p) => p.steam_id === newPlayerSteamId
+      );
+
+      if (!newPlayerData) {
+        continue;
+      }
+
+      // Create and save player rank using shared helper
+      await createAndSavePlayerRankForSeason(
+        newPlayerSteamId,
+        seasonId,
+        appId,
+        platform,
+        signupRankRequirements,
+        connection
+      );
+    }
+  }
 
   // Update FaceIT data for players when platform is FaceIT
   if (season) {
@@ -406,7 +490,7 @@ export const handleSeasonTeamRegistration = async (
       connection
     );
     if (captainEmail) {
-      const team = await getTeamById(teamId);
+      const team = await getTeamById(teamId, connection);
       const teamName = team[0]?.name || "Your Team";
       sendSeasonCaptainWelcomeEmail(
         captainEmail,
@@ -498,6 +582,26 @@ const getCaptainEmailAndPlayers = async (
     }))
   };
 };
+
+async function resolveSignupImagePhash(
+  imageData: string | undefined,
+  imageFilename: string | undefined,
+  entityType: "organization" | "team"
+): Promise<string | undefined> {
+  if (!imageData) return undefined;
+  try {
+    const result = await uploadSignupImage(
+      imageData,
+      imageFilename,
+      entityType,
+      0
+    );
+    return result.phash;
+  } catch (err) {
+    logger.warn(`Failed to upload ${entityType} logo during signup: ${err}`);
+    return undefined;
+  }
+}
 
 export const handleSignupFormForSeason = async (
   season: SeasonDetails,
@@ -609,23 +713,11 @@ export const handleSignupFormForSeason = async (
 
     // New org and new team.
     if (formData.newTeam) {
-      // Determine team logo if image was uploaded
-      let teamLogo: string | undefined;
-      if (formData.newTeam.image_data) {
-        try {
-          const imageResult = await uploadSignupImage(
-            formData.newTeam.image_data,
-            formData.newTeam.image_filename,
-            "team",
-            0 // Temporary ID, will be updated after insert
-          );
-          teamLogo = imageResult.phash;
-        } catch (imageError) {
-          logger.warn(
-            `Failed to upload team logo during signup: ${imageError}`
-          );
-        }
-      }
+      const teamLogo = await resolveSignupImagePhash(
+        formData.newTeam.image_data,
+        formData.newTeam.image_filename,
+        "team"
+      );
 
       const newTeam = await insertTeam(
         {
@@ -668,23 +760,12 @@ export const handleSignupFormForSeason = async (
   // Handle existing org and new team
   if (formData.organizationId !== -1) {
     if (formData.teamId === -1 && formData.newTeam) {
-      // Determine team logo if image was uploaded
-      let teamLogo: string | undefined;
-      if (formData.newTeam.image_data) {
-        try {
-          const imageResult = await uploadSignupImage(
-            formData.newTeam.image_data,
-            formData.newTeam.image_filename,
-            "team",
-            0 // Temporary ID, will be updated after insert
-          );
-          teamLogo = imageResult.phash;
-        } catch (imageError) {
-          logger.warn(
-            `Failed to upload team logo during signup: ${imageError}`
-          );
-        }
-      } else {
+      let teamLogo = await resolveSignupImagePhash(
+        formData.newTeam.image_data,
+        formData.newTeam.image_filename,
+        "team"
+      );
+      if (!teamLogo) {
         // If no team image provided, default to organization logo
         const [org] = await getOrganizationById(formData.organizationId);
         if (org?.logo) {

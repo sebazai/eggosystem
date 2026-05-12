@@ -96,14 +96,16 @@ const mockTeams: MatchInfo["teams"] = {
     name: "Team Alpha",
     logo: "team-alpha-logo.png",
     score: 16,
-    rank: 1
+    rank: 1,
+    side: null
   },
   2: {
     id: 2,
     name: "Team Beta",
     logo: "team-beta-logo.png",
     score: 12,
-    rank: 2
+    rank: 2,
+    side: null
   }
 };
 

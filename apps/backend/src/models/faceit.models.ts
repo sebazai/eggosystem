@@ -38,6 +38,60 @@ export const saveWebhookData = async (
   );
 };
 
+/**
+ * True if we stored a successful `match_status_ready` webhook for this FaceIT room.
+ * Used to decide whether `match_status_finished` should preserve existing start times (BO3+ hub).
+ */
+export const hasSuccessfulFaceitReadyWebhook = async (
+  externalPayloadId: string
+): Promise<boolean> => {
+  const result = await runQuery<Array<{ c: number }>>(
+    `SELECT 1 as c FROM FaceitWebhooks
+     WHERE external_payload_id = ? AND event = 'match_status_ready' AND error_type IS NULL
+     LIMIT 1`,
+    [externalPayloadId]
+  );
+  return result.length > 0;
+};
+
+/**
+ * Count of stored successful `match_status_ready` rows for this FaceIT room.
+ * After {@link saveWebhookData} for the current ready, this is 1 for the first ready
+ * and greater than 1 for later readies (BO3+ hub: only the first should set `start_timestamp`).
+ */
+export const countSuccessfulFaceitReadyWebhooks = async (
+  externalPayloadId: string
+): Promise<number> => {
+  const result = await runQuery<Array<{ c: number }>>(
+    `SELECT COUNT(*) as c FROM FaceitWebhooks
+     WHERE external_payload_id = ? AND event = 'match_status_ready' AND error_type IS NULL`,
+    [externalPayloadId]
+  );
+  return result[0]?.c ?? 0;
+};
+
+/**
+ * Count of match_status_finished after the last match_status_configuring for this room.
+ * Resets the effective game index after a restart (configuring sets matches to ONGOING).
+ * Excludes retries and manual reprocess.
+ */
+export const getMatchStatusFinishedCountAfterLastConfiguring = async (
+  externalPayloadId: string
+): Promise<number> => {
+  const result = await runQuery<Array<{ count: number }>>(
+    `SELECT COUNT(*) as count FROM FaceitWebhooks fw
+     WHERE fw.external_payload_id = ? AND fw.event = 'match_status_finished'
+     AND fw.retry_count = 0 AND COALESCE(fw.manual_reprocess, 0) = 0
+     AND fw.received_at > COALESCE(
+       (SELECT MAX(received_at) FROM FaceitWebhooks
+        WHERE external_payload_id = ? AND event = 'match_status_configuring'),
+       '1970-01-01 00:00:00'
+     )`,
+    [externalPayloadId, externalPayloadId]
+  );
+  return result[0]?.count ?? 0;
+};
+
 export const getFaceitLinksForSeason = async (
   seasonId: number,
   connection?: PoolConnection

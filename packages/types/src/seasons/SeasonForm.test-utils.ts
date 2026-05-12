@@ -1,5 +1,40 @@
 import { SeasonPlatform } from "../enums";
-import type { SeasonFormValues, SeasonFormRaw } from "./SeasonForm.interface";
+import type {
+  SeasonFormRaw,
+  SeasonFormRequestBody,
+  SeasonFormValues
+} from "./SeasonForm.interface";
+
+/**
+ * Minimal valid season create/update JSON body for API/integration tests.
+ * Aligns with `seasonFormSchema` input; optional fields are omitted by default.
+ *
+ * @example
+ * ```typescript
+ * const body = createMockSeasonFormRequestBody({ active_map_pool: [2, 3] });
+ * ```
+ */
+export function createMockSeasonFormRequestBody(
+  overrides?: Partial<SeasonFormRequestBody>
+): SeasonFormRequestBody {
+  return {
+    game_id: 1,
+    game_type_id: 1,
+    organizer_id: 1,
+    name: "Test Season",
+    full_name: "Test Season Full Name",
+    start_date: "2024-02-01",
+    end_date: "2024-12-31",
+    platform: SeasonPlatform.FACEIT,
+    is_round_robin_bo2_as_2xbo1: false,
+    has_vat: true,
+    active_map_pool: [1, 2, 3],
+    faceit_rank_required: false,
+    premier_rank_required: false,
+    hours_played_required: false,
+    ...overrides
+  };
+}
 
 /**
  * Creates a mock SeasonFormValues object with sensible defaults.
@@ -40,6 +75,9 @@ export const createMockSeasonFormValues = (
     registration_price: 150,
     has_vat: true,
     active_map_pool: [1, 2, 3],
+    faceit_rank_required: false,
+    premier_rank_required: false,
+    hours_played_required: false,
     ...overrides
   };
 };
@@ -87,6 +125,9 @@ export const createMockSeasonFormRaw = (
     active_map_pool: [1, 2, 3],
     rulebook_url: null,
     discord_link: null,
+    faceit_rank_required: false,
+    premier_rank_required: false,
+    hours_played_required: false,
     ...overrides
   };
 };

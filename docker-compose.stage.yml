@@ -95,7 +95,7 @@ services:
     restart: always
 
   eggo-stage-db:
-    image: mariadb:12.1.2
+    image: mariadb:12.2.2
     container_name: eggo-stage-db
     restart: always
     environment:
@@ -210,7 +210,7 @@ services:
     restart: no
 
   eggo-stage-rabbitmq:
-    image: rabbitmq:4.2.2-management
+    image: rabbitmq:4.2.5-management
     container_name: eggo-stage-rabbitmq
     restart: always
     environment:

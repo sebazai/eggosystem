@@ -1,6 +1,8 @@
 import { type TeamMapStats, type ParsedParams } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
+import { coerceAvgScore, roundSideKd } from "../utils/number-utils";
 import { generateQueryWithFilters } from "../utils/queryFilter";
+import { getActiveMapPoolMaps } from "./season-active-map-pool.models";
 
 /**
  * Get enhanced map statistics for a team including CT and T side performance
@@ -23,7 +25,89 @@ export const getTeamEnhancedMapStats = async (
   ]);
 
   // Get map statistics including CT/T side data
-  return getMapStatsWithSides(teamId, query, queryParams);
+  const stats = await getMapStatsWithSides(teamId, query, queryParams);
+
+  // Only complement with map pool if:
+  // 1. Seasons are specified (to know which pool to use)
+  // 2. No specific maps are filtered (user wants to see all maps)
+  // 3. Team has at least some activity (not a non-existent team)
+  const shouldComplement =
+    season_ids &&
+    season_ids.length > 0 &&
+    (!map_ids || map_ids.length === 0) &&
+    stats.length > 0;
+
+  if (shouldComplement) {
+    const activeMapPool = await getActiveMapPoolMaps(season_ids);
+    if (activeMapPool.length > 0) {
+      return complementStatsWithMapPool(stats, activeMapPool);
+    }
+  }
+
+  return stats;
+};
+
+/**
+ * Complement stats with complete map pool, filling in zeros for unplayed maps
+ * @param stats Existing stats from database
+ * @param mapPool Complete map pool from SeasonActiveMapPool
+ * @returns Complete stats array with all maps from pool in alphabetical order
+ */
+const complementStatsWithMapPool = (
+  stats: TeamMapStats[],
+  mapPool: Array<{ map_id: number; map_name: string }>
+): TeamMapStats[] => {
+  // Create a map for quick lookup of existing stats
+  const statsMap = new Map(stats.map((s) => [s.map_id, s]));
+
+  // Create stats for all maps in the pool
+  const completeStats = mapPool.map((poolMap) => {
+    const existingStat = statsMap.get(poolMap.map_id);
+    if (existingStat) {
+      return existingStat;
+    }
+
+    // Return zero values for unplayed maps
+    return {
+      map_id: poolMap.map_id,
+      map_name: poolMap.map_name,
+      maps_played: 0,
+      wins: 0,
+      losses: 0,
+      win_percentage: 0,
+      avg_score: 0,
+      avg_opponent_score: 0,
+      ct_win_percentage: 50,
+      t_win_percentage: 50,
+      ct_kd: 0,
+      t_kd: 0,
+      kills_ct: 0,
+      deaths_ct: 0,
+      kills_t: 0,
+      deaths_t: 0,
+      first_kills: 0,
+      first_deaths: 0,
+      first_kills_t: 0,
+      first_deaths_t: 0,
+      first_kills_ct: 0,
+      first_deaths_ct: 0,
+      fk_5v4_won: 0,
+      fk_5v4_total: 0,
+      fk_4v5_won: 0,
+      fk_4v5_total: 0,
+      fk_5v4_won_ct: 0,
+      fk_5v4_total_ct: 0,
+      fk_5v4_won_t: 0,
+      fk_5v4_total_t: 0,
+      fk_4v5_won_ct: 0,
+      fk_4v5_total_ct: 0,
+      fk_4v5_won_t: 0,
+      fk_4v5_total_t: 0
+    } satisfies TeamMapStats;
+  });
+
+  // Sort by map name alphabetically (already sorted from query, but ensure)
+  return completeStats.sort((a, b) => a.map_name.localeCompare(b.map_name));
 };
 
 /**
@@ -36,8 +120,8 @@ interface BaseMapStats {
   wins: number;
   losses: number;
   win_percentage: number;
-  avg_score: string;
-  avg_opponent_score: string;
+  avg_score: string | number;
+  avg_opponent_score: string | number;
 }
 
 interface SideStats {
@@ -258,11 +342,8 @@ const getMapStatsWithSides = async (
         ? Math.min(100, Math.max(0, (side.kills_t / side.deaths_t) * 50))
         : 50;
 
-    const ctKd =
-      side.deaths_ct > 0 ? (side.kills_ct / side.deaths_ct).toFixed(2) : "1.00";
-
-    const tKd =
-      side.deaths_t > 0 ? (side.kills_t / side.deaths_t).toFixed(2) : "1.00";
+    const ctKd = roundSideKd(side.kills_ct, side.deaths_ct);
+    const tKd = roundSideKd(side.kills_t, side.deaths_t);
 
     return {
       map_id: base.map_id,
@@ -271,8 +352,8 @@ const getMapStatsWithSides = async (
       wins: base.wins,
       losses: base.losses,
       win_percentage: base.win_percentage,
-      avg_score: base.avg_score,
-      avg_opponent_score: base.avg_opponent_score,
+      avg_score: coerceAvgScore(base.avg_score),
+      avg_opponent_score: coerceAvgScore(base.avg_opponent_score),
       ct_win_percentage: parseFloat(ctWinPercentage.toFixed(1)),
       t_win_percentage: parseFloat(tWinPercentage.toFixed(1)),
       ct_kd: ctKd,

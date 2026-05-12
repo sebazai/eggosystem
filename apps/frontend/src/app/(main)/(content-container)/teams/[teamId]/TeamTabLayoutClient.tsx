@@ -1,5 +1,6 @@
 "use client";
 import { MultiFilters } from "@/components/filters/MultiFilters";
+import { PageSkeleton } from "@/components/loading";
 import { TeamsHeader } from "@/components/teams/TeamsHeader";
 import { TeamTrophies } from "@/components/teams/TeamTrophies";
 import { useFilters } from "@/context/FilterContext";
@@ -33,7 +34,7 @@ function TeamTabLayoutContent({
   const searchParams = useSearchParams();
 
   if (isLoading || !filterParams || isValidating) {
-    return <div>Loading...</div>;
+    return <PageSkeleton showFilters={true} />;
   }
 
   if (error) {

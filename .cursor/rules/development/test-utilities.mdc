@@ -45,5 +45,5 @@ const customEntity = createMockEntityName({ id: 123, name: "Custom" });
 
 ## Related Rules
 
-- See `testing-strategy.mdc` for overall testing approach
-- See `tdd-workflow.mdc` for test-driven development patterns
+- See `.cursor/skills/testing-strategy/SKILL.md` for overall testing approach
+- See `.cursor/skills/tdd-workflow/SKILL.md` for test-driven development patterns

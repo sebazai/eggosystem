@@ -47,7 +47,7 @@ export default async function AllOrganizations(props: {
         id="sticky-header"
         className="sticky z-30 top-[var(--nav-height)] transition-[top] duration-300 ease-in-out sm:landscape:none xs:landscape:top-6 md:landscape:top-[var(--nav-height)]"
       >
-        <SearchBar placeholder={"Search organizations..."} />
+        <SearchBar placeholder="Search by organization name or company code..." />
       </div>
       <div>
         {/* Organization Cards */}

@@ -28,7 +28,9 @@ describe("getMatchesByFilters", () => {
         team2_logo: "9e39646633c95966",
         match_game_id: null,
         team1_score: 13,
-        team2_score: 8
+        team2_score: 8,
+        team1_side: null,
+        team2_side: null
       },
       {
         match_id: 10068,
@@ -42,7 +44,9 @@ describe("getMatchesByFilters", () => {
         team2_logo: "9e39646633c95966",
         match_game_id: null,
         team1_score: 13,
-        team2_score: 3
+        team2_score: 3,
+        team1_side: null,
+        team2_side: null
       }
     ]);
   });
@@ -154,7 +158,7 @@ describe("getMatchTopPlayers", () => {
     const result = await getMatchTopPlayers(9466);
     expect(result).toEqual({
       most_kills: {
-        steam_id: 76561197987111310,
+        steam_id: "76561197987111310",
         nickname: "Martas",
         value: 27,
         team_id: 2008

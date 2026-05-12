@@ -10,11 +10,11 @@
     "clean": "rm -rf cache dist"
   },
   "dependencies": {
-    "msw": "2.12.7",
+    "msw": "2.12.14",
     "@eggosystem/types": "workspace:*"
   },
   "devDependencies": {
-    "typescript": "5.9.3"
+    "typescript": "6.0.3"
   },
   "exports": {
     ".": {

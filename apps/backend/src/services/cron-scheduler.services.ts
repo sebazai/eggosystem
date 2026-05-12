@@ -30,9 +30,8 @@ const _syncMatchesManualGroup = async (type: string): Promise<void> => {
     const allMatches = [];
     let offset = 0;
     const limit = 100;
-    let hasMoreMatches = true;
 
-    while (hasMoreMatches) {
+    while (true) {
       const matches = await getFaceitMatchesForFaceitLeague(
         seasonLeagueExternalId.external_id,
         type,
@@ -41,7 +40,6 @@ const _syncMatchesManualGroup = async (type: string): Promise<void> => {
       );
 
       if (matches.length === 0) {
-        hasMoreMatches = false;
         break;
       }
 
@@ -49,7 +47,6 @@ const _syncMatchesManualGroup = async (type: string): Promise<void> => {
 
       // If we got fewer matches than the limit, we've reached the end
       if (matches.length < limit) {
-        hasMoreMatches = false;
         break;
       }
 
@@ -246,9 +243,9 @@ export const validateAndUpdateScheduledMatchTeams = async (): Promise<void> => {
 
         // Insert correct teams
         await runQuery(
-          `INSERT INTO MatchTeams (match_id, team_id, season_id, league_id)
-           VALUES (?, ?, ?, ?),
-                  (?, ?, ?, ?)`,
+          `INSERT INTO MatchTeams (match_id, team_id, season_id, league_id, match_side)
+           VALUES (?, ?, ?, ?, 'home'),
+                  (?, ?, ?, ?, 'away')`,
           [
             match.id,
             dbTeam1.team_id,

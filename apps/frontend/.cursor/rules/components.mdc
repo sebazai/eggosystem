@@ -65,7 +65,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 
-export default function MyComponent() {
+export const MyComponent = () => {
   return (
     <Card>
       <CardHeader>
@@ -77,12 +77,13 @@ export default function MyComponent() {
       </CardContent>
     </Card>
   );
-}
+};
 ```
 
 ## Component Structure
 
 - Use functional components with TypeScript
+- **Prefer `export const`** over `export function` for component definitions
 - Define props interfaces at the top of the file
 - Use named exports for components
 - Follow existing component patterns in the codebase
@@ -93,7 +94,7 @@ export default function MyComponent() {
 - Use Tailwind CSS for styling
 - **Use semantic color tokens** for theme support (`bg-background`, `text-foreground`, etc.)
 - Follow existing design system patterns
-- Ensure responsive design for mobile and desktop
+- Ensure responsive design for mobile and desktop; **App Router pages and layouts** (`app/**`) follow `pages-and-layouts.mdc` (mobile-first breakpoints, overflow, touch-friendly patterns)
 - Use `cn()` helper for conditional classes
 
 ## Component Organization
@@ -102,9 +103,128 @@ export default function MyComponent() {
 src/components/
 ├── ui/              # shadcn/ui components (DO NOT modify directly)
 ├── layout/          # Layout components
+├── loading/         # Reusable loading state components
 ├── [domain]/        # Feature-specific components (reuse from here)
 └── [feature]/       # Domain components
 ```
+
+## Loading States
+
+**CRITICAL**: Always use skeleton components instead of "Loading..." text or spinners that remove page structure.
+
+### Available Loading Components
+
+Use components from `@/components/loading/`:
+
+- `PageSkeleton` - For full pages that need to preserve structure (title, filters, etc.)
+- `TableSkeleton` - For table loading states with configurable rows/columns
+- `CardSkeleton` - Generic card skeleton for any card-based loading
+- `ListSkeleton` - For list loading (matches, items, etc.)
+- `MatchListSkeleton` - Specialized skeleton for match lists
+- `LoadingSpinner` - Wrapper around Spinner with optional text (use sparingly)
+- `AuthLoading` - Unified authentication loading state (use for `useAuth().loading`)
+
+### Loading State Patterns
+
+#### ✅ Good - Preserve Page Structure
+
+```tsx
+// ✅ Good - Keep page structure, show skeleton in content area
+export const PlayersPage = () => {
+  const { filterParams, isLoading } = useFilters();
+  const { players, isLoading: isLoadingPlayers } = usePlayers();
+
+  return (
+    <div>
+      <h1>Players</h1>
+      {filterParams && <MultiFilters {...filterParams} />}
+      {!filterParams && <div className="h-10 bg-accent animate-pulse" />}
+      
+      <CardContainer>
+        {(isLoading || isLoadingPlayers) && <TableSkeleton />}
+        {!isLoading && !isLoadingPlayers && players && (
+          <PlayerTable players={players} />
+        )}
+      </CardContainer>
+    </div>
+  );
+};
+```
+
+#### ❌ Bad - Early Return Removes Structure
+
+```tsx
+// ❌ Bad - Early return removes entire page structure
+if (isLoading) {
+  return <ContentContainer>Loading...</ContentContainer>;
+}
+```
+
+#### ✅ Good - Use Short-Circuit Evaluation
+
+```tsx
+// ✅ Good - Use short-circuit (&&) instead of ternary
+{isLoading && <PageSkeleton />}
+{!isLoading && error && <ErrorComponent />}
+{!isLoading && !error && data && <DataComponent data={data} />}
+```
+
+#### ❌ Bad - Avoid Ternary for Conditional Rendering
+
+```tsx
+// ❌ Bad - Ternary is verbose for conditional rendering
+{isLoading ? <Skeleton /> : <Content />}
+```
+
+### Loading Component Selection Guide
+
+- **PageSkeleton**: Use when loading filters or initial page data - preserves title and layout
+- **TableSkeleton**: Use for table components - matches table structure
+- **CardSkeleton**: Use for card-based content - matches card layout
+- **ListSkeleton**: Use for generic lists - matches list item structure
+- **MatchListSkeleton**: Use specifically for match lists - matches match card layout
+- **LoadingSpinner**: Use only for small inline loading states or when skeleton doesn't fit
+
+### Authentication Loading
+
+For authentication loading states, use the unified `AuthLoading` component:
+
+```tsx
+// ✅ Good - Use AuthLoading for auth checks
+const { user, loading } = useAuth();
+
+if (loading) {
+  return <AuthLoading />;
+}
+
+// ✅ Good - Custom message for specific contexts
+if (loading) {
+  return <AuthLoading message="Ensuring authentication..." />;
+}
+
+// ✅ Good - Full screen for protected routes
+if (loading) {
+  return <AuthLoading fullScreen={true} />;
+}
+```
+
+**When to use `AuthLoading`:**
+- When checking `useAuth().loading` state
+- For authentication checks before rendering protected content
+- For role-protected pages/components
+
+**When NOT to use `AuthLoading`:**
+- For data loading (use appropriate skeleton components)
+- When you want to preserve page structure (use PageSkeleton instead)
+
+### Best Practices
+
+1. **Preserve structure** - Never use early returns that remove page headers, filters, or navigation
+2. **Match skeleton to content** - Skeleton should mirror the actual content structure
+3. **Use short-circuit evaluation** - Prefer `&&` over ternary for conditional rendering
+4. **Mobile-responsive** - All loading components are mobile-friendly by default
+5. **Avoid "Loading..." text** - Use visual skeletons instead of text-based loading states
+6. **Use AuthLoading for auth** - Always use `AuthLoading` component for authentication loading states
 
 ## Testing
 
@@ -118,6 +238,9 @@ src/components/
 - **Always check for existing components** before creating new ones
 - **Prefer shadcn/ui components** from `@/components/ui/`
 - **Install new shadcn components** with `pnpm shadcn:add [name]`
+- **Use loading skeleton components** instead of "Loading..." text
+- **Preserve page structure** during loading states
+- **Use short-circuit evaluation** (`&&`) for conditional rendering
 - Functional components with TypeScript
 - Tailwind CSS with semantic color tokens
 - Test with React Testing Library

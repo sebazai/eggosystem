@@ -1,24 +1,24 @@
-# Kanaliiga Kanahub
+# Kanaliiga Eggosystem
 
-> **Eggosystem for Kanaliiga Hub** - A comprehensive esports tournament management platform
+Corporate CS2 esports tournament management platform for Kanaliiga Hub. PNPM workspace monorepo with an Express 5 backend, a Next.js 16 App Router frontend, and shared TypeScript packages.
 
 ## Highlights
 
-- **CS2 Tournament Management**: Complete tournament system with team registration, player management, and match tracking
-- **Advanced Player Analytics**: Comprehensive CS2 demo parser with KanaRating system, detailed statistics, and performance metrics
-- **Role-based Access Control**: Sophisticated permission system with captain permissions, team management, and admin controls
-- **Database-driven Business Logic**: MariaDB with triggers and functions enforcing tournament rules and data integrity
-- **Modern Development Stack**: TypeScript, Next.js, Express.js with full type safety and comprehensive testing
-- **Professional UI**: Responsive design with Tailwind CSS, Radix UI components, and dark/light theme support
-- **Automated Workflows**: Database backups, migration system, and comprehensive CI/CD pipeline
+- CS2 tournament management: team registration, rosters, match tracking.
+- Player analytics: CS2 demo parser with the KanaRating system.
+- Role-based access: captain permissions, team management, admin controls.
+- Database-driven business rules: MariaDB with triggers and SQL functions.
+- Shared TypeScript types and MSW mocks across apps via `@eggosystem/types` and `@eggosystem/shared-msw`.
+- RFC 7807 Problem Details error format, JWT auth with RSA signing, Steam OpenID login.
 
 ## Quick Start
 
 ### Prerequisites
 
 - Docker and Docker Compose
-- VS Code with Dev Containers extension (recommended)
-  - **Note**: DevContainer still requires Docker to be installed and running on your host machine
+- Node.js 24 (the DevContainer uses `mcr.microsoft.com/devcontainers/javascript-node:24-bullseye`)
+- pnpm 11.0.0-rc.5 (pinned via `packageManager` in root `package.json`; enables [global virtual store](https://pnpm.io/11.x/git-worktrees) for git worktrees via `enableGlobalVirtualStore` in `pnpm-workspace.yaml`)
+- VS Code with Dev Containers extension (recommended). DevContainer still requires Docker on your host.
 
 ### Installation
 
@@ -32,50 +32,63 @@
 2. **Start development environment**
 
    ```bash
-   # Option 1: DevContainer (Recommended)
-   # Open in VS Code and select "Reopen in Container"
-
+   # Option 1: DevContainer (recommended) — open in VS Code and "Reopen in Container"
    # Option 2: Docker Compose
    docker compose up
    ```
 
-3. **Initialize database**
+3. **Generate JWT keys** (see [JWT Key Generation](#jwt-key-generation) below).
 
-   ```bash
-   pnpm seed
-   ```
+4. **Apply for a Steam API key**: <https://steamcommunity.com/dev/apikey>.
 
-4. **Apply for your own Steam API key**
-
-- [https://steamcommunity.com/dev/apikey](https://steamcommunity.com/dev/apikey)
-
-5. **Create following apps/backend/.env file**
+5. **Create `apps/backend/.env`**
 
    ```env
    STEAM_API_KEY=your_api_key
    ```
 
-6. **Start development servers**
+6. **One-shot setup** (install deps, Playwright, build, migrate, seed):
+
+   ```bash
+   pnpm setup:dev
+   ```
+
+   Or step by step:
+
+   ```bash
+   pnpm install
+   pnpm build
+   pnpm migrate
+   pnpm seed
+   ```
+
+7. **Start development servers**
 
    ```bash
    pnpm dev
    ```
 
-**You're ready!** Backend runs on `localhost:3001`, frontend on `localhost:3000`
+Backend runs on `localhost:3001`, frontend on `localhost:3000`, bull-monitor on `localhost:3010`.
 
-7. Optional: Apply for FaceIT App Studio API Key (should work withoout)
+8. Optional: Apply for a FaceIT App Studio API key at <https://developers.faceit.com/> (most flows work without it).
 
-- https://developers.faceit.com/
+9. Optional — **GitLab in Cursor (MCP)**: create a [Personal Access Token](https://docs.gitlab.com/ee/user/profile/personal_access_tokens.html) and a local `.env.mcp` file:
+
+   ```bash
+   pnpm gitlab:mcp:pat
+   ```
+
+   That command copies [`.env.mcp.example`](.env.mcp.example) to `.env.mcp` if needed, prints scope guidance, and opens the GitLab token page. Cursor loads `.env.mcp` via [`.cursor/gitlab-mcp.sh`](.cursor/gitlab-mcp.sh) (see [`.cursor/mcp.json`](.cursor/mcp.json)).
 
 ## Documentation
 
-- **[Architecture Overview](README.architecture.md)** - System design and technical patterns
-- **[Backend API Documentation](README.api.md)** - API endpoints, authentication, and security patterns
-- **[Database Schema](README.database.md)** - Complete database documentation with triggers and functions ([Visual Diagram](https://csdb.kanaliiga.fi/))
-- **[Development Commands](README.commands.md)** - Comprehensive command reference
-- **[Dashboard Security](README.dashboard.md)** - Dashboard authentication, authorization, and security patterns
-- **[Frontend Development](README.frontend.md)** - Frontend component patterns, responsive design, and data fetching
-- **[Testing Strategy](README.testing.md)** - Testing patterns and best practices
+- [Architecture Overview](README.architecture.md) — system design and technical patterns
+- [Backend API](README.api.md) — endpoints, authentication, security
+- [Database Schema](README.database.md) — tables, triggers, SQL functions ([visual diagram](https://csdb.kanaliiga.fi/))
+- [Dashboard Security](README.dashboard.md) — dashboard auth and authorization
+- [Frontend Development](README.frontend.md) — component patterns and data fetching
+- [Unit / integration testing](.cursor/skills/testing-strategy/SKILL.md) — Jest patterns and command hierarchy
+- [E2E / Playwright](.cursor/skills/e2e-playwright/SKILL.md) — run from repo root, prerequisites
 
 ### JWT Key Generation
 
@@ -97,7 +110,7 @@ openssl rsa -pubout -in apps/backend/private_refresh_token.pem -out apps/backend
 # Start all services with Docker Compose
 docker compose up
 
-# Start with database seeding
+# Start with the seed profile (runs dev_seed.ts once)
 docker compose --profile seed up
 ```
 
@@ -105,9 +118,9 @@ This starts the complete development environment including:
 
 - Backend API server (localhost:3001)
 - Frontend application (localhost:3000)
-- MariaDB database with PhpMyAdmin
-- Redis for session management
-- Automated test execution
+- MariaDB database with PhpMyAdmin (localhost:8082)
+- Redis for queues and caching
+- bull-monitor UI on localhost:3010
 
 ## Testing
 
@@ -130,26 +143,26 @@ pnpm --filter=backend test -- leaderboards
 ### End-to-End Tests
 
 ```bash
-# Install Playwright dependencies
-pnpm exec playwright install
-pnpm exec playwright install-deps
+# Install Playwright + system deps (chromium only)
+pnpm install:playwright
 
-# Start E2E backend
-pnpm --filter=backend dev:e2e
-
-# Run E2E tests
+# Run E2E tests (builds, reseeds the E2E DB, then runs Playwright)
 pnpm test:e2e
+
+# Playwright UI
+pnpm test:e2e:ui
+
+# Run a dedicated E2E backend (NODE_ENV=e2e, loads .env.local.test)
+pnpm --filter=backend dev:e2e
 ```
 
-**Note**: For macOS with DevContainer, install XQuartz and run `xhost localhost` in XQuartz terminal for Playwright headed mode.
+Always run `pnpm test:e2e` from the workspace root so the build and E2E reseed run first; `test:e2e:run` skips those steps. For macOS with DevContainer, install XQuartz and run `xhost localhost` for Playwright headed mode.
 
 ## Database Management
 
 ### Migrations
 
-When creating new migrations, remember to [update the dev/test seed](docs/update_dev_seed.md).
-
-For production migrations, see [migration documentation](docs/migration.md).
+When creating new migrations, remember to [update the dev/test seed](docs/update_dev_seed.md). See [`README.database.md`](README.database.md) for schema details and production migration notes.
 
 ### Database Access
 

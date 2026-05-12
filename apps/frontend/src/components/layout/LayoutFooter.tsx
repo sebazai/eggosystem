@@ -1,7 +1,16 @@
 import Link from "next/link";
+import Image from "next/image";
 import { FooterPartners } from "../sponsors/FooterPartners";
+import { createNextUrl } from "@/lib/utils";
+import { Separator } from "../ui/separator";
+import { getPublicMarketingSponsors } from "@/lib/get-public-marketing-sponsors";
 
-const Footer = () => {
+const Footer = async () => {
+  const sponsors = await getPublicMarketingSponsors();
+  const footerPartnersWithLogo = sponsors.main_partners.filter(
+    (p) =>
+      p.footer_image_phash != null && p.footer_image_phash.trim().length > 0
+  );
   // Get Git SHA from environment variables
   const gitSha = process.env.NEXT_PUBLIC_GIT_SHA || "";
   const gitlabUrl =
@@ -14,7 +23,7 @@ const Footer = () => {
   return (
     <footer className="bg-secondary pt-4 sm:pt-12 px-4 sm:px-12">
       <div className="max-w-screen-2xl mx-auto">
-        <div className="border-b border-gray-700 pb-6 mb-6"></div>
+        <div className="border-b border-border pb-6 mb-6"></div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <div>
             <h2>Kanaliiga Ry</h2>
@@ -29,12 +38,16 @@ const Footer = () => {
             </p>
           </div>
 
-          {/* Column 2 - Sponsors */}
-          <FooterPartners />
+          {/* Column 2 — main partners only if they uploaded a footer-specific logo */}
+          {footerPartnersWithLogo.length > 0 ? (
+            <FooterPartners partners={footerPartnersWithLogo} />
+          ) : (
+            <div aria-hidden="true" />
+          )}
 
           {/* Column 3 - Follow Us */}
           <div>
-            <h2>Follow us</h2>
+            <h2>Follow Us</h2>
             <div className="mt-4 space-y-2">
               {[
                 { name: "Discord", link: "https://discord.gg/nhrNC9x" },
@@ -64,7 +77,7 @@ const Footer = () => {
           <div>
             <h2>Credits</h2>
             <div className="mt-4">
-              <p>Created by:</p>
+              <b>Created by:</b>
               <div>
                 <Link href="https://www.linkedin.com/in/jari-haikonen/">
                   enzoj
@@ -84,12 +97,43 @@ const Footer = () => {
                   </Link>
                 </div>
               </div>
-
-              <div className="mt-4">
-                <p>Data mining by:</p>
+              <div className="my-3">
+                <b>Data mining by:</b>{" "}
                 <Link href="https://www.linkedin.com/in/jari-haikonen/">
                   enzoj
                 </Link>
+              </div>
+              <Separator />
+              <div className="mt-2 flex flex-row items-center gap-3">
+                <Link
+                  href="https://www.wunderdog.io"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="shrink-0"
+                >
+                  <Image
+                    src={createNextUrl(
+                      "/images/sponsors/wunderdog_oy_logo.jpeg"
+                    )}
+                    alt="Wunderdog"
+                    width={100}
+                    height={100}
+                    className="dark:invert-0 invert"
+                    unoptimized
+                  />
+                </Link>
+                <p className="text-sm text-muted-foreground">
+                  Developed with support from{" "}
+                  <Link
+                    href="https://www.wunderdog.io/blog/open-source-benefit"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline"
+                  >
+                    Wunderdog&apos;s open-source program
+                  </Link>
+                  .
+                </p>
               </div>
             </div>
           </div>

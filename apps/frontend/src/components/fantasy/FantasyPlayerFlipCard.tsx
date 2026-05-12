@@ -1,8 +1,30 @@
 "use client";
 
-import { useState, useRef } from "react";
+import React, { useState, useRef } from "react";
 import { cn, createTeamLogoUrl } from "@/lib/utils";
 import { NextImageFallback } from "../layout/NextImageFallback";
+import {
+  Crosshair,
+  Users,
+  Shield,
+  Zap,
+  Target,
+  Flame,
+  Swords,
+  Sparkles,
+  Star,
+  Activity,
+  Trophy,
+  Eye,
+  Timer,
+  TrendingUp,
+  Skull
+} from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger
+} from "@/components/ui/tooltip";
 import type { FantasyPlayer } from "./FantasyLeague";
 
 type Props = {
@@ -62,7 +84,58 @@ const tierStatHighlight = {
   bronze: "text-[#E09E5C]"
 } as const;
 
-export default function FantasyPlayerFlipCard({
+// Role icon mapping
+const getRoleIcon = (role?: string) => {
+  if (!role) return null;
+  const iconMap: Record<string, React.ReactNode> = {
+    main_awp: <Crosshair className="h-4 w-4" />,
+    leader: <Users className="h-4 w-4" />,
+    support: <Shield className="h-4 w-4" />,
+    entry_fragger: <Zap className="h-4 w-4" />,
+    defender: <Shield className="h-4 w-4" />,
+    hs_machine: <Target className="h-4 w-4" />,
+    multi_fragger: <Flame className="h-4 w-4" />,
+    attacker: <Swords className="h-4 w-4" />,
+    flash_master: <Sparkles className="h-4 w-4" />,
+    clutch_player: <Star className="h-4 w-4" />,
+    first_blood: <Activity className="h-4 w-4" />,
+    ace_hunter: <Trophy className="h-4 w-4" />,
+    t_specialist: <Zap className="h-4 w-4" />,
+    ct_specialist: <Shield className="h-4 w-4" />,
+    anchor: <Eye className="h-4 w-4" />,
+    camper: <Timer className="h-4 w-4" />,
+    stathunter: <TrendingUp className="h-4 w-4" />,
+    noob: <Skull className="h-4 w-4" />
+  };
+  return iconMap[role] || null;
+};
+
+const getRoleLabel = (role?: string) => {
+  if (!role) return "No Role";
+  const labelMap: Record<string, string> = {
+    main_awp: "Main AWP",
+    leader: "Leader",
+    support: "Support",
+    entry_fragger: "Entry Fragger",
+    defender: "Defender",
+    hs_machine: "HS Machine",
+    multi_fragger: "Multi Fragger",
+    attacker: "Attacker",
+    flash_master: "Flash Master",
+    clutch_player: "Clutch Player",
+    first_blood: "First Blood",
+    ace_hunter: "Ace Hunter",
+    t_specialist: "T-Side Specialist",
+    ct_specialist: "CT-Side Specialist",
+    anchor: "Anchor",
+    camper: "Camper",
+    stathunter: "Stathunter",
+    noob: "Noob"
+  };
+  return labelMap[role] || role.replace(/_/g, " ").toUpperCase();
+};
+
+function FantasyPlayerFlipCard({
   player,
   onAdd,
   disabled,
@@ -99,8 +172,10 @@ export default function FantasyPlayerFlipCard({
     <div
       ref={cardRef}
       className={cn(
-        "group relative w-full h-[320px] sm:h-[380px] lg:h-[420px] perspective cursor-pointer",
-        isDisabled && !isExistingTeamPlayer && "opacity-60" // Don't fade existing team cards
+        "group relative w-full h-[320px] sm:h-[380px] lg:h-[420px] perspective cursor-pointer transition-transform duration-200",
+        isDisabled && !isExistingTeamPlayer && "opacity-60", // Don't fade existing team cards
+        isExistingTeamPlayer &&
+          "hover:scale-[1.02] hover:shadow-lg hover:shadow-primary/20"
       )}
       onClick={handleCardClick}
     >
@@ -121,8 +196,9 @@ export default function FantasyPlayerFlipCard({
           style={{
             backfaceVisibility: "hidden",
             WebkitBackfaceVisibility: "hidden",
-            transform: "rotateY(0deg)",
-            WebkitTransform: "rotateY(0deg)"
+            transform: "rotateY(0deg) translateZ(1px)",
+            WebkitTransform: "rotateY(0deg) translateZ(1px)",
+            willChange: "transform"
           }}
         >
           {/* Outer Drop Shadow */}
@@ -132,7 +208,9 @@ export default function FantasyPlayerFlipCard({
               tierFrameGradients[player.tier],
               tierCardShadow[player.tier],
               tierInnerGlow[player.tier],
-              "transition-all duration-300"
+              "transition-all duration-300",
+              isExistingTeamPlayer &&
+                "group-hover:ring-2 group-hover:ring-primary/50 group-hover:ring-offset-2 group-hover:ring-offset-neutral-900"
             )}
           >
             {/* Inner Border for Depth */}
@@ -216,7 +294,7 @@ export default function FantasyPlayerFlipCard({
                 {player.points !== undefined && player.points !== 0 && (
                   <div
                     className={cn(
-                      "absolute bottom-5 right-3 z-20 w-12 h-12 rounded-full flex items-center justify-center backdrop-blur-sm shadow-lg border-2",
+                      "absolute bottom-5 right-3 z-20 w-12 h-12 rounded-full flex items-center justify-center shadow-lg border-2",
                       player.points > 0
                         ? "bg-green-600/90 border-green-400/50"
                         : "bg-red-600/90 border-red-400/50"
@@ -278,8 +356,8 @@ export default function FantasyPlayerFlipCard({
 
               {/* Premium Stats Section with Hierarchy */}
               <div className="relative px-2 sm:px-3 py-2 sm:py-3 bg-gradient-to-b from-neutral-900 via-neutral-850 to-neutral-900">
-                {/* Subtle background blur for readability */}
-                <div className="absolute inset-0 bg-neutral-900/60 backdrop-blur-sm" />
+                {/* Subtle background for readability */}
+                <div className="absolute inset-0 bg-neutral-900/60" />
 
                 <div className="relative grid grid-cols-3 gap-0">
                   {/* Rating */}
@@ -343,33 +421,55 @@ export default function FantasyPlayerFlipCard({
                   </div>
                 </div>
 
-                {/* Collectible-style Button */}
-                <button
-                  onClick={handleAddClick}
-                  disabled={isDisabled}
-                  className={cn(
-                    "relative px-3 sm:px-4 py-1.5 sm:py-2 font-black uppercase tracking-[0.1em] text-[9px] sm:text-[10px] transition-all duration-200 rounded-lg",
-                    "disabled:opacity-50 disabled:cursor-not-allowed",
-                    !isDisabled && [
-                      "bg-gradient-to-br shadow-[0_4px_10px_rgba(0,0,0,0.4)]",
-                      tierFrameGradients[player.tier],
-                      tierTextColor[player.tier],
-                      tierInnerGlow[player.tier],
-                      "hover:scale-105 hover:shadow-[0_6px_14px_rgba(0,0,0,0.5)]",
-                      "active:scale-95"
-                    ],
-                    isDisabled &&
-                      "bg-neutral-800 text-gray-500 border border-neutral-700"
-                  )}
-                >
-                  {/* Button shine overlay */}
-                  {!isDisabled && (
-                    <div className="absolute inset-0 bg-gradient-to-b from-white/25 via-transparent to-transparent rounded-lg" />
-                  )}
-                  <span className="relative z-10">
-                    {!canAfford ? "No Funds" : "Add"}
-                  </span>
-                </button>
+                {/* Collectible-style Button or Role Icon */}
+                {isExistingTeamPlayer && player.role ? (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div
+                        className={cn(
+                          "flex items-center justify-center px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg",
+                          "bg-neutral-800 border border-neutral-700"
+                        )}
+                      >
+                        {getRoleIcon(player.role)}
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="text-xs">
+                      {getRoleLabel(player.role)}
+                    </TooltipContent>
+                  </Tooltip>
+                ) : (
+                  <button
+                    onClick={handleAddClick}
+                    disabled={isDisabled}
+                    className={cn(
+                      "relative px-3 sm:px-4 py-1.5 sm:py-2 font-black uppercase tracking-[0.1em] text-[9px] sm:text-[10px] transition-all duration-200 rounded-lg",
+                      "disabled:opacity-50 disabled:cursor-not-allowed",
+                      !isDisabled && [
+                        "bg-gradient-to-br shadow-[0_4px_10px_rgba(0,0,0,0.4)]",
+                        tierFrameGradients[player.tier],
+                        tierTextColor[player.tier],
+                        tierInnerGlow[player.tier],
+                        "hover:scale-105 hover:shadow-[0_6px_14px_rgba(0,0,0,0.5)]",
+                        "active:scale-95"
+                      ],
+                      isDisabled &&
+                        "bg-neutral-800 text-gray-500 border border-neutral-700"
+                    )}
+                  >
+                    {/* Button shine overlay */}
+                    {!isDisabled && (
+                      <div className="absolute inset-0 bg-gradient-to-b from-white/25 via-transparent to-transparent rounded-lg" />
+                    )}
+                    <span className="relative z-10">
+                      {isExistingTeamPlayer
+                        ? "On Team"
+                        : !canAfford
+                          ? "No Funds"
+                          : "Add"}
+                    </span>
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -381,8 +481,9 @@ export default function FantasyPlayerFlipCard({
           style={{
             backfaceVisibility: "hidden",
             WebkitBackfaceVisibility: "hidden",
-            transform: "rotateY(180deg)",
-            WebkitTransform: "rotateY(180deg)"
+            transform: "rotateY(180deg) translateZ(1px)",
+            WebkitTransform: "rotateY(180deg) translateZ(1px)",
+            willChange: "transform"
           }}
         >
           {/* Premium Frame with Shadow */}
@@ -456,7 +557,7 @@ export default function FantasyPlayerFlipCard({
 
                 {/* Main Stats Grid - Smaller */}
                 <div className="grid grid-cols-2 gap-2">
-                  <div className="bg-neutral-800/80 backdrop-blur-sm rounded-lg p-2 text-center border border-neutral-700/50">
+                  <div className="bg-neutral-800/80 rounded-lg p-2 text-center border border-neutral-700/50">
                     <div
                       className={cn(
                         "text-xl font-black",
@@ -475,7 +576,7 @@ export default function FantasyPlayerFlipCard({
                     </div>
                   </div>
 
-                  <div className="bg-neutral-800/80 backdrop-blur-sm rounded-lg p-2 text-center border border-neutral-700/50">
+                  <div className="bg-neutral-800/80 rounded-lg p-2 text-center border border-neutral-700/50">
                     <div
                       className={cn(
                         "text-xl font-black",
@@ -497,7 +598,7 @@ export default function FantasyPlayerFlipCard({
 
                 {/* Secondary Stats - Smaller */}
                 <div className="grid grid-cols-2 gap-2">
-                  <div className="bg-neutral-800/80 backdrop-blur-sm rounded-lg p-2 text-center border border-green-900/30">
+                  <div className="bg-neutral-800/80 rounded-lg p-2 text-center border border-green-900/30">
                     <div className="text-base font-black text-green-400 drop-shadow-[0_0_6px_rgba(74,222,128,0.6)]">
                       {player.stats.kills}
                     </div>
@@ -506,7 +607,7 @@ export default function FantasyPlayerFlipCard({
                     </div>
                   </div>
 
-                  <div className="bg-neutral-800/80 backdrop-blur-sm rounded-lg p-2 text-center border border-red-900/30">
+                  <div className="bg-neutral-800/80 rounded-lg p-2 text-center border border-red-900/30">
                     <div className="text-base font-black text-red-400 drop-shadow-[0_0_6px_rgba(248,113,113,0.6)]">
                       {player.stats.deaths}
                     </div>
@@ -602,34 +703,55 @@ export default function FantasyPlayerFlipCard({
 
               {/* Footer */}
               <div className="p-3 bg-gradient-to-t from-black via-neutral-900 to-neutral-800">
-                <button
-                  onClick={handleAddClick}
-                  disabled={isDisabled}
-                  className={cn(
-                    "relative w-full px-4 py-2.5 font-black uppercase tracking-[0.1em] text-[10px] transition-all duration-200 rounded-lg",
-                    "disabled:opacity-50 disabled:cursor-not-allowed",
-                    !isDisabled && [
-                      "bg-gradient-to-br shadow-[0_4px_10px_rgba(0,0,0,0.4)]",
-                      tierFrameGradients[player.tier],
-                      tierTextColor[player.tier],
-                      tierInnerGlow[player.tier],
-                      "hover:scale-[1.02] hover:shadow-[0_6px_14px_rgba(0,0,0,0.5)]",
-                      "active:scale-[0.98]"
-                    ],
-                    isDisabled &&
-                      "bg-neutral-800 text-gray-500 border border-neutral-700"
-                  )}
-                >
-                  {/* Button shine overlay */}
-                  {!isDisabled && (
-                    <div className="absolute inset-0 bg-gradient-to-b from-white/25 via-transparent to-transparent rounded-lg" />
-                  )}
-                  <span className="relative z-10">
-                    {!canAfford
-                      ? `No Funds - €${(player.value / 1000).toFixed(0)}K`
-                      : `Add - €${(player.value / 1000).toFixed(0)}K`}
-                  </span>
-                </button>
+                {isExistingTeamPlayer && player.role ? (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div
+                        className={cn(
+                          "w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg",
+                          "bg-neutral-800 border border-neutral-700 text-white font-black uppercase tracking-wider text-xs"
+                        )}
+                      >
+                        {getRoleIcon(player.role)}
+                        <span>€{(player.value / 1000).toFixed(0)}K</span>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="text-xs">
+                      {getRoleLabel(player.role)}
+                    </TooltipContent>
+                  </Tooltip>
+                ) : (
+                  <button
+                    onClick={handleAddClick}
+                    disabled={isDisabled}
+                    className={cn(
+                      "relative w-full px-4 py-2.5 font-black uppercase tracking-[0.1em] text-[10px] transition-all duration-200 rounded-lg",
+                      "disabled:opacity-50 disabled:cursor-not-allowed",
+                      !isDisabled && [
+                        "bg-gradient-to-br shadow-[0_4px_10px_rgba(0,0,0,0.4)]",
+                        tierFrameGradients[player.tier],
+                        tierTextColor[player.tier],
+                        tierInnerGlow[player.tier],
+                        "hover:scale-[1.02] hover:shadow-[0_6px_14px_rgba(0,0,0,0.5)]",
+                        "active:scale-[0.98]"
+                      ],
+                      isDisabled &&
+                        "bg-neutral-800 text-gray-500 border border-neutral-700"
+                    )}
+                  >
+                    {/* Button shine overlay */}
+                    {!isDisabled && (
+                      <div className="absolute inset-0 bg-gradient-to-b from-white/25 via-transparent to-transparent rounded-lg" />
+                    )}
+                    <span className="relative z-10">
+                      {isExistingTeamPlayer
+                        ? `On Team - €${(player.value / 1000).toFixed(0)}K`
+                        : !canAfford
+                          ? `No Funds - €${(player.value / 1000).toFixed(0)}K`
+                          : `Add - €${(player.value / 1000).toFixed(0)}K`}
+                    </span>
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -638,3 +760,15 @@ export default function FantasyPlayerFlipCard({
     </div>
   );
 }
+
+export default React.memo(FantasyPlayerFlipCard, (prev, next) => {
+  return (
+    prev.player.id === next.player.id &&
+    prev.player.steam_id === next.player.steam_id &&
+    prev.player.value === next.player.value &&
+    prev.player.tier === next.player.tier &&
+    prev.disabled === next.disabled &&
+    prev.budgetRemaining === next.budgetRemaining &&
+    prev.isExistingTeamPlayer === next.isExistingTeamPlayer
+  );
+});

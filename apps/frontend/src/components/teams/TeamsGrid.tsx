@@ -8,6 +8,7 @@ import { ContentContainer } from "../layout/ContentContainer";
 import type { TeamStats } from "@eggosystem/types";
 import { NextImageFallback } from "../layout/NextImageFallback";
 import { useFilters } from "@/context/FilterContext";
+import { TeamCardSkeleton } from "../loading";
 
 interface TeamsGridProps {
   filterQueryParams: FilterParamsQuery;
@@ -21,9 +22,7 @@ export const TeamsGrid = ({ filterQueryParams }: TeamsGridProps) => {
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {Array.from({ length: 6 }).map((_, index) => (
-          <TeamCardSkeleton key={index} />
-        ))}
+        <TeamCardSkeleton count={6} />
       </div>
     );
   }
@@ -108,33 +107,6 @@ const StatBox: React.FC<{
       >
         {value}
       </p>
-    </div>
-  );
-};
-
-const TeamCardSkeleton: React.FC = () => {
-  return (
-    <div className="bg-card rounded-md overflow-hidden">
-      <div className="bg-kanaliiga-light-brown/30 p-4 border-b border-border">
-        <div className="flex items-center gap-3">
-          <div className="w-[60px] h-[60px] bg-kanaliiga-orange/20 animate-pulse" />
-          <div className="space-y-2">
-            <div className="h-5 w-32 bg-kanaliiga-orange/20 rounded animate-pulse" />
-            <div className="h-4 w-24 bg-kanaliiga-orange/20 rounded animate-pulse" />
-          </div>
-        </div>
-      </div>
-
-      <div className="p-4">
-        <div className="grid grid-cols-3 gap-4">
-          {Array.from({ length: 3 }).map((_, index) => (
-            <div key={index} className="text-center space-y-2">
-              <div className="h-3 w-12 mx-auto bg-kanaliiga-orange/20 rounded animate-pulse" />
-              <div className="h-5 w-8 mx-auto bg-kanaliiga-orange/20 rounded animate-pulse" />
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   );
 };

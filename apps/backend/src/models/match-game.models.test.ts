@@ -61,8 +61,8 @@ describe("addMatchGamesForMatch", () => {
 
       // Mock successful database operations
       mockGetHubMatchesByExternalMatchRoomId.mockResolvedValue([
-        { id: 1 },
-        { id: 2 }
+        { id: 1, status: "ONGOING" },
+        { id: 2, status: "ONGOING" }
       ]);
 
       const mockConnection = {
@@ -217,8 +217,8 @@ describe("addMatchGamesForMatch", () => {
 
     it("should throw error for invalid BO2 configuration", async () => {
       mockGetHubMatchesByExternalMatchRoomId.mockResolvedValue([
-        { id: 1 },
-        { id: 2 }
+        { id: 1, status: "ONGOING" },
+        { id: 2, status: "ONGOING" }
       ]);
 
       const bo2MatchDetails = {
@@ -256,8 +256,8 @@ describe("addMatchGamesForMatch", () => {
 
     it("should throw error when match object not found for BO2", async () => {
       mockGetHubMatchesByExternalMatchRoomId.mockResolvedValue([
-        { id: 1 },
-        { id: 2 }
+        { id: 1, status: "ONGOING" },
+        { id: 2, status: "ONGOING" }
         // 2 matches for BO2, but map 2 won't find a match object
       ]);
 
@@ -301,7 +301,9 @@ describe("addMatchGamesForMatch", () => {
     });
 
     it("should handle database errors and rollback transaction", async () => {
-      mockGetHubMatchesByExternalMatchRoomId.mockResolvedValue([{ id: 1 }]);
+      mockGetHubMatchesByExternalMatchRoomId.mockResolvedValue([
+        { id: 1, status: "ONGOING" }
+      ]);
 
       const mockConnection = {
         beginTransaction: jest.fn().mockResolvedValue(undefined),

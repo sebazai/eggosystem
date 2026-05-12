@@ -1,4 +1,5 @@
 import type { Match, SteamPlayer, Team } from "@eggosystem/types";
+import type { MatchTeamSide } from "../matches/MatchTeamSide.types";
 
 export interface MyTeamPlayer {
   steam_id: SteamPlayer["steam_id"];
@@ -33,8 +34,10 @@ export interface MyTeamUpcomingMatch {
   match_id: Match["id"];
   team_id: Team["id"];
   team_name: string;
+  team_side: MatchTeamSide;
   opponent_team_id: Team["id"];
   opponent_team_name: string;
+  opponent_side: MatchTeamSide;
   start_timestamp: Match["start_timestamp"];
   season_id: Match["season_id"];
   season_name: string;

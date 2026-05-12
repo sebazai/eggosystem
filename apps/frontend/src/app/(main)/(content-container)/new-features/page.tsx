@@ -71,7 +71,7 @@ export default function NewFeaturesPage() {
             <div className="flex flex-col md:flex-row gap-6">
               <div className="md:flex-1">
                 <h3 className="text-xl font-bold mb-2">
-                  First Death Trade Analysis 📊
+                  📊 First Death Trade Analysis
                 </h3>
                 <p className="mb-2">
                   We&apos;ve added detailed first death trade analysis for
@@ -188,7 +188,7 @@ export default function NewFeaturesPage() {
           <div className="space-y-8">
             <div className="flex flex-col md:flex-row gap-6">
               <div className="md:flex-1">
-                <h3 className="text-xl font-bold mb-2">Trophy System 🏆</h3>
+                <h3 className="text-xl font-bold mb-2">🏆 Trophy System</h3>
                 <p className="mb-2">
                   We&apos;re excited to introduce the Trophy System! Players and
                   teams can now earn and display trophies for their achievements
@@ -385,7 +385,7 @@ export default function NewFeaturesPage() {
           <div className="space-y-8">
             <div className="flex flex-col md:flex-row gap-6">
               <div className="md:flex-1">
-                <h3 className="text-xl font-bold mb-2">Fantasy League 🏆</h3>
+                <h3 className="text-xl font-bold mb-2">🏆 Fantasy League</h3>
                 <p className="mb-2">
                   We&apos;re excited to introduce Fantasy League - a seasonal
                   competition where you can create your own team by drafting
@@ -472,7 +472,7 @@ export default function NewFeaturesPage() {
 
           <div className="space-y-8">
             <div>
-              <h3 className="text-xl font-bold mb-2">My Teams Page 👥</h3>
+              <h3 className="text-xl font-bold mb-2">Your Teams</h3>
               <p className="mb-2">
                 We&apos;ve added a new &quot;My Teams&quot; page where you can
                 quickly access all the teams you&apos;re part of. This
@@ -509,7 +509,7 @@ export default function NewFeaturesPage() {
           <div className="space-y-8">
             <div>
               <h3 className="text-xl font-bold mb-2">
-                2D Viewer Enhancements 🎮
+                🎮 2D Viewer Enhancements
               </h3>
               <p className="mb-2">
                 We&apos;ve made significant improvements to the 2D match viewer
@@ -553,7 +553,7 @@ export default function NewFeaturesPage() {
 
             <div>
               <h3 className="text-xl font-bold mb-2">
-                Discord Account Linking 🔗
+                Discord Account Linking
               </h3>
               <p className="mb-2">
                 You can now link your Discord account directly from your profile
@@ -644,7 +644,7 @@ export default function NewFeaturesPage() {
 
           <div className="space-y-8">
             <div>
-              <h3 className="text-xl font-bold mb-2">FaceIT Integration 🔗</h3>
+              <h3 className="text-xl font-bold mb-2">FaceIT Integration</h3>
               <p className="mb-2">
                 We&apos;ve added FaceIT profile links throughout the platform,
                 making it easier to access player and team FaceIT profiles.
@@ -689,7 +689,7 @@ export default function NewFeaturesPage() {
           <div className="space-y-8">
             <div>
               <h3 className="text-xl font-bold mb-2">
-                CT/T Side Statistics 📊
+                📊 CT/T Side Statistics
               </h3>
               <p className="mb-2">
                 We&apos;ve added separate statistics for Counter-Terrorist (CT)
@@ -731,7 +731,7 @@ export default function NewFeaturesPage() {
           <div className="space-y-8">
             <div>
               <h3 className="text-xl font-bold mb-2">
-                Substitute Players System 👥
+                Substitute Players System
               </h3>
               <p className="mb-2">
                 Team captains and admins can now add substitute players for
@@ -925,7 +925,7 @@ export default function NewFeaturesPage() {
             <div className="flex flex-col md:flex-row gap-6">
               <div className="md:flex-1">
                 <h3 className="text-xl font-bold mb-2">
-                  Historical Player Performance Analytics 📈
+                  📊 Historical Player Performance Analytics
                 </h3>
                 <p className="mb-2">
                   We&apos;ve added a new Historical Data tab to player profiles,
@@ -990,7 +990,7 @@ export default function NewFeaturesPage() {
           <div className="space-y-8">
             <div>
               <h3 className="text-xl font-bold mb-2">
-                Kanahautomo: Find Your Gaming Squad 🎮
+                🎮 Kanahautomo: Find Your Gaming Squad
               </h3>
               <p className="mb-2">
                 Introducing Kanahautomo, our new teammate finder system! Connect
@@ -1075,7 +1075,7 @@ export default function NewFeaturesPage() {
           <div className="space-y-8">
             <div>
               <h3 className="text-xl font-bold mb-2">
-                Player Skill Metrics Diagram 📊
+                📊 Player Skill Metrics Diagram
               </h3>
               <p className="mb-2">
                 We&apos;ve added a comprehensive skill metrics diagram for
@@ -1169,7 +1169,7 @@ export default function NewFeaturesPage() {
           <div className="space-y-8">
             <div>
               <h3 className="text-xl font-bold mb-2">
-                Team Page Player Cards 🎮
+                🎮 Team Page Player Cards
               </h3>
               <p className="mb-2">
                 We&apos;ve enhanced the team pages with improved player cards!
@@ -1183,7 +1183,7 @@ export default function NewFeaturesPage() {
 
             <div>
               <h3 className="text-xl font-bold mb-2">
-                KanaRanks: Player Ranking System 🏆
+                🏆 KanaRanks: Player Ranking System
               </h3>
               <p className="mb-4">
                 We&apos;re excited to introduce our new player ranking system -

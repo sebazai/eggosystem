@@ -1,4 +1,5 @@
 import { League, Match, MatchGame, Season } from "../db";
+import type { MatchTeamSide } from "../matches/MatchTeamSide.types";
 
 export interface TeamMatchHistory {
   match_game_id?: MatchGame["id"];
@@ -16,5 +17,9 @@ export interface TeamMatchHistory {
   opponent_logo: string;
   team_score: number;
   opponent_score: number;
+  /** MatchTeams.match_side for the perspective team (`null` if unknown). */
+  team_side: MatchTeamSide;
+  /** MatchTeams.match_side for the opposing team (`null` if unknown). */
+  opponent_side: MatchTeamSide;
   result: string;
 }

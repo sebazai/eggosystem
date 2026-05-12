@@ -13,4 +13,8 @@ export interface PlayerTrade {
   time: string | null; // BIGINT UNSIGNED, can be null
   trade_time: bigint | null; // BIGINT UNSIGNED, can be null
   death_time: bigint | null; // BIGINT UNSIGNED, can be null
+  trade_denied: boolean; // TINYINT(1)
+  trade_timeout: boolean; // TINYINT(1)
+  denial_time: bigint | null; // BIGINT UNSIGNED, can be null
+  trade_window: bigint | null; // BIGINT UNSIGNED, can be null
 }

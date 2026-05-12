@@ -41,7 +41,25 @@ export const fetchPlayerStatsForMatchOrGame = async <
       JOIN MatchGames mg ON mg.id = ps.match_game_id
       JOIN Matches m ON m.id = mg.match_id
       JOIN MatchTeams mt ON mt.match_id = m.id
-      JOIN SeasonTeamPlayers stp ON stp.steam_id = p.steam_id AND stp.season_id = m.season_id AND stp.team_id = mt.team_id
+      JOIN SeasonTeamPlayers stp ON stp.steam_id = p.steam_id
+        AND stp.season_id = m.season_id
+        AND stp.team_id = mt.team_id
+        AND stp.discarded_at IS NULL
+        AND (
+          stp.match_id = m.id
+          OR (
+            stp.match_id IS NULL
+            AND NOT EXISTS (
+              SELECT 1
+              FROM SeasonTeamPlayers stp2
+              WHERE stp2.season_id = m.season_id
+                AND stp2.team_id = mt.team_id
+                AND stp2.steam_id = p.steam_id
+                AND stp2.discarded_at IS NULL
+                AND stp2.match_id = m.id
+            )
+          )
+        )
       WHERE ${whereClause} 
       GROUP BY p.steam_id, p.nickname
       ORDER BY value DESC, p.nickname ASC, p.steam_id ASC

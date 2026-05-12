@@ -1,15 +1,18 @@
 import { createPool, type PoolOptions } from "mysql2/promise";
 import { dbEnvConfig } from "../configs/db-env";
+import { logger } from "../utils/app-logger";
+
+const connectionLimit = parseInt(process.env.DB_CONNECTION_LIMIT ?? "100", 10);
 
 const dbPool = createPool({
   ...dbEnvConfig,
-  connectionLimit: 250,
+  connectionLimit,
   queueLimit: 500,
   idleTimeout: 20000,
   // debug: process.env.NODE_ENV !== "production",
   decimalNumbers: true,
   supportBigNumbers: true,
-  bigNumberStrings: false,
+  bigNumberStrings: true, // Convert all BIGINTs to strings by default
   typeCast: function (field, next) {
     // Convert TINYINT(1) to boolean
     if (field.type === "TINY" && field.length === 1) {
@@ -25,9 +28,76 @@ const dbPool = createPool({
     if (field.type === "DATE") {
       return field.string();
     }
+
+    // CRITICAL: Handle BIGINT columns
+    // With bigNumberStrings: true, all BIGINT columns come as strings from next().
+    // We want to keep player ID columns as strings (for precision),
+    // but convert other BIGINT columns (counts, entity_ids, timestamps) to numbers.
+    //
+    // Player ID columns that should remain as strings:
+    // - Columns containing "steam" or "steamid": steam_id, steamid, captain_steam_id, co_captain_steam_id,
+    //   replaces_steam_id, trader_steam_id, killer_steam_id, victim_steam_id,
+    //   player_steam_id, clip_steam_id, etc.
+    // - Columns containing "provider_id": provider_id
+    // - Player identifier columns: killer, victim, assister, trader
+    if (field.type === "LONGLONG") {
+      const fieldName = field.name.toLowerCase();
+
+      // Check if this is a player ID column that should stay as string
+      const isPlayerIdColumn =
+        fieldName.includes("steam") || // catches steam_id, steamid, captain_steam_id, etc.
+        fieldName.includes("provider") || // catches provider_id
+        fieldName === "killer" ||
+        fieldName === "victim" ||
+        fieldName === "assister" ||
+        fieldName === "trader";
+
+      if (isPlayerIdColumn) {
+        // Keep as string - let next() handle it (returns string due to bigNumberStrings: true)
+        return next();
+      } else {
+        // Convert to number for entity_id, counts, timestamps, etc.
+        // Get the string value from next() and convert to number
+        const stringValue = next();
+        return stringValue === null ? null : Number(stringValue);
+      }
+    }
+
     return next();
   }
 } satisfies PoolOptions);
+
+// Monitor pool events for diagnostics
+dbPool.on("connection", (connection) => {
+  logger.debug(
+    `New database connection established (ID: ${connection.threadId})`
+  );
+});
+
+// Log pool exhaustion warnings
+let lastExhaustionWarning = 0;
+const EXHAUSTION_WARNING_INTERVAL = 60000; // 1 minute
+
+dbPool.on("acquire", () => {
+  const poolStats = getPoolStatsInternal();
+  const activeConnections = poolStats.active;
+  const queuedRequests = poolStats.queued;
+
+  // Warn if pool is getting exhausted
+  if (activeConnections >= connectionLimit * 0.8 || queuedRequests > 0) {
+    const now = Date.now();
+    if (now - lastExhaustionWarning > EXHAUSTION_WARNING_INTERVAL) {
+      logger.warn(
+        `Database pool high usage: ${activeConnections}/${connectionLimit} connections active, ${queuedRequests} queued`
+      );
+      lastExhaustionWarning = now;
+    }
+  }
+});
+
+dbPool.on("release", (connection) => {
+  logger.debug(`Database connection released (ID: ${connection.threadId})`);
+});
 
 export const getConnection = () => {
   return dbPool.getConnection();
@@ -35,4 +105,43 @@ export const getConnection = () => {
 
 export const endDbConnection = async () => {
   return dbPool.end();
+};
+
+/**
+ * Internal function to get pool statistics
+ * Accesses internal pool state safely
+ */
+const getPoolStatsInternal = () => {
+  // Access internal pool state - these are internal properties of mysql2 Pool
+  const poolState = dbPool.pool as unknown as {
+    _allConnections?: unknown[];
+    _freeConnections?: unknown[];
+    _connectionQueue?: unknown[];
+    _config?: { connectionLimit: number; queueLimit: number };
+  };
+
+  const totalConnections = poolState._allConnections?.length ?? 0;
+  const freeConnections = poolState._freeConnections?.length ?? 0;
+  const activeConnections = totalConnections - freeConnections;
+  const queuedRequests = poolState._connectionQueue?.length ?? 0;
+  const config = poolState._config;
+
+  return {
+    total: totalConnections,
+    active: activeConnections,
+    free: freeConnections,
+    queued: queuedRequests,
+    limit: config?.connectionLimit ?? connectionLimit,
+    queueLimit: config?.queueLimit ?? 500,
+    utilizationPercent: config?.connectionLimit
+      ? Math.round((activeConnections / config.connectionLimit) * 100)
+      : 0
+  };
+};
+
+/**
+ * Get current pool statistics for monitoring
+ */
+export const getPoolStats = () => {
+  return getPoolStatsInternal();
 };

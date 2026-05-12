@@ -6,6 +6,7 @@ import { ContentContainer } from "../layout/ContentContainer";
 import { useParams } from "next/navigation";
 import { useFilters } from "@/context/FilterContext";
 import { FaceitLink } from "../ui/FaceitLink";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export const TeamsHeader = () => {
   const params = useParams();
@@ -21,7 +22,18 @@ export const TeamsHeader = () => {
   }
 
   if (isLoading) {
-    return <ContentContainer>Loading team details...</ContentContainer>;
+    return (
+      <div className="p-3 sm:p-6 bg-card border-b border-border rounded-md overflow-hidden">
+        <div className="flex items-center gap-2 sm:gap-4">
+          <Skeleton className="h-15 w-15 sm:h-25 sm:w-25 rounded-full" />
+          <div className="flex-1">
+            <Skeleton className="h-6 w-48 mb-2" />
+            <Skeleton className="h-4 w-32" />
+          </div>
+          <Skeleton className="h-16 w-24" />
+        </div>
+      </div>
+    );
   }
 
   if (!team) {

@@ -26,6 +26,7 @@ import {
   getTopPerformingPlayersController,
   getPlayerPointHistoryController
 } from "../../controllers/fantasy.controllers";
+import { getPlayoffBracketController } from "../../controllers/playoff.controllers";
 
 const router = Router();
 
@@ -40,6 +41,11 @@ router.get(
   "/:season_id/leagues",
   validateNumericParams(),
   getLeaguesBySeasonController
+);
+router.get(
+  "/:season_id/leagues/:league_id/playoff/bracket",
+  validateNumericParams(["season_id", "league_id"]),
+  getPlayoffBracketController
 );
 router.get(
   "/:season_id/faceit-links",

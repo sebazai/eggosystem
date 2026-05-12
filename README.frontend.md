@@ -2,15 +2,38 @@
 
 This document provides comprehensive guidelines for frontend development in the Kanaliiga project, including component patterns, responsive design requirements, and data fetching strategies.
 
-## 🏗️ Architecture & Technology Stack
+## Architecture & Technology Stack
 
-- **Framework**: Next.js 15 with React 19 and App Router
-- **UI Library**: shadcn/ui built on Radix UI primitives
-- **Styling**: Tailwind CSS with custom design tokens
-- **TypeScript**: Strict type safety with `satisfies` operator
+- **Framework**: Next.js 16 (App Router) with React 19
+- **UI Library**: shadcn (see `apps/frontend/components.json`) built on Radix UI primitives
+- **Styling**: Tailwind CSS v4 (via `@tailwindcss/postcss`) with custom design tokens in `globals.css`
+- **TypeScript**: Strict type safety with `satisfies` operator (no unsafe `as` casts)
 - **Icons**: Lucide React
-- **Data Fetching**: SWR for client-side state management
+- **Forms**: `react-hook-form` + Zod via `@hookform/resolvers`
+- **Data Fetching**: SWR for client-side state management; server components / route handlers where appropriate
 - **Testing**: Jest for unit tests, Playwright for E2E tests
+- **Dev server**: `next dev` on port `:3000`
+
+### Route Groups (`apps/frontend/src/app/`)
+
+- `(admin)` — dashboard routes (cookie-based JWT auth)
+- `(main)` — public-facing routes
+- `(embed)` — embedded widgets
+- `(health)` — health / status endpoints
+
+### Dashboard Authentication
+
+Dashboard routes rely on a cookie-based JWT `access_token` issued by the backend. E2E tests and the Playwright MCP inject this cookie directly via `generateTestJWTForUser` in `apps/frontend/src/e2e/utils/index.ts`. See `.cursor/skills/playwright-mcp-admin-auth/SKILL.md` for the MCP admin-auth workflow.
+
+### Build Output
+
+The app builds in Next.js **standalone** mode (`output: "standalone"` in `next.config.ts`). The `postbuild` script runs `copy-standalone`, which creates `.next/standalone/apps/frontend/.next/static/` and copies `.next/static/*` plus the `public/` directory into it. `start:standalone` then runs `node .next/standalone/apps/frontend/server.js` on port `3000`.
+
+The `build:e2e` script additionally sets `NEXT_PUBLIC_IMAGE_SERVICE_URL=https://img.kanaliiga.fi` so E2E builds resolve image URLs against the production image service.
+
+### AGENTS.md
+
+`apps/frontend/AGENTS.md` is generated via `@next/codemod@canary agents-md` (see the `agents-md` / `postinstall` scripts in `apps/frontend/package.json`). Do not edit by hand.
 
 ## 📱 Responsive Design Requirements
 
@@ -102,6 +125,7 @@ export default function Component({ title, onAction }: ComponentProps) {
 src/components/
 ├── ui/              # shadcn/ui components
 ├── layout/          # Layout and navigation
+├── loading/         # Reusable loading state components
 ├── players/         # Player-related components
 ├── matches/         # Match-related components
 ├── organizations/   # Organization components
@@ -131,7 +155,7 @@ export function usePlayers() {
 export default function PlayersPage() {
   const { players, error, isLoading } = usePlayers();
 
-  if (isLoading) return <LoadingSpinner />;
+  if (isLoading) return <TableSkeleton />;
   if (error) return <ErrorMessage error={error} />;
 
   return <PlayersList players={players} />;
@@ -159,6 +183,97 @@ export default function PlayersPage() {
 2. **Client Components**: Use `clientApiFetch()` for authenticated requests
 3. **Custom Hooks**: Create reusable data hooks in `@/hooks/data/`
 4. **SWR Integration**: Use SWR for caching and state management
+
+## ⏳ Loading States
+
+**CRITICAL**: Always use skeleton components instead of "Loading..." text. Preserve page structure during loading.
+
+### Available Loading Components
+
+All loading components are located in `@/components/loading/`:
+
+- **`PageSkeleton`** - For full pages that need to preserve structure (title, filters, etc.)
+- **`TableSkeleton`** - For table loading states with configurable rows/columns
+- **`CardSkeleton`** - Generic card skeleton for any card-based loading
+- **`ListSkeleton`** - For generic list loading (matches, items, etc.)
+- **`MatchListSkeleton`** - Specialized skeleton for match lists
+- **`StatsGridSkeleton`** - For stats grid layouts (leaderboards, top teams)
+- **`TeamCardSkeleton`** - For team card grids
+- **`AuthLoading`** - Unified authentication loading state (use for `useAuth().loading`)
+- **`LoadingSpinner`** - Wrapper around Spinner with optional text (use sparingly)
+
+### Loading State Patterns
+
+**✅ DO**: Preserve page structure during loading
+
+```tsx
+export const PlayersPage = () => {
+  const { filterParams, isLoading } = useFilters();
+  const { players, isLoading: isLoadingPlayers } = usePlayers();
+
+  return (
+    <div>
+      <h1>Players</h1>
+      {filterParams && <MultiFilters {...filterParams} />}
+      {!filterParams && <div className="h-10 bg-accent animate-pulse" />}
+
+      <CardContainer>
+        {(isLoading || isLoadingPlayers) && <TableSkeleton />}
+        {!isLoading && !isLoadingPlayers && players && (
+          <PlayerTable players={players} />
+        )}
+      </CardContainer>
+    </div>
+  );
+};
+```
+
+**❌ DON'T**: Use early returns that remove page structure
+
+```tsx
+// ❌ Bad - Removes entire page structure
+if (isLoading) {
+  return <ContentContainer>Loading...</ContentContainer>;
+}
+```
+
+### Authentication Loading
+
+For authentication loading states, always use `AuthLoading`:
+
+```tsx
+const { user, loading } = useAuth();
+
+if (loading) {
+  return <AuthLoading />;
+}
+
+// For protected routes
+if (loading) {
+  return <AuthLoading fullScreen={true} message="Ensuring authentication..." />;
+}
+```
+
+### Loading Component Selection Guide
+
+- **`PageSkeleton`**: Use when loading filters or initial page data - preserves title and layout
+- **`TableSkeleton`**: Use for table components - matches table structure
+- **`CardSkeleton`**: Use for card-based content - matches card layout
+- **`ListSkeleton`**: Use for generic lists - matches list item structure
+- **`MatchListSkeleton`**: Use specifically for match lists - matches match card layout
+- **`StatsGridSkeleton`**: Use for leaderboards and top teams grids
+- **`TeamCardSkeleton`**: Use for team card grids
+- **`AuthLoading`**: Use for `useAuth().loading` states
+- **`LoadingSpinner`**: Use only for small inline loading states or when skeleton doesn't fit
+
+### Best Practices
+
+1. **Preserve structure** - Never use early returns that remove page headers, filters, or navigation
+2. **Match skeleton to content** - Skeleton should mirror the actual content structure
+3. **Use short-circuit evaluation** - Prefer `&&` over ternary for conditional rendering
+4. **Mobile-responsive** - All loading components are mobile-friendly by default
+5. **Avoid "Loading..." text** - Use visual skeletons instead of text-based loading states
+6. **Use AuthLoading for auth** - Always use `AuthLoading` component for authentication loading states
 
 ## 🎨 Design System
 
@@ -274,6 +389,7 @@ apps/frontend/src/
 - [ ] Use proper TypeScript interfaces
 - [ ] Follow shadcn/ui patterns
 - [ ] **Use semantic color tokens for light/dark theme support**
+- [ ] **Use appropriate loading skeleton components** (preserve page structure)
 - [ ] Create data hooks for any data fetching
 - [ ] Add unit tests
 - [ ] Test across all breakpoints
@@ -296,4 +412,4 @@ apps/frontend/src/
 ## 🔗 Related Documentation
 
 - [Database Schema](README.database.md)
-- [Testing Strategy](README.testing.md)
+- [Testing strategy](.cursor/skills/testing-strategy/SKILL.md)

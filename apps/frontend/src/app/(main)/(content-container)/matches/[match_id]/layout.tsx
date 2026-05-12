@@ -1,6 +1,7 @@
 import { MatchHeader } from "@/components/matches/match/MatchHeader";
 import { MatchStatus, type MatchInfo } from "@eggosystem/types";
 import type React from "react";
+import { orderMatchParticipantsBySideHomeLeft } from "@/lib/order-match-teams-home-left-away";
 import { getMatchInfo } from "./utils";
 import { CardContainer } from "@/components/layout/CardContainer";
 import { ContentContainer } from "@/components/layout/ContentContainer";
@@ -30,8 +31,9 @@ export async function generateMetadata({ params }: LayoutProps) {
       title: "Match not found"
     };
   }
-  const team1 = Object.values(result.teams)[0];
-  const team2 = Object.values(result.teams)[1];
+  const [team1, team2] = orderMatchParticipantsBySideHomeLeft(
+    Object.values(result.teams)
+  );
   if (!team1 || !team2) {
     return {
       title: "Match not found"
@@ -45,7 +47,8 @@ export async function generateMetadata({ params }: LayoutProps) {
   });
 
   return createPageMetadata({
-    title: `Match ${team1.name} vs ${team2.name} - ${formattedDate}`
+    title: `Match ${team1.name} vs ${team2.name} - ${formattedDate}`,
+    description: `${team1.name} vs ${team2.name} – Match room | Kanahub by Kanaliiga`
   });
 }
 
@@ -60,7 +63,9 @@ export default async function Layout({ children, params }: LayoutProps) {
   if (!matchInfo) {
     return <ContentContainer>Match not found</ContentContainer>;
   }
-  const teams = Object.values(matchInfo.teams);
+  const teams = orderMatchParticipantsBySideHomeLeft(
+    Object.values(matchInfo.teams)
+  );
   if (teams.length < 2) {
     return (
       <ContentContainer>Not enough teams found for match</ContentContainer>
@@ -95,6 +100,7 @@ export default async function Layout({ children, params }: LayoutProps) {
         leagueName={matchInfo.league_name}
         seasonId={matchInfo.season_id}
         leagueId={matchInfo.league_id}
+        status={matchInfo.status}
       />
       <CardContainer classNames="rounded-none">
         <div className="p-2">{children}</div>

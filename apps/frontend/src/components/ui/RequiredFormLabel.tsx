@@ -19,8 +19,8 @@ export function RequiredFormLabel({
       className={cn("flex items-center gap-0.5", className)}
       {...props}
     >
+      {required && <span className="text-kanaliiga-orange">*</span>}
       {children}
-      {required && <span className="text-red-500">*</span>}
     </FormLabel>
   );
 }

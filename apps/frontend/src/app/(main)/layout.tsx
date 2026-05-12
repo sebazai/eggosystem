@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { ConditionalNavigation } from "@/components/layout/ConditionalNavigation";
 import Footer from "@/components/layout/LayoutFooter";
 import SkipToContent from "@/components/layout/SkipToContent";
-import { KfcRain } from "@/components/layout/KfcRain";
+import { KfcRain } from "@/components/kanaliiga";
 import ScrollToTop from "@/components/layout/ScrollToTop";
 import { AuthProvider } from "@/context/AuthContext";
 import { Suspense } from "react";
@@ -15,6 +15,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { AcceptPolicyProvider } from "@/context/AcceptPolicyContext";
 import { createPageMetadata } from "@/lib/metadata";
 import { UpcomingMatchToast } from "@/components/matches/UpcomingMatchBanner";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 const META_THEME_COLORS = {
   light: "#ffffff",
@@ -123,7 +124,7 @@ export default function RootLayout({
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"
-          enableSystem
+          enableSystem={false}
           disableTransitionOnChange
         >
           <Suspense>
@@ -132,13 +133,15 @@ export default function RootLayout({
             <ScrollToTop />
             <div className="min-h-svh min-w-[320px] w-full">
               <AuthProvider>
-                <ConditionalNavigation />
-                <UpcomingMatchToast />
-                <AcceptPolicyProvider>
-                  <main className="w-full" id="main-content">
-                    {children}
-                  </main>
-                </AcceptPolicyProvider>
+                <TooltipProvider delayDuration={0}>
+                  <ConditionalNavigation />
+                  <UpcomingMatchToast />
+                  <AcceptPolicyProvider>
+                    <main className="w-full" id="main-content">
+                      {children}
+                    </main>
+                  </AcceptPolicyProvider>
+                </TooltipProvider>
               </AuthProvider>
               <Footer />
             </div>

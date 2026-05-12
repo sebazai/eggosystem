@@ -37,12 +37,14 @@ import * as organizationModels from "../models/organization.models";
 import * as registrationModels from "../models/season-team-registration.models";
 import * as teamModels from "../models/team.models";
 import * as playerRanksServices from "./player-ranks.services";
+import * as emailServices from "./email.services";
 import _ from "lodash";
 import { validSignupData } from "@eggosystem/shared-msw";
 import { BadRequestError } from "../utils/errors";
 import { runQuery } from "../db/mysqlRunQuery";
 import { redisClient } from "../utils/redisClient";
 import { faceitEloToLevel } from "../utils/faceit-utils";
+import { getConnection } from "../db/mysqlConnection";
 
 describe("Season team registration services", () => {
   process.env.PRIVACY_POLICY_VERSION = "1";
@@ -57,7 +59,10 @@ describe("Season team registration services", () => {
     signup_start_date: yesterday,
     signup_end_date: tomorrow,
     platform: SeasonPlatform.FACEIT,
-    start_date: tomorrow
+    start_date: tomorrow,
+    faceit_rank_required: true,
+    premier_rank_required: true,
+    hours_played_required: true
   });
 
   const seasonDetails = {
@@ -72,7 +77,10 @@ describe("Season team registration services", () => {
       platform: insertSeason.platform,
       start_date:
         insertSeason?.start_date?.toISOString().split("T")[0] ?? "2024-01-01",
-      end_date: insertSeason?.end_date?.toISOString().split("T")[0] ?? null
+      end_date: insertSeason?.end_date?.toISOString().split("T")[0] ?? null,
+      faceit_rank_required: insertSeason.faceit_rank_required,
+      premier_rank_required: insertSeason.premier_rank_required,
+      hours_played_required: insertSeason.hours_played_required
     }),
     app_id: 730
   } satisfies SeasonDetails;
@@ -492,6 +500,80 @@ describe("Season team registration services", () => {
         undefined
       );
       // Captain permissions are now handled automatically by database triggers
+    });
+
+    it("should retrieve correct team name when using transaction connection for new team", async () => {
+      const formData = _.cloneDeep(validSignupData);
+      const mockSendEmail = jest
+        .spyOn(emailServices, "sendSeasonCaptainWelcomeEmail")
+        .mockResolvedValue();
+
+      // Mock the validation and player addition to avoid actual database operations
+      jest
+        .spyOn(registrationServices, "validatePlayersFromDBForSignup")
+        .mockResolvedValue();
+      jest
+        .spyOn(registrationModels, "insertSeasonTeamRegistration")
+        .mockResolvedValue({ insertId: 1 });
+      jest
+        .spyOn(registrationServices, "addPlayersForTeamInSeason")
+        .mockResolvedValue();
+
+      // Get a transaction connection
+      const connection = await getConnection();
+      await connection.beginTransaction();
+
+      try {
+        // Create a new team within the transaction
+        const newTeamName = "Test New Team Name";
+        const newTeam = await teamModels.insertTeam(
+          {
+            name: newTeamName,
+            organization_id: formData.organizationId,
+            org_approved: false
+          },
+          connection
+        );
+
+        const newTeamId = newTeam.insertId;
+
+        // Call handleSeasonTeamRegistration with the transaction connection
+        await registrationServices.handleSeasonTeamRegistration(
+          seasonDetails.id,
+          seasonDetails.platform,
+          seasonDetails.app_id,
+          newTeamId,
+          formData.organizationId,
+          {
+            external_platform_id: formData.teamExternalId,
+            terms_and_conditions_approved:
+              formData.captainHasReadTermAndConditions
+          } satisfies InsertSeasonTeamRegistration,
+          formData.players.map((player) => ({
+            steam_id: player.steamId,
+            is_captain: Boolean(player.captain),
+            is_co_captain: Boolean(player.coCaptain)
+          })),
+          connection
+        );
+
+        // Verify that sendSeasonCaptainWelcomeEmail was called with the correct team name
+        expect(mockSendEmail).toHaveBeenCalledWith(
+          expect.any(String), // captainEmail
+          seasonDetails.id,
+          expect.any(Array), // players
+          newTeamName // teamName - this should be the actual team name, not "Your Team"
+        );
+
+        // Verify the team name is not the fallback value
+        const callArgs = mockSendEmail.mock.calls[0];
+        expect(callArgs[3]).toBe(newTeamName);
+        expect(callArgs[3]).not.toBe("Your Team");
+      } finally {
+        // Rollback the transaction to clean up
+        await connection.rollback();
+        connection.release();
+      }
     });
   });
   describe("validatePlayersFromDBForSignup", () => {
@@ -1325,6 +1407,100 @@ describe("Season team registration services", () => {
         );
       }
     });
+    it("should create SeasonPlayerRank entry for newly added player", async () => {
+      // Set up a new player that will be added to the team
+      const newPlayerSteamId = "11111111111111111"; // This Steam ID has mocked rank/hours data in MSW
+      const newPlayerAccountId = 9999111;
+      const newPlayerNickname = "New Player";
+
+      // Clean up if exists
+      await clearTestUserAndRanks(
+        newPlayerAccountId,
+        newPlayerSteamId,
+        seasonDetails.id
+      );
+
+      // Insert the new player
+      await insertOneTestUser(
+        newPlayerAccountId,
+        newPlayerSteamId,
+        newPlayerNickname
+      );
+
+      // Create form data with existing players plus the new player
+      const formData = _.cloneDeep(validSignupData);
+      formData.players.push({
+        steamId: newPlayerSteamId,
+        accountId: newPlayerAccountId,
+        nickname: newPlayerNickname,
+        captain: false,
+        coCaptain: false,
+        discordLinked: false,
+        hasValidData: true,
+        hasValidWorkEmail: true,
+        isEmailVerified: true,
+        hours: 112,
+        rank: 22000,
+        externalRank: 750
+      });
+
+      // Verify the new player does NOT have a rank entry before update
+      const rankBefore = await runQuery<SeasonPlayerRank[]>(
+        "SELECT * FROM SeasonPlayerRanks WHERE steam_id = ? AND season_id = ?",
+        [newPlayerSteamId, seasonDetails.id]
+      );
+      expect(rankBefore.length).toEqual(0);
+
+      // Update the team registration with the new player
+      await registrationServices.handleSignupFormForSeasonUpdate(
+        seasonDetails.id,
+        validSignupData.teamId,
+        formData
+      );
+
+      // Verify the new player was added to SeasonTeamRegistrationPlayers
+      const [registrationPlayer] = await runQuery<Array<{ steam_id: string }>>(
+        "SELECT * FROM SeasonTeamRegistrationPlayers WHERE season_id = ? AND team_id = ? AND steam_id = ?",
+        [seasonDetails.id, validSignupData.teamId, newPlayerSteamId]
+      );
+      expect(registrationPlayer).toBeDefined();
+      expect(registrationPlayer.steam_id).toEqual(newPlayerSteamId);
+
+      // Verify that SeasonPlayerRank entry was created for the new player
+      const [rankAfter] = await runQuery<SeasonPlayerRank[]>(
+        "SELECT * FROM SeasonPlayerRanks WHERE steam_id = ? AND season_id = ?",
+        [newPlayerSteamId, seasonDetails.id]
+      );
+      expect(rankAfter).toBeDefined();
+      expect(rankAfter.steam_id).toEqual(newPlayerSteamId);
+      expect(rankAfter.season_id).toEqual(seasonDetails.id);
+      // Mocked MSW handlers return: rank: 22000 (weighted avg), hours: 112, faceit_elo: 750
+      expect(rankAfter.cs2_rank).toBeDefined();
+      expect(rankAfter.cs2_rank).not.toBeNull();
+      expect(rankAfter.cs2_rank).not.toEqual(-1);
+      expect(rankAfter.cs_hours).toBeDefined();
+      expect(rankAfter.cs_hours).not.toBeNull();
+      expect(rankAfter.cs_hours).not.toEqual(-1);
+      if (seasonDetails.platform === SeasonPlatform.FACEIT) {
+        expect(rankAfter.faceit_elo).toBeDefined();
+        expect(rankAfter.faceit_elo).not.toBeNull();
+        expect(rankAfter.faceit_elo).not.toEqual(-1);
+        expect(rankAfter.faceit_level).toBeDefined();
+        expect(rankAfter.faceit_level).not.toBeNull();
+      }
+
+      // Clean up
+      await runQuery(
+        "DELETE FROM SeasonTeamRegistrationPlayers WHERE season_id = ? AND team_id = ? AND steam_id = ?",
+        [seasonDetails.id, validSignupData.teamId, newPlayerSteamId]
+      );
+      await clearTestUserAndRanks(
+        newPlayerAccountId,
+        newPlayerSteamId,
+        seasonDetails.id
+      );
+      await cleanUpTestUser(newPlayerAccountId);
+    });
   });
   describe("updatePlayersForSeasonTeamRegistration", () => {
     beforeEach(async () => {
@@ -1513,6 +1689,93 @@ describe("Season team registration services", () => {
       await expect(
         registrationServices.handleSignupFormForSeason(seasonDetails, formData)
       ).rejects.toThrow(/Team does not belong to the selected organization/);
+    });
+  });
+
+  describe("addPlayersForTeamInSeason — optional signup requirement flags", () => {
+    const relaxedSteamId = "55555555555555555";
+    const relaxedAccountId = 9999920;
+
+    beforeEach(async () => {
+      await unsetSeasonTeamRegistration();
+      await setSeasonTeamRegistration();
+      await clearSeasonPlayerRanks();
+      await insertOneTestUser(
+        relaxedAccountId,
+        relaxedSteamId,
+        "RelaxedSignup"
+      );
+      await runQuery(
+        `UPDATE Seasons SET faceit_rank_required = 0, premier_rank_required = 0, hours_played_required = 0 WHERE id = ?`,
+        [seasonDetails.id]
+      );
+    });
+
+    afterEach(async () => {
+      await cleanUpTestUser(relaxedAccountId);
+      await runQuery(
+        "DELETE FROM SeasonPlayerRanks WHERE steam_id = ? AND season_id = ?",
+        [relaxedSteamId, seasonDetails.id]
+      );
+      await runQuery(
+        `UPDATE Seasons SET faceit_rank_required = 1, premier_rank_required = 1, hours_played_required = 1 WHERE id = ?`,
+        [seasonDetails.id]
+      );
+    });
+
+    it("stores null rank/hours when fetches yield -1 but all requirement flags are off", async () => {
+      const mockHours = jest
+        .spyOn(playerRanksServices, "getPlayerHoursForSteamAppId")
+        .mockResolvedValue({ hours: -1 });
+      const mockAppRank = jest
+        .spyOn(playerRanksServices, "getPlayerAppIdRank")
+        .mockResolvedValue({
+          average_rank: -1,
+          rank_updated_at: null
+        });
+      const mockExt = jest
+        .spyOn(playerRanksServices, "getPlayerRankForPlatform")
+        .mockResolvedValue({
+          faceit_elo: -1,
+          faceit_level: 0,
+          faceit_kd: 1.0,
+          faceit_date: Date.now(),
+          metadata: {
+            faceit_matches_played: undefined,
+            faceit_last_match: undefined,
+            faceit_decay: false,
+            faceit_fallback: undefined
+          }
+        });
+
+      try {
+        await registrationServices.addPlayersForTeamInSeason(
+          seasonDetails.id,
+          seasonDetails.app_id,
+          SeasonPlatform.FACEIT,
+          validSignupData.teamId,
+          [
+            {
+              steam_id: relaxedSteamId,
+              is_captain: false,
+              is_co_captain: false
+            }
+          ]
+        );
+
+        const [row] = await runQuery<[SeasonPlayerRank | undefined]>(
+          "SELECT * FROM SeasonPlayerRanks WHERE steam_id = ? AND season_id = ?",
+          [relaxedSteamId, seasonDetails.id]
+        );
+        expect(row).toBeDefined();
+        expect(row?.cs2_rank).toBeNull();
+        expect(row?.cs_hours).toBeNull();
+        expect(row?.faceit_elo).toBeNull();
+      } finally {
+        mockHours.mockRestore();
+        mockAppRank.mockRestore();
+        mockExt.mockRestore();
+      }
     });
   });
 

@@ -403,7 +403,7 @@ export const getAllPlayerStatsByFilters = async ({
         `
         : ""
     }
-    ${whereClause}
+    ${whereClause} AND m.status = 'FINISHED'
     GROUP BY p.steam_id, p.nickname
     ORDER BY kana_rating DESC
   `;
@@ -505,7 +505,7 @@ export const getMultiplePlayerStatsByFilters = async ({
     ${joinType} Matches m ON m.id = mt.match_id AND m.season_id = stp.season_id${matchConditions}
     ${joinType} MatchGames mg ON mg.match_id = m.id${mapConditions}
     ${joinType} PlayerStats ps ON ps.match_game_id = mg.id AND ps.steam_id = stp.steam_id
-    ${whereClause}
+    ${whereClause} AND m.status = 'FINISHED'
     GROUP BY p.steam_id, p.nickname, p.avatar
     ORDER BY kana_rating DESC
   `;
@@ -562,6 +562,9 @@ export const getPlayerMatchHistoryByFilters = async (
         opp_t.name AS opponent_name,
         opp_t.team_logo AS opponent_logo,
 
+        mt.match_side AS team_side,
+        mt_opp.match_side AS opponent_side,
+
         -- Score or Win Count
         CASE
           WHEN m.best_of = 1 THEN MAX(tgs.score)
@@ -599,11 +602,12 @@ export const getPlayerMatchHistoryByFilters = async (
       JOIN Teams t ON t.id = tgs.team_id
       JOIN TeamGameScores opp_tgs ON opp_tgs.match_game_id = mg.id AND opp_tgs.team_id != tgs.team_id
       JOIN Teams opp_t ON opp_t.id = opp_tgs.team_id
+      JOIN MatchTeams mt_opp ON mt_opp.match_id = m.id AND mt_opp.team_id = opp_tgs.team_id
       LEFT JOIN PlayerStats ps ON ps.steam_id = sp.steam_id AND ps.match_game_id = mg.id
       JOIN Seasons s ON s.id = m.season_id
       JOIN Leagues l ON l.id = m.league_id
 
-      WHERE ${query}
+      WHERE ${query} AND m.status = 'FINISHED'
 
       GROUP BY
         m.id,
@@ -620,14 +624,18 @@ export const getPlayerMatchHistoryByFilters = async (
         t.team_logo,
         opp_tgs.team_id,
         opp_t.name,
-        opp_t.team_logo;
+        opp_t.team_logo,
+        mt.match_side,
+        mt_opp.match_side;
   `;
 
   const matchHistory = await runQuery<MatchHistoryResult[]>(
     matchHistoryQuery,
     queryParams
   );
-  return matchHistory.filter((mh) => mh.kills && mh.deaths);
+  // Only exclude rows with no PlayerStats (SQL SUMs null). Do not use truthiness:
+  // 0 kills or 0 deaths are valid and must be kept.
+  return matchHistory.filter((mh) => mh.kills != null && mh.deaths != null);
 };
 
 export const getPlayerTeamDetailsWithFilters = async (
@@ -725,7 +733,7 @@ export const getPlayerGameDetailsWithFilters = async (
       JOIN PlayerStats ps ON ps.steam_id = p.steam_id AND ps.match_game_id = mg.id
       JOIN TeamGameScores tgs ON tgs.match_id = m.id AND tgs.team_id = slt.team_id AND mg.id = tgs.match_game_id
       JOIN TeamGameScores opp_tgs ON opp_tgs.match_id = m.id AND opp_tgs.team_id != slt.team_id AND mg.id = opp_tgs.match_game_id
-      WHERE ${query}
+      WHERE ${query} AND m.status = 'FINISHED'
     ),
     GameWinsPerMatch AS (
       SELECT
@@ -796,7 +804,7 @@ export const getAllPlayerStatsWithPartialQueryFilters = async (
       INNER JOIN MatchGames mg ON mg.id = ps.match_game_id
       INNER JOIN Matches m ON m.id = mg.match_id
       ${teamIdsJoin ? "INNER JOIN MatchTeams mt ON mt.match_id = m.id" : ""}
-      WHERE ${query}
+      WHERE ${query} AND m.status = 'FINISHED'
     ),
     player_stats AS (
       SELECT 
@@ -902,7 +910,7 @@ export const getPlayerStatsWithAllFilters = async (
       INNER JOIN MatchGames mg ON mg.id = ps.match_game_id
       INNER JOIN Matches m ON m.id = mg.match_id
       ${teamIdsJoin ? "INNER JOIN MatchTeams mt ON mt.match_id = m.id" : ""}
-      WHERE ${query}
+      WHERE ${query} AND m.status = 'FINISHED'
     ),
     player_stats AS (
       SELECT 
@@ -1060,12 +1068,13 @@ export const getPlayerStatsForLatestSeason = async (steam_id: string) => {
     INNER JOIN Matches m ON m.id = mg.match_id
     INNER JOIN SeasonLeagues sl ON sl.season_id = m.season_id AND sl.league_id = m.league_id
     WHERE p.steam_id = ? 
+      AND m.status = 'FINISHED'
       AND m.season_id = (
         SELECT MAX(m2.season_id)
         FROM PlayerStats ps2
         INNER JOIN MatchGames mg2 ON mg2.id = ps2.match_game_id
         INNER JOIN Matches m2 ON m2.id = mg2.match_id
-        WHERE ps2.steam_id = ?
+        WHERE ps2.steam_id = ? AND m2.status = 'FINISHED'
       )
     GROUP BY p.steam_id, p.nickname, m.season_id, sl.tier
   `;
@@ -1089,6 +1098,7 @@ export const getPlayerOldKanaElo = async (steam_id: string) => {
     LEFT JOIN Matches m ON m.id = mg.match_id 
     LEFT JOIN SeasonPlayerRanks spr ON spr.season_id = m.season_id AND spr.steam_id = ps.steam_id 
     WHERE ps.steam_id = ? 
+      AND m.status = 'FINISHED'
       AND spr.kana_elo IS NOT NULL 
       AND ps.kana_rating IS NOT NULL 
     GROUP BY m.season_id 
@@ -1186,6 +1196,7 @@ export const getPlayerMapStatsWithFilters = async (
         WHERE pt.victim_steam_id = ?
           AND pt.first_death = 1
           AND mg.map_id = ?
+          AND m.status = 'FINISHED'
           ${season_ids && season_ids.length > 0 ? `AND m.season_id IN (${season_ids.map(() => "?").join(",")})` : ""}
           ${league_ids && league_ids.length > 0 ? `AND m.league_id IN (${league_ids.map(() => "?").join(",")})` : ""}
           ${

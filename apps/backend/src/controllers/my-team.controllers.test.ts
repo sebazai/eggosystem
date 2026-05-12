@@ -38,7 +38,8 @@ describe("My Team Controllers", () => {
         account_id: 123,
         provider_id: "76561198000000001",
         nickname: "TestPlayer"
-      })
+      }),
+      query: {}
     };
 
     mockRes = {
@@ -144,8 +145,10 @@ describe("My Team Controllers", () => {
           match_id: 1,
           team_id: 1,
           team_name: "Test Team",
+          team_side: null,
           opponent_team_id: 2,
           opponent_team_name: "Opponent Team",
+          opponent_side: null,
           start_timestamp: "2025-11-15T18:00:00.000Z",
           season_id: 16,
           season_name: "Season 16",
@@ -166,9 +169,9 @@ describe("My Team Controllers", () => {
         mockNext
       );
 
-      expect(mockGetMyTeamsUpcomingMatches).toHaveBeenCalledWith(
+      expect(mockGetMyTeamsUpcomingMatches).toHaveBeenCalledWith([
         "76561198000000001"
-      );
+      ]);
       expect(mockJson).toHaveBeenCalledWith({ matches: mockMatches });
     });
 

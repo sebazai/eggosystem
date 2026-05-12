@@ -1,10 +1,10 @@
-import dotenv from "dotenv";
 import { logger } from "./utils/app-logger";
 import { initializeProfiling } from "./configs/profiling";
 
 if (process.env.NODE_ENV === "e2e") {
   logger.info("Loading .env.local.test file");
-  dotenv.config({ path: ".env.local.test" });
+  // eslint-disable-next-line @typescript-eslint/no-require-imports -- dotenv is a devDependency; only loaded in non-production paths
+  require("dotenv").config({ path: ".env.local.test" });
 }
 
 if (!process.env.NODE_ENV) {
@@ -14,7 +14,8 @@ if (!process.env.NODE_ENV) {
 if (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "test") {
   logger.info("Loading .env.development & .env file");
   // Load .env.development first so it takes precedence over .env
-  dotenv.config({ path: [".env.development", ".env"], quiet: true });
+  // eslint-disable-next-line @typescript-eslint/no-require-imports -- dotenv is a devDependency; only loaded in non-production paths
+  require("dotenv").config({ path: [".env.development", ".env"], quiet: true });
 }
 
 if (process.env.NODE_ENV !== "development" && process.env.NODE_ENV !== "test") {
@@ -40,6 +41,7 @@ if (process.env.NODE_ENV === "production") {
 }
 
 import express from "express";
+import { EventEmitter } from "node:events";
 import helmet from "helmet";
 import morgan from "morgan";
 import passport from "./configs/passport";
@@ -53,6 +55,13 @@ import {
 } from "./services/discord.services";
 import { queueConsumerManager } from "./services/queue-consumer-manager";
 import cors from "cors";
+
+/**
+ * Express and middleware (morgan, helmet, audit logging, etc.) attach several
+ * `finish` listeners per {@link import("http").ServerResponse}. The default cap
+ * of 10 triggers MaxListenersExceededWarning under normal operation.
+ */
+EventEmitter.defaultMaxListeners = 32;
 
 const app = express();
 

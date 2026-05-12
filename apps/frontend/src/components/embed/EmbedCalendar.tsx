@@ -1,19 +1,29 @@
 "use client";
 
-import { useMemo, useRef, useEffect } from "react";
+import { useMemo, useRef, useEffect, useCallback } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import type {
+  EventApi,
   EventClickArg,
   EventContentArg,
-  MoreLinkContentArg
+  MoreLinkContentArg,
+  MoreLinkHandler
 } from "@fullcalendar/core";
 import useSWR from "swr";
 import type { MatchWithStreamUrls } from "@eggosystem/types";
 import { formatInTimezone } from "@/lib/timezone";
 import { Clock } from "lucide-react";
+import {
+  CalendarMoreEventsDialog,
+  useCalendarMoreLinkDialog
+} from "@/components/calendar/CalendarMoreEventsDialog";
+import {
+  calendarMatchHomeLeftTeamNames,
+  calendarMatchVersusTitle
+} from "@/lib/order-match-teams-home-left-away";
 
 // Division definitions with darker, more readable colors
 const DIVISIONS: Record<number, { color: string; borderColor: string }> = {
@@ -62,10 +72,11 @@ const transformMatchesToEvents = (matches: MatchWithStreamUrls[]) => {
 
   return sortedMatches.map((match, index) => {
     const hasStream = match.stream_urls && match.stream_urls.length > 0;
+    const { leftName, rightName } = calendarMatchHomeLeftTeamNames(match);
 
     return {
       id: match.match_id,
-      title: match.title,
+      title: calendarMatchVersusTitle(match),
       start: match.match_start,
       end: match.match_end,
       backgroundColor: DIVISIONS[match.league_tier]?.color || "#6b7280",
@@ -77,8 +88,8 @@ const transformMatchesToEvents = (matches: MatchWithStreamUrls[]) => {
       extendedProps: {
         league: match.league_name,
         streamUrl: match.stream_urls,
-        team1: match.match_team1,
-        team2: match.match_team2,
+        team1: leftName,
+        team2: rightName,
         tier: match.league_tier,
         hasStream: hasStream,
         status: match.match_status,
@@ -150,14 +161,16 @@ export default function EmbedCalendar({
   organizerId,
   appId,
   leagueId,
-  height = "600px",
-  width = "100%",
+  height = undefined,
+  width = undefined,
   view: defaultView = "month",
   theme = "light"
 }: EmbedCalendarProps) {
   const calendarRef = useRef<FullCalendar>(null);
   const view: "dayGridMonth" | "timeGridWeek" =
     defaultView === "week" ? "timeGridWeek" : "dayGridMonth";
+
+  const moreDialog = useCalendarMoreLinkDialog();
 
   // Build the API URL
   const apiUrl = useMemo(() => {
@@ -190,6 +203,14 @@ export default function EmbedCalendar({
       window.open(matchUrl, "_blank", "noopener,noreferrer");
     }
   };
+
+  const openMatchFromEvent = useCallback((event: EventApi) => {
+    const matchId = event.extendedProps?.matchId;
+    if (matchId) {
+      const matchUrl = `${window.location.origin}/matches/${matchId}`;
+      window.open(matchUrl, "_blank", "noopener,noreferrer");
+    }
+  }, []);
 
   const calendarOptions = useMemo(
     () => ({
@@ -226,17 +247,16 @@ export default function EmbedCalendar({
           </div>
         );
       },
-      dayMaxEvents: 3,
-      moreLinkClick: "popover",
+      dayMaxEvents: height ? 2 : 3,
+      moreLinkClick:
+        moreDialog.moreLinkClickForFullCalendar as unknown as MoreLinkHandler,
       moreLinkContent: (arg: MoreLinkContentArg) => `+${arg.num} more`,
       slotMinTime: timeRange.minTime,
       slotMaxTime: timeRange.maxTime,
       allDaySlot: false,
-      slotDuration: "00:30:00",
-      expandRows: true,
-      height: "auto",
-      eventMaxStack: 3,
-      slotEventOverlap: false,
+      height: height || "auto",
+      eventMaxStack: height ? 2 : 3,
+      slotEventOverlap: true,
       selectable: false,
       selectMirror: false,
       weekends: true,
@@ -250,16 +270,16 @@ export default function EmbedCalendar({
       },
       eventOrder: "displayOrder,start,-allDay",
       editable: false,
-      droppable: false,
-      eventResizableFromStart: false,
-      handleWindowResize: true,
-      windowResizeDelay: 100,
-      longPressDelay: 500,
-      eventLongPressDelay: 500,
-      selectLongPressDelay: 500,
       dayMaxEventRows: 3
     }),
-    [view, matches, timeRange.minTime, timeRange.maxTime]
+    [
+      view,
+      matches,
+      timeRange.minTime,
+      timeRange.maxTime,
+      height,
+      moreDialog.moreLinkClickForFullCalendar
+    ]
   );
 
   // Apply theme class to document
@@ -303,7 +323,7 @@ export default function EmbedCalendar({
   return (
     <div
       className={`embed-calendar-container bg-background text-foreground ${theme}`}
-      style={{ height, width, overflow: "auto" }}
+      style={{ height, width }}
     >
       <style>{`
         .embed-calendar-container .fc {
@@ -363,6 +383,14 @@ export default function EmbedCalendar({
         }
       `}</style>
       <FullCalendar ref={calendarRef} {...calendarOptions} />
+
+      <CalendarMoreEventsDialog
+        open={moreDialog.open}
+        onOpenChange={moreDialog.onOpenChange}
+        title={moreDialog.title}
+        segments={moreDialog.segments}
+        onEventSelect={openMatchFromEvent}
+      />
     </div>
   );
 }

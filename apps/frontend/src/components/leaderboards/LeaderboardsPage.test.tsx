@@ -45,12 +45,14 @@ describe("LeaderboardsPage", () => {
     });
 
     render(<LeaderboardsPage />);
-    expect(screen.getByText("Loading...")).toBeInTheDocument();
+    // PageSkeleton is used for loading state
+    const skeleton = document.querySelector('[class*="animate-pulse"]');
+    expect(skeleton).toBeInTheDocument();
   });
 
   it("renders error state when filters fail to load", () => {
     mockUseFilters.mockReturnValue({
-      filterParams: null,
+      filterParams: { seasons: [1] }, // Must be set so isFiltersLoading is false
       isLoading: false,
       error: new Error("Failed to load filters"),
       isValidating: false,
@@ -58,6 +60,7 @@ describe("LeaderboardsPage", () => {
     });
 
     render(<LeaderboardsPage />);
+    // Error message should be displayed in ContentContainer
     expect(screen.getByText("Failed to load filters")).toBeInTheDocument();
   });
 
@@ -71,7 +74,9 @@ describe("LeaderboardsPage", () => {
     });
 
     render(<LeaderboardsPage />);
-    expect(screen.getByText("Loading...")).toBeInTheDocument();
+    // PageSkeleton is used for loading state
+    const skeleton = document.querySelector('[class*="animate-pulse"]');
+    expect(skeleton).toBeInTheDocument();
   });
 
   it("renders the main heading", () => {
@@ -138,6 +143,8 @@ describe("LeaderboardsPage", () => {
     });
 
     render(<LeaderboardsPage />);
-    expect(screen.getByText("Loading...")).toBeInTheDocument();
+    // PageSkeleton is used for loading state
+    const skeleton = document.querySelector('[class*="animate-pulse"]');
+    expect(skeleton).toBeInTheDocument();
   });
 });

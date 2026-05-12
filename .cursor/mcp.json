@@ -1,0 +1,46 @@
+{
+  "mcpServers": {
+    "mariadb": {
+      "type": "stdio",
+      "command": "bash",
+      "args": ["/workspace/scripts/run-mariadb-mcp.sh"],
+      "env": {
+        "DB_HOST": "eggo-devdb",
+        "DB_PORT": "3306",
+        "DB_USER": "mcp_readonly",
+        "DB_PASSWORD": "dev-pass",
+        "DB_NAME": "kanaliiga",
+        "MCP_READ_ONLY": "true"
+      }
+    },
+    "Playwright": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@playwright/mcp@latest",
+        "--browser",
+        "chromium",
+        "--headless",
+        "--no-sandbox"
+      ],
+      "env": {}
+    },
+    "shadcn/ui": {
+      "command": "pnpm",
+      "args": ["-C", "/workspace/apps/frontend", "exec", "shadcn", "mcp"],
+      "env": {}
+    },
+    "GitLab": {
+      "type": "stdio",
+      "command": "bash",
+      "args": [".cursor/gitlab-mcp.sh"],
+      "env": {}
+    },
+    "faceit": {
+      "type": "stdio",
+      "command": "bash",
+      "args": [".cursor/faceit-mcp.sh"],
+      "env": {}
+    }
+  }
+}

@@ -78,9 +78,18 @@ const players = row.players ? JSON.parse(row.players) : [];
 
 **Why**: Steam IDs (17-digit numbers) exceed JavaScript's `Number.MAX_SAFE_INTEGER` (2^53 - 1). `JSON.parse()` converts them to floating point numbers, causing precision loss. `JSONBig` with `storeAsString: true` preserves them as strings.
 
+## Reuse: Export Shared Logic
+
+**Rule**: Export functions that other models or callers can reuse. Do not keep logic local when it is duplicated or likely to be needed elsewhere.
+
+- **Export reusable helpers**: If a function performs a generic query or transformation (e.g. "get active map pool maps for seasons"), put it in the most relevant module, **export** it, and import it wherever it is needed.
+- **Single canonical implementation**: When the same logic exists in multiple files, move it to one place (e.g. `season-active-map-pool.models.ts` for map-pool queries) and import from there. Avoid copy-pasting the same function across models.
+- **Before adding a "local" helper**: Check if an equivalent already exists in the codebase or in a related model; if so, import and reuse it.
+
 ## Summary
 
 - **Models/Services**: `throw new ErrorClass("message")`
 - **Try/Catch**: Only for database transactions with cleanup
 - **JSON Parsing**: Use `JSONBig({ storeAsString: true })` for JSON with large integers
+- **Reuse**: Export shared query/helper functions; import instead of duplicating
 - Errors bubble up to RFC 7807 middleware automatically

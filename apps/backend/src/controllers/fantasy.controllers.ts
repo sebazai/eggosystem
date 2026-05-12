@@ -72,7 +72,7 @@ export const createFantasyTeamController = async (
       steam_id?: string;
       player_id?: string; // Support both for backward compatibility
       role: PlayerRole | null;
-      player_value: number;
+      player_value?: number; // Optional, server will fetch actual value
     }>;
   };
 
@@ -95,6 +95,7 @@ export const createFantasyTeamController = async (
   }
 
   // Validate and map players (support both steam_id and player_id)
+  // Note: player_value from client is ignored, server fetches actual value
   const mappedPlayers = players.map((p) => {
     const steamId = p.steam_id || p.player_id;
     if (!steamId) {
@@ -103,7 +104,7 @@ export const createFantasyTeamController = async (
     return {
       steam_id: steamId,
       role: p.role,
-      player_value: p.player_value
+      player_value: 0 // Placeholder, server will fetch actual value
     };
   });
 
@@ -192,27 +193,21 @@ export const substitutePlayerController = async (
     remove_player_id?: string; // Support both for backward compatibility
     add_steam_id?: string;
     add_player_id?: string; // Support both for backward compatibility
-    new_player_value: number;
-    week_number: number;
     role?: PlayerRole | null;
+    // new_player_value removed - server fetches from database
+    // week_number removed - server calculates current week
   };
 
-  const remove_steam_id = body.remove_steam_id || body.remove_player_id;
-  const add_steam_id = body.add_steam_id || body.add_player_id;
+  const remove_steam_id = body.remove_steam_id ?? body.remove_player_id;
+  const add_steam_id = body.add_steam_id ?? body.add_player_id;
 
   if (
-    !remove_steam_id ||
-    !add_steam_id ||
-    !body.new_player_value ||
-    body.week_number === undefined ||
-    body.week_number === null
+    remove_steam_id === undefined ||
+    remove_steam_id === null ||
+    add_steam_id === undefined ||
+    add_steam_id === null
   ) {
     return next(new BadRequestError("Invalid request body"));
-  }
-
-  // Validate week_number is a positive integer
-  if (!Number.isInteger(body.week_number) || body.week_number < 1) {
-    return next(new BadRequestError("week_number must be a positive integer"));
   }
 
   const steamId = await getSteamIdFromAuth(req.auth.account_id);
@@ -223,11 +218,10 @@ export const substitutePlayerController = async (
   }
 
   const substitutionData: SubstitutionData = {
-    remove_steam_id,
-    add_steam_id,
-    new_player_value: body.new_player_value,
-    week_number: body.week_number,
+    remove_steam_id: String(remove_steam_id),
+    add_steam_id: String(add_steam_id),
     role: body.role
+    // Server fetches actual player value and calculates week number
   };
 
   const result = await substitutePlayer(team.id, substitutionData);
@@ -258,23 +252,23 @@ export const updatePlayerRolesController = async (
       player_id?: string; // Support both for backward compatibility
       role: PlayerRole | null;
     }>;
-    skip_swap_limit?: boolean;
+    // skip_swap_limit removed - server determines this automatically
   };
 
   if (!body.role_updates || !Array.isArray(body.role_updates)) {
     return next(new BadRequestError("Invalid request body"));
   }
 
-  // Map role_updates to use steam_id
+  // Map role_updates to use steam_id (always string to avoid JS number precision issues)
   const role_updates = body.role_updates.map((update) => {
-    const steamId = update.steam_id || update.player_id;
-    if (!steamId) {
+    const steamId = update.steam_id ?? update.player_id;
+    if (steamId === undefined || steamId === null) {
       throw new BadRequestError(
         "Each role update must have steam_id or player_id"
       );
     }
     return {
-      steam_id: steamId,
+      steam_id: String(steamId),
       role: update.role
     };
   });
@@ -289,12 +283,8 @@ export const updatePlayerRolesController = async (
   // Calculate current week number
   const weekNumber = await getCurrentWeekNumberForSeason(seasonId);
 
-  const result = await updatePlayerRoles(
-    team.id,
-    role_updates,
-    weekNumber,
-    body.skip_swap_limit || false
-  );
+  // Server determines if it's a swap or initial assignment
+  const result = await updatePlayerRoles(team.id, role_updates, weekNumber);
 
   res.json({
     success: true,
@@ -478,7 +468,7 @@ export const getPlayerPointHistoryController = async (
     return next(new BadRequestError("Player not in your fantasy team"));
   }
 
-  const history = await getPlayerPointHistory(playerSteamId, seasonId);
+  const history = await getPlayerPointHistory(playerSteamId, seasonId, team.id);
 
   res.json(history);
 };

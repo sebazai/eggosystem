@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation";
 import { TanStackTableWrapper } from "../tables/TanStackTableWrapper";
 import { useFilteredTeamMatchHistory } from "@/hooks/data/filtered/useFilteredTeamMatchHistory";
 import { NextImageFallback } from "../layout/NextImageFallback";
+import { TableSkeleton } from "@/components/loading";
 import {
   getSortedRowModel,
   getPaginationRowModel,
@@ -19,6 +20,7 @@ import {
   type PaginationState
 } from "@tanstack/react-table";
 import type { TeamMatchHistory as TeamMatchHistoryType } from "@eggosystem/types";
+import { MatchRowScoreComponents } from "../shared/MatchRowScoreComponents";
 
 interface TeamMatchHistoryProps {
   teamId: number;
@@ -85,19 +87,21 @@ export const TeamMatchHistory = ({
           const teamWon = row.original.team_score > row.original.opponent_score;
           return (
             <>
-              <span className={teamWon ? "text-green-500" : "text-red-500"}>
-                {row.original.team_score}
-              </span>
+              <MatchRowScoreComponents
+                score={row.original.team_score}
+                teamWon={teamWon}
+              />
               -
-              <span className={!teamWon ? "text-green-500" : "text-red-500"}>
-                {row.original.opponent_score}
-              </span>
+              <MatchRowScoreComponents
+                score={row.original.opponent_score}
+                teamWon={!teamWon}
+              />
             </>
           );
         },
         meta: {
           responsive: "table-cell",
-          tooltip: "Match Score",
+          tooltip: "Match score",
           sortable: true
         }
       },
@@ -135,12 +139,13 @@ export const TeamMatchHistory = ({
         header: "RESULT",
         cell: ({ getValue }) => {
           const result = getValue<string>();
+          console.log(result);
           return (
             <span
               className={
-                result === "win"
+                result === "won"
                   ? "text-green-500"
-                  : result === "loss"
+                  : result === "lost"
                     ? "text-red-500"
                     : "text-yellow-500"
               }
@@ -189,10 +194,7 @@ export const TeamMatchHistory = ({
     return (
       <div className="bg-card rounded-md overflow-hidden pt-4 sm:pt-2">
         <h2 className="text-xl font-semibold mb-2">Match History</h2>
-        <div className="text-center">
-          <div className="h-6 w-40 bg-kanaliiga-light-brown/30 animate-pulse rounded mx-auto mb-3" />
-          <div className="h-4 w-60 bg-kanaliiga-light-brown/30 animate-pulse rounded mx-auto" />
-        </div>
+        <TableSkeleton rows={10} columns={6} showHeader={false} />
       </div>
     );
   }

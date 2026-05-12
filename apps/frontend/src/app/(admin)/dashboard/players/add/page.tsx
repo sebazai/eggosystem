@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { WithRoleProtection } from "@/components/dashboard/WithRoleProtection";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -50,6 +51,7 @@ export default function AddPlayerPage() {
   const [skipProfileValidation, setSkipProfileValidation] = useState(false);
   const [showRosterPopup, setShowRosterPopup] = useState(false);
   const [popupPosition, setPopupPosition] = useState({ x: 0, y: 0 });
+  const [ticketNumber, setTicketNumber] = useState<string>("");
 
   // Use shared season for finalized context
   // For registration context, we still need a season - use shared season if available
@@ -138,6 +140,7 @@ export default function AddPlayerPage() {
       clearResult();
       setSuccess(null);
       setApiError(null);
+      setTicketNumber("");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sharedSeasonId, selectedContext]);
@@ -151,6 +154,7 @@ export default function AddPlayerPage() {
       setSuccess(null);
       setApiError(null);
       setSkipProfileValidation(false);
+      setTicketNumber("");
     }
   };
 
@@ -160,6 +164,7 @@ export default function AddPlayerPage() {
     clearResult();
     setSuccess(null);
     setApiError(null);
+    setTicketNumber("");
   };
 
   const handleAddPlayer = async () => {
@@ -207,14 +212,19 @@ export default function AddPlayerPage() {
         eligibilityResult?.selectedTeam.csrankker_components ||
         {};
 
+      const addPayload: Parameters<typeof addPlayer>[3] = {
+        kana_elo: kanaElo,
+        calculus
+      };
+      if (ticketNumber.trim() !== "") {
+        addPayload.ticket_number = ticketNumber.trim();
+      }
+
       await addPlayer(
         effectiveSeasonId,
         selectedTeamId,
         convertedSteamId,
-        {
-          kana_elo: kanaElo,
-          calculus
-        },
+        addPayload,
         selectedContext
       );
 
@@ -231,6 +241,7 @@ export default function AddPlayerPage() {
       clearValidationResults();
       clearResult();
       setSteamId("");
+      setTicketNumber("");
     } catch (err) {
       console.error("Failed to add player:", err);
       setSuccess(null);
@@ -282,6 +293,7 @@ export default function AddPlayerPage() {
                     clearResult();
                     setSuccess(null);
                     setApiError(null);
+                    setTicketNumber("");
                   }}
                 >
                   <SelectTrigger id="context">
@@ -353,6 +365,24 @@ export default function AddPlayerPage() {
                     )}
                   </SelectContent>
                 </Select>
+
+                <div className="space-y-2">
+                  <Label htmlFor="add-ticket-number">
+                    Helpdesk ticket number (optional)
+                  </Label>
+                  <Input
+                    id="add-ticket-number"
+                    value={ticketNumber}
+                    onChange={(e) => setTicketNumber(e.target.value)}
+                    placeholder="e.g. ticket ID from your helpdesk"
+                    autoComplete="off"
+                    data-testid="add-player-ticket-number"
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    If provided, stored on the roster row for finalized seasons.
+                    Registration adds do not persist this field.
+                  </p>
+                </div>
 
                 {/* View Team Roster Button */}
                 {selectedTeamId && (

@@ -5,6 +5,7 @@ import { faceitPlayerGameRankHandlers } from "./faceit/GameRank-handlers.js";
 import { faceitMetadataHandlers } from "./faceit/Metadata-handlers.js";
 import { faceitTeamHandlers } from "./faceit/Teams-handlers.js";
 import { faceitMatchDetailsHandlers } from "./faceit/MatchDetails-handlers.js";
+import { faceitMatchHistoryHandlers } from "./faceit/MatchHistory-handlers.js";
 import { faceitDemoHandlers } from "./faceit/Demo-handlers.js";
 import { faceitChampionshipHandlers } from "./faceit/ChampionshipDetails-handlers.js";
 import { csrankkerHandlers } from "./csrankker/handlers.js";
@@ -17,6 +18,7 @@ const handlers = [
   ...faceitPlayerGameRankHandlers,
   ...faceitTeamHandlers,
   ...faceitMatchDetailsHandlers,
+  ...faceitMatchHistoryHandlers,
   ...faceitDemoHandlers,
   ...faceitChampionshipHandlers,
   ...csrankkerHandlers

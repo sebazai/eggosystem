@@ -137,17 +137,19 @@ describe("Fantasy Models", () => {
       // Mock all runQuery calls in order:
       // 1. Get team
       mockRunQuery.mockResolvedValueOnce(mockTeamData as never);
-      // 2. getRemainingRoleSwaps - returns count
+      // 2. Calculate total points (NEW - added for backward compatibility fix)
+      mockRunQuery.mockResolvedValueOnce([{ total_points: 100 }] as never);
+      // 3. getRemainingRoleSwaps - returns count
       mockRunQuery.mockResolvedValueOnce([{ count: 0 }] as never);
-      // 3. getRemainingSubstitutions - returns count
+      // 4. getRemainingSubstitutions - returns count
       mockRunQuery.mockResolvedValueOnce([{ count: 0 }] as never);
-      // 4. Get players
+      // 5. Get players
       mockRunQuery.mockResolvedValueOnce(mockPlayers as never);
-      // 5. Get role swaps history
+      // 6. Get role swaps history
       mockRunQuery.mockResolvedValueOnce([] as never);
-      // 6. Get substitutions history
+      // 7. Get substitutions history
       mockRunQuery.mockResolvedValueOnce([] as never);
-      // 7. Get player values (for each player) - this is a loop, so mock for each player
+      // 8. Get player values (for each player) - this is a loop, so mock for each player
       mockRunQuery.mockResolvedValueOnce([] as never);
 
       const result = await getFantasyTeamByUser("12345", 1);
@@ -283,6 +285,12 @@ describe("Fantasy Models", () => {
       };
 
       mockRunQuery
+        // Fetch actual values for each player (5 queries)
+        .mockResolvedValueOnce([{ value: 200000 }] as never) // Player 1 value
+        .mockResolvedValueOnce([{ value: 200000 }] as never) // Player 2 value
+        .mockResolvedValueOnce([{ value: 200000 }] as never) // Player 3 value
+        .mockResolvedValueOnce([{ value: 200000 }] as never) // Player 4 value
+        .mockResolvedValueOnce([{ value: 200000 }] as never) // Player 5 value
         .mockResolvedValueOnce([] as never) // Check existing team
         .mockResolvedValueOnce({ insertId: 1 } as never) // Insert team
         .mockResolvedValueOnce({ insertId: 1 } as never) // Insert player 1
@@ -328,7 +336,13 @@ describe("Fantasy Models", () => {
         ]
       };
 
-      mockRunQuery.mockResolvedValueOnce([] as never);
+      // Mock fetching actual values for each player (server validates)
+      mockRunQuery
+        .mockResolvedValueOnce([{ value: 300000 }] as never) // Player 1 value
+        .mockResolvedValueOnce([{ value: 300000 }] as never) // Player 2 value
+        .mockResolvedValueOnce([{ value: 300000 }] as never) // Player 3 value
+        .mockResolvedValueOnce([{ value: 300000 }] as never) // Player 4 value
+        .mockResolvedValueOnce([{ value: 300000 }] as never); // Player 5 value
 
       await expect(createFantasyTeam(teamData)).rejects.toThrow(
         "Total player value exceeds budget"
@@ -378,7 +392,14 @@ describe("Fantasy Models", () => {
 
       // Reset mocks for this test
       mockRunQuery.mockReset();
-      mockRunQuery.mockResolvedValueOnce([{ id: 1 }]);
+      // Mock fetching actual values for each player first
+      mockRunQuery
+        .mockResolvedValueOnce([{ value: 200000 }] as never) // Player 1 value
+        .mockResolvedValueOnce([{ value: 200000 }] as never) // Player 2 value
+        .mockResolvedValueOnce([{ value: 200000 }] as never) // Player 3 value
+        .mockResolvedValueOnce([{ value: 200000 }] as never) // Player 4 value
+        .mockResolvedValueOnce([{ value: 200000 }] as never) // Player 5 value
+        .mockResolvedValueOnce([{ id: 1 }] as never); // Check existing team - already exists!
 
       await expect(createFantasyTeam(teamData)).rejects.toThrow(
         "already has a fantasy team"
@@ -404,9 +425,9 @@ describe("Fantasy Models", () => {
     it("should remove old player and add new player", async () => {
       const substitutionData = {
         remove_steam_id: "1",
-        add_steam_id: "2",
-        new_player_value: 200000,
-        week_number: 1
+        add_steam_id: "2"
+        // new_player_value removed - server fetches from database
+        // week_number removed - server calculates current week
       };
 
       // Mock getCurrentWeekNumberForSeason
@@ -418,10 +439,13 @@ describe("Fantasy Models", () => {
       mockRunQuery.mockReset();
 
       mockRunQuery
-        .mockResolvedValueOnce([{ id: 1, budget_remaining: 500000 }]) // Get team
+        .mockResolvedValueOnce([
+          { id: 1, season_id: 1, budget_remaining: 500000 }
+        ]) // Get team
         .mockResolvedValueOnce([{ count: 0 }]) // Check substitution limit
         .mockResolvedValueOnce([{ player_value: 190000, role: "rifler" }]) // Get old player
         .mockResolvedValueOnce([{ count: 0 }]) // Check played this week
+        .mockResolvedValueOnce([{ value: 200000 }]) // Get new player value from database
         .mockResolvedValueOnce(undefined) // Deactivate old player
         .mockResolvedValueOnce({ insertId: 2 }) // Insert new player
         .mockResolvedValueOnce(undefined) // Update team budget
@@ -431,8 +455,50 @@ describe("Fantasy Models", () => {
 
       const result = await substitutePlayer(1, substitutionData);
 
-      expect(result.remaining_substitutions).toBeGreaterThanOrEqual(0);
+      expect(result.remaining_substitutions).toBe(1);
       expect(mockConnection.commit).toHaveBeenCalled();
+    });
+
+    it("should use server-side week for history so remaining count matches getFantasyTeamByUser", async () => {
+      const substitutionData = {
+        remove_steam_id: "1",
+        add_steam_id: "2"
+        // new_player_value removed - server fetches from database
+        // week_number removed - server ALWAYS calculates current week (not client-provided)
+      };
+
+      // Server calculates week as 3 (not whatever client sends)
+      mockGetCurrentWeekNumberForSeason.mockResolvedValue(3);
+
+      mockRunQuery.mockReset();
+      mockRunQuery
+        .mockResolvedValueOnce([
+          { id: 1, season_id: 1, budget_remaining: 500000 }
+        ])
+        .mockResolvedValueOnce([{ count: 0 }])
+        .mockResolvedValueOnce([{ player_value: 190000, role: "rifler" }])
+        .mockResolvedValueOnce([{ count: 0 }])
+        .mockResolvedValueOnce([{ value: 200000 }]) // Get new player value from database
+        .mockResolvedValueOnce(undefined)
+        .mockResolvedValueOnce({ insertId: 2 })
+        .mockResolvedValueOnce(undefined)
+        .mockResolvedValueOnce(undefined)
+        .mockResolvedValueOnce(undefined)
+        .mockResolvedValueOnce([{ count: 1 }]);
+
+      await substitutePlayer(1, substitutionData);
+
+      // Verify server uses week 3 (from server calculation) not client-provided value
+      const historyInsertCalls = mockRunQuery.mock.calls.filter(
+        (call) =>
+          Array.isArray(call[0]) === false &&
+          String(call[0]).includes("INSERT INTO FantasyPlayerHistory")
+      );
+      expect(historyInsertCalls.length).toBe(2);
+      const firstInsertParams = historyInsertCalls[0][1] as unknown[];
+      const secondInsertParams = historyInsertCalls[1][1] as unknown[];
+      expect(firstInsertParams[firstInsertParams.length - 1]).toBe(3);
+      expect(secondInsertParams[secondInsertParams.length - 1]).toBe(3);
     });
 
     it("should enforce substitution limit (2 per week)", async () => {
@@ -443,16 +509,13 @@ describe("Fantasy Models", () => {
         week_number: 1
       };
 
-      // Mock getCurrentWeekNumberForSeason
       mockGetCurrentWeekNumberForSeason.mockResolvedValue(1);
-      // Mock getSeasonStartDate
-      mockGetSeasonStartDate.mockResolvedValue(new Date("2024-01-01"));
 
-      // Reset mocks for this test
       mockRunQuery.mockReset();
-
       mockRunQuery
-        .mockResolvedValueOnce([{ id: 1, budget_remaining: 500000 }]) // Get team
+        .mockResolvedValueOnce([
+          { id: 1, season_id: 1, budget_remaining: 500000 }
+        ])
         .mockResolvedValueOnce([{ count: 2 }]); // Already used 2 substitutions
 
       await expect(substitutePlayer(1, substitutionData)).rejects.toThrow(
@@ -502,7 +565,7 @@ describe("Fantasy Models", () => {
         .mockResolvedValueOnce(undefined) // Update team updated_at
         .mockResolvedValueOnce([{ count: 2 }]); // Final swap count
 
-      const result = await updatePlayerRoles(1, roleUpdates, 1, false);
+      const result = await updatePlayerRoles(1, roleUpdates, 1);
 
       expect(result.remaining_swaps).toBeGreaterThanOrEqual(0);
       expect(mockConnection.commit).toHaveBeenCalled();
@@ -519,7 +582,7 @@ describe("Fantasy Models", () => {
         .mockResolvedValueOnce([]) // Get all team roles
         .mockResolvedValueOnce([{ count: 2 }]); // Already used 2 swaps
 
-      await expect(updatePlayerRoles(1, roleUpdates, 1, false)).rejects.toThrow(
+      await expect(updatePlayerRoles(1, roleUpdates, 1)).rejects.toThrow(
         "Maximum 2 role swaps per week allowed"
       );
     });
@@ -535,9 +598,7 @@ describe("Fantasy Models", () => {
       // Mock that the player is NOT in the team (empty result)
       mockRunQuery.mockResolvedValueOnce([]); // Get current players - empty means player not found
 
-      const error = await updatePlayerRoles(1, roleUpdates, 1, false).catch(
-        (e) => e
-      );
+      const error = await updatePlayerRoles(1, roleUpdates, 1).catch((e) => e);
 
       expect(error).toBeInstanceOf(Error);
       expect(error.message).toBe("Player 76561197992956290 not found in team");
@@ -558,9 +619,7 @@ describe("Fantasy Models", () => {
       // Mock that only player "1" is in the team, player "76561197992956290" is not
       mockRunQuery.mockResolvedValueOnce([{ steam_id: "1", role: "support" }]); // Get current players
 
-      const error = await updatePlayerRoles(1, roleUpdates, 1, false).catch(
-        (e) => e
-      );
+      const error = await updatePlayerRoles(1, roleUpdates, 1).catch((e) => e);
 
       expect(error).toBeInstanceOf(Error);
       expect(error.message).toBe("Player 76561197992956290 not found in team");
@@ -582,9 +641,7 @@ describe("Fantasy Models", () => {
           { steam_id: "3", role: "leader" }
         ]); // Get all team roles
 
-      const error = await updatePlayerRoles(1, roleUpdates, 1, false).catch(
-        (e) => e
-      );
+      const error = await updatePlayerRoles(1, roleUpdates, 1).catch((e) => e);
 
       expect(error).toBeInstanceOf(Error);
       expect(error.message).toBe(
@@ -796,11 +853,16 @@ describe("Fantasy Models", () => {
       mockRunQuery.mockReset();
       mockRunQuery.mockResolvedValueOnce(mockHistory);
 
-      const result = await getPlayerPointHistory("12345", 1);
+      const result = await getPlayerPointHistory("12345", 1, 1);
 
       expect(result).toHaveLength(1);
       expect(result[0]).toHaveProperty("points_earned");
       expect(result[0]).toHaveProperty("stats_breakdown");
+      expect(mockRunQuery).toHaveBeenCalledWith(
+        expect.stringContaining("ft.id = ?"),
+        [expect.anything(), "12345", expect.anything(), 1],
+        undefined
+      );
     });
 
     it("should handle player with no matches", async () => {
@@ -808,9 +870,36 @@ describe("Fantasy Models", () => {
       mockRunQuery.mockReset();
       mockRunQuery.mockResolvedValueOnce([]);
 
-      const result = await getPlayerPointHistory("12345", 1);
+      const result = await getPlayerPointHistory("12345", 1, 1);
 
       expect(result).toEqual([]);
+    });
+
+    it("should filter point history by fantasy team id so same player in multiple teams returns only that team's rows", async () => {
+      mockRunQuery.mockReset();
+      mockRunQuery.mockResolvedValueOnce([
+        {
+          match_game_id: 1,
+          match_date: "2024-01-01",
+          map_name: "de_overpass",
+          opponent: "AirTap",
+          opponent_logo: null,
+          points_earned: -7,
+          individual_points: -5,
+          team_points: -1,
+          role_points: -1,
+          stats_breakdown: JSON.stringify({ kills: 10, deaths: 15 }),
+          points_breakdown: JSON.stringify({ kills: 5, deaths: -10 })
+        }
+      ]);
+
+      const result = await getPlayerPointHistory("76561198001857963", 1, 42);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].points_earned).toBe(-7);
+      expect(mockRunQuery).toHaveBeenCalledTimes(1);
+      const [, params] = mockRunQuery.mock.calls[0];
+      expect(params).toEqual([1, "76561198001857963", 1, 42]);
     });
   });
 });

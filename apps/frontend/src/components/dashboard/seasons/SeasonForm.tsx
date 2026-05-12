@@ -17,6 +17,7 @@ import {
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -88,7 +89,10 @@ export function SeasonForm({
       ),
       active_map_pool: season.active_map_pool || [],
       rulebook_url: season.rulebook_url || null,
-      discord_link: season.discord_link || null
+      discord_link: season.discord_link || null,
+      faceit_rank_required: season.faceit_rank_required,
+      premier_rank_required: season.premier_rank_required,
+      hours_played_required: season.hours_played_required
     };
   };
 
@@ -113,7 +117,10 @@ export function SeasonForm({
       early_bird_price_discount_end_date: null,
       active_map_pool: [],
       rulebook_url: null,
-      discord_link: null
+      discord_link: null,
+      faceit_rank_required: false,
+      premier_rank_required: false,
+      hours_played_required: false
     },
     mode: "onTouched"
   });
@@ -183,7 +190,10 @@ export function SeasonForm({
         ),
         active_map_pool: data.active_map_pool,
         rulebook_url: data.rulebook_url || null,
-        discord_link: data.discord_link || null
+        discord_link: data.discord_link || null,
+        faceit_rank_required: data.faceit_rank_required ?? false,
+        premier_rank_required: data.premier_rank_required ?? false,
+        hours_played_required: data.hours_played_required ?? false
       };
 
       await onSubmit(rawData);
@@ -477,10 +487,10 @@ export function SeasonForm({
                     </FormControl>
                     <div className="space-y-1 leading-none">
                       <FormLabel>Round Robin BO2 as 2xBO1</FormLabel>
-                      <p className="text-sm text-muted-foreground">
+                      <FormDescription>
                         Treat round robin BO2 matches as two separate BO1
                         matches
-                      </p>
+                      </FormDescription>
                     </div>
                   </FormItem>
                 )}
@@ -502,9 +512,9 @@ export function SeasonForm({
                         disabled={isFormDisabled}
                       />
                     </FormControl>
-                    <p className="text-sm text-muted-foreground">
+                    <FormDescription>
                       Link to payment page for participation fee
-                    </p>
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -526,9 +536,9 @@ export function SeasonForm({
                         disabled={isFormDisabled}
                       />
                     </FormControl>
-                    <p className="text-sm text-muted-foreground">
+                    <FormDescription>
                       Link to the season rulebook
-                    </p>
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -550,9 +560,9 @@ export function SeasonForm({
                         disabled={isFormDisabled}
                       />
                     </FormControl>
-                    <p className="text-sm text-muted-foreground">
+                    <FormDescription>
                       Discord invite link for the season
-                    </p>
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -582,9 +592,9 @@ export function SeasonForm({
                         disabled={isFormDisabled}
                       />
                     </FormControl>
-                    <p className="text-sm text-muted-foreground">
+                    <FormDescription>
                       Participation fee in euros (€)
-                    </p>
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -605,10 +615,10 @@ export function SeasonForm({
                     </FormControl>
                     <div className="space-y-1 leading-none">
                       <FormLabel>Price includes VAT</FormLabel>
-                      <p className="text-sm text-muted-foreground">
+                      <FormDescription>
                         If checked, displays &quot;(includes VAT)&quot;. If
                         unchecked, displays &quot;(+VAT)&quot;.
-                      </p>
+                      </FormDescription>
                     </div>
                   </FormItem>
                 )}
@@ -639,10 +649,10 @@ export function SeasonForm({
                         disabled={isFormDisabled}
                       />
                     </FormControl>
-                    <p className="text-sm text-muted-foreground">
+                    <FormDescription>
                       Discount as decimal (0.2 = 20% off). Must be between 0 and
                       1.
-                    </p>
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -724,7 +734,7 @@ export function SeasonForm({
                                   disabled={isFormDisabled}
                                 />
                               </FormControl>
-                              <FormLabel className="font-normal cursor-pointer">
+                              <FormLabel className="normal-case font-body font-normal cursor-pointer text-foreground">
                                 {map.name}
                               </FormLabel>
                             </FormItem>
@@ -732,10 +742,80 @@ export function SeasonForm({
                         </div>
                       )}
                     </div>
-                    <p className="text-sm text-muted-foreground">
+                    <FormDescription>
                       Select at least one map to be active for this season
-                    </p>
+                    </FormDescription>
                     <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* FaceIt Rank Required */}
+              <FormField
+                control={form.control}
+                name="faceit_rank_required"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value || false}
+                        onCheckedChange={field.onChange}
+                        disabled={isFormDisabled}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>Require FaceIt Rank</FormLabel>
+                      <FormDescription>
+                        Players must have a valid FaceIt rank to sign up
+                      </FormDescription>
+                    </div>
+                  </FormItem>
+                )}
+              />
+
+              {/* Premier Rank Required */}
+              <FormField
+                control={form.control}
+                name="premier_rank_required"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value || false}
+                        onCheckedChange={field.onChange}
+                        disabled={isFormDisabled}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>Require Premier Rank</FormLabel>
+                      <FormDescription>
+                        Players must have a valid CS2 Premier rank to sign up
+                      </FormDescription>
+                    </div>
+                  </FormItem>
+                )}
+              />
+
+              {/* Hours Played Required */}
+              <FormField
+                control={form.control}
+                name="hours_played_required"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value || false}
+                        onCheckedChange={field.onChange}
+                        disabled={isFormDisabled}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>Require Hours Played</FormLabel>
+                      <FormDescription>
+                        Players must have played sufficient hours in CS2 to sign
+                        up
+                      </FormDescription>
+                    </div>
                   </FormItem>
                 )}
               />
@@ -744,7 +824,7 @@ export function SeasonForm({
               <Button
                 type="submit"
                 disabled={isFormDisabled}
-                className="w-full"
+                className="w-full md:w-auto"
               >
                 {isSubmitting ? (
                   <>
@@ -754,9 +834,9 @@ export function SeasonForm({
                       : "Creating Season..."}
                   </>
                 ) : mode === "edit" ? (
-                  "Save Season"
+                  "Save Season →"
                 ) : (
-                  "Create Season"
+                  "Create Season →"
                 )}
               </Button>
             </form>

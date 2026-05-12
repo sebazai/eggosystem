@@ -8,6 +8,7 @@ import { useSeasonDetails } from "@/hooks/data/useSeasonDetails";
 import { convertTimeToLocalTimeWithoutSeconds } from "@/lib/date-utils";
 import { createNextUrl } from "@/lib/utils";
 import Link from "next/link";
+import { CardSkeleton } from "@/components/loading";
 
 interface SignupWelcomeProps {
   seasonId: string;
@@ -47,12 +48,18 @@ const calculateEarlyBirdPricing = (
 };
 
 export const SignupWelcome = ({ seasonId }: SignupWelcomeProps) => {
-  const { seasonDetails, isLoading, isError, isValidating } =
-    useSeasonDetails(seasonId);
+  const { seasonDetails, isLoading, isError } = useSeasonDetails(seasonId);
   const { user } = useAuth();
 
-  if (isLoading || isValidating) {
-    return <ContentContainer>Loading...</ContentContainer>;
+  // Match SignupForm: only block initial load, not SWR background revalidation.
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <CardSkeleton showHeader={true} contentLines={5} />
+        <CardSkeleton showHeader={true} contentLines={3} />
+        <CardSkeleton showHeader={true} contentLines={4} />
+      </div>
+    );
   }
   if (isError || !seasonDetails) {
     return (
@@ -100,21 +107,21 @@ export const SignupWelcome = ({ seasonId }: SignupWelcomeProps) => {
       </div>
       <div className="pb-4">
         <p>
-          Hi and Welcome to Kanaliiga, the biggest and the coolest CS2
-          tournament in Finland! Please, read instructions carefully and reserve
-          yourself some time for filling the registration as accurately as
-          possible. As a captain, You will be responsible of your team. Together
-          we will make this tournament an awesome experience for everyone!
+          Hi and welcome to Kanaliiga, Finland&apos;s corporate CS2 tournament!
+          Please read the instructions carefully and reserve yourself some time
+          for filling the registration as accurately as possible. As a captain,
+          you will be responsible for your team. Together we will make this
+          tournament a great experience for everyone.
         </p>
         <p>
           At this point, we would like to kindly remind you, that We, Kanaliiga
           Organizers, do this purely voluntarily, without monthly paychecks
-          running and out of ❤ for the Esports. Please, be active, help others,
+          running and out of love for esports. Please be active, help others,
           enjoy the event and bear with us! Sincerely, Kanaliiga.
         </p>
       </div>
       <div>
-        <div className="text-center text-xl pb-6">💰 Participation Fee</div>
+        <div className="text-center text-xl pb-6">Participation Fee</div>
         <p>
           We cover organizing costs in CS2 tournaments by collecting
           participation fees from teams. The fee is per a participating team.
@@ -198,7 +205,7 @@ export const SignupWelcome = ({ seasonId }: SignupWelcomeProps) => {
           >
             Discord
           </Link>{" "}
-          to make the tournament an awesome experience for everyone! If you need
+          to keep the tournament running smoothly for everyone. If you need
           assistance with translations, usually Google Translator will translate
           from Finnish to English surprisingly well. Organizers in the Discord
           will gladly help you as well!

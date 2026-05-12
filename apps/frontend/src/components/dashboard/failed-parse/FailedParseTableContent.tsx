@@ -14,43 +14,20 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { TanStackTableWrapper } from "../../tables/TanStackTableWrapper";
-import { ServerSidePagination } from "../../tables/ServerSidePagination";
+import { TablePagination } from "../../tables/TablePagination";
 import type { FailedParseMessage, CustomColumnMeta } from "@eggosystem/types";
-import { useMatchDetailsByGameId } from "@/hooks/data/useMatchDetailsByGameId";
 import Link from "next/link";
+import { Loader2 } from "lucide-react";
 
-interface MatchGameIdLinkProps {
-  matchGameId: number;
-}
-
-const MatchGameIdLink = ({ matchGameId }: MatchGameIdLinkProps) => {
-  const {
-    data: matchDetails,
-    isLoading,
-    error
-  } = useMatchDetailsByGameId(matchGameId);
-
-  if (isLoading) {
-    return (
-      <span className="font-mono text-sm text-muted-foreground">
-        Loading...
-      </span>
-    );
-  }
-
-  if (error || !matchDetails) {
-    return <span className="font-mono text-sm">{matchGameId}</span>;
-  }
-
-  return (
-    <Link
-      href={`/matches/${matchDetails.match_id}/games/${matchGameId}`}
-      className="font-mono text-sm text-blue-600 hover:text-blue-800 hover:underline"
-    >
-      {matchGameId}
-    </Link>
-  );
-};
+/** Links to match game page via /match-games/[id] which redirects to /matches/[match_id]/games/[id] */
+const MatchGameIdLink = ({ matchGameId }: { matchGameId: string | number }) => (
+  <Link
+    href={`/match-games/${matchGameId}`}
+    className="font-mono text-sm text-blue-600 hover:text-blue-800 hover:underline"
+  >
+    {matchGameId}
+  </Link>
+);
 
 interface FailedParseTableContentProps {
   failedMessages: FailedParseMessage[];
@@ -65,6 +42,13 @@ interface FailedParseTableContentProps {
   onSortingChange: OnChangeFn<SortingState>;
   onRowSelectionChange: OnChangeFn<RowSelectionState>;
   onPageChange: (page: number) => void;
+  onPageSizeChange: (pageSize: number) => void;
+  /** Row ids (`FailedParseMessage.id`) showing a spinner while a background job runs */
+  pendingRowKeys?: ReadonlySet<string>;
+  /** When true, show spinner on all rows with status `failed` (e.g. requeue-all in progress) */
+  spinAllFailedRows?: boolean;
+  /** Row ids that should be displayed as locally requeued (optimistic). */
+  requeuedRowKeys?: ReadonlySet<string>;
 }
 
 export const FailedParseTableContent = ({
@@ -76,7 +60,11 @@ export const FailedParseTableContent = ({
   rowSelection,
   onSortingChange,
   onRowSelectionChange,
-  onPageChange
+  onPageChange,
+  onPageSizeChange,
+  pendingRowKeys,
+  spinAllFailedRows = false,
+  requeuedRowKeys
 }: FailedParseTableContentProps) => {
   // TanStack Table column definitions
   const columns = useMemo<ColumnDef<FailedParseMessage>[]>(
@@ -96,14 +84,37 @@ export const FailedParseTableContent = ({
             aria-label="Select all"
           />
         ),
-        cell: ({ row }: { row: Row<FailedParseMessage> }) => (
-          <Checkbox
-            checked={row.getIsSelected()}
-            onCheckedChange={(value) => row.toggleSelected(!!value)}
-            aria-label="Select row"
-            disabled={row.original.status !== "failed"}
-          />
-        ),
+        cell: ({ row }: { row: Row<FailedParseMessage> }) => {
+          const rowId = row.id;
+          const isLocallyRequeued = requeuedRowKeys?.has(rowId) ?? false;
+          const isRowPending =
+            (pendingRowKeys?.has(rowId) ?? false) ||
+            (spinAllFailedRows && row.original.status === "failed");
+          if (isLocallyRequeued) {
+            return (
+              <div className="flex justify-center">
+                <Badge variant="secondary" className="text-xs">
+                  requeued
+                </Badge>
+              </div>
+            );
+          }
+          if (isRowPending) {
+            return (
+              <div className="flex justify-center" aria-busy="true">
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              </div>
+            );
+          }
+          return (
+            <Checkbox
+              checked={row.getIsSelected()}
+              onCheckedChange={(value) => row.toggleSelected(!!value)}
+              aria-label="Select row"
+              disabled={row.original.status !== "failed"}
+            />
+          );
+        },
         enableSorting: false,
         meta: {
           responsive: "table-cell",
@@ -115,7 +126,7 @@ export const FailedParseTableContent = ({
         accessorKey: "match_game_id",
         header: "GAME ID",
         cell: ({ getValue }) => {
-          const matchGameId = getValue<number>();
+          const matchGameId = getValue<string>();
           return <MatchGameIdLink matchGameId={matchGameId} />;
         },
         meta: {
@@ -141,8 +152,11 @@ export const FailedParseTableContent = ({
       {
         accessorKey: "status",
         header: "STATUS",
-        cell: ({ getValue }) => {
-          const status = getValue<string>();
+        cell: ({ row, getValue }) => {
+          const status =
+            (requeuedRowKeys?.has(row.id) ?? false)
+              ? "requeued"
+              : getValue<string>();
           const variant =
             status === "failed"
               ? "destructive"
@@ -165,11 +179,14 @@ export const FailedParseTableContent = ({
         accessorKey: "final_error",
         header: "ERROR",
         cell: ({ getValue }) => {
-          const error = getValue<string>();
+          const error = getValue<string>() ?? "";
           const truncatedError =
-            error.length > 80 ? error.substring(0, 80) + "..." : error;
+            error.length > 80 ? error.substring(0, 80) + "..." : error || "—";
           return (
-            <span className="text-sm text-muted-foreground" title={error}>
+            <span
+              className="text-sm text-muted-foreground"
+              title={error || undefined}
+            >
               {truncatedError}
             </span>
           );
@@ -185,10 +202,17 @@ export const FailedParseTableContent = ({
         accessorKey: "failed_at",
         header: "FAILED AT",
         cell: ({ getValue }) => {
-          const date = new Date(getValue<string>());
+          const raw = getValue<string>();
+          if (!raw || raw.trim() === "") {
+            return <span className="text-sm text-muted-foreground">—</span>;
+          }
+          const date = new Date(raw);
+          const label = Number.isNaN(date.getTime())
+            ? "—"
+            : date.toLocaleString();
           return (
-            <span className="text-sm text-muted-foreground">
-              {date.toLocaleString()}
+            <span className="text-sm text-muted-foreground" title={raw}>
+              {label}
             </span>
           );
         },
@@ -218,7 +242,7 @@ export const FailedParseTableContent = ({
         }
       }
     ],
-    []
+    [pendingRowKeys, spinAllFailedRows, requeuedRowKeys]
   );
 
   const customCellClassName = (
@@ -247,17 +271,19 @@ export const FailedParseTableContent = ({
       onRowSelectionChange={onRowSelectionChange}
       getRowId={(row) => row.id.toString()}
       enableRowSelection={(row) => row.original.status === "failed"}
-      showPagination={false}
+      showPagination={true}
       customCellClassName={customCellClassName}
       customRowClassName={customRowClassName}
       customPagination={
         pagination ? (
-          <ServerSidePagination
-            currentPage={currentPage}
+          <TablePagination
+            totalRows={pagination.total}
+            currentPage={currentPage + 1}
+            totalPages={Math.max(1, Math.ceil(pagination.total / pageSize))}
+            handlePageChange={(page) => onPageChange(page - 1)}
+            handlePageSizeChange={onPageSizeChange}
             pageSize={pageSize}
-            total={pagination.total}
-            hasMore={pagination.has_more}
-            onPageChange={onPageChange}
+            type="items"
           />
         ) : undefined
       }

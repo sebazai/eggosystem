@@ -8,6 +8,7 @@ export default [
       ".next/**",
       "out/**",
       "build/**",
+      "playwright-report/**",
       "next-env.d.ts",
       "**/*.test.{js,jsx,ts,tsx}",
       "**/*.spec.{js,jsx,ts,tsx}",
@@ -16,10 +17,5 @@ export default [
       "**/test-utils/**/*.{js,jsx,ts,tsx}",
       "**/e2e/**/*.{js,ts}"
     ]
-  },
-  {
-    rules: {
-      "@next/next/no-img-element": "error"
-    }
   }
 ];

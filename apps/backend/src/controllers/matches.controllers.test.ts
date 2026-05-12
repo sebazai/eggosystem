@@ -40,10 +40,11 @@ import {
   type MatchesWithTeamDataQuery,
   type MatchGame,
   type ParsedParams,
-  SeasonPlatform,
-  type MatchMapsPlayed
+  type SeasonPlatform,
+  type MatchMapsPlayed,
+  createMockMatch,
+  createMockSeason
 } from "@eggosystem/types";
-import { createMockMatch } from "@eggosystem/types";
 
 // Mock the models
 jest.mock("../models/match.models");
@@ -123,11 +124,37 @@ const mockMatchesWithTeamData: MatchesWithTeamDataQuery[] = [
     season_platform: "kanaliiga" as SeasonPlatform,
     stage: 1,
     teams: JSON.stringify({
-      team1: { id: 1, name: "Team A", logo: "logo1.png", score: 16 },
-      team2: { id: 2, name: "Team B", logo: "logo2.png", score: 13 }
+      team1: {
+        id: 1,
+        name: "Team A",
+        logo: "logo1.png",
+        score: 16,
+        rank: null,
+        side: null
+      },
+      team2: {
+        id: 2,
+        name: "Team B",
+        logo: "logo2.png",
+        score: 13,
+        rank: null,
+        side: null
+      }
     })
   }
 ];
+
+const mockSeasonForGetMatchesBySeasonIdController = createMockSeason({
+  id: 123,
+  name: "Test Season",
+  full_name: "Test Season",
+  signup_start_date: null,
+  signup_end_date: null,
+  start_date: "2024-01-01",
+  end_date: null,
+  has_vat: false,
+  active_map_pool: [1]
+});
 
 // Type definitions for test requests
 type TestRequestWithParams<P = Record<string, string>> =
@@ -195,29 +222,9 @@ describe("Matches Controllers", () => {
     it("should return matches for valid season ID", async () => {
       mockRequest.params = { season_id: "123" };
       mockRequest.query = {};
-      mockGetSeasonById.mockResolvedValue({
-        id: 123,
-        game_id: 1,
-        game_type_id: 1,
-        organizer_id: 1,
-        name: "Test Season",
-        full_name: "Test Season",
-        signup_start_date: null,
-        signup_end_date: null,
-        start_date: "2024-01-01",
-        end_date: null,
-        platform: SeasonPlatform.Kanaliiga,
-        is_round_robin_bo2_as_2xbo1: false,
-        grand_final_round_one_only: false,
-        payment_link: null,
-        registration_price: null,
-        has_vat: false,
-        early_bird_price_discount: null,
-        early_bird_price_discount_end_date: null,
-        active_map_pool: [1],
-        rulebook_url: null,
-        discord_link: null
-      });
+      mockGetSeasonById.mockResolvedValue(
+        mockSeasonForGetMatchesBySeasonIdController
+      );
       mockGetMatchesWithTeamDataBySeasonId.mockResolvedValue(
         mockMatchesWithTeamData
       );
@@ -319,29 +326,9 @@ describe("Matches Controllers", () => {
     it("should return matches for valid season ID with league_id filter", async () => {
       mockRequest.params = { season_id: "123" };
       mockRequest.query = { league_id: "456" };
-      mockGetSeasonById.mockResolvedValue({
-        id: 123,
-        game_id: 1,
-        game_type_id: 1,
-        organizer_id: 1,
-        name: "Test Season",
-        full_name: "Test Season",
-        signup_start_date: null,
-        signup_end_date: null,
-        start_date: "2024-01-01",
-        end_date: null,
-        platform: SeasonPlatform.Kanaliiga,
-        is_round_robin_bo2_as_2xbo1: false,
-        grand_final_round_one_only: false,
-        payment_link: null,
-        registration_price: null,
-        has_vat: false,
-        early_bird_price_discount: null,
-        early_bird_price_discount_end_date: null,
-        active_map_pool: [1],
-        rulebook_url: null,
-        discord_link: null
-      });
+      mockGetSeasonById.mockResolvedValue(
+        mockSeasonForGetMatchesBySeasonIdController
+      );
       mockGetMatchesWithTeamDataBySeasonId.mockResolvedValue(
         mockMatchesWithTeamData
       );
@@ -371,29 +358,9 @@ describe("Matches Controllers", () => {
     it("should return matches for valid season ID with invalid league_id", async () => {
       mockRequest.params = { season_id: "123" };
       mockRequest.query = { league_id: "invalid" };
-      mockGetSeasonById.mockResolvedValue({
-        id: 123,
-        game_id: 1,
-        game_type_id: 1,
-        organizer_id: 1,
-        name: "Test Season",
-        full_name: "Test Season",
-        signup_start_date: null,
-        signup_end_date: null,
-        start_date: "2024-01-01",
-        end_date: null,
-        platform: SeasonPlatform.Kanaliiga,
-        is_round_robin_bo2_as_2xbo1: false,
-        grand_final_round_one_only: false,
-        payment_link: null,
-        registration_price: null,
-        has_vat: false,
-        early_bird_price_discount: null,
-        early_bird_price_discount_end_date: null,
-        active_map_pool: [1],
-        rulebook_url: null,
-        discord_link: null
-      });
+      mockGetSeasonById.mockResolvedValue(
+        mockSeasonForGetMatchesBySeasonIdController
+      );
       mockGetMatchesWithTeamDataBySeasonId.mockResolvedValue(
         mockMatchesWithTeamData
       );
@@ -436,29 +403,9 @@ describe("Matches Controllers", () => {
         }
       ];
 
-      mockGetSeasonById.mockResolvedValue({
-        id: 123,
-        game_id: 1,
-        game_type_id: 1,
-        organizer_id: 1,
-        name: "Test Season",
-        full_name: "Test Season",
-        signup_start_date: null,
-        signup_end_date: null,
-        start_date: "2024-01-01",
-        end_date: null,
-        platform: SeasonPlatform.Kanaliiga,
-        is_round_robin_bo2_as_2xbo1: false,
-        grand_final_round_one_only: false,
-        payment_link: null,
-        registration_price: null,
-        has_vat: false,
-        early_bird_price_discount: null,
-        early_bird_price_discount_end_date: null,
-        active_map_pool: [1],
-        rulebook_url: null,
-        discord_link: null
-      });
+      mockGetSeasonById.mockResolvedValue(
+        mockSeasonForGetMatchesBySeasonIdController
+      );
       mockGetMatchesWithTeamDataBySeasonId.mockResolvedValue(
         mixedStatusMatches
       );
@@ -623,7 +570,8 @@ describe("Matches Controllers", () => {
         match_id: 123,
         map_id: 1,
         demofile: "demo.dem",
-        regulation_rounds: 30
+        regulation_rounds: 30,
+        team_game_scores_staff_lock: false
       };
       mockGetMatchGame.mockResolvedValue([mockGame]);
 
@@ -931,8 +879,12 @@ describe("Matches Controllers", () => {
           match_id: 123,
           map_order: null,
           demofile: "demo.dem",
+          team1_id: 10,
+          team2_id: 11,
           team1_score: 16,
-          team2_score: 13
+          team2_score: 13,
+          team1_side: null,
+          team2_side: null
         }
       ];
       mockGetMatchGames.mockResolvedValue(mockGames);

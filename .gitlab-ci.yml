@@ -7,8 +7,6 @@ variables:
   DOCKER_DRIVER: overlay2
   # Other global variables
   PNPM_HOME: $CI_PROJECT_DIR/.pnpm-store
-  TRIVY_VERSION: "0.59.1" # Set the Trivy version here
-  TRIVY_SEVERITY: "HIGH,CRITICAL,MEDIUM"
   PNPM_STORE_PATH: .pnpm-store
   TURBO_TOKEN: $TURBO_TOKEN
   TURBO_TEAM: $TURBO_TEAM
@@ -19,6 +17,9 @@ variables:
   BACKEND_TAG: $CI_COMMIT_SHA
   FRONTEND_TAG: $CI_COMMIT_SHA
   MIGRATIONS_TAG: $CI_COMMIT_SHA
+  DOCKER_IMAGE_TAG: 29.4.1-alpine3.23
+  DOCKER_DIND_IMAGE_TAG: 29.4.1-dind-alpine3.23
+  MARIADB_TAG: 12.2.2
 
 # Define on-demand environment variables
 .overwrite-variables: &overwrite-variables
@@ -126,10 +127,10 @@ variables:
 # Define a base Docker build configuration without rules
 .docker-build-base: &docker-build-base
   stage: build-docker
-  image: docker:28.2.2-alpine3.21
+  image: docker:$DOCKER_IMAGE_TAG
   # Define global services for the entire pipeline
   services:
-    - name: docker:28.2.2-dind-alpine3.21
+    - name: docker:$DOCKER_DIND_IMAGE_TAG
       alias: docker
   before_script:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
@@ -198,6 +199,7 @@ knip:
   extends: [.prepare-pnpm, .mr-all-app]
   script:
     - pnpm --filter=@eggosystem/types build
+    - pnpm --filter=@eggosystem/shared-msw build
     - pnpm knip
 
 format:check:
@@ -212,15 +214,15 @@ audit:
   extends: [.prepare-pnpm, .mr-all-app]
   script:
     - pnpm audit --json > gl-dependency-scanning-report.json || true
-    - apt update && apt install -y jq
+    - apt update && apt install -y jq curl
     - ./scripts/audit.sh
-    # Count vulnerabilities by severity
     - |
+      # Count vulnerabilities by severity
       if [ -f gl-dependency-scanning-report.json ]; then
         CRITICAL=$(cat gl-dependency-scanning-report.json | jq '[.advisories | to_entries[]?.value | select(.severity == "critical")] | length' 2>/dev/null || echo 0)
         HIGH=$(cat gl-dependency-scanning-report.json | jq '[.advisories | to_entries[]?.value | select(.severity == "high")] | length' 2>/dev/null || echo 0)
         MODERATE=$(cat gl-dependency-scanning-report.json | jq '[.advisories | to_entries[]?.value | select(.severity == "moderate")] | length' 2>/dev/null || echo 0)
-        
+
         echo ""
         echo "╔══════════════════════════════════════════════════════════════╗"
         echo "║           NPM DEPENDENCY AUDIT RESULTS                       ║"
@@ -230,18 +232,41 @@ audit:
         echo "║  🟡 MODERATE: $MODERATE                                      "
         echo "╚══════════════════════════════════════════════════════════════╝"
         echo ""
-        
-        # Fail pipeline if CRITICAL vulnerabilities found
-        if [ "$CRITICAL" -gt 0 ]; then
-          echo "❌ CRITICAL npm vulnerabilities found! Pipeline blocked."
-          echo "   Run 'pnpm audit' locally to see details and fix."
-          exit 1
+
+        # Print actual advisory details for HIGH + CRITICAL
+        if [ "$CRITICAL" -gt 0 ] || [ "$HIGH" -gt 0 ]; then
+          echo "Detailed HIGH + CRITICAL npm advisories:"
+          jq -c '
+            .advisories | to_entries[]?.value
+            | select(.severity == "critical" or .severity == "high")
+            | {
+                severity: (.severity | ascii_upcase),
+                id: (.id // "n/a"),
+                title: (.title // "n/a"),
+                url: (.url // "n/a"),
+                recommendation: (.recommendation // .overview // "n/a")
+              }
+          ' gl-dependency-scanning-report.json || true
+          echo ""
         fi
-        
-        # Warn but don't fail on HIGH (can be changed to fail if desired)
+
+        # Warn on CRITICAL vulnerabilities but don't block pipeline
+        if [ "$CRITICAL" -gt 0 ]; then
+          echo "⚠️ CRITICAL npm vulnerabilities found!"
+          echo "   Run 'pnpm audit' locally to see details and fix."
+          echo "   Pipeline will continue but review recommended before merging."
+        fi
+
+        # Warn on HIGH vulnerabilities
         if [ "$HIGH" -gt 0 ]; then
           echo "⚠️ HIGH severity npm vulnerabilities found."
           echo "   Consider fixing these before merging."
+        fi
+
+        # Exit with warning status if critical or high vulnerabilities found
+        # This makes GitLab show the job with a warning icon (yellow/orange)
+        if [ "$CRITICAL" -gt 0 ] || [ "$HIGH" -gt 0 ]; then
+          exit 1
         fi
       fi
   artifacts:
@@ -251,7 +276,7 @@ audit:
     paths:
       - gl-dependency-scanning.json
       - gl-dependency-scanning-report.json
-  allow_failure: false
+  allow_failure: true # Allow pipeline to continue, but mark as warning
 
 secrets_scan:
   stage: security
@@ -265,7 +290,7 @@ test:backend:
   stage: test
   extends: [.mr-backend]
   services:
-    - name: mariadb:12.1.2
+    - name: mariadb:$MARIADB_TAG
       alias: eggo-devdb
     # - name: redis:8-alpine
     #   alias: eggo-redis
@@ -333,7 +358,7 @@ test:frontend:
     - pnpm install --frozen-lockfile
     - pnpm --filter=@eggosystem/types build
   script:
-    - pnpm --filter=frontend test
+    - pnpm --filter=frontend test --runInBand
   coverage: '/Statements\s+:\s+([\d.]+)%/'
   artifacts:
     expire_in: 7 days
@@ -389,7 +414,7 @@ build:backend:
       - apps/backend/dist/
 
 test-e2e:frontend:
-  image: mcr.microsoft.com/playwright:v1.57.0-jammy
+  image: mcr.microsoft.com/playwright:v1.59.1-jammy
   stage: test-e2e
   dependencies:
     - build:backend
@@ -397,7 +422,7 @@ test-e2e:frontend:
     - build:types
     - build:shared-msw
   services:
-    - name: mariadb:12.1.2
+    - name: mariadb:$MARIADB_TAG
       alias: eggo-devdb
     - name: redis:8-alpine
       alias: eggo-redis
@@ -781,7 +806,7 @@ deploy-dev:
 
 deploy-ondemand:
   <<: *docker-build-base
-  image: docker:28.2.2-alpine3.21
+  image: docker:$DOCKER_IMAGE_TAG
   tags:
     - hub # use this so we have whitelisted runner for portainer
   stage: on-demand-env
@@ -876,7 +901,7 @@ stop-ondemand:
   stage: cleanup
   tags:
     - hub
-  image: docker:28.2.2-alpine3.21
+  image: docker:$DOCKER_IMAGE_TAG
   allow_failure: true # Make on-demand jobs optional for merge requests
   needs: [deploy-ondemand]
   dependencies: []

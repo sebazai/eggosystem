@@ -1,9 +1,11 @@
 ---
-applies:
-  - "**/*.test.ts"
-  - "**/*.test.tsx"
-  - "**/*.spec.ts"
-  - "**/*.spec.tsx"
+description: Frontend testing patterns for React component tests
+alwaysApply: false
+globs:
+  - "apps/frontend/**/*.test.ts"
+  - "apps/frontend/**/*.test.tsx"
+  - "apps/frontend/**/*.spec.ts"
+  - "apps/frontend/**/*.spec.tsx"
 ---
 
 # Frontend Testing Patterns

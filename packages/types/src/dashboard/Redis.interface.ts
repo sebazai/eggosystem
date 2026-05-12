@@ -25,3 +25,9 @@ export interface RedisDeleteResponse {
   success: boolean;
   message: string;
 }
+
+export interface RedisFlushStandingsCacheResponse {
+  success: boolean;
+  deletedCount: number;
+  message: string;
+}

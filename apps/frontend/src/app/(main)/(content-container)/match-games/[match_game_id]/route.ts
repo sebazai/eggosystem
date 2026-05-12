@@ -39,11 +39,15 @@ export async function GET(
       return NextResponse.json({ error: "Match not found" }, { status: 404 });
     }
 
-    // Return 302 redirect to the proper match game page
-    return NextResponse.redirect(
-      new URL(`/matches/${data.match_id}/games/${matchGameId}`, request.url),
-      { status: 302 }
-    );
+    // Build redirect URL from public base (not request.url, which may be internal host in production)
+    const path =
+      `${envConfig.BASE_PATH}/matches/${data.match_id}/games/${matchGameId}`.replace(
+        /\/+/g,
+        "/"
+      );
+    const redirectUrl = new URL(path, envConfig.BASE_URL);
+
+    return NextResponse.redirect(redirectUrl, { status: 302 });
   } catch (_error) {
     // If API call fails, return 404
     return NextResponse.json(

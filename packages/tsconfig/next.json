@@ -7,7 +7,7 @@
       "@eggosystem/types": ["../types/src"],
       "react": ["./node_modules/@types/react"]
     },
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": ["dom", "esnext"],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,

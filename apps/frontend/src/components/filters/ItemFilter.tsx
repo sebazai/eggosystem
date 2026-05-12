@@ -100,6 +100,7 @@ export const ItemFilter = <T extends { id: number }>(
       placeholder={`Filter ${props.filterName}`}
       isOpen={props.openFilter === props.filterName}
       setOpen={handleOpenFilter}
+      disabled={!selectableIds || selectableIds.length === 0}
     />
   );
 };

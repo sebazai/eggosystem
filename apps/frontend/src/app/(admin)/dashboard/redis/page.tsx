@@ -18,13 +18,15 @@ import {
   Eye,
   ChevronLeft,
   ChevronRight,
-  Search
+  Search,
+  RotateCcw
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { WithRoleProtection } from "@/components/dashboard/WithRoleProtection";
 import { useRedisKeys } from "@/hooks/data/dashboard/useRedisKeys";
 import { useRedisKeyData } from "@/hooks/data/dashboard/useRedisKeyData";
 import { useDeleteRedisKey } from "@/hooks/data/dashboard/useDeleteRedisKey";
+import { useFlushStandingsCache } from "@/hooks/data/dashboard/useFlushStandingsCache";
 
 export default function RedisManagementPage() {
   const { user } = useAuth();
@@ -55,6 +57,11 @@ export default function RedisManagementPage() {
     isError: keyDataError
   } = useRedisKeyData(selectedKeyName);
   const { deleteKey, isDeleting, error: deleteError } = useDeleteRedisKey();
+  const {
+    flushStandingsCache,
+    isFlushing,
+    error: flushError
+  } = useFlushStandingsCache();
 
   const handleDeleteKey = async (key: string) => {
     if (!canDelete) {
@@ -89,6 +96,25 @@ export default function RedisManagementPage() {
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       handleSearch();
+    }
+  };
+
+  const handleFlushStandingsCaches = async () => {
+    if (
+      !confirm(
+        "Flush standings caches? This clears Faceit match stats (faceit-match-stats-*) used to build the standings table. The next standings load will refetch from the Faceit API."
+      )
+    ) {
+      return;
+    }
+    const result = await flushStandingsCache();
+    if (result.success) {
+      refetchKeys();
+      alert(
+        result.deletedCount > 0
+          ? `Flushed ${result.deletedCount} Faceit standings cache key(s).`
+          : "No Faceit standings cache keys found."
+      );
     }
   };
 
@@ -158,40 +184,27 @@ export default function RedisManagementPage() {
     return insertionTime.toLocaleString();
   };
 
-  // Determine loading and error states
-  const isLoading = keysLoading || keyDataLoading || isDeleting;
-  const error = keysError || keyDataError || deleteError;
-
-  // Short-circuit returns for loading states
-  if (isLoading) {
-    return (
-      <WithRoleProtection allowedRoles={["admin", "helpdesk"]}>
-        <div className="flex flex-1 flex-col gap-4 p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold">Redis Management</h1>
-              <p className="text-muted-foreground">
-                Manage Redis keys and data
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center justify-center py-8">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
-              <p className="text-muted-foreground">Loading Redis data...</p>
-            </div>
-          </div>
-        </div>
-      </WithRoleProtection>
-    );
-  }
+  const error = keysError || keyDataError || deleteError || flushError;
 
   return (
     <WithRoleProtection allowedRoles={["admin", "helpdesk"]}>
       <div className="flex flex-1 flex-col gap-4 p-4">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold">Redis Management</h1>
+            <div className="flex items-center gap-4">
+              <h1 className="text-2xl font-bold">Redis Management</h1>
+              {canDelete && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleFlushStandingsCaches}
+                  disabled={isFlushing}
+                >
+                  <RotateCcw className="h-4 w-4 mr-2" />
+                  Flush standings caches
+                </Button>
+              )}
+            </div>
             <p className="text-muted-foreground">Manage Redis keys and data</p>
 
             {/* Common Redis Key Patterns */}
@@ -229,7 +242,16 @@ export default function RedisManagementPage() {
                     faceit-match-stats-*
                   </div>
                   <div className="text-muted-foreground">
-                    Faceit match statistics
+                    Faceit match stats used to build standings table (cached
+                    when match rounds complete; flush button clears these)
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <div className="font-mono bg-background px-2 py-1 rounded">
+                    faceit-player-by-id-*
+                  </div>
+                  <div className="text-muted-foreground">
+                    Faceit player by Faceit user ID
                   </div>
                 </div>
                 <div className="space-y-1">
@@ -298,18 +320,18 @@ export default function RedisManagementPage() {
                 </div>
                 <div className="space-y-1">
                   <div className="font-mono bg-background px-2 py-1 rounded">
-                    team-placements:s*
+                    sortter:season:*:teams
                   </div>
                   <div className="text-muted-foreground">
-                    Team placement data
+                    Sortter team placements (preliminary)
                   </div>
                 </div>
                 <div className="space-y-1">
                   <div className="font-mono bg-background px-2 py-1 rounded">
-                    finalization-status:s*
+                    sortter:season:*:finalized
                   </div>
                   <div className="text-muted-foreground">
-                    Season finalization status
+                    Sortter finalization status
                   </div>
                 </div>
                 <div className="space-y-1">
@@ -317,7 +339,7 @@ export default function RedisManagementPage() {
                     match:invalid_players:*
                   </div>
                   <div className="text-muted-foreground">
-                    Flagged match data
+                    Flagged match data (invalid roster)
                   </div>
                 </div>
               </div>
@@ -326,8 +348,8 @@ export default function RedisManagementPage() {
         </div>
 
         {error && (
-          <div className="rounded-md bg-red-50 p-4">
-            <p className="text-sm text-red-800">{error}</p>
+          <div className="rounded-md border border-destructive/30 bg-destructive/10 p-4">
+            <p className="text-sm text-destructive">{error}</p>
           </div>
         )}
 
@@ -402,6 +424,11 @@ export default function RedisManagementPage() {
                       elo-adjustment:s*:l*:*
                     </p>
                   </div>
+                ) : keysLoading ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mb-4" />
+                    <p className="text-sm">Searching keys…</p>
+                  </div>
                 ) : keys.length === 0 ? (
                   <div className="text-center py-4 text-muted-foreground">
                     No keys found for pattern: {searchPattern}
@@ -434,11 +461,12 @@ export default function RedisManagementPage() {
                           <Button
                             variant="ghost"
                             size="sm"
+                            disabled={isDeleting}
                             onClick={(e) => {
                               e.stopPropagation();
                               handleDeleteKey(key);
                             }}
-                            className="text-red-600 hover:text-red-700"
+                            className="text-destructive hover:text-destructive/80"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -497,7 +525,12 @@ export default function RedisManagementPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col flex-1">
-              {selectedKey ? (
+              {selectedKeyName && keyDataLoading && !selectedKey ? (
+                <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mb-4" />
+                  <p className="text-sm">Loading key…</p>
+                </div>
+              ) : selectedKey ? (
                 <div className="space-y-4 flex flex-col h-full">
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">

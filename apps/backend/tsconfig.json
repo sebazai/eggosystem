@@ -3,6 +3,7 @@
   "compilerOptions": {
     "typeRoots": ["node_modules/@types", "./node_modules/@types", "src/types"],
     "types": ["jest", "node"],
+    "rootDir": ".",
     "outDir": "dist",
     "isolatedModules": true,
     "paths": {

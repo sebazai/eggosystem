@@ -796,7 +796,7 @@ export const getMultiplePlayersSkillDiagrams = async (
     generateQueryWithFilters(filters);
 
   // Create a descriptive name for the filter
-  let filterDescription = "";
+  let filterDescription: string;
   if (team_ids && team_ids.length > 0) {
     filterDescription = `Team Players`;
   } else if (tier !== null && tier !== undefined) {

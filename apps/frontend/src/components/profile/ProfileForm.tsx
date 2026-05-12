@@ -17,6 +17,7 @@ import {
 import Link from "next/link";
 import { ContentContainer } from "../layout/ContentContainer";
 import { SteamLoginButton } from "@/components/profile/SteamLoginButton";
+import { CardSkeleton } from "@/components/loading";
 import {
   accountSchema,
   type Account,
@@ -73,17 +74,15 @@ export default function ProfileForm({
     return null;
   }, [searchParams, user?.hasAcceptedPreviousPolicy]);
 
-  // Initialize errorMessage with computed value
-  const [errorMessage, setErrorMessage] = useState<string | null>(
-    () => computedErrorMessage
-  );
-
   useEffect(() => {
     // Handle URL replacement for privacy policy acceptance
     const requiresPolicyAcceptance = searchParams.get(
       "acceptPrivacyPolicyRequired"
     );
     if (requiresPolicyAcceptance) {
+      if (computedErrorMessage) {
+        toast.error(computedErrorMessage);
+      }
       const returnTo = searchParams.get("returnTo");
       const replacedUrl = returnTo
         ? `${pathname}?returnTo=${encodeURIComponent(returnTo)}`
@@ -92,7 +91,7 @@ export default function ProfileForm({
         scroll: false
       });
     }
-  }, [computedErrorMessage, errorMessage, searchParams, pathname, router]);
+  }, [computedErrorMessage, searchParams, pathname, router]);
 
   useEffect(() => {
     const discordLinked = searchParams.get("discordLinked");
@@ -146,7 +145,12 @@ export default function ProfileForm({
   }, [searchParams, router, checkAuth]);
 
   if (isLoadingProfile) {
-    return <ContentContainer>Loading...</ContentContainer>;
+    return (
+      <div className="space-y-6">
+        <CardSkeleton showHeader={true} contentLines={4} />
+        <CardSkeleton showHeader={true} contentLines={3} />
+      </div>
+    );
   }
 
   if (!account) {
@@ -170,7 +174,6 @@ export default function ProfileForm({
 
   async function onSubmit(data: AccountUpdateValues) {
     setSuccessMessage(null);
-    setErrorMessage(null);
     try {
       const returnValue = await clientApiFetch<{ message: string }>(
         `/api/v1/accounts/update`,
@@ -193,7 +196,7 @@ export default function ProfileForm({
         { revalidate: false }
       );
     } catch (_error) {
-      setErrorMessage("There was an error updating your profile.");
+      toast.error("There was an error updating your profile.");
     }
   }
 
@@ -220,9 +223,6 @@ export default function ProfileForm({
         >
           {successMessage}
         </div>
-      )}
-      {errorMessage && (
-        <div className="text-red-500 mt-4 font-semibold">{errorMessage}</div>
       )}
     </>
   );
@@ -335,7 +335,9 @@ const ProfileFormInputs = ({
                   onCheckedChange={field.onChange}
                 />
               </FormControl>
-              <FormLabel>I have no work email, this is my personal</FormLabel>{" "}
+              <FormLabel className="normal-case font-body font-normal text-foreground">
+                I have no work email, this is my personal
+              </FormLabel>{" "}
               <TooltipIcon
                 text={
                   "We use personal work emails for the identification that the player is working for the registered company."
@@ -373,7 +375,7 @@ const ProfileFormInputs = ({
               </FormControl>
               <RequiredFormLabel
                 required
-                className="flex flex-wrap items-center gap-2"
+                className="flex flex-wrap items-center gap-2 normal-case font-body font-normal text-foreground"
               >
                 I have read and accept the
                 <Link
@@ -399,7 +401,9 @@ const ProfileFormInputs = ({
                   onCheckedChange={field.onChange}
                 />
               </FormControl>
-              <FormLabel>Receive marketing emails (optional)</FormLabel>
+              <FormLabel className="normal-case font-body font-normal text-foreground">
+                Receive marketing emails (optional)
+              </FormLabel>
             </FormItem>
           )}
         />
@@ -415,7 +419,7 @@ const ProfileFormInputs = ({
                   onCheckedChange={field.onChange}
                 />
               </FormControl>
-              <FormLabel>
+              <FormLabel className="normal-case font-body font-normal text-foreground">
                 Receive tournament newsletter emails (you can opt out anytime)
               </FormLabel>
             </FormItem>
@@ -423,7 +427,9 @@ const ProfileFormInputs = ({
         />
 
         <div className="flex gap-4">
-          <Button type="submit">Save Changes</Button>
+          <Button type="submit" className="w-full md:w-auto">
+            Save Changes
+          </Button>
           {emailsVerified?.work_email_token_expires_at ? (
             <Button
               onClick={() => {

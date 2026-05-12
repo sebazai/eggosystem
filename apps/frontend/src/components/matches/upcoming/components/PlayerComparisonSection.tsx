@@ -3,6 +3,7 @@ import { User } from "lucide-react";
 import type { Player, PlayerStatsResult } from "@eggosystem/types";
 import Link from "next/link";
 import { cn, createNextUrl } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface PlayerStatsDisplayProps {
   playerStats: PlayerStatsResult | null;
@@ -40,9 +41,11 @@ const PlayerStatsDisplay: React.FC<PlayerStatsDisplayProps> = ({
     <div className="space-y-4">
       <div className="text-center">
         <div className={`text-2xl font-bold ${colorClasses[color]}`}>
-          {isLoading
-            ? "Loading..."
-            : playerStats?.kana_rating?.toFixed(2) || "N/A"}
+          {isLoading ? (
+            <Skeleton className="w-full h-4" />
+          ) : (
+            playerStats?.kana_rating?.toFixed(2) || "N/A"
+          )}
         </div>
         <div className="text-sm text-muted-foreground">Rating</div>
       </div>

@@ -3,6 +3,7 @@ import { useForm, FormProvider } from "react-hook-form";
 import { TabPlayers } from "@/components/signup/TabPlayers";
 import {
   AabeSteamId,
+  createMockSeasonDetails,
   NoFaceitRankPlayerSteamId,
   SeasonPlatform,
   ValidationFailurePlayerSteamId
@@ -101,12 +102,16 @@ const TestWrapper = ({
   players,
   platform = SeasonPlatform.FACEIT,
   seasonSteamAppId = 730,
-  seasonId = "16"
+  seasonId = "16",
+  faceitRankRequired = true,
+  hoursPlayedRequired = false
 }: {
   players: SignupFormValues["players"];
   platform?: SeasonPlatform;
   seasonSteamAppId?: number;
   seasonId?: string;
+  faceitRankRequired?: boolean;
+  hoursPlayedRequired?: boolean;
 }) => {
   const methods = useForm<SignupFormValues>({
     defaultValues: {
@@ -137,6 +142,11 @@ const TestWrapper = ({
           prefilledPlayerSteamIds={[]}
           isEditMode={false}
           submitInitiated={false}
+          seasonDetails={createMockSeasonDetails({
+            platform,
+            faceit_rank_required: faceitRankRequired,
+            hours_played_required: hoursPlayedRequired
+          })}
         />
       </Tabs>
     </FormProvider>
@@ -168,11 +178,8 @@ describe("External Rank Error", () => {
 
     render(<TestWrapper players={players} platform={SeasonPlatform.FACEIT} />);
 
-    // First, open the accordion to see the error message
-    const accordionTrigger = screen.getByTestId("player-accordion-triggers");
-    fireEvent.click(accordionTrigger);
-
-    // Wait for the error message to appear
+    // The accordion is auto-opened by the open-on-error effect because the
+    // player has loaded validation data with an error.
     await waitFor(() => {
       expect(
         screen.getByText(/Could not detect external FACEIT rank for the player/)
@@ -250,10 +257,7 @@ describe("External Rank Error", () => {
 
     render(<TestWrapper players={players} platform={SeasonPlatform.FACEIT} />);
 
-    // Open the accordion to see the error message
-    const accordionTrigger = screen.getByTestId("player-accordion-triggers");
-    fireEvent.click(accordionTrigger);
-
+    // The accordion is auto-opened by the open-on-error effect.
     await waitFor(() => {
       expect(
         screen.getByText(/Could not detect external FACEIT rank for the player/)
@@ -298,14 +302,12 @@ describe("External Rank Error", () => {
 
     render(<TestWrapper players={players} platform={SeasonPlatform.FACEIT} />);
 
-    // Open both accordions to see the error messages
+    // Both accordions auto-open via the open-on-error effect because both
+    // players have loaded validation data with errors.
     const accordionTriggers = screen.getAllByTestId(
       "player-accordion-triggers"
     );
     expect(accordionTriggers).toHaveLength(2);
-
-    if (accordionTriggers[0]) fireEvent.click(accordionTriggers[0]);
-    if (accordionTriggers[1]) fireEvent.click(accordionTriggers[1]);
 
     // Wait for both error messages to be visible
     await waitFor(() => {
@@ -403,10 +405,7 @@ describe("External Rank Error", () => {
 
     render(<TestWrapper players={players} platform={SeasonPlatform.FACEIT} />);
 
-    // Open the accordion to see the error message
-    const accordionTrigger = screen.getByTestId("player-accordion-triggers");
-    fireEvent.click(accordionTrigger);
-
+    // The accordion is auto-opened by the open-on-error effect.
     await waitFor(() => {
       expect(
         screen.getByText(/Could not detect external FACEIT rank for the player/)
@@ -448,10 +447,7 @@ describe("External Rank Error", () => {
 
     render(<TestWrapper players={players} platform={SeasonPlatform.FACEIT} />);
 
-    // Open the accordion to see the error message
-    const accordionTrigger = screen.getByTestId("player-accordion-triggers");
-    fireEvent.click(accordionTrigger);
-
+    // The accordion is auto-opened by the open-on-error effect.
     await waitFor(() => {
       expect(
         screen.getByText(/Could not detect external FACEIT rank for the player/)
@@ -467,5 +463,187 @@ describe("External Rank Error", () => {
         /or open a ticket in the Kanaliiga Discord if the problem persists/
       )
     ).toBeInTheDocument();
+  });
+
+  it("should NOT show external rank error when faceit_rank_required is disabled", () => {
+    const players = [
+      {
+        accountId: 15014,
+        steamId: NoFaceitRankPlayerSteamId,
+        nickname: "NoFaceitRankPlayer",
+        discord: "",
+        captain: false,
+        coCaptain: false,
+        hasValidData: true,
+        hasValidWorkEmail: true,
+        isEmailVerified: true,
+        hours: 1200,
+        rank: 13,
+        externalRank: -1
+      }
+    ];
+
+    render(
+      <TestWrapper
+        players={players}
+        platform={SeasonPlatform.FACEIT}
+        faceitRankRequired={false}
+      />
+    );
+
+    // The external rank notification must not be present in the document at all,
+    // regardless of accordion state.
+    expect(
+      screen.queryByTestId("external-rank-error-0")
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/Could not detect external.*rank for the player/)
+    ).not.toBeInTheDocument();
+  });
+
+  it("should show green/valid visual state when faceit_rank_required is disabled and externalRank is -1", () => {
+    const players = [
+      {
+        accountId: 15014,
+        steamId: NoFaceitRankPlayerSteamId,
+        nickname: "NoFaceitRankPlayer",
+        discord: "",
+        captain: false,
+        coCaptain: false,
+        hasValidData: true,
+        hasValidWorkEmail: true,
+        isEmailVerified: true,
+        hours: 1200,
+        rank: 13,
+        externalRank: -1
+      }
+    ];
+
+    render(
+      <TestWrapper
+        players={players}
+        platform={SeasonPlatform.FACEIT}
+        faceitRankRequired={false}
+      />
+    );
+
+    // The steam-id-input should display the green/valid border class because the
+    // disabled requirement must not contribute to an error state.
+    const steamIdInput = screen.getByTestId("steam-id-input-0");
+    expect(steamIdInput.className).toContain("border-green-500");
+    expect(steamIdInput.className).not.toContain("border-red-500");
+
+    // The accordion item must NOT have been forced open by the error effect —
+    // because there is no error, the open-on-error logic should not trigger.
+    const accordionItem = screen.getByTestId("player-accordion-0");
+    expect(accordionItem.getAttribute("data-state")).toBe("closed");
+  });
+
+  it("should NOT show hours notification when hours_played_required is disabled and hours is -1", () => {
+    const players = [
+      {
+        accountId: 15014,
+        steamId: NoFaceitRankPlayerSteamId,
+        nickname: "NoFaceitRankPlayer",
+        discord: "",
+        captain: false,
+        coCaptain: false,
+        hasValidData: true,
+        hasValidWorkEmail: true,
+        isEmailVerified: true,
+        hours: -1,
+        rank: 13,
+        externalRank: 5
+      }
+    ];
+
+    render(
+      <TestWrapper
+        players={players}
+        platform={SeasonPlatform.FACEIT}
+        hoursPlayedRequired={false}
+      />
+    );
+
+    expect(screen.queryByTestId("hours-error-0")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/Could not detect the hours for the player/)
+    ).not.toBeInTheDocument();
+  });
+
+  it("should show hours notification when hours_played_required is enabled and hours is -1", async () => {
+    const players = [
+      {
+        accountId: 15014,
+        steamId: NoFaceitRankPlayerSteamId,
+        nickname: "NoFaceitRankPlayer",
+        discord: "",
+        captain: false,
+        coCaptain: false,
+        hasValidData: true,
+        hasValidWorkEmail: true,
+        isEmailVerified: true,
+        hours: -1,
+        rank: 13,
+        externalRank: 5
+      }
+    ];
+
+    render(
+      <TestWrapper
+        players={players}
+        platform={SeasonPlatform.FACEIT}
+        hoursPlayedRequired={true}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("hours-error-0")).toBeInTheDocument();
+    });
+
+    expect(
+      screen.getByText(/Could not detect the hours for the player/)
+    ).toBeInTheDocument();
+  });
+
+  it("should show red/invalid visual state and force accordion open when hours_played_required=true and hours=-1", async () => {
+    const players = [
+      {
+        accountId: 15014,
+        steamId: NoFaceitRankPlayerSteamId,
+        nickname: "NoFaceitRankPlayer",
+        discord: "",
+        captain: false,
+        coCaptain: false,
+        hasValidData: true,
+        hasValidWorkEmail: true,
+        isEmailVerified: true,
+        hours: -1,
+        rank: 13,
+        externalRank: 5
+      }
+    ];
+
+    render(
+      <TestWrapper
+        players={players}
+        platform={SeasonPlatform.FACEIT}
+        hoursPlayedRequired={true}
+        faceitRankRequired={false}
+      />
+    );
+
+    const steamIdInput = screen.getByTestId("steam-id-input-0");
+    await waitFor(() => {
+      expect(steamIdInput.className).toContain("border-red-500");
+    });
+    expect(steamIdInput.className).not.toContain("border-green-500");
+
+    const accordionItem = screen.getByTestId("player-accordion-0");
+    await waitFor(() => {
+      expect(accordionItem.getAttribute("data-state")).toBe("open");
+    });
+
+    expect(screen.getByTestId("hours-error-0")).toBeInTheDocument();
   });
 });

@@ -18,6 +18,8 @@ import { type PoolConnection } from "mysql2/promise";
 import { buildInsertQueryParts } from "../db/utils";
 import { generateQueryWithFilters } from "../utils/queryFilter";
 import { BadRequestError } from "../utils/errors";
+import { coerceAvgScore } from "../utils/number-utils";
+import { getActiveMapPoolMaps } from "./season-active-map-pool.models";
 
 export const getTeams = async () => {
   return runQuery<Team[]>(
@@ -25,11 +27,35 @@ export const getTeams = async () => {
   );
 };
 
-export const getTeamById = async (teamId: number) => {
+export const getTeamById = async (
+  teamId: number,
+  connection?: PoolConnection
+) => {
   return runQuery<[Team | undefined]>(
     "SELECT id, organization_id, name, team_logo FROM Teams WHERE id = ? LIMIT 1",
-    [teamId]
+    [teamId],
+    connection
   );
+};
+
+/**
+ * Fetches team_logo for the given team IDs. Returns a map of team_id -> team_logo (null if missing).
+ */
+export const getTeamLogosByTeamIds = async (
+  teamIds: number[]
+): Promise<Map<number, string | null>> => {
+  const map = new Map<number, string | null>();
+  if (teamIds.length === 0) return map;
+  const unique = [...new Set(teamIds)];
+  const placeholders = unique.map(() => "?").join(",");
+  const rows = await runQuery<Pick<Team, "id" | "team_logo">[]>(
+    `SELECT id, team_logo FROM Teams WHERE id IN (${placeholders})`,
+    unique
+  );
+  for (const row of rows) {
+    map.set(row.id, row.team_logo ?? null);
+  }
+  return map;
 };
 
 /**
@@ -156,7 +182,7 @@ export const getTeamsByFilters = async ({
       LEFT JOIN MatchGames mg ON m.id = mg.match_id
       LEFT JOIN TeamGameScores team1_score ON mg.id = team1_score.match_game_id AND team1_score.team_id = team1.team_id
       LEFT JOIN TeamGameScores team2_score ON mg.id = team2_score.match_game_id AND team2_score.team_id = team2.team_id
-      WHERE ${matchQuery}
+      WHERE ${matchQuery} AND m.status = 'FINISHED'
       ${!mapFilterPresent ? "GROUP BY m.id, team1.team_id, team2.team_id, m.best_of, m.league_id, m.season_id" : "GROUP BY mg.id, team1.team_id, team2.team_id"}
     )
     SELECT
@@ -224,7 +250,7 @@ export const getTeamMatchesByFilters = async ({
       FROM Matches m
       JOIN MatchGames mg ON m.id = mg.match_id
       JOIN Maps maps ON mg.map_id = maps.id
-      WHERE ${query}
+      WHERE ${query} AND m.status = 'FINISHED'
       GROUP BY m.id
     ),
    match_game_scores AS (
@@ -244,6 +270,8 @@ export const getTeamMatchesByFilters = async ({
       t1.team_logo as team_logo,
       t2.name AS opponent_name,
       t2.team_logo as opponent_logo,
+      team.match_side AS team_side,
+      opponent.match_side AS opponent_side,
       COUNT(CASE WHEN tgs1.score > tgs2.score THEN 1 END) AS team_game_wins,
       COUNT(CASE WHEN tgs2.score > tgs1.score THEN 1 END) AS opponent_game_wins,
       
@@ -258,8 +286,8 @@ export const getTeamMatchesByFilters = async ({
     JOIN MatchGames mg ON m.id = mg.match_id
     JOIN TeamGameScores tgs1 ON mg.id = tgs1.match_game_id AND tgs1.team_id = team.team_id
     JOIN TeamGameScores tgs2 ON mg.id = tgs2.match_game_id AND tgs2.team_id = opponent.team_id
-    WHERE ${query}
-    GROUP BY m.id, DATE(m.start_timestamp), m.best_of, team.team_id, opponent.team_id, t1.name, t1.team_logo, t2.name, t2.team_logo
+    WHERE ${query} AND m.status = 'FINISHED'
+    GROUP BY m.id, DATE(m.start_timestamp), m.best_of, team.team_id, opponent.team_id, team.match_side, opponent.match_side, t1.name, t1.team_logo, t2.name, t2.team_logo
   )
     SELECT 
       mgs.match_id,
@@ -277,6 +305,8 @@ export const getTeamMatchesByFilters = async ({
       mgs.opponent_id, 
       mgs.opponent_name, 
       mgs.opponent_logo,
+      mgs.team_side,
+      mgs.opponent_side,
       CASE
         WHEN best_of = 1 THEN 
           CASE 
@@ -321,6 +351,8 @@ export const getTeamMatchesByFilters = async ({
       t1.team_logo as team_logo,
       t2.name AS opponent_name,
       t2.team_logo as opponent_logo,
+      team.match_side AS team_side,
+      opponent.match_side AS opponent_side,
       tgs1.score AS team_score,
       tgs2.score AS opponent_score,
       CASE
@@ -369,6 +401,43 @@ export const insertTeam = async (
   );
 };
 
+/**
+ * Complement basic map stats with complete map pool
+ * @param stats Existing stats from database
+ * @param mapPool Complete map pool from SeasonActiveMapPool
+ * @returns Complete stats array with all maps from pool in alphabetical order
+ */
+const complementBasicMapStats = (
+  stats: TeamMapStats[],
+  mapPool: Array<{ map_id: number; map_name: string }>
+): TeamMapStats[] => {
+  // Create a map for quick lookup of existing stats
+  const statsMap = new Map(stats.map((s) => [s.map_id, s]));
+
+  // Create stats for all maps in the pool
+  const completeStats = mapPool.map((poolMap) => {
+    const existingStat = statsMap.get(poolMap.map_id);
+    if (existingStat) {
+      return existingStat;
+    }
+
+    // Return zero values for unplayed maps (basic stats only)
+    return {
+      map_id: poolMap.map_id,
+      map_name: poolMap.map_name,
+      maps_played: 0,
+      wins: 0,
+      losses: 0,
+      win_percentage: 0,
+      avg_score: 0,
+      avg_opponent_score: 0
+    } as TeamMapStats;
+  });
+
+  // Sort by map name alphabetically (already sorted from query, but ensure)
+  return completeStats.sort((a, b) => a.map_name.localeCompare(b.map_name));
+};
+
 export const getTeamMapStats = async (
   teamId: number,
   { season_ids, league_ids, map_ids, stages }: ParsedParams
@@ -408,13 +477,78 @@ export const getTeamMapStats = async (
     JOIN MatchTeams mt ON m.id = mt.match_id AND mt.team_id = tgs.team_id
     JOIN MatchTeams opponent_mt ON m.id = opponent_mt.match_id AND opponent_mt.team_id != tgs.team_id
     JOIN TeamGameScores opponent_score ON mg.id = opponent_score.match_game_id AND opponent_score.team_id = opponent_mt.team_id
-    WHERE ${query}
+    WHERE ${query} AND m.status = 'FINISHED'
     GROUP BY mg.map_id, maps.name
   `;
 
   const params = [teamId, ...queryParams];
 
-  return runQuery<TeamMapStats[]>(baseQuery, params);
+  type TeamMapStatsRow = Omit<
+    TeamMapStats,
+    "avg_score" | "avg_opponent_score"
+  > & {
+    avg_score: string | number;
+    avg_opponent_score: string | number;
+  };
+  const rawStats = await runQuery<TeamMapStatsRow[]>(baseQuery, params);
+  const stats = rawStats.map((row) => ({
+    ...row,
+    avg_score: coerceAvgScore(row.avg_score),
+    avg_opponent_score: coerceAvgScore(row.avg_opponent_score)
+  }));
+
+  // Only complement with map pool if:
+  // 1. Seasons are specified (to know which pool to use)
+  // 2. No specific maps are filtered (user wants to see all maps)
+  // 3. Team has at least some activity (not a non-existent team)
+  const shouldComplement =
+    season_ids &&
+    season_ids.length > 0 &&
+    (!map_ids || map_ids.length === 0) &&
+    stats.length > 0;
+
+  if (shouldComplement) {
+    const activeMapPool = await getActiveMapPoolMaps(season_ids);
+    if (activeMapPool.length > 0) {
+      return complementBasicMapStats(stats, activeMapPool);
+    }
+  }
+
+  return stats;
+};
+
+/**
+ * Complement trade map stats with complete map pool
+ * @param stats Existing stats from database
+ * @param mapPool Complete map pool from SeasonActiveMapPool
+ * @returns Complete stats array with all maps from pool in alphabetical order
+ */
+const complementTradeMapStats = (
+  stats: TeamTradeMapStats[],
+  mapPool: Array<{ map_id: number; map_name: string }>
+): TeamTradeMapStats[] => {
+  // Create a map for quick lookup of existing stats
+  const statsMap = new Map(stats.map((s) => [s.map_id, s]));
+
+  // Create stats for all maps in the pool
+  const completeStats = mapPool.map((poolMap) => {
+    const existingStat = statsMap.get(poolMap.map_id);
+    if (existingStat) {
+      return existingStat;
+    }
+
+    // Return zero values for unplayed maps
+    return {
+      map_id: poolMap.map_id,
+      map_name: poolMap.map_name,
+      trades: 0,
+      trade_attempts: 0,
+      trade_opportunities: 0
+    } satisfies TeamTradeMapStats;
+  });
+
+  // Sort by map name alphabetically (already sorted from query, but ensure)
+  return completeStats.sort((a, b) => a.map_name.localeCompare(b.map_name));
 };
 
 /**
@@ -455,13 +589,32 @@ export const getTeamTradeMapStats = async (
     JOIN SeasonTeamPlayers stp ON stp.steam_id = ps.steam_id 
       AND stp.team_id = mt.team_id 
       AND stp.season_id = m.season_id
-    WHERE ${query}
+    WHERE ${query} AND m.status = 'FINISHED'
     GROUP BY mg.map_id, maps.name
   `;
 
   const params = [teamId, ...queryParams];
 
-  return runQuery<TeamTradeMapStats[]>(baseQuery, params);
+  const stats = await runQuery<TeamTradeMapStats[]>(baseQuery, params);
+
+  // Only complement with map pool if:
+  // 1. Seasons are specified (to know which pool to use)
+  // 2. No specific maps are filtered (user wants to see all maps)
+  // 3. Team has at least some activity (not a non-existent team)
+  const shouldComplement =
+    season_ids &&
+    season_ids.length > 0 &&
+    (!map_ids || map_ids.length === 0) &&
+    stats.length > 0;
+
+  if (shouldComplement) {
+    const activeMapPool = await getActiveMapPoolMaps(season_ids);
+    if (activeMapPool.length > 0) {
+      return complementTradeMapStats(stats, activeMapPool);
+    }
+  }
+
+  return stats;
 };
 
 export const getFilteredTopTeams = async ({
@@ -499,7 +652,7 @@ export const getFilteredTopTeams = async ({
       JOIN SeasonTeamPlayers stp ON stp.steam_id = ps.steam_id 
         AND stp.team_id = t.id 
         AND stp.season_id = m.season_id
-      WHERE ${query}
+      WHERE ${query} AND m.status = 'FINISHED'
       GROUP BY t.id, t.name, t.team_logo, l.id, l.name, m.stage
     )
     SELECT 
@@ -553,7 +706,7 @@ const getTeamLatestSeason = async (teamId: number) => {
     SELECT DISTINCT m.season_id 
     FROM Matches m
     JOIN MatchTeams mt ON m.id = mt.match_id
-    WHERE mt.team_id = ?
+    WHERE mt.team_id = ? AND m.status = 'FINISHED'
     ORDER BY m.season_id DESC
     LIMIT 1
   `;
@@ -595,6 +748,7 @@ export const getTeamKeyPlayers = async (
     WHERE stp.team_id = ? 
       AND stp.season_id = ?
       AND m.season_id = ?
+      AND m.status = 'FINISHED'
     GROUP BY sp.steam_id, sp.nickname
     ORDER BY games_played DESC, kana_rating DESC
     LIMIT 5
@@ -678,7 +832,8 @@ export const getTeamCaptainsBySeasonId = async (
     JOIN SeasonTeamPlayers strp_captain ON 
       strp_captain.season_id = str.season_id AND 
       strp_captain.team_id = str.team_id AND 
-      strp_captain.is_captain = 1
+      strp_captain.is_captain = 1 AND
+      strp_captain.discarded_at IS NULL
     JOIN SteamPlayers sp_captain ON strp_captain.steam_id = sp_captain.steam_id
     JOIN Accounts captain_account ON sp_captain.account_id = captain_account.id
     LEFT JOIN LinkedAccounts captain_discord ON 
@@ -687,7 +842,8 @@ export const getTeamCaptainsBySeasonId = async (
     LEFT JOIN SeasonTeamPlayers strp_co_captain ON 
       strp_co_captain.season_id = str.season_id AND 
       strp_co_captain.team_id = str.team_id AND 
-      strp_co_captain.is_co_captain = 1
+      strp_co_captain.is_co_captain = 1 AND
+      strp_co_captain.discarded_at IS NULL
     LEFT JOIN SteamPlayers sp_co_captain ON strp_co_captain.steam_id = sp_co_captain.steam_id
     LEFT JOIN Accounts co_captain_account ON sp_co_captain.account_id = co_captain_account.id
     LEFT JOIN LinkedAccounts co_captain_discord ON 

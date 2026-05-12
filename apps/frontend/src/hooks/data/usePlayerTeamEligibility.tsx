@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useCallback } from "react";
 import { clientApiFetch } from "@/lib/apiClient";
 import type { TeamEligibilityResult } from "@eggosystem/types";
 import useSWR from "swr";
@@ -22,31 +23,53 @@ export const usePlayerTeamEligibility = (
       ? `${baseUrl}?excludeSteamId=${excludeSteamId}`
       : baseUrl;
 
-  const { data, error, isValidating, isLoading, mutate } =
-    useSWR<TeamEligibilityResult>(key, clientApiFetch, {
-      revalidateOnFocus: false,
-      // Don't fetch automatically - we'll trigger with mutate
-      revalidateOnMount: false,
-      revalidateOnReconnect: false
-    });
+  const [isChecking, setIsChecking] = useState(false);
+  const [fetchError, setFetchError] = useState<Error | null>(null);
 
-  const checkEligibility = async () => {
+  // Fetcher is never run (revalidateOnMount: false); we fetch in checkEligibility and mutate() the result.
+  const dummyFetcher = (): Promise<TeamEligibilityResult> =>
+    new Promise(() => {});
+
+  const { data, mutate } = useSWR<TeamEligibilityResult>(
+    key ?? undefined,
+    key ? dummyFetcher : null,
+    {
+      revalidateOnFocus: false,
+      revalidateOnMount: false,
+      revalidateOnReconnect: false,
+      keepPreviousData: false
+    }
+  );
+
+  const checkEligibility = useCallback(async () => {
     if (!key) {
       throw new Error("Please select a season, team and enter a Steam ID");
     }
 
-    // Use mutate to trigger the fetch
-    return await mutate();
-  };
+    setIsChecking(true);
+    setFetchError(null);
+    try {
+      const result = await clientApiFetch<TeamEligibilityResult>(key);
+      await mutate(result, { revalidate: false });
+      return result;
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error(String(err));
+      setFetchError(error);
+      throw error;
+    } finally {
+      setIsChecking(false);
+    }
+  }, [key, mutate]);
 
-  const clearResult = () => {
-    mutate(undefined, false); // Clear data without revalidation
-  };
+  const clearResult = useCallback(() => {
+    setFetchError(null);
+    mutate(undefined, { revalidate: false });
+  }, [mutate]);
 
   return {
     eligibilityResult: data,
-    isLoading: isValidating || isLoading,
-    isError: error,
+    isLoading: isChecking,
+    isError: fetchError,
     checkEligibility,
     clearResult
   };

@@ -1,13 +1,15 @@
 "use client";
 
-import { ExternalLink, Menu } from "lucide-react";
+import { ChevronRight, ExternalLink, Menu } from "lucide-react";
 import Image from "next/image";
+import { Logo } from "@/components/kanaliiga";
 import {
   useEffect,
   useReducer,
   useRef,
   useState,
   type JSX,
+  type ReactNode,
   useMemo
 } from "react";
 import Link from "next/link";
@@ -25,6 +27,7 @@ import {
   NavigationMenuItem,
   NavigationMenuLink,
   NavigationMenuList,
+  NavigationMenuSub,
   NavigationMenuTrigger,
   navigationMenuTriggerStyle
 } from "@/components/ui/navigation-menu";
@@ -50,7 +53,6 @@ import type { ActiveSignupOrSeasonForAppId } from "@eggosystem/types";
 import { Separator } from "../ui/separator";
 import { MobileLogOut } from "../profile/MobileLogOut";
 import { useAuth } from "@/context/AuthContext";
-import { ModeToggle } from "./ThemeToggle";
 
 interface MenuItemLink {
   title: string;
@@ -143,6 +145,11 @@ const getSeasonMenuItems = (
           hasFilters: false
         },
         {
+          title: "Playoff Bracket",
+          url: `/seasons/${signupOrActiveSeason.season_id}/leagues/1/playoff`,
+          hasFilters: false
+        },
+        {
           title: "Captains",
           url: `/seasons/${signupOrActiveSeason.season_id}/captains`,
           hasFilters: false
@@ -162,7 +169,29 @@ const getSeasonMenuItems = (
         {
           title: "Fantasy League",
           url: `/seasons/${signupOrActiveSeason.season_id}/fantasy`,
-          hasFilters: false
+          hasFilters: false,
+          items: [
+            {
+              title: "Draft",
+              url: `/seasons/${signupOrActiveSeason.season_id}/fantasy`,
+              hasFilters: false
+            },
+            {
+              title: "Leaderboard",
+              url: `/seasons/${signupOrActiveSeason.season_id}/fantasy/leaderboard`,
+              hasFilters: false
+            },
+            {
+              title: "Price History",
+              url: `/seasons/${signupOrActiveSeason.season_id}/fantasy/price-history`,
+              hasFilters: false
+            },
+            {
+              title: "Top Players",
+              url: `/seasons/${signupOrActiveSeason.season_id}/fantasy/top-players`,
+              hasFilters: false
+            }
+          ]
         }
       ]
     }
@@ -361,7 +390,7 @@ export const Navigation = (props: NavbarProps) => {
           <div className="flex items-center justify-between">
             {logo && (
               <Link href={logo.url} className="flex items-center gap-2">
-                <Image src={logo.src} alt={logo.alt} width={75} height={75} />
+                <Logo variant="mark" size="sm" />
               </Link>
             )}
             <Sheet open={sheetOpen} onOpenChange={handleSheetOpenChange}>
@@ -372,7 +401,7 @@ export const Navigation = (props: NavbarProps) => {
                   className="pointer-events-auto"
                   onClick={() => setIsSheetOpen(true)}
                 >
-                  <Menu className="size-6" />
+                  <Menu className="size-5" />
                 </Button>
               </SheetTrigger>
               <SheetContent className="flex flex-col overflow-y-auto">
@@ -384,12 +413,7 @@ export const Navigation = (props: NavbarProps) => {
                           href={logo.url}
                           onClick={() => setIsSheetOpen(false)}
                         >
-                          <Image
-                            src={logo.src}
-                            alt={logo.alt}
-                            width={75}
-                            height={75}
-                          />
+                          <Logo variant="mark" size="sm" />
                         </Link>
                       </span>
                     )}
@@ -432,7 +456,6 @@ export const Navigation = (props: NavbarProps) => {
                     </div>
                   )}
                   <div className="flex flex-wrap items-center gap-4 justify-between m-4 mt-auto">
-                    <ModeToggle />
                     {user && <MobileLogOut logOutUser={() => logout()} />}
                   </div>
                 </div>
@@ -442,6 +465,80 @@ export const Navigation = (props: NavbarProps) => {
         </div>
       </div>
     </div>
+  );
+};
+
+const renderMenuContent = (
+  items: MenuItemLink[],
+  params: ReadonlyURLSearchParams,
+  keyPrefix: string
+) => {
+  const firstValue = items[0]
+    ? items[0].url || `${keyPrefix}-0`
+    : `${keyPrefix}-0`;
+  return (
+    <NavigationMenuSub
+      orientation="vertical"
+      defaultValue={firstValue}
+      className="w-full"
+    >
+      <NavigationMenuList className="grid w-[200px] list-none flex-col items-start justify-start gap-4">
+        {items.map((component, index) => {
+          const value = component.url || `${keyPrefix}-${index}`;
+          if (component.items) {
+            return (
+              <NavigationMenuItem
+                key={value}
+                value={value}
+                className="relative z-[100]"
+              >
+                <NavigationMenuTrigger
+                  hideChevron
+                  className="pl-2 text-kanaliiga-orange"
+                >
+                  {component.title}
+                  <ChevronRight
+                    className="ml-1 size-3 shrink-0 opacity-70"
+                    aria-hidden
+                  />
+                </NavigationMenuTrigger>
+                <NavigationMenuContent className="!left-full !top-0 z-[100] min-w-[200px] w-auto shadow-lg">
+                  <ul className="grid gap-1">
+                    {component.items.map((sub, subIndex) => (
+                      <ListItem
+                        key={`${keyPrefix}-${sub.url}-${subIndex}`}
+                        title={sub.title}
+                        href={sub.url}
+                        {...(sub.hasFilters ? { params } : {})}
+                        icon={sub.icon}
+                        isExternal={sub.isExternal}
+                      />
+                    ))}
+                  </ul>
+                </NavigationMenuContent>
+              </NavigationMenuItem>
+            );
+          }
+          return (
+            <NavigationMenuItem key={value} value={value}>
+              <NavigationMenuLink asChild>
+                <Link
+                  href={{
+                    pathname: component.url,
+                    query: component.hasFilters ? params.toString() : undefined
+                  }}
+                  className="flex flex-row items-center gap-2"
+                  target={component.isExternal ? "_blank" : undefined}
+                  rel={component.isExternal ? "noopener noreferrer" : undefined}
+                >
+                  {component.title} {component.icon}
+                </Link>
+              </NavigationMenuLink>
+            </NavigationMenuItem>
+          );
+        })}
+      </NavigationMenuList>
+    </NavigationMenuSub>
   );
 };
 
@@ -455,19 +552,8 @@ const renderMenuItem = (item: MenuItem, params: ReadonlyURLSearchParams) => {
         >
           {item.title}
         </NavigationMenuTrigger>
-        <NavigationMenuContent>
-          <ul className="grid w-[200px] gap-4">
-            {item.items.map((component) => (
-              <ListItem
-                key={component.title}
-                title={component.title}
-                href={component.url}
-                {...(component.hasFilters ? { params } : {})}
-                icon={component.icon}
-                isExternal={component.isExternal}
-              />
-            ))}
-          </ul>
+        <NavigationMenuContent className="group-data-[viewport=false]/navigation-menu:!overflow-visible">
+          {renderMenuContent(item.items, params, item.title)}
         </NavigationMenuContent>
       </NavigationMenuItem>
     );
@@ -489,6 +575,56 @@ const renderMenuItem = (item: MenuItem, params: ReadonlyURLSearchParams) => {
   );
 };
 
+const renderMobileMenuItems = (
+  items: MenuItemLink[],
+  closeMenuOnClick: () => void,
+  params: ReadonlyURLSearchParams,
+  accordionValuePrefix: string
+): ReactNode =>
+  items.map((subItem, index) => {
+    const value = `${accordionValuePrefix}-${subItem.url}-${index}`;
+    if (subItem.items) {
+      return (
+        <Accordion
+          key={value}
+          type="single"
+          collapsible
+          className="flex w-full flex-col gap-4 border-b-0"
+        >
+          <AccordionItem value={value} className="border-b-0">
+            <AccordionTrigger className="py-2 text-sm hover:no-underline">
+              {subItem.title}
+            </AccordionTrigger>
+            <AccordionContent className="mt-2 pl-4">
+              {renderMobileMenuItems(
+                subItem.items,
+                closeMenuOnClick,
+                params,
+                value
+              )}
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+      );
+    }
+    return (
+      <div className="py-2" key={value}>
+        <Link
+          href={{
+            pathname: subItem.url,
+            query: subItem.hasFilters ? params.toString() : undefined
+          }}
+          onClick={closeMenuOnClick}
+          className="flex flex-row items-center gap-2"
+          target={subItem.isExternal ? "_blank" : undefined}
+          rel={subItem.isExternal ? "noopener noreferrer" : undefined}
+        >
+          {subItem.title} {subItem.icon}
+        </Link>
+      </div>
+    );
+  });
+
 const renderMobileMenuItem = (
   item: MenuItem,
   closeMenuOnClick: () => void,
@@ -497,26 +633,16 @@ const renderMobileMenuItem = (
   if (item.items) {
     return (
       <AccordionItem key={item.title} value={item.title} className="border-b-0">
-        <AccordionTrigger className="py-0 font-semibold text-[14px] hover:no-underline">
+        <AccordionTrigger className="py-0 text-sm hover:no-underline">
           {item.title}
         </AccordionTrigger>
         <AccordionContent className="mt-2">
-          {item.items.map((subItem) => (
-            <div className="py-2" key={subItem.title}>
-              <Link
-                href={{
-                  pathname: subItem.url,
-                  query: subItem.hasFilters ? params.toString() : undefined
-                }}
-                onClick={closeMenuOnClick}
-                className="flex flex-row items-center gap-2"
-                target={subItem.isExternal ? "_blank" : undefined}
-                rel={subItem.isExternal ? "noopener noreferrer" : undefined}
-              >
-                {subItem.title} {subItem.icon}
-              </Link>
-            </div>
-          ))}
+          {renderMobileMenuItems(
+            item.items,
+            closeMenuOnClick,
+            params,
+            item.title
+          )}
         </AccordionContent>
       </AccordionItem>
     );

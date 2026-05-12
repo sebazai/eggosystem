@@ -41,7 +41,6 @@ import { convertSteamIdToSteamId64 } from "@/lib/utils";
 import { ApiError } from "@/lib/apiClient";
 import { LiveTeamPlayersPopup } from "@/components/dashboard/LiveTeamPlayersPopup";
 import { useTeamPlayersLive } from "@/hooks/data/dashboard/useTeamPlayersLive";
-import { Checkbox } from "@/components/ui/checkbox";
 
 export default function AddSubstitutePlayerPage() {
   const { selectedSeasonId } = useDashboardSeason();
@@ -49,7 +48,6 @@ export default function AddSubstitutePlayerPage() {
   const [steamId, setSteamId] = useState<string>("");
   const [matchId, setMatchId] = useState<string>("");
   const [replacingSteamId, setReplacingSteamId] = useState<string>("");
-  const [checkEligibility, setCheckEligibility] = useState(false);
   const [ticketNumber, setTicketNumber] = useState<string>("");
   const [isAdding, setIsAdding] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);
@@ -229,7 +227,6 @@ export default function AddSubstitutePlayerPage() {
       setMatchId("");
       setTicketNumber("");
       setReplacingSteamId("");
-      setCheckEligibility(false);
     } catch (err) {
       console.error("Failed to add substitute player:", err);
       setSuccess(null);
@@ -268,8 +265,8 @@ export default function AddSubstitutePlayerPage() {
             <SelectedSeasonBadge />
           </div>
           <p className="text-muted-foreground">
-            Add a substitute player to a team. Only player validation is
-            required - no team balance checking.
+            Add a substitute player to a team. Team eligibility check is always
+            required to maintain balance.
           </p>
         </div>
 
@@ -381,32 +378,8 @@ export default function AddSubstitutePlayerPage() {
                 </div>
               )}
 
-              {selectedTeamId && validationResult?.overall_success && (
-                <div className="flex items-center space-x-2 rounded-md border p-3">
-                  <Checkbox
-                    id="check-eligibility"
-                    checked={checkEligibility}
-                    onCheckedChange={(checked) => {
-                      setCheckEligibility(checked === true);
-                      if (!checked) {
-                        setReplacingSteamId("");
-                        clearEligibilityResult();
-                      }
-                    }}
-                    data-testid="check-eligibility-checkbox"
-                  />
-                  <Label
-                    htmlFor="check-eligibility"
-                    className="text-sm font-normal cursor-pointer"
-                  >
-                    Check team eligibility (for substitutes that might affect
-                    balance)
-                  </Label>
-                </div>
-              )}
-
-              {/* Player Selection for Substitution */}
-              {checkEligibility && liveTeamPlayers && (
+              {/* Player Selection for Substitution - Always visible when team selected */}
+              {selectedTeamId && liveTeamPlayers && (
                 <div className="space-y-2">
                   <Label htmlFor="replacing-player">
                     Who will this substitute replace? (Optional)
@@ -442,15 +415,14 @@ export default function AddSubstitutePlayerPage() {
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-muted-foreground">
-                    Selecting a player will exclude them from eligibility
-                    calculations, simulating the team balance with the
-                    substitute instead.
+                    If the substitute doesn&apos;t fit the team, try selecting a
+                    player to exclude from the calculation.
                   </p>
                 </div>
               )}
 
-              {/* Check Eligibility Button */}
-              {checkEligibility && (
+              {/* Check Eligibility Button - Always required for substitutes */}
+              {selectedTeamId && validationResult && (
                 <Button
                   onClick={handleCheckEligibilityClick}
                   disabled={
@@ -458,8 +430,7 @@ export default function AddSubstitutePlayerPage() {
                     !selectedTeamId ||
                     !steamId ||
                     isCheckingEligibility ||
-                    !validationResult ||
-                    !validationResult.overall_success
+                    !validationResult
                   }
                   className="w-full"
                   variant="secondary"
@@ -471,7 +442,7 @@ export default function AddSubstitutePlayerPage() {
                       Checking...
                     </>
                   ) : (
-                    "Check Team Eligibility"
+                    "2. Check Team Eligibility"
                   )}
                 </Button>
               )}
@@ -530,7 +501,7 @@ export default function AddSubstitutePlayerPage() {
               </div>
 
               {/* Eligibility Error Display */}
-              {eligibilityError && checkEligibility && (
+              {eligibilityError && (
                 <Alert
                   variant="destructive"
                   data-testid="eligibility-error-message"
@@ -552,13 +523,11 @@ export default function AddSubstitutePlayerPage() {
                   !steamId ||
                   isAdding ||
                   !validationResult ||
-                  !validationResult.overall_success ||
                   !matchId.trim() ||
                   !ticketNumber.trim() ||
-                  (checkEligibility && !eligibilityResult) ||
-                  (checkEligibility &&
-                    eligibilityResult &&
-                    !eligibilityResult.canAddPlayer)
+                  // Eligibility check is ALWAYS required for substitutes
+                  !eligibilityResult ||
+                  !eligibilityResult.canAddPlayer
                 }
                 className="w-full"
                 data-testid="add-substitute-player-button"
@@ -571,9 +540,7 @@ export default function AddSubstitutePlayerPage() {
                 ) : (
                   <>
                     <CheckCircle className="mr-2 h-4 w-4" />
-                    {checkEligibility
-                      ? "3. Add Substitute Player"
-                      : "2. Add Substitute Player"}
+                    3. Add Substitute Player
                   </>
                 )}
               </Button>
@@ -612,8 +579,8 @@ export default function AddSubstitutePlayerPage() {
             </div>
           )}
 
-          {/* Eligibility Results Display */}
-          {checkEligibility && eligibilityResult && (
+          {/* Eligibility Results Display - Always shown when result exists */}
+          {eligibilityResult && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">

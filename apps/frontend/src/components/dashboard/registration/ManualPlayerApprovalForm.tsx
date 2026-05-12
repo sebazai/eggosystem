@@ -33,11 +33,11 @@ import { SelectedSeasonBadge } from "@/components/dashboard/SelectedSeasonBadge"
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle, PlusIcon } from "lucide-react";
 import { NewOrganizationForm } from "@/components/organizations/NewOrganizationForm";
-import { useState } from "react";
 import {
   FormControl,
   FormField,
   FormItem,
+  FormLabel,
   FormMessage
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
@@ -129,7 +129,7 @@ function SteamIdInputWithName({
 
   return (
     <FormItem>
-      <Label className="pb-1">Accepted Player Steam ID #{index + 1}</Label>
+      <FormLabel>Accepted Player Steam ID #{index + 1}</FormLabel>
       <FormControl>
         <SteamIdInput
           value={field.value}
@@ -170,8 +170,6 @@ export function ManualPlayerApprovalForm() {
       details: undefined
     }
   });
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
   // eslint-disable-next-line react-hooks/incompatible-library
   const selectedTeamId = methods.watch("teamId");
   const selectedOrgId = methods.watch("organizationId");
@@ -184,10 +182,8 @@ export function ManualPlayerApprovalForm() {
   });
 
   const onSubmit = async (data: ManualPlayerApprovalFormSchemaType) => {
-    setErrorMessage(null);
-
     if (!selectedSeasonId) {
-      setErrorMessage("Please select a season from the sidebar");
+      toast.error("Select a season from the sidebar");
       return;
     }
 
@@ -207,10 +203,10 @@ export function ManualPlayerApprovalForm() {
       methods.reset();
     } catch (error) {
       if (error instanceof ApiError) {
-        setErrorMessage(error.message);
+        toast.error(error.message);
         return;
       }
-      toast.error("Something went wrong... Please contact developers.");
+      toast.error("Something went wrong. Contact the developers.");
     }
   };
 
@@ -243,9 +239,7 @@ export function ManualPlayerApprovalForm() {
           render={({ field }) => {
             return (
               <FormItem>
-                <Label className="pb-1" htmlFor="organizationId">
-                  Select Organization or Create New
-                </Label>
+                <FormLabel>Select Organization or Create New</FormLabel>
                 <FormControl>
                   <Select
                     key={field.value}
@@ -254,7 +248,10 @@ export function ManualPlayerApprovalForm() {
                     }}
                     value={field.value || ""}
                   >
-                    <SelectTrigger value={field.value ?? undefined}>
+                    <SelectTrigger
+                      value={field.value ?? undefined}
+                      data-testid="manual-approval-organization-trigger"
+                    >
                       <SelectValue placeholder="Select an organization" />
                     </SelectTrigger>
                     <SelectContent>
@@ -290,9 +287,7 @@ export function ManualPlayerApprovalForm() {
           render={({ field }) => {
             return (
               <FormItem>
-                <Label className="pb-1" htmlFor="teamId">
-                  Select Team or Create New
-                </Label>
+                <FormLabel>Select Team or Create New</FormLabel>
                 <FormControl>
                   <Select
                     key={field.value}
@@ -326,9 +321,7 @@ export function ManualPlayerApprovalForm() {
             name={"newTeamName"}
             render={({ field }) => (
               <FormItem>
-                <Label className="pb-1" htmlFor="newTeamName">
-                  New Team Name
-                </Label>
+                <FormLabel>New Team Name</FormLabel>
                 <FormControl>
                   <Input
                     {...field}
@@ -365,6 +358,7 @@ export function ManualPlayerApprovalForm() {
           type="button"
           onClick={() => append({ steamId: "" })}
           variant="outline"
+          data-testid="manual-approval-add-player"
         >
           <PlusIcon /> Add player
         </Button>
@@ -374,9 +368,7 @@ export function ManualPlayerApprovalForm() {
           name={"ticketId"}
           render={({ field }) => (
             <FormItem>
-              <Label className="pb-1" htmlFor="ticketId">
-                Ticket Number
-              </Label>
+              <FormLabel>Ticket Number</FormLabel>
               <FormControl>
                 <Input
                   {...field}
@@ -394,9 +386,7 @@ export function ManualPlayerApprovalForm() {
           name={"details"}
           render={({ field }) => (
             <FormItem>
-              <Label className="pb-1" htmlFor="details">
-                Details
-              </Label>
+              <FormLabel>Details</FormLabel>
               <FormControl>
                 <Textarea
                   {...field}
@@ -411,22 +401,21 @@ export function ManualPlayerApprovalForm() {
 
         <div className="flex gap-2">
           <Button
-            type="submit"
-            disabled={methods.formState.isSubmitting || !selectedSeasonId}
-          >
-            {methods.formState.isSubmitting ? "Submitting..." : "Submit"}
-          </Button>
-          <Button
             type="reset"
             variant="destructive"
             onClick={() => methods.reset()}
           >
             Reset
           </Button>
+          <Button
+            type="submit"
+            className="w-full md:w-auto"
+            disabled={methods.formState.isSubmitting || !selectedSeasonId}
+            data-testid="manual-approval-submit"
+          >
+            {methods.formState.isSubmitting ? "Submitting..." : "Submit →"}
+          </Button>
         </div>
-        {errorMessage && (
-          <div className="text-red-500 font-semibold">{errorMessage}</div>
-        )}
       </form>
     </FormProvider>
   );

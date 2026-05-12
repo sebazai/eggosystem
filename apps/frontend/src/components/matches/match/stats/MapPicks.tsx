@@ -13,6 +13,8 @@ import { NextImageFallback } from "@/components/layout/NextImageFallback";
 import { useGetMatchGamesByExternalMatchRoomId } from "@/hooks/data/useGetMatchGamesByExternalMatchRoomId";
 import { useMemo } from "react";
 import { useParams } from "next/navigation";
+import { MatchMapPicksSkeleton } from "@/components/loading";
+import { orderTwoParticipantsBySideHomeLeft } from "@/lib/order-match-teams-home-left-away";
 
 interface MatchMapPicksProps {
   matchId: number;
@@ -27,15 +29,17 @@ export const MatchMapPicks = ({
 }: MatchMapPicksProps) => {
   const params = useParams();
   const matchGameId = parseInt(params.match_game_id as string, 10);
-  const { maps } = useMatchMaps(matchId);
-  const { vetoes } = useMatchMapVetoes(matchId);
+  const { maps, isLoading: isLoadingMaps } = useMatchMaps(matchId);
+  const { vetoes, isLoading: isLoadingVetoes } = useMatchMapVetoes(matchId);
   const { matchInfo } = useMatchInfo(String(matchId));
-  const { games } = useGetMatchGamesByExternalMatchRoomId(
-    externalMatchRoomId,
-    vetoes?.filter((veto) => veto.action !== "drop").length === 2
-  );
+  const { games, isLoading: isLoadingGames } =
+    useGetMatchGamesByExternalMatchRoomId(
+      externalMatchRoomId,
+      vetoes?.filter((veto) => veto.action !== "drop").length === 2
+    );
   const theOtherGame = games?.find((game) => game.match_id !== matchId);
-  const { maps: theOtherGameMaps } = useMatchMaps(theOtherGame?.match_id);
+  const { maps: theOtherGameMaps, isLoading: isLoadingOtherGameMaps } =
+    useMatchMaps(theOtherGame?.match_id);
 
   // Helper to get team info by id
   const getTeam = (teamId: number) =>
@@ -48,6 +52,23 @@ export const MatchMapPicks = ({
     return [...(maps || []), ...(theOtherGameMaps || [])];
   }, [maps, theOtherGameMaps]);
 
+  const orderedMatchTeams = useMemo(() => {
+    if (!matchInfo) return null;
+    const list = Object.values(matchInfo.teams);
+    if (list.length !== 2) return null;
+    return orderTwoParticipantsBySideHomeLeft(list[0]!, list[1]!);
+  }, [matchInfo]);
+
+  const isLoading =
+    isLoadingMaps ||
+    isLoadingVetoes ||
+    isLoadingGames ||
+    (theOtherGame?.match_id !== undefined && isLoadingOtherGameMaps);
+
+  if (isLoading) {
+    return <MatchMapPicksSkeleton />;
+  }
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-4">
       {/* Picked Maps Scores */}
@@ -56,6 +77,37 @@ export const MatchMapPicks = ({
         {allMatchGameMaps
           .sort((a, b) => (a.map_order ?? 0) - (b.map_order ?? 0))
           .map((mapMatchGame, index) => {
+            const [leftScore, rightScore] = (() => {
+              if (!orderedMatchTeams) {
+                return [
+                  mapMatchGame.team1_score,
+                  mapMatchGame.team2_score
+                ] as const;
+              }
+              const [left, right] = orderedMatchTeams;
+              if (
+                left.id === mapMatchGame.team1_id &&
+                right.id === mapMatchGame.team2_id
+              ) {
+                return [
+                  mapMatchGame.team1_score,
+                  mapMatchGame.team2_score
+                ] as const;
+              }
+              if (
+                left.id === mapMatchGame.team2_id &&
+                right.id === mapMatchGame.team1_id
+              ) {
+                return [
+                  mapMatchGame.team2_score,
+                  mapMatchGame.team1_score
+                ] as const;
+              }
+              return [
+                mapMatchGame.team1_score,
+                mapMatchGame.team2_score
+              ] as const;
+            })();
             return (
               <div
                 key={index}
@@ -88,11 +140,11 @@ export const MatchMapPicks = ({
 
                 <div className="flex items-center gap-1 p-3 z-10 w-full justify-end">
                   <span className="text-lg w-6 font-black text-center">
-                    {mapMatchGame.team1_score}
+                    {leftScore}
                   </span>
                   <span className="text-md">-</span>
                   <span className="text-lg w-6 font-black text-center">
-                    {mapMatchGame.team2_score}
+                    {rightScore}
                   </span>
                 </div>
               </div>

@@ -13,7 +13,8 @@ import {
   getPlayerRankForSeason,
   getPlayerKanaElo,
   getTopXPlayersKanaElo,
-  insertPlayerRankForSeason
+  insertPlayerRankForSeason,
+  getLatestSeasonForPlayer
 } from "../models/season-player-ranks.models";
 import { getCS2RankFromLeetify } from "./leetify.services";
 import { getFaceITCS2Rank } from "./faceit.services";
@@ -82,14 +83,19 @@ export const getPlayerHoursForSteamAppId = async (
   }
 };
 
+interface RankOptions {
+  skipExternalCheck?: boolean;
+}
+
 export const getPlayerAppIdRank = async (
   steam_id: string,
   app_id: number,
-  season_id?: number
+  season_id?: number,
+  options?: RankOptions
 ) => {
   switch (app_id) {
     case 730: // CS
-      return getCSRank(steam_id, season_id);
+      return getCSRank(steam_id, season_id, options);
     default:
       throw new BadRequestError("Unknown app_id");
   }
@@ -245,11 +251,15 @@ const getRankFromDatabaseFallback = async (
 /**
  * Main function to get CS2 rank for a player
  * Tries multiple sources in order: Database -> Cache -> External API -> Database Fallback
+ * When skipExternalCheck is true: Redis then DB (season_id or latest season only); never calls Leetify; returns -1 shape if no rank.
  */
 export const getCSRank = async (
   steam_id: string,
-  season_id?: number
+  season_id?: number,
+  options?: RankOptions
 ): Promise<CS2LeetifyAvgRank> => {
+  const skipExternalCheck = options?.skipExternalCheck === true;
+
   try {
     // 1. Try database first if season_id is provided
     if (season_id) {
@@ -262,6 +272,22 @@ export const getCSRank = async (
     const cachedRank = await getRankFromCache(steam_id);
     if (cachedRank) {
       return cachedRank;
+    }
+
+    if (skipExternalCheck) {
+      // Redis + DB only: use season_id or latest season, then return -1 if nothing
+      const effectiveSeasonId =
+        season_id ?? (await getLatestSeasonForPlayer(steam_id));
+      if (effectiveSeasonId) {
+        const dbRank = await getRankFromDatabase(steam_id, effectiveSeasonId);
+        if (dbRank) {
+          return dbRank;
+        }
+      }
+      return {
+        average_rank: -1,
+        rank_updated_at: null
+      } satisfies CS2LeetifyAvgRank;
     }
 
     // 3. Try external sources (Leetify)
@@ -307,14 +333,15 @@ export const getCSRank = async (
 export const getPlayerRankForPlatform = async (
   steam_id: string,
   platform: SeasonPlatform | null,
-  season_id?: number
+  season_id?: number,
+  options?: RankOptions
 ): Promise<FaceITCSRank | { kana_elo: number } | null> => {
   if (!platform) {
     return null;
   }
   switch (platform) {
     case SeasonPlatform.FACEIT:
-      return getFaceITCS2Rank(steam_id, season_id);
+      return getFaceITCS2Rank(steam_id, season_id, options);
     case SeasonPlatform.Kanaliiga: {
       const kanaElo = await getPlayerKanaElo(steam_id);
       if (kanaElo) {
@@ -331,19 +358,20 @@ export const getPlayerRankForPlatform = async (
 };
 
 // Kanarank rank configuration based on elo thresholds
+// Updated for Season 17 distribution (697 players, range 29-224, avg 115)
 const KANARANK_THRESHOLDS = [
-  { rank: "COCK", subrank: 1, min_elo: 320 }, // COCK_1: 320+ elo
-  { rank: "COCK", subrank: 2, min_elo: 300 }, // COCK_2: 300-319 elo
-  { rank: "COCK", subrank: 3, min_elo: 280 }, // COCK_3: 280-299 elo
-  { rank: "CHICKEN", subrank: 1, min_elo: 250 }, // CHICKEN_1: 250-279 elo
-  { rank: "CHICKEN", subrank: 2, min_elo: 220 }, // CHICKEN_2: 220-249 elo
-  { rank: "CHICKEN", subrank: 3, min_elo: 185 }, // CHICKEN_3: 185-219 elo
-  { rank: "CHICK", subrank: 1, min_elo: 145 }, // CHICK_1: 145-184 elo
-  { rank: "CHICK", subrank: 2, min_elo: 120 }, // CHICK_2: 120-144 elo
-  { rank: "CHICK", subrank: 3, min_elo: 100 }, // CHICK_3: 100-119 elo
-  { rank: "EGG", subrank: 1, min_elo: 85 }, // EGG_1: 85-99 elo
-  { rank: "EGG", subrank: 2, min_elo: 60 }, // EGG_2: 60-84 elo
-  { rank: "EGG", subrank: 3, min_elo: 0 } // EGG_3: 0-59 elo
+  { rank: "COCK", subrank: 1, min_elo: 190 }, // COCK_1: 190+ elo (~top 3%)
+  { rank: "COCK", subrank: 2, min_elo: 180 }, // COCK_2: 180-189 elo (~top 5%)
+  { rank: "COCK", subrank: 3, min_elo: 170 }, // COCK_3: 170-179 elo (~top 10%)
+  { rank: "CHICKEN", subrank: 1, min_elo: 160 }, // CHICKEN_1: 160-169 elo (~top 15%)
+  { rank: "CHICKEN", subrank: 2, min_elo: 145 }, // CHICKEN_2: 145-159 elo (~top 25%)
+  { rank: "CHICKEN", subrank: 3, min_elo: 125 }, // CHICKEN_3: 125-144 elo (~top 40%)
+  { rank: "CHICK", subrank: 1, min_elo: 110 }, // CHICK_1: 110-124 elo (~top 50%)
+  { rank: "CHICK", subrank: 2, min_elo: 90 }, // CHICK_2: 90-109 elo (~top 65%)
+  { rank: "CHICK", subrank: 3, min_elo: 75 }, // CHICK_3: 75-89 elo (~top 75%)
+  { rank: "EGG", subrank: 1, min_elo: 60 }, // EGG_1: 60-74 elo (~top 85%)
+  { rank: "EGG", subrank: 2, min_elo: 45 }, // EGG_2: 45-59 elo (~top 92%)
+  { rank: "EGG", subrank: 3, min_elo: 0 } // EGG_3: 0-44 elo (bottom ~8%)
 ];
 
 // Top rankings configuration
@@ -378,7 +406,7 @@ export const getPlayerKanaRank = async (steam_id: string) => {
   const topPlayers = await getTopXPlayersKanaElo(TOP_PLAYERS_COUNT);
 
   const playerPosition = topPlayers.findIndex(
-    (player) => player.steam_id === steam_id
+    (player) => String(player.steam_id) === steam_id
   );
 
   const position = playerPosition + 1;
