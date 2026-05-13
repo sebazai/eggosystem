@@ -10,4 +10,5 @@ export * from "./PlayerFullName.test-utils";
 export * from "./PlayerMapStats.interface";
 export * from "./PlayerHistoricalData.interface";
 export * from "./PlayerHistoricalAverage.interface";
+export * from "./PlayerActiveSeasons.interface";
 export * from "./PlayerStatistics.interface";

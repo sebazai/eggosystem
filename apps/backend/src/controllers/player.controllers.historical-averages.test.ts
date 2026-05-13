@@ -81,8 +81,8 @@ describe("Historical Average Controllers", () => {
       ).toHaveBeenCalledWith(15000, { games: 30 });
     });
 
-    it("should handle period parameter", async () => {
-      mockRequest.query = { period: "this_season" };
+    it("should ignore unknown params like period and use default games", async () => {
+      mockRequest.query = { period: "this_season" } as Record<string, string>;
       (
         mockPlayerModels.getPlayerHistoricalAverageByRank as jest.Mock
       ).mockResolvedValue(mockAverageData);
@@ -95,10 +95,7 @@ describe("Historical Average Controllers", () => {
 
       expect(
         mockPlayerModels.getPlayerHistoricalAverageByRank
-      ).toHaveBeenCalledWith(
-        15000,
-        expect.objectContaining({ games: 15, period: "this_season" })
-      );
+      ).toHaveBeenCalledWith(15000, { games: 15, season_id: undefined });
     });
 
     it("should handle database errors", async () => {
@@ -176,8 +173,11 @@ describe("Historical Average Controllers", () => {
       ).toHaveBeenCalledWith(5, { games: 15 });
     });
 
-    it("should handle custom parameters", async () => {
-      mockRequest.query = { games: "20", period: "last_season" };
+    it("should handle custom games and ignore unknown params like period", async () => {
+      mockRequest.query = { games: "20", period: "last_season" } as Record<
+        string,
+        string
+      >;
       (
         mockPlayerModels.getPlayerHistoricalAverageByLevel as jest.Mock
       ).mockResolvedValue(mockAverageData);
@@ -190,10 +190,7 @@ describe("Historical Average Controllers", () => {
 
       expect(
         mockPlayerModels.getPlayerHistoricalAverageByLevel
-      ).toHaveBeenCalledWith(
-        5,
-        expect.objectContaining({ games: 20, period: "last_season" })
-      );
+      ).toHaveBeenCalledWith(5, { games: 20, season_id: undefined });
     });
 
     it("should handle database errors", async () => {
@@ -236,8 +233,11 @@ describe("Historical Average Controllers", () => {
       });
     });
 
-    it("should handle custom parameters", async () => {
-      mockRequest.query = { games: "50", period: "this_season" };
+    it("should handle custom games and ignore unknown params like period", async () => {
+      mockRequest.query = { games: "50", period: "this_season" } as Record<
+        string,
+        string
+      >;
       (
         mockPlayerModels.getPlayerHistoricalAverage as jest.Mock
       ).mockResolvedValue(mockAverageData);
@@ -248,9 +248,10 @@ describe("Historical Average Controllers", () => {
         mockNext
       );
 
-      expect(mockPlayerModels.getPlayerHistoricalAverage).toHaveBeenCalledWith(
-        expect.objectContaining({ games: 50, period: "this_season" })
-      );
+      expect(mockPlayerModels.getPlayerHistoricalAverage).toHaveBeenCalledWith({
+        games: 50,
+        season_id: undefined
+      });
     });
 
     it("should handle invalid games parameter by using default", async () => {

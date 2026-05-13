@@ -130,13 +130,8 @@ describe("getPlayerHistoricalDataController", () => {
     expect(mockResponse.json).toHaveBeenCalledWith([]);
   });
 
-  it("should handle query parameters correctly when org context is provided", async () => {
-    mockRequest.query = {
-      games: "10",
-      period: "this_season",
-      app_id: "730",
-      organizer_id: "1"
-    };
+  it("should filter by season_id when provided", async () => {
+    mockRequest.query = { games: "10", season_id: "5" };
     (mockPlayerModels.getPlayerHistoricalData as jest.Mock).mockResolvedValue(
       mockHistoricalData
     );
@@ -150,12 +145,15 @@ describe("getPlayerHistoricalDataController", () => {
     expect(mockResponse.json).toHaveBeenCalledWith(mockHistoricalData);
     expect(mockPlayerModels.getPlayerHistoricalData).toHaveBeenCalledWith(
       steam_id,
-      { games: 10, period: "this_season", app_id: 730, organizer_id: 1 }
+      { games: 10, season_id: 5 }
     );
   });
 
-  it("should return 400 when period is set but app_id is missing", async () => {
-    mockRequest.query = { period: "this_season", organizer_id: "1" };
+  it("should ignore unrecognised query params (e.g. legacy period)", async () => {
+    mockRequest.query = { period: "this_season" } as Record<string, string>;
+    (mockPlayerModels.getPlayerHistoricalData as jest.Mock).mockResolvedValue(
+      []
+    );
 
     await getPlayerHistoricalDataController(
       mockRequest as Request,
@@ -163,32 +161,10 @@ describe("getPlayerHistoricalDataController", () => {
       mockNext
     );
 
-    expect(mockNext).toHaveBeenCalledWith(
-      expect.objectContaining({
-        message:
-          "app_id and organizer_id are required when period is this_season or last_season",
-        status: 400
-      })
+    expect(mockNext).not.toHaveBeenCalled();
+    expect(mockPlayerModels.getPlayerHistoricalData).toHaveBeenCalledWith(
+      steam_id,
+      { games: undefined, season_id: undefined }
     );
-    expect(mockPlayerModels.getPlayerHistoricalData).not.toHaveBeenCalled();
-  });
-
-  it("should return 400 when period is set but organizer_id is missing", async () => {
-    mockRequest.query = { period: "last_season", app_id: "730" };
-
-    await getPlayerHistoricalDataController(
-      mockRequest as Request,
-      mockResponse as Response,
-      mockNext
-    );
-
-    expect(mockNext).toHaveBeenCalledWith(
-      expect.objectContaining({
-        message:
-          "app_id and organizer_id are required when period is this_season or last_season",
-        status: 400
-      })
-    );
-    expect(mockPlayerModels.getPlayerHistoricalData).not.toHaveBeenCalled();
   });
 });

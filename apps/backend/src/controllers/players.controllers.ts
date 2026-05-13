@@ -19,7 +19,8 @@ import {
   getPlayerHistoricalData,
   getPlayerHistoricalAverageByRank,
   getPlayerHistoricalAverageByLevel,
-  getPlayerHistoricalAverage
+  getPlayerHistoricalAverage,
+  getPlayerActiveSeasons
 } from "../models/player-historical.models";
 
 import {
@@ -539,6 +540,21 @@ export const setPlayerKanaEloController = async (
   }
 };
 
+export const getPlayerSeasonsController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { steam_id } = req.params;
+    if (!steam_id) return next(new BadRequestError("Steam ID is required"));
+    const seasons = await getPlayerActiveSeasons(steam_id);
+    res.json(seasons);
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const getPlayerHistoricalDataController = async (
   req: Request,
   res: Response,
@@ -547,13 +563,6 @@ export const getPlayerHistoricalDataController = async (
   try {
     const { steam_id } = req.params;
     const params = parseHistoricalParams(req.query);
-    if (params.period && (!params.app_id || !params.organizer_id)) {
-      return next(
-        new BadRequestError(
-          "app_id and organizer_id are required when period is this_season or last_season"
-        )
-      );
-    }
     const historicalData = await getPlayerHistoricalData(steam_id, params);
     res.json(historicalData);
   } catch (error) {
@@ -562,34 +571,16 @@ export const getPlayerHistoricalDataController = async (
 };
 
 const parseHistoricalParams = (
-  query: {
-    games?: string;
-    period?: string;
-    app_id?: string;
-    organizer_id?: string;
-  },
+  query: { games?: string; season_id?: string },
   defaultGames?: number
 ): HistoricalDataParams => {
   const games = query.games ? parseInt(query.games) : defaultGames;
-  const period = query.period;
-
   const validGames = [5, 10, 15, 20, 30, 40, 50];
   const finalGames = games && validGames.includes(games) ? games : defaultGames;
 
-  const finalPeriod =
-    period === "this_season" || period === "last_season" ? period : undefined;
+  const season_id = query.season_id ? parseInt(query.season_id) : undefined;
 
-  const app_id = query.app_id ? parseInt(query.app_id) : undefined;
-  const organizer_id = query.organizer_id
-    ? parseInt(query.organizer_id)
-    : undefined;
-
-  return {
-    games: finalGames,
-    period: finalPeriod,
-    app_id,
-    organizer_id
-  };
+  return { games: finalGames, season_id };
 };
 
 export const getPlayerHistoricalAverageByRankController = async (

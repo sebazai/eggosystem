@@ -10,6 +10,7 @@ import {
   getPlayerOldKanaEloController,
   getPlayerStatsForLatestSeasonController,
   setPlayerKanaEloController,
+  getPlayerSeasonsController,
   getPlayerHistoricalDataController,
   getPlayerHistoricalAverageByRankController,
   getPlayerHistoricalAverageByLevelController,
@@ -71,6 +72,13 @@ router.post(
   "/:steam_id/set-kanaelo",
   createApiKeyValidator(process.env.BACKEND_SERVICE_API_KEY),
   setPlayerKanaEloController
+);
+
+// Player seasons
+router.get(
+  "/:steam_id/seasons/active",
+  corsMiddleware,
+  getPlayerSeasonsController
 );
 
 // Historical data route

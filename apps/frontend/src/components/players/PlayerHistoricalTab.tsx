@@ -36,20 +36,20 @@ import {
   ReferenceLine
 } from "recharts";
 import {
+  usePlayerActiveSeasons,
   usePlayerHistoricalData,
   usePlayerHistoricalAverageByRank,
   usePlayerHistoricalAverageByLevel,
   usePlayerHistoricalAverage,
   parsePeriodToParams
 } from "@/hooks/data/usePlayerHistoricalData";
-import { DEFAULT_APP_ID, DEFAULT_ORGANIZER_ID } from "@/config/organizer";
 
 interface PlayerHistoricalTabProps {
   steamId: string;
 }
 
-// Period options
-const periodOptions = [
+// Period options — season labels are overridden dynamically in the component
+const staticPeriodOptions = [
   { value: "last_5", label: "Last 5 games" },
   { value: "last_10", label: "Last 10 games" },
   { value: "last_15", label: "Last 15 games" },
@@ -424,15 +424,50 @@ export const PlayerHistoricalTab = ({ steamId }: PlayerHistoricalTabProps) => {
 
   const compareOptionGroups = getCompareOptionGroups();
 
-  // Parse period to API parameters, always include org context for season-relative periods
-  const params = useMemo(
-    () => ({
-      ...parsePeriodToParams(period),
-      app_id: DEFAULT_APP_ID,
-      organizer_id: DEFAULT_ORGANIZER_ID
-    }),
-    [period]
+  const { data: playerSeasons, isLoading: isLoadingSeasons } =
+    usePlayerActiveSeasons(steamId);
+
+  const periodOptions = useMemo(
+    () =>
+      staticPeriodOptions.map((opt) => {
+        if (opt.value === "this_season") {
+          if (isLoadingSeasons) {
+            return { ...opt, label: "This season…", disabled: false };
+          }
+          return {
+            ...opt,
+            label: playerSeasons?.current_season
+              ? `${playerSeasons.current_season.full_name} (current)`
+              : "This season — none found",
+            disabled: !playerSeasons?.current_season
+          };
+        }
+        if (opt.value === "last_season") {
+          if (isLoadingSeasons) {
+            return { ...opt, label: "Last season…", disabled: false };
+          }
+          return {
+            ...opt,
+            label: playerSeasons?.last_season
+              ? `${playerSeasons.last_season.full_name} (last)`
+              : "Last season — none found",
+            disabled: !playerSeasons?.last_season
+          };
+        }
+        return { ...opt, disabled: false };
+      }),
+    [playerSeasons, isLoadingSeasons]
   );
+
+  const params = useMemo(() => {
+    if (period === "this_season") {
+      return { season_id: playerSeasons?.current_season?.season_id };
+    }
+    if (period === "last_season") {
+      return { season_id: playerSeasons?.last_season?.season_id };
+    }
+    return parsePeriodToParams(period);
+  }, [period, playerSeasons]);
 
   // Fetch player historical data
   const {
@@ -458,15 +493,15 @@ export const PlayerHistoricalTab = ({ steamId }: PlayerHistoricalTabProps) => {
   // Always fetch overall league averages for reference lines
   const {
     data: leagueAverages,
-    error: leagueError,
-    isLoading: isLoadingLeague
+    error: _leagueError,
+    isLoading: _isLoadingLeague
   } = usePlayerHistoricalAverage(params);
 
   // Fetch comparison averages based on selected option (only if not "none" or "aggregate")
   const {
     data: faceitAverages,
-    error: faceitError,
-    isLoading: isLoadingFaceit
+    error: _faceitError,
+    isLoading: _isLoadingFaceit
   } = usePlayerHistoricalAverageByLevel(
     comparisonType === "faceit" ? comparisonValue : null,
     comparisonType === "faceit" ? params : undefined
@@ -474,8 +509,8 @@ export const PlayerHistoricalTab = ({ steamId }: PlayerHistoricalTabProps) => {
 
   const {
     data: cs2rankAverages,
-    error: cs2rankError,
-    isLoading: isLoadingCs2rank
+    error: _cs2rankError,
+    isLoading: _isLoadingCs2rank
   } = usePlayerHistoricalAverageByRank(
     comparisonType === "cs2rank" ? comparisonValue : null,
     comparisonType === "cs2rank" ? params : undefined
@@ -495,13 +530,9 @@ export const PlayerHistoricalTab = ({ steamId }: PlayerHistoricalTabProps) => {
     }
   }, [comparisonType, faceitAverages, cs2rankAverages, leagueAverages]);
 
-  // Check for loading and error states
-  const isLoading =
-    isLoadingHistorical ||
-    isLoadingLeague ||
-    isLoadingFaceit ||
-    isLoadingCs2rank;
-  const error = historicalError || leagueError || faceitError || cs2rankError;
+  // Only block the skeleton on the player's own data — averages load progressively
+  const isLoading = isLoadingHistorical;
+  const error = historicalError;
 
   // Transform historical data for charts
   const chartData = useMemo(() => {
@@ -728,7 +759,7 @@ export const PlayerHistoricalTab = ({ steamId }: PlayerHistoricalTabProps) => {
 
         <div className="flex flex-col sm:flex-row gap-3">
           {/* Period Dropdown */}
-          <div className="w-full sm:w-48">
+          <div className="w-full sm:w-64">
             <Select value={period} onValueChange={setPeriod}>
               <SelectTrigger>
                 <SelectValue placeholder="Select period">
@@ -737,7 +768,11 @@ export const PlayerHistoricalTab = ({ steamId }: PlayerHistoricalTabProps) => {
               </SelectTrigger>
               <SelectContent>
                 {periodOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
+                  <SelectItem
+                    key={option.value}
+                    value={option.value}
+                    disabled={option.disabled}
+                  >
                     {option.label}
                   </SelectItem>
                 ))}
