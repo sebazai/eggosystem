@@ -25,8 +25,8 @@ importers:
         specifier: workspace:*
         version: link:packages/tsconfig
       '@playwright/test':
-        specifier: 1.59.1
-        version: 1.59.1
+        specifier: 1.60.0
+        version: 1.60.0
       '@types/node':
         specifier: 25.6.0
         version: 25.6.0
@@ -346,7 +346,7 @@ importers:
     devDependencies:
       '@axe-core/playwright':
         specifier: 4.11.3
-        version: 4.11.3(playwright-core@1.59.1)
+        version: 4.11.3(playwright-core@1.60.0)
       '@eggosystem/eslint':
         specifier: workspace:*
         version: link:../../packages/eslint
@@ -2693,6 +2693,11 @@ packages:
 
   '@playwright/test@1.59.1':
     resolution: {integrity: sha512-PG6q63nQg5c9rIi4/Z5lR5IVF7yU5MqmKaPOe0HSc0O2cX1fPi96sUQu5j7eo4gKCkB2AnNGoWt7y4/Xx3Kcqg==}
+    engines: {node: '>=18'}
+    hasBin: true
+
+  '@playwright/test@1.60.0':
+    resolution: {integrity: sha512-O71yZIbAh/PxDMNGns37GHBIfrVkEVyn+AXyIa5dOTfb4/xNvRWV+Vv/NMbNCtODB/pO7vLlF2OTmMVLhmr7Ag==}
     engines: {node: '>=18'}
     hasBin: true
 
@@ -6894,8 +6899,18 @@ packages:
     engines: {node: '>=18'}
     hasBin: true
 
+  playwright-core@1.60.0:
+    resolution: {integrity: sha512-9bW6zvX/m0lEbgTKJ6YppOKx8H3VOPBMOCFh2irXFOT4BbHgrx5hPjwJYLT40Lu+4qtD36qKc/Hn56StUW57IA==}
+    engines: {node: '>=18'}
+    hasBin: true
+
   playwright@1.59.1:
     resolution: {integrity: sha512-C8oWjPR3F81yljW9o5OxcWzfh6avkVwDD2VYdwIGqTkl+OGFISgypqzfu7dOe4QNLL2aqcWBmI3PMtLIK233lw==}
+    engines: {node: '>=18'}
+    hasBin: true
+
+  playwright@1.60.0:
+    resolution: {integrity: sha512-hheHdokM8cdqCb0lcE3s+zT4t4W+vvjpGxsZlDnikarzx8tSzMebh3UiFtgqwFwnTnjYQcsyMF8ei2mCO/tpeA==}
     engines: {node: '>=18'}
     hasBin: true
 
@@ -8235,10 +8250,10 @@ snapshots:
 
   '@asamuzakjp/nwsapi@2.3.9': {}
 
-  '@axe-core/playwright@4.11.3(playwright-core@1.59.1)':
+  '@axe-core/playwright@4.11.3(playwright-core@1.60.0)':
     dependencies:
       axe-core: 4.11.4
-      playwright-core: 1.59.1
+      playwright-core: 1.60.0
 
   '@babel/code-frame@7.27.1':
     dependencies:
@@ -10688,6 +10703,10 @@ snapshots:
   '@playwright/test@1.59.1':
     dependencies:
       playwright: 1.59.1
+
+  '@playwright/test@1.60.0':
+    dependencies:
+      playwright: 1.60.0
 
   '@protobufjs/aspromise@1.1.2': {}
 
@@ -15358,9 +15377,17 @@ snapshots:
 
   playwright-core@1.59.1: {}
 
+  playwright-core@1.60.0: {}
+
   playwright@1.59.1:
     dependencies:
       playwright-core: 1.59.1
+    optionalDependencies:
+      fsevents: 2.3.2
+
+  playwright@1.60.0:
+    dependencies:
+      playwright-core: 1.60.0
     optionalDependencies:
       fsevents: 2.3.2
 
