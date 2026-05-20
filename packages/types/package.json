@@ -15,15 +15,16 @@
   "keywords": [],
   "author": "",
   "dependencies": {
-    "zod": "4.3.6"
+    "zod": "4.4.3"
   },
   "devDependencies": {
     "@eggosystem/eslint": "workspace:*",
     "@eggosystem/tsconfig": "workspace:*",
+    "@swc/core": "1.15.33",
+    "@swc/jest": "0.2.39",
     "@types/express": "5.0.6",
     "@types/jest": "30.0.0",
-    "jest": "30.3.0",
-    "ts-jest": "29.4.6",
+    "jest": "30.4.2",
     "typescript": "6.0.3"
   },
   "exports": {

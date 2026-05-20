@@ -75,7 +75,7 @@ describe("CasterApplicationsTable", () => {
   });
 
   it("should show approve confirmation and call onApprove when confirmed", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(
       <CasterApplicationsTable
         applications={mockApplications}

@@ -249,7 +249,7 @@ services:
       - web
 
   eggo-prod-rabbitmq:
-    image: rabbitmq:4.2.5-management
+    image: rabbitmq:4.3.0-management
     container_name: eggo-prod-rabbitmq
     restart: always
     environment:

@@ -3,6 +3,7 @@ import {
   calculateInitialPlayerValues
 } from "./fantasy-value.service";
 import { runQuery } from "../db/mysqlRunQuery";
+import type { PoolConnection } from "mysql2/promise";
 
 // Mock dependencies
 jest.mock("../db/mysqlRunQuery");
@@ -116,7 +117,7 @@ describe("Fantasy Value Service", () => {
 
     it("should pass connection when provided", async () => {
       mockRunQuery.mockResolvedValue([]);
-      const mockConnection = {} as import("mysql2/promise").PoolConnection;
+      const mockConnection = {} as PoolConnection;
 
       await calculateInitialPlayerValues(5, 2, mockConnection);
 

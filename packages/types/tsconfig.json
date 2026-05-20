@@ -1,25 +1,20 @@
 {
   "extends": "@eggosystem/tsconfig/types.json",
   "compilerOptions": {
-    "rootDir": "./src", // Source directory for TypeScript
-    "outDir": "./dist", // Output directory for compiled JavaScript
-    "declaration": true, // Ensure type declaration files are generated
-    // "moduleResolution": "bundler",
-    "module": "CommonJS", // Use CommonJS module format
-    "target": "ES2018", // Target ES2018 for good Node.js compatibility
-    "esModuleInterop": true, // Allows default imports for CommonJS modules
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "target": "ES2018",
+    "esModuleInterop": true,
     "skipLibCheck": true,
-    "strict": true, // TypeScript's strict mode for better type safety
+    "strict": true,
     "allowSyntheticDefaultImports": true,
-    "verbatimModuleSyntax": false, // Disable strict module syntax checking
-    "noImplicitAny": false, // Allow implicit any types
-    "removeComments": false, // Keep comments in output files
-    "noEmit": false, // Ensure files are emitted
+    "noImplicitAny": false,
+    "removeComments": false,
     "paths": {
       "@eggosystem/types": ["./src"]
     },
     "types": ["jest"]
   },
-  "include": ["**/*.ts"], // Include all TypeScript files (tests use Jest globals like frontend/backend)
+  "include": ["**/*.ts"],
   "exclude": ["node_modules", "dist"]
 }

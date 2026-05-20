@@ -89,6 +89,7 @@ export default function FantasyLeague({ seasonId }: Props) {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [substitutionsRemaining, setSubstitutionsRemaining] =
     useState<number>(2); // Will be updated from backend
+  const [roleChangesRemaining, setRoleChangesRemaining] = useState(2); // 2 role changes per week
   const [userRank, setUserRank] = useState<number | null>(null);
   const [totalTeams, setTotalTeams] = useState<number>(0);
 
@@ -306,8 +307,6 @@ export default function FantasyLeague({ seasonId }: Props) {
       setIsSubmitting(false);
     }
   };
-
-  const [roleChangesRemaining, setRoleChangesRemaining] = useState(2); // 2 role changes per week
 
   const handleRoleSelect = useCallback(
     async (
