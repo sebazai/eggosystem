@@ -38,6 +38,31 @@ describe("Season Routes - Integration Tests", () => {
     cleanup();
   });
 
+  describe("GET /:season_id/faceit-links", () => {
+    it("should return 401 without authentication", async () => {
+      const response = await request(app).get("/14/faceit-links").expect(401);
+
+      expect(response.body).toMatchObject({
+        type: "about:blank",
+        title: "Unauthorized",
+        status: 401
+      });
+    });
+
+    it("should return 400 for invalid season_id", async () => {
+      const response = await request(app)
+        .get("/invalid/faceit-links")
+        .expect(400);
+
+      expect(response.body).toMatchObject({
+        type: "about:blank",
+        title: "Bad Request",
+        status: 400,
+        detail: "Invalid numeric param: season_id"
+      });
+    });
+  });
+
   describe("GET /:season_id/captains", () => {
     it("should return 401 without authentication", async () => {
       const response = await request(app).get("/14/captains").expect(401);

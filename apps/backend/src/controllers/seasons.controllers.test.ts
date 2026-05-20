@@ -3,6 +3,7 @@ import {
   getSeasonsController,
   getSeasonByIdController,
   getSeasonDetailsByIdController,
+  getFaceitLinksForSeasonController,
   getTeamCaptainsBySeasonIdController
 } from "./seasons.controllers";
 import {
@@ -11,6 +12,7 @@ import {
   getSeasonDetailsById
 } from "../models/season.models";
 import { getTeamCaptainsBySeasonId } from "../models/team.models";
+import { getFaceitLinksForSeason } from "../models/faceit.models";
 import type { RequestWithParams } from "@eggosystem/types";
 import type { Season, SeasonDetails } from "@eggosystem/types";
 import { SeasonPlatform, createMockSeason } from "@eggosystem/types";
@@ -21,10 +23,15 @@ jest.mock("../utils/redisClient");
 jest.mock("../db/mysqlRunQuery");
 jest.mock("../services/season.services");
 jest.mock("../models/team.models");
+jest.mock("../models/faceit.models");
 
 const mockGetTeamCaptainsBySeasonId =
   getTeamCaptainsBySeasonId as jest.MockedFunction<
     typeof getTeamCaptainsBySeasonId
+  >;
+const mockGetFaceitLinksForSeason =
+  getFaceitLinksForSeason as jest.MockedFunction<
+    typeof getFaceitLinksForSeason
   >;
 
 const mockGetSeasons = getSeasons as jest.MockedFunction<typeof getSeasons>;
@@ -57,6 +64,7 @@ const mockSeasons = [mockSeason] satisfies Season[];
 type TestRequestWithParams<P = Record<string, string>> =
   RequestWithParams<P> & {
     parsedParams?: Record<string, unknown>;
+    query?: Record<string, string | string[] | undefined>;
   };
 
 describe("Seasons Controllers", () => {
@@ -280,6 +288,36 @@ describe("Seasons Controllers", () => {
           status: 404
         })
       );
+    });
+  });
+
+  describe("getFaceitLinksForSeasonController", () => {
+    it("should return faceit links for a valid season_id", async () => {
+      const mockLinks = [] as Awaited<
+        ReturnType<typeof getFaceitLinksForSeason>
+      >;
+      mockRequest.params = { season_id: "14" };
+      mockGetFaceitLinksForSeason.mockResolvedValue(mockLinks);
+
+      await getFaceitLinksForSeasonController(
+        mockRequest as TestRequestWithParams<{ season_id: string }>,
+        mockResponse as Response
+      );
+
+      expect(mockGetFaceitLinksForSeason).toHaveBeenCalledWith(14);
+      expect(mockJson).toHaveBeenCalledWith(mockLinks);
+    });
+
+    it("should coerce invalid season_id to NaN when calling the model", async () => {
+      mockRequest.params = { season_id: "invalid" };
+      mockGetFaceitLinksForSeason.mockResolvedValue([]);
+
+      await getFaceitLinksForSeasonController(
+        mockRequest as TestRequestWithParams<{ season_id: string }>,
+        mockResponse as Response
+      );
+
+      expect(mockGetFaceitLinksForSeason).toHaveBeenCalledWith(NaN);
     });
   });
 
