@@ -7,6 +7,7 @@ import {
 import { runQuery } from "../db/mysqlRunQuery";
 import { getConnection } from "../db/mysqlConnection";
 import { getGameTypeIdByName } from "./game.models";
+import { redisClient } from "../utils/redisClient";
 import { SeasonPlatform, createMockSeasonFormRaw } from "@eggosystem/types";
 import type { PoolConnection } from "mysql2/promise";
 
@@ -19,11 +20,19 @@ jest.mock("./season-active-map-pool.models", () => ({
   setActiveMapPoolForSeason: jest.fn().mockResolvedValue(undefined),
   getActiveMapPoolBySeasonId: jest.fn().mockResolvedValue([1, 2, 3])
 }));
+jest.mock("../utils/redisClient", () => ({
+  redisClient: {
+    get: jest.fn().mockResolvedValue(null),
+    set: jest.fn().mockResolvedValue(undefined)
+  },
+  expireInOneDay: 86400
+}));
 
 const mockRunQuery = runQuery as jest.MockedFunction<typeof runQuery>;
 const mockGetConnection = getConnection as jest.MockedFunction<
   typeof getConnection
 >;
+const mockRedisClient = redisClient as jest.Mocked<typeof redisClient>;
 
 function getMockConnection(): PoolConnection {
   return {
@@ -241,6 +250,8 @@ describe("getOrganizerActiveSeasonForAppId", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockGetGameTypeIdByName.mockResolvedValue(1);
+    mockRedisClient.get.mockResolvedValue(null);
+    mockRedisClient.set.mockResolvedValue("OK");
   });
 
   it("should return a currently running season (start_date past, end_date future)", async () => {
@@ -314,12 +325,45 @@ describe("getOrganizerActiveSeasonForAppId", () => {
     );
   });
 
-  it("should use 'comp' as the default gametype", async () => {
+  it("should use 'comp' as the default gametype when gametype is omitted", async () => {
     mockRunQuery.mockResolvedValue([activeSeason]);
 
     await getOrganizerActiveSeasonForAppId(1, 730);
 
-    expect(mockGetGameTypeIdByName).toHaveBeenCalledWith("comp");
+    expect(mockGetGameTypeIdByName).toHaveBeenCalledWith(undefined);
+  });
+
+  it("should resolve undefined gametype to comp for cache key and lookup", async () => {
+    mockRunQuery.mockResolvedValue([activeSeason]);
+
+    await getOrganizerActiveSeasonForAppId(1, 730, undefined);
+
+    expect(mockRedisClient.get).toHaveBeenCalledWith(
+      "1-730-comp-active-season"
+    );
+    expect(mockGetGameTypeIdByName).toHaveBeenCalledWith(undefined);
+  });
+
+  it("should return cached season without hitting the database", async () => {
+    mockRedisClient.get.mockResolvedValue(JSON.stringify(activeSeason));
+
+    const result = await getOrganizerActiveSeasonForAppId(1, 730, "comp");
+
+    expect(result).toEqual(activeSeason);
+    expect(mockRunQuery).not.toHaveBeenCalled();
+  });
+
+  it("should cache season in Redis after a database hit", async () => {
+    mockRunQuery.mockResolvedValue([activeSeason]);
+
+    await getOrganizerActiveSeasonForAppId(1, 730, "comp");
+
+    expect(mockRedisClient.set).toHaveBeenCalledWith(
+      "1-730-comp-active-season",
+      JSON.stringify(activeSeason),
+      "EX",
+      86400
+    );
   });
 
   it("should pass the resolved game_type_id to the query", async () => {

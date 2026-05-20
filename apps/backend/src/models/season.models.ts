@@ -8,6 +8,7 @@ import type {
 import { runQuery } from "../db/mysqlRunQuery";
 import { type PoolConnection } from "mysql2/promise";
 import { getConnection } from "../db/mysqlConnection";
+import { expireInOneDay, redisClient } from "../utils/redisClient";
 import {
   setActiveMapPoolForSeason,
   getActiveMapPoolBySeasonId
@@ -102,13 +103,21 @@ export const getSeasonPlatformAndAppId = async (
  *
  * @param organizer_id - The organizer ID
  * @param app_id - The app ID
+ * @param gametype - The game type (default: "comp")
  * @returns The active or signup-open season for the given app and organizer, or undefined if none found
  */
 export const getOrganizerActiveSeasonForAppId = async (
   organizer_id: number,
   app_id: number,
-  gametype: string = "comp"
+  gametype?: string
 ) => {
+  const resolvedGametype = gametype ?? "comp";
+  const redisKey = `${organizer_id}-${app_id}-${resolvedGametype}-active-season`;
+  const cachedData = await redisClient.get(redisKey);
+  if (cachedData) {
+    return JSON.parse(cachedData);
+  }
+
   const game_type_id = await getGameTypeIdByName(gametype);
   const [activeSeason] = await runQuery<
     Array<ActiveSeasonSignupForAppId | undefined>
@@ -128,6 +137,16 @@ export const getOrganizerActiveSeasonForAppId = async (
      LIMIT 1;`,
     [app_id, organizer_id, game_type_id]
   );
+
+  if (activeSeason) {
+    await redisClient.set(
+      redisKey,
+      JSON.stringify(activeSeason),
+      "EX",
+      expireInOneDay
+    );
+  }
+
   return activeSeason;
 };
 

@@ -23,6 +23,7 @@ const mockRedisClient = redisClient as jest.Mocked<typeof redisClient>;
 type TestRequestWithParams<P = Record<string, string>> =
   RequestWithParams<P> & {
     parsedParams?: Record<string, unknown>;
+    query?: Record<string, string | string[] | undefined>;
   };
 
 describe("Seasons Controllers", () => {
@@ -99,7 +100,7 @@ describe("Seasons Controllers", () => {
         mockRequest as TestRequestWithParams<{
           app_id: string;
           organizer_id: string;
-        }> & { query: { gametype?: string } },
+        }>,
         mockResponse as Response,
         mockNext
       );
@@ -126,7 +127,7 @@ describe("Seasons Controllers", () => {
         mockRequest as TestRequestWithParams<{
           app_id: string;
           organizer_id: string;
-        }> & { query: { gametype?: string } },
+        }>,
         mockResponse as Response,
         mockNext
       );
@@ -141,10 +142,10 @@ describe("Seasons Controllers", () => {
       const testRequest = {
         params: { app_id: "730", organizer_id: "1" },
         query: { gametype: undefined }
-      } as TestRequestWithParams<{
+      } as unknown as TestRequestWithParams<{
         app_id: string;
         organizer_id: string;
-      }> & { query: { gametype?: string } };
+      }>;
 
       mockGetActiveSeason.mockResolvedValue({
         season_id: 123,
@@ -171,10 +172,10 @@ describe("Seasons Controllers", () => {
       const testRequest = {
         params: { app_id: "730", organizer_id: "1" },
         query: { gametype: undefined }
-      } as TestRequestWithParams<{
+      } as unknown as TestRequestWithParams<{
         app_id: string;
         organizer_id: string;
-      }> & { query: { gametype?: string } };
+      }>;
 
       mockGetActiveSeason.mockResolvedValue(undefined);
 
@@ -200,10 +201,10 @@ describe("Seasons Controllers", () => {
       const testRequest = {
         params: { app_id: "730", organizer_id: "1" },
         query: { gametype: "" }
-      } as TestRequestWithParams<{
+      } as unknown as TestRequestWithParams<{
         app_id: string;
         organizer_id: string;
-      }> & { query: { gametype?: string } };
+      }>;
 
       mockGetActiveSeason.mockResolvedValue(undefined);
 
@@ -234,7 +235,7 @@ describe("Seasons Controllers", () => {
         mockRequest as TestRequestWithParams<{
           app_id: string;
           organizer_id: string;
-        }> & { query: { gametype?: string } },
+        }>,
         mockResponse as Response,
         mockNext
       );
@@ -260,7 +261,7 @@ describe("Seasons Controllers", () => {
         mockRequest as TestRequestWithParams<{
           app_id: string;
           organizer_id: string;
-        }> & { query: { gametype?: string } },
+        }>,
         mockResponse as Response,
         mockNext
       );
@@ -285,7 +286,7 @@ describe("Seasons Controllers", () => {
         mockRequest as TestRequestWithParams<{
           app_id: string;
           organizer_id: string;
-        }> & { query: { gametype?: string } },
+        }>,
         mockResponse as Response,
         mockNext
       );
@@ -308,7 +309,7 @@ describe("Seasons Controllers", () => {
         mockRequest as TestRequestWithParams<{
           app_id: string;
           organizer_id: string;
-        }> & { query: { gametype?: string } },
+        }>,
         mockResponse as Response,
         mockNext
       );
@@ -331,7 +332,7 @@ describe("Seasons Controllers", () => {
         mockRequest as TestRequestWithParams<{
           app_id: string;
           organizer_id: string;
-        }> & { query: { gametype?: string } },
+        }>,
         mockResponse as Response,
         mockNext
       );
@@ -354,7 +355,7 @@ describe("Seasons Controllers", () => {
         mockRequest as TestRequestWithParams<{
           app_id: string;
           organizer_id: string;
-        }> & { query: { gametype?: string } },
+        }>,
         mockResponse as Response,
         mockNext
       );
@@ -364,6 +365,31 @@ describe("Seasons Controllers", () => {
           message:
             "Invalid app ID or organizer ID: app_id=730, organizer_id=-1",
           status: 400
+        })
+      );
+    });
+
+    it("should pass undefined gametype for unknown app_id without throwing", async () => {
+      mockRequest.params = { app_id: "570", organizer_id: "1" };
+      mockRequest.query = {};
+      mockGetActiveSeason.mockResolvedValue(undefined);
+
+      const mockNext = jest.fn();
+      await redirectToActiveSignup(
+        mockRequest as TestRequestWithParams<{
+          app_id: string;
+          organizer_id: string;
+        }>,
+        mockResponse as Response,
+        mockNext
+      );
+
+      expect(mockGetActiveSeason).toHaveBeenCalledWith(1, 570, undefined);
+      expect(mockNext).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message:
+            "No active signup season found for app 570, organizer 1, and game type 'comp'",
+          status: 404
         })
       );
     });
@@ -384,7 +410,7 @@ describe("Seasons Controllers", () => {
         mockRequest as TestRequestWithParams<{
           app_id: string;
           organizer_id: string;
-        }> & { query: { gametype?: string } },
+        }>,
         mockResponse as Response,
         mockNext
       );
@@ -392,7 +418,36 @@ describe("Seasons Controllers", () => {
       expect(mockGetActiveSeason).toHaveBeenCalledWith(1, 730, "comp");
       expect(mockNext).toHaveBeenCalledWith(
         expect.objectContaining({
-          message: "FRONTEND_URL environment variable is not set"
+          message: "Invalid FRONTEND_URL configuration"
+        })
+      );
+      expect(mockRedirect).not.toHaveBeenCalled();
+    });
+
+    it("should return error when FRONTEND_URL is not a valid https URL", async () => {
+      process.env.FRONTEND_URL = "http://evil.example.com";
+      mockRequest.params = { app_id: "730", organizer_id: "1" };
+      mockRequest.query = { gametype: "comp" };
+      mockGetActiveSeason.mockResolvedValue({
+        season_id: 123,
+        platform: SeasonPlatform.Kanaliiga,
+        signup_end_date: "2024-12-31T23:59:59Z",
+        full_name: "Test Season"
+      });
+
+      const mockNext = jest.fn();
+      await redirectToActiveSignup(
+        mockRequest as TestRequestWithParams<{
+          app_id: string;
+          organizer_id: string;
+        }>,
+        mockResponse as Response,
+        mockNext
+      );
+
+      expect(mockNext).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: "Invalid FRONTEND_URL configuration"
         })
       );
       expect(mockRedirect).not.toHaveBeenCalled();

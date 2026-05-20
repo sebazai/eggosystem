@@ -1,18 +1,23 @@
 import { type Request, type Response, type NextFunction } from "express";
 import {
   getPlayerOldKanaEloController,
+  getPlayerSeasonsController,
   setPlayerKanaEloController,
   resolveSteamIdController
 } from "../controllers/players.controllers";
 import * as playerModels from "../models/player.models";
 import * as steamServices from "../services/steam.services";
+import * as playerHistoricalModels from "../models/player-historical.models";
 import { normalizeSteamId } from "../utils/steam-id-validator";
 import type { RequestWithParams } from "@eggosystem/types";
 // Mock the player models
 jest.mock("../models/player.models");
 jest.mock("../services/steam.services");
 jest.mock("../utils/steam-id-validator");
+jest.mock("../models/player-historical.models");
+
 const mockedPlayerModels = jest.mocked(playerModels);
+const mockedPlayerHistoricalModels = jest.mocked(playerHistoricalModels);
 const mockedNormalizeSteamId = normalizeSteamId as jest.MockedFunction<
   typeof normalizeSteamId
 >;
@@ -695,5 +700,117 @@ describe("resolveSteamIdController", () => {
       // Assert - Should trim before searching
       expect(mockGetPlayerSteamIdByNickname).toHaveBeenCalledWith("heppajpg");
     });
+  });
+});
+
+describe("getPlayerSeasonsController", () => {
+  let req: Partial<Request>;
+  let res: Partial<Response>;
+  let mockJson: jest.Mock;
+  let mockStatus: jest.Mock;
+
+  beforeEach(() => {
+    mockJson = jest.fn();
+    mockStatus = jest.fn().mockReturnValue({ json: mockJson });
+
+    req = {
+      params: { steam_id: "76561198012345678" }
+    };
+    res = {
+      status: mockStatus,
+      json: mockJson
+    };
+
+    jest.clearAllMocks();
+  });
+
+  it("should return player's active seasons when data exists", async () => {
+    // Arrange
+    const expectedSeasons = {
+      current_season: {
+        season_id: 123,
+        full_name: "Spring 2024 Season",
+        start_date: "2024-03-01",
+        end_date: null
+      },
+      last_season: {
+        season_id: 122,
+        full_name: "Winter 2023 Season",
+        start_date: "2023-10-01",
+        end_date: "2024-02-29"
+      }
+    };
+
+    mockedPlayerHistoricalModels.getPlayerActiveSeasons.mockResolvedValue(
+      expectedSeasons
+    );
+
+    // Act
+    const mockNext = jest.fn();
+    await getPlayerSeasonsController(req as Request, res as Response, mockNext);
+
+    // Assert
+    expect(
+      mockedPlayerHistoricalModels.getPlayerActiveSeasons
+    ).toHaveBeenCalledWith("76561198012345678");
+    expect(mockJson).toHaveBeenCalledWith(expectedSeasons);
+    expect(mockNext).not.toHaveBeenCalled();
+  });
+
+  it("should return null for both seasons when player has no match history", async () => {
+    // Arrange
+    const expectedSeasons = {
+      current_season: null,
+      last_season: null
+    };
+
+    mockedPlayerHistoricalModels.getPlayerActiveSeasons.mockResolvedValue(
+      expectedSeasons
+    );
+
+    // Act
+    const mockNext = jest.fn();
+    await getPlayerSeasonsController(req as Request, res as Response, mockNext);
+
+    // Assert
+    expect(
+      mockedPlayerHistoricalModels.getPlayerActiveSeasons
+    ).toHaveBeenCalledWith("76561198012345678");
+    expect(mockJson).toHaveBeenCalledWith(expectedSeasons);
+  });
+
+  it("should return 400 when steam_id parameter is missing", async () => {
+    // Arrange
+    req.params = {};
+
+    const mockNext = jest.fn();
+
+    // Act
+    await getPlayerSeasonsController(req as Request, res as Response, mockNext);
+
+    // Assert
+    expect(mockNext).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: "Steam ID is required",
+        status: 400
+      })
+    );
+    expect(mockStatus).not.toHaveBeenCalled();
+    expect(mockJson).not.toHaveBeenCalled();
+  });
+
+  it("should handle database errors gracefully", async () => {
+    // Arrange
+    mockedPlayerHistoricalModels.getPlayerActiveSeasons.mockRejectedValue(
+      new Error("Database error")
+    );
+
+    const mockNext = jest.fn();
+
+    // Act
+    await getPlayerSeasonsController(req as Request, res as Response, mockNext);
+
+    // Assert - Error is passed through as-is
+    expect(mockNext).toHaveBeenCalledWith(new Error("Database error"));
   });
 });

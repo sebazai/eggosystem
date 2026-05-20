@@ -70,12 +70,13 @@ export const getActiveSignupOrActiveSeasonForAppController = async (
   res.json(ActiveSignupOrActiveSeason);
 };
 
-const defaultGameTypeForAppId = (app_id: number) => {
+const defaultGameTypeForAppId = (app_id: number): string | undefined => {
   switch (app_id) {
     case 730:
       return "comp";
+    // Add other defaults as needed, or return undefined
     default:
-      throw new BadRequestError(`No default game type found for app ${app_id}`);
+      return undefined;
   }
 };
 
@@ -114,15 +115,15 @@ export const redirectToActiveSignup = async (
   if (!activeSignupSeason) {
     return next(
       new NotFoundError(
-        `No active signup season found for app ${app_id}, organizer ${organizer_id}, and game type '${gametype}'`
+        `No active signup season found for app ${app_id}, organizer ${organizer_id}, and game type '${gametype ?? "comp"}'`
       )
     );
   }
 
   // Redirect to frontend signup page
   const frontendUrl = process.env.FRONTEND_URL;
-  if (!frontendUrl) {
-    return next(new Error("FRONTEND_URL environment variable is not set"));
+  if (!frontendUrl || !frontendUrl.match(/^https:\/\/[a-z0-9.-]+/i)) {
+    return next(new Error("Invalid FRONTEND_URL configuration"));
   }
 
   res.redirect(`${frontendUrl}/seasons/${activeSignupSeason.season_id}/signup`);

@@ -459,15 +459,18 @@ export const PlayerHistoricalTab = ({ steamId }: PlayerHistoricalTabProps) => {
     [playerSeasons, isLoadingSeasons]
   );
 
+  const currentSeasonId = playerSeasons?.current_season?.season_id;
+  const lastSeasonId = playerSeasons?.last_season?.season_id;
+
   const params = useMemo(() => {
     if (period === "this_season") {
-      return { season_id: playerSeasons?.current_season?.season_id };
+      return { season_id: currentSeasonId };
     }
     if (period === "last_season") {
-      return { season_id: playerSeasons?.last_season?.season_id };
+      return { season_id: lastSeasonId };
     }
     return parsePeriodToParams(period);
-  }, [period, playerSeasons]);
+  }, [period, currentSeasonId, lastSeasonId]);
 
   // Fetch player historical data
   const {

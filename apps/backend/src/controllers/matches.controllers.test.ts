@@ -160,6 +160,7 @@ const mockSeasonForGetMatchesBySeasonIdController = createMockSeason({
 type TestRequestWithParams<P = Record<string, string>> =
   RequestWithParams<P> & {
     parsedParams?: ParsedParams;
+    query?: Record<string, string | string[] | undefined>;
   };
 
 describe("Matches Controllers", () => {
@@ -231,9 +232,7 @@ describe("Matches Controllers", () => {
 
       const mockNext = jest.fn();
       await getMatchesBySeasonIdController(
-        mockRequest as TestRequestWithParams<{ season_id: string }> & {
-          query: { league_id?: string };
-        },
+        mockRequest as TestRequestWithParams<{ season_id: string }>,
         mockResponse as Response,
         mockNext
       );
@@ -258,9 +257,7 @@ describe("Matches Controllers", () => {
 
       const mockNext = jest.fn();
       await getMatchesBySeasonIdController(
-        mockRequest as TestRequestWithParams<{ season_id: string }> & {
-          query: { league_id?: string };
-        },
+        mockRequest as TestRequestWithParams<{ season_id: string }>,
         mockResponse as Response,
         mockNext
       );
@@ -282,9 +279,7 @@ describe("Matches Controllers", () => {
 
       const mockNext = jest.fn();
       await getMatchesBySeasonIdController(
-        mockRequest as TestRequestWithParams<{ season_id: string }> & {
-          query: { league_id?: string };
-        },
+        mockRequest as TestRequestWithParams<{ season_id: string }>,
         mockResponse as Response,
         mockNext
       );
@@ -306,9 +301,7 @@ describe("Matches Controllers", () => {
 
       const mockNext = jest.fn();
       await getMatchesBySeasonIdController(
-        mockRequest as TestRequestWithParams<{ season_id: string }> & {
-          query: { league_id?: string };
-        },
+        mockRequest as TestRequestWithParams<{ season_id: string }>,
         mockResponse as Response,
         mockNext
       );
@@ -335,9 +328,7 @@ describe("Matches Controllers", () => {
 
       const mockNext = jest.fn();
       await getMatchesBySeasonIdController(
-        mockRequest as TestRequestWithParams<{ season_id: string }> & {
-          query: { league_id?: string };
-        },
+        mockRequest as TestRequestWithParams<{ season_id: string }>,
         mockResponse as Response,
         mockNext
       );
@@ -367,9 +358,7 @@ describe("Matches Controllers", () => {
 
       const mockNext = jest.fn();
       await getMatchesBySeasonIdController(
-        mockRequest as TestRequestWithParams<{ season_id: string }> & {
-          query: { league_id?: string };
-        },
+        mockRequest as TestRequestWithParams<{ season_id: string }>,
         mockResponse as Response,
         mockNext
       );
@@ -412,9 +401,7 @@ describe("Matches Controllers", () => {
 
       const mockNext = jest.fn();
       await getMatchesBySeasonIdController(
-        mockRequest as TestRequestWithParams<{ season_id: string }> & {
-          query: { league_id?: string };
-        },
+        mockRequest as TestRequestWithParams<{ season_id: string }>,
         mockResponse as Response,
         mockNext
       );

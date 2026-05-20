@@ -320,3 +320,14 @@ Controllers should `return next(new BadRequestError(...))` etc. (from `utils/err
 - [Frontend](README.frontend.md) — Next.js App Router + SWR integration
 - [Testing strategy](.cursor/skills/testing-strategy/SKILL.md) — unit + integration conventions
 - [E2E / Playwright](.cursor/skills/e2e-playwright/SKILL.md) — E2E from repo root
+
+## Deprecated Patterns
+
+Do not use in new code:
+
+- `getActiveSignupOrActiveSeasonForAppId()` → use `getOrganizerActiveSeasonForAppId()`
+- `getActiveOrLatestSeasonForAppId()` → use `getOrganizerActiveSeasonForAppId()`
+- `getActiveSeasonForAppId()` → use `getOrganizerActiveSeasonForAppId()`
+- `getActiveSignupSeasonForAppId()` → use `getOrganizerActiveSeasonForAppId()`
+
+These functions have been renamed to follow a consistent naming convention across the codebase.
