@@ -15,7 +15,7 @@
   "keywords": [],
   "author": "",
   "dependencies": {
-    "zod": "4.3.6"
+    "zod": "4.4.3"
   },
   "devDependencies": {
     "@eggosystem/eslint": "workspace:*",
@@ -23,7 +23,7 @@
     "@types/express": "5.0.6",
     "@types/jest": "30.0.0",
     "jest": "30.3.0",
-    "ts-jest": "29.4.6",
+    "ts-jest": "29.4.9",
     "typescript": "6.0.3"
   },
   "exports": {

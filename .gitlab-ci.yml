@@ -1,4 +1,4 @@
-image: node:25-slim
+image: node:26-slim
 
 variables:
   # Docker configuration
@@ -414,7 +414,7 @@ build:backend:
       - apps/backend/dist/
 
 test-e2e:frontend:
-  image: mcr.microsoft.com/playwright:v1.59.1-jammy
+  image: mcr.microsoft.com/playwright:v1.60.0-jammy
   stage: test-e2e
   dependencies:
     - build:backend

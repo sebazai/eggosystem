@@ -49,22 +49,22 @@
   ],
   "dependencies": {
     "@opentelemetry/api": "1.9.1",
-    "@opentelemetry/auto-instrumentations-node": "0.72.0",
-    "turbo": "2.9.5"
+    "@opentelemetry/auto-instrumentations-node": "0.74.0",
+    "turbo": "2.9.9"
   },
   "devDependencies": {
     "@eggosystem/eslint": "workspace:*",
     "@eggosystem/tsconfig": "workspace:*",
-    "@playwright/test": "1.59.1",
-    "@types/node": "25.5.2",
-    "eslint": "10.2.0",
+    "@playwright/test": "1.60.0",
+    "@types/node": "25.6.0",
+    "eslint": "10.3.0",
     "husky": "9.1.7",
-    "knip": "6.9.0",
+    "knip": "6.11.0",
     "lint-staged": "16.4.0",
-    "prettier": "3.8.1",
+    "prettier": "3.8.3",
     "typescript": "6.0.3"
   },
-  "packageManager": "pnpm@10.33.0",
+  "packageManager": "pnpm@11.0.6",
   "pnpm": {
     "overrides": {
       "form-data@>=4.0.0 <4.0.4": ">=4.0.4",
