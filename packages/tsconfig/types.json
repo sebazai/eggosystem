@@ -3,6 +3,11 @@
   "display": "Shared Types",
   "extends": "./base.json",
   "compilerOptions": {
+    "lib": ["ESNext"],
+    "module": "CommonJS",
+    "moduleResolution": "bundler",
+    "verbatimModuleSyntax": false,
+    "noEmit": false,
     "outDir": "dist",
     "declaration": true,
     "emitDecoratorMetadata": true,

@@ -2,7 +2,7 @@
 
 import { useSteamPlayer } from "@/hooks/data/useSteamPlayer";
 import { AvatarUploadSection } from "./AvatarUploadSection";
-import { ContentContainer } from "../layout/ContentContainer";
+import { ContentContainer } from "@/components/layout/ContentContainer";
 
 export const AvatarSettings = ({ steamId }: { steamId: string }) => {
   const { steamPlayer, isError } = useSteamPlayer(steamId);

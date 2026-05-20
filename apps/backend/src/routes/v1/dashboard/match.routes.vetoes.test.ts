@@ -19,15 +19,15 @@ import {
 } from "../../../models/match-team-map-veto.models";
 import { getConnection } from "../../../db/mysqlConnection";
 import matchRouter from "./match.routes";
+import type * as MatchModels from "../../../models/match.models";
+import type * as MatchVetoContextModels from "../../../models/match-veto-context.models";
 import type { PoolConnection } from "mysql2/promise";
 import type { Match } from "@eggosystem/types";
 
 jest.mock("../../../db/mysqlRunQuery");
 
 jest.mock("../../../models/match.models", () => ({
-  ...jest.requireActual<typeof import("../../../models/match.models")>(
-    "../../../models/match.models"
-  ),
+  ...jest.requireActual<typeof MatchModels>("../../../models/match.models"),
   updateMatchStatusByMatchId: jest.fn().mockResolvedValue(undefined)
 }));
 
@@ -45,9 +45,9 @@ const mockGetRoles = getRolesForAccountId as jest.MockedFunction<
 >;
 
 jest.mock("../../../models/match-veto-context.models", () => {
-  const actual = jest.requireActual<
-    typeof import("../../../models/match-veto-context.models")
-  >("../../../models/match-veto-context.models");
+  const actual = jest.requireActual<typeof MatchVetoContextModels>(
+    "../../../models/match-veto-context.models"
+  );
   return {
     ...actual,
     getMatchVetoSeasonMeta: jest.fn()

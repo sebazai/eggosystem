@@ -164,7 +164,7 @@ describe("MappingFormDialog", () => {
   });
 
   it("should handle form submission for create mode", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<MappingFormDialog {...defaultProps} editingMapping={undefined} />);
 
     const externalIdInput = screen.getByLabelText(/external id/i);
@@ -172,8 +172,10 @@ describe("MappingFormDialog", () => {
       screen.getByLabelText(/external league name/i);
     const submitButton = screen.getByRole("button", { name: /create/i });
 
-    await user.type(externalIdInput, "faceit-789");
-    await user.type(externalLeagueNameInput, "New League");
+    await user.click(externalIdInput);
+    await user.paste("faceit-789");
+    await user.click(externalLeagueNameInput);
+    await user.paste("New League");
 
     await user.click(submitButton);
 
@@ -191,7 +193,7 @@ describe("MappingFormDialog", () => {
   });
 
   it("should handle form submission for update mode", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(
       <MappingFormDialog
         {...defaultProps}
@@ -203,6 +205,9 @@ describe("MappingFormDialog", () => {
     const submitButton = screen.getByRole("button", { name: /update/i });
 
     await user.clear(externalIdInput);
+    await waitFor(() => {
+      expect(externalIdInput).toHaveValue("");
+    });
     await user.type(externalIdInput, "faceit-updated");
 
     await user.click(submitButton);
