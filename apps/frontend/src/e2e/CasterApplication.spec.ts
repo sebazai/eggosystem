@@ -62,9 +62,12 @@ test.describe("Caster Application", () => {
       timeout: 10000
     });
 
+    // Caster stream URL management lives in the Streams tab in the new profile UI
+    await page.getByRole("tab", { name: /streams/i }).click();
+
     await expect(
       page
-        .getByText(/caster settings|default stream url|caster application/i)
+        .getByText(/stream urls|default stream url|caster application/i)
         .first()
     ).toBeVisible();
   });

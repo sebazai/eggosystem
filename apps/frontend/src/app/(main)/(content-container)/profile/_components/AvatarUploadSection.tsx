@@ -104,12 +104,6 @@ export const AvatarUploadSection = ({
 
   return (
     <div className="pb-4">
-      <h3 className="text-lg font-semibold mb-4">Profile Avatar</h3>
-      <p className="text-sm text-muted-foreground mb-4">
-        Upload a custom avatar to display on your player profile, team pages,
-        and match lineups.
-      </p>
-
       <div className="flex flex-col sm:flex-row items-start gap-6">
         {/* Avatar Preview */}
         <div className="relative">

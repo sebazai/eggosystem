@@ -15,7 +15,7 @@ import {
   FormLabel
 } from "@/components/ui/form";
 import Link from "next/link";
-import { ContentContainer } from "../layout/ContentContainer";
+import { ContentContainer } from "@/components/layout/ContentContainer";
 import { SteamLoginButton } from "@/components/profile/SteamLoginButton";
 import { CardSkeleton } from "@/components/loading";
 import {
@@ -30,8 +30,8 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEmailsVerified } from "@/hooks/data/useEmailsVerified";
 import { EmailVerifiedIcon } from "./EmailVerifiedIcon";
 import { toast } from "sonner";
-import { RequiredFormLabel } from "../ui/RequiredFormLabel";
-import { TooltipIcon } from "../ui/icons";
+import { RequiredFormLabel } from "@/components/ui/RequiredFormLabel";
+import { TooltipIcon } from "@/components/ui/icons";
 import { useAccountDetails } from "@/hooks/data/user/useAccountDetails";
 import { useSWRConfig } from "swr";
 
