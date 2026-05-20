@@ -7,8 +7,8 @@ import {
   CardHeader,
   CardTitle
 } from "@/components/ui/card";
-import { AvatarSettings } from "@/components/profile/AvatarSettings";
-import ProfileForm from "@/components/profile/ProfileForm";
+import { AvatarSettings } from "./AvatarSettings";
+import ProfileForm from "./ProfileForm";
 import type { UserFullPayload } from "@eggosystem/types";
 
 interface IdentityPanelProps {
