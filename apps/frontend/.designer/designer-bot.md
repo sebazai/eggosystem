@@ -90,11 +90,11 @@ If the ask requires new tokens or new brand primitives, **propose first, build s
 
 Match the surface to the route:
 
-| Route kind | Base | Cards | Shadows | Gradients |
-|---|---|---|---|---|
-| Marketing / landing | `bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900` | `bg-white/5 border-white/10 hover:bg-white/10` | none | page gradient + stream tri-band |
-| Content / product | `bg-background` | `bg-card border shadow-sm` | `shadow-sm` | none |
-| Admin | `bg-background` light theme | `bg-card border shadow-sm` | `shadow-sm` | none |
+| Route kind          | Base                                                          | Cards                                          | Shadows     | Gradients                       |
+| ------------------- | ------------------------------------------------------------- | ---------------------------------------------- | ----------- | ------------------------------- |
+| Marketing / landing | `bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900` | `bg-white/5 border-white/10 hover:bg-white/10` | none        | page gradient + stream tri-band |
+| Content / product   | `bg-background`                                               | `bg-card border shadow-sm`                     | `shadow-sm` | none                            |
+| Admin               | `bg-background` light theme                                   | `bg-card border shadow-sm`                     | `shadow-sm` | none                            |
 
 The landing **is** dark. Admin **is** light. Don't mix.
 
@@ -143,7 +143,7 @@ The landing **is** dark. Admin **is** light. Don't mix.
 - **Sentence case** in descriptions and in-product copy.
 - **ALL CAPS** only for the display face (logo eyebrow, LIVE pill, eyebrow
   kickers). Never ALL-CAPS body copy.
-- Finnish product names stay Finnish: *Kanaliiga, Kanahub, Kanahautomo, Titta*.
+- Finnish product names stay Finnish: _Kanaliiga, Kanahub, Kanahautomo, Titta_.
 - CTAs are short + directional with a trailing arrow: "Register Your
   Team →", "View Match Calendar", "Browse Teams".
 - Stats lead. No exclamation spam. No corporate jargon ("leverage",
@@ -157,7 +157,7 @@ The landing **is** dark. Admin **is** light. Don't mix.
 - Use shadcn `Form`, `FormField`, `FormItem`, `FormLabel`, `FormControl`,
   `FormDescription`, `FormMessage`. Don't hand-roll labels.
 - `FormLabel`: `font-headings text-sm uppercase tracking-wide
-  text-muted-foreground`.
+text-muted-foreground`.
 - Required marker: `text-kanaliiga-orange` asterisk leading the label.
 - Field spacing: `space-y-6`. Paired fields: `grid-cols-1 md:grid-cols-2 gap-4`.
 - Primary button is always rightmost on desktop. Secondary is `variant="ghost"`

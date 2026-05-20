@@ -16,13 +16,13 @@ Every UI icon in Kanahub is a Lucide React component. The UI kits in this projec
 - **Never fill.** Lucide is a line set; filled icons look wrong next to Vera Mono.
 - **Sizing table:**
 
-  | Context | Tailwind | Pixels |
-  |---|---|---|
-  | Body inline | `size-3` / `h-3 w-3` | 12 |
-  | Button / input / badge | `size-4` / `h-4 w-4` | 16 |
-  | Large button, nav trigger | `size-5` / `h-5 w-5` | 20 |
-  | Icon button (default) | `size-9` | 36 (container) / 16 glyph |
-  | Feature tile | `h-8 w-8` → `2xl:h-12 w-12` | 32 → 48 |
+  | Context                   | Tailwind                    | Pixels                    |
+  | ------------------------- | --------------------------- | ------------------------- |
+  | Body inline               | `size-3` / `h-3 w-3`        | 12                        |
+  | Button / input / badge    | `size-4` / `h-4 w-4`        | 16                        |
+  | Large button, nav trigger | `size-5` / `h-5 w-5`        | 20                        |
+  | Icon button (default)     | `size-9`                    | 36 (container) / 16 glyph |
+  | Feature tile              | `h-8 w-8` → `2xl:h-12 w-12` | 32 → 48                   |
 
 - **Color:** `currentColor` so icons inherit from the text. Accent icons (e.g. hero tile iconography) use `text-orange-400` / `var(--kanaliiga-orange)`.
 - **Spacing:** icons sit in a `gap-2` flex container next to their label. Leading icons: `mr-2`; trailing icons: `ml-2`. Arrows (`ChevronRight`, `ExternalLink`) trail. Functional icons (`Calendar`, `Clock`, `Users`) lead.
@@ -31,24 +31,24 @@ Every UI icon in Kanahub is a Lucide React component. The UI kits in this projec
 
 These Lucide glyphs appear across screens. Keep using them for the same concept — don't substitute.
 
-| Concept | Lucide name |
-|---|---|
-| Match / schedule | `Calendar` |
-| Time, start time | `Clock` |
-| External link | `ExternalLink` |
-| Watch stream | `Play` (or inline Twitch SVG, see below) |
-| Standings / rankings | `TrendingUp` |
-| Teams / organizations / players | `Users` |
-| Menu (mobile) | `Menu` |
-| Nav sub‑menu | `ChevronRight` |
-| My team vs opponent | `Swords` |
-| Search | `Search` |
-| Filter | `SlidersHorizontal` |
-| Success toast | `CheckCircle2` |
-| Error / flag | `AlertTriangle` |
-| Destructive / delete | `Trash2` |
-| Admin — approve | `ShieldCheck` |
-| Admin — dashboard | `LayoutDashboard` |
+| Concept                         | Lucide name                              |
+| ------------------------------- | ---------------------------------------- |
+| Match / schedule                | `Calendar`                               |
+| Time, start time                | `Clock`                                  |
+| External link                   | `ExternalLink`                           |
+| Watch stream                    | `Play` (or inline Twitch SVG, see below) |
+| Standings / rankings            | `TrendingUp`                             |
+| Teams / organizations / players | `Users`                                  |
+| Menu (mobile)                   | `Menu`                                   |
+| Nav sub‑menu                    | `ChevronRight`                           |
+| My team vs opponent             | `Swords`                                 |
+| Search                          | `Search`                                 |
+| Filter                          | `SlidersHorizontal`                      |
+| Success toast                   | `CheckCircle2`                           |
+| Error / flag                    | `AlertTriangle`                          |
+| Destructive / delete            | `Trash2`                                 |
+| Admin — approve                 | `ShieldCheck`                            |
+| Admin — dashboard               | `LayoutDashboard`                        |
 
 ### Exceptions to Lucide
 
@@ -56,7 +56,9 @@ These Lucide glyphs appear across screens. Keep using them for the same concept 
 
 ```html
 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-  <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z"/>
+  <path
+    d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z"
+  />
 </svg>
 ```
 
@@ -75,14 +77,14 @@ It is **not** an icon. Don't put it in buttons, don't put it in lists, don't use
 
 A single emoji is allowed as the leading glyph of a section header when it carries meaning:
 
-| Emoji | Used for |
-|---|---|
-| 🎮 | Season is live / currently playing |
-| 📝 | Registration / signup open |
-| 📊 | Statistics / all‑time highlights |
-| 📺 | Streamed matches tab |
-| 🏆 | Hall of Fame / champions |
-| 🍗 | Kanaliiga self‑reference in a chatty context (release notes, easter eggs) — don't use in marketing pages |
+| Emoji | Used for                                                                                                 |
+| ----- | -------------------------------------------------------------------------------------------------------- |
+| 🎮    | Season is live / currently playing                                                                       |
+| 📝    | Registration / signup open                                                                               |
+| 📊    | Statistics / all‑time highlights                                                                         |
+| 📺    | Streamed matches tab                                                                                     |
+| 🏆    | Hall of Fame / champions                                                                                 |
+| 🍗    | Kanaliiga self‑reference in a chatty context (release notes, easter eggs) — don't use in marketing pages |
 
 Rules:
 
