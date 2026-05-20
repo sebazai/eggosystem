@@ -26,7 +26,7 @@ const kanaHeadingFonts = localFont({
   fallback: ["system-ui", "arial"],
   src: [
     {
-      path: "../../../public/fonts/NEXT_ART_Heavy.otf",
+      path: "../../../public/fonts/kanaliiga/NEXT_ART_Heavy.otf",
       weight: "400",
       style: "normal"
     }
@@ -38,22 +38,22 @@ const kanaFonts = localFont({
   fallback: ["system-ui", "arial"],
   src: [
     {
-      path: "../../../public/fonts/VeraMono.ttf",
+      path: "../../../public/fonts/kanaliiga/VeraMono.ttf",
       weight: "400",
       style: "normal"
     },
     {
-      path: "../../../public/fonts/VeraMoIt.ttf",
+      path: "../../../public/fonts/kanaliiga/VeraMoIt.ttf",
       weight: "400",
       style: "italic"
     },
     {
-      path: "../../../public/fonts/VeraMoBd.ttf",
+      path: "../../../public/fonts/kanaliiga/VeraMoBd.ttf",
       weight: "700",
       style: "normal"
     },
     {
-      path: "../../../public/fonts/VeraMoBI.ttf",
+      path: "../../../public/fonts/kanaliiga/VeraMoBI.ttf",
       weight: "700",
       style: "italic"
     }
@@ -65,12 +65,12 @@ const poppinsFont = localFont({
   fallback: ["system-ui", "arial"],
   src: [
     {
-      path: "../../../public/fonts/poppins/Poppins-Regular.ttf",
+      path: "../../../public/fonts/kanaliiga/Poppins-Regular.ttf",
       weight: "400",
       style: "normal"
     },
     {
-      path: "../../../public/fonts/poppins/Poppins-Bold.ttf",
+      path: "../../../public/fonts/kanaliiga/Poppins-Bold.ttf",
       weight: "700",
       style: "normal"
     }
