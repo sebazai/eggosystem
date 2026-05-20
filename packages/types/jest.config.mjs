@@ -1,6 +1,5 @@
 /** @type {import("jest").Config} */
 export default {
-  preset: "ts-jest",
   testEnvironment: "node",
   roots: ["<rootDir>/src"],
   testMatch: ["**/*.test.ts"],
@@ -11,9 +10,19 @@ export default {
   },
   transform: {
     "^.+\\.tsx?$": [
-      "ts-jest",
+      "@swc/jest",
       {
-        tsconfig: "<rootDir>/tsconfig.jest.json"
+        jsc: {
+          parser: {
+            syntax: "typescript",
+            decorators: true
+          },
+          target: "es2018",
+          keepClassNames: true
+        },
+        module: {
+          type: "commonjs"
+        }
       }
     ]
   }

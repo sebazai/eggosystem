@@ -3,6 +3,7 @@ packages:
   - 'packages/*'
 allowBuilds:
   '@datadog/pprof': true
+  '@swc/core': true
   msgpackr-extract: true
   msw: true
   protobufjs: true
