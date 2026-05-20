@@ -21,14 +21,14 @@ const getDefaultMaxWorkers = () => {
 export default {
   preset: "ts-jest",
   testEnvironment: "node",
-  moduleFileExtensions: ["ts", "tsx", "js", "jsx", "json", "node"],
+  moduleFileExtensions: ["ts", "tsx", "js", "jsx", "json", "node", "mjs"],
   setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],
   transform: {
     "^.+\\.(ts|tsx)$": "ts-jest",
-    "^.+\\.(js|jsx)$": "babel-jest"
+    "^.+\\.(js|jsx|mjs|cjs)$": "babel-jest"
   },
   transformIgnorePatterns: [
-    "node_modules/(?!.*(@eggosystem/shared-msw|msw|until-async))"
+    "node_modules/(?!.*(@eggosystem/shared-msw|msw|@mswjs|@open-draft|rettime|until-async|strict-event-emitter|is-node-process|outvariant|headers-polyfill)/)"
   ],
   openHandlesTimeout: 2 * 1000,
   testMatch: ["**/?(*.)+(spec|test).ts?(x)"],
