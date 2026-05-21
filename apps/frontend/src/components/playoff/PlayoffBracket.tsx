@@ -9,8 +9,7 @@ import {
   type PlayoffBracketSlotDisplay,
   type PlayoffUpperBracketWinner
 } from "@/lib/playoff-upper-bracket-preview";
-import { createNextUrl, createTeamLogoUrl } from "@/lib/utils";
-import { cn } from "@/lib/utils";
+import { createNextUrl, createTeamLogoUrl, cn } from "@/lib/utils";
 
 const GROUP_LABELS: Record<number, string> = {
   1: "Upper bracket",
@@ -150,7 +149,8 @@ function MatchCard({ match }: { match: PlayoffBracketMatch }) {
     ? `${match.team1_score}-${match.team2_score ?? 0}`
     : "TBD";
   const team2DisplayName = match.team2_name ?? "Bye";
-  const hasMatchRoom = match.match_id > 0;
+  const href =
+    match.match_id > 0 ? createNextUrl(`/matches/${match.match_id}`) : null;
   const isTeam2Known = match.team2_id != null && match.team2_name != null;
   const cardClassName =
     "block w-full min-w-[220px] max-w-full rounded-lg border border-border bg-card text-card-foreground shadow-sm transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background";
@@ -212,9 +212,9 @@ function MatchCard({ match }: { match: PlayoffBracketMatch }) {
     </div>
   );
 
-  return hasMatchRoom ? (
+  return href != null ? (
     <Link
-      href={createNextUrl(`/matches/${match.match_id}`)}
+      href={href}
       className={cardClassName}
       aria-label={`Match: ${match.team1_name} vs ${team2DisplayName}, ${scoreText}`}
     >

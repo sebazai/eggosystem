@@ -27,8 +27,8 @@ const mockGetChampionshipBracketMatchesCached =
     typeof faceitBracketServices.getChampionshipBracketMatchesCached
   >;
 const mockGetPlayoffMatchIds =
-  matchModels.getPlayoffMatchIdsByExternalRoomIds as jest.MockedFunction<
-    typeof matchModels.getPlayoffMatchIdsByExternalRoomIds
+  matchModels.getPlayoffMatchIdsByTeamPairs as jest.MockedFunction<
+    typeof matchModels.getPlayoffMatchIdsByTeamPairs
   >;
 const mockGetTeamIdsByExternalIds =
   seasonLeagueTeamModels.getTeamIdsByExternalIds as jest.MockedFunction<
@@ -105,7 +105,8 @@ describe("playoff.controllers", () => {
         }
       ]);
       mockGetChampionshipMatchesCached.mockResolvedValue([]);
-      mockGetPlayoffMatchIds.mockResolvedValue(new Map([["faceit-1", 100]]));
+      // key format: "{group}-{minTeamId}-{maxTeamId}" → group=1, teams 10 and 20
+      mockGetPlayoffMatchIds.mockResolvedValue(new Map([["1-10-20", 100]]));
       mockGetTeamIdsByExternalIds.mockResolvedValue(
         new Map([
           ["f1", 10],
@@ -180,7 +181,8 @@ describe("playoff.controllers", () => {
         }
       ]);
       mockGetChampionshipMatchesCached.mockResolvedValue([]);
-      mockGetPlayoffMatchIds.mockResolvedValue(new Map([["m1", 1]]));
+      // key: group=1, teams 100 and 200
+      mockGetPlayoffMatchIds.mockResolvedValue(new Map([["1-100-200", 1]]));
       mockGetTeamIdsByExternalIds.mockResolvedValue(
         new Map([
           ["low", 100],
@@ -269,14 +271,8 @@ describe("playoff.controllers", () => {
       ]);
       mockGetChampionshipMatchesCached.mockResolvedValue([]);
 
-      mockGetPlayoffMatchIds.mockResolvedValue(
-        new Map([
-          ["lb-r1-a", 10],
-          ["lb-r1-b", 11],
-          ["lb-r1-c", 12],
-          ["lb-r1-d", 13]
-        ])
-      );
+      // All factions map to unknown team IDs (empty map) so teamPairKey is null; map unused.
+      mockGetPlayoffMatchIds.mockResolvedValue(new Map());
       mockGetTeamIdsByExternalIds.mockResolvedValue(new Map());
       mockGetTeamLogosByTeamIds.mockResolvedValue(new Map());
       mockGetPlayoffSeedMap.mockResolvedValue(new Map());
@@ -351,9 +347,10 @@ describe("playoff.controllers", () => {
 
       mockGetPlayoffMatchIds.mockResolvedValue(
         new Map([
-          ["lb-r1-seeds", 1],
-          ["lb-r2-slot0", 2],
-          ["lb-r2-slot1", 3]
+          // group=2, "{min}-{max}" team IDs
+          ["2-101-116", 1], // lb-r1-seeds: f1(101) vs f16(116)
+          ["2-106-109", 2], // lb-r2-slot0: f6(106) vs f9(109)
+          ["2-108-111", 3] // lb-r2-slot1: f8(108) vs f11(111)
         ])
       );
       mockGetTeamIdsByExternalIds.mockResolvedValue(
@@ -516,20 +513,20 @@ describe("playoff.controllers", () => {
       ]);
       mockGetChampionshipMatchesCached.mockResolvedValue([]);
 
+      const tid = (seed: number) => 1000 + seed;
+      // key format: "{group}-{minTeamId}-{maxTeamId}", all group=2 (lower bracket)
       mockGetPlayoffMatchIds.mockResolvedValue(
         new Map([
-          ["lb-r1-1", 1],
-          ["lb-r1-2", 2],
-          ["lb-r1-3", 3],
-          ["lb-r1-4", 4],
-          ["lb-r2-1", 5],
-          ["lb-r2-2", 6],
-          ["lb-r2-3", 7],
-          ["lb-r2-8v3", 8]
+          [`2-${tid(9)}-${tid(16)}`, 1], // lb-r1-1: fs16(1016) vs fs9(1009)
+          [`2-${tid(12)}-${tid(13)}`, 2], // lb-r1-2: fs13(1013) vs fs12(1012)
+          [`2-${tid(10)}-${tid(15)}`, 3], // lb-r1-3: fs15(1015) vs fs10(1010)
+          [`2-${tid(3)}-${tid(11)}`, 4], // lb-r1-4: fs3(1003) vs fs11(1011)
+          [`2-${tid(6)}-${tid(16)}`, 5], // lb-r2-1: fs6(1006) vs fs16(1016)
+          [`2-${tid(2)}-${tid(13)}`, 6], // lb-r2-2: fs2(1002) vs fs13(1013)
+          [`2-${tid(5)}-${tid(10)}`, 7], // lb-r2-3: fs5(1005) vs fs10(1010)
+          [`2-${tid(3)}-${tid(8)}`, 8] // lb-r2-8v3: fs3(1003) vs fs8(1008)
         ])
       );
-
-      const tid = (seed: number) => 1000 + seed;
       const factions: [string, number][] = [
         ["fs16", tid(16)],
         ["fs9", tid(9)],
@@ -600,12 +597,8 @@ describe("playoff.controllers", () => {
       ]);
       mockGetChampionshipMatchesCached.mockResolvedValue([]);
 
-      mockGetPlayoffMatchIds.mockResolvedValue(
-        new Map([
-          ["zzz-first-in-api", 20],
-          ["aaa-second-in-api", 21]
-        ])
-      );
+      // All factions unknown (empty team map) so teamPairKey is null; map unused.
+      mockGetPlayoffMatchIds.mockResolvedValue(new Map());
       mockGetTeamIdsByExternalIds.mockResolvedValue(new Map());
       mockGetTeamLogosByTeamIds.mockResolvedValue(new Map());
       mockGetPlayoffSeedMap.mockResolvedValue(new Map());
@@ -622,6 +615,77 @@ describe("playoff.controllers", () => {
       );
       expect(lbMatches[0].external_match_id).toBe("zzz-first-in-api");
       expect(lbMatches[1].external_match_id).toBe("aaa-second-in-api");
+    });
+
+    it("links grand final to its own DB match when the same two teams also met in the upper bracket", async () => {
+      // Regression: AirTap vs Evitec in UB round 4 AND grand final — old code keyed only by
+      // team pair so both cards pointed to the earlier (UB) match.
+      mockGetPlayoffExternalId.mockResolvedValue("champ-rematch");
+      mockGetChampionshipBracketMatchesCached.mockResolvedValue([
+        {
+          match_id: "ub-r4",
+          round: 4,
+          group: 1,
+          status: "FINISHED",
+          best_of: 3,
+          scheduled_at: 1000,
+          teams: {
+            faction1: { faction_id: "fa", name: "AirTap", avatar: "" },
+            faction2: { faction_id: "fe", name: "Evitec", avatar: "" }
+          },
+          results: { score: { faction1: 2, faction2: 1 } }
+        },
+        {
+          match_id: "gf-1",
+          round: 1,
+          group: 3,
+          status: "FINISHED",
+          best_of: 3,
+          scheduled_at: 2000,
+          teams: {
+            faction1: { faction_id: "fa", name: "AirTap", avatar: "" },
+            faction2: { faction_id: "fe", name: "Evitec", avatar: "" }
+          },
+          results: { score: { faction1: 2, faction2: 0 } }
+        }
+      ]);
+      mockGetChampionshipMatchesCached.mockResolvedValue([]);
+      mockGetTeamIdsByExternalIds.mockResolvedValue(
+        new Map([
+          ["fa", 10],
+          ["fe", 20]
+        ])
+      );
+      mockGetTeamLogosByTeamIds.mockResolvedValue(new Map());
+      mockGetPlayoffSeedMap.mockResolvedValue(
+        new Map([
+          [10, 1],
+          [20, 2]
+        ])
+      );
+      // Two distinct DB match IDs: 41 for UB (group 1), 99 for grand final (group 3)
+      mockGetPlayoffMatchIds.mockResolvedValue(
+        new Map([
+          ["1-10-20", 41],
+          ["3-10-20", 99]
+        ])
+      );
+
+      await getPlayoffBracketController(
+        mockRequest as Request,
+        mockResponse as Response,
+        mockNext
+      );
+
+      const [payload] = (mockResponse.json as jest.Mock).mock.calls[0];
+      const ubMatch = payload.matches.find(
+        (m: { external_match_id: string }) => m.external_match_id === "ub-r4"
+      );
+      const gfMatch = payload.matches.find(
+        (m: { external_match_id: string }) => m.external_match_id === "gf-1"
+      );
+      expect(ubMatch.match_id).toBe(41);
+      expect(gfMatch.match_id).toBe(99);
     });
 
     it("treats FaceIT BYE encoded as faction_id 'bye' as BYE (8-team brackets commonly do this)", async () => {
@@ -644,7 +708,8 @@ describe("playoff.controllers", () => {
         }
       ]);
       mockGetChampionshipMatchesCached.mockResolvedValue([]);
-      mockGetPlayoffMatchIds.mockResolvedValue(new Map([["ub-r1-bye", 1]]));
+      // BYE match: team2Id=null, no pair key built, map unused
+      mockGetPlayoffMatchIds.mockResolvedValue(new Map());
       mockGetTeamIdsByExternalIds.mockResolvedValue(new Map([["t1", 10]]));
       mockGetTeamLogosByTeamIds.mockResolvedValue(new Map());
       mockGetPlayoffSeedMap.mockResolvedValue(new Map([[10, 1]]));
@@ -679,7 +744,8 @@ describe("playoff.controllers", () => {
         }
       ]);
       mockGetChampionshipMatchesCached.mockResolvedValue([]);
-      mockGetPlayoffMatchIds.mockResolvedValue(new Map([["lb-r6-waiting", 2]]));
+      // TBD match: unknown faction → team2Id=0, no pair key built, map unused
+      mockGetPlayoffMatchIds.mockResolvedValue(new Map());
       mockGetTeamIdsByExternalIds.mockResolvedValue(new Map([["t1", 10]]));
       mockGetTeamLogosByTeamIds.mockResolvedValue(new Map());
       mockGetPlayoffSeedMap.mockResolvedValue(new Map([[10, 1]]));
