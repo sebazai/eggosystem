@@ -572,35 +572,6 @@ export const getHubMatchesByExternalMatchRoomId = async (
 };
 
 /**
- * Returns a map of external_match_room_id -> our Match.id for playoff matches.
- * Used to link FaceIT bracket matches to our match room pages (first match id when 2xBO1).
- */
-export const getPlayoffMatchIdsByExternalRoomIds = async (
-  seasonId: number,
-  leagueId: number,
-  externalRoomIds: string[]
-): Promise<Map<string, number>> => {
-  if (externalRoomIds.length === 0) return new Map();
-  const placeholders = externalRoomIds.map(() => "?").join(", ");
-  const query = `
-    SELECT id, external_match_room_id
-    FROM Matches
-    WHERE season_id = ? AND league_id = ? AND stage = 2 AND external_match_room_id IN (${placeholders})
-    ORDER BY external_match_room_id, id ASC
-  `;
-  const rows = await runQuery<
-    Array<{ id: Match["id"]; external_match_room_id: string }>
-  >(query, [seasonId, leagueId, ...externalRoomIds]);
-  const map = new Map<string, number>();
-  for (const row of rows) {
-    if (!map.has(row.external_match_room_id)) {
-      map.set(row.external_match_room_id, row.id);
-    }
-  }
-  return map;
-};
-
-/**
  * Returns a map keyed by "{min_team_id}-{max_team_id}" -> our Match.id for playoff matches.
  * Used when the bracket API's match IDs differ from the external_match_room_id stored in our DB
  * (e.g. the FaceIT web bracket API uses internal IDs that do not match the open API format).
@@ -613,7 +584,8 @@ export const getPlayoffMatchIdsByTeamPairs = async (
   const query = `
     SELECT mt1.match_id,
            LEAST(mt1.team_id, mt2.team_id)    AS min_team_id,
-           GREATEST(mt1.team_id, mt2.team_id) AS max_team_id
+           GREATEST(mt1.team_id, mt2.team_id) AS max_team_id,
+           m.\`group\`                          AS grp
     FROM MatchTeams mt1
     JOIN MatchTeams mt2
       ON mt1.match_id = mt2.match_id AND mt1.team_id < mt2.team_id
@@ -623,11 +595,16 @@ export const getPlayoffMatchIdsByTeamPairs = async (
     ORDER BY mt1.match_id ASC
   `;
   const rows = await runQuery<
-    Array<{ match_id: Match["id"]; min_team_id: number; max_team_id: number }>
+    Array<{
+      match_id: Match["id"];
+      min_team_id: number;
+      max_team_id: number;
+      grp: number;
+    }>
   >(query, [seasonId, leagueId]);
   const map = new Map<string, number>();
   for (const row of rows) {
-    const key = `${row.min_team_id}-${row.max_team_id}`;
+    const key = `${row.grp}-${row.min_team_id}-${row.max_team_id}`;
     if (!map.has(key)) {
       map.set(key, row.match_id);
     }

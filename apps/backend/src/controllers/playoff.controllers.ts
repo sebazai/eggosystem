@@ -293,7 +293,7 @@ export const getPlayoffBracketController = async (
 
       const teamPairKey =
         team1Id > 0 && team2Id != null && team2Id > 0
-          ? `${Math.min(team1Id, team2Id)}-${Math.max(team1Id, team2Id)}`
+          ? `${item.group}-${Math.min(team1Id, team2Id)}-${Math.max(team1Id, team2Id)}`
           : null;
       const internalMatchId =
         teamPairKey != null ? (teamPairMatchIdMap.get(teamPairKey) ?? 0) : 0;
