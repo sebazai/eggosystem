@@ -119,3 +119,17 @@ export const updatePlayoffSeeds = async (
     );
   }
 };
+
+export const updateSeasonLeagueTeamPlacement = async (
+  seasonId: number,
+  leagueId: number,
+  teamId: number,
+  placement: number,
+  connection?: PoolConnection
+): Promise<void> => {
+  await runQuery(
+    `UPDATE SeasonLeagueTeams SET placement = ? WHERE season_id = ? AND league_id = ? AND team_id = ?`,
+    [placement, seasonId, leagueId, teamId],
+    connection
+  );
+};

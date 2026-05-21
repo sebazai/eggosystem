@@ -1335,3 +1335,31 @@ export const ensureMatchIdAndTeamIdMatches = async (
     );
   }
 };
+
+export const getMatchTeamIdsByMatchId = async (
+  matchId: number,
+  connection?: PoolConnection
+): Promise<number[]> => {
+  const rows = await runQuery<Array<{ team_id: number }>>(
+    `SELECT team_id FROM MatchTeams WHERE match_id = ?`,
+    [matchId],
+    connection
+  );
+  return rows.map((r) => r.team_id);
+};
+
+export const getLowerBracketFinalMatch = async (
+  seasonId: number,
+  leagueId: number,
+  stageId: number,
+  connection?: PoolConnection
+): Promise<{ id: number } | null> => {
+  const rows = await runQuery<Array<{ id: number }>>(
+    `SELECT id FROM Matches
+     WHERE season_id = ? AND league_id = ? AND stage = ? AND \`group\` = 2
+     ORDER BY round DESC LIMIT 1`,
+    [seasonId, leagueId, stageId],
+    connection
+  );
+  return rows[0] ?? null;
+};

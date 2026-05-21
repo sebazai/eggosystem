@@ -13,6 +13,7 @@ import {
 } from "../models/faceit.models";
 import { invalidateChampionshipMatchesCache } from "../services/playoff-bracket.services";
 import { invalidateChampionshipBracketMatchesCache } from "../services/faceit-bracket.services";
+import { setLeaguePlacements } from "../services/placements.services";
 import { isForfeitPayload } from "../utils/faceit-match-status-finished-detection";
 import { logger } from "../utils/app-logger";
 import {
@@ -626,6 +627,18 @@ export const handleFaceitWebhook = async (
           await updateMatchStatusByExternalMatchroomId(
             externalMatchRoomId,
             "FINISHED"
+          );
+        }
+        if (
+          matchDetails?.group === 3 &&
+          matchDetails?.round === 1 &&
+          seasonLeague != null
+        ) {
+          await setLeaguePlacements(
+            matchDetails,
+            seasonLeague.season_id,
+            seasonLeague.league_id,
+            seasonLeague.stage_id
           );
         }
         await saveWebhookData(
