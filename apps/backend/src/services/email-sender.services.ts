@@ -207,3 +207,49 @@ export const sendSeasonWelcomeEmail = async (
 
   await transporter?.sendMail(mailOptions);
 };
+
+/**
+ * Send a custom newsletter email to a player.
+ * Supports plain text, HTML, or both. Always includes GDPR unsubscribe footer.
+ */
+export const sendNewsletterEmail = async (
+  to: string,
+  accountId: number,
+  subject: string,
+  textContent?: string,
+  htmlContent?: string
+) => {
+  const transporter = createTransporter();
+
+  const { unsubscribeUrl, footerHtml } =
+    await getUnsubscribeUrlAndFooter(accountId);
+
+  const htmlBody = htmlContent ? `${htmlContent}\n${footerHtml}` : undefined;
+
+  const textBody = textContent
+    ? `${textContent}\n\n---\nDon't want to receive these emails? Unsubscribe: ${unsubscribeUrl}`
+    : undefined;
+
+  const mailOptions = {
+    from: "Kanahub by Kanaliiga <cs@kanaliiga.fi>",
+    to,
+    replyTo: "cs@kanaliiga.fi",
+    subject,
+    ...(htmlBody ? { html: htmlBody } : {}),
+    ...(textBody ? { text: textBody } : {}),
+    headers: {
+      Date: new Date().toUTCString(),
+      "Message-ID": `<${Date.now()}.${Math.random().toString(36).substring(2)}@kanaliiga.fi>`,
+      "List-Unsubscribe": `<${unsubscribeUrl}>`,
+      "List-Unsubscribe-Post": "List-Unsubscribe=One-Click"
+    },
+    list: {
+      unsubscribe: {
+        url: unsubscribeUrl,
+        comment: "Unsubscribe from newsletters"
+      }
+    }
+  };
+
+  await transporter?.sendMail(mailOptions);
+};
