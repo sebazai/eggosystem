@@ -7,7 +7,7 @@ import type { Match } from "@eggosystem/types";
 import { getPlayoffExternalIdBySeasonAndLeague } from "../models/season-league-external-id.models";
 import { getChampionshipMatchesCached } from "../services/playoff-bracket.services";
 import { getChampionshipBracketMatchesCached } from "../services/faceit-bracket.services";
-import { getPlayoffMatchIdsByExternalRoomIds } from "../models/match.models";
+import { getPlayoffMatchIdsByTeamPairs } from "../models/match.models";
 import {
   getTeamIdsByExternalIds,
   getPlayoffSeedMapBySeasonAndLeague
@@ -140,13 +140,6 @@ export const getPlayoffBracketController = async (
     const apiIndexMap = new Map<string, number>();
     items.forEach((item, idx) => apiIndexMap.set(item.match_id, idx));
 
-    const externalMatchIds = items.map((i) => i.match_id);
-    const matchIdMap = await getPlayoffMatchIdsByExternalRoomIds(
-      seasonId,
-      leagueId,
-      externalMatchIds
-    );
-
     const factionIds = new Set<string>();
     for (const item of items) {
       const f1 = item.teams.faction1;
@@ -157,6 +150,12 @@ export const getPlayoffBracketController = async (
     const teamIdMap = await getTeamIdsByExternalIds(seasonId, [...factionIds]);
     const teamIdsForLogos = [...teamIdMap.values()].filter((id) => id > 0);
     const teamLogoMap = await getTeamLogosByTeamIds(teamIdsForLogos);
+    // The FaceIT web bracket API uses internal IDs that don't match our DB's external_match_room_id.
+    // Match by team-pair instead so bracket cards link to our internal match rooms.
+    const teamPairMatchIdMap = await getPlayoffMatchIdsByTeamPairs(
+      seasonId,
+      leagueId
+    );
     const playoffSeedMap = await getPlayoffSeedMapBySeasonAndLeague(
       seasonId,
       leagueId
@@ -292,7 +291,12 @@ export const getPlayoffBracketController = async (
       const seed1 = home.seed;
       const seed2 = away.seed;
 
-      const internalMatchId = matchIdMap.get(item.match_id) ?? 0;
+      const teamPairKey =
+        team1Id > 0 && team2Id != null && team2Id > 0
+          ? `${Math.min(team1Id, team2Id)}-${Math.max(team1Id, team2Id)}`
+          : null;
+      const internalMatchId =
+        teamPairKey != null ? (teamPairMatchIdMap.get(teamPairKey) ?? 0) : 0;
       const slot =
         seedPos && item.group === 1
           ? (getUpperBracketSlotForSeeds({

@@ -601,6 +601,41 @@ export const getPlayoffMatchIdsByExternalRoomIds = async (
 };
 
 /**
+ * Returns a map keyed by "{min_team_id}-{max_team_id}" -> our Match.id for playoff matches.
+ * Used when the bracket API's match IDs differ from the external_match_room_id stored in our DB
+ * (e.g. the FaceIT web bracket API uses internal IDs that do not match the open API format).
+ * Takes the lowest match id for each team pair (handles 2xBO1 by linking to the first match).
+ */
+export const getPlayoffMatchIdsByTeamPairs = async (
+  seasonId: number,
+  leagueId: number
+): Promise<Map<string, number>> => {
+  const query = `
+    SELECT mt1.match_id,
+           LEAST(mt1.team_id, mt2.team_id)    AS min_team_id,
+           GREATEST(mt1.team_id, mt2.team_id) AS max_team_id
+    FROM MatchTeams mt1
+    JOIN MatchTeams mt2
+      ON mt1.match_id = mt2.match_id AND mt1.team_id < mt2.team_id
+    JOIN Matches m
+      ON m.id = mt1.match_id
+    WHERE m.season_id = ? AND m.league_id = ? AND m.stage = 2
+    ORDER BY mt1.match_id ASC
+  `;
+  const rows = await runQuery<
+    Array<{ match_id: Match["id"]; min_team_id: number; max_team_id: number }>
+  >(query, [seasonId, leagueId]);
+  const map = new Map<string, number>();
+  for (const row of rows) {
+    const key = `${row.min_team_id}-${row.max_team_id}`;
+    if (!map.has(key)) {
+      map.set(key, row.match_id);
+    }
+  }
+  return map;
+};
+
+/**
  * Updates a match's start timestamp using an ISO 8601 timestamp string
  *
  * **Timezone Handling:**
