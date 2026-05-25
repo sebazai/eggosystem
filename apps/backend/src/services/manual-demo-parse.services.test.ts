@@ -3,12 +3,16 @@ import { MatchStatus } from "@eggosystem/types";
 import { getConnection } from "../db/mysqlConnection";
 import { runQuery } from "../db/mysqlRunQuery";
 import { formatDateForDatabase } from "../utils/date-utils";
-import { getMatchIdByGameId } from "../models/match-game.models";
+import {
+  getMatchIdByGameId,
+  isChampionshipMatchGame
+} from "../models/match-game.models";
 import {
   enqueueManualDashboardDemoParse,
   finishMatchWithComputedEndTime
 } from "./manual-demo-parse.services";
 import { publishToParseQueue } from "./parse-queue.services";
+import { sendDemoForAllStarPOTGClip } from "./allstar.services";
 
 jest.mock("../db/mysqlRunQuery");
 jest.mock("../db/mysqlConnection");
@@ -17,7 +21,11 @@ jest.mock("./parse-queue.services", () => ({
   publishToParseQueue: jest.fn()
 }));
 jest.mock("../models/match-game.models", () => ({
-  getMatchIdByGameId: jest.fn()
+  getMatchIdByGameId: jest.fn(),
+  isChampionshipMatchGame: jest.fn()
+}));
+jest.mock("./allstar.services", () => ({
+  sendDemoForAllStarPOTGClip: jest.fn()
 }));
 
 const mockRunQuery = runQuery as jest.MockedFunction<typeof runQuery>;
@@ -27,9 +35,17 @@ const mockGetConnection = getConnection as jest.MockedFunction<
 const mockGetMatchIdByGameId = getMatchIdByGameId as jest.MockedFunction<
   typeof getMatchIdByGameId
 >;
+const mockIsChampionshipMatchGame =
+  isChampionshipMatchGame as jest.MockedFunction<
+    typeof isChampionshipMatchGame
+  >;
 const mockPublishToParseQueue = publishToParseQueue as jest.MockedFunction<
   typeof publishToParseQueue
 >;
+const mockSendDemoForAllStarPOTGClip =
+  sendDemoForAllStarPOTGClip as jest.MockedFunction<
+    typeof sendDemoForAllStarPOTGClip
+  >;
 
 describe("enqueueManualDashboardDemoParse", () => {
   beforeEach(() => {
@@ -41,6 +57,7 @@ describe("enqueueManualDashboardDemoParse", () => {
       { match_id: 12, team_game_scores_staff_lock: 0 }
     ]);
     mockPublishToParseQueue.mockResolvedValue(undefined);
+    mockIsChampionshipMatchGame.mockResolvedValue(false);
 
     await expect(
       enqueueManualDashboardDemoParse({
@@ -64,6 +81,76 @@ describe("enqueueManualDashboardDemoParse", () => {
 
     expect(mockPublishToParseQueue).toHaveBeenCalledTimes(1);
     expect(mockGetConnection).not.toHaveBeenCalled();
+    expect(mockSendDemoForAllStarPOTGClip).not.toHaveBeenCalled();
+  });
+
+  it("calls sendDemoForAllStarPOTGClip for championship matches", async () => {
+    mockGetMatchIdByGameId.mockResolvedValue([
+      { match_id: 12, team_game_scores_staff_lock: 0 }
+    ]);
+    mockPublishToParseQueue.mockResolvedValue(undefined);
+    mockIsChampionshipMatchGame.mockResolvedValue(true);
+    mockSendDemoForAllStarPOTGClip.mockResolvedValue({ success: true });
+
+    await enqueueManualDashboardDemoParse({
+      matchGameId: 5,
+      downloadUrl: "https://cdn.example/demo.dem.zst",
+      priority: 4,
+      actorAccountId: 1,
+      source: "manual",
+      reparse: false,
+      mark_finished: false
+    });
+
+    expect(mockSendDemoForAllStarPOTGClip).toHaveBeenCalledTimes(1);
+    expect(mockSendDemoForAllStarPOTGClip).toHaveBeenCalledWith(
+      5,
+      "https://cdn.example/demo.dem.zst"
+    );
+  });
+
+  it("does not call sendDemoForAllStarPOTGClip for non-championship matches", async () => {
+    mockGetMatchIdByGameId.mockResolvedValue([
+      { match_id: 12, team_game_scores_staff_lock: 0 }
+    ]);
+    mockPublishToParseQueue.mockResolvedValue(undefined);
+    mockIsChampionshipMatchGame.mockResolvedValue(false);
+
+    await enqueueManualDashboardDemoParse({
+      matchGameId: 5,
+      downloadUrl: "https://cdn.example/demo.dem.zst",
+      priority: 4,
+      actorAccountId: 1,
+      source: "manual",
+      reparse: false,
+      mark_finished: false
+    });
+
+    expect(mockSendDemoForAllStarPOTGClip).not.toHaveBeenCalled();
+  });
+
+  it("calls sendDemoForAllStarPOTGClip when reparse is true (dedup handled internally)", async () => {
+    mockGetMatchIdByGameId.mockResolvedValue([
+      { match_id: 12, team_game_scores_staff_lock: 0 }
+    ]);
+    mockPublishToParseQueue.mockResolvedValue(undefined);
+    mockIsChampionshipMatchGame.mockResolvedValue(true);
+    mockSendDemoForAllStarPOTGClip.mockResolvedValue({
+      success: true,
+      message: "Demo processing request already exists for game"
+    });
+
+    await enqueueManualDashboardDemoParse({
+      matchGameId: 5,
+      downloadUrl: "https://cdn.example/demo.dem.zst",
+      priority: 4,
+      actorAccountId: 1,
+      source: "manual",
+      reparse: true,
+      mark_finished: false
+    });
+
+    expect(mockSendDemoForAllStarPOTGClip).toHaveBeenCalledTimes(1);
   });
 
   it("runs mark_finished after publish using a DB transaction", async () => {
@@ -71,6 +158,7 @@ describe("enqueueManualDashboardDemoParse", () => {
       { match_id: 12, team_game_scores_staff_lock: 0 }
     ]);
     mockPublishToParseQueue.mockResolvedValue(undefined);
+    mockIsChampionshipMatchGame.mockResolvedValue(false);
 
     const mockConn = {
       beginTransaction: jest.fn(),

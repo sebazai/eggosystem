@@ -8,7 +8,11 @@ import type { PoolConnection } from "mysql2/promise";
 import moment from "moment-timezone";
 import { getConnection } from "../db/mysqlConnection";
 import { runQuery } from "../db/mysqlRunQuery";
-import { getMatchIdByGameId } from "../models/match-game.models";
+import {
+  getMatchIdByGameId,
+  isChampionshipMatchGame
+} from "../models/match-game.models";
+import { sendDemoForAllStarPOTGClip } from "./allstar.services";
 import { logger } from "../utils/app-logger";
 import { NotFoundError } from "../utils/errors";
 import { formatDateForDatabase } from "../utils/date-utils";
@@ -127,7 +131,10 @@ export const enqueueManualDashboardDemoParse = async (input: {
   );
 
   const fingerprint = fingerprintDemoUrlForLog(downloadUrl);
-  await publishToParseQueue(parseMessage);
+  const [, isChampionship] = await Promise.all([
+    publishToParseQueue(parseMessage),
+    isChampionshipMatchGame(matchGameId)
+  ]);
   logger.info("Manual dashboard demo enqueued to parse_queue", {
     actorAccountId,
     matchGameId,
@@ -135,6 +142,10 @@ export const enqueueManualDashboardDemoParse = async (input: {
     downloadUrlSha256: fingerprint.download_url_sha256_hex,
     source
   });
+
+  if (isChampionship) {
+    await sendDemoForAllStarPOTGClip(matchGameId, downloadUrl);
+  }
 
   if (!markFinished) {
     return {
