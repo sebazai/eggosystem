@@ -1316,7 +1316,9 @@ export const getUnfinishedMatchesBySeason = async (
     JOIN MatchTeams mt2 ON mt2.match_id = m.id AND mt2.team_id > mt1.team_id
     JOIN Teams t2 ON t2.id = mt2.team_id
     WHERE m.season_id = ?
-      AND m.status NOT IN ('FINISHED', 'ABORTED', 'CANCELLED', 'FORFEIT')
+      AND NOT EXISTS (
+        SELECT 1 FROM MatchTeamMapVetoes v WHERE v.match_id = m.id
+      )
     ORDER BY m.start_timestamp ASC
   `;
 

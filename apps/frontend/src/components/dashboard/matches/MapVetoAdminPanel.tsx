@@ -11,6 +11,7 @@ import {
   getExpectedVetoActingTeamId,
   getVetoTemplate
 } from "@eggosystem/types";
+import { toast } from "sonner";
 import { ApiError, clientApiFetch } from "@/lib/apiClient";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
@@ -32,6 +33,21 @@ import {
   CardHeader,
   CardTitle
 } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList
+} from "@/components/ui/command";
+import { Input } from "@/components/ui/input";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger
+} from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -104,6 +120,7 @@ export function MapVetoAdminPanel() {
   const [matchesLoading, setMatchesLoading] = useState(false);
 
   const [selectedMatchId, setSelectedMatchId] = useState<string>("");
+  const [matchComboOpen, setMatchComboOpen] = useState(false);
 
   const [context, setContext] = useState<MatchVetoContext | null>(null);
   const [contextLoading, setContextLoading] = useState(false);
@@ -115,7 +132,12 @@ export function MapVetoAdminPanel() {
 
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [busyAction, setBusyAction] = useState<"clear" | "submit" | null>(null);
+  const [busyAction, setBusyAction] = useState<
+    "clear" | "submit" | "override-clear" | null
+  >(null);
+
+  const [overrideEnabled, setOverrideEnabled] = useState(false);
+  const [overrideMatchId, setOverrideMatchId] = useState<string>("");
 
   /** When null, backend `default_veto_best_of` applies. Cleared when the match selection changes. */
   const [vetoBestOfOverride, setVetoBestOfOverride] = useState<number | null>(
@@ -336,6 +358,27 @@ export function MapVetoAdminPanel() {
     }
   }
 
+  async function clearVetoesOverride() {
+    const matchId = Number.parseInt(overrideMatchId, 10);
+    if (!Number.isFinite(matchId) || matchId <= 0) return;
+    setBusyAction("override-clear");
+    try {
+      await clientApiFetch(`/api/v1/dashboard/matches/${matchId}/vetoes`, {
+        method: "DELETE"
+      });
+      toast.success(`Veto entries cleared for match ${matchId}.`);
+      setOverrideMatchId("");
+    } catch (err) {
+      if (err instanceof ApiError) {
+        toast.error(err.detail || err.message);
+      } else {
+        toast.error("Could not clear vetoes.");
+      }
+    } finally {
+      setBusyAction(null);
+    }
+  }
+
   const seasonMissingMessage =
     !selectedSeasonId &&
     "Pick a season in the sidebar to list unfinished matches for that season.";
@@ -389,44 +432,79 @@ export function MapVetoAdminPanel() {
         <CardHeader className="space-y-1">
           <CardTitle className="text-lg sm:text-xl">Match</CardTitle>
           <CardDescription>
-            Unfinished matches for the selected season. Labels follow{" "}
-            <span className="font-medium">League Team A vs. Team B</span>.
+            Matches without a recorded veto for the selected season. Labels
+            follow <span className="font-medium">League Team A vs. Team B</span>
+            .
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-end">
           <div className="min-w-0 flex-1 space-y-2">
             <div className="text-sm font-medium">Season-aware selection</div>
-            <Select
-              value={selectedMatchId}
-              onValueChange={(value) => {
-                setSelectedMatchId(value);
-              }}
-              disabled={!selectedSeasonId || matchesLoading}
-            >
-              <SelectTrigger className="w-full min-h-11 md:max-w-xl">
-                <SelectValue
-                  placeholder={
-                    matchesLoading
+            <Popover open={matchComboOpen} onOpenChange={setMatchComboOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={matchComboOpen}
+                  disabled={!selectedSeasonId || matchesLoading}
+                  className="w-full min-h-11 md:max-w-xl justify-between font-normal"
+                >
+                  <span className="truncate">
+                    {matchesLoading
                       ? "Loading matches…"
-                      : "Select an unfinished match"
-                  }
-                />
-              </SelectTrigger>
-              <SelectContent position="popper">
-                {matches.map((m) => (
-                  <SelectItem
-                    key={m.match_id}
-                    value={String(m.match_id)}
-                    textValue={m.label}
-                  >
-                    <span className="line-clamp-2 text-left">{m.label}</span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+                      : selectedMatchId
+                        ? (() => {
+                            const m = matches.find(
+                              (m) => String(m.match_id) === selectedMatchId
+                            );
+                            return m
+                              ? `#${m.match_id} · ${m.label}`
+                              : `#${selectedMatchId}`;
+                          })()
+                        : "Select a match without a veto"}
+                  </span>
+                  <span className="ml-2 shrink-0 text-muted-foreground">▾</span>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent
+                className="w-[var(--radix-popover-trigger-width)] p-0"
+                align="start"
+              >
+                <Command
+                  filter={(value, search) => {
+                    if (!search) return 1;
+                    const lower = search.toLowerCase();
+                    return value.toLowerCase().includes(lower) ? 1 : 0;
+                  }}
+                >
+                  <CommandInput placeholder="Search by match ID or team name…" />
+                  <CommandList>
+                    <CommandEmpty>No matches found.</CommandEmpty>
+                    <CommandGroup>
+                      {matches.map((m) => (
+                        <CommandItem
+                          key={m.match_id}
+                          value={`${m.match_id} ${m.label}`}
+                          onSelect={() => {
+                            setSelectedMatchId(String(m.match_id));
+                            setMatchComboOpen(false);
+                          }}
+                        >
+                          <span className="font-mono text-muted-foreground mr-2 shrink-0">
+                            #{m.match_id}
+                          </span>
+                          <span className="line-clamp-2">{m.label}</span>
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
             {selectedSeasonId && !matchesLoading && matches.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                No unfinished matches for this season.
+                No matches without a veto for this season.
               </p>
             ) : null}
           </div>
@@ -771,6 +849,84 @@ export function MapVetoAdminPanel() {
           </CardContent>
         </Card>
       ) : null}
+
+      <Card>
+        <CardHeader className="space-y-1">
+          <CardTitle className="text-lg sm:text-xl">
+            Clear vetoes by match ID
+          </CardTitle>
+          <CardDescription>
+            Clears all recorded veto rows for any match — use this when the
+            season-aware list does not include the match you need to fix.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <label className="flex cursor-pointer items-center gap-3">
+            <Checkbox
+              checked={overrideEnabled}
+              onCheckedChange={(checked) => {
+                setOverrideEnabled(checked === true);
+                setOverrideMatchId("");
+              }}
+            />
+            <span className="text-sm font-medium">Enable manual override</span>
+          </label>
+
+          {overrideEnabled ? (
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+              <div className="min-w-0 flex-1 space-y-2">
+                <div className="text-sm font-medium">Match ID</div>
+                <Input
+                  type="number"
+                  min={1}
+                  placeholder="Enter match ID"
+                  value={overrideMatchId}
+                  onChange={(e) => setOverrideMatchId(e.target.value)}
+                  className="max-w-xs"
+                />
+              </div>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="destructive"
+                    className="w-full shrink-0 sm:w-auto"
+                    disabled={
+                      busyAction !== null ||
+                      !overrideMatchId ||
+                      Number.parseInt(overrideMatchId, 10) <= 0
+                    }
+                  >
+                    {busyAction === "override-clear" ? (
+                      <Spinner size="sm" className="mr-2" />
+                    ) : null}
+                    Clear vetoes
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent className="max-w-md">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>
+                      Clear vetoes for match {overrideMatchId}?
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This removes every recorded map veto for match{" "}
+                      {overrideMatchId}. This cannot be undone except by
+                      re-entering vetoes.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => void clearVetoesOverride()}
+                    >
+                      Clear
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          ) : null}
+        </CardContent>
+      </Card>
     </div>
   );
 }
