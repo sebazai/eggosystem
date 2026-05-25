@@ -39,6 +39,7 @@ export function ManualDemoParseForm() {
   const [priority, setPriority] = useState("5");
   const [reparse, setReparse] = useState(false);
   const [markFinished, setMarkFinished] = useState(false);
+  const [forceFinishForfeit, setForceFinishForfeit] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [issues, setIssues] = useState<Array<{
@@ -83,7 +84,8 @@ export function ManualDemoParseForm() {
         download_url: downloadUrl.trim(),
         ...(Number.isFinite(priNum) ? { priority: priNum } : {}),
         reparse,
-        mark_finished: markFinished
+        mark_finished: markFinished,
+        ...(markFinished ? { force_finish_forfeit: forceFinishForfeit } : {})
       };
 
       const data = await clientApiFetch<ManualDemoParseResponse>(
@@ -304,12 +306,29 @@ export function ManualDemoParseForm() {
             <Checkbox
               id="mark_finished"
               checked={markFinished}
-              onCheckedChange={(val) => setMarkFinished(val === true)}
+              onCheckedChange={(val) => {
+                const next = val === true;
+                setMarkFinished(next);
+                if (!next) setForceFinishForfeit(false);
+              }}
             />
             <Label htmlFor="mark_finished">
               Mark match as finished (computed end time)
             </Label>
           </div>
+
+          {markFinished ? (
+            <div className="flex items-center gap-2 ml-6">
+              <Checkbox
+                id="force_finish_forfeit"
+                checked={forceFinishForfeit}
+                onCheckedChange={(val) => setForceFinishForfeit(val === true)}
+              />
+              <Label htmlFor="force_finish_forfeit">
+                Force finish even if forfeit
+              </Label>
+            </div>
+          ) : null}
 
           <Button type="submit" disabled={submitting}>
             {submitting ? "Sending…" : "Enqueue parse_queue"}

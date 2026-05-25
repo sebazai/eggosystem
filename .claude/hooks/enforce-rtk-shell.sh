@@ -84,6 +84,19 @@ fi
 # Hide $(git rev-parse ...) so nested `git` does not trip bare-git detection.
 scan=$(printf '%s' "$cmd" | sed 's/\$(git[[:space:]]\+rev-parse[^)]*)/__/g')
 
+# --- Block tsc without --noEmit (emits compiled JS/d.ts output files) ---------
+# Matches `tsc` as a command word after any prefix (rtk, pnpm, npx, bare, etc.)
+if printf '%s' "$scan" | grep -Eq '(^|[[:space:];|&])tsc([[:space:]]|$)'; then
+  if ! printf '%s' "$cmd" | grep -Fq -- '--noEmit'; then
+    msg='`tsc` without `--noEmit` emits compiled JS files. Use `pnpm typecheck` (in apps/backend or apps/frontend) instead of calling tsc directly.'
+    jq -n \
+      --arg um "$msg" \
+      --arg am "$msg" \
+      '{"permission":"deny","user_message":$um,"agent_message":$am,"continue":true}'
+    exit 0
+  fi
+fi
+
 if printf '%s' "$scan" | grep -Eq "$bare_regex"; then
   msg='Use rtk for this shell command (prefix the binary with `rtk `), per `.cursor/rules/core/rtk-shell-usage.mdc`. Exception: repo-root typecheck uses `pnpm typecheck` without rtk (`cd $(git rev-parse --show-toplevel) && pnpm typecheck`). See `docs/rtk-reference.md`.'
   jq -n \
