@@ -23,7 +23,12 @@ jest.mock("../../../services/auth.services", () => ({
 
 jest.mock("../../../models/match-game.models", () => ({
   getMatchIdByGameId: jest.fn(),
-  listMatchGamesForMatch: jest.fn()
+  listMatchGamesForMatch: jest.fn(),
+  isChampionshipMatchGame: jest.fn().mockResolvedValue(false)
+}));
+
+jest.mock("../../../services/allstar.services", () => ({
+  sendDemoForAllStarPOTGClip: jest.fn().mockResolvedValue({ success: true })
 }));
 
 jest.mock("../../../models/match.models", () => ({
