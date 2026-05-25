@@ -53,7 +53,8 @@ const manualParseQueueBodySchema = z
      * When true, enqueue then mark associated `Matches` FINISHED using
      * `start_timestamp + best_of` hours per approved architecture (#379).
      */
-    mark_finished: z.boolean().optional().default(false)
+    mark_finished: z.boolean().optional().default(false),
+    force_finish_forfeit: z.boolean().optional().default(false)
   })
   .superRefine((val, ctx) => {
     const hasAny =
@@ -128,8 +129,14 @@ router.post(
       return next(parsed.error);
     }
 
-    const { download_url, priority, reparse, mark_finished, ...identifiers } =
-      parsed.data;
+    const {
+      download_url,
+      priority,
+      reparse,
+      mark_finished,
+      force_finish_forfeit,
+      ...identifiers
+    } = parsed.data;
     const { match_game_id, match_id, map_order, external_match_room_id } =
       identifiers;
 
@@ -184,6 +191,7 @@ router.post(
       source,
       reparse,
       mark_finished,
+      force_finish_forfeit,
       finishMatchIds
     });
 

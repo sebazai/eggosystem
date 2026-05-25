@@ -16,6 +16,13 @@ export interface ManualDemoParseRequest {
    * @default false
    */
   mark_finished?: boolean;
+  /**
+   * When true and mark_finished is also true, matches that are currently
+   * FORFEIT are also updated to FINISHED. Normally FORFEIT matches are
+   * excluded. Has no effect when mark_finished is false.
+   * @default false
+   */
+  force_finish_forfeit?: boolean;
 }
 
 /**

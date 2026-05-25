@@ -379,6 +379,104 @@ describe("finishMatchWithComputedEndTime", () => {
     );
   });
 
+  describe("forceFinishForfeit", () => {
+    it("updates a FORFEIT match when forceFinishForfeit is true", async () => {
+      const mockConn = {
+        beginTransaction: jest.fn(),
+        commit: jest.fn(),
+        rollback: jest.fn(),
+        release: jest.fn()
+      };
+      mockGetConnection.mockResolvedValue(
+        mockConn as unknown as Awaited<ReturnType<typeof getConnection>>
+      );
+      mockRunQuery.mockResolvedValue({ affectedRows: 1 });
+
+      const start = "2025-06-01T10:00:00.000Z";
+      const result = await finishMatchWithComputedEndTime(
+        [
+          {
+            id: 7,
+            start_timestamp: start,
+            best_of: 1,
+            status: "FORFEIT" satisfies Match["status"]
+          }
+        ],
+        { forceFinishForfeit: true }
+      );
+
+      expect(result.applied).toBe(true);
+      expect(result.match_ids).toEqual([7]);
+      expect(mockRunQuery).toHaveBeenCalledWith(
+        expect.stringMatching(/status\s*!=\s*'FINISHED'/),
+        [
+          MatchStatus.FINISHED,
+          formatDateForDatabase("2025-06-01T11:00:00.000Z"),
+          7
+        ],
+        mockConn
+      );
+    });
+
+    it("no-ops when all rows are FINISHED even with forceFinishForfeit", async () => {
+      const result = await finishMatchWithComputedEndTime(
+        [
+          {
+            id: 8,
+            start_timestamp: "2025-06-01T10:00:00.000Z",
+            best_of: 1,
+            status: "FINISHED" satisfies Match["status"]
+          }
+        ],
+        { forceFinishForfeit: true }
+      );
+
+      expect(result).toEqual({
+        applied: false,
+        match_ids: [],
+        end_timestamp: null,
+        skipped_reason: "All matches are already FINISHED; no update applied."
+      });
+      expect(mockGetConnection).not.toHaveBeenCalled();
+    });
+
+    it("updates FORFEIT but skips FINISHED in a mixed pair with forceFinishForfeit", async () => {
+      const mockConn = {
+        beginTransaction: jest.fn(),
+        commit: jest.fn(),
+        rollback: jest.fn(),
+        release: jest.fn()
+      };
+      mockGetConnection.mockResolvedValue(
+        mockConn as unknown as Awaited<ReturnType<typeof getConnection>>
+      );
+      mockRunQuery.mockResolvedValue({ affectedRows: 1 });
+
+      const start = "2025-06-01T10:00:00.000Z";
+      const result = await finishMatchWithComputedEndTime(
+        [
+          {
+            id: 9,
+            start_timestamp: start,
+            best_of: 1,
+            status: "FINISHED" satisfies Match["status"]
+          },
+          {
+            id: 10,
+            start_timestamp: start,
+            best_of: 1,
+            status: "FORFEIT" satisfies Match["status"]
+          }
+        ],
+        { forceFinishForfeit: true }
+      );
+
+      expect(result.applied).toBe(true);
+      expect(result.match_ids).toEqual([10]);
+      expect(mockRunQuery).toHaveBeenCalledTimes(1);
+    });
+  });
+
   it("rolls back and rethrows on failure", async () => {
     const mockConn = {
       beginTransaction: jest.fn(),

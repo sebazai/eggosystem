@@ -95,6 +95,7 @@ export const enqueueManualDashboardDemoParse = async (input: {
    */
   finishMatchIds?: number[];
   mark_finished?: boolean;
+  force_finish_forfeit?: boolean;
 }): Promise<{
   match_game_id: number;
   mark_finished: ManualDemoParseMarkFinishedResult;
@@ -107,7 +108,8 @@ export const enqueueManualDashboardDemoParse = async (input: {
     source,
     reparse,
     finishMatchIds,
-    mark_finished: markFinished = false
+    mark_finished: markFinished = false,
+    force_finish_forfeit: forceFinishForfeit = false
   } = input;
 
   const matchRows = await getMatchIdByGameId(matchGameId);
@@ -162,7 +164,8 @@ export const enqueueManualDashboardDemoParse = async (input: {
     }
 
     const finishResult = await finishMatchWithComputedEndTime(rows, {
-      connection: conn
+      connection: conn,
+      forceFinishForfeit
     });
     await conn.commit();
     return {
@@ -228,7 +231,7 @@ function isValidBestOf(value: unknown): value is number {
  */
 export async function finishMatchWithComputedEndTime(
   matches: FinishMatchWithComputedEndTimeRowInput[],
-  options?: { connection?: PoolConnection }
+  options?: { connection?: PoolConnection; forceFinishForfeit?: boolean }
 ): Promise<ManualDemoParseMarkFinishedResult> {
   if (matches.length === 0) {
     return validationResult("No match rows were provided.");
@@ -273,14 +276,19 @@ export async function finishMatchWithComputedEndTime(
     });
   }
 
-  const eligible = normalized.filter(
-    (row) =>
-      row.status !== MatchStatus.FINISHED && row.status !== MatchStatus.FORFEIT
-  );
+  const forceFinishForfeit = options?.forceFinishForfeit ?? false;
+
+  const eligible = normalized.filter((row) => {
+    if (row.status === MatchStatus.FINISHED) return false;
+    if (row.status === MatchStatus.FORFEIT && !forceFinishForfeit) return false;
+    return true;
+  });
 
   if (eligible.length === 0) {
     return validationResult(
-      "All matches are already FINISHED or FORFEIT; no update applied."
+      forceFinishForfeit
+        ? "All matches are already FINISHED; no update applied."
+        : "All matches are already FINISHED or FORFEIT; no update applied."
     );
   }
 
@@ -301,8 +309,11 @@ export async function finishMatchWithComputedEndTime(
         .utc(row.startIso)
         .add(row.best_of, "hours")
         .toISOString();
+      const updateSql = forceFinishForfeit
+        ? `UPDATE Matches SET status = ?, end_timestamp = ? WHERE id = ? AND status != 'FINISHED'`
+        : `UPDATE Matches SET status = ?, end_timestamp = ? WHERE id = ? AND status NOT IN ('FINISHED', 'FORFEIT')`;
       const updateResult = await runQuery<{ affectedRows: number }>(
-        `UPDATE Matches SET status = ?, end_timestamp = ? WHERE id = ? AND status NOT IN ('FINISHED', 'FORFEIT')`,
+        updateSql,
         [MatchStatus.FINISHED, formatDateForDatabase(endIso), row.id],
         conn
       );
