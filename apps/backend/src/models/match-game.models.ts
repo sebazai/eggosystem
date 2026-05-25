@@ -241,6 +241,30 @@ export const getMatchIdByGameId = async (
   );
 };
 
+export const isChampionshipMatchGame = async (
+  matchGameId: number,
+  connection?: PoolConnection
+): Promise<boolean> => {
+  const query = `
+    SELECT EXISTS (
+      SELECT 1
+      FROM MatchGames mg
+      JOIN Matches m ON mg.match_id = m.id
+      WHERE mg.id = ?
+        AND EXISTS (
+          SELECT 1 FROM SeasonLeagueExternalIds slei
+          WHERE slei.season_id = m.season_id AND slei.league_id = m.league_id
+        )
+    ) AS is_championship
+  `;
+  const [row] = await runQuery<Array<{ is_championship: 0 | 1 }>>(
+    query,
+    [matchGameId],
+    connection
+  );
+  return row?.is_championship === 1;
+};
+
 type MatchGameTeamScoresMeta = {
   id: number;
   match_id: number;
