@@ -1,4 +1,11 @@
-import { resolveSteamIdToSteamId64, isValidSteamId } from "./utils";
+import {
+  resolveSteamIdToSteamId64,
+  isValidSteamId,
+  createTeamLogoUrl,
+  createAvatarUrl,
+  createOrgLogoUrl,
+  LOCAL_NO_LOGO_PATH
+} from "./utils";
 
 describe("Steam ID Utils", () => {
   describe("resolveSteamIdToSteamId64", () => {
@@ -164,5 +171,25 @@ describe("Steam ID Utils", () => {
         expect(steamId3Result).toBe(expectedSteamId64);
       });
     });
+  });
+});
+
+describe("image URL helpers", () => {
+  it("createTeamLogoUrl uses local placeholder for nologo.png", () => {
+    expect(createTeamLogoUrl("nologo.png")).toBe(LOCAL_NO_LOGO_PATH);
+  });
+
+  it("createOrgLogoUrl uses local placeholder for nologo.png", () => {
+    expect(createOrgLogoUrl("nologo.png")).toBe(LOCAL_NO_LOGO_PATH);
+  });
+
+  it("createAvatarUrl skips image service for nologo.png", () => {
+    expect(createAvatarUrl("nologo.png")).toBe("");
+  });
+
+  it("createTeamLogoUrl still resolves phash identifiers", () => {
+    expect(createTeamLogoUrl("8f85f92562586f19")).toBe(
+      "https://img.kanaliiga.fi/images/by-hash/phash/8f85f92562586f19"
+    );
   });
 });

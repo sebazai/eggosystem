@@ -26,7 +26,8 @@ import {
   type UnfinishedMatch,
   type UnfinishedMatchQuery,
   type CalendarMatchTeamsBySide,
-  type MatchTeamSide
+  type MatchTeamSide,
+  type MatchMvp
 } from "@eggosystem/types";
 import {
   fetchPlayerStatsForMatchOrGame,
@@ -273,6 +274,96 @@ export const getMatchTopPlayers = async (
     {},
     ...queryResults
   ) satisfies MatchOrGameTopPlayerAwards;
+};
+
+const MATCH_MVP_BATCH_LIMIT = 50;
+
+const seasonTeamPlayerJoin = `
+  JOIN MatchTeams mt ON mt.match_id = m.id
+  JOIN SeasonTeamPlayers stp ON stp.steam_id = p.steam_id
+    AND stp.season_id = m.season_id
+    AND stp.team_id = mt.team_id
+    AND stp.discarded_at IS NULL
+    AND (
+      stp.match_id = m.id
+      OR (
+        stp.match_id IS NULL
+        AND NOT EXISTS (
+          SELECT 1
+          FROM SeasonTeamPlayers stp2
+          WHERE stp2.season_id = m.season_id
+            AND stp2.team_id = mt.team_id
+            AND stp2.steam_id = p.steam_id
+            AND stp2.discarded_at IS NULL
+            AND stp2.match_id = m.id
+        )
+      )
+    )
+`;
+
+export const getMatchMvps = async (
+  match_ids: number[]
+): Promise<MatchMvp[]> => {
+  if (match_ids.length === 0) {
+    return [];
+  }
+
+  const uniqueIds = [...new Set(match_ids)].slice(0, MATCH_MVP_BATCH_LIMIT);
+  const placeholders = uniqueIds.map(() => "?").join(", ");
+
+  const query = `
+    WITH player_scores AS (
+      SELECT
+        m.id AS match_id,
+        p.steam_id,
+        p.nickname,
+        p.avatar,
+        stp.team_id,
+        CASE
+          WHEN m.best_of = 1 THEN MAX(ps.kana_rating)
+          ELSE ROUND(AVG(ps.kana_rating), 2)
+        END AS mvp_score
+      FROM PlayerStats ps
+      JOIN SteamPlayers p ON p.steam_id = ps.steam_id
+      JOIN MatchGames mg ON mg.id = ps.match_game_id
+      JOIN Matches m ON m.id = mg.match_id
+      ${seasonTeamPlayerJoin}
+      WHERE m.id IN (${placeholders})
+      GROUP BY m.id, m.best_of, p.steam_id, p.nickname, p.avatar, stp.team_id
+    ),
+    ranked AS (
+      SELECT
+        match_id,
+        steam_id,
+        nickname,
+        avatar,
+        team_id,
+        mvp_score,
+        ROW_NUMBER() OVER (
+          PARTITION BY match_id
+          ORDER BY mvp_score DESC, nickname ASC, steam_id ASC
+        ) AS rn
+      FROM player_scores
+    )
+    SELECT
+      match_id,
+      steam_id,
+      nickname,
+      avatar,
+      team_id,
+      mvp_score AS kana_rating
+    FROM ranked
+    WHERE rn = 1
+  `;
+
+  return runQuery<MatchMvp[]>(query, uniqueIds);
+};
+
+export const getMatchMvp = async (
+  match_id: number
+): Promise<MatchMvp | null> => {
+  const [mvp] = await getMatchMvps([match_id]);
+  return mvp ?? null;
 };
 
 export const getMatchesByFilters = async ({

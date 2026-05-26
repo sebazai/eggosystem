@@ -1,6 +1,6 @@
 export type MatchSortKey = "newest" | "oldest" | "tier";
 
-export const MATCH_SORT_OPTIONS: {
+const MATCH_SORT_OPTIONS: {
   value: MatchSortKey;
   label: string;
 }[] = [

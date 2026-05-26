@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { Clock, Crown, Swords } from "lucide-react";
-import type { MatchesByFilters } from "@eggosystem/types";
+import type { MatchMvp, MatchesByFilters } from "@eggosystem/types";
+import { useMatchMvp } from "@/context/MatchMvpContext";
 import { DivisionPill } from "./DivisionPill";
 import { SeasonChip } from "./SeasonChip";
 import { MetaPill } from "./MetaPill";
@@ -15,7 +16,9 @@ import {
   matchDurationMinutes
 } from "@/lib/matches/format";
 import { NextImageFallback } from "@/components/layout/NextImageFallback";
-import { createTeamLogoUrl } from "@/lib/utils";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Skeleton } from "@/components/ui/skeleton";
+import { cn, createAvatarUrl, createTeamLogoUrl } from "@/lib/utils";
 
 interface MatchCardProps {
   match: MatchesByFilters;
@@ -24,12 +27,176 @@ interface MatchCardProps {
   seasonLabel?: string;
 }
 
+function formatMvpRating(rating: number): string {
+  return rating.toFixed(2);
+}
+
+function truncateWithHyphen(value: string, maxLength: number): string {
+  if (value.length <= maxLength) return value;
+  return `${value.slice(0, Math.max(1, maxLength - 1))}-`;
+}
+
+function mvpInitials(nickname: string): string {
+  const trimmed = nickname.trim();
+  if (!trimmed) return "?";
+  const parts = trimmed.split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) {
+    return `${parts[0]![0] ?? ""}${parts[1]![0] ?? ""}`.toUpperCase();
+  }
+  return trimmed.slice(0, 2).toUpperCase();
+}
+
+interface SeriesMvpDisplayProps {
+  seriesMvp: MatchMvp | null | undefined;
+  isLoading: boolean;
+  variant: "desktop" | "mobile";
+}
+
+const mvpSkeletonClassName = "bg-white/20";
+
+function SeriesMvpSkeleton({ variant }: { variant: "desktop" | "mobile" }) {
+  if (variant === "mobile") {
+    return (
+      <div className="flex min-w-0 items-center gap-1.5" aria-hidden="true">
+        <Skeleton
+          className={cn("h-3 w-3 shrink-0 rounded-sm", mvpSkeletonClassName)}
+        />
+        <Skeleton className={cn("h-3 w-8 shrink-0", mvpSkeletonClassName)} />
+        <Skeleton className={cn("h-3 w-20 min-w-0", mvpSkeletonClassName)} />
+        <Skeleton className={cn("h-3 w-8 shrink-0", mvpSkeletonClassName)} />
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex min-w-0 items-center gap-2.5" aria-hidden="true">
+      <Skeleton
+        className={cn("size-16 shrink-0 rounded-full", mvpSkeletonClassName)}
+      />
+      <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+        <Skeleton className={cn("h-4 w-full max-w-28", mvpSkeletonClassName)} />
+        <Skeleton className={cn("h-8 w-20 rounded-md", mvpSkeletonClassName)} />
+      </div>
+    </div>
+  );
+}
+
+function SeriesMvpEmpty({ variant }: { variant: "desktop" | "mobile" }) {
+  if (variant === "mobile") {
+    return (
+      <span className="flex items-center gap-1 font-mono text-[10px] text-muted-foreground/50">
+        <Crown
+          size={12}
+          strokeWidth={1.5}
+          className="shrink-0 text-kanaliiga-orange/40"
+        />
+        <span className="uppercase tracking-[0.08em]">MVP</span>
+        <span>—</span>
+      </span>
+    );
+  }
+
+  return <p className="font-mono text-[10px] text-muted-foreground/50">—</p>;
+}
+
+function SeriesMvpPlayer({
+  seriesMvp,
+  variant
+}: {
+  seriesMvp: MatchMvp;
+  variant: "desktop" | "mobile";
+}) {
+  const avatarUrl = seriesMvp.avatar
+    ? createAvatarUrl(seriesMvp.avatar) || null
+    : null;
+  const initials = mvpInitials(seriesMvp.nickname);
+  const displayNickname =
+    variant === "mobile"
+      ? truncateWithHyphen(seriesMvp.nickname, 10)
+      : truncateWithHyphen(seriesMvp.nickname, 14);
+  const isNicknameTruncated = displayNickname !== seriesMvp.nickname;
+
+  if (variant === "mobile") {
+    return (
+      <span className="flex min-w-0 items-center gap-1 font-mono text-[10px]">
+        <Crown
+          size={12}
+          strokeWidth={1.5}
+          className="shrink-0 text-kanaliiga-orange"
+        />
+        <span className="shrink-0 uppercase tracking-[0.08em] text-muted-foreground">
+          MVP
+        </span>
+        <span
+          className="min-w-0 flex-1 overflow-hidden text-clip whitespace-nowrap font-headings text-xs uppercase text-foreground"
+          title={isNicknameTruncated ? seriesMvp.nickname : undefined}
+        >
+          {displayNickname}
+        </span>
+        <span className="shrink-0 font-headings text-xs text-kanaliiga-orange">
+          {formatMvpRating(seriesMvp.kana_rating)}
+        </span>
+      </span>
+    );
+  }
+
+  return (
+    <div className="flex min-w-0 items-center gap-2.5">
+      <Avatar className="size-16 shrink-0">
+        {avatarUrl ? (
+          <AvatarImage src={avatarUrl} alt={seriesMvp.nickname} />
+        ) : null}
+        <AvatarFallback className="bg-white/10 font-headings text-base uppercase text-foreground">
+          {initials}
+        </AvatarFallback>
+      </Avatar>
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
+        <p
+          className="min-w-0 overflow-hidden text-clip whitespace-nowrap font-headings text-sm uppercase leading-tight text-foreground"
+          title={isNicknameTruncated ? seriesMvp.nickname : undefined}
+        >
+          {displayNickname}
+        </p>
+        <div className="inline-flex w-fit items-center gap-1.5 rounded-md border border-kanaliiga-orange/35 bg-kanaliiga-orange/10 px-2 py-1 shadow-[0_0_12px_rgba(251,146,60,0.12)]">
+          <span className="font-headings text-xl tabular-nums leading-none tracking-tight text-kanaliiga-orange">
+            {formatMvpRating(seriesMvp.kana_rating)}
+          </span>
+          <span className="font-mono text-[7px] uppercase leading-[1.15] tracking-[0.14em] text-kanaliiga-orange/65">
+            Kana
+            <br />
+            rating
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SeriesMvpDisplay({
+  seriesMvp,
+  isLoading,
+  variant
+}: SeriesMvpDisplayProps) {
+  if (isLoading) {
+    return <SeriesMvpSkeleton variant={variant} />;
+  }
+
+  if (!seriesMvp) {
+    return <SeriesMvpEmpty variant={variant} />;
+  }
+
+  return <SeriesMvpPlayer seriesMvp={seriesMvp} variant={variant} />;
+}
+
 export function MatchCard({
   match,
   href,
   showSeason,
   seasonLabel
 }: MatchCardProps) {
+  const { seriesMvp, isMvpLoading, visibilityRef } = useMatchMvp(
+    match.match_id
+  );
   const tierColor = leagueColor(match.league_name).color;
 
   const { home_team: home, away_team: away } = match;
@@ -76,7 +243,11 @@ export function MatchCard({
   }
 
   return (
-    <Link href={href} className="block w-full min-w-0 no-underline">
+    <Link
+      ref={visibilityRef}
+      href={href}
+      className="block w-full min-w-0 no-underline"
+    >
       {/* Desktop */}
       <div className="mb-2 hidden overflow-hidden rounded-xl border border-white/8 bg-white/5 transition-colors duration-200 hover:bg-white/[0.07] lg:grid lg:grid-cols-[6px_240px_1fr_220px]">
         {/* Col 1: Tier stripe */}
@@ -143,16 +314,19 @@ export function MatchCard({
           )}
         </div>
 
-        {/* Col 4: MVP + action (graceful degrade — no MVP data in API yet) */}
-        <div className="flex flex-col justify-between border-l border-white/8 px-4 py-3">
-          <div>
-            <p className="mb-2 font-mono text-[9px] uppercase tracking-[0.18em] text-muted-foreground">
-              Series MVP
-            </p>
-            {/* MVP player data unavailable — backend work required */}
-            <p className="font-mono text-[10px] text-muted-foreground/50">—</p>
+        {/* Col 4: MVP + action */}
+        <div className="flex min-h-0 flex-col border-l border-white/8 px-3 py-2.5">
+          <div className="shrink-0 font-mono text-[9px] uppercase tracking-[0.18em] text-muted-foreground">
+            MVP
           </div>
-          <span className="mt-3 inline-block rounded border border-white/16 px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.06em] text-muted-foreground transition-colors hover:border-white/30 hover:text-foreground">
+          <div className="flex flex-1 items-center py-1">
+            <SeriesMvpDisplay
+              seriesMvp={seriesMvp}
+              isLoading={isMvpLoading}
+              variant="desktop"
+            />
+          </div>
+          <span className="inline-block w-fit shrink-0 rounded border border-white/16 px-2 py-1 font-mono text-[9px] uppercase tracking-[0.06em] text-muted-foreground transition-colors hover:border-white/30 hover:text-foreground">
             Match Recap →
           </span>
         </div>
@@ -282,17 +456,14 @@ export function MatchCard({
             </div>
           )}
 
-          {/* Mobile footer: MVP (unavailable) + recap link */}
+          {/* Mobile footer: MVP + recap link */}
           <div className="flex items-center justify-between border-t border-white/8 pt-2">
-            <span className="flex items-center gap-1 font-mono text-[10px] text-muted-foreground/50">
-              <Crown
-                size={12}
-                strokeWidth={1.5}
-                className="text-kanaliiga-orange/40"
-              />
-              —
-            </span>
-            <span className="font-mono text-[11px] uppercase tracking-[0.06em] text-kanaliiga-orange">
+            <SeriesMvpDisplay
+              seriesMvp={seriesMvp}
+              isLoading={isMvpLoading}
+              variant="mobile"
+            />
+            <span className="font-mono text-[9px] uppercase tracking-[0.06em] text-kanaliiga-orange">
               Recap →
             </span>
           </div>

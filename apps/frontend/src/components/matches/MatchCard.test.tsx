@@ -1,6 +1,15 @@
 import { render, screen } from "@testing-library/react";
 import { MatchCard } from "./MatchCard";
-import type { MatchesByFilters } from "@eggosystem/types";
+import { useMatchMvp } from "@/context/MatchMvpContext";
+import type { MatchMvp, MatchesByFilters } from "@eggosystem/types";
+import type { ReactElement } from "react";
+
+jest.mock("@/context/MatchMvpContext", () => ({
+  ...jest.requireActual("@/context/MatchMvpContext"),
+  useMatchMvp: jest.fn()
+}));
+
+const mockUseMatchMvp = useMatchMvp as jest.MockedFunction<typeof useMatchMvp>;
 
 jest.mock("@/components/layout/NextImageFallback", () => ({
   NextImageFallback: ({
@@ -44,48 +53,69 @@ const baseMatch: MatchesByFilters = {
   }
 };
 
+function renderMatchCard(ui: ReactElement) {
+  return render(ui);
+}
+
+const seededMvp: MatchMvp = {
+  match_id: 1,
+  steam_id: "76561198024059644",
+  nickname: "Shwifty",
+  avatar: null,
+  team_id: 2035,
+  kana_rating: 1.02
+};
+
 describe("MatchCard", () => {
+  beforeEach(() => {
+    mockUseMatchMvp.mockReturnValue({
+      seriesMvp: undefined,
+      isMvpLoading: false,
+      visibilityRef: jest.fn()
+    });
+  });
+
   it("renders both team names", () => {
-    render(<MatchCard match={baseMatch} href="/matches/1" />);
+    renderMatchCard(<MatchCard match={baseMatch} href="/matches/1" />);
     expect(screen.getAllByText("WIOSS").length).toBeGreaterThan(0);
     expect(screen.getAllByText("KT").length).toBeGreaterThan(0);
   });
 
   it("renders the score", () => {
-    render(<MatchCard match={baseMatch} href="/matches/1" />);
+    renderMatchCard(<MatchCard match={baseMatch} href="/matches/1" />);
     expect(screen.getAllByText("0").length).toBeGreaterThan(0);
     expect(screen.getAllByText("2").length).toBeGreaterThan(0);
   });
 
   it("renders the stage label (Grand Final for stage 2, group 3)", () => {
-    render(<MatchCard match={baseMatch} href="/matches/1" />);
+    renderMatchCard(<MatchCard match={baseMatch} href="/matches/1" />);
     expect(screen.getAllByText("Grand Final").length).toBeGreaterThan(0);
   });
 
   it("renders map score chips", () => {
-    render(<MatchCard match={baseMatch} href="/matches/1" />);
+    renderMatchCard(<MatchCard match={baseMatch} href="/matches/1" />);
     expect(screen.getAllByText("de_nuke").length).toBeGreaterThan(0);
     expect(screen.getAllByText("de_mirage").length).toBeGreaterThan(0);
   });
 
   it("renders the DivisionPill label for the league name", () => {
-    render(<MatchCard match={baseMatch} href="/matches/1" />);
+    renderMatchCard(<MatchCard match={baseMatch} href="/matches/1" />);
     expect(screen.getAllByText("CS2 Masters").length).toBeGreaterThan(0);
   });
 
   it("renders duration when end_timestamp is present", () => {
-    render(<MatchCard match={baseMatch} href="/matches/1" />);
+    renderMatchCard(<MatchCard match={baseMatch} href="/matches/1" />);
     expect(screen.getAllByText("2h 11m").length).toBeGreaterThan(0);
   });
 
   it("does not render duration when end_timestamp is null", () => {
     const matchNoEnd = { ...baseMatch, end_timestamp: null };
-    render(<MatchCard match={matchNoEnd} href="/matches/1" />);
+    renderMatchCard(<MatchCard match={matchNoEnd} href="/matches/1" />);
     expect(screen.queryByText(/\dh \d+m/)).toBeNull();
   });
 
   it("renders SeasonChip when showSeason and seasonLabel are provided", () => {
-    render(
+    renderMatchCard(
       <MatchCard
         match={baseMatch}
         href="/matches/1"
@@ -97,24 +127,28 @@ describe("MatchCard", () => {
   });
 
   it("does not render SeasonChip when showSeason is false", () => {
-    render(<MatchCard match={baseMatch} href="/matches/1" seasonLabel="S5" />);
+    renderMatchCard(
+      <MatchCard match={baseMatch} href="/matches/1" seasonLabel="S5" />
+    );
     expect(screen.queryByText("S5")).toBeNull();
   });
 
   it("renders no map chips when maps_json is empty", () => {
     const matchNoMaps = { ...baseMatch, maps_json: [] };
-    render(<MatchCard match={matchNoMaps} href="/matches/1" />);
+    renderMatchCard(<MatchCard match={matchNoMaps} href="/matches/1" />);
     expect(screen.queryByText("de_nuke")).toBeNull();
   });
 
   it("links to the correct href", () => {
-    render(<MatchCard match={baseMatch} href="/matches/1/games/101" />);
+    renderMatchCard(
+      <MatchCard match={baseMatch} href="/matches/1/games/101" />
+    );
     const links = screen.getAllByRole("link");
     expect(links[0]).toHaveAttribute("href", "/matches/1/games/101");
   });
 
   it("highlights the winning series score on desktop layout", () => {
-    const { container } = render(
+    const { container } = renderMatchCard(
       <MatchCard match={baseMatch} href="/matches/1" />
     );
     const winnerScores = container.querySelectorAll(".text-kanaliiga-orange");
@@ -129,7 +163,9 @@ describe("MatchCard", () => {
       away_team: { name: "Beta", logo: "b.png", score: 1 },
       maps_json: [{ name: "de_nuke", home_score: 9, away_score: 13 }]
     };
-    const { container } = render(<MatchCard match={match} href="/matches/1" />);
+    const { container } = renderMatchCard(
+      <MatchCard match={match} href="/matches/1" />
+    );
 
     expect(screen.getAllByText("Alpha").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Beta").length).toBeGreaterThan(0);
@@ -156,7 +192,63 @@ describe("MatchCard", () => {
       match_group: 2,
       match_round: 3
     };
-    render(<MatchCard match={stage1Match} href="/matches/1" />);
+    renderMatchCard(<MatchCard match={stage1Match} href="/matches/1" />);
     expect(screen.getAllByText("Regular Season").length).toBeGreaterThan(0);
+  });
+
+  it("renders series MVP nickname when cached", () => {
+    mockUseMatchMvp.mockReturnValue({
+      seriesMvp: seededMvp,
+      isMvpLoading: false,
+      visibilityRef: jest.fn()
+    });
+
+    renderMatchCard(<MatchCard match={baseMatch} href="/matches/1" />);
+    expect(screen.getAllByText("Shwifty").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("1.02").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Kanarating").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("MVP").length).toBeGreaterThan(0);
+  });
+
+  it("renders MVP loading skeleton when fetch is in progress", () => {
+    mockUseMatchMvp.mockReturnValue({
+      seriesMvp: undefined,
+      isMvpLoading: true,
+      visibilityRef: jest.fn()
+    });
+
+    renderMatchCard(<MatchCard match={baseMatch} href="/matches/1" />);
+    expect(document.querySelector('[data-slot="skeleton"]')).toBeTruthy();
+  });
+
+  it("renders em dash when MVP is not cached", () => {
+    renderMatchCard(<MatchCard match={baseMatch} href="/matches/1" />);
+    expect(screen.getAllByText("—").length).toBeGreaterThan(0);
+  });
+
+  it("renders em dash when MVP fetch returned no stats", () => {
+    mockUseMatchMvp.mockReturnValue({
+      seriesMvp: null,
+      isMvpLoading: false,
+      visibilityRef: jest.fn()
+    });
+
+    renderMatchCard(<MatchCard match={baseMatch} href="/matches/1" />);
+    expect(screen.getAllByText("—").length).toBeGreaterThan(0);
+  });
+
+  it("truncates long MVP nicknames with a hyphen instead of ellipsis", () => {
+    mockUseMatchMvp.mockReturnValue({
+      seriesMvp: {
+        ...seededMvp,
+        nickname: "VeryLongPlayerNickname"
+      },
+      isMvpLoading: false,
+      visibilityRef: jest.fn()
+    });
+
+    renderMatchCard(<MatchCard match={baseMatch} href="/matches/1" />);
+    expect(screen.getAllByText("VeryLongPlaye-").length).toBeGreaterThan(0);
+    expect(screen.queryByText(/\.\.\./)).toBeNull();
   });
 });

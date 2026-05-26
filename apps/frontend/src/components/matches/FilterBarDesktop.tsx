@@ -6,12 +6,6 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import useSWR from "swr";
 import { expressFetcher, cn } from "@/lib/utils";
 import { leagueColor, formatLeagueName } from "@/lib/matches/tiers";
-import {
-  getMatchSortKey,
-  getMatchSortLabel,
-  MATCH_SORT_OPTIONS,
-  type MatchSortKey
-} from "@/lib/matches/sort";
 import type { FilterParamsQuery } from "@/lib/utils";
 import type { Season, League, Stage, Team, Map } from "@eggosystem/types";
 import {
@@ -165,68 +159,6 @@ function FacetPopover({
   );
 }
 
-function SortPopover({
-  sort,
-  onSelect
-}: {
-  sort: MatchSortKey;
-  onSelect: (value: MatchSortKey) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const isNonDefault = sort !== "newest";
-
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <button
-          aria-label="Sort matches"
-          className={cn(
-            "flex h-9 w-40 shrink-0 items-center justify-between gap-1.5 rounded-md border px-3 font-mono text-[11px] transition-colors",
-            isNonDefault
-              ? "border-kanaliiga-orange/40 text-foreground"
-              : "border-kanaliiga-light-brown/40 text-muted-foreground hover:border-kanaliiga-light-brown/70 hover:text-foreground"
-          )}
-        >
-          <span className="truncate uppercase tracking-[0.08em]">
-            {getMatchSortLabel(sort)}
-          </span>
-          <ChevronDown size={12} strokeWidth={1.5} className="shrink-0" />
-        </button>
-      </PopoverTrigger>
-      <PopoverContent
-        align="end"
-        className="z-30 w-52 p-0 border-white/8 bg-[hsl(240_3%_11%)]"
-      >
-        <div className="py-1">
-          {MATCH_SORT_OPTIONS.map((option) => {
-            const isSelected = sort === option.value;
-            return (
-              <button
-                key={option.value}
-                onClick={() => {
-                  onSelect(option.value);
-                  setOpen(false);
-                }}
-                className={cn(
-                  "flex w-full items-center gap-2 px-3 py-2 font-mono text-[11px] transition-colors hover:bg-white/5",
-                  isSelected ? "text-kanaliiga-orange" : "text-foreground"
-                )}
-              >
-                <span className="flex-1 text-left">{option.label}</span>
-                {isSelected && (
-                  <span className="size-3 rounded-full bg-kanaliiga-orange/20 text-kanaliiga-orange flex items-center justify-center text-[8px]">
-                    ✓
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </PopoverContent>
-    </Popover>
-  );
-}
-
 interface FilterBarDesktopProps {
   filterParams: FilterParamsQuery;
 }
@@ -275,14 +207,6 @@ export function FilterBarDesktop({ filterParams }: FilterBarDesktopProps) {
       : [...current, id];
     setParam(key, next);
   }
-
-  function setSort(value: MatchSortKey) {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("sort", value);
-    router.replace(`${pathname}?${params.toString()}`);
-  }
-
-  const currentSort = getMatchSortKey(searchParams);
 
   const seasonItems: FacetItem[] = (seasons ?? [])
     .slice()
@@ -360,8 +284,6 @@ export function FilterBarDesktop({ filterParams }: FilterBarDesktopProps) {
           />
         </div>
       </div>
-
-      <SortPopover sort={currentSort} onSelect={setSort} />
 
       <button
         onClick={() => router.replace(pathname)}

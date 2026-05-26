@@ -79,30 +79,28 @@ describe("FilterBarDesktop", () => {
     });
   });
 
-  it("shows default newest sort label", () => {
+  it("renders facet filter controls without a sort control", () => {
     render(<FilterBarDesktop filterParams={defaultFilterParams} />);
 
+    expect(screen.getByRole("button", { name: "Seasons" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Leagues" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Stages" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Teams" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Maps" })).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "Sort matches" })
-    ).toHaveTextContent("Newest first");
+      screen.queryByRole("button", { name: "Sort matches" })
+    ).not.toBeInTheDocument();
   });
 
-  it("updates sort URL param when selecting oldest", () => {
-    render(<FilterBarDesktop filterParams={defaultFilterParams} />);
-
-    fireEvent.click(screen.getByRole("button", { name: "Sort matches" }));
-    fireEvent.click(screen.getByRole("button", { name: "Oldest first" }));
-
-    expect(mockReplace).toHaveBeenCalledWith("/matches?sort=oldest");
-  });
-
-  it("reflects current sort from URL params", () => {
-    mockUseSearchParams.mockReturnValue(new URLSearchParams("sort=tier"));
+  it("clears all filter params when Clear all is clicked", () => {
+    mockUseSearchParams.mockReturnValue(
+      new URLSearchParams("leagues=1&sort=oldest")
+    );
 
     render(<FilterBarDesktop filterParams={defaultFilterParams} />);
 
-    expect(
-      screen.getByRole("button", { name: "Sort matches" })
-    ).toHaveTextContent("Highest tier first");
+    fireEvent.click(screen.getByRole("button", { name: "Clear all" }));
+
+    expect(mockReplace).toHaveBeenCalledWith("/matches");
   });
 });

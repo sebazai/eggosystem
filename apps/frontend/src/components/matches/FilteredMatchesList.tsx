@@ -5,6 +5,7 @@ import useSWR from "swr";
 import { expressFetcher, type FilterParamsQuery } from "@/lib/utils";
 import { DateGroup } from "./DateGroup";
 import { MatchCard } from "./MatchCard";
+import { MatchMvpProvider } from "@/context/MatchMvpContext";
 import type { MatchesByFilters, Season, League } from "@eggosystem/types";
 
 function abbrevSeasonName(fullName: string): string {
@@ -106,30 +107,32 @@ export const FilteredMatchesList = ({
   const orderedDates = Array.from(new Set(sorted.map((m) => m.match_date)));
 
   return (
-    <div className="min-w-0 w-full">
-      {orderedDates.map((date) => {
-        const matchesForDate = groupedMatches[date] ?? [];
-        return (
-          <DateGroup key={date} date={date} count={matchesForDate.length}>
-            {matchesForDate.map((match) => {
-              const href = match.match_game_id
-                ? `/matches/${match.match_id}/games/${match.match_game_id}`
-                : `/matches/${match.match_id}`;
-              const seasonLabel =
-                seasonLabelMap[match.season_id] ?? `S${match.season_id}`;
-              return (
-                <MatchCard
-                  key={match.match_id}
-                  match={match}
-                  href={href}
-                  showSeason={showSeason}
-                  seasonLabel={seasonLabel}
-                />
-              );
-            })}
-          </DateGroup>
-        );
-      })}
-    </div>
+    <MatchMvpProvider>
+      <div className="min-w-0 w-full">
+        {orderedDates.map((date) => {
+          const matchesForDate = groupedMatches[date] ?? [];
+          return (
+            <DateGroup key={date} date={date} count={matchesForDate.length}>
+              {matchesForDate.map((match) => {
+                const href = match.match_game_id
+                  ? `/matches/${match.match_id}/games/${match.match_game_id}`
+                  : `/matches/${match.match_id}`;
+                const seasonLabel =
+                  seasonLabelMap[match.season_id] ?? `S${match.season_id}`;
+                return (
+                  <MatchCard
+                    key={match.match_id}
+                    match={match}
+                    href={href}
+                    showSeason={showSeason}
+                    seasonLabel={seasonLabel}
+                  />
+                );
+              })}
+            </DateGroup>
+          );
+        })}
+      </div>
+    </MatchMvpProvider>
   );
 };

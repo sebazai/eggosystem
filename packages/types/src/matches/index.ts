@@ -1,3 +1,4 @@
+export * from "./MatchMvp.interface";
 export * from "./MatchesByFilters.interface";
 export * from "./MatchInfo.interface";
 export * from "./TeamStatsResponse";

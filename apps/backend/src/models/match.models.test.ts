@@ -3,7 +3,9 @@ import {
   getMatchesByFilters,
   getMatchTopPlayers,
   getMatchMapVetoes,
-  getMatchGamesByTeam
+  getMatchGamesByTeam,
+  getMatchMvps,
+  getMatchMvp
 } from "./match.models";
 
 describe("getMatchesByFilters", () => {
@@ -535,5 +537,65 @@ describe("getMatchGamesByTeam", () => {
   it("should handle team with no matches", async () => {
     const result = await getMatchGamesByTeam(999999);
     expect(result).toEqual([]);
+  });
+});
+
+describe("getMatchMvps", () => {
+  it("returns BO3 series MVP with average kana_rating", async () => {
+    const [mvp] = await getMatchMvps([10154]);
+
+    expect(mvp).toEqual(
+      expect.objectContaining({
+        match_id: 10154,
+        steam_id: "76561198024059644",
+        nickname: "Shwifty",
+        team_id: 2035,
+        kana_rating: 1.02
+      })
+    );
+  });
+
+  it("returns BO1 series MVP with highest single-map kana_rating", async () => {
+    const [mvp] = await getMatchMvps([14]);
+
+    expect(mvp).toEqual(
+      expect.objectContaining({
+        match_id: 14,
+        steam_id: "76561198207195847",
+        nickname: "( GhostZero)",
+        kana_rating: 1.15
+      })
+    );
+  });
+
+  it("returns multiple MVPs in one batch", async () => {
+    const mvps = await getMatchMvps([10154, 14]);
+    expect(mvps).toHaveLength(2);
+    expect(mvps.map((m) => m.match_id).sort((a, b) => a - b)).toEqual([
+      14, 10154
+    ]);
+  });
+
+  it("omits unknown match_id from results", async () => {
+    const mvps = await getMatchMvps([999999]);
+    expect(mvps).toEqual([]);
+  });
+
+  it("returns empty array for empty input", async () => {
+    const mvps = await getMatchMvps([]);
+    expect(mvps).toEqual([]);
+  });
+});
+
+describe("getMatchMvp", () => {
+  it("returns MVP for a single match", async () => {
+    const mvp = await getMatchMvp(10154);
+    expect(mvp?.nickname).toBe("Shwifty");
+    expect(mvp?.kana_rating).toBe(1.02);
+  });
+
+  it("returns null when no MVP can be computed", async () => {
+    const mvp = await getMatchMvp(999999);
+    expect(mvp).toBeNull();
   });
 });

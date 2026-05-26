@@ -13,7 +13,9 @@ import {
   getMatchesWithTeamDataBySeasonId,
   getMatchIs2xBO1,
   getMatchTeamLineups,
-  getTeamStats
+  getTeamStats,
+  getMatchMvps,
+  getMatchMvp
 } from "../models/match.models";
 import type {
   MatchGame,
@@ -25,6 +27,29 @@ import type {
 } from "@eggosystem/types";
 import { BadRequestError, NotFoundError } from "../utils/errors";
 import { getActiveOrPassedSeasonId } from "../services/season.services";
+
+function parseMatchIdsQuery(
+  param: string | string[] | undefined
+): number[] | null {
+  if (param === undefined || param === "") return null;
+
+  let values: string[] = [];
+  if (Array.isArray(param)) {
+    values = param;
+  } else if (typeof param === "string") {
+    values = param.split(",");
+  }
+
+  const parsedValues = values
+    .map((value) => {
+      if (value.trim() === "") return null;
+      const num = Number(value.trim());
+      return Number.isNaN(num) ? null : num;
+    })
+    .filter((n): n is number => n !== null);
+
+  return parsedValues.length > 0 ? parsedValues : null;
+}
 
 export const getMatchesController = async (req: Request, res: Response) => {
   const matches = await getMatches(); // Wait for the promise to resolve
@@ -222,4 +247,24 @@ export const getMatchTeamLineupsController = async (
   }
 
   res.json(lineups);
+};
+
+export const getMatchMvpsController = async (req: Request, res: Response) => {
+  const matchIds = parseMatchIdsQuery(req.query.match_ids?.toString());
+
+  if (!matchIds) {
+    throw new BadRequestError("match_ids query parameter is required");
+  }
+
+  const mvps = await getMatchMvps(matchIds);
+  res.json({ mvps });
+};
+
+export const getMatchMvpController = async (
+  req: RequestWithParams<{ match_id: string }>,
+  res: Response
+) => {
+  const matchId = parseInt(req.params.match_id, 10);
+  const mvp = await getMatchMvp(matchId);
+  res.json(mvp);
 };
