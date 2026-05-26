@@ -6,9 +6,9 @@ import {
 } from "./format";
 
 describe("stageLabel", () => {
-  it("returns Group · Round for regular season (stage 1)", () => {
+  it("returns Group · Week for regular season (stage 1)", () => {
     expect(stageLabel({ stage: 1, match_group: 2, match_round: 3 })).toBe(
-      "Group 2 · Round 3"
+      "Group 2 · Week 3"
     );
   });
 
@@ -20,22 +20,31 @@ describe("stageLabel", () => {
 
   it("returns Upper Bracket for playoff group 1", () => {
     expect(stageLabel({ stage: 2, match_group: 1, match_round: 2 })).toBe(
-      "Upper Bracket · Round 2"
+      "Upper Bracket · Week 2"
     );
   });
 
   it("returns Lower Bracket for playoff group 2", () => {
     expect(stageLabel({ stage: 2, match_group: 2, match_round: 1 })).toBe(
-      "Lower Bracket · Round 1"
+      "Lower Bracket · Week 1"
     );
   });
 
   it("handles null group/round gracefully", () => {
     expect(stageLabel({ stage: 1, match_group: null, match_round: null })).toBe(
-      "Group ? · Round ?"
+      ""
+    );
+    expect(stageLabel({ stage: 1, match_group: null, match_round: 3 })).toBe(
+      "Week 3"
+    );
+    expect(stageLabel({ stage: 1, match_group: 2, match_round: null })).toBe(
+      "Group 2"
     );
     expect(stageLabel({ stage: 2, match_group: null, match_round: null })).toBe(
-      "Upper Bracket · Round ?"
+      "Upper Bracket"
+    );
+    expect(stageLabel({ stage: 2, match_group: 1, match_round: null })).toBe(
+      "Upper Bracket"
     );
   });
 });

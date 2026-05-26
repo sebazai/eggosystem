@@ -5,7 +5,6 @@ import { orderMatchParticipantsBySideHomeLeft } from "@/lib/order-match-teams-ho
 import { getMatchInfo } from "./utils";
 import { CardContainer } from "@/components/layout/CardContainer";
 import { ContentContainer } from "@/components/layout/ContentContainer";
-import { AutoBreadcrumbs } from "@/components/layout/AutoBreadcrumbs";
 import { createPageMetadata } from "@/lib/metadata";
 import { UpcomingMatchHeader } from "@/components/matches/upcoming/UpcomingMatchHeader";
 import { formatDateShort } from "@/lib/date-utils";
@@ -75,9 +74,6 @@ export default async function Layout({ children, params }: LayoutProps) {
   if (matchInfo.status === MatchStatus.SCHEDULED) {
     return (
       <>
-        <div className="px-4 pt-4">
-          <AutoBreadcrumbs />
-        </div>
         <UpcomingMatchHeader matchId={matchIdNumber} matchInfo={matchInfo} />
         <CardContainer classNames="rounded-none">
           <div className="p-2">{children}</div>
@@ -88,9 +84,6 @@ export default async function Layout({ children, params }: LayoutProps) {
 
   return (
     <>
-      <div className="px-4 pt-4">
-        <AutoBreadcrumbs />
-      </div>
       <MatchHeader
         team1={teams[0]!}
         team2={teams[1]!}

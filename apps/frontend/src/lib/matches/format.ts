@@ -6,11 +6,14 @@ type StageInput = {
 
 export function stageLabel(m: StageInput): string {
   if (m.stage === 1) {
-    return `Group ${m.match_group ?? "?"} · Round ${m.match_round ?? "?"}`;
+    const parts: string[] = [];
+    if (m.match_group != null) parts.push(`Group ${m.match_group}`);
+    if (m.match_round != null) parts.push(`Week ${m.match_round}`);
+    return parts.join(" · ");
   }
   if (m.match_group === 3) return "Grand Final";
   const bracket = m.match_group === 2 ? "Lower Bracket" : "Upper Bracket";
-  return `${bracket} · Round ${m.match_round ?? "?"}`;
+  return m.match_round != null ? `${bracket} · Week ${m.match_round}` : bracket;
 }
 
 export function stageKicker(stage: number): string {

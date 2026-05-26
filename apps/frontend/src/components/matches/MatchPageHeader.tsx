@@ -2,10 +2,6 @@
 
 import { useEffect, useState } from "react";
 
-interface MatchPageHeaderProps {
-  seasonId?: number | null;
-}
-
 function useMinutesAgo(): number {
   const [loadedAt] = useState(() => Date.now());
   const [minutesAgo, setMinutesAgo] = useState(0);
@@ -20,24 +16,17 @@ function useMinutesAgo(): number {
   return minutesAgo;
 }
 
-export function MatchPageHeader({ seasonId }: MatchPageHeaderProps) {
+export function MatchPageHeader() {
   const minutesAgo = useMinutesAgo();
 
-  const eyebrow =
-    seasonId != null ? `◇◇ CS2 Season ${seasonId}` : "◇◇ Kanaliiga";
   const updatedLabel = minutesAgo === 0 ? "Just now" : `${minutesAgo} min ago`;
 
   return (
-    <div className="mb-6">
-      <div className="flex items-start justify-between gap-4">
-        <p className="font-mono text-[10.5px] uppercase tracking-[0.22em] text-kanaliiga-orange">
-          {eyebrow}
-        </p>
-        <p className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground whitespace-nowrap">
-          Updated {updatedLabel}
-        </p>
-      </div>
-      <h1 className="text-4xl md:text-5xl">Recent Matches</h1>
+    <div className="mb-6 min-w-0">
+      <p className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground">
+        Updated {updatedLabel} · Auto-Refresh
+      </p>
+      <h1 className="tracking-[0.02em] text-4xl md:text-5xl">Recent Matches</h1>
       <hr
         className="mt-4"
         style={{

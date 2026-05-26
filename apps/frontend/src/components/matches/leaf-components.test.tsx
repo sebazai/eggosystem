@@ -8,19 +8,34 @@ import { Swords } from "lucide-react";
 
 describe("DivisionPill", () => {
   it.each([
-    ["premier", "Masters"],
-    ["elite", "Challengers"],
-    ["challenge", "Prospects"],
-    ["open", "Open"]
-  ] as const)("renders label for %s tier", (tierKey, expectedLabel) => {
-    render(<DivisionPill tierKey={tierKey} />);
+    ["Masters", "Masters"],
+    ["Challengers", "Challengers"],
+    ["Prospects", "Prospects"],
+    ["div5", "Div 5"],
+    ["div2", "Div 2"],
+    ["div11", "Div 11"],
+    ["MKT", "MKT"]
+  ])("renders formatted label for %s", (leagueName, expectedLabel) => {
+    render(<DivisionPill leagueName={leagueName} />);
     expect(screen.getByText(expectedLabel)).toBeInTheDocument();
   });
 
-  it("applies tier color via inline style", () => {
-    const { container } = render(<DivisionPill tierKey="premier" />);
+  it("applies an inline color style", () => {
+    const { container } = render(<DivisionPill leagueName="Masters" />);
     const pill = container.firstChild as HTMLElement;
-    expect(pill.style.color).toContain("--tier-premier");
+    expect(pill.style.color).toBeTruthy();
+  });
+
+  it("applies distinct colors for the top three tiers", () => {
+    const { container: c1 } = render(<DivisionPill leagueName="Masters" />);
+    const { container: c2 } = render(<DivisionPill leagueName="Challengers" />);
+    const { container: c3 } = render(<DivisionPill leagueName="Prospects" />);
+    const mastersColor = (c1.firstChild as HTMLElement).style.color;
+    const challengersColor = (c2.firstChild as HTMLElement).style.color;
+    const prospectsColor = (c3.firstChild as HTMLElement).style.color;
+    expect(mastersColor).not.toBe(challengersColor);
+    expect(challengersColor).not.toBe(prospectsColor);
+    expect(mastersColor).not.toBe(prospectsColor);
   });
 });
 

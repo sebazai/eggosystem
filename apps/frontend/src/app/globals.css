@@ -61,12 +61,6 @@ Vaaleanruskea: #d09158 / hsl(29, 56%, 58%) */
   --max-page: 1920px;
   --page-px: 1rem;
 
-  /* ---------- Tier colors ---------- */
-  --tier-premier: 35 93% 49%;
-  --tier-elite: 262 83% 58%;
-  --tier-challenge: 199 89% 48%;
-  --tier-open: 160 60% 45%;
-
   /* ---------- Status / stream ---------- */
   --status-live: 0 84% 60%;
   --status-upcoming: 35 93% 49%;
@@ -159,10 +153,6 @@ Vaaleanruskea: #d09158 / hsl(29, 56%, 58%) */
   --color-kanaliiga-light-brown: var(--kanaliiga-light-brown);
   --color-kanaliiga-dark-gray: var(--kanaliiga-dark-gray);
   --color-kanaliiga-white: var(--kanaliiga-white);
-  --color-tier-premier: hsl(var(--tier-premier));
-  --color-tier-elite: hsl(var(--tier-elite));
-  --color-tier-challenge: hsl(var(--tier-challenge));
-  --color-tier-open: hsl(var(--tier-open));
   --color-status-live: hsl(var(--status-live));
   --color-status-upcoming: hsl(var(--status-upcoming));
   --color-status-finished: hsl(var(--status-finished));

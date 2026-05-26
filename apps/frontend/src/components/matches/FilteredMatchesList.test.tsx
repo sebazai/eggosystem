@@ -7,6 +7,19 @@ jest.mock("@/hooks/data/filtered/useRecentMatches", () => ({
   useRecentMatches: jest.fn()
 }));
 
+jest.mock("swr", () => ({
+  __esModule: true,
+  default: jest
+    .fn()
+    .mockReturnValue({ data: undefined, isLoading: false, isValidating: false })
+}));
+
+jest.mock("next/navigation", () => ({
+  useSearchParams: () => new URLSearchParams(),
+  usePathname: () => "/matches",
+  useRouter: () => ({ replace: jest.fn(), push: jest.fn() })
+}));
+
 jest.mock("@/components/layout/NextImageFallback", () => ({
   NextImageFallback: ({
     src,

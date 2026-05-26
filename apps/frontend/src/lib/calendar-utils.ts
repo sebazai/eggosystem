@@ -1,23 +1,14 @@
 import { MatchStatus, type MatchWithStreamUrls } from "@eggosystem/types";
-import {
-  numericTierToKey,
-  tierCssColor,
-  tierCssBorderColor
-} from "@/lib/matches/tiers";
+import { numericTierColors } from "@/lib/matches/tiers";
 
-// Maps numeric tier values to CSS-variable-based colors from globals.css.
-// Tiers 1–3 map to premier/elite/challenge; 4+ map to open.
 const buildDivisions = (): Record<
   number,
   { color: string; borderColor: string }
 > => {
   const result: Record<number, { color: string; borderColor: string }> = {};
   for (let i = 1; i <= 12; i++) {
-    const key = numericTierToKey(i);
-    result[i] = {
-      color: tierCssColor(key),
-      borderColor: tierCssBorderColor(key)
-    };
+    const { color, border } = numericTierColors(i);
+    result[i] = { color, borderColor: border };
   }
   return result;
 };

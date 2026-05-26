@@ -66,9 +66,9 @@ describe("MatchCard", () => {
     expect(screen.getAllByText("de_mirage").length).toBeGreaterThan(0);
   });
 
-  it("renders the DivisionPill with Masters label for a Masters league", () => {
+  it("renders the DivisionPill label for the league name", () => {
     render(<MatchCard match={baseMatch} href="/matches/1" />);
-    expect(screen.getAllByText("Masters").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("CS2 Masters").length).toBeGreaterThan(0);
   });
 
   it("renders duration when end_timestamp is present", () => {
@@ -111,12 +111,13 @@ describe("MatchCard", () => {
     expect(links[0]).toHaveAttribute("href", "/matches/1/games/101");
   });
 
-  it("applies opacity to losing team score on desktop layout", () => {
+  it("highlights the winning series score on desktop layout", () => {
     const { container } = render(
       <MatchCard match={baseMatch} href="/matches/1" />
     );
-    const opacityEls = container.querySelectorAll(".opacity-40");
-    expect(opacityEls.length).toBeGreaterThan(0);
+    const winnerScores = container.querySelectorAll(".text-kanaliiga-orange");
+    expect(winnerScores.length).toBeGreaterThan(0);
+    expect(container.querySelectorAll(".opacity-40")).toHaveLength(0);
   });
 
   it("renders regular season kicker for stage 1", () => {

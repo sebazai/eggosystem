@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { numericTierToKey, tierCssColor } from "@/lib/matches/tiers";
+import { numericTierColors } from "@/lib/matches/tiers";
 
 export function TierDot({
   tier,
@@ -8,7 +8,7 @@ export function TierDot({
   tier: number;
   className?: string;
 }) {
-  const color = tierCssColor(numericTierToKey(tier));
+  const color = numericTierColors(tier).color;
 
   return (
     <span
