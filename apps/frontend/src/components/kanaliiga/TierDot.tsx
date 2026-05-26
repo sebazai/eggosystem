@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { DIVISIONS } from "@/lib/calendar-utils";
+import { numericTierToKey, tierCssColor } from "@/lib/matches/tiers";
 
 export function TierDot({
   tier,
@@ -8,7 +8,7 @@ export function TierDot({
   tier: number;
   className?: string;
 }) {
-  const color = DIVISIONS[tier]?.color ?? "#6b7280";
+  const color = tierCssColor(numericTierToKey(tier));
 
   return (
     <span
