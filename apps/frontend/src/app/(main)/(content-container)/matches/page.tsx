@@ -1,7 +1,6 @@
-import _ from "lodash";
 import { createPageMetadata } from "@/lib/metadata";
 import type { Metadata } from "next";
-import { RecentMatches } from "@/components/matches/RecentMatches";
+import { MatchesView } from "@/components/matches/MatchesView";
 
 export const metadata: Metadata = createPageMetadata({
   title: "Recent matches",
@@ -9,5 +8,5 @@ export const metadata: Metadata = createPageMetadata({
 });
 
 export default function AllMatches() {
-  return <RecentMatches />;
+  return <MatchesView />;
 }

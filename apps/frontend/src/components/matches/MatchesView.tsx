@@ -1,22 +1,36 @@
 "use client";
 
-import { MultiFilters } from "@/components/filters/MultiFilters";
-import { FilteredMatchesList } from "@/components/matches/FilteredMatchesList";
-import _ from "lodash";
-import { useFilters } from "@/context/FilterContext";
-import { ContentContainer } from "@/components/layout/ContentContainer";
 import { Suspense } from "react";
+import { useFilters } from "@/context/FilterContext";
+import { useRecentMatches } from "@/hooks/data/filtered/useRecentMatches";
+import { MultiFilters } from "@/components/filters/MultiFilters";
+import { ContentContainer } from "@/components/layout/ContentContainer";
 import { MatchListSkeleton } from "@/components/loading";
+import { MatchPageHeader } from "./MatchPageHeader";
+import { SummaryStrip } from "./SummaryStrip";
+import { FilteredMatchesList } from "./FilteredMatchesList";
 
-export const RecentMatches = () => {
-  const { filterParams, isLoading, error, isValidating } = useFilters();
+export function MatchesView() {
+  const { filterParams, activeSeason, isLoading, error, isValidating } =
+    useFilters();
 
   const isFiltersLoading = isLoading || !filterParams || isValidating;
 
+  const { matches } = useRecentMatches(
+    filterParams ?? {
+      seasons: [],
+      leagues: [],
+      stages: null,
+      teams: null,
+      maps: null
+    }
+  );
+
   return (
     <div>
-      <h1 className="text-3xl mb-4 md:mb-8">Recent matches</h1>
-      <div className="pb-2">
+      <MatchPageHeader seasonId={activeSeason?.season_id} />
+
+      <div className="mb-4">
         {filterParams && (
           <MultiFilters
             seasons={filterParams.seasons}
@@ -27,9 +41,11 @@ export const RecentMatches = () => {
           />
         )}
         {!filterParams && (
-          <div className="h-10 bg-accent animate-pulse rounded-md" />
+          <div className="h-10 animate-pulse rounded-md bg-accent" />
         )}
       </div>
+
+      {matches && matches.length > 0 && <SummaryStrip matches={matches} />}
 
       {isFiltersLoading && <MatchListSkeleton />}
       {!isFiltersLoading && error && (
@@ -42,4 +58,4 @@ export const RecentMatches = () => {
       )}
     </div>
   );
-};
+}
