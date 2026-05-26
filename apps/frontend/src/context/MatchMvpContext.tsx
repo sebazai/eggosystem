@@ -153,6 +153,8 @@ export function useMatchMvp(matchId: number) {
 
   const observerRef = useRef<IntersectionObserver | null>(null);
 
+  const { registerVisible } = ctx;
+
   const visibilityRef: RefCallback<HTMLElement> = useCallback(
     (node) => {
       if (observerRef.current) {
@@ -164,14 +166,14 @@ export function useMatchMvp(matchId: number) {
       observerRef.current = new IntersectionObserver(
         (entries) => {
           if (entries.some((entry) => entry.isIntersecting)) {
-            ctx.registerVisible(matchId);
+            registerVisible(matchId);
           }
         },
         { rootMargin: PREFETCH_ROOT_MARGIN }
       );
       observerRef.current.observe(node);
     },
-    [ctx, matchId]
+    [registerVisible, matchId]
   );
 
   useEffect(() => {
