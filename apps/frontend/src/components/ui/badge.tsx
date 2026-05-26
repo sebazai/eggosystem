@@ -20,7 +20,7 @@ const badgeVariants = cva(
         link: "text-primary underline-offset-4 [a&]:hover:underline",
         live: "bg-destructive text-destructive-foreground animate-pulse rounded-full font-headings tracking-wide",
         success:
-          "bg-tier-open/10 text-tier-open border-tier-open/30 dark:border-tier-open/40"
+          "bg-tier-default/10 text-tier-default border-tier-default/30 dark:border-tier-default/40"
       }
     },
     defaultVariants: {

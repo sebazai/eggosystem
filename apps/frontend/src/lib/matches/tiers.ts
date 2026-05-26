@@ -13,17 +13,14 @@ export interface LeagueColors {
   border: string;
 }
 
-// Three distinct colors for the top three tiers; everything else gets a neutral.
-// HSL values are softened (~20% lower saturation, slightly higher lightness) from
-// the original design-spec palette, which was too vivid for a dark UI.
-const BANDS = {
-  masters: [35, 78, 56] as const, // warm amber
-  challengers: [262, 68, 68] as const, // soft lavender
-  prospects: [199, 74, 58] as const, // sky blue
-  default: [215, 12, 55] as const // cool grey (div3 and below)
-};
+const TIER_CSS_VARS = {
+  masters: "--tier-masters",
+  challengers: "--tier-challengers",
+  prospects: "--tier-prospects",
+  default: "--tier-default"
+} as const;
 
-type BandKey = keyof typeof BANDS;
+type BandKey = keyof typeof TIER_CSS_VARS;
 
 function bandFor(leagueName: string): BandKey {
   const lower = leagueName.toLowerCase();
@@ -47,21 +44,17 @@ function bandFor(leagueName: string): BandKey {
   return "default";
 }
 
-function colorsFrom([h, s, l]: readonly [
-  number,
-  number,
-  number
-]): LeagueColors {
+function colorsFrom(cssVar: string): LeagueColors {
   return {
-    color: `hsl(${h} ${s}% ${l}%)`,
-    bg: `hsl(${h} ${s}% ${l}% / 0.16)`,
-    border: `hsl(${h} ${s}% ${l}% / 0.5)`
+    color: `hsl(var(${cssVar}))`,
+    bg: `hsl(var(${cssVar}) / 0.16)`,
+    border: `hsl(var(${cssVar}) / 0.5)`
   };
 }
 
 /** Returns CSS color values for a DB league name. */
 export function leagueColor(leagueName: string): LeagueColors {
-  return colorsFrom(BANDS[bandFor(leagueName)]);
+  return colorsFrom(TIER_CSS_VARS[bandFor(leagueName)]);
 }
 
 /** Returns CSS color values for a numeric SeasonLeague.tier (used by calendar / TierDot). */
@@ -74,5 +67,5 @@ export function numericTierColors(tier: number): LeagueColors {
         : tier === 3
           ? "prospects"
           : "default";
-  return colorsFrom(BANDS[band]);
+  return colorsFrom(TIER_CSS_VARS[band]);
 }

@@ -12,27 +12,29 @@ describe("formatLeagueName", () => {
 });
 
 describe("leagueColor", () => {
-  it("returns masters (amber) for Masters/Pro variants", () => {
-    expect(leagueColor("Masters").color).toBe("hsl(35 78% 56%)");
-    expect(leagueColor("CS2 Pro").color).toBe("hsl(35 78% 56%)");
-    expect(leagueColor("Pro").color).toBe("hsl(35 78% 56%)");
+  it("returns masters token for Masters/Pro variants", () => {
+    expect(leagueColor("Masters").color).toBe("hsl(var(--tier-masters))");
+    expect(leagueColor("CS2 Pro").color).toBe("hsl(var(--tier-masters))");
+    expect(leagueColor("Pro").color).toBe("hsl(var(--tier-masters))");
   });
 
-  it("returns challengers (lavender) for Semi-pro/Challengers/Elite", () => {
-    expect(leagueColor("Semi-pro").color).toBe("hsl(262 68% 68%)");
-    expect(leagueColor("Challengers").color).toBe("hsl(262 68% 68%)");
-    expect(leagueColor("Elite").color).toBe("hsl(262 68% 68%)");
+  it("returns challengers token for Semi-pro/Challengers/Elite", () => {
+    expect(leagueColor("Semi-pro").color).toBe("hsl(var(--tier-challengers))");
+    expect(leagueColor("Challengers").color).toBe(
+      "hsl(var(--tier-challengers))"
+    );
+    expect(leagueColor("Elite").color).toBe("hsl(var(--tier-challengers))");
   });
 
-  it("returns prospects (sky blue) for Prospects/Challenge/MKT/div2", () => {
-    expect(leagueColor("Prospects").color).toBe("hsl(199 74% 58%)");
-    expect(leagueColor("Challenge").color).toBe("hsl(199 74% 58%)");
-    expect(leagueColor("MKT").color).toBe("hsl(199 74% 58%)");
-    expect(leagueColor("div2").color).toBe("hsl(199 74% 58%)");
+  it("returns prospects token for Prospects/Challenge/MKT/div2", () => {
+    expect(leagueColor("Prospects").color).toBe("hsl(var(--tier-prospects))");
+    expect(leagueColor("Challenge").color).toBe("hsl(var(--tier-prospects))");
+    expect(leagueColor("MKT").color).toBe("hsl(var(--tier-prospects))");
+    expect(leagueColor("div2").color).toBe("hsl(var(--tier-prospects))");
   });
 
-  it("returns neutral grey for div3 and all lower divisions", () => {
-    const grey = "hsl(215 12% 55%)";
+  it("returns default token for div3 and all lower divisions", () => {
+    const grey = "hsl(var(--tier-default))";
     expect(leagueColor("div3").color).toBe(grey);
     expect(leagueColor("div4").color).toBe(grey);
     expect(leagueColor("div5").color).toBe(grey);
@@ -43,27 +45,29 @@ describe("leagueColor", () => {
   });
 
   it("returns bg at 16% opacity", () => {
-    expect(leagueColor("Masters").bg).toBe("hsl(35 78% 56% / 0.16)");
+    expect(leagueColor("Masters").bg).toBe("hsl(var(--tier-masters) / 0.16)");
   });
 
   it("returns border at 50% opacity", () => {
-    expect(leagueColor("Masters").border).toBe("hsl(35 78% 56% / 0.5)");
+    expect(leagueColor("Masters").border).toBe(
+      "hsl(var(--tier-masters) / 0.5)"
+    );
   });
 });
 
 describe("numericTierColors", () => {
   it("maps tier 1 to masters", () => {
-    expect(numericTierColors(1).color).toBe("hsl(35 78% 56%)");
+    expect(numericTierColors(1).color).toBe("hsl(var(--tier-masters))");
   });
   it("maps tier 2 to challengers", () => {
-    expect(numericTierColors(2).color).toBe("hsl(262 68% 68%)");
+    expect(numericTierColors(2).color).toBe("hsl(var(--tier-challengers))");
   });
   it("maps tier 3 to prospects", () => {
-    expect(numericTierColors(3).color).toBe("hsl(199 74% 58%)");
+    expect(numericTierColors(3).color).toBe("hsl(var(--tier-prospects))");
   });
-  it("maps tier 4+ to neutral grey", () => {
-    expect(numericTierColors(4).color).toBe("hsl(215 12% 55%)");
-    expect(numericTierColors(6).color).toBe("hsl(215 12% 55%)");
-    expect(numericTierColors(12).color).toBe("hsl(215 12% 55%)");
+  it("maps tier 4+ to default", () => {
+    expect(numericTierColors(4).color).toBe("hsl(var(--tier-default))");
+    expect(numericTierColors(6).color).toBe("hsl(var(--tier-default))");
+    expect(numericTierColors(12).color).toBe("hsl(var(--tier-default))");
   });
 });
