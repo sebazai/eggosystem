@@ -1,15 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { FilteredMatchesList } from "./FilteredMatchesList";
-import { useRecentMatches } from "@/hooks/data/filtered/useRecentMatches";
 import type { MatchesByFilters } from "@eggosystem/types";
-
-jest.mock("@/hooks/data/filtered/useRecentMatches", () => ({
-  useRecentMatches: jest.fn()
-}));
-
-jest.mock("@/components/loading", () => ({
-  MatchListSkeleton: () => <div data-testid="match-list-skeleton" />
-}));
 
 const mockSwr = jest.fn();
 jest.mock("swr", () => ({
@@ -101,8 +92,6 @@ const mockMatches: MatchesByFilters[] = [
 ];
 
 describe("FilteredMatchesList", () => {
-  const mockUseRecentMatches = useRecentMatches as jest.Mock;
-
   beforeEach(() => {
     jest.clearAllMocks();
     mockUseSearchParams.mockReturnValue(new URLSearchParams());
@@ -127,56 +116,15 @@ describe("FilteredMatchesList", () => {
 
   function renderList(
     filterQueryParams = defaultFilterParams,
-    hookReturn: Partial<ReturnType<typeof useRecentMatches>> = {}
+    matches: MatchesByFilters[] = mockMatches
   ) {
-    mockUseRecentMatches.mockReturnValue({
-      matches: mockMatches,
-      isLoading: false,
-      isError: false,
-      isValidating: false,
-      ...hookReturn
-    });
-
     return render(
-      <FilteredMatchesList filterQueryParams={filterQueryParams} />
+      <FilteredMatchesList
+        filterQueryParams={filterQueryParams}
+        matches={matches}
+      />
     );
   }
-
-  it("shows skeleton while loading", () => {
-    renderList(defaultFilterParams, {
-      matches: undefined,
-      isLoading: true
-    });
-
-    expect(screen.getByTestId("match-list-skeleton")).toBeInTheDocument();
-  });
-
-  it("shows skeleton while validating", () => {
-    renderList(defaultFilterParams, {
-      matches: undefined,
-      isValidating: true
-    });
-
-    expect(screen.getByTestId("match-list-skeleton")).toBeInTheDocument();
-  });
-
-  it("shows error message when fetch fails", () => {
-    renderList(defaultFilterParams, {
-      matches: undefined,
-      isError: true
-    });
-
-    expect(screen.getByText("Error loading Matches")).toBeInTheDocument();
-  });
-
-  it("shows empty state when matches is undefined", () => {
-    renderList(defaultFilterParams, {
-      matches: undefined,
-      isLoading: false
-    });
-
-    expect(screen.getByText("No matches found")).toBeInTheDocument();
-  });
 
   it("groups matches by date with headings and counts", () => {
     renderList();
@@ -205,21 +153,14 @@ describe("FilteredMatchesList", () => {
   });
 
   it("links to match route when match_game_id is null", () => {
-    mockUseRecentMatches.mockReturnValue({
-      matches: [
-        mockMatch(4, {
-          match_game_id: null,
-          home_team: { name: "Team Eta", logo: "eta-logo.png", score: 1 },
-          away_team: { name: "Team Theta", logo: "theta-logo.png", score: 0 },
-          maps_json: []
-        })
-      ],
-      isLoading: false,
-      isError: false,
-      isValidating: false
-    });
-
-    render(<FilteredMatchesList filterQueryParams={defaultFilterParams} />);
+    renderList(defaultFilterParams, [
+      mockMatch(4, {
+        match_game_id: null,
+        home_team: { name: "Team Eta", logo: "eta-logo.png", score: 1 },
+        away_team: { name: "Team Theta", logo: "theta-logo.png", score: 0 },
+        maps_json: []
+      })
+    ]);
 
     expect(screen.getAllByRole("link")[0]).toHaveAttribute(
       "href",
@@ -266,23 +207,17 @@ describe("FilteredMatchesList", () => {
       }
       return { data: undefined, isLoading: false, isValidating: false };
     });
-    mockUseRecentMatches.mockReturnValue({
-      matches: [
-        mockMatch(1, {
-          league_name: "CS2 Open",
-          start_timestamp: "2024-01-15T21:00:00Z"
-        }),
-        mockMatch(2, {
-          league_name: "CS2 Masters",
-          start_timestamp: "2024-01-15T19:00:00Z"
-        })
-      ],
-      isLoading: false,
-      isError: false,
-      isValidating: false
-    });
 
-    render(<FilteredMatchesList filterQueryParams={defaultFilterParams} />);
+    renderList(defaultFilterParams, [
+      mockMatch(1, {
+        league_name: "CS2 Open",
+        start_timestamp: "2024-01-15T21:00:00Z"
+      }),
+      mockMatch(2, {
+        league_name: "CS2 Masters",
+        start_timestamp: "2024-01-15T19:00:00Z"
+      })
+    ]);
 
     const links = screen.getAllByRole("link");
     expect(links[0]).toHaveAttribute("href", "/matches/2/games/102");

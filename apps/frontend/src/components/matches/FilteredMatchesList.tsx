@@ -2,10 +2,7 @@
 
 import { useSearchParams } from "next/navigation";
 import useSWR from "swr";
-import { ContentContainer } from "../layout/ContentContainer";
 import { expressFetcher, type FilterParamsQuery } from "@/lib/utils";
-import { useRecentMatches } from "@/hooks/data/filtered/useRecentMatches";
-import { MatchListSkeleton } from "@/components/loading";
 import { DateGroup } from "./DateGroup";
 import { MatchCard } from "./MatchCard";
 import type { MatchesByFilters, Season, League } from "@eggosystem/types";
@@ -49,16 +46,15 @@ function sortMatches(
 
 interface FilteredMatchesListProps {
   filterQueryParams: FilterParamsQuery;
+  matches: MatchesByFilters[];
 }
 
 export const FilteredMatchesList = ({
-  filterQueryParams
+  filterQueryParams,
+  matches
 }: FilteredMatchesListProps) => {
   const searchParams = useSearchParams();
   const sort = (searchParams.get("sort") as SortKey | null) ?? "newest";
-
-  const { matches, isError, isLoading, isValidating } =
-    useRecentMatches(filterQueryParams);
 
   const { data: seasons } = useSWR<Season[]>(
     "/api/v1/seasons",
@@ -88,18 +84,6 @@ export const FilteredMatchesList = ({
     },
     {}
   );
-
-  if (isLoading || isValidating) {
-    return <MatchListSkeleton />;
-  }
-
-  if (isError) {
-    return <ContentContainer>Error loading Matches</ContentContainer>;
-  }
-
-  if (!matches) {
-    return <ContentContainer>No matches found</ContentContainer>;
-  }
 
   const showSeason =
     !filterQueryParams.seasons || filterQueryParams.seasons.length !== 1;

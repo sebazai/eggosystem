@@ -10,21 +10,32 @@ import { SummaryStrip } from "./SummaryStrip";
 import { FilteredMatchesList } from "./FilteredMatchesList";
 import { FilterBarDesktop } from "./FilterBarDesktop";
 import { FilterBarMobile } from "./FilterBarMobile";
+import type { FilterParamsQuery } from "@/lib/utils";
+
+const emptyFilterParams: FilterParamsQuery = {
+  seasons: [],
+  leagues: [],
+  stages: null,
+  teams: null,
+  maps: null
+};
 
 export function MatchesView() {
   const { filterParams, isLoading, error, isValidating } = useFilters();
 
   const isFiltersLoading = isLoading || !filterParams || isValidating;
 
-  const { matches } = useRecentMatches(
-    filterParams ?? {
-      seasons: [],
-      leagues: [],
-      stages: null,
-      teams: null,
-      maps: null
-    }
-  );
+  const {
+    matches,
+    isLoading: isMatchesLoading,
+    isError: isMatchesError,
+    isValidating: isMatchesValidating
+  } = useRecentMatches(filterParams ?? emptyFilterParams);
+
+  const isMatchesFetching =
+    Boolean(filterParams) &&
+    (isMatchesLoading || isMatchesValidating) &&
+    !matches;
 
   const seasonCount = filterParams?.seasons?.length ?? 1;
   const showSeasonCounts = seasonCount !== 1;
@@ -52,15 +63,36 @@ export function MatchesView() {
         />
       )}
 
-      {isFiltersLoading && <MatchListSkeleton />}
+      {(isFiltersLoading || isMatchesFetching) && <MatchListSkeleton />}
       {!isFiltersLoading && error && (
         <ContentContainer>Failed to load filters</ContentContainer>
       )}
-      {!isFiltersLoading && !error && filterParams && (
-        <Suspense fallback={<MatchListSkeleton />}>
-          <FilteredMatchesList filterQueryParams={filterParams} />
-        </Suspense>
+      {!isFiltersLoading && !error && filterParams && isMatchesError && (
+        <ContentContainer>Error loading Matches</ContentContainer>
       )}
+      {!isFiltersLoading &&
+        !error &&
+        filterParams &&
+        !isMatchesFetching &&
+        !isMatchesError &&
+        matches &&
+        matches.length === 0 && (
+          <ContentContainer>No matches found</ContentContainer>
+        )}
+      {!isFiltersLoading &&
+        !error &&
+        filterParams &&
+        !isMatchesFetching &&
+        !isMatchesError &&
+        matches &&
+        matches.length > 0 && (
+          <Suspense fallback={<MatchListSkeleton />}>
+            <FilteredMatchesList
+              filterQueryParams={filterParams}
+              matches={matches}
+            />
+          </Suspense>
+        )}
     </div>
   );
 }

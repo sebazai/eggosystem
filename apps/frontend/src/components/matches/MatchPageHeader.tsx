@@ -24,7 +24,7 @@ export function MatchPageHeader() {
   return (
     <div className="mb-6 min-w-0">
       <p className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground">
-        Updated {updatedLabel} · Auto-Refresh
+        Loaded {updatedLabel}
       </p>
       <h1 className="tracking-[0.02em] text-4xl md:text-5xl">Recent Matches</h1>
       <hr
