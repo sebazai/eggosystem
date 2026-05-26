@@ -65,26 +65,26 @@ describe("MetaPill", () => {
 });
 
 describe("MapScoreChip", () => {
-  const map = { name: "de_nuke", score_a: 13, score_b: 9 };
+  const map = { name: "de_nuke", home_score: 13, away_score: 9 };
 
   it("renders map name and scores", () => {
-    render(<MapScoreChip map={map} winner="a" />);
+    render(<MapScoreChip map={map} winner="home" />);
     expect(screen.getByText("de_nuke")).toBeInTheDocument();
     expect(screen.getByText("13")).toBeInTheDocument();
     expect(screen.getByText("9")).toBeInTheDocument();
   });
 
   it("bolds the winning side score", () => {
-    const { container } = render(<MapScoreChip map={map} winner="a" />);
+    const { container } = render(<MapScoreChip map={map} winner="home" />);
     const scores = container.querySelectorAll("span > span");
-    const aScore = Array.from(scores).find((el) => el.textContent === "13");
-    const bScore = Array.from(scores).find((el) => el.textContent === "9");
-    expect(aScore?.className).toContain("font-bold");
-    expect(bScore?.className).not.toContain("font-bold");
+    const homeScore = Array.from(scores).find((el) => el.textContent === "13");
+    const awayScore = Array.from(scores).find((el) => el.textContent === "9");
+    expect(homeScore?.className).toContain("font-bold");
+    expect(awayScore?.className).not.toContain("font-bold");
   });
 
   it("marks both sides as muted on draw", () => {
-    const drawMap = { name: "de_mirage", score_a: 13, score_b: 13 };
+    const drawMap = { name: "de_mirage", home_score: 13, away_score: 13 };
     const { container } = render(<MapScoreChip map={drawMap} winner="draw" />);
     const spans = container.querySelectorAll("span > span");
     const scored = Array.from(spans).filter((el) =>

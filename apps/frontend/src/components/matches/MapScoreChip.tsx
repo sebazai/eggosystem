@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 
 interface MapScoreChipProps {
   map: MatchMapScore;
-  winner: "a" | "b" | "draw";
+  winner: "home" | "away" | "draw";
   compact?: boolean;
 }
 
@@ -12,8 +12,8 @@ export function MapScoreChip({
   winner,
   compact = false
 }: MapScoreChipProps) {
-  const aWins = winner === "a";
-  const bWins = winner === "b";
+  const homeWins = winner === "home";
+  const awayWins = winner === "away";
 
   return (
     <span
@@ -33,18 +33,18 @@ export function MapScoreChip({
       <span className={cn("font-mono", compact ? "text-[9px]" : "text-[10px]")}>
         <span
           className={
-            aWins ? "font-bold text-foreground" : "text-muted-foreground"
+            homeWins ? "font-bold text-foreground" : "text-muted-foreground"
           }
         >
-          {map.score_a}
+          {map.home_score}
         </span>
         <span className="mx-0.5 text-muted-foreground">:</span>
         <span
           className={
-            bWins ? "font-bold text-foreground" : "text-muted-foreground"
+            awayWins ? "font-bold text-foreground" : "text-muted-foreground"
           }
         >
-          {map.score_b}
+          {map.away_score}
         </span>
       </span>
     </span>

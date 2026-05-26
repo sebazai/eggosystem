@@ -29,17 +29,19 @@ const baseMatch: MatchesByFilters = {
   stage: 2,
   league_name: "CS2 Masters",
   maps_json: [
-    { name: "de_nuke", score_a: 9, score_b: 13 },
-    { name: "de_mirage", score_a: 6, score_b: 13 }
+    { name: "de_nuke", home_score: 9, away_score: 13 },
+    { name: "de_mirage", home_score: 6, away_score: 13 }
   ],
-  team1_name: "WIOSS",
-  team2_name: "KT",
-  team1_logo: "wioss-logo.png",
-  team2_logo: "kt-logo.png",
-  team1_score: 0,
-  team2_score: 2,
-  team1_side: "home",
-  team2_side: "away"
+  home_team: {
+    name: "WIOSS",
+    logo: "wioss-logo.png",
+    score: 0
+  },
+  away_team: {
+    name: "KT",
+    logo: "kt-logo.png",
+    score: 2
+  }
 };
 
 describe("MatchCard", () => {
@@ -120,26 +122,19 @@ describe("MatchCard", () => {
     expect(container.querySelectorAll(".opacity-40")).toHaveLength(0);
   });
 
-  it("remaps map chip scores when teams swap for home-left display", () => {
-    const swappedMatch: MatchesByFilters = {
+  it("renders home team on the left and map scores in home:away order", () => {
+    const match: MatchesByFilters = {
       ...baseMatch,
-      team1_side: "away",
-      team2_side: "home",
-      team1_name: "Beta",
-      team2_name: "Alpha",
-      team1_score: 0,
-      team2_score: 1,
-      maps_json: [{ name: "de_nuke", score_a: 13, score_b: 9 }]
+      home_team: { name: "Alpha", logo: "a.png", score: 0 },
+      away_team: { name: "Beta", logo: "b.png", score: 1 },
+      maps_json: [{ name: "de_nuke", home_score: 9, away_score: 13 }]
     };
-    const { container } = render(
-      <MatchCard match={swappedMatch} href="/matches/1" />
-    );
+    const { container } = render(<MatchCard match={match} href="/matches/1" />);
 
     expect(screen.getAllByText("Alpha").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Beta").length).toBeGreaterThan(0);
 
     const nukeLabels = screen.getAllByText("de_nuke");
-    expect(nukeLabels.length).toBeGreaterThan(0);
     for (const label of nukeLabels) {
       const chip = label.closest(".inline-flex");
       expect(chip?.textContent).toContain("9");

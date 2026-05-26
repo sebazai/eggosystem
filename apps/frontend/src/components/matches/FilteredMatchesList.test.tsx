@@ -62,17 +62,19 @@ const mockMatch = (
   stage: 2,
   league_name: "CS2 Masters",
   maps_json: [
-    { name: "de_nuke", score_a: 13, score_b: 9 },
-    { name: "de_mirage", score_a: 13, score_b: 6 }
+    { name: "de_nuke", home_score: 13, away_score: 9 },
+    { name: "de_mirage", home_score: 13, away_score: 6 }
   ],
-  team1_name: "Team Alpha",
-  team2_name: "Team Beta",
-  team1_logo: "alpha-logo.png",
-  team2_logo: "beta-logo.png",
-  team1_score: 2,
-  team2_score: 0,
-  team1_side: "home",
-  team2_side: "away",
+  home_team: {
+    name: "Team Alpha",
+    logo: "alpha-logo.png",
+    score: 2
+  },
+  away_team: {
+    name: "Team Beta",
+    logo: "beta-logo.png",
+    score: 0
+  },
   ...overrides
 });
 
@@ -80,24 +82,20 @@ const mockMatches: MatchesByFilters[] = [
   mockMatch(1, { match_date: "2024-01-15" }),
   mockMatch(2, {
     match_date: "2024-01-15",
-    team1_name: "Team Gamma",
-    team2_name: "Team Delta",
-    team1_score: 0,
-    team2_score: 2
+    home_team: { name: "Team Gamma", logo: "gamma-logo.png", score: 0 },
+    away_team: { name: "Team Delta", logo: "delta-logo.png", score: 2 }
   }),
   mockMatch(3, {
     match_date: "2024-01-14",
     start_timestamp: "2024-01-14T19:00:00Z",
     end_timestamp: "2024-01-14T21:00:00Z",
-    team1_name: "Team Epsilon",
-    team2_name: "Team Zeta",
-    team1_score: 2,
-    team2_score: 1,
+    home_team: { name: "Team Epsilon", logo: "epsilon-logo.png", score: 2 },
+    away_team: { name: "Team Zeta", logo: "zeta-logo.png", score: 1 },
     best_of: 5,
     maps_json: [
-      { name: "de_inferno", score_a: 13, score_b: 9 },
-      { name: "de_anubis", score_a: 7, score_b: 13 },
-      { name: "de_mirage", score_a: 13, score_b: 11 }
+      { name: "de_inferno", home_score: 13, away_score: 9 },
+      { name: "de_anubis", home_score: 7, away_score: 13 },
+      { name: "de_mirage", home_score: 13, away_score: 11 }
     ]
   })
 ];
@@ -211,8 +209,8 @@ describe("FilteredMatchesList", () => {
       matches: [
         mockMatch(4, {
           match_game_id: null,
-          team1_name: "Team Eta",
-          team2_name: "Team Theta",
+          home_team: { name: "Team Eta", logo: "eta-logo.png", score: 1 },
+          away_team: { name: "Team Theta", logo: "theta-logo.png", score: 0 },
           maps_json: []
         })
       ],
@@ -244,6 +242,51 @@ describe("FilteredMatchesList", () => {
     const headings = screen.getAllByRole("heading", { level: 2 });
     expect(headings[0]).toHaveTextContent("JAN 15 · 2024");
     expect(headings[1]).toHaveTextContent("JAN 14 · 2024");
+  });
+
+  it("orders matches by league tier when sort=tier", () => {
+    mockUseSearchParams.mockReturnValue(new URLSearchParams("sort=tier"));
+    mockSwr.mockImplementation((key: string) => {
+      if (key === "/api/v1/seasons") {
+        return {
+          data: [{ id: 5, full_name: "Season 12" }],
+          isLoading: false,
+          isValidating: false
+        };
+      }
+      if (key === "/api/v1/leagues") {
+        return {
+          data: [
+            { name: "CS2 Masters", sort_priority: 1 },
+            { name: "CS2 Open", sort_priority: 2 }
+          ],
+          isLoading: false,
+          isValidating: false
+        };
+      }
+      return { data: undefined, isLoading: false, isValidating: false };
+    });
+    mockUseRecentMatches.mockReturnValue({
+      matches: [
+        mockMatch(1, {
+          league_name: "CS2 Open",
+          start_timestamp: "2024-01-15T21:00:00Z"
+        }),
+        mockMatch(2, {
+          league_name: "CS2 Masters",
+          start_timestamp: "2024-01-15T19:00:00Z"
+        })
+      ],
+      isLoading: false,
+      isError: false,
+      isValidating: false
+    });
+
+    render(<FilteredMatchesList filterQueryParams={defaultFilterParams} />);
+
+    const links = screen.getAllByRole("link");
+    expect(links[0]).toHaveAttribute("href", "/matches/2/games/102");
+    expect(links[1]).toHaveAttribute("href", "/matches/1/games/101");
   });
 
   it("shows season chip when more than one season is selected", () => {

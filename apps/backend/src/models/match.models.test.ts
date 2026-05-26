@@ -28,12 +28,12 @@ describe("getMatchesByFilters", () => {
       match_date: "2024-11-27",
       league_name: "Masters",
       stage: 2,
-      team1_name: "Digia Vengers",
-      team1_logo: "c1663e99856359b6",
-      team2_name: "Gigantti",
-      team2_logo: "9e39646633c95966",
       match_game_id: null
     });
+    expect(match10148!.home_team.name).toBeTruthy();
+    expect(match10148!.away_team.name).toBeTruthy();
+    expect(typeof match10148!.home_team.score).toBe("number");
+    expect(typeof match10148!.away_team.score).toBe("number");
 
     // maps_json is a parsed array — all maps for the match are present
     expect(Array.isArray(match10148!.maps_json)).toBe(true);
@@ -41,8 +41,8 @@ describe("getMatchesByFilters", () => {
     expect(match10148!.maps_json.some((m) => m.name === "de_nuke")).toBe(true);
     match10148!.maps_json.forEach((map) => {
       expect(typeof map.name).toBe("string");
-      expect(typeof map.score_a).toBe("number");
-      expect(typeof map.score_b).toBe("number");
+      expect(typeof map.home_score).toBe("number");
+      expect(typeof map.away_score).toBe("number");
     });
 
     // New fields are present with expected types
@@ -75,8 +75,8 @@ describe("getMatchesByFilters", () => {
     // Each row has maps_json and numeric scores
     result.forEach((m) => {
       expect(Array.isArray(m.maps_json)).toBe(true);
-      expect(typeof m.team1_score).toBe("number");
-      expect(typeof m.team2_score).toBe("number");
+      expect(typeof m.home_team.score).toBe("number");
+      expect(typeof m.away_team.score).toBe("number");
     });
   });
 
@@ -104,15 +104,15 @@ describe("getMatchesByFilters", () => {
       expect(match10148.maps_json.length).toBeGreaterThan(0);
       match10148.maps_json.forEach((map) => {
         expect(typeof map.name).toBe("string");
-        expect(typeof map.score_a).toBe("number");
-        expect(typeof map.score_b).toBe("number");
+        expect(typeof map.home_score).toBe("number");
+        expect(typeof map.away_score).toBe("number");
       });
 
       // Series scores are map wins for BO3
-      expect(typeof match10148.team1_score).toBe("number");
-      expect(typeof match10148.team2_score).toBe("number");
-      expect(match10148.team1_score).toBeGreaterThanOrEqual(0);
-      expect(match10148.team2_score).toBeGreaterThanOrEqual(0);
+      expect(typeof match10148.home_team.score).toBe("number");
+      expect(typeof match10148.away_team.score).toBe("number");
+      expect(match10148.home_team.score).toBeGreaterThanOrEqual(0);
+      expect(match10148.away_team.score).toBeGreaterThanOrEqual(0);
 
       expect(match10148.match_game_id).toBeNull();
 
@@ -149,8 +149,8 @@ describe("getMatchesByFilters", () => {
       expect(Array.isArray(match.maps_json)).toBe(true);
       expect(match.maps_json.length).toBeGreaterThan(0);
 
-      expect(typeof match.team1_score).toBe("number");
-      expect(typeof match.team2_score).toBe("number");
+      expect(typeof match.home_team.score).toBe("number");
+      expect(typeof match.away_team.score).toBe("number");
 
       if (match.match_game_id !== null) {
         expect(typeof match.match_game_id).toBe("number");

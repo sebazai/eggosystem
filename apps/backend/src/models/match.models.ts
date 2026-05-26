@@ -317,24 +317,86 @@ export const getMatchesByFilters = async ({
           m.stage,
           JSON_ARRAYAGG(JSON_OBJECT(
               'name', map.name,
-              'score_a', tms1.score,
-              'score_b', tms2.score
+              'home_score', CASE
+                  WHEN mt1.match_side = 'home' THEN tms1.score
+                  WHEN mt2.match_side = 'home' THEN tms2.score
+                  WHEN mt1.match_side = 'away' THEN tms2.score
+                  WHEN mt2.match_side = 'away' THEN tms1.score
+                  ELSE tms1.score
+              END,
+              'away_score', CASE
+                  WHEN mt1.match_side = 'home' THEN tms2.score
+                  WHEN mt2.match_side = 'home' THEN tms1.score
+                  WHEN mt1.match_side = 'away' THEN tms1.score
+                  WHEN mt2.match_side = 'away' THEN tms2.score
+                  ELSE tms2.score
+              END
           ) ORDER BY mmp.map_order ASC) AS maps_json,
-          t1.name AS team1_name,
-          t1.team_logo AS team1_logo,
-          t2.name AS team2_name,
-          t2.team_logo AS team2_logo,
-          MAX(mt1.match_side) AS team1_side,
-          MAX(mt2.match_side) AS team2_side,
+          CASE
+              WHEN MAX(mt1.match_side) = 'home' THEN MAX(t1.name)
+              WHEN MAX(mt2.match_side) = 'home' THEN MAX(t2.name)
+              WHEN MAX(mt1.match_side) = 'away' THEN MAX(t2.name)
+              WHEN MAX(mt2.match_side) = 'away' THEN MAX(t1.name)
+              ELSE MAX(t1.name)
+          END AS home_team_name,
+          CASE
+              WHEN MAX(mt1.match_side) = 'home' THEN MAX(t1.team_logo)
+              WHEN MAX(mt2.match_side) = 'home' THEN MAX(t2.team_logo)
+              WHEN MAX(mt1.match_side) = 'away' THEN MAX(t2.team_logo)
+              WHEN MAX(mt2.match_side) = 'away' THEN MAX(t1.team_logo)
+              ELSE MAX(t1.team_logo)
+          END AS home_team_logo,
+          CASE
+              WHEN MAX(mt1.match_side) = 'home' THEN MAX(t2.name)
+              WHEN MAX(mt2.match_side) = 'home' THEN MAX(t1.name)
+              WHEN MAX(mt1.match_side) = 'away' THEN MAX(t1.name)
+              WHEN MAX(mt2.match_side) = 'away' THEN MAX(t2.name)
+              ELSE MAX(t2.name)
+          END AS away_team_name,
+          CASE
+              WHEN MAX(mt1.match_side) = 'home' THEN MAX(t2.team_logo)
+              WHEN MAX(mt2.match_side) = 'home' THEN MAX(t1.team_logo)
+              WHEN MAX(mt1.match_side) = 'away' THEN MAX(t1.team_logo)
+              WHEN MAX(mt2.match_side) = 'away' THEN MAX(t2.team_logo)
+              ELSE MAX(t2.team_logo)
+          END AS away_team_logo,
           CASE WHEN m.best_of = 1 THEN MAX(mmp.id) ELSE NULL END AS match_game_id,
           CASE
-              WHEN m.best_of != 1 THEN SUM(CASE WHEN tms1.score > tms2.score THEN 1 ELSE 0 END)
-              ELSE MAX(tms1.score)
-          END AS team1_score,
+              WHEN m.best_of != 1 THEN
+                  CASE
+                      WHEN MAX(mt1.match_side) = 'home' THEN SUM(CASE WHEN tms1.score > tms2.score THEN 1 ELSE 0 END)
+                      WHEN MAX(mt2.match_side) = 'home' THEN SUM(CASE WHEN tms2.score > tms1.score THEN 1 ELSE 0 END)
+                      WHEN MAX(mt1.match_side) = 'away' THEN SUM(CASE WHEN tms2.score > tms1.score THEN 1 ELSE 0 END)
+                      WHEN MAX(mt2.match_side) = 'away' THEN SUM(CASE WHEN tms1.score > tms2.score THEN 1 ELSE 0 END)
+                      ELSE SUM(CASE WHEN tms1.score > tms2.score THEN 1 ELSE 0 END)
+                  END
+              ELSE
+                  CASE
+                      WHEN MAX(mt1.match_side) = 'home' THEN MAX(tms1.score)
+                      WHEN MAX(mt2.match_side) = 'home' THEN MAX(tms2.score)
+                      WHEN MAX(mt1.match_side) = 'away' THEN MAX(tms2.score)
+                      WHEN MAX(mt2.match_side) = 'away' THEN MAX(tms1.score)
+                      ELSE MAX(tms1.score)
+                  END
+          END AS home_score,
           CASE
-              WHEN m.best_of != 1 THEN SUM(CASE WHEN tms1.score < tms2.score THEN 1 ELSE 0 END)
-              ELSE MAX(tms2.score)
-          END AS team2_score
+              WHEN m.best_of != 1 THEN
+                  CASE
+                      WHEN MAX(mt1.match_side) = 'home' THEN SUM(CASE WHEN tms1.score < tms2.score THEN 1 ELSE 0 END)
+                      WHEN MAX(mt2.match_side) = 'home' THEN SUM(CASE WHEN tms2.score < tms1.score THEN 1 ELSE 0 END)
+                      WHEN MAX(mt1.match_side) = 'away' THEN SUM(CASE WHEN tms2.score < tms1.score THEN 1 ELSE 0 END)
+                      WHEN MAX(mt2.match_side) = 'away' THEN SUM(CASE WHEN tms1.score < tms2.score THEN 1 ELSE 0 END)
+                      ELSE SUM(CASE WHEN tms1.score < tms2.score THEN 1 ELSE 0 END)
+                  END
+              ELSE
+                  CASE
+                      WHEN MAX(mt1.match_side) = 'home' THEN MAX(tms2.score)
+                      WHEN MAX(mt2.match_side) = 'home' THEN MAX(tms1.score)
+                      WHEN MAX(mt1.match_side) = 'away' THEN MAX(tms1.score)
+                      WHEN MAX(mt2.match_side) = 'away' THEN MAX(tms2.score)
+                      ELSE MAX(tms2.score)
+                  END
+          END AS away_score
       FROM Matches m
       JOIN MatchGames mmp ON m.id = mmp.match_id
       JOIN Maps map ON map.id = mmp.map_id
@@ -362,13 +424,52 @@ export const getMatchesByFilters = async ({
       ORDER BY
           m.start_timestamp DESC ${hasFilters ? "LIMIT 100" : "LIMIT 500"}`;
 
-  type RawRow = Omit<MatchesByFilters, "maps_json"> & { maps_json: string };
+  type RawRow = {
+    match_id: MatchesByFilters["match_id"];
+    match_game_id: MatchesByFilters["match_game_id"];
+    match_group: MatchesByFilters["match_group"];
+    match_round: MatchesByFilters["match_round"];
+    best_of: MatchesByFilters["best_of"];
+    season_id: MatchesByFilters["season_id"];
+    match_date: MatchesByFilters["match_date"];
+    start_timestamp: MatchesByFilters["start_timestamp"];
+    end_timestamp: MatchesByFilters["end_timestamp"];
+    stage: MatchesByFilters["stage"];
+    league_name: MatchesByFilters["league_name"];
+    maps_json: string;
+    home_team_name: MatchesByFilters["home_team"]["name"];
+    home_team_logo: MatchesByFilters["home_team"]["logo"];
+    home_score: MatchesByFilters["home_team"]["score"];
+    away_team_name: MatchesByFilters["away_team"]["name"];
+    away_team_logo: MatchesByFilters["away_team"]["logo"];
+    away_score: MatchesByFilters["away_team"]["score"];
+  };
   const rows = await runQuery<RawRow[]>(baseQuery, [
     ...queryParams,
     ...mapFilterParams
   ]);
   return rows.map((row) => ({
-    ...row,
+    match_id: row.match_id,
+    match_game_id: row.match_game_id,
+    match_group: row.match_group,
+    match_round: row.match_round,
+    best_of: row.best_of,
+    season_id: row.season_id,
+    match_date: row.match_date,
+    start_timestamp: row.start_timestamp,
+    end_timestamp: row.end_timestamp,
+    stage: row.stage,
+    league_name: row.league_name,
+    home_team: {
+      name: row.home_team_name,
+      logo: row.home_team_logo,
+      score: row.home_score
+    },
+    away_team: {
+      name: row.away_team_name,
+      logo: row.away_team_logo,
+      score: row.away_score
+    },
     maps_json: (typeof row.maps_json === "string"
       ? JSON.parse(row.maps_json)
       : row.maps_json) as MatchesByFilters["maps_json"]

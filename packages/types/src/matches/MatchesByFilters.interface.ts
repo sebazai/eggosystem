@@ -6,12 +6,17 @@ import type {
   Nullable,
   MatchGame
 } from "../index";
-import type { MatchTeamSide } from "./MatchTeamSide.types";
+
+export interface MatchesByFiltersTeam {
+  name: Team["name"];
+  logo: Team["team_logo"];
+  score: TeamGameScore["score"];
+}
 
 export interface MatchMapScore {
   name: string;
-  score_a: number;
-  score_b: number;
+  home_score: number;
+  away_score: number;
 }
 
 export interface MatchesByFilters {
@@ -27,12 +32,6 @@ export interface MatchesByFilters {
   stage: Match["stage"];
   league_name: League["name"];
   maps_json: MatchMapScore[];
-  team1_name: Team["name"];
-  team2_name: Team["name"];
-  team1_logo: Team["team_logo"];
-  team2_logo: Team["team_logo"];
-  team1_score: TeamGameScore["score"];
-  team2_score: TeamGameScore["score"];
-  team1_side: MatchTeamSide;
-  team2_side: MatchTeamSide;
+  home_team: MatchesByFiltersTeam;
+  away_team: MatchesByFiltersTeam;
 }

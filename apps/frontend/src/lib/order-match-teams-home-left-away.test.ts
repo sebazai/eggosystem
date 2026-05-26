@@ -4,7 +4,6 @@ import {
   dualTeamRowToHomeLeftDisplay,
   homeAwayScoresFromFocalVersusOpponent,
   homeLeftVersusLabelFromSides,
-  matchMapScoreForHomeLeftDisplay,
   orderMatchParticipantsBySideHomeLeft,
   orderTwoByMatchTeamSideHomeLeftAway
 } from "./order-match-teams-home-left-away";
@@ -72,7 +71,6 @@ describe("dualTeamRowToHomeLeftDisplay", () => {
     expect(d.left.score).toBe(16);
     expect(d.right.name).toBe("Beta");
     expect(d.right.score).toBe(14);
-    expect(d.leftIsTeam1).toBe(false);
   });
 
   it("uses deterministic name ordering when sides are unknown", () => {
@@ -89,10 +87,9 @@ describe("dualTeamRowToHomeLeftDisplay", () => {
     const d = dualTeamRowToHomeLeftDisplay(row);
     expect(d.left.name).toBe("Alpha");
     expect(d.right.name).toBe("Beta");
-    expect(d.leftIsTeam1).toBe(false);
   });
 
-  it("sets leftIsTeam1 when team1 is already home-left", () => {
+  it("keeps team1 home-left when sides are explicit", () => {
     const row = {
       team1_side: "home" as const,
       team2_side: "away" as const,
@@ -106,37 +103,6 @@ describe("dualTeamRowToHomeLeftDisplay", () => {
     const d = dualTeamRowToHomeLeftDisplay(row);
     expect(d.left.name).toBe("Alpha");
     expect(d.right.name).toBe("Beta");
-    expect(d.leftIsTeam1).toBe(true);
-  });
-});
-
-describe("matchMapScoreForHomeLeftDisplay", () => {
-  const raw = { name: "de_nuke", score_a: 13, score_b: 9 };
-
-  it("preserves scores when left is team1", () => {
-    expect(matchMapScoreForHomeLeftDisplay(raw, true)).toEqual({
-      map: { name: "de_nuke", score_a: 13, score_b: 9 },
-      winner: "a"
-    });
-  });
-
-  it("swaps scores and winner when left is team2", () => {
-    expect(matchMapScoreForHomeLeftDisplay(raw, false)).toEqual({
-      map: { name: "de_nuke", score_a: 9, score_b: 13 },
-      winner: "b"
-    });
-  });
-
-  it("returns draw when display scores tie", () => {
-    expect(
-      matchMapScoreForHomeLeftDisplay(
-        { name: "de_inferno", score_a: 13, score_b: 13 },
-        false
-      )
-    ).toEqual({
-      map: { name: "de_inferno", score_a: 13, score_b: 13 },
-      winner: "draw"
-    });
   });
 });
 

@@ -6,11 +6,10 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import useSWR from "swr";
 import { expressFetcher } from "@/lib/utils";
 import type { FilterParamsQuery } from "@/lib/utils";
-import type { Season, League, Stage, Map } from "@eggosystem/types";
+import type { Season, League, Stage, Team, Map } from "@eggosystem/types";
 import { formatLeagueName } from "@/lib/matches/tiers";
+import { cycleMatchSortKey, getMatchSortKey } from "@/lib/matches/sort";
 import { FilterSheet } from "./FilterSheet";
-
-type SortKey = "newest" | "oldest" | "tier";
 
 interface FilterBarMobileProps {
   filterParams: FilterParamsQuery;
@@ -45,6 +44,10 @@ export function FilterBarMobile({ filterParams }: FilterBarMobileProps) {
     revalidateOnFocus: false,
     keepPreviousData: true
   });
+  const { data: teams } = useSWR<Team[]>("/api/v1/teams", expressFetcher, {
+    revalidateOnFocus: false,
+    keepPreviousData: true
+  });
 
   function removeFilter(key: string, id: number) {
     const params = new URLSearchParams(searchParams.toString());
@@ -57,13 +60,7 @@ export function FilterBarMobile({ filterParams }: FilterBarMobileProps) {
   }
 
   function cycleSort() {
-    const current = (searchParams.get("sort") as SortKey | null) ?? "newest";
-    const next: SortKey =
-      current === "newest"
-        ? "oldest"
-        : current === "oldest"
-          ? "tier"
-          : "newest";
+    const next = cycleMatchSortKey(getMatchSortKey(searchParams));
     const params = new URLSearchParams(searchParams.toString());
     params.set("sort", next);
     router.replace(`${pathname}?${params.toString()}`);
@@ -108,12 +105,22 @@ export function FilterBarMobile({ filterParams }: FilterBarMobileProps) {
       });
     }
   });
+  (filterParams.teams ?? []).forEach((id) => {
+    const t = teams?.find((x) => x.id === id);
+    if (t) {
+      activeChips.push({
+        label: t.name,
+        onRemove: () => removeFilter("teams", id)
+      });
+    }
+  });
 
   const activeCount =
     (filterParams.seasons?.length ?? 0) +
     (filterParams.leagues?.length ?? 0) +
     (filterParams.stages?.length ?? 0) +
-    (filterParams.maps?.length ?? 0);
+    (filterParams.maps?.length ?? 0) +
+    (filterParams.teams?.length ?? 0);
 
   return (
     <div className="w-full min-w-0 md:hidden">

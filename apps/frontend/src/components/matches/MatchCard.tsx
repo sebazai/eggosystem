@@ -14,10 +14,6 @@ import {
   durationLabel,
   matchDurationMinutes
 } from "@/lib/matches/format";
-import {
-  dualTeamRowToHomeLeftDisplay,
-  matchMapScoreForHomeLeftDisplay
-} from "@/lib/order-match-teams-home-left-away";
 import { NextImageFallback } from "@/components/layout/NextImageFallback";
 import { createTeamLogoUrl } from "@/lib/utils";
 
@@ -36,24 +32,23 @@ export function MatchCard({
 }: MatchCardProps) {
   const tierColor = leagueColor(match.league_name).color;
 
-  const { left, right, leftIsTeam1 } = dualTeamRowToHomeLeftDisplay({
-    team1_side: match.team1_side,
-    team2_side: match.team2_side,
-    team1_name: match.team1_name,
-    team2_name: match.team2_name,
-    team1_logo: match.team1_logo,
-    team2_logo: match.team2_logo,
-    team1_score: match.team1_score,
-    team2_score: match.team2_score
-  });
+  const { home_team: home, away_team: away } = match;
 
-  const leftWins = left.score > right.score;
-  const rightWins = right.score > left.score;
-  const hasSeriesWinner = leftWins || rightWins;
+  const homeWins = home.score > away.score;
+  const awayWins = away.score > home.score;
+  const hasSeriesWinner = homeWins || awayWins;
 
   function seriesScoreClass(isWinner: boolean): string {
     if (!hasSeriesWinner) return "text-foreground";
     return isWinner ? "text-kanaliiga-orange" : "text-muted-foreground";
+  }
+
+  function mapWinner(
+    map: MatchesByFilters["maps_json"][number]
+  ): "home" | "away" | "draw" {
+    if (map.home_score > map.away_score) return "home";
+    if (map.away_score > map.home_score) return "away";
+    return "draw";
   }
 
   const durationMinutes = matchDurationMinutes(
@@ -70,12 +65,14 @@ export function MatchCard({
 
   function renderMapChips(compact?: boolean) {
     if (match.maps_json.length === 0) return null;
-    return match.maps_json.map((raw, i) => {
-      const { map, winner } = matchMapScoreForHomeLeftDisplay(raw, leftIsTeam1);
-      return (
-        <MapScoreChip key={i} map={map} winner={winner} compact={compact} />
-      );
-    });
+    return match.maps_json.map((map, i) => (
+      <MapScoreChip
+        key={i}
+        map={map}
+        winner={mapWinner(map)}
+        compact={compact}
+      />
+    ));
   }
 
   return (
@@ -110,11 +107,11 @@ export function MatchCard({
           <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
             <div className="flex items-center justify-end gap-2">
               <span className="font-headings text-base text-right">
-                {left.name}
+                {home.name}
               </span>
               <NextImageFallback
-                src={createTeamLogoUrl(left.logo ?? "")}
-                alt={left.name}
+                src={createTeamLogoUrl(home.logo ?? "")}
+                alt={home.name}
                 width={40}
                 height={40}
                 className="h-10 w-10 flex-shrink-0 object-contain"
@@ -122,20 +119,20 @@ export function MatchCard({
             </div>
 
             <div className="flex items-center px-2 font-headings text-[30px] leading-none">
-              <span className={seriesScoreClass(leftWins)}>{left.score}</span>
+              <span className={seriesScoreClass(homeWins)}>{home.score}</span>
               <span className="mx-1 text-xl opacity-30">—</span>
-              <span className={seriesScoreClass(rightWins)}>{right.score}</span>
+              <span className={seriesScoreClass(awayWins)}>{away.score}</span>
             </div>
 
             <div className="flex items-center justify-start gap-2">
               <NextImageFallback
-                src={createTeamLogoUrl(right.logo ?? "")}
-                alt={right.name}
+                src={createTeamLogoUrl(away.logo ?? "")}
+                alt={away.name}
                 width={40}
                 height={40}
                 className="h-10 w-10 flex-shrink-0 object-contain"
               />
-              <span className="font-headings text-base">{right.name}</span>
+              <span className="font-headings text-base">{away.name}</span>
             </div>
           </div>
 
@@ -188,11 +185,11 @@ export function MatchCard({
           <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
             <div className="flex items-center justify-end gap-2">
               <span className="font-headings text-base text-right">
-                {left.name}
+                {home.name}
               </span>
               <NextImageFallback
-                src={createTeamLogoUrl(left.logo ?? "")}
-                alt={left.name}
+                src={createTeamLogoUrl(home.logo ?? "")}
+                alt={home.name}
                 width={32}
                 height={32}
                 className="h-8 w-8 flex-shrink-0 object-contain"
@@ -200,20 +197,20 @@ export function MatchCard({
             </div>
 
             <div className="flex items-center px-2 font-headings text-[2rem] leading-none">
-              <span className={seriesScoreClass(leftWins)}>{left.score}</span>
+              <span className={seriesScoreClass(homeWins)}>{home.score}</span>
               <span className="mx-1 text-xl opacity-30">—</span>
-              <span className={seriesScoreClass(rightWins)}>{right.score}</span>
+              <span className={seriesScoreClass(awayWins)}>{away.score}</span>
             </div>
 
             <div className="flex items-center justify-start gap-2">
               <NextImageFallback
-                src={createTeamLogoUrl(right.logo ?? "")}
-                alt={right.name}
+                src={createTeamLogoUrl(away.logo ?? "")}
+                alt={away.name}
                 width={32}
                 height={32}
                 className="h-8 w-8 flex-shrink-0 object-contain"
               />
-              <span className="font-headings text-base">{right.name}</span>
+              <span className="font-headings text-base">{away.name}</span>
             </div>
           </div>
 
@@ -248,33 +245,33 @@ export function MatchCard({
           <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 py-1.5">
             <div className="flex flex-col items-start gap-1.5">
               <NextImageFallback
-                src={createTeamLogoUrl(left.logo ?? "")}
-                alt={left.name}
+                src={createTeamLogoUrl(home.logo ?? "")}
+                alt={home.name}
                 width={32}
                 height={32}
                 className="h-8 w-8 flex-shrink-0 object-contain"
               />
               <span className="break-words font-headings text-sm leading-tight">
-                {left.name}
+                {home.name}
               </span>
             </div>
 
             <div className="flex items-center px-1 font-headings text-[1.75rem] leading-none">
-              <span className={seriesScoreClass(leftWins)}>{left.score}</span>
+              <span className={seriesScoreClass(homeWins)}>{home.score}</span>
               <span className="mx-1 text-lg opacity-30">—</span>
-              <span className={seriesScoreClass(rightWins)}>{right.score}</span>
+              <span className={seriesScoreClass(awayWins)}>{away.score}</span>
             </div>
 
             <div className="flex flex-col items-end gap-1.5">
               <NextImageFallback
-                src={createTeamLogoUrl(right.logo ?? "")}
-                alt={right.name}
+                src={createTeamLogoUrl(away.logo ?? "")}
+                alt={away.name}
                 width={32}
                 height={32}
                 className="h-8 w-8 flex-shrink-0 object-contain"
               />
               <span className="break-words text-right font-headings text-sm leading-tight">
-                {right.name}
+                {away.name}
               </span>
             </div>
           </div>
