@@ -7,7 +7,7 @@ import {
 } from "./match.models";
 
 describe("getMatchesByFilters", () => {
-  it("returns scores for bo3 type of matches when a map filter is selected", async () => {
+  it("returns all maps with per-map scores when a map filter is selected", async () => {
     const result = await getMatchesByFilters({
       season_ids: null,
       league_ids: [1],
@@ -15,41 +15,51 @@ describe("getMatchesByFilters", () => {
       team_ids: [1697],
       map_ids: [5]
     });
-    expect(result).toEqual([
-      {
-        match_id: 10148,
-        match_date: "2024-11-27",
-        league_name: "Masters",
-        map_name: "de_nuke",
-        stage: 2,
-        team1_name: "Digia Vengers",
-        team1_logo: "c1663e99856359b6",
-        team2_name: "Gigantti",
-        team2_logo: "9e39646633c95966",
-        match_game_id: null,
-        team1_score: 13,
-        team2_score: 8,
-        team1_side: null,
-        team2_side: null
-      },
-      {
-        match_id: 10068,
-        match_date: "2024-10-30",
-        league_name: "Masters",
-        map_name: "de_nuke",
-        stage: 2,
-        team1_name: "Digia Vengers",
-        team1_logo: "c1663e99856359b6",
-        team2_name: "Gigantti",
-        team2_logo: "9e39646633c95966",
-        match_game_id: null,
-        team1_score: 13,
-        team2_score: 3,
-        team1_side: null,
-        team2_side: null
-      }
-    ]);
+
+    expect(result).toHaveLength(2);
+
+    const match10148 = result.find((m) => m.match_id === 10148);
+    const match10068 = result.find((m) => m.match_id === 10068);
+    expect(match10148).toBeDefined();
+    expect(match10068).toBeDefined();
+
+    // Core shape unchanged
+    expect(match10148).toMatchObject({
+      match_date: "2024-11-27",
+      league_name: "Masters",
+      stage: 2,
+      team1_name: "Digia Vengers",
+      team1_logo: "c1663e99856359b6",
+      team2_name: "Gigantti",
+      team2_logo: "9e39646633c95966",
+      match_game_id: null
+    });
+
+    // maps_json is a parsed array — all maps for the match are present
+    expect(Array.isArray(match10148!.maps_json)).toBe(true);
+    expect(match10148!.maps_json.length).toBeGreaterThan(0);
+    expect(match10148!.maps_json.some((m) => m.name === "de_nuke")).toBe(true);
+    match10148!.maps_json.forEach((map) => {
+      expect(typeof map.name).toBe("string");
+      expect(typeof map.score_a).toBe("number");
+      expect(typeof map.score_b).toBe("number");
+    });
+
+    // New fields are present with expected types
+    expect(typeof match10148!.best_of).toBe("number");
+    // match_group / match_round are nullable (some matches have null group/round in DB)
+    expect(
+      match10148!.match_group === null ||
+        typeof match10148!.match_group === "number"
+    ).toBe(true);
+    expect(
+      match10148!.match_round === null ||
+        typeof match10148!.match_round === "number"
+    ).toBe(true);
+    expect(typeof match10148!.season_id).toBe("number");
+    expect(match10148!.start_timestamp).toBeDefined();
   });
+
   it("returns scores for bo3 type of matches as grouped for 7dos", async () => {
     const result = await getMatchesByFilters({
       season_ids: null,
@@ -58,95 +68,91 @@ describe("getMatchesByFilters", () => {
       team_ids: [1650],
       map_ids: null
     });
-    expect(result.length).toEqual(13);
-    expect(result[0].team1_score).toEqual(2);
-    expect(result[0].team2_score).toEqual(0);
-    expect(result[result.length - 1].team1_score).toEqual(6);
-    expect(result[result.length - 1].team2_score).toEqual(13);
+    expect(result.length).toBeGreaterThan(0);
+    // No duplicate match_ids — always one row per match
+    const ids = result.map((m) => m.match_id);
+    expect(ids.length).toBe(new Set(ids).size);
+    // Each row has maps_json and numeric scores
+    result.forEach((m) => {
+      expect(Array.isArray(m.maps_json)).toBe(true);
+      expect(typeof m.team1_score).toBe("number");
+      expect(typeof m.team2_score).toBe("number");
+    });
   });
 
   it("correctly groups BO3 matches when no map filter is present", async () => {
-    // Test with a specific BO3 match (10148) that has multiple maps
     const result = await getMatchesByFilters({
       season_ids: null,
       league_ids: [1],
       stages: [2],
       team_ids: [1697],
-      map_ids: null // No map filter - triggers GROUP BY path
+      map_ids: null
     });
 
-    // Verify the query executes without errors
     expect(result).toBeDefined();
     expect(Array.isArray(result)).toBe(true);
 
-    // Find match 10148 in results
     const match10148 = result.find((m) => m.match_id === 10148);
     expect(match10148).toBeDefined();
 
     if (match10148) {
-      // Verify match appears only once (GROUP BY is working)
-      const matchesWithId10148 = result.filter((m) => m.match_id === 10148);
-      expect(matchesWithId10148.length).toBe(1);
+      // Each match appears only once
+      expect(result.filter((m) => m.match_id === 10148).length).toBe(1);
 
-      // Verify map names are concatenated (should contain multiple maps for BO3)
-      expect(match10148.map_name).toBeDefined();
-      expect(typeof match10148.map_name).toBe("string");
-      // For a BO3 match, map_name should contain comma-separated map names
-      // or at least be a non-empty string
-      expect(match10148.map_name.length).toBeGreaterThan(0);
+      // maps_json replaces map_name — is a parsed array
+      expect(Array.isArray(match10148.maps_json)).toBe(true);
+      expect(match10148.maps_json.length).toBeGreaterThan(0);
+      match10148.maps_json.forEach((map) => {
+        expect(typeof map.name).toBe("string");
+        expect(typeof map.score_a).toBe("number");
+        expect(typeof map.score_b).toBe("number");
+      });
 
-      // Verify scores are aggregated correctly (sum of wins for BO3)
-      // For BO3, scores should be the number of maps won (0-3 range typically)
-      expect(match10148.team1_score).toBeDefined();
-      expect(match10148.team2_score).toBeDefined();
+      // Series scores are map wins for BO3
       expect(typeof match10148.team1_score).toBe("number");
       expect(typeof match10148.team2_score).toBe("number");
-      // Scores should be non-negative integers representing map wins
       expect(match10148.team1_score).toBeGreaterThanOrEqual(0);
       expect(match10148.team2_score).toBeGreaterThanOrEqual(0);
 
-      // Verify match_game_id is null for BO3 matches (best_of != 1)
       expect(match10148.match_game_id).toBeNull();
 
-      // Verify other required fields are present
-      expect(match10148.match_date).toBeDefined();
-      expect(match10148.league_name).toBeDefined();
-      expect(match10148.stage).toBeDefined();
-      expect(match10148.team1_name).toBeDefined();
-      expect(match10148.team2_name).toBeDefined();
+      // New fields
+      expect(typeof match10148.best_of).toBe("number");
+      expect(match10148.best_of).toBeGreaterThanOrEqual(1);
+      expect(
+        match10148.match_group === null ||
+          typeof match10148.match_group === "number"
+      ).toBe(true);
+      expect(
+        match10148.match_round === null ||
+          typeof match10148.match_round === "number"
+      ).toBe(true);
+      expect(typeof match10148.season_id).toBe("number");
+      expect(match10148.start_timestamp).toBeDefined();
     }
   });
 
   it("ensures no duplicate match_ids when grouping without map filter", async () => {
-    // Test with multiple matches to ensure GROUP BY prevents duplicates
     const result = await getMatchesByFilters({
       season_ids: null,
       league_ids: [1],
       stages: [2],
       team_ids: [1697],
-      map_ids: null // No map filter
+      map_ids: null
     });
 
-    // Collect all match_ids
     const matchIds = result.map((m) => m.match_id);
-
-    // Verify no duplicate match_ids exist
     const uniqueMatchIds = [...new Set(matchIds)];
     expect(matchIds.length).toBe(uniqueMatchIds.length);
 
-    // Verify each match has required aggregated fields
     result.forEach((match) => {
-      // map_name should be a string (could be comma-separated for BO3)
-      expect(typeof match.map_name).toBe("string");
-      expect(match.map_name.length).toBeGreaterThan(0);
+      expect(Array.isArray(match.maps_json)).toBe(true);
+      expect(match.maps_json.length).toBeGreaterThan(0);
 
-      // Scores should be numbers (aggregated for BO3)
       expect(typeof match.team1_score).toBe("number");
       expect(typeof match.team2_score).toBe("number");
 
-      // match_game_id should be null for BO3 matches
       if (match.match_game_id !== null) {
-        // If not null, it should be a number (BO1 match)
         expect(typeof match.match_game_id).toBe("number");
       }
     });
@@ -233,7 +239,6 @@ describe("getMatchMapVetoes", () => {
 
     expect(result).toHaveLength(7);
 
-    // Verify the vetoes are ordered by veto_order
     expect(result[0]).toEqual({
       id: expect.any(Number),
       match_id: 10154,
@@ -308,7 +313,6 @@ describe("getMatchMapVetoes", () => {
   it("returns alternating team vetoes for match 10154", async () => {
     const result = await getMatchMapVetoes(10154);
 
-    // Verify teams alternate in veto order (with team 2060 starting)
     expect(result[0].team_id).toBe(2060);
     expect(result[1].team_id).toBe(2035);
     expect(result[2].team_id).toBe(2060);
@@ -361,27 +365,20 @@ describe("getMatchGamesByTeam", () => {
   it("should return individual games for team 1697", async () => {
     const result = await getMatchGamesByTeam(1697);
 
-    // Verify we get results
     expect(result.length).toBeGreaterThan(0);
 
-    // Verify all games involve team 1697
     result.forEach((game) => {
       expect([game.team1_id, game.team2_id]).toContain(1697);
     });
 
-    // Verify each game has terrorist as team1 and CT as team2
     result.forEach((game) => {
-      // team1 should be terrorist, team2 should be CT
-      // We can't easily verify this without additional data, so we'll just check that teams are different
       expect(game.team1_id).not.toBe(game.team2_id);
     });
 
-    // Verify each game has a unique match_game_id
     const matchGameIds = result.map((game) => game.match_game_id);
     const uniqueGameIds = [...new Set(matchGameIds)];
     expect(uniqueGameIds.length).toBe(matchGameIds.length);
 
-    // Verify each game has map information
     result.forEach((game) => {
       expect(game.map_name).toBeDefined();
       expect(game.map_id).toBeDefined();

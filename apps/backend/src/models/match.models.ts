@@ -282,41 +282,58 @@ export const getMatchesByFilters = async ({
   stages,
   map_ids
 }: ParsedParams) => {
-  // Base query
   const { query, queryParams } = generateQueryWithFilters([
     { column: "m.season_id", value: season_ids },
     { column: "m.league_id", value: league_ids },
     { column: [{ column: "t1.id" }, { column: "t2.id" }], value: team_ids },
-    { column: "m.stage", value: stages },
-    { column: "mmp.map_id", value: map_ids }
+    { column: "m.stage", value: stages }
   ]);
 
-  const mapFilterPresent = map_ids && map_ids.length > 0;
+  // Map filter uses EXISTS so all maps are aggregated into maps_json regardless
+  let mapFilterClause = "";
+  const mapFilterParams: number[] = [];
+  if (map_ids && map_ids.length > 0) {
+    const placeholders = map_ids.map(() => "?").join(", ");
+    mapFilterClause = `AND EXISTS (
+      SELECT 1 FROM MatchGames mg_f
+      WHERE mg_f.match_id = m.id AND mg_f.map_id IN (${placeholders})
+    )`;
+    mapFilterParams.push(...map_ids);
+  }
+
+  const hasFilters = query !== "1=1" || mapFilterParams.length > 0;
 
   const baseQuery = `
-      SELECT 
+      SELECT
           m.id AS match_id,
+          m.\`group\` AS match_group,
+          m.round AS match_round,
+          m.best_of,
+          m.season_id,
           DATE(m.start_timestamp) AS match_date,
+          m.start_timestamp,
+          m.end_timestamp,
           l.name AS league_name,
           m.stage,
-          ${!mapFilterPresent ? "GROUP_CONCAT(DISTINCT map.name SEPARATOR ',') AS map_name," : "map.name AS map_name,"}
+          JSON_ARRAYAGG(JSON_OBJECT(
+              'name', map.name,
+              'score_a', tms1.score,
+              'score_b', tms2.score
+          ) ORDER BY mmp.map_order ASC) AS maps_json,
           t1.name AS team1_name,
           t1.team_logo AS team1_logo,
           t2.name AS team2_name,
           t2.team_logo AS team2_logo,
           MAX(mt1.match_side) AS team1_side,
           MAX(mt2.match_side) AS team2_side,
+          CASE WHEN m.best_of = 1 THEN MAX(mmp.id) ELSE NULL END AS match_game_id,
           CASE
-            WHEN m.best_of = 1 THEN ${!mapFilterPresent ? "MAX(mmp.id)" : "mmp.id"}
-            ELSE NULL
-          END AS match_game_id,
-          CASE 
-              ${!mapFilterPresent ? "WHEN m.best_of != 1 THEN SUM(CASE WHEN tms1.score > tms2.score THEN 1 ELSE 0 END)" : "WHEN 1=1 THEN tms1.score"}
-              ELSE tms1.score
+              WHEN m.best_of != 1 THEN SUM(CASE WHEN tms1.score > tms2.score THEN 1 ELSE 0 END)
+              ELSE MAX(tms1.score)
           END AS team1_score,
-          CASE 
-              ${!mapFilterPresent ? "WHEN m.best_of != 1 THEN SUM(CASE WHEN tms1.score < tms2.score THEN 1 ELSE 0 END)" : "WHEN 1=1 THEN tms2.score"}
-              ELSE tms2.score
+          CASE
+              WHEN m.best_of != 1 THEN SUM(CASE WHEN tms1.score < tms2.score THEN 1 ELSE 0 END)
+              ELSE MAX(tms2.score)
           END AS team2_score
       FROM Matches m
       JOIN MatchGames mmp ON m.id = mmp.match_id
@@ -336,12 +353,26 @@ export const getMatchesByFilters = async ({
           FROM MatchTeams
           GROUP BY match_id, team_id
       ) mt2 ON m.id = mt2.match_id AND mt2.team_id = t2.id
-      WHERE ${query} AND m.status = 'FINISHED'
-      GROUP BY 
-          ${!mapFilterPresent ? "m.id, DATE(m.start_timestamp), l.name, m.stage, t1.name, t1.team_logo, t2.name, t2.team_logo" : "mmp.id, l.name, m.stage, t1.name, t1.team_logo, t2.name, t2.team_logo"}
-      ORDER BY 
-          m.start_timestamp DESC ${query === "1=1" ? "LIMIT 500" : "LIMIT 100"}`;
-  return runQuery<MatchesByFilters[]>(baseQuery, queryParams);
+      WHERE ${query} AND m.status = 'FINISHED' ${mapFilterClause}
+      GROUP BY
+          m.id, m.\`group\`, m.round, m.best_of, m.season_id,
+          m.start_timestamp, m.end_timestamp,
+          DATE(m.start_timestamp), l.name, m.stage,
+          t1.name, t1.team_logo, t2.name, t2.team_logo
+      ORDER BY
+          m.start_timestamp DESC ${hasFilters ? "LIMIT 100" : "LIMIT 500"}`;
+
+  type RawRow = Omit<MatchesByFilters, "maps_json"> & { maps_json: string };
+  const rows = await runQuery<RawRow[]>(baseQuery, [
+    ...queryParams,
+    ...mapFilterParams
+  ]);
+  return rows.map((row) => ({
+    ...row,
+    maps_json: (typeof row.maps_json === "string"
+      ? JSON.parse(row.maps_json)
+      : row.maps_json) as MatchesByFilters["maps_json"]
+  }));
 };
 
 export const getMatchGames = async (match_id: number) => {
