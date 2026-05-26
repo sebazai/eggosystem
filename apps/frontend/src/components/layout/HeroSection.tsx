@@ -403,7 +403,7 @@ export default function HeroSection({ device: _device }: HeroSectionProps) {
 
               <p className="text-lg sm:text-xl 2xl:text-2xl text-muted-foreground leading-relaxed">
                 Finland&apos;s corporate CS2 league. Watch live matches, follow
-                your team, and compete across four divisions.
+                your team, and compete across multiple divisions.
               </p>
             </div>
 
