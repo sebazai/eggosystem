@@ -1,5 +1,12 @@
 export type TierKey = "premier" | "elite" | "challenge" | "open";
 
+export const TIERS: Record<TierKey, { label: string }> = {
+  premier: { label: "Masters" },
+  elite: { label: "Challengers" },
+  challenge: { label: "Prospects" },
+  open: { label: "Open" }
+};
+
 /** Returns `hsl(var(--tier-{key}))` for use as an inline CSS color value. */
 export function tierCssColor(key: TierKey): string {
   return `hsl(var(--tier-${key}))`;

@@ -1297,76 +1297,340 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly when no matches fo
 exports[`FilteredMatchesList Snapshot Tests renders correctly with match that has no game id 1`] = `
 <div>
   <div>
-    <div>
-      <h2
-        class="text-left text-sm sm:text-lg mb-2"
-      >
-        2024-01-13
-      </h2>
+    <div
+      class="mb-6"
+    >
       <div
-        class="mb-2 sm:mb-4"
+        class="mb-3 flex items-center gap-3"
       >
-        <a
-          class="no-underline"
-          href="/matches/4"
+        <h2
+          class="whitespace-nowrap text-sm uppercase tracking-[0.04em]"
+        >
+          JAN 15 · 2024
+        </h2>
+        <hr
+          class="flex-1 border-t border-white/8"
+        />
+        <span
+          class="whitespace-nowrap font-mono text-[10px] text-muted-foreground"
+        >
+          1
+           
+          match
+        </span>
+      </div>
+      <a
+        class="block no-underline"
+        href="/matches/4"
+      >
+        <div
+          class="mb-2 hidden overflow-hidden rounded-lg border border-border bg-card shadow-sm transition-colors hover:bg-accent/30 md:grid md:grid-cols-[6px_240px_1fr]"
         >
           <div
-            class="bg-card grid grid-cols-[1fr_auto_1fr] min-h-10 md:min-h-12 items-center gap-2 px-0 transition-transform transform hover:scale-105 hover:ring-2 hover:ring-ring mb-1 rounded-lg shadow-md dark:shadow-muted"
+            class="h-full"
+            style="background-color: hsl(var(--tier-premier));"
+          />
+          <div
+            class="flex flex-col gap-1.5 border-r border-white/8 px-4 py-3"
           >
             <div
-              class="flex items-center justify-end"
+              class="flex flex-wrap items-center gap-1.5"
             >
-              <div
-                class="text-right xs:break-normal break-words text-sm sm:text-base mr-1"
-              >
-                Team Eta
-              </div>
-              <img
-                alt="Team Eta"
-                class="w-8 h-8 sm:w-10 sm:h-10 ml-1 object-contain hidden xxs:block"
-                height="30"
-                src="https://img.kanaliiga.fi/images/by-hash/phash/eta-logo.png"
-                width="30"
-              />
-            </div>
-            <div
-              class="relative h-full min-w-16 md:min-w-20 flex items-center justify-center bg-kanaliiga-light-brown/30 rounded-xs"
-            >
-              <div
-                class="z-10 w-7 font-black text-md sm:text-lg text-center"
-              >
-                0
-              </div>
               <span
-                class="mx-1 md:mx-2"
+                class="inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.12em]"
+                style="color: hsl(var(--tier-premier)); border-color: hsl(var(--tier-premier) / 0.5); background-color: hsl(var(--tier-premier) / 0.16);"
               >
-                —
+                <span
+                  aria-hidden="true"
+                  class="size-1.5 flex-shrink-0 rounded-full"
+                  style="background-color: hsl(var(--tier-premier));"
+                />
+                Masters
               </span>
-              <div
-                class="z-10 w-7 font-black text-md sm:text-lg text-center"
-              >
-                0
-              </div>
             </div>
-            <div
-              class="flex items-center justify-start ml-1"
+            <p
+              class="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground"
             >
-              <img
-                alt="Team Theta"
-                class="w-6 h-6 sm:w-8 sm:h-8 mr-1 object-contain hidden xxs:block"
-                height="30"
-                src="https://img.kanaliiga.fi/images/by-hash/phash/theta-logo.png"
-                width="30"
-              />
-              <div
-                class="text-left xs:break-normal break-words text-sm sm:text-base ml-1"
+              Playoff
+            </p>
+            <p
+              class="font-headings text-sm text-foreground"
+            >
+              Upper Bracket · Round 1
+            </p>
+            <div
+              class="mt-1 flex flex-wrap gap-3"
+            >
+              <span
+                class="inline-flex items-center gap-1 font-mono text-[10px] tracking-[0.08em] text-muted-foreground"
               >
-                Team Theta
+                <svg
+                  aria-hidden="true"
+                  class="lucide lucide-calendar"
+                  fill="none"
+                  height="12"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="1.5"
+                  viewBox="0 0 24 24"
+                  width="12"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M8 2v4"
+                  />
+                  <path
+                    d="M16 2v4"
+                  />
+                  <rect
+                    height="18"
+                    rx="2"
+                    width="18"
+                    x="3"
+                    y="4"
+                  />
+                  <path
+                    d="M3 10h18"
+                  />
+                </svg>
+                MON 01-15
+              </span>
+              <span
+                class="inline-flex items-center gap-1 font-mono text-[10px] tracking-[0.08em] text-muted-foreground"
+              >
+                <svg
+                  aria-hidden="true"
+                  class="lucide lucide-clock"
+                  fill="none"
+                  height="12"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="1.5"
+                  viewBox="0 0 24 24"
+                  width="12"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="10"
+                  />
+                  <path
+                    d="M12 6v6l4 2"
+                  />
+                </svg>
+                2h 00m
+              </span>
+              <span
+                class="inline-flex items-center gap-1 font-mono text-[10px] tracking-[0.08em] text-muted-foreground"
+              >
+                <svg
+                  aria-hidden="true"
+                  class="lucide lucide-swords"
+                  fill="none"
+                  height="12"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="1.5"
+                  viewBox="0 0 24 24"
+                  width="12"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <polyline
+                    points="14.5 17.5 3 6 3 3 6 3 17.5 14.5"
+                  />
+                  <line
+                    x1="13"
+                    x2="19"
+                    y1="19"
+                    y2="13"
+                  />
+                  <line
+                    x1="16"
+                    x2="20"
+                    y1="16"
+                    y2="20"
+                  />
+                  <line
+                    x1="19"
+                    x2="21"
+                    y1="21"
+                    y2="19"
+                  />
+                  <polyline
+                    points="14.5 6.5 18 3 21 3 21 6 17.5 9.5"
+                  />
+                  <line
+                    x1="5"
+                    x2="9"
+                    y1="14"
+                    y2="18"
+                  />
+                  <line
+                    x1="7"
+                    x2="4"
+                    y1="17"
+                    y2="20"
+                  />
+                  <line
+                    x1="3"
+                    x2="5"
+                    y1="19"
+                    y2="21"
+                  />
+                </svg>
+                Bo3
+              </span>
+            </div>
+          </div>
+          <div
+            class="flex flex-col justify-center px-4 py-3"
+          >
+            <div
+              class="grid grid-cols-[1fr_auto_1fr] items-center gap-2"
+            >
+              <div
+                class="flex items-center justify-end gap-2"
+              >
+                <span
+                  class="font-headings text-base text-right"
+                >
+                  Team Eta
+                </span>
+                <img
+                  alt="Team Eta"
+                  class="h-8 w-8 flex-shrink-0 object-contain"
+                  height="32"
+                  src="https://img.kanaliiga.fi/images/by-hash/phash/alpha-logo.png"
+                  width="32"
+                />
+              </div>
+              <div
+                class="flex items-center px-2 font-headings text-[2rem] leading-none"
+              >
+                <span
+                  class=""
+                >
+                  0
+                </span>
+                <span
+                  class="mx-1 text-xl opacity-30"
+                >
+                  —
+                </span>
+                <span
+                  class=""
+                >
+                  0
+                </span>
+              </div>
+              <div
+                class="flex items-center justify-start gap-2"
+              >
+                <img
+                  alt="Team Theta"
+                  class="h-8 w-8 flex-shrink-0 object-contain"
+                  height="32"
+                  src="https://img.kanaliiga.fi/images/by-hash/phash/beta-logo.png"
+                  width="32"
+                />
+                <span
+                  class="font-headings text-base"
+                >
+                  Team Theta
+                </span>
               </div>
             </div>
           </div>
-        </a>
-      </div>
+        </div>
+        <div
+          class="mb-2 overflow-hidden rounded-lg border border-border bg-card shadow-sm transition-colors hover:bg-accent/30 md:hidden"
+          style="border-left-color: hsl(var(--tier-premier)); border-left-width: 4px;"
+        >
+          <div
+            class="flex flex-col gap-2 px-3 py-3"
+          >
+            <div
+              class="flex flex-wrap items-center gap-1.5"
+            >
+              <span
+                class="inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.12em]"
+                style="color: hsl(var(--tier-premier)); border-color: hsl(var(--tier-premier) / 0.5); background-color: hsl(var(--tier-premier) / 0.16);"
+              >
+                <span
+                  aria-hidden="true"
+                  class="size-1.5 flex-shrink-0 rounded-full"
+                  style="background-color: hsl(var(--tier-premier));"
+                />
+                Masters
+              </span>
+              <span
+                class="font-mono text-[10px] text-muted-foreground"
+              >
+                Upper Bracket · Round 1
+              </span>
+            </div>
+            <div
+              class="grid grid-cols-[1fr_auto_1fr] items-center gap-2"
+            >
+              <div
+                class="flex items-center gap-1.5"
+              >
+                <img
+                  alt="Team Eta"
+                  class="h-6 w-6 flex-shrink-0 object-contain"
+                  height="24"
+                  src="https://img.kanaliiga.fi/images/by-hash/phash/alpha-logo.png"
+                  width="24"
+                />
+                <span
+                  class="font-headings text-sm leading-tight"
+                >
+                  Team Eta
+                </span>
+              </div>
+              <div
+                class="flex items-center px-1 font-headings text-[1.75rem] leading-none"
+              >
+                <span
+                  class=""
+                >
+                  0
+                </span>
+                <span
+                  class="mx-1 text-lg opacity-30"
+                >
+                  —
+                </span>
+                <span
+                  class=""
+                >
+                  0
+                </span>
+              </div>
+              <div
+                class="flex items-center justify-end gap-1.5"
+              >
+                <span
+                  class="font-headings text-right text-sm leading-tight"
+                >
+                  Team Theta
+                </span>
+                <img
+                  alt="Team Theta"
+                  class="h-6 w-6 flex-shrink-0 object-contain"
+                  height="24"
+                  src="https://img.kanaliiga.fi/images/by-hash/phash/beta-logo.png"
+                  width="24"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </a>
     </div>
   </div>
 </div>
@@ -1375,211 +1639,1403 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with match that ha
 exports[`FilteredMatchesList Snapshot Tests renders correctly with matches grouped by date 1`] = `
 <div>
   <div>
-    <div>
-      <h2
-        class="text-left text-sm sm:text-lg mb-2"
-      >
-        2024-01-15
-      </h2>
+    <div
+      class="mb-6"
+    >
       <div
-        class="mb-2 sm:mb-4"
+        class="mb-3 flex items-center gap-3"
       >
-        <a
-          class="no-underline"
-          href="/matches/1/games/101"
+        <h2
+          class="whitespace-nowrap text-sm uppercase tracking-[0.04em]"
+        >
+          JAN 15 · 2024
+        </h2>
+        <hr
+          class="flex-1 border-t border-white/8"
+        />
+        <span
+          class="whitespace-nowrap font-mono text-[10px] text-muted-foreground"
+        >
+          2
+           
+          matches
+        </span>
+      </div>
+      <a
+        class="block no-underline"
+        href="/matches/1/games/101"
+      >
+        <div
+          class="mb-2 hidden overflow-hidden rounded-lg border border-border bg-card shadow-sm transition-colors hover:bg-accent/30 md:grid md:grid-cols-[6px_240px_1fr]"
         >
           <div
-            class="bg-card grid grid-cols-[1fr_auto_1fr] min-h-10 md:min-h-12 items-center gap-2 px-0 transition-transform transform hover:scale-105 hover:ring-2 hover:ring-ring mb-1 rounded-lg shadow-md dark:shadow-muted"
+            class="h-full"
+            style="background-color: hsl(var(--tier-premier));"
+          />
+          <div
+            class="flex flex-col gap-1.5 border-r border-white/8 px-4 py-3"
           >
             <div
-              class="flex items-center justify-end"
+              class="flex flex-wrap items-center gap-1.5"
             >
-              <div
-                class="text-right xs:break-normal break-words text-sm sm:text-base mr-1"
-              >
-                Team Alpha
-              </div>
-              <img
-                alt="Team Alpha"
-                class="w-8 h-8 sm:w-10 sm:h-10 ml-1 object-contain hidden xxs:block"
-                height="30"
-                src="https://img.kanaliiga.fi/images/by-hash/phash/alpha-logo.png"
-                width="30"
-              />
-            </div>
-            <div
-              class="relative h-full min-w-16 md:min-w-20 flex items-center justify-center bg-kanaliiga-light-brown/30 rounded-xs"
-            >
-              <div
-                class="z-10 w-7 font-black text-md sm:text-lg text-center"
-              >
-                16
-              </div>
               <span
-                class="mx-1 md:mx-2"
+                class="inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.12em]"
+                style="color: hsl(var(--tier-premier)); border-color: hsl(var(--tier-premier) / 0.5); background-color: hsl(var(--tier-premier) / 0.16);"
               >
-                —
+                <span
+                  aria-hidden="true"
+                  class="size-1.5 flex-shrink-0 rounded-full"
+                  style="background-color: hsl(var(--tier-premier));"
+                />
+                Masters
               </span>
-              <div
-                class="z-10 w-7 font-black text-md sm:text-lg text-center"
-              >
-                12
-              </div>
             </div>
-            <div
-              class="flex items-center justify-start ml-1"
+            <p
+              class="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground"
             >
-              <img
-                alt="Team Beta"
-                class="w-6 h-6 sm:w-8 sm:h-8 mr-1 object-contain hidden xxs:block"
-                height="30"
-                src="https://img.kanaliiga.fi/images/by-hash/phash/beta-logo.png"
-                width="30"
-              />
-              <div
-                class="text-left xs:break-normal break-words text-sm sm:text-base ml-1"
+              Playoff
+            </p>
+            <p
+              class="font-headings text-sm text-foreground"
+            >
+              Upper Bracket · Round 1
+            </p>
+            <div
+              class="mt-1 flex flex-wrap gap-3"
+            >
+              <span
+                class="inline-flex items-center gap-1 font-mono text-[10px] tracking-[0.08em] text-muted-foreground"
               >
-                Team Beta
-              </div>
+                <svg
+                  aria-hidden="true"
+                  class="lucide lucide-calendar"
+                  fill="none"
+                  height="12"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="1.5"
+                  viewBox="0 0 24 24"
+                  width="12"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M8 2v4"
+                  />
+                  <path
+                    d="M16 2v4"
+                  />
+                  <rect
+                    height="18"
+                    rx="2"
+                    width="18"
+                    x="3"
+                    y="4"
+                  />
+                  <path
+                    d="M3 10h18"
+                  />
+                </svg>
+                MON 01-15
+              </span>
+              <span
+                class="inline-flex items-center gap-1 font-mono text-[10px] tracking-[0.08em] text-muted-foreground"
+              >
+                <svg
+                  aria-hidden="true"
+                  class="lucide lucide-clock"
+                  fill="none"
+                  height="12"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="1.5"
+                  viewBox="0 0 24 24"
+                  width="12"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="10"
+                  />
+                  <path
+                    d="M12 6v6l4 2"
+                  />
+                </svg>
+                2h 00m
+              </span>
+              <span
+                class="inline-flex items-center gap-1 font-mono text-[10px] tracking-[0.08em] text-muted-foreground"
+              >
+                <svg
+                  aria-hidden="true"
+                  class="lucide lucide-swords"
+                  fill="none"
+                  height="12"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="1.5"
+                  viewBox="0 0 24 24"
+                  width="12"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <polyline
+                    points="14.5 17.5 3 6 3 3 6 3 17.5 14.5"
+                  />
+                  <line
+                    x1="13"
+                    x2="19"
+                    y1="19"
+                    y2="13"
+                  />
+                  <line
+                    x1="16"
+                    x2="20"
+                    y1="16"
+                    y2="20"
+                  />
+                  <line
+                    x1="19"
+                    x2="21"
+                    y1="21"
+                    y2="19"
+                  />
+                  <polyline
+                    points="14.5 6.5 18 3 21 3 21 6 17.5 9.5"
+                  />
+                  <line
+                    x1="5"
+                    x2="9"
+                    y1="14"
+                    y2="18"
+                  />
+                  <line
+                    x1="7"
+                    x2="4"
+                    y1="17"
+                    y2="20"
+                  />
+                  <line
+                    x1="3"
+                    x2="5"
+                    y1="19"
+                    y2="21"
+                  />
+                </svg>
+                Bo3
+              </span>
             </div>
           </div>
-        </a>
-      </div>
-      <div
-        class="mb-2 sm:mb-4"
-      >
-        <a
-          class="no-underline"
-          href="/matches/2/games/102"
+          <div
+            class="flex flex-col justify-center px-4 py-3"
+          >
+            <div
+              class="grid grid-cols-[1fr_auto_1fr] items-center gap-2"
+            >
+              <div
+                class="flex items-center justify-end gap-2"
+              >
+                <span
+                  class="font-headings text-base text-right"
+                >
+                  Team Alpha
+                </span>
+                <img
+                  alt="Team Alpha"
+                  class="h-8 w-8 flex-shrink-0 object-contain"
+                  height="32"
+                  src="https://img.kanaliiga.fi/images/by-hash/phash/alpha-logo.png"
+                  width="32"
+                />
+              </div>
+              <div
+                class="flex items-center px-2 font-headings text-[2rem] leading-none"
+              >
+                <span
+                  class=""
+                >
+                  2
+                </span>
+                <span
+                  class="mx-1 text-xl opacity-30"
+                >
+                  —
+                </span>
+                <span
+                  class="opacity-40"
+                >
+                  0
+                </span>
+              </div>
+              <div
+                class="flex items-center justify-start gap-2 opacity-40"
+              >
+                <img
+                  alt="Team Beta"
+                  class="h-8 w-8 flex-shrink-0 object-contain"
+                  height="32"
+                  src="https://img.kanaliiga.fi/images/by-hash/phash/beta-logo.png"
+                  width="32"
+                />
+                <span
+                  class="font-headings text-base"
+                >
+                  Team Beta
+                </span>
+              </div>
+            </div>
+            <div
+              class="mt-2 flex flex-wrap justify-center gap-1.5 border-t border-dashed border-white/8 pt-2"
+            >
+              <span
+                class="inline-flex items-center gap-1.5 rounded border border-white/5 bg-black/20 px-2 py-0.5"
+              >
+                <span
+                  class="font-mono text-[10px] text-kanaliiga-light-brown"
+                >
+                  de_nuke
+                </span>
+                <span
+                  class="font-mono text-[10px]"
+                >
+                  <span
+                    class="font-bold text-foreground"
+                  >
+                    13
+                  </span>
+                  <span
+                    class="mx-0.5 text-muted-foreground"
+                  >
+                    :
+                  </span>
+                  <span
+                    class="text-muted-foreground"
+                  >
+                    9
+                  </span>
+                </span>
+              </span>
+              <span
+                class="inline-flex items-center gap-1.5 rounded border border-white/5 bg-black/20 px-2 py-0.5"
+              >
+                <span
+                  class="font-mono text-[10px] text-kanaliiga-light-brown"
+                >
+                  de_mirage
+                </span>
+                <span
+                  class="font-mono text-[10px]"
+                >
+                  <span
+                    class="font-bold text-foreground"
+                  >
+                    13
+                  </span>
+                  <span
+                    class="mx-0.5 text-muted-foreground"
+                  >
+                    :
+                  </span>
+                  <span
+                    class="text-muted-foreground"
+                  >
+                    6
+                  </span>
+                </span>
+              </span>
+            </div>
+          </div>
+        </div>
+        <div
+          class="mb-2 overflow-hidden rounded-lg border border-border bg-card shadow-sm transition-colors hover:bg-accent/30 md:hidden"
+          style="border-left-color: hsl(var(--tier-premier)); border-left-width: 4px;"
         >
           <div
-            class="bg-card grid grid-cols-[1fr_auto_1fr] min-h-10 md:min-h-12 items-center gap-2 px-0 transition-transform transform hover:scale-105 hover:ring-2 hover:ring-ring mb-1 rounded-lg shadow-md dark:shadow-muted"
+            class="flex flex-col gap-2 px-3 py-3"
           >
             <div
-              class="flex items-center justify-end"
+              class="flex flex-wrap items-center gap-1.5"
             >
-              <div
-                class="text-right xs:break-normal break-words text-sm sm:text-base mr-1"
-              >
-                Team Delta
-              </div>
-              <img
-                alt="Team Delta"
-                class="w-8 h-8 sm:w-10 sm:h-10 ml-1 object-contain hidden xxs:block"
-                height="30"
-                src="https://img.kanaliiga.fi/images/by-hash/phash/delta-logo.png"
-                width="30"
-              />
-            </div>
-            <div
-              class="relative h-full min-w-16 md:min-w-20 flex items-center justify-center bg-kanaliiga-light-brown/30 rounded-xs"
-            >
-              <div
-                class="z-10 w-7 font-black text-md sm:text-lg text-center"
-              >
-                16
-              </div>
               <span
-                class="mx-1 md:mx-2"
+                class="inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.12em]"
+                style="color: hsl(var(--tier-premier)); border-color: hsl(var(--tier-premier) / 0.5); background-color: hsl(var(--tier-premier) / 0.16);"
               >
-                —
+                <span
+                  aria-hidden="true"
+                  class="size-1.5 flex-shrink-0 rounded-full"
+                  style="background-color: hsl(var(--tier-premier));"
+                />
+                Masters
               </span>
-              <div
-                class="z-10 w-7 font-black text-md sm:text-lg text-center"
+              <span
+                class="font-mono text-[10px] text-muted-foreground"
               >
-                13
+                Upper Bracket · Round 1
+              </span>
+            </div>
+            <div
+              class="grid grid-cols-[1fr_auto_1fr] items-center gap-2"
+            >
+              <div
+                class="flex items-center gap-1.5"
+              >
+                <img
+                  alt="Team Alpha"
+                  class="h-6 w-6 flex-shrink-0 object-contain"
+                  height="24"
+                  src="https://img.kanaliiga.fi/images/by-hash/phash/alpha-logo.png"
+                  width="24"
+                />
+                <span
+                  class="font-headings text-sm leading-tight"
+                >
+                  Team Alpha
+                </span>
+              </div>
+              <div
+                class="flex items-center px-1 font-headings text-[1.75rem] leading-none"
+              >
+                <span
+                  class=""
+                >
+                  2
+                </span>
+                <span
+                  class="mx-1 text-lg opacity-30"
+                >
+                  —
+                </span>
+                <span
+                  class="opacity-40"
+                >
+                  0
+                </span>
+              </div>
+              <div
+                class="flex items-center justify-end gap-1.5 opacity-40"
+              >
+                <span
+                  class="font-headings text-right text-sm leading-tight"
+                >
+                  Team Beta
+                </span>
+                <img
+                  alt="Team Beta"
+                  class="h-6 w-6 flex-shrink-0 object-contain"
+                  height="24"
+                  src="https://img.kanaliiga.fi/images/by-hash/phash/beta-logo.png"
+                  width="24"
+                />
               </div>
             </div>
             <div
-              class="flex items-center justify-start ml-1"
+              class="flex flex-wrap gap-1 border-t border-dashed border-white/8 pt-1"
             >
-              <img
-                alt="Team Gamma"
-                class="w-6 h-6 sm:w-8 sm:h-8 mr-1 object-contain hidden xxs:block"
-                height="30"
-                src="https://img.kanaliiga.fi/images/by-hash/phash/gamma-logo.png"
-                width="30"
-              />
-              <div
-                class="text-left xs:break-normal break-words text-sm sm:text-base ml-1"
+              <span
+                class="inline-flex items-center gap-1.5 rounded border border-white/5 bg-black/20 px-2 py-0.5"
               >
-                Team Gamma
-              </div>
+                <span
+                  class="font-mono text-[10px] text-kanaliiga-light-brown"
+                >
+                  de_nuke
+                </span>
+                <span
+                  class="font-mono text-[10px]"
+                >
+                  <span
+                    class="font-bold text-foreground"
+                  >
+                    13
+                  </span>
+                  <span
+                    class="mx-0.5 text-muted-foreground"
+                  >
+                    :
+                  </span>
+                  <span
+                    class="text-muted-foreground"
+                  >
+                    9
+                  </span>
+                </span>
+              </span>
+              <span
+                class="inline-flex items-center gap-1.5 rounded border border-white/5 bg-black/20 px-2 py-0.5"
+              >
+                <span
+                  class="font-mono text-[10px] text-kanaliiga-light-brown"
+                >
+                  de_mirage
+                </span>
+                <span
+                  class="font-mono text-[10px]"
+                >
+                  <span
+                    class="font-bold text-foreground"
+                  >
+                    13
+                  </span>
+                  <span
+                    class="mx-0.5 text-muted-foreground"
+                  >
+                    :
+                  </span>
+                  <span
+                    class="text-muted-foreground"
+                  >
+                    6
+                  </span>
+                </span>
+              </span>
             </div>
           </div>
-        </a>
-      </div>
+        </div>
+      </a>
+      <a
+        class="block no-underline"
+        href="/matches/2/games/102"
+      >
+        <div
+          class="mb-2 hidden overflow-hidden rounded-lg border border-border bg-card shadow-sm transition-colors hover:bg-accent/30 md:grid md:grid-cols-[6px_240px_1fr]"
+        >
+          <div
+            class="h-full"
+            style="background-color: hsl(var(--tier-premier));"
+          />
+          <div
+            class="flex flex-col gap-1.5 border-r border-white/8 px-4 py-3"
+          >
+            <div
+              class="flex flex-wrap items-center gap-1.5"
+            >
+              <span
+                class="inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.12em]"
+                style="color: hsl(var(--tier-premier)); border-color: hsl(var(--tier-premier) / 0.5); background-color: hsl(var(--tier-premier) / 0.16);"
+              >
+                <span
+                  aria-hidden="true"
+                  class="size-1.5 flex-shrink-0 rounded-full"
+                  style="background-color: hsl(var(--tier-premier));"
+                />
+                Masters
+              </span>
+            </div>
+            <p
+              class="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground"
+            >
+              Playoff
+            </p>
+            <p
+              class="font-headings text-sm text-foreground"
+            >
+              Upper Bracket · Round 1
+            </p>
+            <div
+              class="mt-1 flex flex-wrap gap-3"
+            >
+              <span
+                class="inline-flex items-center gap-1 font-mono text-[10px] tracking-[0.08em] text-muted-foreground"
+              >
+                <svg
+                  aria-hidden="true"
+                  class="lucide lucide-calendar"
+                  fill="none"
+                  height="12"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="1.5"
+                  viewBox="0 0 24 24"
+                  width="12"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M8 2v4"
+                  />
+                  <path
+                    d="M16 2v4"
+                  />
+                  <rect
+                    height="18"
+                    rx="2"
+                    width="18"
+                    x="3"
+                    y="4"
+                  />
+                  <path
+                    d="M3 10h18"
+                  />
+                </svg>
+                MON 01-15
+              </span>
+              <span
+                class="inline-flex items-center gap-1 font-mono text-[10px] tracking-[0.08em] text-muted-foreground"
+              >
+                <svg
+                  aria-hidden="true"
+                  class="lucide lucide-clock"
+                  fill="none"
+                  height="12"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="1.5"
+                  viewBox="0 0 24 24"
+                  width="12"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="10"
+                  />
+                  <path
+                    d="M12 6v6l4 2"
+                  />
+                </svg>
+                2h 00m
+              </span>
+              <span
+                class="inline-flex items-center gap-1 font-mono text-[10px] tracking-[0.08em] text-muted-foreground"
+              >
+                <svg
+                  aria-hidden="true"
+                  class="lucide lucide-swords"
+                  fill="none"
+                  height="12"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="1.5"
+                  viewBox="0 0 24 24"
+                  width="12"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <polyline
+                    points="14.5 17.5 3 6 3 3 6 3 17.5 14.5"
+                  />
+                  <line
+                    x1="13"
+                    x2="19"
+                    y1="19"
+                    y2="13"
+                  />
+                  <line
+                    x1="16"
+                    x2="20"
+                    y1="16"
+                    y2="20"
+                  />
+                  <line
+                    x1="19"
+                    x2="21"
+                    y1="21"
+                    y2="19"
+                  />
+                  <polyline
+                    points="14.5 6.5 18 3 21 3 21 6 17.5 9.5"
+                  />
+                  <line
+                    x1="5"
+                    x2="9"
+                    y1="14"
+                    y2="18"
+                  />
+                  <line
+                    x1="7"
+                    x2="4"
+                    y1="17"
+                    y2="20"
+                  />
+                  <line
+                    x1="3"
+                    x2="5"
+                    y1="19"
+                    y2="21"
+                  />
+                </svg>
+                Bo3
+              </span>
+            </div>
+          </div>
+          <div
+            class="flex flex-col justify-center px-4 py-3"
+          >
+            <div
+              class="grid grid-cols-[1fr_auto_1fr] items-center gap-2"
+            >
+              <div
+                class="flex items-center justify-end gap-2 opacity-40"
+              >
+                <span
+                  class="font-headings text-base text-right"
+                >
+                  Team Gamma
+                </span>
+                <img
+                  alt="Team Gamma"
+                  class="h-8 w-8 flex-shrink-0 object-contain"
+                  height="32"
+                  src="https://img.kanaliiga.fi/images/by-hash/phash/alpha-logo.png"
+                  width="32"
+                />
+              </div>
+              <div
+                class="flex items-center px-2 font-headings text-[2rem] leading-none"
+              >
+                <span
+                  class="opacity-40"
+                >
+                  0
+                </span>
+                <span
+                  class="mx-1 text-xl opacity-30"
+                >
+                  —
+                </span>
+                <span
+                  class=""
+                >
+                  2
+                </span>
+              </div>
+              <div
+                class="flex items-center justify-start gap-2"
+              >
+                <img
+                  alt="Team Delta"
+                  class="h-8 w-8 flex-shrink-0 object-contain"
+                  height="32"
+                  src="https://img.kanaliiga.fi/images/by-hash/phash/beta-logo.png"
+                  width="32"
+                />
+                <span
+                  class="font-headings text-base"
+                >
+                  Team Delta
+                </span>
+              </div>
+            </div>
+            <div
+              class="mt-2 flex flex-wrap justify-center gap-1.5 border-t border-dashed border-white/8 pt-2"
+            >
+              <span
+                class="inline-flex items-center gap-1.5 rounded border border-white/5 bg-black/20 px-2 py-0.5"
+              >
+                <span
+                  class="font-mono text-[10px] text-kanaliiga-light-brown"
+                >
+                  de_nuke
+                </span>
+                <span
+                  class="font-mono text-[10px]"
+                >
+                  <span
+                    class="font-bold text-foreground"
+                  >
+                    13
+                  </span>
+                  <span
+                    class="mx-0.5 text-muted-foreground"
+                  >
+                    :
+                  </span>
+                  <span
+                    class="text-muted-foreground"
+                  >
+                    9
+                  </span>
+                </span>
+              </span>
+              <span
+                class="inline-flex items-center gap-1.5 rounded border border-white/5 bg-black/20 px-2 py-0.5"
+              >
+                <span
+                  class="font-mono text-[10px] text-kanaliiga-light-brown"
+                >
+                  de_mirage
+                </span>
+                <span
+                  class="font-mono text-[10px]"
+                >
+                  <span
+                    class="font-bold text-foreground"
+                  >
+                    13
+                  </span>
+                  <span
+                    class="mx-0.5 text-muted-foreground"
+                  >
+                    :
+                  </span>
+                  <span
+                    class="text-muted-foreground"
+                  >
+                    6
+                  </span>
+                </span>
+              </span>
+            </div>
+          </div>
+        </div>
+        <div
+          class="mb-2 overflow-hidden rounded-lg border border-border bg-card shadow-sm transition-colors hover:bg-accent/30 md:hidden"
+          style="border-left-color: hsl(var(--tier-premier)); border-left-width: 4px;"
+        >
+          <div
+            class="flex flex-col gap-2 px-3 py-3"
+          >
+            <div
+              class="flex flex-wrap items-center gap-1.5"
+            >
+              <span
+                class="inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.12em]"
+                style="color: hsl(var(--tier-premier)); border-color: hsl(var(--tier-premier) / 0.5); background-color: hsl(var(--tier-premier) / 0.16);"
+              >
+                <span
+                  aria-hidden="true"
+                  class="size-1.5 flex-shrink-0 rounded-full"
+                  style="background-color: hsl(var(--tier-premier));"
+                />
+                Masters
+              </span>
+              <span
+                class="font-mono text-[10px] text-muted-foreground"
+              >
+                Upper Bracket · Round 1
+              </span>
+            </div>
+            <div
+              class="grid grid-cols-[1fr_auto_1fr] items-center gap-2"
+            >
+              <div
+                class="flex items-center gap-1.5 opacity-40"
+              >
+                <img
+                  alt="Team Gamma"
+                  class="h-6 w-6 flex-shrink-0 object-contain"
+                  height="24"
+                  src="https://img.kanaliiga.fi/images/by-hash/phash/alpha-logo.png"
+                  width="24"
+                />
+                <span
+                  class="font-headings text-sm leading-tight"
+                >
+                  Team Gamma
+                </span>
+              </div>
+              <div
+                class="flex items-center px-1 font-headings text-[1.75rem] leading-none"
+              >
+                <span
+                  class="opacity-40"
+                >
+                  0
+                </span>
+                <span
+                  class="mx-1 text-lg opacity-30"
+                >
+                  —
+                </span>
+                <span
+                  class=""
+                >
+                  2
+                </span>
+              </div>
+              <div
+                class="flex items-center justify-end gap-1.5"
+              >
+                <span
+                  class="font-headings text-right text-sm leading-tight"
+                >
+                  Team Delta
+                </span>
+                <img
+                  alt="Team Delta"
+                  class="h-6 w-6 flex-shrink-0 object-contain"
+                  height="24"
+                  src="https://img.kanaliiga.fi/images/by-hash/phash/beta-logo.png"
+                  width="24"
+                />
+              </div>
+            </div>
+            <div
+              class="flex flex-wrap gap-1 border-t border-dashed border-white/8 pt-1"
+            >
+              <span
+                class="inline-flex items-center gap-1.5 rounded border border-white/5 bg-black/20 px-2 py-0.5"
+              >
+                <span
+                  class="font-mono text-[10px] text-kanaliiga-light-brown"
+                >
+                  de_nuke
+                </span>
+                <span
+                  class="font-mono text-[10px]"
+                >
+                  <span
+                    class="font-bold text-foreground"
+                  >
+                    13
+                  </span>
+                  <span
+                    class="mx-0.5 text-muted-foreground"
+                  >
+                    :
+                  </span>
+                  <span
+                    class="text-muted-foreground"
+                  >
+                    9
+                  </span>
+                </span>
+              </span>
+              <span
+                class="inline-flex items-center gap-1.5 rounded border border-white/5 bg-black/20 px-2 py-0.5"
+              >
+                <span
+                  class="font-mono text-[10px] text-kanaliiga-light-brown"
+                >
+                  de_mirage
+                </span>
+                <span
+                  class="font-mono text-[10px]"
+                >
+                  <span
+                    class="font-bold text-foreground"
+                  >
+                    13
+                  </span>
+                  <span
+                    class="mx-0.5 text-muted-foreground"
+                  >
+                    :
+                  </span>
+                  <span
+                    class="text-muted-foreground"
+                  >
+                    6
+                  </span>
+                </span>
+              </span>
+            </div>
+          </div>
+        </div>
+      </a>
     </div>
-    <div>
-      <h2
-        class="text-left text-sm sm:text-lg mb-2"
-      >
-        2024-01-14
-      </h2>
+    <div
+      class="mb-6"
+    >
       <div
-        class="mb-2 sm:mb-4"
+        class="mb-3 flex items-center gap-3"
       >
-        <a
-          class="no-underline"
-          href="/matches/3/games/103"
+        <h2
+          class="whitespace-nowrap text-sm uppercase tracking-[0.04em]"
+        >
+          JAN 14 · 2024
+        </h2>
+        <hr
+          class="flex-1 border-t border-white/8"
+        />
+        <span
+          class="whitespace-nowrap font-mono text-[10px] text-muted-foreground"
+        >
+          1
+           
+          match
+        </span>
+      </div>
+      <a
+        class="block no-underline"
+        href="/matches/3/games/103"
+      >
+        <div
+          class="mb-2 hidden overflow-hidden rounded-lg border border-border bg-card shadow-sm transition-colors hover:bg-accent/30 md:grid md:grid-cols-[6px_240px_1fr]"
         >
           <div
-            class="bg-card grid grid-cols-[1fr_auto_1fr] min-h-10 md:min-h-12 items-center gap-2 px-0 transition-transform transform hover:scale-105 hover:ring-2 hover:ring-ring mb-1 rounded-lg shadow-md dark:shadow-muted"
+            class="h-full"
+            style="background-color: hsl(var(--tier-premier));"
+          />
+          <div
+            class="flex flex-col gap-1.5 border-r border-white/8 px-4 py-3"
           >
             <div
-              class="flex items-center justify-end"
+              class="flex flex-wrap items-center gap-1.5"
             >
-              <div
-                class="text-right xs:break-normal break-words text-sm sm:text-base mr-1"
-              >
-                Team Epsilon
-              </div>
-              <img
-                alt="Team Epsilon"
-                class="w-8 h-8 sm:w-10 sm:h-10 ml-1 object-contain hidden xxs:block"
-                height="30"
-                src="https://img.kanaliiga.fi/images/by-hash/phash/epsilon-logo.png"
-                width="30"
-              />
-            </div>
-            <div
-              class="relative h-full min-w-16 md:min-w-20 flex items-center justify-center bg-kanaliiga-light-brown/30 rounded-xs"
-            >
-              <div
-                class="z-10 w-7 font-black text-md sm:text-lg text-center"
-              >
-                16
-              </div>
               <span
-                class="mx-1 md:mx-2"
+                class="inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.12em]"
+                style="color: hsl(var(--tier-premier)); border-color: hsl(var(--tier-premier) / 0.5); background-color: hsl(var(--tier-premier) / 0.16);"
               >
-                —
+                <span
+                  aria-hidden="true"
+                  class="size-1.5 flex-shrink-0 rounded-full"
+                  style="background-color: hsl(var(--tier-premier));"
+                />
+                Masters
               </span>
-              <div
-                class="z-10 w-7 font-black text-md sm:text-lg text-center"
-              >
-                14
-              </div>
             </div>
-            <div
-              class="flex items-center justify-start ml-1"
+            <p
+              class="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground"
             >
-              <img
-                alt="Team Zeta"
-                class="w-6 h-6 sm:w-8 sm:h-8 mr-1 object-contain hidden xxs:block"
-                height="30"
-                src="https://img.kanaliiga.fi/images/by-hash/phash/zeta-logo.png"
-                width="30"
-              />
-              <div
-                class="text-left xs:break-normal break-words text-sm sm:text-base ml-1"
+              Playoff
+            </p>
+            <p
+              class="font-headings text-sm text-foreground"
+            >
+              Upper Bracket · Round 1
+            </p>
+            <div
+              class="mt-1 flex flex-wrap gap-3"
+            >
+              <span
+                class="inline-flex items-center gap-1 font-mono text-[10px] tracking-[0.08em] text-muted-foreground"
               >
-                Team Zeta
-              </div>
+                <svg
+                  aria-hidden="true"
+                  class="lucide lucide-calendar"
+                  fill="none"
+                  height="12"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="1.5"
+                  viewBox="0 0 24 24"
+                  width="12"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M8 2v4"
+                  />
+                  <path
+                    d="M16 2v4"
+                  />
+                  <rect
+                    height="18"
+                    rx="2"
+                    width="18"
+                    x="3"
+                    y="4"
+                  />
+                  <path
+                    d="M3 10h18"
+                  />
+                </svg>
+                MON 01-15
+              </span>
+              <span
+                class="inline-flex items-center gap-1 font-mono text-[10px] tracking-[0.08em] text-muted-foreground"
+              >
+                <svg
+                  aria-hidden="true"
+                  class="lucide lucide-clock"
+                  fill="none"
+                  height="12"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="1.5"
+                  viewBox="0 0 24 24"
+                  width="12"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="10"
+                  />
+                  <path
+                    d="M12 6v6l4 2"
+                  />
+                </svg>
+                2h 00m
+              </span>
+              <span
+                class="inline-flex items-center gap-1 font-mono text-[10px] tracking-[0.08em] text-muted-foreground"
+              >
+                <svg
+                  aria-hidden="true"
+                  class="lucide lucide-swords"
+                  fill="none"
+                  height="12"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="1.5"
+                  viewBox="0 0 24 24"
+                  width="12"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <polyline
+                    points="14.5 17.5 3 6 3 3 6 3 17.5 14.5"
+                  />
+                  <line
+                    x1="13"
+                    x2="19"
+                    y1="19"
+                    y2="13"
+                  />
+                  <line
+                    x1="16"
+                    x2="20"
+                    y1="16"
+                    y2="20"
+                  />
+                  <line
+                    x1="19"
+                    x2="21"
+                    y1="21"
+                    y2="19"
+                  />
+                  <polyline
+                    points="14.5 6.5 18 3 21 3 21 6 17.5 9.5"
+                  />
+                  <line
+                    x1="5"
+                    x2="9"
+                    y1="14"
+                    y2="18"
+                  />
+                  <line
+                    x1="7"
+                    x2="4"
+                    y1="17"
+                    y2="20"
+                  />
+                  <line
+                    x1="3"
+                    x2="5"
+                    y1="19"
+                    y2="21"
+                  />
+                </svg>
+                Bo5
+              </span>
             </div>
           </div>
-        </a>
-      </div>
+          <div
+            class="flex flex-col justify-center px-4 py-3"
+          >
+            <div
+              class="grid grid-cols-[1fr_auto_1fr] items-center gap-2"
+            >
+              <div
+                class="flex items-center justify-end gap-2"
+              >
+                <span
+                  class="font-headings text-base text-right"
+                >
+                  Team Epsilon
+                </span>
+                <img
+                  alt="Team Epsilon"
+                  class="h-8 w-8 flex-shrink-0 object-contain"
+                  height="32"
+                  src="https://img.kanaliiga.fi/images/by-hash/phash/alpha-logo.png"
+                  width="32"
+                />
+              </div>
+              <div
+                class="flex items-center px-2 font-headings text-[2rem] leading-none"
+              >
+                <span
+                  class=""
+                >
+                  2
+                </span>
+                <span
+                  class="mx-1 text-xl opacity-30"
+                >
+                  —
+                </span>
+                <span
+                  class="opacity-40"
+                >
+                  1
+                </span>
+              </div>
+              <div
+                class="flex items-center justify-start gap-2 opacity-40"
+              >
+                <img
+                  alt="Team Zeta"
+                  class="h-8 w-8 flex-shrink-0 object-contain"
+                  height="32"
+                  src="https://img.kanaliiga.fi/images/by-hash/phash/beta-logo.png"
+                  width="32"
+                />
+                <span
+                  class="font-headings text-base"
+                >
+                  Team Zeta
+                </span>
+              </div>
+            </div>
+            <div
+              class="mt-2 flex flex-wrap justify-center gap-1.5 border-t border-dashed border-white/8 pt-2"
+            >
+              <span
+                class="inline-flex items-center gap-1.5 rounded border border-white/5 bg-black/20 px-2 py-0.5"
+              >
+                <span
+                  class="font-mono text-[10px] text-kanaliiga-light-brown"
+                >
+                  de_inferno
+                </span>
+                <span
+                  class="font-mono text-[10px]"
+                >
+                  <span
+                    class="font-bold text-foreground"
+                  >
+                    13
+                  </span>
+                  <span
+                    class="mx-0.5 text-muted-foreground"
+                  >
+                    :
+                  </span>
+                  <span
+                    class="text-muted-foreground"
+                  >
+                    9
+                  </span>
+                </span>
+              </span>
+              <span
+                class="inline-flex items-center gap-1.5 rounded border border-white/5 bg-black/20 px-2 py-0.5"
+              >
+                <span
+                  class="font-mono text-[10px] text-kanaliiga-light-brown"
+                >
+                  de_anubis
+                </span>
+                <span
+                  class="font-mono text-[10px]"
+                >
+                  <span
+                    class="text-muted-foreground"
+                  >
+                    7
+                  </span>
+                  <span
+                    class="mx-0.5 text-muted-foreground"
+                  >
+                    :
+                  </span>
+                  <span
+                    class="font-bold text-foreground"
+                  >
+                    13
+                  </span>
+                </span>
+              </span>
+              <span
+                class="inline-flex items-center gap-1.5 rounded border border-white/5 bg-black/20 px-2 py-0.5"
+              >
+                <span
+                  class="font-mono text-[10px] text-kanaliiga-light-brown"
+                >
+                  de_mirage
+                </span>
+                <span
+                  class="font-mono text-[10px]"
+                >
+                  <span
+                    class="font-bold text-foreground"
+                  >
+                    13
+                  </span>
+                  <span
+                    class="mx-0.5 text-muted-foreground"
+                  >
+                    :
+                  </span>
+                  <span
+                    class="text-muted-foreground"
+                  >
+                    11
+                  </span>
+                </span>
+              </span>
+            </div>
+          </div>
+        </div>
+        <div
+          class="mb-2 overflow-hidden rounded-lg border border-border bg-card shadow-sm transition-colors hover:bg-accent/30 md:hidden"
+          style="border-left-color: hsl(var(--tier-premier)); border-left-width: 4px;"
+        >
+          <div
+            class="flex flex-col gap-2 px-3 py-3"
+          >
+            <div
+              class="flex flex-wrap items-center gap-1.5"
+            >
+              <span
+                class="inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.12em]"
+                style="color: hsl(var(--tier-premier)); border-color: hsl(var(--tier-premier) / 0.5); background-color: hsl(var(--tier-premier) / 0.16);"
+              >
+                <span
+                  aria-hidden="true"
+                  class="size-1.5 flex-shrink-0 rounded-full"
+                  style="background-color: hsl(var(--tier-premier));"
+                />
+                Masters
+              </span>
+              <span
+                class="font-mono text-[10px] text-muted-foreground"
+              >
+                Upper Bracket · Round 1
+              </span>
+            </div>
+            <div
+              class="grid grid-cols-[1fr_auto_1fr] items-center gap-2"
+            >
+              <div
+                class="flex items-center gap-1.5"
+              >
+                <img
+                  alt="Team Epsilon"
+                  class="h-6 w-6 flex-shrink-0 object-contain"
+                  height="24"
+                  src="https://img.kanaliiga.fi/images/by-hash/phash/alpha-logo.png"
+                  width="24"
+                />
+                <span
+                  class="font-headings text-sm leading-tight"
+                >
+                  Team Epsilon
+                </span>
+              </div>
+              <div
+                class="flex items-center px-1 font-headings text-[1.75rem] leading-none"
+              >
+                <span
+                  class=""
+                >
+                  2
+                </span>
+                <span
+                  class="mx-1 text-lg opacity-30"
+                >
+                  —
+                </span>
+                <span
+                  class="opacity-40"
+                >
+                  1
+                </span>
+              </div>
+              <div
+                class="flex items-center justify-end gap-1.5 opacity-40"
+              >
+                <span
+                  class="font-headings text-right text-sm leading-tight"
+                >
+                  Team Zeta
+                </span>
+                <img
+                  alt="Team Zeta"
+                  class="h-6 w-6 flex-shrink-0 object-contain"
+                  height="24"
+                  src="https://img.kanaliiga.fi/images/by-hash/phash/beta-logo.png"
+                  width="24"
+                />
+              </div>
+            </div>
+            <div
+              class="flex flex-wrap gap-1 border-t border-dashed border-white/8 pt-1"
+            >
+              <span
+                class="inline-flex items-center gap-1.5 rounded border border-white/5 bg-black/20 px-2 py-0.5"
+              >
+                <span
+                  class="font-mono text-[10px] text-kanaliiga-light-brown"
+                >
+                  de_inferno
+                </span>
+                <span
+                  class="font-mono text-[10px]"
+                >
+                  <span
+                    class="font-bold text-foreground"
+                  >
+                    13
+                  </span>
+                  <span
+                    class="mx-0.5 text-muted-foreground"
+                  >
+                    :
+                  </span>
+                  <span
+                    class="text-muted-foreground"
+                  >
+                    9
+                  </span>
+                </span>
+              </span>
+              <span
+                class="inline-flex items-center gap-1.5 rounded border border-white/5 bg-black/20 px-2 py-0.5"
+              >
+                <span
+                  class="font-mono text-[10px] text-kanaliiga-light-brown"
+                >
+                  de_anubis
+                </span>
+                <span
+                  class="font-mono text-[10px]"
+                >
+                  <span
+                    class="text-muted-foreground"
+                  >
+                    7
+                  </span>
+                  <span
+                    class="mx-0.5 text-muted-foreground"
+                  >
+                    :
+                  </span>
+                  <span
+                    class="font-bold text-foreground"
+                  >
+                    13
+                  </span>
+                </span>
+              </span>
+              <span
+                class="inline-flex items-center gap-1.5 rounded border border-white/5 bg-black/20 px-2 py-0.5"
+              >
+                <span
+                  class="font-mono text-[10px] text-kanaliiga-light-brown"
+                >
+                  de_mirage
+                </span>
+                <span
+                  class="font-mono text-[10px]"
+                >
+                  <span
+                    class="font-bold text-foreground"
+                  >
+                    13
+                  </span>
+                  <span
+                    class="mx-0.5 text-muted-foreground"
+                  >
+                    :
+                  </span>
+                  <span
+                    class="text-muted-foreground"
+                  >
+                    11
+                  </span>
+                </span>
+              </span>
+            </div>
+          </div>
+        </div>
+      </a>
     </div>
   </div>
 </div>
