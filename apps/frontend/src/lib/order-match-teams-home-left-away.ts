@@ -1,4 +1,8 @@
-import type { MatchTeamSide, MatchWithStreamUrls } from "@eggosystem/types";
+import type {
+  MatchMapScore,
+  MatchTeamSide,
+  MatchWithStreamUrls
+} from "@eggosystem/types";
 
 /**
  * Orders two participants as **left = home**, **right = away** when both
@@ -76,6 +80,7 @@ interface DualTeamRowSlot {
 export function dualTeamRowToHomeLeftDisplay(row: DualTeamRowSlot): {
   left: { name: string; logo: string | null; score: number };
   right: { name: string; logo: string | null; score: number };
+  leftIsTeam1: boolean;
 } {
   const slot1 = {
     side: row.team1_side,
@@ -92,8 +97,25 @@ export function dualTeamRowToHomeLeftDisplay(row: DualTeamRowSlot): {
   const [left, right] = orderTwoParticipantsBySideHomeLeft(slot1, slot2);
   return {
     left: { name: left.name, logo: left.logo, score: left.score },
-    right: { name: right.name, logo: right.logo, score: right.score }
+    right: { name: right.name, logo: right.logo, score: right.score },
+    leftIsTeam1: left === slot1
   };
+}
+
+export function matchMapScoreForHomeLeftDisplay(
+  map: MatchMapScore,
+  leftIsTeam1: boolean
+): { map: MatchMapScore; winner: "a" | "b" | "draw" } {
+  const displayMap = leftIsTeam1
+    ? map
+    : { ...map, score_a: map.score_b, score_b: map.score_a };
+  const winner =
+    displayMap.score_a > displayMap.score_b
+      ? "a"
+      : displayMap.score_b > displayMap.score_a
+        ? "b"
+        : "draw";
+  return { map: displayMap, winner };
 }
 
 type CalendarMatchHomeLeftInput = {

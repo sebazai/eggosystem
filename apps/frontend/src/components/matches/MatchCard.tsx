@@ -14,7 +14,10 @@ import {
   durationLabel,
   matchDurationMinutes
 } from "@/lib/matches/format";
-import { dualTeamRowToHomeLeftDisplay } from "@/lib/order-match-teams-home-left-away";
+import {
+  dualTeamRowToHomeLeftDisplay,
+  matchMapScoreForHomeLeftDisplay
+} from "@/lib/order-match-teams-home-left-away";
 import { NextImageFallback } from "@/components/layout/NextImageFallback";
 import { createTeamLogoUrl } from "@/lib/utils";
 
@@ -33,7 +36,7 @@ export function MatchCard({
 }: MatchCardProps) {
   const tierColor = leagueColor(match.league_name).color;
 
-  const { left, right } = dualTeamRowToHomeLeftDisplay({
+  const { left, right, leftIsTeam1 } = dualTeamRowToHomeLeftDisplay({
     team1_side: match.team1_side,
     team2_side: match.team2_side,
     team1_name: match.team1_name,
@@ -64,6 +67,16 @@ export function MatchCard({
     match_round: match.match_round
   });
   const format = match.best_of ? `Bo${match.best_of}` : null;
+
+  function renderMapChips(compact?: boolean) {
+    if (match.maps_json.length === 0) return null;
+    return match.maps_json.map((raw, i) => {
+      const { map, winner } = matchMapScoreForHomeLeftDisplay(raw, leftIsTeam1);
+      return (
+        <MapScoreChip key={i} map={map} winner={winner} compact={compact} />
+      );
+    });
+  }
 
   return (
     <Link href={href} className="block w-full min-w-0 no-underline">
@@ -128,15 +141,7 @@ export function MatchCard({
 
           {match.maps_json.length > 0 && (
             <div className="mt-2 flex flex-wrap justify-center gap-1.5 border-t border-dashed border-white/8 pt-2">
-              {match.maps_json.map((map, i) => {
-                const winner =
-                  map.score_a > map.score_b
-                    ? "a"
-                    : map.score_b > map.score_a
-                      ? "b"
-                      : "draw";
-                return <MapScoreChip key={i} map={map} winner={winner} />;
-              })}
+              {renderMapChips()}
             </div>
           )}
         </div>
@@ -214,15 +219,7 @@ export function MatchCard({
 
           {match.maps_json.length > 0 && (
             <div className="mt-2 flex flex-wrap justify-center gap-1.5 border-t border-dashed border-white/8 pt-2">
-              {match.maps_json.map((map, i) => {
-                const winner =
-                  map.score_a > map.score_b
-                    ? "a"
-                    : map.score_b > map.score_a
-                      ? "b"
-                      : "draw";
-                return <MapScoreChip key={i} map={map} winner={winner} />;
-              })}
+              {renderMapChips()}
             </div>
           )}
         </div>
@@ -284,17 +281,7 @@ export function MatchCard({
 
           {match.maps_json.length > 0 && (
             <div className="flex flex-wrap gap-1 border-t border-dashed border-white/8 pt-1">
-              {match.maps_json.map((map, i) => {
-                const winner =
-                  map.score_a > map.score_b
-                    ? "a"
-                    : map.score_b > map.score_a
-                      ? "b"
-                      : "draw";
-                return (
-                  <MapScoreChip key={i} map={map} winner={winner} compact />
-                );
-              })}
+              {renderMapChips(true)}
             </div>
           )}
 

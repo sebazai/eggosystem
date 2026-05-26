@@ -120,6 +120,40 @@ describe("MatchCard", () => {
     expect(container.querySelectorAll(".opacity-40")).toHaveLength(0);
   });
 
+  it("remaps map chip scores when teams swap for home-left display", () => {
+    const swappedMatch: MatchesByFilters = {
+      ...baseMatch,
+      team1_side: "away",
+      team2_side: "home",
+      team1_name: "Beta",
+      team2_name: "Alpha",
+      team1_score: 0,
+      team2_score: 1,
+      maps_json: [{ name: "de_nuke", score_a: 13, score_b: 9 }]
+    };
+    const { container } = render(
+      <MatchCard match={swappedMatch} href="/matches/1" />
+    );
+
+    expect(screen.getAllByText("Alpha").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Beta").length).toBeGreaterThan(0);
+
+    const nukeLabels = screen.getAllByText("de_nuke");
+    expect(nukeLabels.length).toBeGreaterThan(0);
+    for (const label of nukeLabels) {
+      const chip = label.closest(".inline-flex");
+      expect(chip?.textContent).toContain("9");
+      expect(chip?.textContent).toContain("13");
+      const boldScore = chip?.querySelector(".font-bold.text-foreground");
+      expect(boldScore?.textContent).toBe("13");
+    }
+
+    const winnerSeriesScores = container.querySelectorAll(
+      ".text-kanaliiga-orange"
+    );
+    expect(winnerSeriesScores.length).toBeGreaterThan(0);
+  });
+
   it("renders regular season kicker for stage 1", () => {
     const stage1Match = {
       ...baseMatch,
