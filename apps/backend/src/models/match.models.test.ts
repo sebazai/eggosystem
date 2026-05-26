@@ -157,6 +157,151 @@ describe("getMatchesByFilters", () => {
       }
     });
   });
+
+  describe("season 14 match 10148 home/away SQL aggregation", () => {
+    const MATCH_ID = 10148;
+    const SEASON_ID = 14;
+    const DIGIA_TEAM_ID = 1028;
+    const GIGANTTI_TEAM_ID = 1697;
+    const NUKE_MAP_ID = 5;
+
+    const digiaMirageMap = {
+      name: "de_mirage",
+      home_score: 13,
+      away_score: 4
+    };
+    const digiaNukeMap = {
+      name: "de_nuke",
+      home_score: 13,
+      away_score: 8
+    };
+    const giganttiMirageMap = {
+      name: "de_mirage",
+      home_score: 4,
+      away_score: 13
+    };
+    const giganttiNukeMap = {
+      name: "de_nuke",
+      home_score: 8,
+      away_score: 13
+    };
+
+    async function setMatchSides(
+      homeTeamId: number,
+      awayTeamId: number
+    ): Promise<void> {
+      await runQuery(
+        `UPDATE MatchTeams
+         SET match_side = CASE
+           WHEN team_id = ? THEN 'home'
+           WHEN team_id = ? THEN 'away'
+         END
+         WHERE match_id = ? AND team_id IN (?, ?)`,
+        [homeTeamId, awayTeamId, MATCH_ID, homeTeamId, awayTeamId]
+      );
+    }
+
+    async function resetMatchSides(): Promise<void> {
+      await runQuery(
+        `UPDATE MatchTeams SET match_side = NULL WHERE match_id = ?`,
+        [MATCH_ID]
+      );
+    }
+
+    function sortedMaps(match: { maps_json: { name: string }[] }) {
+      return [...match.maps_json].sort((a, b) => a.name.localeCompare(b.name));
+    }
+
+    afterEach(async () => {
+      await resetMatchSides();
+    });
+
+    it("returns Digia as home with map wins and per-map home/away scores", async () => {
+      await setMatchSides(DIGIA_TEAM_ID, GIGANTTI_TEAM_ID);
+
+      const result = await getMatchesByFilters({
+        season_ids: [SEASON_ID],
+        league_ids: [1],
+        stages: [2],
+        team_ids: [GIGANTTI_TEAM_ID],
+        map_ids: null
+      });
+
+      const match = result.find((m) => m.match_id === MATCH_ID);
+      expect(match).toMatchObject({
+        match_id: MATCH_ID,
+        match_game_id: null,
+        match_group: null,
+        match_round: null,
+        best_of: 3,
+        season_id: SEASON_ID,
+        match_date: "2024-11-27",
+        stage: 2,
+        league_name: "Masters",
+        home_team: {
+          name: "Digia Vengers",
+          logo: "c1663e99856359b6",
+          score: 2
+        },
+        away_team: {
+          name: "Gigantti",
+          logo: "9e39646633c95966",
+          score: 0
+        }
+      });
+      expect(sortedMaps(match!)).toEqual([digiaMirageMap, digiaNukeMap]);
+    });
+
+    it("swaps home/away teams and map scores when Gigantti is home", async () => {
+      await setMatchSides(GIGANTTI_TEAM_ID, DIGIA_TEAM_ID);
+
+      const result = await getMatchesByFilters({
+        season_ids: [SEASON_ID],
+        league_ids: [1],
+        stages: [2],
+        team_ids: [GIGANTTI_TEAM_ID],
+        map_ids: null
+      });
+
+      const match = result.find((m) => m.match_id === MATCH_ID);
+      expect(match).toMatchObject({
+        home_team: {
+          name: "Gigantti",
+          logo: "9e39646633c95966",
+          score: 0
+        },
+        away_team: {
+          name: "Digia Vengers",
+          logo: "c1663e99856359b6",
+          score: 2
+        }
+      });
+      expect(sortedMaps(match!)).toEqual([giganttiMirageMap, giganttiNukeMap]);
+    });
+
+    it("includes every map in maps_json when filtering by a single map", async () => {
+      await setMatchSides(DIGIA_TEAM_ID, GIGANTTI_TEAM_ID);
+
+      const result = await getMatchesByFilters({
+        season_ids: [SEASON_ID],
+        league_ids: [1],
+        stages: [2],
+        team_ids: [GIGANTTI_TEAM_ID],
+        map_ids: [NUKE_MAP_ID]
+      });
+
+      const match = result.find((m) => m.match_id === MATCH_ID);
+      expect(match).toBeDefined();
+      expect(sortedMaps(match!)).toEqual([digiaMirageMap, digiaNukeMap]);
+
+      const otherMatch = result.find((m) => m.match_id === 10068);
+      expect(otherMatch).toBeDefined();
+      expect(sortedMaps(otherMatch!)).toEqual([
+        { name: "de_mirage", home_score: 13, away_score: 8 },
+        { name: "de_nuke", home_score: 13, away_score: 3 }
+      ]);
+    });
+  });
 });
 
 describe("getMatchTopPlayers", () => {
