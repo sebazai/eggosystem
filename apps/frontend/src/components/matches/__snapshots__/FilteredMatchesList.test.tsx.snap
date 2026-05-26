@@ -3592,7 +3592,9 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly when no matches fo
 
 exports[`FilteredMatchesList Snapshot Tests renders correctly with match that has no game id 1`] = `
 <div>
-  <div>
+  <div
+    class="min-w-0 w-full"
+  >
     <div
       class="mb-6"
     >
@@ -3616,7 +3618,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with match that ha
         </span>
       </div>
       <a
-        class="block no-underline"
+        class="block w-full min-w-0 no-underline"
         href="/matches/4"
       >
         <div
@@ -3633,12 +3635,12 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with match that ha
               class="flex flex-wrap items-center gap-1.5"
             >
               <span
-                class="inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.12em]"
+                class="inline-flex items-center rounded-full border font-mono uppercase tracking-[0.12em] gap-1.5 px-2 py-0.5 text-[10px]"
                 style="color: rgb(230, 157, 55); border-color: rgba(230, 157, 55, 0.5); background-color: rgba(230, 157, 55, 0.16);"
               >
                 <span
                   aria-hidden="true"
-                  class="size-1.5 flex-shrink-0 rounded-full"
+                  class="flex-shrink-0 rounded-full size-1.5"
                   style="background-color: rgb(230, 157, 55);"
                 />
                 CS2 Masters
@@ -3652,7 +3654,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with match that ha
             <p
               class="font-headings text-sm text-foreground"
             >
-              Upper Bracket · Round 1
+              Upper Bracket · Week 1
             </p>
             <div
               class="mt-1 flex flex-wrap gap-3"
@@ -3773,7 +3775,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with match that ha
                 class="flex items-center px-2 font-headings text-[30px] leading-none"
               >
                 <span
-                  class=""
+                  class="text-foreground"
                 >
                   0
                 </span>
@@ -3783,7 +3785,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with match that ha
                   —
                 </span>
                 <span
-                  class=""
+                  class="text-foreground"
                 >
                   0
                 </span>
@@ -3842,12 +3844,12 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with match that ha
               class="flex flex-wrap items-center gap-1.5"
             >
               <span
-                class="inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.12em]"
+                class="inline-flex items-center rounded-full border font-mono uppercase tracking-[0.12em] gap-1.5 px-2 py-0.5 text-[10px]"
                 style="color: rgb(230, 157, 55); border-color: rgba(230, 157, 55, 0.5); background-color: rgba(230, 157, 55, 0.16);"
               >
                 <span
                   aria-hidden="true"
-                  class="size-1.5 flex-shrink-0 rounded-full"
+                  class="flex-shrink-0 rounded-full size-1.5"
                   style="background-color: rgb(230, 157, 55);"
                 />
                 CS2 Masters
@@ -3861,7 +3863,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with match that ha
             <p
               class="font-headings text-sm text-foreground"
             >
-              Upper Bracket · Round 1
+              Upper Bracket · Week 1
             </p>
             <div
               class="mt-1 flex flex-wrap gap-3"
@@ -3982,7 +3984,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with match that ha
                 class="flex items-center px-2 font-headings text-[2rem] leading-none"
               >
                 <span
-                  class=""
+                  class="text-foreground"
                 >
                   0
                 </span>
@@ -3992,7 +3994,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with match that ha
                   —
                 </span>
                 <span
-                  class=""
+                  class="text-foreground"
                 >
                   0
                 </span>
@@ -4024,40 +4026,44 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with match that ha
             class="flex flex-col gap-2 px-3 py-3"
           >
             <div
-              class="flex flex-wrap items-center gap-1.5"
+              class="flex items-center justify-between gap-2"
             >
-              <span
-                class="inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.12em]"
-                style="color: rgb(230, 157, 55); border-color: rgba(230, 157, 55, 0.5); background-color: rgba(230, 157, 55, 0.16);"
+              <div
+                class="flex flex-wrap items-center gap-1"
               >
                 <span
-                  aria-hidden="true"
-                  class="size-1.5 flex-shrink-0 rounded-full"
-                  style="background-color: rgb(230, 157, 55);"
-                />
-                CS2 Masters
-              </span>
+                  class="inline-flex items-center rounded-full border font-mono uppercase tracking-[0.12em] gap-1 px-2 py-px text-[9px]"
+                  style="color: rgb(230, 157, 55); border-color: rgba(230, 157, 55, 0.5); background-color: rgba(230, 157, 55, 0.16);"
+                >
+                  <span
+                    aria-hidden="true"
+                    class="flex-shrink-0 rounded-full size-1"
+                    style="background-color: rgb(230, 157, 55);"
+                  />
+                  CS2 Masters
+                </span>
+              </div>
               <span
-                class="font-mono text-[10px] text-muted-foreground"
+                class="shrink-0 text-right font-mono text-[9px] text-muted-foreground"
               >
-                Upper Bracket · Round 1
+                Upper Bracket · Week 1
               </span>
             </div>
             <div
-              class="grid grid-cols-[1fr_auto_1fr] items-center gap-2"
+              class="grid grid-cols-[1fr_auto_1fr] items-center gap-2 py-1.5"
             >
               <div
-                class="flex items-center gap-1.5"
+                class="flex flex-col items-start gap-1.5"
               >
                 <img
                   alt="Team Eta"
-                  class="h-6 w-6 flex-shrink-0 object-contain"
-                  height="24"
+                  class="h-8 w-8 flex-shrink-0 object-contain"
+                  height="32"
                   src="https://img.kanaliiga.fi/images/by-hash/phash/alpha-logo.png"
-                  width="24"
+                  width="32"
                 />
                 <span
-                  class="font-headings text-sm leading-tight"
+                  class="break-words font-headings text-sm leading-tight"
                 >
                   Team Eta
                 </span>
@@ -4066,7 +4072,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with match that ha
                 class="flex items-center px-1 font-headings text-[1.75rem] leading-none"
               >
                 <span
-                  class=""
+                  class="text-foreground"
                 >
                   0
                 </span>
@@ -4076,26 +4082,26 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with match that ha
                   —
                 </span>
                 <span
-                  class=""
+                  class="text-foreground"
                 >
                   0
                 </span>
               </div>
               <div
-                class="flex items-center justify-end gap-1.5"
+                class="flex flex-col items-end gap-1.5"
               >
+                <img
+                  alt="Team Theta"
+                  class="h-8 w-8 flex-shrink-0 object-contain"
+                  height="32"
+                  src="https://img.kanaliiga.fi/images/by-hash/phash/beta-logo.png"
+                  width="32"
+                />
                 <span
-                  class="font-headings text-right text-sm leading-tight"
+                  class="break-words text-right font-headings text-sm leading-tight"
                 >
                   Team Theta
                 </span>
-                <img
-                  alt="Team Theta"
-                  class="h-6 w-6 flex-shrink-0 object-contain"
-                  height="24"
-                  src="https://img.kanaliiga.fi/images/by-hash/phash/beta-logo.png"
-                  width="24"
-                />
               </div>
             </div>
             <div
@@ -4142,7 +4148,9 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with match that ha
 
 exports[`FilteredMatchesList Snapshot Tests renders correctly with matches grouped by date 1`] = `
 <div>
-  <div>
+  <div
+    class="min-w-0 w-full"
+  >
     <div
       class="mb-6"
     >
@@ -4166,7 +4174,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with matches group
         </span>
       </div>
       <a
-        class="block no-underline"
+        class="block w-full min-w-0 no-underline"
         href="/matches/1/games/101"
       >
         <div
@@ -4183,12 +4191,12 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with matches group
               class="flex flex-wrap items-center gap-1.5"
             >
               <span
-                class="inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.12em]"
+                class="inline-flex items-center rounded-full border font-mono uppercase tracking-[0.12em] gap-1.5 px-2 py-0.5 text-[10px]"
                 style="color: rgb(230, 157, 55); border-color: rgba(230, 157, 55, 0.5); background-color: rgba(230, 157, 55, 0.16);"
               >
                 <span
                   aria-hidden="true"
-                  class="size-1.5 flex-shrink-0 rounded-full"
+                  class="flex-shrink-0 rounded-full size-1.5"
                   style="background-color: rgb(230, 157, 55);"
                 />
                 CS2 Masters
@@ -4202,7 +4210,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with matches group
             <p
               class="font-headings text-sm text-foreground"
             >
-              Upper Bracket · Round 1
+              Upper Bracket · Week 1
             </p>
             <div
               class="mt-1 flex flex-wrap gap-3"
@@ -4323,7 +4331,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with matches group
                 class="flex items-center px-2 font-headings text-[30px] leading-none"
               >
                 <span
-                  class=""
+                  class="text-kanaliiga-orange"
                 >
                   2
                 </span>
@@ -4333,13 +4341,13 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with matches group
                   —
                 </span>
                 <span
-                  class="opacity-40"
+                  class="text-muted-foreground"
                 >
                   0
                 </span>
               </div>
               <div
-                class="flex items-center justify-start gap-2 opacity-40"
+                class="flex items-center justify-start gap-2"
               >
                 <img
                   alt="Team Beta"
@@ -4359,10 +4367,10 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with matches group
               class="mt-2 flex flex-wrap justify-center gap-1.5 border-t border-dashed border-white/8 pt-2"
             >
               <span
-                class="inline-flex items-center gap-1.5 rounded border border-white/5 bg-black/20 px-2 py-0.5"
+                class="inline-flex items-center rounded border border-white/5 bg-black/20 gap-1.5 px-2 py-0.5"
               >
                 <span
-                  class="font-mono text-[10px] text-kanaliiga-light-brown"
+                  class="font-mono text-kanaliiga-light-brown text-[10px]"
                 >
                   de_nuke
                 </span>
@@ -4387,10 +4395,10 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with matches group
                 </span>
               </span>
               <span
-                class="inline-flex items-center gap-1.5 rounded border border-white/5 bg-black/20 px-2 py-0.5"
+                class="inline-flex items-center rounded border border-white/5 bg-black/20 gap-1.5 px-2 py-0.5"
               >
                 <span
-                  class="font-mono text-[10px] text-kanaliiga-light-brown"
+                  class="font-mono text-kanaliiga-light-brown text-[10px]"
                 >
                   de_mirage
                 </span>
@@ -4452,12 +4460,12 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with matches group
               class="flex flex-wrap items-center gap-1.5"
             >
               <span
-                class="inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.12em]"
+                class="inline-flex items-center rounded-full border font-mono uppercase tracking-[0.12em] gap-1.5 px-2 py-0.5 text-[10px]"
                 style="color: rgb(230, 157, 55); border-color: rgba(230, 157, 55, 0.5); background-color: rgba(230, 157, 55, 0.16);"
               >
                 <span
                   aria-hidden="true"
-                  class="size-1.5 flex-shrink-0 rounded-full"
+                  class="flex-shrink-0 rounded-full size-1.5"
                   style="background-color: rgb(230, 157, 55);"
                 />
                 CS2 Masters
@@ -4471,7 +4479,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with matches group
             <p
               class="font-headings text-sm text-foreground"
             >
-              Upper Bracket · Round 1
+              Upper Bracket · Week 1
             </p>
             <div
               class="mt-1 flex flex-wrap gap-3"
@@ -4592,7 +4600,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with matches group
                 class="flex items-center px-2 font-headings text-[2rem] leading-none"
               >
                 <span
-                  class=""
+                  class="text-kanaliiga-orange"
                 >
                   2
                 </span>
@@ -4602,13 +4610,13 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with matches group
                   —
                 </span>
                 <span
-                  class="opacity-40"
+                  class="text-muted-foreground"
                 >
                   0
                 </span>
               </div>
               <div
-                class="flex items-center justify-start gap-2 opacity-40"
+                class="flex items-center justify-start gap-2"
               >
                 <img
                   alt="Team Beta"
@@ -4628,10 +4636,10 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with matches group
               class="mt-2 flex flex-wrap justify-center gap-1.5 border-t border-dashed border-white/8 pt-2"
             >
               <span
-                class="inline-flex items-center gap-1.5 rounded border border-white/5 bg-black/20 px-2 py-0.5"
+                class="inline-flex items-center rounded border border-white/5 bg-black/20 gap-1.5 px-2 py-0.5"
               >
                 <span
-                  class="font-mono text-[10px] text-kanaliiga-light-brown"
+                  class="font-mono text-kanaliiga-light-brown text-[10px]"
                 >
                   de_nuke
                 </span>
@@ -4656,10 +4664,10 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with matches group
                 </span>
               </span>
               <span
-                class="inline-flex items-center gap-1.5 rounded border border-white/5 bg-black/20 px-2 py-0.5"
+                class="inline-flex items-center rounded border border-white/5 bg-black/20 gap-1.5 px-2 py-0.5"
               >
                 <span
-                  class="font-mono text-[10px] text-kanaliiga-light-brown"
+                  class="font-mono text-kanaliiga-light-brown text-[10px]"
                 >
                   de_mirage
                 </span>
@@ -4694,40 +4702,44 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with matches group
             class="flex flex-col gap-2 px-3 py-3"
           >
             <div
-              class="flex flex-wrap items-center gap-1.5"
+              class="flex items-center justify-between gap-2"
             >
-              <span
-                class="inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.12em]"
-                style="color: rgb(230, 157, 55); border-color: rgba(230, 157, 55, 0.5); background-color: rgba(230, 157, 55, 0.16);"
+              <div
+                class="flex flex-wrap items-center gap-1"
               >
                 <span
-                  aria-hidden="true"
-                  class="size-1.5 flex-shrink-0 rounded-full"
-                  style="background-color: rgb(230, 157, 55);"
-                />
-                CS2 Masters
-              </span>
+                  class="inline-flex items-center rounded-full border font-mono uppercase tracking-[0.12em] gap-1 px-2 py-px text-[9px]"
+                  style="color: rgb(230, 157, 55); border-color: rgba(230, 157, 55, 0.5); background-color: rgba(230, 157, 55, 0.16);"
+                >
+                  <span
+                    aria-hidden="true"
+                    class="flex-shrink-0 rounded-full size-1"
+                    style="background-color: rgb(230, 157, 55);"
+                  />
+                  CS2 Masters
+                </span>
+              </div>
               <span
-                class="font-mono text-[10px] text-muted-foreground"
+                class="shrink-0 text-right font-mono text-[9px] text-muted-foreground"
               >
-                Upper Bracket · Round 1
+                Upper Bracket · Week 1
               </span>
             </div>
             <div
-              class="grid grid-cols-[1fr_auto_1fr] items-center gap-2"
+              class="grid grid-cols-[1fr_auto_1fr] items-center gap-2 py-1.5"
             >
               <div
-                class="flex items-center gap-1.5"
+                class="flex flex-col items-start gap-1.5"
               >
                 <img
                   alt="Team Alpha"
-                  class="h-6 w-6 flex-shrink-0 object-contain"
-                  height="24"
+                  class="h-8 w-8 flex-shrink-0 object-contain"
+                  height="32"
                   src="https://img.kanaliiga.fi/images/by-hash/phash/alpha-logo.png"
-                  width="24"
+                  width="32"
                 />
                 <span
-                  class="font-headings text-sm leading-tight"
+                  class="break-words font-headings text-sm leading-tight"
                 >
                   Team Alpha
                 </span>
@@ -4736,7 +4748,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with matches group
                 class="flex items-center px-1 font-headings text-[1.75rem] leading-none"
               >
                 <span
-                  class=""
+                  class="text-kanaliiga-orange"
                 >
                   2
                 </span>
@@ -4746,41 +4758,41 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with matches group
                   —
                 </span>
                 <span
-                  class="opacity-40"
+                  class="text-muted-foreground"
                 >
                   0
                 </span>
               </div>
               <div
-                class="flex items-center justify-end gap-1.5 opacity-40"
+                class="flex flex-col items-end gap-1.5"
               >
+                <img
+                  alt="Team Beta"
+                  class="h-8 w-8 flex-shrink-0 object-contain"
+                  height="32"
+                  src="https://img.kanaliiga.fi/images/by-hash/phash/beta-logo.png"
+                  width="32"
+                />
                 <span
-                  class="font-headings text-right text-sm leading-tight"
+                  class="break-words text-right font-headings text-sm leading-tight"
                 >
                   Team Beta
                 </span>
-                <img
-                  alt="Team Beta"
-                  class="h-6 w-6 flex-shrink-0 object-contain"
-                  height="24"
-                  src="https://img.kanaliiga.fi/images/by-hash/phash/beta-logo.png"
-                  width="24"
-                />
               </div>
             </div>
             <div
               class="flex flex-wrap gap-1 border-t border-dashed border-white/8 pt-1"
             >
               <span
-                class="inline-flex items-center gap-1.5 rounded border border-white/5 bg-black/20 px-2 py-0.5"
+                class="inline-flex items-center rounded border border-white/5 bg-black/20 gap-1 px-1.5 py-px"
               >
                 <span
-                  class="font-mono text-[10px] text-kanaliiga-light-brown"
+                  class="font-mono text-kanaliiga-light-brown text-[9px]"
                 >
                   de_nuke
                 </span>
                 <span
-                  class="font-mono text-[10px]"
+                  class="font-mono text-[9px]"
                 >
                   <span
                     class="font-bold text-foreground"
@@ -4800,15 +4812,15 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with matches group
                 </span>
               </span>
               <span
-                class="inline-flex items-center gap-1.5 rounded border border-white/5 bg-black/20 px-2 py-0.5"
+                class="inline-flex items-center rounded border border-white/5 bg-black/20 gap-1 px-1.5 py-px"
               >
                 <span
-                  class="font-mono text-[10px] text-kanaliiga-light-brown"
+                  class="font-mono text-kanaliiga-light-brown text-[9px]"
                 >
                   de_mirage
                 </span>
                 <span
-                  class="font-mono text-[10px]"
+                  class="font-mono text-[9px]"
                 >
                   <span
                     class="font-bold text-foreground"
@@ -4866,7 +4878,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with matches group
         </div>
       </a>
       <a
-        class="block no-underline"
+        class="block w-full min-w-0 no-underline"
         href="/matches/2/games/102"
       >
         <div
@@ -4883,12 +4895,12 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with matches group
               class="flex flex-wrap items-center gap-1.5"
             >
               <span
-                class="inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.12em]"
+                class="inline-flex items-center rounded-full border font-mono uppercase tracking-[0.12em] gap-1.5 px-2 py-0.5 text-[10px]"
                 style="color: rgb(230, 157, 55); border-color: rgba(230, 157, 55, 0.5); background-color: rgba(230, 157, 55, 0.16);"
               >
                 <span
                   aria-hidden="true"
-                  class="size-1.5 flex-shrink-0 rounded-full"
+                  class="flex-shrink-0 rounded-full size-1.5"
                   style="background-color: rgb(230, 157, 55);"
                 />
                 CS2 Masters
@@ -4902,7 +4914,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with matches group
             <p
               class="font-headings text-sm text-foreground"
             >
-              Upper Bracket · Round 1
+              Upper Bracket · Week 1
             </p>
             <div
               class="mt-1 flex flex-wrap gap-3"
@@ -5004,7 +5016,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with matches group
               class="grid grid-cols-[1fr_auto_1fr] items-center gap-2"
             >
               <div
-                class="flex items-center justify-end gap-2 opacity-40"
+                class="flex items-center justify-end gap-2"
               >
                 <span
                   class="font-headings text-base text-right"
@@ -5023,7 +5035,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with matches group
                 class="flex items-center px-2 font-headings text-[30px] leading-none"
               >
                 <span
-                  class="opacity-40"
+                  class="text-muted-foreground"
                 >
                   0
                 </span>
@@ -5033,7 +5045,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with matches group
                   —
                 </span>
                 <span
-                  class=""
+                  class="text-kanaliiga-orange"
                 >
                   2
                 </span>
@@ -5059,10 +5071,10 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with matches group
               class="mt-2 flex flex-wrap justify-center gap-1.5 border-t border-dashed border-white/8 pt-2"
             >
               <span
-                class="inline-flex items-center gap-1.5 rounded border border-white/5 bg-black/20 px-2 py-0.5"
+                class="inline-flex items-center rounded border border-white/5 bg-black/20 gap-1.5 px-2 py-0.5"
               >
                 <span
-                  class="font-mono text-[10px] text-kanaliiga-light-brown"
+                  class="font-mono text-kanaliiga-light-brown text-[10px]"
                 >
                   de_nuke
                 </span>
@@ -5087,10 +5099,10 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with matches group
                 </span>
               </span>
               <span
-                class="inline-flex items-center gap-1.5 rounded border border-white/5 bg-black/20 px-2 py-0.5"
+                class="inline-flex items-center rounded border border-white/5 bg-black/20 gap-1.5 px-2 py-0.5"
               >
                 <span
-                  class="font-mono text-[10px] text-kanaliiga-light-brown"
+                  class="font-mono text-kanaliiga-light-brown text-[10px]"
                 >
                   de_mirage
                 </span>
@@ -5152,12 +5164,12 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with matches group
               class="flex flex-wrap items-center gap-1.5"
             >
               <span
-                class="inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.12em]"
+                class="inline-flex items-center rounded-full border font-mono uppercase tracking-[0.12em] gap-1.5 px-2 py-0.5 text-[10px]"
                 style="color: rgb(230, 157, 55); border-color: rgba(230, 157, 55, 0.5); background-color: rgba(230, 157, 55, 0.16);"
               >
                 <span
                   aria-hidden="true"
-                  class="size-1.5 flex-shrink-0 rounded-full"
+                  class="flex-shrink-0 rounded-full size-1.5"
                   style="background-color: rgb(230, 157, 55);"
                 />
                 CS2 Masters
@@ -5171,7 +5183,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with matches group
             <p
               class="font-headings text-sm text-foreground"
             >
-              Upper Bracket · Round 1
+              Upper Bracket · Week 1
             </p>
             <div
               class="mt-1 flex flex-wrap gap-3"
@@ -5273,7 +5285,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with matches group
               class="grid grid-cols-[1fr_auto_1fr] items-center gap-2"
             >
               <div
-                class="flex items-center justify-end gap-2 opacity-40"
+                class="flex items-center justify-end gap-2"
               >
                 <span
                   class="font-headings text-base text-right"
@@ -5292,7 +5304,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with matches group
                 class="flex items-center px-2 font-headings text-[2rem] leading-none"
               >
                 <span
-                  class="opacity-40"
+                  class="text-muted-foreground"
                 >
                   0
                 </span>
@@ -5302,7 +5314,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with matches group
                   —
                 </span>
                 <span
-                  class=""
+                  class="text-kanaliiga-orange"
                 >
                   2
                 </span>
@@ -5328,10 +5340,10 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with matches group
               class="mt-2 flex flex-wrap justify-center gap-1.5 border-t border-dashed border-white/8 pt-2"
             >
               <span
-                class="inline-flex items-center gap-1.5 rounded border border-white/5 bg-black/20 px-2 py-0.5"
+                class="inline-flex items-center rounded border border-white/5 bg-black/20 gap-1.5 px-2 py-0.5"
               >
                 <span
-                  class="font-mono text-[10px] text-kanaliiga-light-brown"
+                  class="font-mono text-kanaliiga-light-brown text-[10px]"
                 >
                   de_nuke
                 </span>
@@ -5356,10 +5368,10 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with matches group
                 </span>
               </span>
               <span
-                class="inline-flex items-center gap-1.5 rounded border border-white/5 bg-black/20 px-2 py-0.5"
+                class="inline-flex items-center rounded border border-white/5 bg-black/20 gap-1.5 px-2 py-0.5"
               >
                 <span
-                  class="font-mono text-[10px] text-kanaliiga-light-brown"
+                  class="font-mono text-kanaliiga-light-brown text-[10px]"
                 >
                   de_mirage
                 </span>
@@ -5394,40 +5406,44 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with matches group
             class="flex flex-col gap-2 px-3 py-3"
           >
             <div
-              class="flex flex-wrap items-center gap-1.5"
+              class="flex items-center justify-between gap-2"
             >
-              <span
-                class="inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.12em]"
-                style="color: rgb(230, 157, 55); border-color: rgba(230, 157, 55, 0.5); background-color: rgba(230, 157, 55, 0.16);"
+              <div
+                class="flex flex-wrap items-center gap-1"
               >
                 <span
-                  aria-hidden="true"
-                  class="size-1.5 flex-shrink-0 rounded-full"
-                  style="background-color: rgb(230, 157, 55);"
-                />
-                CS2 Masters
-              </span>
+                  class="inline-flex items-center rounded-full border font-mono uppercase tracking-[0.12em] gap-1 px-2 py-px text-[9px]"
+                  style="color: rgb(230, 157, 55); border-color: rgba(230, 157, 55, 0.5); background-color: rgba(230, 157, 55, 0.16);"
+                >
+                  <span
+                    aria-hidden="true"
+                    class="flex-shrink-0 rounded-full size-1"
+                    style="background-color: rgb(230, 157, 55);"
+                  />
+                  CS2 Masters
+                </span>
+              </div>
               <span
-                class="font-mono text-[10px] text-muted-foreground"
+                class="shrink-0 text-right font-mono text-[9px] text-muted-foreground"
               >
-                Upper Bracket · Round 1
+                Upper Bracket · Week 1
               </span>
             </div>
             <div
-              class="grid grid-cols-[1fr_auto_1fr] items-center gap-2"
+              class="grid grid-cols-[1fr_auto_1fr] items-center gap-2 py-1.5"
             >
               <div
-                class="flex items-center gap-1.5 opacity-40"
+                class="flex flex-col items-start gap-1.5"
               >
                 <img
                   alt="Team Gamma"
-                  class="h-6 w-6 flex-shrink-0 object-contain"
-                  height="24"
+                  class="h-8 w-8 flex-shrink-0 object-contain"
+                  height="32"
                   src="https://img.kanaliiga.fi/images/by-hash/phash/alpha-logo.png"
-                  width="24"
+                  width="32"
                 />
                 <span
-                  class="font-headings text-sm leading-tight"
+                  class="break-words font-headings text-sm leading-tight"
                 >
                   Team Gamma
                 </span>
@@ -5436,7 +5452,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with matches group
                 class="flex items-center px-1 font-headings text-[1.75rem] leading-none"
               >
                 <span
-                  class="opacity-40"
+                  class="text-muted-foreground"
                 >
                   0
                 </span>
@@ -5446,41 +5462,41 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with matches group
                   —
                 </span>
                 <span
-                  class=""
+                  class="text-kanaliiga-orange"
                 >
                   2
                 </span>
               </div>
               <div
-                class="flex items-center justify-end gap-1.5"
+                class="flex flex-col items-end gap-1.5"
               >
+                <img
+                  alt="Team Delta"
+                  class="h-8 w-8 flex-shrink-0 object-contain"
+                  height="32"
+                  src="https://img.kanaliiga.fi/images/by-hash/phash/beta-logo.png"
+                  width="32"
+                />
                 <span
-                  class="font-headings text-right text-sm leading-tight"
+                  class="break-words text-right font-headings text-sm leading-tight"
                 >
                   Team Delta
                 </span>
-                <img
-                  alt="Team Delta"
-                  class="h-6 w-6 flex-shrink-0 object-contain"
-                  height="24"
-                  src="https://img.kanaliiga.fi/images/by-hash/phash/beta-logo.png"
-                  width="24"
-                />
               </div>
             </div>
             <div
               class="flex flex-wrap gap-1 border-t border-dashed border-white/8 pt-1"
             >
               <span
-                class="inline-flex items-center gap-1.5 rounded border border-white/5 bg-black/20 px-2 py-0.5"
+                class="inline-flex items-center rounded border border-white/5 bg-black/20 gap-1 px-1.5 py-px"
               >
                 <span
-                  class="font-mono text-[10px] text-kanaliiga-light-brown"
+                  class="font-mono text-kanaliiga-light-brown text-[9px]"
                 >
                   de_nuke
                 </span>
                 <span
-                  class="font-mono text-[10px]"
+                  class="font-mono text-[9px]"
                 >
                   <span
                     class="font-bold text-foreground"
@@ -5500,15 +5516,15 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with matches group
                 </span>
               </span>
               <span
-                class="inline-flex items-center gap-1.5 rounded border border-white/5 bg-black/20 px-2 py-0.5"
+                class="inline-flex items-center rounded border border-white/5 bg-black/20 gap-1 px-1.5 py-px"
               >
                 <span
-                  class="font-mono text-[10px] text-kanaliiga-light-brown"
+                  class="font-mono text-kanaliiga-light-brown text-[9px]"
                 >
                   de_mirage
                 </span>
                 <span
-                  class="font-mono text-[10px]"
+                  class="font-mono text-[9px]"
                 >
                   <span
                     class="font-bold text-foreground"
@@ -5589,7 +5605,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with matches group
         </span>
       </div>
       <a
-        class="block no-underline"
+        class="block w-full min-w-0 no-underline"
         href="/matches/3/games/103"
       >
         <div
@@ -5606,12 +5622,12 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with matches group
               class="flex flex-wrap items-center gap-1.5"
             >
               <span
-                class="inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.12em]"
+                class="inline-flex items-center rounded-full border font-mono uppercase tracking-[0.12em] gap-1.5 px-2 py-0.5 text-[10px]"
                 style="color: rgb(230, 157, 55); border-color: rgba(230, 157, 55, 0.5); background-color: rgba(230, 157, 55, 0.16);"
               >
                 <span
                   aria-hidden="true"
-                  class="size-1.5 flex-shrink-0 rounded-full"
+                  class="flex-shrink-0 rounded-full size-1.5"
                   style="background-color: rgb(230, 157, 55);"
                 />
                 CS2 Masters
@@ -5625,7 +5641,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with matches group
             <p
               class="font-headings text-sm text-foreground"
             >
-              Upper Bracket · Round 1
+              Upper Bracket · Week 1
             </p>
             <div
               class="mt-1 flex flex-wrap gap-3"
@@ -5746,7 +5762,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with matches group
                 class="flex items-center px-2 font-headings text-[30px] leading-none"
               >
                 <span
-                  class=""
+                  class="text-kanaliiga-orange"
                 >
                   2
                 </span>
@@ -5756,13 +5772,13 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with matches group
                   —
                 </span>
                 <span
-                  class="opacity-40"
+                  class="text-muted-foreground"
                 >
                   1
                 </span>
               </div>
               <div
-                class="flex items-center justify-start gap-2 opacity-40"
+                class="flex items-center justify-start gap-2"
               >
                 <img
                   alt="Team Zeta"
@@ -5782,10 +5798,10 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with matches group
               class="mt-2 flex flex-wrap justify-center gap-1.5 border-t border-dashed border-white/8 pt-2"
             >
               <span
-                class="inline-flex items-center gap-1.5 rounded border border-white/5 bg-black/20 px-2 py-0.5"
+                class="inline-flex items-center rounded border border-white/5 bg-black/20 gap-1.5 px-2 py-0.5"
               >
                 <span
-                  class="font-mono text-[10px] text-kanaliiga-light-brown"
+                  class="font-mono text-kanaliiga-light-brown text-[10px]"
                 >
                   de_inferno
                 </span>
@@ -5810,10 +5826,10 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with matches group
                 </span>
               </span>
               <span
-                class="inline-flex items-center gap-1.5 rounded border border-white/5 bg-black/20 px-2 py-0.5"
+                class="inline-flex items-center rounded border border-white/5 bg-black/20 gap-1.5 px-2 py-0.5"
               >
                 <span
-                  class="font-mono text-[10px] text-kanaliiga-light-brown"
+                  class="font-mono text-kanaliiga-light-brown text-[10px]"
                 >
                   de_anubis
                 </span>
@@ -5838,10 +5854,10 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with matches group
                 </span>
               </span>
               <span
-                class="inline-flex items-center gap-1.5 rounded border border-white/5 bg-black/20 px-2 py-0.5"
+                class="inline-flex items-center rounded border border-white/5 bg-black/20 gap-1.5 px-2 py-0.5"
               >
                 <span
-                  class="font-mono text-[10px] text-kanaliiga-light-brown"
+                  class="font-mono text-kanaliiga-light-brown text-[10px]"
                 >
                   de_mirage
                 </span>
@@ -5903,12 +5919,12 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with matches group
               class="flex flex-wrap items-center gap-1.5"
             >
               <span
-                class="inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.12em]"
+                class="inline-flex items-center rounded-full border font-mono uppercase tracking-[0.12em] gap-1.5 px-2 py-0.5 text-[10px]"
                 style="color: rgb(230, 157, 55); border-color: rgba(230, 157, 55, 0.5); background-color: rgba(230, 157, 55, 0.16);"
               >
                 <span
                   aria-hidden="true"
-                  class="size-1.5 flex-shrink-0 rounded-full"
+                  class="flex-shrink-0 rounded-full size-1.5"
                   style="background-color: rgb(230, 157, 55);"
                 />
                 CS2 Masters
@@ -5922,7 +5938,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with matches group
             <p
               class="font-headings text-sm text-foreground"
             >
-              Upper Bracket · Round 1
+              Upper Bracket · Week 1
             </p>
             <div
               class="mt-1 flex flex-wrap gap-3"
@@ -6043,7 +6059,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with matches group
                 class="flex items-center px-2 font-headings text-[2rem] leading-none"
               >
                 <span
-                  class=""
+                  class="text-kanaliiga-orange"
                 >
                   2
                 </span>
@@ -6053,13 +6069,13 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with matches group
                   —
                 </span>
                 <span
-                  class="opacity-40"
+                  class="text-muted-foreground"
                 >
                   1
                 </span>
               </div>
               <div
-                class="flex items-center justify-start gap-2 opacity-40"
+                class="flex items-center justify-start gap-2"
               >
                 <img
                   alt="Team Zeta"
@@ -6079,10 +6095,10 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with matches group
               class="mt-2 flex flex-wrap justify-center gap-1.5 border-t border-dashed border-white/8 pt-2"
             >
               <span
-                class="inline-flex items-center gap-1.5 rounded border border-white/5 bg-black/20 px-2 py-0.5"
+                class="inline-flex items-center rounded border border-white/5 bg-black/20 gap-1.5 px-2 py-0.5"
               >
                 <span
-                  class="font-mono text-[10px] text-kanaliiga-light-brown"
+                  class="font-mono text-kanaliiga-light-brown text-[10px]"
                 >
                   de_inferno
                 </span>
@@ -6107,10 +6123,10 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with matches group
                 </span>
               </span>
               <span
-                class="inline-flex items-center gap-1.5 rounded border border-white/5 bg-black/20 px-2 py-0.5"
+                class="inline-flex items-center rounded border border-white/5 bg-black/20 gap-1.5 px-2 py-0.5"
               >
                 <span
-                  class="font-mono text-[10px] text-kanaliiga-light-brown"
+                  class="font-mono text-kanaliiga-light-brown text-[10px]"
                 >
                   de_anubis
                 </span>
@@ -6135,10 +6151,10 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with matches group
                 </span>
               </span>
               <span
-                class="inline-flex items-center gap-1.5 rounded border border-white/5 bg-black/20 px-2 py-0.5"
+                class="inline-flex items-center rounded border border-white/5 bg-black/20 gap-1.5 px-2 py-0.5"
               >
                 <span
-                  class="font-mono text-[10px] text-kanaliiga-light-brown"
+                  class="font-mono text-kanaliiga-light-brown text-[10px]"
                 >
                   de_mirage
                 </span>
@@ -6173,40 +6189,44 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with matches group
             class="flex flex-col gap-2 px-3 py-3"
           >
             <div
-              class="flex flex-wrap items-center gap-1.5"
+              class="flex items-center justify-between gap-2"
             >
-              <span
-                class="inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.12em]"
-                style="color: rgb(230, 157, 55); border-color: rgba(230, 157, 55, 0.5); background-color: rgba(230, 157, 55, 0.16);"
+              <div
+                class="flex flex-wrap items-center gap-1"
               >
                 <span
-                  aria-hidden="true"
-                  class="size-1.5 flex-shrink-0 rounded-full"
-                  style="background-color: rgb(230, 157, 55);"
-                />
-                CS2 Masters
-              </span>
+                  class="inline-flex items-center rounded-full border font-mono uppercase tracking-[0.12em] gap-1 px-2 py-px text-[9px]"
+                  style="color: rgb(230, 157, 55); border-color: rgba(230, 157, 55, 0.5); background-color: rgba(230, 157, 55, 0.16);"
+                >
+                  <span
+                    aria-hidden="true"
+                    class="flex-shrink-0 rounded-full size-1"
+                    style="background-color: rgb(230, 157, 55);"
+                  />
+                  CS2 Masters
+                </span>
+              </div>
               <span
-                class="font-mono text-[10px] text-muted-foreground"
+                class="shrink-0 text-right font-mono text-[9px] text-muted-foreground"
               >
-                Upper Bracket · Round 1
+                Upper Bracket · Week 1
               </span>
             </div>
             <div
-              class="grid grid-cols-[1fr_auto_1fr] items-center gap-2"
+              class="grid grid-cols-[1fr_auto_1fr] items-center gap-2 py-1.5"
             >
               <div
-                class="flex items-center gap-1.5"
+                class="flex flex-col items-start gap-1.5"
               >
                 <img
                   alt="Team Epsilon"
-                  class="h-6 w-6 flex-shrink-0 object-contain"
-                  height="24"
+                  class="h-8 w-8 flex-shrink-0 object-contain"
+                  height="32"
                   src="https://img.kanaliiga.fi/images/by-hash/phash/alpha-logo.png"
-                  width="24"
+                  width="32"
                 />
                 <span
-                  class="font-headings text-sm leading-tight"
+                  class="break-words font-headings text-sm leading-tight"
                 >
                   Team Epsilon
                 </span>
@@ -6215,7 +6235,7 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with matches group
                 class="flex items-center px-1 font-headings text-[1.75rem] leading-none"
               >
                 <span
-                  class=""
+                  class="text-kanaliiga-orange"
                 >
                   2
                 </span>
@@ -6225,41 +6245,41 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with matches group
                   —
                 </span>
                 <span
-                  class="opacity-40"
+                  class="text-muted-foreground"
                 >
                   1
                 </span>
               </div>
               <div
-                class="flex items-center justify-end gap-1.5 opacity-40"
+                class="flex flex-col items-end gap-1.5"
               >
+                <img
+                  alt="Team Zeta"
+                  class="h-8 w-8 flex-shrink-0 object-contain"
+                  height="32"
+                  src="https://img.kanaliiga.fi/images/by-hash/phash/beta-logo.png"
+                  width="32"
+                />
                 <span
-                  class="font-headings text-right text-sm leading-tight"
+                  class="break-words text-right font-headings text-sm leading-tight"
                 >
                   Team Zeta
                 </span>
-                <img
-                  alt="Team Zeta"
-                  class="h-6 w-6 flex-shrink-0 object-contain"
-                  height="24"
-                  src="https://img.kanaliiga.fi/images/by-hash/phash/beta-logo.png"
-                  width="24"
-                />
               </div>
             </div>
             <div
               class="flex flex-wrap gap-1 border-t border-dashed border-white/8 pt-1"
             >
               <span
-                class="inline-flex items-center gap-1.5 rounded border border-white/5 bg-black/20 px-2 py-0.5"
+                class="inline-flex items-center rounded border border-white/5 bg-black/20 gap-1 px-1.5 py-px"
               >
                 <span
-                  class="font-mono text-[10px] text-kanaliiga-light-brown"
+                  class="font-mono text-kanaliiga-light-brown text-[9px]"
                 >
                   de_inferno
                 </span>
                 <span
-                  class="font-mono text-[10px]"
+                  class="font-mono text-[9px]"
                 >
                   <span
                     class="font-bold text-foreground"
@@ -6279,15 +6299,15 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with matches group
                 </span>
               </span>
               <span
-                class="inline-flex items-center gap-1.5 rounded border border-white/5 bg-black/20 px-2 py-0.5"
+                class="inline-flex items-center rounded border border-white/5 bg-black/20 gap-1 px-1.5 py-px"
               >
                 <span
-                  class="font-mono text-[10px] text-kanaliiga-light-brown"
+                  class="font-mono text-kanaliiga-light-brown text-[9px]"
                 >
                   de_anubis
                 </span>
                 <span
-                  class="font-mono text-[10px]"
+                  class="font-mono text-[9px]"
                 >
                   <span
                     class="text-muted-foreground"
@@ -6307,15 +6327,15 @@ exports[`FilteredMatchesList Snapshot Tests renders correctly with matches group
                 </span>
               </span>
               <span
-                class="inline-flex items-center gap-1.5 rounded border border-white/5 bg-black/20 px-2 py-0.5"
+                class="inline-flex items-center rounded border border-white/5 bg-black/20 gap-1 px-1.5 py-px"
               >
                 <span
-                  class="font-mono text-[10px] text-kanaliiga-light-brown"
+                  class="font-mono text-kanaliiga-light-brown text-[9px]"
                 >
                   de_mirage
                 </span>
                 <span
-                  class="font-mono text-[10px]"
+                  class="font-mono text-[9px]"
                 >
                   <span
                     class="font-bold text-foreground"

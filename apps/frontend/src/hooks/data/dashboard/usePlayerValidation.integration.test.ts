@@ -4,7 +4,7 @@
  * but using mocked fetch responses to ensure predictable results
  */
 
-import { renderHook, waitFor } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import { usePlayerValidation } from "./usePlayerValidation";
 import {
   EligiblePlayerForValidationSteamId,
@@ -316,23 +316,21 @@ describe("usePlayerValidation Integration Tests", () => {
       const { result } = renderHook(() => usePlayerValidation());
 
       // First validate
-      await result.current.validatePlayer(
-        EligiblePlayerForValidationSteamId,
-        "14"
-      );
-
-      await waitFor(() => {
-        expect(result.current.validationResult).toEqual(
-          mockSuccessfulValidation
+      await act(async () => {
+        await result.current.validatePlayer(
+          EligiblePlayerForValidationSteamId,
+          "14"
         );
       });
 
-      // Then clear results
-      result.current.clearResults();
+      expect(result.current.validationResult).toEqual(mockSuccessfulValidation);
 
-      await waitFor(() => {
-        expect(result.current.validationResult).toBeNull();
+      // Then clear results
+      act(() => {
+        result.current.clearResults();
       });
+
+      expect(result.current.validationResult).toBeNull();
     });
   });
 
