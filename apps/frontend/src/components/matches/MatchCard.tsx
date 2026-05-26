@@ -188,6 +188,309 @@ function SeriesMvpDisplay({
   return <SeriesMvpPlayer seriesMvp={seriesMvp} variant={variant} />;
 }
 
+interface MatchCardMetaColumnProps {
+  leagueName: string;
+  showSeason?: boolean;
+  seasonLabel?: string;
+  kicker: string;
+  stage: string;
+  durationMinutes: number | null;
+  format: string | null;
+}
+
+function MatchCardMetaColumn({
+  leagueName,
+  showSeason,
+  seasonLabel,
+  kicker,
+  stage,
+  durationMinutes,
+  format
+}: MatchCardMetaColumnProps) {
+  return (
+    <div className="flex flex-col gap-1.5 border-r border-white/8 px-4 py-3">
+      <div className="flex flex-wrap items-center gap-1.5">
+        <DivisionPill leagueName={leagueName} />
+        {showSeason && seasonLabel && <SeasonChip label={seasonLabel} />}
+      </div>
+      <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+        {kicker}
+      </p>
+      {stage ? (
+        <p className="font-headings text-sm text-foreground">{stage}</p>
+      ) : null}
+      <div className="mt-1 flex flex-wrap gap-3">
+        {durationMinutes !== null && (
+          <MetaPill icon={Clock} label={durationLabel(durationMinutes)} />
+        )}
+        {format && <MetaPill icon={Swords} label={format} />}
+      </div>
+    </div>
+  );
+}
+
+interface MatchCardTeamsScoreProps {
+  home: MatchesByFilters["home_team"];
+  away: MatchesByFilters["away_team"];
+  homeWins: boolean;
+  awayWins: boolean;
+  seriesScoreClass: (isWinner: boolean) => string;
+  logoSize: number;
+  logoClassName: string;
+  scoreClassName: string;
+  nameClassName: string;
+}
+
+function MatchCardWideTeamsScore({
+  home,
+  away,
+  homeWins,
+  awayWins,
+  seriesScoreClass,
+  logoSize,
+  logoClassName,
+  scoreClassName,
+  nameClassName
+}: MatchCardTeamsScoreProps) {
+  return (
+    <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+      <div className="flex items-center justify-end gap-2">
+        <span className={cn("font-headings text-right", nameClassName)}>
+          {home.name}
+        </span>
+        <NextImageFallback
+          src={createTeamLogoUrl(home.logo ?? "")}
+          alt={home.name}
+          width={logoSize}
+          height={logoSize}
+          className={cn(logoClassName, "flex-shrink-0 object-contain")}
+        />
+      </div>
+
+      <div
+        className={cn(
+          "flex items-center px-2 font-headings leading-none",
+          scoreClassName
+        )}
+      >
+        <span className={seriesScoreClass(homeWins)}>{home.score}</span>
+        <span className="mx-1 text-xl opacity-30">—</span>
+        <span className={seriesScoreClass(awayWins)}>{away.score}</span>
+      </div>
+
+      <div className="flex items-center justify-start gap-2">
+        <NextImageFallback
+          src={createTeamLogoUrl(away.logo ?? "")}
+          alt={away.name}
+          width={logoSize}
+          height={logoSize}
+          className={cn(logoClassName, "flex-shrink-0 object-contain")}
+        />
+        <span className={cn("font-headings", nameClassName)}>{away.name}</span>
+      </div>
+    </div>
+  );
+}
+
+interface MatchCardMapChipsRowProps {
+  maps: MatchesByFilters["maps_json"];
+  mapWinner: (
+    map: MatchesByFilters["maps_json"][number]
+  ) => "home" | "away" | "draw";
+  compact?: boolean;
+}
+
+function MatchCardMapChipsRow({
+  maps,
+  mapWinner,
+  compact = false
+}: MatchCardMapChipsRowProps) {
+  if (maps.length === 0) return null;
+
+  return (
+    <div
+      className={cn(
+        "flex flex-wrap gap-1.5 border-t border-dashed border-white/8",
+        compact ? "gap-1 pt-1" : "mt-2 justify-center pt-2"
+      )}
+    >
+      {maps.map((map, index) => (
+        <MapScoreChip
+          key={index}
+          map={map}
+          winner={mapWinner(map)}
+          compact={compact}
+        />
+      ))}
+    </div>
+  );
+}
+
+interface MatchCardWideLayoutProps {
+  variant: "desktop" | "tablet";
+  tierColor: string;
+  meta: MatchCardMetaColumnProps;
+  teams: MatchCardTeamsScoreProps;
+  maps: MatchesByFilters["maps_json"];
+  mapWinner: MatchCardMapChipsRowProps["mapWinner"];
+  seriesMvp?: MatchMvp | null;
+  isMvpLoading?: boolean;
+}
+
+function MatchCardWideLayout({
+  variant,
+  tierColor,
+  meta,
+  teams,
+  maps,
+  mapWinner,
+  seriesMvp,
+  isMvpLoading
+}: MatchCardWideLayoutProps) {
+  const isDesktop = variant === "desktop";
+
+  return (
+    <div
+      className={cn(
+        "mb-2 hidden overflow-hidden rounded-xl border border-white/8 bg-white/5 transition-colors duration-200 hover:bg-white/[0.07]",
+        isDesktop
+          ? "lg:grid lg:grid-cols-[6px_240px_1fr_220px]"
+          : "md:grid md:grid-cols-[6px_240px_1fr] lg:hidden"
+      )}
+    >
+      <div className="h-full" style={{ backgroundColor: tierColor }} />
+      <MatchCardMetaColumn {...meta} />
+
+      <div className="flex flex-col justify-center px-4 py-3">
+        <MatchCardWideTeamsScore {...teams} />
+        <MatchCardMapChipsRow maps={maps} mapWinner={mapWinner} />
+      </div>
+
+      {isDesktop ? (
+        <div className="flex min-h-0 flex-col border-l border-white/8 px-3 py-2.5">
+          <div className="shrink-0 font-mono text-[9px] uppercase tracking-[0.18em] text-muted-foreground">
+            MVP
+          </div>
+          <div className="flex flex-1 items-center py-1">
+            <SeriesMvpDisplay
+              seriesMvp={seriesMvp}
+              isLoading={Boolean(isMvpLoading)}
+              variant="desktop"
+            />
+          </div>
+          <span className="inline-block w-fit shrink-0 rounded border border-white/16 px-2 py-1 font-mono text-[9px] uppercase tracking-[0.06em] text-muted-foreground transition-colors hover:border-white/30 hover:text-foreground">
+            Match Recap →
+          </span>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+interface MatchCardMobileLayoutProps {
+  tierColor: string;
+  leagueName: string;
+  showSeason?: boolean;
+  seasonLabel?: string;
+  stage: string;
+  home: MatchesByFilters["home_team"];
+  away: MatchesByFilters["away_team"];
+  homeWins: boolean;
+  awayWins: boolean;
+  seriesScoreClass: (isWinner: boolean) => string;
+  maps: MatchesByFilters["maps_json"];
+  mapWinner: MatchCardMapChipsRowProps["mapWinner"];
+  seriesMvp: MatchMvp | null | undefined;
+  isMvpLoading: boolean;
+}
+
+function MatchCardMobileLayout({
+  tierColor,
+  leagueName,
+  showSeason,
+  seasonLabel,
+  stage,
+  home,
+  away,
+  homeWins,
+  awayWins,
+  seriesScoreClass,
+  maps,
+  mapWinner,
+  seriesMvp,
+  isMvpLoading
+}: MatchCardMobileLayoutProps) {
+  return (
+    <div
+      className="mb-2 overflow-hidden rounded-xl border border-white/8 bg-white/5 transition-colors duration-200 hover:bg-white/[0.07] md:hidden"
+      style={{ borderLeftColor: tierColor, borderLeftWidth: "4px" }}
+    >
+      <div className="flex flex-col gap-2 px-3 py-3">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-1">
+            <DivisionPill leagueName={leagueName} compact />
+            {showSeason && seasonLabel && (
+              <SeasonChip label={seasonLabel} mini />
+            )}
+          </div>
+          {stage ? (
+            <span className="shrink-0 text-right font-mono text-[9px] text-muted-foreground">
+              {stage}
+            </span>
+          ) : null}
+        </div>
+
+        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 py-1.5">
+          <div className="flex flex-col items-start gap-1.5">
+            <NextImageFallback
+              src={createTeamLogoUrl(home.logo ?? "")}
+              alt={home.name}
+              width={32}
+              height={32}
+              className="h-8 w-8 flex-shrink-0 object-contain"
+            />
+            <span className="break-words font-headings text-sm leading-tight">
+              {home.name}
+            </span>
+          </div>
+
+          <div className="flex items-center px-1 font-headings text-[1.75rem] leading-none">
+            <span className={seriesScoreClass(homeWins)}>{home.score}</span>
+            <span className="mx-1 text-lg opacity-30">—</span>
+            <span className={seriesScoreClass(awayWins)}>{away.score}</span>
+          </div>
+
+          <div className="flex flex-col items-end gap-1.5">
+            <NextImageFallback
+              src={createTeamLogoUrl(away.logo ?? "")}
+              alt={away.name}
+              width={32}
+              height={32}
+              className="h-8 w-8 flex-shrink-0 object-contain"
+            />
+            <span className="break-words text-right font-headings text-sm leading-tight">
+              {away.name}
+            </span>
+          </div>
+        </div>
+
+        <MatchCardMapChipsRow maps={maps} mapWinner={mapWinner} compact />
+
+        <div className="flex items-center justify-between border-t border-white/8 pt-2">
+          <SeriesMvpDisplay
+            seriesMvp={seriesMvp}
+            isLoading={isMvpLoading}
+            variant="mobile"
+          />
+          <span className="font-mono text-[9px] uppercase tracking-[0.06em] text-kanaliiga-orange">
+            Recap →
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function MatchCard({
   match,
   href,
@@ -230,17 +533,23 @@ export function MatchCard({
   });
   const format = match.best_of ? `Bo${match.best_of}` : null;
 
-  function renderMapChips(compact?: boolean) {
-    if (match.maps_json.length === 0) return null;
-    return match.maps_json.map((map, i) => (
-      <MapScoreChip
-        key={i}
-        map={map}
-        winner={mapWinner(map)}
-        compact={compact}
-      />
-    ));
-  }
+  const metaColumnProps: MatchCardMetaColumnProps = {
+    leagueName: match.league_name,
+    showSeason,
+    seasonLabel,
+    kicker,
+    stage,
+    durationMinutes,
+    format
+  };
+
+  const teamsScoreBase = {
+    home,
+    away,
+    homeWins,
+    awayWins,
+    seriesScoreClass
+  };
 
   return (
     <Link
@@ -248,227 +557,54 @@ export function MatchCard({
       href={href}
       className="block w-full min-w-0 no-underline"
     >
-      {/* Desktop */}
-      <div className="mb-2 hidden overflow-hidden rounded-xl border border-white/8 bg-white/5 transition-colors duration-200 hover:bg-white/[0.07] lg:grid lg:grid-cols-[6px_240px_1fr_220px]">
-        {/* Col 1: Tier stripe */}
-        <div className="h-full" style={{ backgroundColor: tierColor }} />
+      <MatchCardWideLayout
+        variant="desktop"
+        tierColor={tierColor}
+        meta={metaColumnProps}
+        teams={{
+          ...teamsScoreBase,
+          logoSize: 40,
+          logoClassName: "h-10 w-10",
+          scoreClassName: "text-[30px]",
+          nameClassName: "text-base"
+        }}
+        maps={match.maps_json}
+        mapWinner={mapWinner}
+        seriesMvp={seriesMvp}
+        isMvpLoading={isMvpLoading}
+      />
 
-        {/* Col 2: Meta */}
-        <div className="flex flex-col gap-1.5 border-r border-white/8 px-4 py-3">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <DivisionPill leagueName={match.league_name} />
-            {showSeason && seasonLabel && <SeasonChip label={seasonLabel} />}
-          </div>
-          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-            {kicker}
-          </p>
-          {stage ? (
-            <p className="font-headings text-sm text-foreground">{stage}</p>
-          ) : null}
-          <div className="mt-1 flex flex-wrap gap-3">
-            {durationMinutes !== null && (
-              <MetaPill icon={Clock} label={durationLabel(durationMinutes)} />
-            )}
-            {format && <MetaPill icon={Swords} label={format} />}
-          </div>
-        </div>
+      <MatchCardWideLayout
+        variant="tablet"
+        tierColor={tierColor}
+        meta={metaColumnProps}
+        teams={{
+          ...teamsScoreBase,
+          logoSize: 32,
+          logoClassName: "h-8 w-8",
+          scoreClassName: "text-[2rem]",
+          nameClassName: "text-base"
+        }}
+        maps={match.maps_json}
+        mapWinner={mapWinner}
+      />
 
-        {/* Col 3: Teams + score */}
-        <div className="flex flex-col justify-center px-4 py-3">
-          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-            <div className="flex items-center justify-end gap-2">
-              <span className="font-headings text-base text-right">
-                {home.name}
-              </span>
-              <NextImageFallback
-                src={createTeamLogoUrl(home.logo ?? "")}
-                alt={home.name}
-                width={40}
-                height={40}
-                className="h-10 w-10 flex-shrink-0 object-contain"
-              />
-            </div>
-
-            <div className="flex items-center px-2 font-headings text-[30px] leading-none">
-              <span className={seriesScoreClass(homeWins)}>{home.score}</span>
-              <span className="mx-1 text-xl opacity-30">—</span>
-              <span className={seriesScoreClass(awayWins)}>{away.score}</span>
-            </div>
-
-            <div className="flex items-center justify-start gap-2">
-              <NextImageFallback
-                src={createTeamLogoUrl(away.logo ?? "")}
-                alt={away.name}
-                width={40}
-                height={40}
-                className="h-10 w-10 flex-shrink-0 object-contain"
-              />
-              <span className="font-headings text-base">{away.name}</span>
-            </div>
-          </div>
-
-          {match.maps_json.length > 0 && (
-            <div className="mt-2 flex flex-wrap justify-center gap-1.5 border-t border-dashed border-white/8 pt-2">
-              {renderMapChips()}
-            </div>
-          )}
-        </div>
-
-        {/* Col 4: MVP + action */}
-        <div className="flex min-h-0 flex-col border-l border-white/8 px-3 py-2.5">
-          <div className="shrink-0 font-mono text-[9px] uppercase tracking-[0.18em] text-muted-foreground">
-            MVP
-          </div>
-          <div className="flex flex-1 items-center py-1">
-            <SeriesMvpDisplay
-              seriesMvp={seriesMvp}
-              isLoading={isMvpLoading}
-              variant="desktop"
-            />
-          </div>
-          <span className="inline-block w-fit shrink-0 rounded border border-white/16 px-2 py-1 font-mono text-[9px] uppercase tracking-[0.06em] text-muted-foreground transition-colors hover:border-white/30 hover:text-foreground">
-            Match Recap →
-          </span>
-        </div>
-      </div>
-
-      {/* Tablet (md–lg): 3-column without MVP column */}
-      <div className="mb-2 hidden overflow-hidden rounded-xl border border-white/8 bg-white/5 transition-colors duration-200 hover:bg-white/[0.07] md:grid md:grid-cols-[6px_240px_1fr] lg:hidden">
-        <div className="h-full" style={{ backgroundColor: tierColor }} />
-
-        <div className="flex flex-col gap-1.5 border-r border-white/8 px-4 py-3">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <DivisionPill leagueName={match.league_name} />
-            {showSeason && seasonLabel && <SeasonChip label={seasonLabel} />}
-          </div>
-          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-            {kicker}
-          </p>
-          {stage ? (
-            <p className="font-headings text-sm text-foreground">{stage}</p>
-          ) : null}
-          <div className="mt-1 flex flex-wrap gap-3">
-            {durationMinutes !== null && (
-              <MetaPill icon={Clock} label={durationLabel(durationMinutes)} />
-            )}
-            {format && <MetaPill icon={Swords} label={format} />}
-          </div>
-        </div>
-
-        <div className="flex flex-col justify-center px-4 py-3">
-          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-            <div className="flex items-center justify-end gap-2">
-              <span className="font-headings text-base text-right">
-                {home.name}
-              </span>
-              <NextImageFallback
-                src={createTeamLogoUrl(home.logo ?? "")}
-                alt={home.name}
-                width={32}
-                height={32}
-                className="h-8 w-8 flex-shrink-0 object-contain"
-              />
-            </div>
-
-            <div className="flex items-center px-2 font-headings text-[2rem] leading-none">
-              <span className={seriesScoreClass(homeWins)}>{home.score}</span>
-              <span className="mx-1 text-xl opacity-30">—</span>
-              <span className={seriesScoreClass(awayWins)}>{away.score}</span>
-            </div>
-
-            <div className="flex items-center justify-start gap-2">
-              <NextImageFallback
-                src={createTeamLogoUrl(away.logo ?? "")}
-                alt={away.name}
-                width={32}
-                height={32}
-                className="h-8 w-8 flex-shrink-0 object-contain"
-              />
-              <span className="font-headings text-base">{away.name}</span>
-            </div>
-          </div>
-
-          {match.maps_json.length > 0 && (
-            <div className="mt-2 flex flex-wrap justify-center gap-1.5 border-t border-dashed border-white/8 pt-2">
-              {renderMapChips()}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Mobile */}
-      <div
-        className="mb-2 overflow-hidden rounded-xl border border-white/8 bg-white/5 transition-colors duration-200 hover:bg-white/[0.07] md:hidden"
-        style={{ borderLeftColor: tierColor, borderLeftWidth: "4px" }}
-      >
-        <div className="flex flex-col gap-2 px-3 py-3">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex flex-wrap items-center gap-1">
-              <DivisionPill leagueName={match.league_name} compact />
-              {showSeason && seasonLabel && (
-                <SeasonChip label={seasonLabel} mini />
-              )}
-            </div>
-            {stage ? (
-              <span className="shrink-0 text-right font-mono text-[9px] text-muted-foreground">
-                {stage}
-              </span>
-            ) : null}
-          </div>
-
-          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 py-1.5">
-            <div className="flex flex-col items-start gap-1.5">
-              <NextImageFallback
-                src={createTeamLogoUrl(home.logo ?? "")}
-                alt={home.name}
-                width={32}
-                height={32}
-                className="h-8 w-8 flex-shrink-0 object-contain"
-              />
-              <span className="break-words font-headings text-sm leading-tight">
-                {home.name}
-              </span>
-            </div>
-
-            <div className="flex items-center px-1 font-headings text-[1.75rem] leading-none">
-              <span className={seriesScoreClass(homeWins)}>{home.score}</span>
-              <span className="mx-1 text-lg opacity-30">—</span>
-              <span className={seriesScoreClass(awayWins)}>{away.score}</span>
-            </div>
-
-            <div className="flex flex-col items-end gap-1.5">
-              <NextImageFallback
-                src={createTeamLogoUrl(away.logo ?? "")}
-                alt={away.name}
-                width={32}
-                height={32}
-                className="h-8 w-8 flex-shrink-0 object-contain"
-              />
-              <span className="break-words text-right font-headings text-sm leading-tight">
-                {away.name}
-              </span>
-            </div>
-          </div>
-
-          {match.maps_json.length > 0 && (
-            <div className="flex flex-wrap gap-1 border-t border-dashed border-white/8 pt-1">
-              {renderMapChips(true)}
-            </div>
-          )}
-
-          {/* Mobile footer: MVP + recap link */}
-          <div className="flex items-center justify-between border-t border-white/8 pt-2">
-            <SeriesMvpDisplay
-              seriesMvp={seriesMvp}
-              isLoading={isMvpLoading}
-              variant="mobile"
-            />
-            <span className="font-mono text-[9px] uppercase tracking-[0.06em] text-kanaliiga-orange">
-              Recap →
-            </span>
-          </div>
-        </div>
-      </div>
+      <MatchCardMobileLayout
+        tierColor={tierColor}
+        leagueName={match.league_name}
+        showSeason={showSeason}
+        seasonLabel={seasonLabel}
+        stage={stage}
+        home={home}
+        away={away}
+        homeWins={homeWins}
+        awayWins={awayWins}
+        seriesScoreClass={seriesScoreClass}
+        maps={match.maps_json}
+        mapWinner={mapWinner}
+        seriesMvp={seriesMvp}
+        isMvpLoading={isMvpLoading}
+      />
     </Link>
   );
 }

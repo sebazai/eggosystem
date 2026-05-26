@@ -28,17 +28,21 @@ import type {
 import { BadRequestError, NotFoundError } from "../utils/errors";
 import { getActiveOrPassedSeasonId } from "../services/season.services";
 
-function parseMatchIdsQuery(
-  param: string | string[] | undefined
-): number[] | null {
+function parseMatchIdsQuery(param: unknown): number[] | null {
   if (param === undefined || param === "") return null;
 
-  let values: string[] = [];
+  let values: string[];
   if (Array.isArray(param)) {
-    values = param;
+    values = param.filter(
+      (value): value is string => typeof value === "string"
+    );
   } else if (typeof param === "string") {
     values = param.split(",");
+  } else {
+    return null;
   }
+
+  if (values.length === 0) return null;
 
   const parsedValues = values
     .map((value) => {
@@ -250,7 +254,7 @@ export const getMatchTeamLineupsController = async (
 };
 
 export const getMatchMvpsController = async (req: Request, res: Response) => {
-  const matchIds = parseMatchIdsQuery(req.query.match_ids?.toString());
+  const matchIds = parseMatchIdsQuery(req.query.match_ids);
 
   if (!matchIds) {
     throw new BadRequestError("match_ids query parameter is required");

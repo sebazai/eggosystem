@@ -34,6 +34,7 @@ import {
   matchTopStats
 } from "../shared/fetch-stat";
 import { getConnection } from "../db/mysqlConnection";
+import { BadRequestError } from "../utils/errors";
 import { logger } from "../utils/app-logger";
 import {
   adjustMatchDateTime,
@@ -276,7 +277,7 @@ export const getMatchTopPlayers = async (
   ) satisfies MatchOrGameTopPlayerAwards;
 };
 
-const MATCH_MVP_BATCH_LIMIT = 50;
+export const MATCH_MVP_BATCH_LIMIT = 50;
 
 const seasonTeamPlayerJoin = `
   JOIN MatchTeams mt ON mt.match_id = m.id
@@ -308,7 +309,12 @@ export const getMatchMvps = async (
     return [];
   }
 
-  const uniqueIds = [...new Set(match_ids)].slice(0, MATCH_MVP_BATCH_LIMIT);
+  const uniqueIds = [...new Set(match_ids)];
+  if (uniqueIds.length > MATCH_MVP_BATCH_LIMIT) {
+    throw new BadRequestError(
+      `match_ids accepts at most ${MATCH_MVP_BATCH_LIMIT} unique IDs per request`
+    );
+  }
   const placeholders = uniqueIds.map(() => "?").join(", ");
 
   const query = `

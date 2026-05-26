@@ -1,11 +1,13 @@
 import { runQuery } from "../db/mysqlRunQuery";
+import { BadRequestError } from "../utils/errors";
 import {
   getMatchesByFilters,
   getMatchTopPlayers,
   getMatchMapVetoes,
   getMatchGamesByTeam,
   getMatchMvps,
-  getMatchMvp
+  getMatchMvp,
+  MATCH_MVP_BATCH_LIMIT
 } from "./match.models";
 
 describe("getMatchesByFilters", () => {
@@ -584,6 +586,24 @@ describe("getMatchMvps", () => {
   it("returns empty array for empty input", async () => {
     const mvps = await getMatchMvps([]);
     expect(mvps).toEqual([]);
+  });
+
+  it("throws when more than the batch limit of unique match_ids are requested", async () => {
+    const ids = Array.from(
+      { length: MATCH_MVP_BATCH_LIMIT + 1 },
+      (_, index) => index + 1
+    );
+
+    await expect(getMatchMvps(ids)).rejects.toThrow(BadRequestError);
+    await expect(getMatchMvps(ids)).rejects.toThrow(
+      `match_ids accepts at most ${MATCH_MVP_BATCH_LIMIT} unique IDs per request`
+    );
+  });
+
+  it("dedupes duplicate match_ids before enforcing the batch limit", async () => {
+    const ids = Array.from({ length: MATCH_MVP_BATCH_LIMIT }, () => 10154);
+
+    await expect(getMatchMvps(ids)).resolves.toHaveLength(1);
   });
 });
 
