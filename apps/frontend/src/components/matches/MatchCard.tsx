@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { Clock, Crown, Swords } from "lucide-react";
 import type { MatchMvp, MatchesByFilters } from "@eggosystem/types";
 import { useMatchMvp } from "@/context/MatchMvpContext";
@@ -16,7 +17,7 @@ import {
   matchDurationMinutes
 } from "@/lib/matches/format";
 import { NextImageFallback } from "@/components/layout/NextImageFallback";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn, createAvatarUrl, createTeamLogoUrl } from "@/lib/utils";
 
@@ -142,13 +143,20 @@ function SeriesMvpPlayer({
 
   return (
     <div className="flex min-w-0 items-center gap-2.5">
-      <Avatar className="size-16 shrink-0">
+      <Avatar className="size-16 shrink-0 bg-white/10">
         {avatarUrl ? (
-          <AvatarImage src={avatarUrl} alt={seriesMvp.nickname} />
-        ) : null}
-        <AvatarFallback className="bg-white/10 font-headings text-base uppercase text-foreground">
-          {initials}
-        </AvatarFallback>
+          <Image
+            src={avatarUrl}
+            alt={seriesMvp.nickname}
+            width={64}
+            height={64}
+            className="aspect-square size-full object-cover"
+          />
+        ) : (
+          <AvatarFallback className="bg-white/10 font-headings text-base uppercase text-foreground">
+            {initials}
+          </AvatarFallback>
+        )}
       </Avatar>
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <p
