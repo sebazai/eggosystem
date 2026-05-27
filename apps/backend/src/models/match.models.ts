@@ -279,29 +279,6 @@ export const getMatchTopPlayers = async (
 
 export const MATCH_MVP_BATCH_LIMIT = 50;
 
-const seasonTeamPlayerJoin = `
-  JOIN MatchTeams mt ON mt.match_id = m.id
-  JOIN SeasonTeamPlayers stp ON stp.steam_id = p.steam_id
-    AND stp.season_id = m.season_id
-    AND stp.team_id = mt.team_id
-    AND stp.discarded_at IS NULL
-    AND (
-      stp.match_id = m.id
-      OR (
-        stp.match_id IS NULL
-        AND NOT EXISTS (
-          SELECT 1
-          FROM SeasonTeamPlayers stp2
-          WHERE stp2.season_id = m.season_id
-            AND stp2.team_id = mt.team_id
-            AND stp2.steam_id = p.steam_id
-            AND stp2.discarded_at IS NULL
-            AND stp2.match_id = m.id
-        )
-      )
-    )
-`;
-
 export const getMatchMvps = async (
   match_ids: number[]
 ): Promise<MatchMvp[]> => {
@@ -333,8 +310,20 @@ export const getMatchMvps = async (
       JOIN SteamPlayers p ON p.steam_id = ps.steam_id
       JOIN MatchGames mg ON mg.id = ps.match_game_id
       JOIN Matches m ON m.id = mg.match_id
-      ${seasonTeamPlayerJoin}
+      JOIN MatchTeams mt ON mt.match_id = m.id
+      JOIN SeasonTeamPlayers stp ON stp.steam_id = p.steam_id
+        AND stp.season_id = m.season_id
+        AND stp.team_id = mt.team_id
+        AND stp.discarded_at IS NULL
+        AND (stp.match_id = m.id OR stp.match_id IS NULL)
+      LEFT JOIN SeasonTeamPlayers stp2 ON stp.match_id IS NULL
+        AND stp2.steam_id = p.steam_id
+        AND stp2.season_id = m.season_id
+        AND stp2.team_id = mt.team_id
+        AND stp2.discarded_at IS NULL
+        AND stp2.match_id = m.id
       WHERE m.id IN (${placeholders})
+        AND (stp2.steam_id IS NULL OR stp.match_id IS NOT NULL)
       GROUP BY m.id, m.best_of, p.steam_id, p.nickname, p.avatar, stp.team_id
     ),
     ranked AS (

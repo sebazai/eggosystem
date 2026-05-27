@@ -543,6 +543,84 @@ describe("getMatchGamesByTeam", () => {
 });
 
 describe("getMatchMvps", () => {
+  beforeAll(async () => {
+    await runQuery(`
+      INSERT INTO SteamPlayers (steam_id, nickname, account_id, faceit_nickname, faceit_id, avatar)
+      VALUES (76561198207195847, '( GhostZero)', NULL, NULL, NULL, NULL)
+    `);
+    await runQuery(`
+      INSERT INTO Matches (id, league_id, season_id, stage, best_of, start_timestamp, end_timestamp, external_match_room_id, \`group\`, round, status, created_at, updated_at)
+      VALUES (14, 7, 14, 1, 1, '2024-01-01 19:00:00', '2024-01-01 20:00:00', NULL, NULL, NULL, 'FINISHED', NOW(), NOW())
+    `);
+    await runQuery(`
+      INSERT INTO MatchTeams (match_id, team_id, season_id, league_id)
+      VALUES (14, 2035, 14, 7)
+    `);
+    await runQuery(`
+      INSERT INTO MatchGames (id, match_id, map_id, map_order, demofile, regulation_rounds, created_at, updated_at)
+      VALUES (999999, 14, 3, NULL, 'test_bo1_demo.dem', 24, NOW(), NOW())
+    `);
+    await runQuery(`
+      INSERT INTO SeasonTeamPlayers (season_id, team_id, steam_id, role, is_captain, is_co_captain, match_id, id, created_at, updated_at, replaces_steam_id, ticket_number, discarded_at, discarded_by)
+      VALUES (14, 2035, 76561198207195847, 'primary', 0, 0, NULL, 999999, NOW(), NOW(), NULL, NULL, NULL, NULL)
+    `);
+    await runQuery(`
+      INSERT INTO PlayerStats (id, steam_id, match_game_id, kills, deaths, assists, assists_ct, assists_t, mvps,
+        total_damage, total_damage_ct, total_damage_t, headshots, flash_assists, flash_assists_t, flash_assists_ct,
+        adr, adr_t, adr_ct, hs_percent, plants, explodes, defuses, first_kills, kills_1, kills_2, kills_3, kills_4,
+        kills_5, trades, traded, clutches_won, clutches, awp_kills, utility_damage, utility_damage_t, utility_damage_ct,
+        molotov_damage, molotov_damage_ct, molotov_damage_t, he_damage, he_damage_ct, he_damage_t,
+        trade_attempts, trade_attempts_ct, trade_attempts_t, kills_through_walls,
+        first_death_trade_attempts, first_death_trade_attempts_ct, first_death_trade_attempts_t,
+        first_death_trade_opportunities, first_death_trade_opportunities_ct, first_death_trade_opportunities_t,
+        trade_opportunities, trade_opportunities_t, trade_opportunities_ct,
+        flashes_thrown, enemies_flashed, mates_flashed, self_flashes, first_deaths,
+        total_mf_duration, total_ef_duration, one_v_one_won, one_v_one_lost,
+        one_v_one_won_ct, one_v_one_lost_ct, one_v_one_won_t, one_v_one_lost_t,
+        kast, kana_rating,
+        first_kills_t, first_kills_ct, first_deaths_t, first_deaths_ct,
+        first_death_trades, first_death_traded, first_death_trades_ct, first_death_traded_ct,
+        first_death_trades_t, first_death_traded_t,
+        flashes_thrown_t, flashes_thrown_ct, enemies_flashed_t, enemies_flashed_ct,
+        kills_t, kills_ct, deaths_t, deaths_ct, trades_t, trades_ct, traded_t, traded_ct,
+        total_ef_duration_ct, total_ef_duration_t, total_mf_duration_t, total_mf_duration_ct,
+        mates_flashed_t, mates_flashed_ct, ttd, crosshair_placement, ttf, rws,
+        shots, shots_hit, total_strafing_shots, good_strafing_shots)
+      VALUES (999999, 76561198207195847, 999999, 20, 10, 5, 2, 3, 2,
+        1500, 700, 800, 8, 2, 1, 1,
+        90.0, NULL, NULL, 40, 1, 1, 0, 3, 5, 3, 2, 0,
+        0, 4, 3, 1, 2, 3, 200, 100, 100,
+        50, 25, 25, 30, 15, 15,
+        5, 2, 3, 2,
+        1, 0, 1,
+        2, 1, 1,
+        4, 2, 2,
+        10, 5, 3, 1, 3,
+        8.5, 12.3, 1, 0,
+        NULL, NULL, NULL, NULL,
+        70, 1.15,
+        NULL, NULL, NULL, NULL,
+        1, 0, 0, 0,
+        1, 0,
+        NULL, NULL, NULL, NULL,
+        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+        NULL, NULL, NULL, NULL,
+        NULL, NULL, NULL, NULL, NULL, 0.00,
+        NULL, NULL, NULL, NULL)
+    `);
+  });
+
+  afterAll(async () => {
+    await runQuery(`DELETE FROM PlayerStats WHERE id = 999999`);
+    await runQuery(`DELETE FROM SeasonTeamPlayers WHERE id = 999999`);
+    await runQuery(`DELETE FROM MatchGames WHERE id = 999999`);
+    await runQuery(`DELETE FROM MatchTeams WHERE match_id = 14`);
+    await runQuery(`DELETE FROM Matches WHERE id = 14`);
+    await runQuery(
+      `DELETE FROM SteamPlayers WHERE steam_id = 76561198207195847`
+    );
+  });
+
   it("returns BO3 series MVP with average kana_rating", async () => {
     const [mvp] = await getMatchMvps([10154]);
 
