@@ -79,7 +79,7 @@ export const PlayerDetailsHeader = ({ steamId }: { steamId: string }) => {
                 alt={steamPlayer?.nickname ?? "Player avatar"}
                 width={80}
                 height={80}
-                className="w-full h-full object-cover"
+                className="aspect-square size-full object-cover"
               />
             ) : (
               (steamPlayer?.nickname.charAt(0).toUpperCase() ?? "U")
