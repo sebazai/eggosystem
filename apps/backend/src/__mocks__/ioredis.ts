@@ -29,6 +29,22 @@ const mockRedisStorage = new Map<string, string>();
   return Promise.resolve(existed ? 1 : 0);
 });
 
+(IORedis as any).prototype.mget = jest
+  .fn()
+  .mockImplementation((...keys: any[]) => {
+    const flatKeys: string[] = Array.isArray(keys[0]) ? keys[0] : keys;
+    return Promise.resolve(
+      flatKeys.map((k) => mockRedisStorage.get(k) ?? null)
+    );
+  });
+
+const mockPipeline = {
+  set: jest.fn().mockReturnThis(),
+  exec: jest.fn().mockResolvedValue([])
+};
+
+(IORedis as any).prototype.pipeline = jest.fn(() => mockPipeline);
+
 // Helper function to clear mock storage between tests
 (IORedis as any).clearMockStorage = () => {
   mockRedisStorage.clear();
