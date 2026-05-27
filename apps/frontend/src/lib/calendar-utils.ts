@@ -1,21 +1,19 @@
 import { MatchStatus, type MatchWithStreamUrls } from "@eggosystem/types";
+import { numericTierColors } from "@/lib/matches/tiers";
 
-// Division definitions with darker, more readable colors
-export const DIVISIONS: Record<number, { color: string; borderColor: string }> =
-  {
-    1: { color: "#b91c1c", borderColor: "#991b1b" }, // Darker red
-    2: { color: "#1d4ed8", borderColor: "#1e40af" }, // Darker blue
-    3: { color: "#047857", borderColor: "#065f46" }, // Darker green
-    4: { color: "#b45309", borderColor: "#92400e" }, // Darker orange
-    5: { color: "#6d28d9", borderColor: "#5b21b6" }, // Darker purple
-    6: { color: "#be185d", borderColor: "#9d174d" }, // Darker pink
-    7: { color: "#0e7490", borderColor: "#155e75" }, // Darker cyan
-    8: { color: "#4d7c0f", borderColor: "#365314" }, // Darker lime
-    9: { color: "#c2410c", borderColor: "#9a3412" }, // Darker red-orange
-    10: { color: "#7c3aed", borderColor: "#6d28d9" }, // Darker violet
-    11: { color: "#0f766e", borderColor: "#134e4a" }, // Darker teal
-    12: { color: "#a16207", borderColor: "#854d0e" } // Darker yellow
-  };
+const buildDivisions = (): Record<
+  number,
+  { color: string; borderColor: string }
+> => {
+  const result: Record<number, { color: string; borderColor: string }> = {};
+  for (let i = 1; i <= 12; i++) {
+    const { color, border } = numericTierColors(i);
+    result[i] = { color, borderColor: border };
+  }
+  return result;
+};
+
+export const DIVISIONS = buildDivisions();
 
 /**
  * Sorts matches by date/time first, then by stream availability, then by league tier

@@ -88,6 +88,22 @@ describe("dualTeamRowToHomeLeftDisplay", () => {
     expect(d.left.name).toBe("Alpha");
     expect(d.right.name).toBe("Beta");
   });
+
+  it("keeps team1 home-left when sides are explicit", () => {
+    const row = {
+      team1_side: "home" as const,
+      team2_side: "away" as const,
+      team1_name: "Alpha",
+      team2_name: "Beta",
+      team1_logo: "a.png",
+      team2_logo: "b.png",
+      team1_score: 2,
+      team2_score: 0
+    };
+    const d = dualTeamRowToHomeLeftDisplay(row);
+    expect(d.left.name).toBe("Alpha");
+    expect(d.right.name).toBe("Beta");
+  });
 });
 
 describe("calendarMatchHomeLeftTeamNames", () => {

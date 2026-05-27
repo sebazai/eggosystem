@@ -11,7 +11,9 @@ import {
   getMatchMapVetoesController,
   getMatchBreadcrumbController,
   getMatchIs2xBO1Controller,
-  getMatchTeamLineupsController
+  getMatchTeamLineupsController,
+  getMatchMvpsController,
+  getMatchMvpController
 } from "../../controllers/matches.controllers";
 import {
   reserveStreamController,
@@ -28,6 +30,8 @@ import {
 
 // New Router instance
 const router = Router();
+
+router.get("/mvps", getMatchMvpsController);
 
 router.get("/:match_id", validateNumericParams(), getMatchController);
 router.get(
@@ -62,6 +66,8 @@ router.get(
   validateNumericParams(),
   getMatchTopPlayersController
 );
+
+router.get("/:match_id/mvp", validateNumericParams(), getMatchMvpController);
 
 router.get(
   "/:match_id/vetoes",
