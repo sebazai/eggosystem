@@ -16,7 +16,7 @@ interface FilterSheetProps {
   filterParams: FilterParamsQuery;
 }
 
-type PendingFilters = {
+type ActiveFilters = {
   seasons: number[];
   leagues: number[];
   stages: number[];
@@ -76,25 +76,25 @@ export function FilterSheet({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const isClosingRef = useRef(false);
 
-  const [pending, setPending] = useState<PendingFilters>({
+  // Local state for optimistic chip active states
+  const [local, setLocal] = useState<ActiveFilters>({
     seasons: filterParams.seasons ?? [],
     leagues: filterParams.leagues ?? [],
     stages: filterParams.stages ?? [],
     maps: filterParams.maps ?? []
   });
 
-  // Sync pending state only when the sheet opens (not on URL updates while closing)
+  // Sync local state only when the sheet opens
   useEffect(() => {
     if (!open) return;
-    setPending({
+    setLocal({
       seasons: filterParams.seasons ?? [],
       leagues: filterParams.leagues ?? [],
       stages: filterParams.stages ?? [],
       maps: filterParams.maps ?? []
     });
-    // filterParams intentionally omitted — only reset draft when opening
+    // filterParams intentionally omitted — only reset on open
   }, [open]);
 
   const { data: seasons } = useSWR<Season[]>(
@@ -116,58 +116,90 @@ export function FilterSheet({
     keepPreviousData: true
   });
 
-  function toggle(key: keyof PendingFilters, id: number) {
-    setPending((prev) => ({
-      ...prev,
-      [key]: prev[key].includes(id)
-        ? prev[key].filter((x) => x !== id)
-        : [...prev[key], id]
-    }));
+  function applyFilters(next: ActiveFilters) {
+    const params = new URLSearchParams(searchParams.toString());
+    (["seasons", "leagues", "stages", "maps"] as const).forEach((key) => {
+      params.delete(key);
+      next[key].forEach((id) => params.append(key, String(id)));
+    });
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  }
+
+  function toggle(key: keyof ActiveFilters, id: number) {
+    const next: ActiveFilters = {
+      ...local,
+      [key]: local[key].includes(id)
+        ? local[key].filter((x) => x !== id)
+        : [...local[key], id]
+    };
+    setLocal(next);
+    applyFilters(next);
   }
 
   function clearAll() {
-    setPending({ seasons: [], leagues: [], stages: [], maps: [] });
+    const next: ActiveFilters = {
+      seasons: [],
+      leagues: [],
+      stages: [],
+      maps: []
+    };
+    setLocal(next);
+    applyFilters(next);
   }
 
-  function handleOpenChange(nextOpen: boolean) {
-    if (isClosingRef.current && nextOpen) return;
-    onOpenChange(nextOpen);
+  // Swipe-to-close gesture
+  const [dragY, setDragY] = useState(0);
+  const touchStartY = useRef<number | null>(null);
+
+  function handleDragTouchStart(e: React.TouchEvent) {
+    const touch = e.touches[0];
+    if (!touch) return;
+    touchStartY.current = touch.clientY;
+    setDragY(0);
   }
 
-  function commit() {
-    const params = new URLSearchParams(searchParams.toString());
-    // Preserve non-filter params (like sort)
-    (["seasons", "leagues", "stages", "maps"] as const).forEach((key) => {
-      params.delete(key);
-      pending[key].forEach((id) => params.append(key, String(id)));
-    });
-    const nextUrl = `${pathname}?${params.toString()}`;
+  function handleDragTouchMove(e: React.TouchEvent) {
+    if (touchStartY.current === null) return;
+    const touch = e.touches[0];
+    if (!touch) return;
+    const delta = touch.clientY - touchStartY.current;
+    if (delta > 0) setDragY(delta);
+  }
 
-    isClosingRef.current = true;
-    onOpenChange(false);
-    router.replace(nextUrl, { scroll: false });
-    window.setTimeout(() => {
-      isClosingRef.current = false;
-    }, 350);
+  function handleDragTouchEnd() {
+    if (dragY > 80) {
+      onOpenChange(false);
+    }
+    touchStartY.current = null;
+    setDragY(0);
   }
 
   const totalActive =
-    pending.seasons.length +
-    pending.leagues.length +
-    pending.stages.length +
-    pending.maps.length;
+    local.seasons.length +
+    local.leagues.length +
+    local.stages.length +
+    local.maps.length;
 
   return (
-    <Sheet open={open} onOpenChange={handleOpenChange}>
+    <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="bottom"
         showCloseButton={false}
         onCloseAutoFocus={(event) => event.preventDefault()}
         className="rounded-t-2xl border-0 bg-[hsl(240_3%_9%)] px-0 pb-0 pt-0 max-h-[85dvh] flex flex-col"
-        style={{ borderTop: "2px solid var(--kanaliiga-orange)" }}
+        style={{
+          borderTop: "2px solid var(--kanaliiga-orange)",
+          transform: dragY > 0 ? `translateY(${dragY}px)` : undefined,
+          transition: dragY > 0 ? "none" : undefined
+        }}
       >
-        {/* Drag handle */}
-        <div className="flex justify-center pb-1 pt-3">
+        {/* Drag handle — touch handlers here drive swipe-to-close */}
+        <div
+          className="flex justify-center pb-1 pt-3 touch-none"
+          onTouchStart={handleDragTouchStart}
+          onTouchMove={handleDragTouchMove}
+          onTouchEnd={handleDragTouchEnd}
+        >
           <span className="h-1 w-9 rounded-full bg-white/20" />
         </div>
 
@@ -191,7 +223,7 @@ export function FilterSheet({
                   <Chip
                     key={s.id}
                     label={s.full_name}
-                    active={pending.seasons.includes(s.id)}
+                    active={local.seasons.includes(s.id)}
                     onClick={() => toggle("seasons", s.id)}
                   />
                 ))}
@@ -206,7 +238,7 @@ export function FilterSheet({
                   <Chip
                     key={l.id}
                     label={formatLeagueName(l.name)}
-                    active={pending.leagues.includes(l.id)}
+                    active={local.leagues.includes(l.id)}
                     onClick={() => toggle("leagues", l.id)}
                     dotColor={leagueColor(l.name).color}
                   />
@@ -220,7 +252,7 @@ export function FilterSheet({
                 <Chip
                   key={s.id}
                   label={s.name}
-                  active={pending.stages.includes(s.id)}
+                  active={local.stages.includes(s.id)}
                   onClick={() => toggle("stages", s.id)}
                 />
               ))}
@@ -233,7 +265,7 @@ export function FilterSheet({
                 <Chip
                   key={m.id}
                   label={m.name}
-                  active={pending.maps.includes(m.id)}
+                  active={local.maps.includes(m.id)}
                   onClick={() => toggle("maps", m.id)}
                 />
               ))}
@@ -252,10 +284,10 @@ export function FilterSheet({
           </button>
           <button
             type="button"
-            onClick={commit}
+            onClick={() => onOpenChange(false)}
             className="flex-[2] rounded-md bg-kanaliiga-orange py-2.5 font-mono text-[11px] uppercase tracking-[0.08em] text-kanaliiga-dark-gray transition-opacity hover:opacity-90"
           >
-            Show{totalActive > 0 ? ` (${totalActive} active)` : ""} Matches
+            Show results{totalActive > 0 ? ` (${totalActive})` : ""}
           </button>
         </div>
       </SheetContent>
