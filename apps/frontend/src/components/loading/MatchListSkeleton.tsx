@@ -5,44 +5,104 @@ import { Skeleton } from "@/components/ui/skeleton";
 interface MatchListSkeletonProps {
   items?: number;
   className?: string;
-  showDateHeaders?: boolean;
+}
+
+function MatchCardSkeleton() {
+  return (
+    <div className="mb-2 hidden overflow-hidden rounded-xl border border-white/8 bg-white/5 lg:grid lg:grid-cols-[6px_240px_1fr_220px]">
+      <div className="h-full bg-white/10" />
+      <div className="flex flex-col gap-2 border-r border-white/8 px-4 py-3">
+        <div className="flex gap-1.5">
+          <Skeleton className="h-5 w-20" />
+          <Skeleton className="h-5 w-12" />
+        </div>
+        <Skeleton className="h-3 w-16" />
+        <Skeleton className="h-4 w-28" />
+        <div className="flex gap-2 mt-1">
+          <Skeleton className="h-3 w-14" />
+          <Skeleton className="h-3 w-14" />
+        </div>
+      </div>
+      <div className="flex flex-col justify-center px-4 py-3">
+        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+          <div className="flex items-center justify-end gap-2">
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-10 w-10 rounded-sm" />
+          </div>
+          <div className="flex items-center gap-1 px-2">
+            <Skeleton className="h-7 w-6" />
+            <span className="opacity-20 text-xl">—</span>
+            <Skeleton className="h-7 w-6" />
+          </div>
+          <div className="flex items-center justify-start gap-2">
+            <Skeleton className="h-10 w-10 rounded-sm" />
+            <Skeleton className="h-4 w-24" />
+          </div>
+        </div>
+      </div>
+      <div className="flex flex-col justify-between border-l border-white/8 px-4 py-3">
+        <div className="flex flex-col gap-2">
+          <Skeleton className="h-3 w-20" />
+          <Skeleton className="h-3 w-8" />
+        </div>
+        <Skeleton className="h-8 w-full rounded-md" />
+      </div>
+    </div>
+  );
+}
+
+function MatchCardSkeletonMobile() {
+  return (
+    <div className="mb-2 overflow-hidden rounded-xl border border-white/8 bg-white/5 md:hidden">
+      <div className="flex flex-col gap-2 px-3 py-3">
+        <div className="flex gap-1.5">
+          <Skeleton className="h-5 w-20" />
+          <Skeleton className="h-4 w-16" />
+        </div>
+        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+          <div className="flex items-center gap-1.5">
+            <Skeleton className="h-6 w-6 rounded-sm" />
+            <Skeleton className="h-4 w-20" />
+          </div>
+          <div className="flex gap-1 px-1">
+            <Skeleton className="h-6 w-4" />
+            <span className="opacity-20">—</span>
+            <Skeleton className="h-6 w-4" />
+          </div>
+          <div className="flex items-center justify-end gap-1.5">
+            <Skeleton className="h-4 w-20" />
+            <Skeleton className="h-6 w-6 rounded-sm" />
+          </div>
+        </div>
+        <div className="flex justify-between border-t border-white/8 pt-2">
+          <Skeleton className="h-3 w-12" />
+          <Skeleton className="h-3 w-16" />
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export function MatchListSkeleton({
-  items = 10,
-  className,
-  showDateHeaders = true
+  items = 8,
+  className
 }: MatchListSkeletonProps) {
-  // Group items by date headers (3-4 matches per date)
-  const matchesPerDate = 3;
-  const dateGroups = Math.ceil(items / matchesPerDate);
+  const perGroup = 3;
+  const groups = Math.ceil(items / perGroup);
 
   return (
-    <div className={className || ""}>
-      {Array.from({ length: dateGroups }).map((_, dateIndex) => (
-        <div key={dateIndex}>
-          {showDateHeaders && (
-            <h2 className="text-left text-sm sm:text-lg mb-2">
-              <Skeleton className="h-5 w-32 inline-block" />
-            </h2>
-          )}
-          {Array.from({ length: matchesPerDate }).map((_, matchIndex) => (
-            <div key={matchIndex} className="mb-2 sm:mb-4">
-              <div className="bg-card grid grid-cols-[1fr_auto_1fr] min-h-10 md:min-h-12 items-center gap-2 px-0 transition-transform transform mb-1 rounded-lg shadow-md dark:shadow-muted">
-                <div className="flex items-center justify-end">
-                  <Skeleton className="h-4 w-24 sm:w-32 mr-1" />
-                  <Skeleton className="h-8 w-8 sm:h-10 sm:w-10 ml-1 rounded-full hidden xxs:block" />
-                </div>
-                <div className="relative h-full min-w-16 md:min-w-20 flex items-center justify-center bg-kanaliiga-light-brown/30 rounded-xs">
-                  <Skeleton className="h-5 w-7" />
-                  <span className="mx-1 md:mx-2">&mdash;</span>
-                  <Skeleton className="h-5 w-7" />
-                </div>
-                <div className="flex items-center justify-start ml-1">
-                  <Skeleton className="h-6 w-6 sm:h-8 sm:w-8 mr-1 rounded-full hidden xxs:block" />
-                  <Skeleton className="h-4 w-24 sm:w-32 ml-1" />
-                </div>
-              </div>
+    <div className={className ?? ""}>
+      {Array.from({ length: groups }).map((_, gi) => (
+        <div key={gi} className="mb-6">
+          <div className="mb-3 flex items-center gap-3">
+            <Skeleton className="h-4 w-28" />
+            <div className="flex-1 border-t border-white/8" />
+            <Skeleton className="h-3 w-16" />
+          </div>
+          {Array.from({ length: perGroup }).map((_, mi) => (
+            <div key={mi}>
+              <MatchCardSkeleton />
+              <MatchCardSkeletonMobile />
             </div>
           ))}
         </div>

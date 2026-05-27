@@ -1,13 +1,20 @@
-import { render } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { FilteredMatchesList } from "./FilteredMatchesList";
-import { useRecentMatches } from "@/hooks/data/filtered/useRecentMatches";
+import type { MatchesByFilters } from "@eggosystem/types";
 
-// Mock the useRecentMatches hook
-jest.mock("@/hooks/data/filtered/useRecentMatches", () => ({
-  useRecentMatches: jest.fn()
+const mockSwr = jest.fn();
+jest.mock("swr", () => ({
+  __esModule: true,
+  default: (...args: unknown[]) => mockSwr(...args)
 }));
 
-// Mock NextImageFallback
+const mockUseSearchParams = jest.fn(() => new URLSearchParams());
+jest.mock("next/navigation", () => ({
+  useSearchParams: () => mockUseSearchParams(),
+  usePathname: () => "/matches",
+  useRouter: () => ({ replace: jest.fn(), push: jest.fn() })
+}));
+
 jest.mock("@/components/layout/NextImageFallback", () => ({
   NextImageFallback: ({
     src,
@@ -22,192 +29,216 @@ jest.mock("@/components/layout/NextImageFallback", () => ({
   }) => <img src={src} alt={alt} {...props} />
 }));
 
-const mockMatches = [
-  {
-    match_id: 1,
-    match_game_id: 101,
-    match_date: "2024-01-15",
-    team1_name: "Team Alpha",
-    team1_logo: "alpha-logo.png",
-    team1_score: 16,
-    team2_name: "Team Beta",
-    team2_logo: "beta-logo.png",
-    team2_score: 12
+const defaultFilterParams = {
+  seasons: [1],
+  leagues: [1],
+  stages: null,
+  teams: null,
+  maps: null
+};
+
+const mockMatch = (
+  match_id: number,
+  overrides: Partial<Omit<MatchesByFilters, "match_id">> = {}
+): MatchesByFilters => ({
+  match_id,
+  match_game_id: 100 + match_id,
+  match_group: 1,
+  match_round: 1,
+  best_of: 3,
+  season_id: 5,
+  match_date: "2024-01-15",
+  start_timestamp: "2024-01-15T19:00:00Z",
+  end_timestamp: "2024-01-15T21:00:00Z",
+  stage: 2,
+  league_name: "CS2 Masters",
+  maps_json: [
+    { name: "de_nuke", home_score: 13, away_score: 9 },
+    { name: "de_mirage", home_score: 13, away_score: 6 }
+  ],
+  home_team: {
+    name: "Team Alpha",
+    logo: "alpha-logo.png",
+    score: 2
   },
-  {
-    match_id: 2,
-    match_game_id: 102,
-    match_date: "2024-01-15",
-    team1_name: "Team Gamma",
-    team1_logo: "gamma-logo.png",
-    team1_score: 13,
-    team2_name: "Team Delta",
-    team2_logo: "delta-logo.png",
-    team2_score: 16
+  away_team: {
+    name: "Team Beta",
+    logo: "beta-logo.png",
+    score: 0
   },
-  {
-    match_id: 3,
-    match_game_id: 103,
+  ...overrides
+});
+
+const mockMatches: MatchesByFilters[] = [
+  mockMatch(1, { match_date: "2024-01-15" }),
+  mockMatch(2, {
+    match_date: "2024-01-15",
+    home_team: { name: "Team Gamma", logo: "gamma-logo.png", score: 0 },
+    away_team: { name: "Team Delta", logo: "delta-logo.png", score: 2 }
+  }),
+  mockMatch(3, {
     match_date: "2024-01-14",
-    team1_name: "Team Epsilon",
-    team1_logo: "epsilon-logo.png",
-    team1_score: 16,
-    team2_name: "Team Zeta",
-    team2_logo: "zeta-logo.png",
-    team2_score: 14
-  }
+    start_timestamp: "2024-01-14T19:00:00Z",
+    end_timestamp: "2024-01-14T21:00:00Z",
+    home_team: { name: "Team Epsilon", logo: "epsilon-logo.png", score: 2 },
+    away_team: { name: "Team Zeta", logo: "zeta-logo.png", score: 1 },
+    best_of: 5,
+    maps_json: [
+      { name: "de_inferno", home_score: 13, away_score: 9 },
+      { name: "de_anubis", home_score: 7, away_score: 13 },
+      { name: "de_mirage", home_score: 13, away_score: 11 }
+    ]
+  })
 ];
 
 describe("FilteredMatchesList", () => {
-  const mockUseRecentMatches = useRecentMatches as jest.Mock;
-
   beforeEach(() => {
     jest.clearAllMocks();
+    mockUseSearchParams.mockReturnValue(new URLSearchParams());
+    mockSwr.mockImplementation((key: string) => {
+      if (key === "/api/v1/seasons") {
+        return {
+          data: [{ id: 5, full_name: "Season 12" }],
+          isLoading: false,
+          isValidating: false
+        };
+      }
+      if (key === "/api/v1/leagues") {
+        return {
+          data: [{ name: "CS2 Masters", sort_priority: 1 }],
+          isLoading: false,
+          isValidating: false
+        };
+      }
+      return { data: undefined, isLoading: false, isValidating: false };
+    });
   });
 
-  describe("Snapshot Tests", () => {
-    it("renders correctly with matches grouped by date", () => {
-      mockUseRecentMatches.mockReturnValue({
-        matches: mockMatches,
-        isLoading: false,
-        isError: false,
-        isValidating: false
-      });
+  function renderList(
+    filterQueryParams = defaultFilterParams,
+    matches: MatchesByFilters[] = mockMatches
+  ) {
+    return render(
+      <FilteredMatchesList
+        filterQueryParams={filterQueryParams}
+        matches={matches}
+      />
+    );
+  }
 
-      const { container } = render(
-        <FilteredMatchesList
-          filterQueryParams={{
-            seasons: [1],
-            leagues: [1],
-            stages: null,
-            teams: null,
-            maps: null
-          }}
-        />
-      );
-      expect(container).toMatchSnapshot();
+  it("groups matches by date with headings and counts", () => {
+    renderList();
+
+    const headings = screen.getAllByRole("heading", { level: 2 });
+    expect(headings).toHaveLength(2);
+    expect(headings[0]).toHaveTextContent("JAN 15 · 2024");
+    expect(headings[1]).toHaveTextContent("JAN 14 · 2024");
+    expect(screen.getByText("2 matches")).toBeInTheDocument();
+    expect(screen.getByText("1 match")).toBeInTheDocument();
+  });
+
+  it("renders team names from match data", () => {
+    renderList();
+
+    expect(screen.getAllByText("Team Alpha").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Team Gamma").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Team Epsilon").length).toBeGreaterThan(0);
+  });
+
+  it("links to game route when match_game_id is set", () => {
+    renderList();
+
+    const links = screen.getAllByRole("link");
+    expect(links[0]).toHaveAttribute("href", "/matches/1/games/101");
+  });
+
+  it("links to match route when match_game_id is null", () => {
+    renderList(defaultFilterParams, [
+      mockMatch(4, {
+        match_game_id: null,
+        home_team: { name: "Team Eta", logo: "eta-logo.png", score: 1 },
+        away_team: { name: "Team Theta", logo: "theta-logo.png", score: 0 },
+        maps_json: []
+      })
+    ]);
+
+    expect(screen.getAllByRole("link")[0]).toHaveAttribute(
+      "href",
+      "/matches/4"
+    );
+  });
+
+  it("orders date groups oldest first when sort=oldest", () => {
+    mockUseSearchParams.mockReturnValue(new URLSearchParams("sort=oldest"));
+    renderList();
+
+    const headings = screen.getAllByRole("heading", { level: 2 });
+    expect(headings[0]).toHaveTextContent("JAN 14 · 2024");
+    expect(headings[1]).toHaveTextContent("JAN 15 · 2024");
+  });
+
+  it("orders date groups newest first by default", () => {
+    renderList();
+
+    const headings = screen.getAllByRole("heading", { level: 2 });
+    expect(headings[0]).toHaveTextContent("JAN 15 · 2024");
+    expect(headings[1]).toHaveTextContent("JAN 14 · 2024");
+  });
+
+  it("orders matches by league tier when sort=tier", () => {
+    mockUseSearchParams.mockReturnValue(new URLSearchParams("sort=tier"));
+    mockSwr.mockImplementation((key: string) => {
+      if (key === "/api/v1/seasons") {
+        return {
+          data: [{ id: 5, full_name: "Season 12" }],
+          isLoading: false,
+          isValidating: false
+        };
+      }
+      if (key === "/api/v1/leagues") {
+        return {
+          data: [
+            { name: "CS2 Masters", sort_priority: 1 },
+            { name: "CS2 Open", sort_priority: 2 }
+          ],
+          isLoading: false,
+          isValidating: false
+        };
+      }
+      return { data: undefined, isLoading: false, isValidating: false };
     });
 
-    it("renders correctly in loading state", () => {
-      mockUseRecentMatches.mockReturnValue({
-        matches: undefined,
-        isLoading: true,
-        isError: false,
-        isValidating: false
-      });
+    renderList(defaultFilterParams, [
+      mockMatch(1, {
+        league_name: "CS2 Open",
+        start_timestamp: "2024-01-15T21:00:00Z"
+      }),
+      mockMatch(2, {
+        league_name: "CS2 Masters",
+        start_timestamp: "2024-01-15T19:00:00Z"
+      })
+    ]);
 
-      const { container } = render(
-        <FilteredMatchesList
-          filterQueryParams={{
-            seasons: [1],
-            leagues: [1],
-            stages: null,
-            teams: null,
-            maps: null
-          }}
-        />
-      );
-      expect(container).toMatchSnapshot();
+    const links = screen.getAllByRole("link");
+    expect(links[0]).toHaveAttribute("href", "/matches/2/games/102");
+    expect(links[1]).toHaveAttribute("href", "/matches/1/games/101");
+  });
+
+  it("shows season chip when more than one season is selected", () => {
+    renderList({
+      ...defaultFilterParams,
+      seasons: [1, 2]
     });
 
-    it("renders correctly in validating state", () => {
-      mockUseRecentMatches.mockReturnValue({
-        matches: undefined,
-        isLoading: false,
-        isError: false,
-        isValidating: true
-      });
+    expect(screen.getAllByText("S12").length).toBeGreaterThan(0);
+  });
 
-      const { container } = render(
-        <FilteredMatchesList
-          filterQueryParams={{
-            seasons: [1],
-            leagues: [1],
-            stages: null,
-            teams: null,
-            maps: null
-          }}
-        />
-      );
-      expect(container).toMatchSnapshot();
+  it("hides season chip when exactly one season is selected", () => {
+    renderList({
+      ...defaultFilterParams,
+      seasons: [1]
     });
 
-    it("renders correctly in error state", () => {
-      mockUseRecentMatches.mockReturnValue({
-        matches: undefined,
-        isLoading: false,
-        isError: true,
-        isValidating: false
-      });
-
-      const { container } = render(
-        <FilteredMatchesList
-          filterQueryParams={{
-            seasons: [1],
-            leagues: [1],
-            stages: null,
-            teams: null,
-            maps: null
-          }}
-        />
-      );
-      expect(container).toMatchSnapshot();
-    });
-
-    it("renders correctly when no matches found", () => {
-      mockUseRecentMatches.mockReturnValue({
-        matches: null,
-        isLoading: false,
-        isError: false,
-        isValidating: false
-      });
-
-      const { container } = render(
-        <FilteredMatchesList
-          filterQueryParams={{
-            seasons: [1],
-            leagues: [1],
-            stages: null,
-            teams: null,
-            maps: null
-          }}
-        />
-      );
-      expect(container).toMatchSnapshot();
-    });
-
-    it("renders correctly with match that has no game id", () => {
-      mockUseRecentMatches.mockReturnValue({
-        matches: [
-          {
-            match_id: 4,
-            match_game_id: null,
-            match_date: "2024-01-13",
-            team1_name: "Team Eta",
-            team1_logo: "eta-logo.png",
-            team1_score: 0,
-            team2_name: "Team Theta",
-            team2_logo: "theta-logo.png",
-            team2_score: 0
-          }
-        ],
-        isLoading: false,
-        isError: false,
-        isValidating: false
-      });
-
-      const { container } = render(
-        <FilteredMatchesList
-          filterQueryParams={{
-            seasons: [1],
-            leagues: [1],
-            stages: null,
-            teams: null,
-            maps: null
-          }}
-        />
-      );
-      expect(container).toMatchSnapshot();
-    });
+    expect(screen.queryByText("S12")).toBeNull();
   });
 });
