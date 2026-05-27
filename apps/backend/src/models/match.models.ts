@@ -44,6 +44,7 @@ import {
 import { type PoolConnection } from "mysql2/promise";
 import { getSeasonLeagueExternalIdByExternalIdWithSeasonSettings } from "./season-league-external-id.models";
 import { getSeasonLeagueTeamByExternalId } from "./season-league-team.models";
+import { redisClient } from "../utils/redisClient";
 
 function normalizeMatchTeamSide(value: unknown): MatchTeamSide {
   if (value === "home" || value === "away") return value;
@@ -279,6 +280,10 @@ export const getMatchTopPlayers = async (
 
 export const MATCH_MVP_BATCH_LIMIT = 50;
 
+const MVP_CACHE_KEY = (id: number) => `mvp:match:${id}`;
+
+type MatchMvpWithStatus = MatchMvp & { match_status: string };
+
 export const getMatchMvps = async (
   match_ids: number[]
 ): Promise<MatchMvp[]> => {
@@ -292,66 +297,108 @@ export const getMatchMvps = async (
       `match_ids accepts at most ${MATCH_MVP_BATCH_LIMIT} unique IDs per request`
     );
   }
-  const placeholders = uniqueIds.map(() => "?").join(", ");
 
-  const query = `
-    WITH player_scores AS (
-      SELECT
-        m.id AS match_id,
-        p.steam_id,
-        p.nickname,
-        p.avatar,
-        stp.team_id,
-        CASE
-          WHEN m.best_of = 1 THEN MAX(ps.kana_rating)
-          ELSE ROUND(AVG(ps.kana_rating), 2)
-        END AS mvp_score
-      FROM PlayerStats ps
-      JOIN SteamPlayers p ON p.steam_id = ps.steam_id
-      JOIN MatchGames mg ON mg.id = ps.match_game_id
-      JOIN Matches m ON m.id = mg.match_id
-      JOIN MatchTeams mt ON mt.match_id = m.id
-      JOIN SeasonTeamPlayers stp ON stp.steam_id = p.steam_id
-        AND stp.season_id = m.season_id
-        AND stp.team_id = mt.team_id
-        AND stp.discarded_at IS NULL
-        AND (stp.match_id = m.id OR stp.match_id IS NULL)
-      LEFT JOIN SeasonTeamPlayers stp2 ON stp.match_id IS NULL
-        AND stp2.steam_id = p.steam_id
-        AND stp2.season_id = m.season_id
-        AND stp2.team_id = mt.team_id
-        AND stp2.discarded_at IS NULL
-        AND stp2.match_id = m.id
-      WHERE m.id IN (${placeholders})
-        AND (stp2.steam_id IS NULL OR stp.match_id IS NOT NULL)
-      GROUP BY m.id, m.best_of, p.steam_id, p.nickname, p.avatar, stp.team_id
-    ),
-    ranked AS (
+  const cacheKeys = uniqueIds.map(MVP_CACHE_KEY);
+  const cached = await redisClient.mget(cacheKeys);
+
+  const resultMap = new Map<number, MatchMvp>();
+  const missIds: number[] = [];
+
+  uniqueIds.forEach((id, i) => {
+    const hit = cached[i];
+    if (hit) {
+      resultMap.set(id, JSON.parse(hit) as MatchMvp);
+    } else {
+      missIds.push(id);
+    }
+  });
+
+  if (missIds.length > 0) {
+    const placeholders = missIds.map(() => "?").join(", ");
+
+    const query = `
+      WITH player_scores AS (
+        SELECT
+          m.id AS match_id,
+          m.status AS match_status,
+          p.steam_id,
+          p.nickname,
+          p.avatar,
+          stp.team_id,
+          CASE
+            WHEN m.best_of = 1 THEN MAX(ps.kana_rating)
+            ELSE ROUND(AVG(ps.kana_rating), 2)
+          END AS mvp_score
+        FROM PlayerStats ps
+        JOIN SteamPlayers p ON p.steam_id = ps.steam_id
+        JOIN MatchGames mg ON mg.id = ps.match_game_id
+        JOIN Matches m ON m.id = mg.match_id
+        JOIN MatchTeams mt ON mt.match_id = m.id
+        JOIN SeasonTeamPlayers stp ON stp.steam_id = p.steam_id
+          AND stp.season_id = m.season_id
+          AND stp.team_id = mt.team_id
+          AND stp.discarded_at IS NULL
+          AND (stp.match_id = m.id OR stp.match_id IS NULL)
+        LEFT JOIN SeasonTeamPlayers stp2 ON stp.match_id IS NULL
+          AND stp2.steam_id = p.steam_id
+          AND stp2.season_id = m.season_id
+          AND stp2.team_id = mt.team_id
+          AND stp2.discarded_at IS NULL
+          AND stp2.match_id = m.id
+        WHERE m.id IN (${placeholders})
+          AND (stp2.steam_id IS NULL OR stp.match_id IS NOT NULL)
+        GROUP BY m.id, m.status, m.best_of, p.steam_id, p.nickname, p.avatar, stp.team_id
+      ),
+      ranked AS (
+        SELECT
+          match_id,
+          match_status,
+          steam_id,
+          nickname,
+          avatar,
+          team_id,
+          mvp_score,
+          ROW_NUMBER() OVER (
+            PARTITION BY match_id
+            ORDER BY mvp_score DESC, nickname ASC, steam_id ASC
+          ) AS rn
+        FROM player_scores
+      )
       SELECT
         match_id,
+        match_status,
         steam_id,
         nickname,
         avatar,
         team_id,
-        mvp_score,
-        ROW_NUMBER() OVER (
-          PARTITION BY match_id
-          ORDER BY mvp_score DESC, nickname ASC, steam_id ASC
-        ) AS rn
-      FROM player_scores
-    )
-    SELECT
-      match_id,
-      steam_id,
-      nickname,
-      avatar,
-      team_id,
-      mvp_score AS kana_rating
-    FROM ranked
-    WHERE rn = 1
-  `;
+        mvp_score AS kana_rating
+      FROM ranked
+      WHERE rn = 1
+    `;
 
-  return runQuery<MatchMvp[]>(query, uniqueIds);
+    const fresh = await runQuery<MatchMvpWithStatus[]>(query, missIds);
+
+    const pipeline = redisClient.pipeline();
+    let hasCacheable = false;
+
+    for (const row of fresh) {
+      const { match_status, ...mvp } = row;
+      resultMap.set(mvp.match_id, mvp);
+      if (match_status === MatchStatus.FINISHED) {
+        pipeline.set(MVP_CACHE_KEY(mvp.match_id), JSON.stringify(mvp));
+        hasCacheable = true;
+      }
+    }
+
+    if (hasCacheable) {
+      await pipeline.exec();
+    }
+  }
+
+  return uniqueIds.flatMap((id) => {
+    const mvp = resultMap.get(id);
+    return mvp ? [mvp] : [];
+  });
 };
 
 export const getMatchMvp = async (
