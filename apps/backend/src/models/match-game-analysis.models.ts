@@ -2374,3 +2374,69 @@ export const getMatchGameInsights = async (
 
   return { teams };
 };
+
+// ── Round Swing Events ────────────────────────────────────────────────────────
+
+interface SwingContributorParsed {
+  steam_id: string;
+  contribution: number;
+}
+
+export interface RoundSwingRow {
+  round_number: number;
+  time_in_round: number;
+  event_type: string;
+  pre_win_prob: number;
+  post_win_prob: number;
+  delta: number;
+  primary_player_steam_id: string;
+  contributors: SwingContributorParsed[];
+}
+
+interface GetRoundSwingEventsOptions {
+  roundNumber?: number;
+  limit?: number;
+}
+
+export const getRoundSwingEvents = async (
+  matchGameId: number,
+  { roundNumber, limit = 5 }: GetRoundSwingEventsOptions = {}
+): Promise<RoundSwingRow[]> => {
+  const conditions: string[] = ["match_game_id = ?"];
+  const params: (number | string)[] = [matchGameId];
+
+  if (roundNumber !== undefined) {
+    conditions.push("round_number = ?");
+    params.push(roundNumber);
+  }
+
+  const where = conditions.join(" AND ");
+  // Order by |delta| DESC so the most impactful swings come first
+  const query = `
+    SELECT
+      round_number,
+      time_in_round,
+      event_type,
+      pre_win_prob,
+      post_win_prob,
+      delta,
+      primary_player_steam_id,
+      contributors
+    FROM RoundSwingEvents
+    WHERE ${where}
+    ORDER BY ABS(delta) DESC
+    LIMIT ?
+  `;
+  params.push(limit);
+
+  const rows = await runQuery<
+    Array<Omit<RoundSwingRow, "contributors"> & { contributors: string }>
+  >(query, params);
+
+  return rows.map((r) => ({
+    ...r,
+    contributors: r.contributors
+      ? (jsonBig.parse(r.contributors) as SwingContributorParsed[])
+      : []
+  }));
+};

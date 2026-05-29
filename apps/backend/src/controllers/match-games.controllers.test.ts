@@ -5,15 +5,22 @@ import {
   getMatchGameKillMatrixController,
   getMatchGameOpeningDuelsController,
   getMatchGameTradeStatsController,
-  getMatchGameInsightsController
+  getMatchGameInsightsController,
+  getRoundSwingsController,
+  getFlashMatrixController
 } from "./match-games.controllers";
 import {
   getMatchGameAfterplantAnalysis,
   getMatchGameKillMatrix,
   getMatchGameOpeningDuels,
   getMatchGameTradeStats,
-  getMatchGameInsights
+  getMatchGameInsights,
+  getRoundSwingEvents
 } from "../models/match-game-analysis.models";
+import {
+  getFlashMatrix,
+  getPlayerFlashStats
+} from "../models/flash-events.models";
 import { RoundEndReasonInfo } from "@eggosystem/types";
 
 jest.mock("../models/match-game-analysis.models", () => ({
@@ -21,7 +28,14 @@ jest.mock("../models/match-game-analysis.models", () => ({
   getMatchGameKillMatrix: jest.fn(),
   getMatchGameOpeningDuels: jest.fn(),
   getMatchGameTradeStats: jest.fn(),
-  getMatchGameInsights: jest.fn()
+  getMatchGameInsights: jest.fn(),
+  getRoundSwingEvents: jest.fn()
+}));
+
+jest.mock("../models/flash-events.models", () => ({
+  saveFlashEventsForGame: jest.fn(),
+  getFlashMatrix: jest.fn(),
+  getPlayerFlashStats: jest.fn()
 }));
 
 const mockAfterplantAnalysis =
@@ -41,10 +55,21 @@ const mockInsights = getMatchGameInsights as jest.MockedFunction<
   typeof getMatchGameInsights
 >;
 
-function makeReq(match_game_id: string) {
+const mockRoundSwingEvents = getRoundSwingEvents as jest.MockedFunction<
+  typeof getRoundSwingEvents
+>;
+const mockGetFlashMatrix = getFlashMatrix as jest.MockedFunction<
+  typeof getFlashMatrix
+>;
+const mockGetPlayerFlashStats = getPlayerFlashStats as jest.MockedFunction<
+  typeof getPlayerFlashStats
+>;
+
+function makeReq(match_game_id: string, query: Record<string, string> = {}) {
   return {
-    params: { match_game_id }
-  } as RequestWithParams<{ match_game_id: string }>;
+    params: { match_game_id },
+    query
+  } as unknown as RequestWithParams<{ match_game_id: string }>;
 }
 
 function makeRes() {
@@ -289,6 +314,130 @@ describe("match-games analysis controllers", () => {
       await getMatchGameInsightsController(req, res);
 
       expect(jsonSpy).toHaveBeenCalledWith({ teams: [] });
+    });
+  });
+
+  describe("getRoundSwingsController", () => {
+    const mockSwings = [
+      {
+        round_number: 14,
+        time_in_round: 42.18,
+        event_type: "kill",
+        pre_win_prob: 0.62,
+        post_win_prob: 0.31,
+        delta: -0.31,
+        primary_player_steam_id: "1001",
+        contributors: [{ steam_id: "1001", contribution: 1 }]
+      }
+    ];
+
+    it("parses match_game_id and calls model with numeric id and defaults", async () => {
+      mockRoundSwingEvents.mockResolvedValue(mockSwings);
+      const req = makeReq("42");
+      const { res } = makeRes();
+
+      await getRoundSwingsController(req, res);
+
+      expect(mockRoundSwingEvents).toHaveBeenCalledWith(42, {
+        roundNumber: undefined,
+        limit: undefined
+      });
+    });
+
+    it("passes roundNumber and limit query params to model", async () => {
+      mockRoundSwingEvents.mockResolvedValue(mockSwings);
+      const req = makeReq("42", { roundNumber: "3", limit: "10" });
+      const { res } = makeRes();
+
+      await getRoundSwingsController(req, res);
+
+      expect(mockRoundSwingEvents).toHaveBeenCalledWith(42, {
+        roundNumber: 3,
+        limit: 10
+      });
+    });
+
+    it("wraps result in round_swings envelope", async () => {
+      mockRoundSwingEvents.mockResolvedValue(mockSwings);
+      const req = makeReq("42");
+      const { res, jsonSpy } = makeRes();
+
+      await getRoundSwingsController(req, res);
+
+      expect(jsonSpy).toHaveBeenCalledWith({ round_swings: mockSwings });
+    });
+
+    it("returns empty round_swings array for games with no swing data", async () => {
+      mockRoundSwingEvents.mockResolvedValue([]);
+      const req = makeReq("999");
+      const { res, jsonSpy } = makeRes();
+
+      await getRoundSwingsController(req, res);
+
+      expect(jsonSpy).toHaveBeenCalledWith({ round_swings: [] });
+    });
+  });
+
+  describe("getFlashMatrixController", () => {
+    const mockMatrix = [
+      {
+        thrower_steam_id: "1001",
+        victim_steam_id: "1002",
+        flash_count: 5,
+        avg_duration_seconds: 2.4,
+        total_duration_seconds: 12.0
+      }
+    ];
+    const mockStats = [
+      {
+        steam_id: "1001",
+        enemy_flashes: 5,
+        teammate_flashes: 1,
+        self_flashes: 0,
+        total_flashes: 6,
+        avg_duration_seconds: 2.0,
+        total_duration_seconds: 12.0
+      }
+    ];
+
+    it("calls both model functions with match_game_id", async () => {
+      mockGetFlashMatrix.mockResolvedValue(mockMatrix);
+      mockGetPlayerFlashStats.mockResolvedValue(mockStats);
+      const req = makeReq("42");
+      const { res } = makeRes();
+
+      await getFlashMatrixController(req, res);
+
+      expect(mockGetFlashMatrix).toHaveBeenCalledWith(42);
+      expect(mockGetPlayerFlashStats).toHaveBeenCalledWith(42);
+    });
+
+    it("returns flash_matrix and player_stats in response", async () => {
+      mockGetFlashMatrix.mockResolvedValue(mockMatrix);
+      mockGetPlayerFlashStats.mockResolvedValue(mockStats);
+      const req = makeReq("42");
+      const { res, jsonSpy } = makeRes();
+
+      await getFlashMatrixController(req, res);
+
+      expect(jsonSpy).toHaveBeenCalledWith({
+        flash_matrix: mockMatrix,
+        player_stats: mockStats
+      });
+    });
+
+    it("returns empty arrays for old-parser games with no flash events", async () => {
+      mockGetFlashMatrix.mockResolvedValue([]);
+      mockGetPlayerFlashStats.mockResolvedValue([]);
+      const req = makeReq("999");
+      const { res, jsonSpy } = makeRes();
+
+      await getFlashMatrixController(req, res);
+
+      expect(jsonSpy).toHaveBeenCalledWith({
+        flash_matrix: [],
+        player_stats: []
+      });
     });
   });
 });
