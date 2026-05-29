@@ -270,7 +270,9 @@ export interface DemoRoundImpact {
 }
 
 /**
- * Kill event from the demo parser
+ * Kill event from the demo parser.
+ * Fields added in KanaRating 3.2 are optional for backward compatibility
+ * with older parser output that does not include them.
  */
 export interface KillEvent {
   round_number: number;
@@ -288,6 +290,94 @@ export interface KillEvent {
   bomb_planted: boolean; // Was bomb planted at time of kill
   assister: number; // Steam ID (0 = no assister)
   is_flash_assist: boolean;
+  // KanaRating 3.2 enrichment fields (optional — absent on old parser output)
+  is_first_death?: boolean;
+  is_exit_kill?: boolean;
+  is_post_plant?: boolean;
+  was_victim_traded?: boolean;
+  ct_buy_type?: string;
+  t_buy_type?: string;
+  /** Steam ID of the player whose flash enabled this kill. Parser emits 0 for "none". */
+  setup_flash_thrower?: number;
+  /** Steam ID of the player whose utility damage set up this kill. Parser emits 0 for "none". */
+  setup_damage_player?: number;
+  victim_blind_seconds?: number;
+}
+
+// ── KanaRating 3.2 event log interfaces ──────────────────────────────────────
+
+/** @public */
+export interface FlashEvent {
+  round_number: number;
+  time_in_round: number;
+  thrower: number; // Steam ID
+  thrower_team: "CT" | "T";
+  victim: number; // Steam ID
+  victim_team: "CT" | "T";
+  duration_seconds: number;
+  is_self_flash: boolean;
+  is_teammate_flash: boolean;
+  is_enemy_flash: boolean;
+}
+
+/** @public */
+export interface SwingContributor {
+  steam_id: number;
+  contribution: number; // Share of delta (0–1)
+}
+
+/** @public */
+export interface RoundSwingEvent {
+  round_number: number;
+  time_in_round: number;
+  event_type: string; // "kill" | "plant" | "defuse"
+  pre_win_prob: number; // CT win probability before event
+  post_win_prob: number;
+  delta: number; // Signed change; positive = CT favoured
+  primary_player: number; // Steam ID of killer / actor
+  contributors: SwingContributor[];
+}
+
+/** @public */
+export interface SetupEvent {
+  round_number: number;
+  time_in_round: number;
+  setup_type: "flash" | "utility_damage";
+  setup_player: number; // Steam ID
+  beneficiary: number; // Steam ID
+  victim: number; // Steam ID
+  seconds_after_setup: number;
+  flash_duration?: number;
+  damage_dealt?: number;
+}
+
+/** @public */
+export interface WastedUtilityEvent {
+  round_number: number;
+  time_in_round: number;
+  thrower: number; // Steam ID
+  utility_type: string; // "HE" | "Molotov" | "Incendiary"
+}
+
+/** @public */
+export interface RoundUtilitySummaryEntry {
+  round_number: number;
+  steam_id: number;
+  flashes_thrown: number;
+  enemies_flashed: number;
+  teammates_flashed: number;
+  smokes_thrown: number;
+  utility_damage: number;
+  wasted_utility: number;
+}
+
+/** @public */
+export interface ParsedPayloadMeta {
+  parser_version?: string;
+  match_game_id?: string;
+  map?: string;
+  total_rounds?: number;
+  parsed_at?: string;
 }
 
 export interface ParsedPayload {
@@ -298,5 +388,12 @@ export interface ParsedPayload {
   RoundInfo: number[];
   NewRoundInfo: DemoNewRoundInfo;
   RoundImpacts: DemoRoundImpact[];
-  KillLog?: KillEvent[]; // Optional - new field from parser
+  KillLog?: KillEvent[];
+  // KanaRating 3.2 event logs (absent on old parser output — always treat as optional)
+  Meta?: ParsedPayloadMeta;
+  FlashLog?: FlashEvent[];
+  RoundSwingLog?: RoundSwingEvent[];
+  SetupEventLog?: SetupEvent[];
+  WastedUtilityLog?: WastedUtilityEvent[];
+  RoundUtilitySummary?: RoundUtilitySummaryEntry[];
 }

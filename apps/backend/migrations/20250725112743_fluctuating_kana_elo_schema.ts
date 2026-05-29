@@ -2,7 +2,7 @@ import type { Knex } from "knex";
 
 export async function up(knex: Knex): Promise<void> {
   // Create new table called SteamPlayerKanaElo
-  await knex.schema.createTable("SteamPlayerKanaElo", (table) => {
+  await knex.schema.createTableIfNotExists("SteamPlayerKanaElo", (table) => {
     table.increments("id").primary();
     table.integer("kana_elo").notNullable();
     // FK to SteamPlayers
@@ -26,8 +26,10 @@ export async function up(knex: Knex): Promise<void> {
     WHERE spr1.kana_elo IS NOT NULL
   `);
 
-  // Insert into SteamPlayerKanaElo
-  await knex("SteamPlayerKanaElo").insert(latestSeasonIds[0]);
+  // Insert into SteamPlayerKanaElo (guard against empty result on fresh DB)
+  if (latestSeasonIds[0].length > 0) {
+    await knex("SteamPlayerKanaElo").insert(latestSeasonIds[0]);
+  }
 }
 
 export async function down(knex: Knex): Promise<void> {
