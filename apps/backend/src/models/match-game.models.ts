@@ -22,6 +22,8 @@ import { upsertMapRoundStats } from "./map-round-stat.models";
 import { upsertPlayerKillLogsForGame } from "./player-kill-logs.models";
 import { upsertPlayerClutchesForGame } from "./player-clutches.models";
 import { upsertPlayerRoundImpactsForGame } from "./player-round-impacts.models";
+import { saveFlashEventsForGame } from "./flash-events.models";
+import { saveRoundSwingEventsForGame } from "./round-swing-events.models";
 
 export const getGameTeamRoundBreakdown = async (match_game_id: number) => {
   const query = `
@@ -357,7 +359,9 @@ export const saveParsedDemoDataForGame = async (
     Trades,
     Clutches,
     RoundImpacts,
-    KillLog
+    KillLog,
+    FlashLog,
+    RoundSwingLog
   } = parsed_payload;
 
   const connection = await getConnection();
@@ -465,7 +469,18 @@ export const saveParsedDemoDataForGame = async (
               connection
             })
           ]
-        : [])
+        : []),
+      // Parser 3.2 event logs — always call (delete+insert handles empty arrays and reparse)
+      saveFlashEventsForGame({
+        matchGameId,
+        events: FlashLog ?? [],
+        connection
+      }),
+      saveRoundSwingEventsForGame({
+        matchGameId,
+        events: RoundSwingLog ?? [],
+        connection
+      })
     ]);
 
     await connection.commit();

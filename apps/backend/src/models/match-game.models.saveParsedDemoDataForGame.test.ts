@@ -18,6 +18,8 @@ jest.mock("./player-clutches.models");
 jest.mock("./player-round-impacts.models");
 jest.mock("./player-kill-logs.models");
 jest.mock("./map-round-stat.models");
+jest.mock("./flash-events.models");
+jest.mock("./round-swing-events.models");
 
 // Import the mocked functions
 import { upsertTeamGameScore } from "./team-game-score.models";
