@@ -23,6 +23,7 @@ jest.mock("./round-swing-events.models");
 jest.mock("./setup-events.models");
 jest.mock("./wasted-utility-events.models");
 jest.mock("./round-utility-summary.models");
+jest.mock("./player-hit-logs.models");
 
 // Import the mocked functions
 import { upsertTeamGameScore } from "./team-game-score.models";
