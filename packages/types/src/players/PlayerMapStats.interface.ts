@@ -22,7 +22,11 @@ export interface PlayerMapStats {
   clutches_lost: number;
   kast: number;
   enemies_flashed: number;
+  enemies_flashed_ct: number;
+  enemies_flashed_t: number;
   mates_flashed: number;
+  mates_flashed_ct: number;
+  mates_flashed_t: number;
   self_flashes: number;
   total_damage: number;
   flashes_thrown: number;
