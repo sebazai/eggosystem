@@ -73,7 +73,7 @@ export const getMatchGameAfterplantAnalysis = async (
       pklog.time_in_round
     FROM PlayerKillLogs pklog
     WHERE pklog.match_game_id = ?
-      AND pklog.bomb_planted = 1
+      AND COALESCE(pklog.is_post_plant, pklog.bomb_planted) = 1
     ORDER BY pklog.round_number ASC, pklog.time_in_round ASC
   `;
 

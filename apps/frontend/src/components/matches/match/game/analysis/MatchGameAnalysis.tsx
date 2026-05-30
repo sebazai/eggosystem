@@ -12,7 +12,6 @@ import { InsightsTab } from "./InsightsTab";
 import { RoundSwingTab } from "./RoundSwingTab";
 import { useMatchGameAfterplantAnalysis } from "@/hooks/data/useMatchGameAfterplantAnalysis";
 import { useMatchGameOpeningDuels } from "@/hooks/data/useMatchGameOpeningDuels";
-import { useMatchGameKillMatrix } from "@/hooks/data/useMatchGameKillMatrix";
 import { useMatchGameTradeStats } from "@/hooks/data/useMatchGameTradeStats";
 import { useMatchGameInsights } from "@/hooks/data/useMatchGameInsights";
 import { useGamePlayerStats } from "@/hooks/data/useGamePlayerStats";
@@ -56,9 +55,6 @@ export const MatchGameAnalysis = ({
   const { openingDuels, isLoading: isLoadingDuels } =
     useMatchGameOpeningDuels(matchGameId);
 
-  const { killMatrix, isLoading: isLoadingMatrix } =
-    useMatchGameKillMatrix(matchGameId);
-
   const { tradeStats, isLoading: isLoadingTrades } =
     useMatchGameTradeStats(matchGameId);
 
@@ -72,7 +68,6 @@ export const MatchGameAnalysis = ({
     isLoadingAfterplant ||
     isLoadingPlayers ||
     isLoadingDuels ||
-    isLoadingMatrix ||
     isLoadingTrades;
 
   // Build a steam_id → nickname map from playerStats for the insights tab
@@ -161,10 +156,9 @@ export const MatchGameAnalysis = ({
 
       <TabsContent value="kill-matrix">
         {isLoadingLegacy && <TableSkeleton rows={6} />}
-        {!isLoadingLegacy && killMatrix && playerStats && (
+        {!isLoadingLegacy && playerStats && (
           <KillMatrixTab
             matchGameId={matchGameId}
-            matrix={killMatrix}
             playerStats={playerStats}
             teams={matchInfo.teams}
           />

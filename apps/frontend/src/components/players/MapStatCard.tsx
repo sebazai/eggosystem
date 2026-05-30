@@ -405,8 +405,7 @@ function UtilityStats({ mapStat }: { mapStat: PlayerMapStats }) {
   const total =
     mapStat.enemies_flashed + mapStat.mates_flashed + mapStat.self_flashes;
   const enemyPct = total > 0 ? (mapStat.enemies_flashed / total) * 100 : 0;
-  const _matePct = total > 0 ? (mapStat.mates_flashed / total) * 100 : 0;
-  const _selfPct = total > 0 ? (mapStat.self_flashes / total) * 100 : 0;
+  // matePct and selfPct replaced by CT/T split bars
 
   const friendlyRatio =
     total > 0 ? (mapStat.mates_flashed + mapStat.self_flashes) / total : 0;
