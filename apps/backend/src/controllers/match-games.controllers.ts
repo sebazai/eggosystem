@@ -161,7 +161,7 @@ export const getFlashMatrixController = async (
 ) => {
   const match_game_id = parseInt(req.params.match_game_id, 10);
   const [matrix, playerStats] = await Promise.all([
-    getFlashMatrix(match_game_id),
+    getFlashMatrix(match_game_id, { enemyOnly: false }),
     getPlayerFlashStats(match_game_id)
   ]);
   res.json({ flash_matrix: matrix, player_stats: playerStats });

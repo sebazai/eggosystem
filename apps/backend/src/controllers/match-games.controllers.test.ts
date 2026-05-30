@@ -482,7 +482,7 @@ describe("match-games analysis controllers", () => {
 
       await getFlashMatrixController(req, res);
 
-      expect(mockGetFlashMatrix).toHaveBeenCalledWith(42);
+      expect(mockGetFlashMatrix).toHaveBeenCalledWith(42, { enemyOnly: false });
       expect(mockGetPlayerFlashStats).toHaveBeenCalledWith(42);
     });
 

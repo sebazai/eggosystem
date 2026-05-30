@@ -163,6 +163,7 @@ export const MatchGameAnalysis = ({
         {isLoadingLegacy && <TableSkeleton rows={6} />}
         {!isLoadingLegacy && killMatrix && playerStats && (
           <KillMatrixTab
+            matchGameId={matchGameId}
             matrix={killMatrix}
             playerStats={playerStats}
             teams={matchInfo.teams}
