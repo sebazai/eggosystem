@@ -24,6 +24,9 @@ import { upsertPlayerClutchesForGame } from "./player-clutches.models";
 import { upsertPlayerRoundImpactsForGame } from "./player-round-impacts.models";
 import { saveFlashEventsForGame } from "./flash-events.models";
 import { saveRoundSwingEventsForGame } from "./round-swing-events.models";
+import { saveSetupEventsForGame } from "./setup-events.models";
+import { saveWastedUtilityEventsForGame } from "./wasted-utility-events.models";
+import { saveRoundUtilitySummaryForGame } from "./round-utility-summary.models";
 
 export const getGameTeamRoundBreakdown = async (match_game_id: number) => {
   const query = `
@@ -361,7 +364,10 @@ export const saveParsedDemoDataForGame = async (
     RoundImpacts,
     KillLog,
     FlashLog,
-    RoundSwingLog
+    RoundSwingLog,
+    SetupEventLog,
+    WastedUtilityLog,
+    RoundUtilitySummary
   } = parsed_payload;
 
   const connection = await getConnection();
@@ -479,6 +485,21 @@ export const saveParsedDemoDataForGame = async (
       saveRoundSwingEventsForGame({
         matchGameId,
         events: RoundSwingLog ?? [],
+        connection
+      }),
+      saveSetupEventsForGame({
+        matchGameId,
+        events: SetupEventLog ?? [],
+        connection
+      }),
+      saveWastedUtilityEventsForGame({
+        matchGameId,
+        events: WastedUtilityLog ?? [],
+        connection
+      }),
+      saveRoundUtilitySummaryForGame({
+        matchGameId,
+        entries: RoundUtilitySummary ?? [],
         connection
       })
     ]);
