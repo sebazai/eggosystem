@@ -22,6 +22,12 @@ import { upsertMapRoundStats } from "./map-round-stat.models";
 import { upsertPlayerKillLogsForGame } from "./player-kill-logs.models";
 import { upsertPlayerClutchesForGame } from "./player-clutches.models";
 import { upsertPlayerRoundImpactsForGame } from "./player-round-impacts.models";
+import { saveFlashEventsForGame } from "./flash-events.models";
+import { saveRoundSwingEventsForGame } from "./round-swing-events.models";
+import { saveSetupEventsForGame } from "./setup-events.models";
+import { saveWastedUtilityEventsForGame } from "./wasted-utility-events.models";
+import { saveRoundUtilitySummaryForGame } from "./round-utility-summary.models";
+import { savePlayerHitLogsForGame } from "./player-hit-logs.models";
 
 export const getGameTeamRoundBreakdown = async (match_game_id: number) => {
   const query = `
@@ -357,7 +363,13 @@ export const saveParsedDemoDataForGame = async (
     Trades,
     Clutches,
     RoundImpacts,
-    KillLog
+    KillLog,
+    HitLog,
+    FlashLog,
+    RoundSwingLog,
+    SetupEventLog,
+    WastedUtilityLog,
+    RoundUtilitySummary
   } = parsed_payload;
 
   const connection = await getConnection();
@@ -465,7 +477,39 @@ export const saveParsedDemoDataForGame = async (
               connection
             })
           ]
-        : [])
+        : []),
+      // Hit logs — delete+insert for idempotent reparse (absent on old parser output)
+      savePlayerHitLogsForGame({
+        matchGameId,
+        events: HitLog ?? [],
+        connection
+      }),
+      // Parser 3.2 event logs — always call (delete+insert handles empty arrays and reparse)
+      saveFlashEventsForGame({
+        matchGameId,
+        events: FlashLog ?? [],
+        connection
+      }),
+      saveRoundSwingEventsForGame({
+        matchGameId,
+        events: RoundSwingLog ?? [],
+        connection
+      }),
+      saveSetupEventsForGame({
+        matchGameId,
+        events: SetupEventLog ?? [],
+        connection
+      }),
+      saveWastedUtilityEventsForGame({
+        matchGameId,
+        events: WastedUtilityLog ?? [],
+        connection
+      }),
+      saveRoundUtilitySummaryForGame({
+        matchGameId,
+        entries: RoundUtilitySummary ?? [],
+        connection
+      })
     ]);
 
     await connection.commit();

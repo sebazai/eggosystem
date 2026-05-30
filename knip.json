@@ -9,7 +9,8 @@
       "next": false,
       "ignoreDependencies": [
         "@opentelemetry/auto-instrumentations-node",
-        "@opentelemetry/api"
+        "@opentelemetry/api",
+        "lint-staged"
       ]
     },
     "apps/backend": {

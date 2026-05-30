@@ -17,7 +17,13 @@ import {
   getMatchGameOpeningDuelsController,
   getMatchGameKillMatrixController,
   getMatchGameTradeStatsController,
-  getMatchGameInsightsController
+  getMatchGameInsightsController,
+  getRoundSwingsController,
+  getFlashMatrixController,
+  getEntryKillsController,
+  getSetupPairsController,
+  getWastedUtilityController,
+  getRoundUtilitySummaryController
 } from "../../controllers/match-games.controllers";
 import {
   getMatchGamesByExternalMatchRoomId,
@@ -120,6 +126,36 @@ router.get(
   "/:match_game_id/insights",
   validateNumericParams(),
   getMatchGameInsightsController
+);
+router.get(
+  "/:match_game_id/round-swings",
+  validateNumericParams(),
+  getRoundSwingsController
+);
+router.get(
+  "/:match_game_id/flash-matrix",
+  validateNumericParams(),
+  getFlashMatrixController
+);
+router.get(
+  "/:match_game_id/entry-kills",
+  validateNumericParams(),
+  getEntryKillsController
+);
+router.get(
+  "/:match_game_id/setup-pairs",
+  validateNumericParams(),
+  getSetupPairsController
+);
+router.get(
+  "/:match_game_id/wasted-utility",
+  validateNumericParams(),
+  getWastedUtilityController
+);
+router.get(
+  "/:match_game_id/round-utility-summary",
+  validateNumericParams(),
+  getRoundUtilitySummaryController
 );
 router.get("/external/:external_match_room_id/games", async (req, res) => {
   const externalMatchRoomId = req.params.external_match_room_id;

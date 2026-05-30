@@ -402,6 +402,39 @@ function TradingStats({ mapStat }: { mapStat: PlayerMapStats }) {
 
 // Utility Stats Content
 function UtilityStats({ mapStat }: { mapStat: PlayerMapStats }) {
+  const total =
+    mapStat.enemies_flashed + mapStat.mates_flashed + mapStat.self_flashes;
+  const enemyPct = total > 0 ? (mapStat.enemies_flashed / total) * 100 : 0;
+  // matePct and selfPct replaced by CT/T split bars
+
+  const friendlyRatio =
+    total > 0 ? (mapStat.mates_flashed + mapStat.self_flashes) / total : 0;
+  // Composite score: duration quality × count discipline
+  // Rewards blinding enemies for long AND keeps teammate blinds short
+  const mateDur = Math.max(mapStat.avg_teammate_flash_duration, 0.1);
+  const durationRatio = mapStat.avg_enemy_flash_duration / mateDur;
+  const flashScore = durationRatio * (1 - friendlyRatio);
+  const discipline =
+    total < 5
+      ? null
+      : flashScore >= 1.4
+        ? {
+            label: "disciplined",
+            color: "text-green-400",
+            bg: "bg-green-400/15 border-green-400/30"
+          }
+        : flashScore >= 0.7
+          ? {
+              label: "average",
+              color: "text-amber-400",
+              bg: "bg-amber-400/15 border-amber-400/30"
+            }
+          : {
+              label: "poor discipline",
+              color: "text-red-400",
+              bg: "bg-red-400/15 border-red-400/30"
+            };
+
   const utilDmgPerRound =
     mapStat.rounds_played > 0
       ? mapStat.utility_damage / mapStat.rounds_played
@@ -468,19 +501,131 @@ function UtilityStats({ mapStat }: { mapStat: PlayerMapStats }) {
         <p className="text-xs text-muted-foreground mt-1">Lower is better</p>
       </div>
 
-      {/* Bottom Stats Row */}
-      <div className="grid grid-cols-3 gap-2 text-center pt-2 border-t border-border">
-        <div>
-          <p className="text-lg font-bold">{mapStat.flash_assists}</p>
-          <p className="text-xs text-muted-foreground">Flash Assists</p>
+      {/* Flash breakdown card */}
+      <div className="pt-2 border-t border-border space-y-3">
+        {/* Discipline badge + 3 stats */}
+        <div className="flex justify-end">
+          {discipline && (
+            <span
+              className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${discipline.bg} ${discipline.color}`}
+            >
+              {discipline.label}
+            </span>
+          )}
         </div>
-        <div>
-          <p className="text-lg font-bold">{mapStat.enemies_flashed}</p>
-          <p className="text-xs text-muted-foreground">Enemies Flashed</p>
+        <div className="grid grid-cols-2 gap-3 text-center">
+          <div>
+            <p className="text-2xl font-bold text-green-400">
+              {mapStat.enemies_flashed}
+            </p>
+            <p className="text-[11px] text-muted-foreground leading-tight mt-0.5">
+              enemy
+              <br />
+              flashed
+            </p>
+          </div>
+          <div>
+            <p className="text-2xl font-bold">
+              {mapStat.total_ef_duration.toFixed(1)}s
+            </p>
+            <p className="text-[11px] text-muted-foreground leading-tight mt-0.5">
+              total blind
+              <br />
+              time
+            </p>
+          </div>
         </div>
-        <div>
-          <p className="text-lg font-bold">{mapStat.awp_kills}</p>
-          <p className="text-xs text-muted-foreground">AWP Kills</p>
+
+        {/* Distribution bar: CT and T side separated */}
+        {(() => {
+          const ctTotal = mapStat.enemies_flashed_ct + mapStat.mates_flashed_ct;
+          const tTotal = mapStat.enemies_flashed_t + mapStat.mates_flashed_t;
+          const ctEnemyPct =
+            ctTotal > 0 ? (mapStat.enemies_flashed_ct / ctTotal) * 100 : 0;
+          const ctMatePct =
+            ctTotal > 0 ? (mapStat.mates_flashed_ct / ctTotal) * 100 : 0;
+          const tEnemyPct =
+            tTotal > 0 ? (mapStat.enemies_flashed_t / tTotal) * 100 : 0;
+          const tMatePct =
+            tTotal > 0 ? (mapStat.mates_flashed_t / tTotal) * 100 : 0;
+          return (
+            <div className="space-y-2">
+              {/* CT row */}
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-[10px] font-bold text-sky-400 w-5 shrink-0">
+                    CT
+                  </span>
+                  <div className="flex h-2 flex-1 rounded-full overflow-hidden">
+                    <div
+                      className="bg-green-400/70"
+                      style={{ width: `${ctEnemyPct}%` }}
+                    />
+                    <div
+                      className="bg-amber-400/70"
+                      style={{ width: `${ctMatePct}%` }}
+                    />
+                    {ctTotal === 0 && <div className="bg-gray-700 w-full" />}
+                  </div>
+                  <span className="text-[10px] text-muted-foreground tabular-nums w-16 text-right shrink-0">
+                    {mapStat.enemies_flashed_ct}e · {mapStat.mates_flashed_ct}t
+                  </span>
+                </div>
+              </div>
+              {/* T row */}
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-[10px] font-bold text-amber-400 w-5 shrink-0">
+                    T
+                  </span>
+                  <div className="flex h-2 flex-1 rounded-full overflow-hidden">
+                    <div
+                      className="bg-green-400/70"
+                      style={{ width: `${tEnemyPct}%` }}
+                    />
+                    <div
+                      className="bg-amber-400/70"
+                      style={{ width: `${tMatePct}%` }}
+                    />
+                    {tTotal === 0 && <div className="bg-gray-700 w-full" />}
+                  </div>
+                  <span className="text-[10px] text-muted-foreground tabular-nums w-16 text-right shrink-0">
+                    {mapStat.enemies_flashed_t}e · {mapStat.mates_flashed_t}t
+                  </span>
+                </div>
+              </div>
+              {/* self-flash line */}
+              {mapStat.self_flashes > 0 && (
+                <p className="text-[11px] text-muted-foreground">
+                  <span className="text-red-400 font-semibold">
+                    {mapStat.self_flashes}
+                  </span>{" "}
+                  self-flash{mapStat.self_flashes !== 1 ? "es" : ""}
+                </p>
+              )}
+              <div className="flex justify-between items-center">
+                <p className="text-[11px] text-muted-foreground">
+                  <span className="text-green-400">■</span> enemy {"  "}
+                  <span className="text-amber-400">■</span> teammate
+                </p>
+                <p className="text-[11px] text-muted-foreground tabular-nums">
+                  {(100 - enemyPct).toFixed(0)}% friendly
+                </p>
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* Flash assists + thrown */}
+        <div className="grid grid-cols-2 gap-2 text-center pt-1">
+          <div>
+            <p className="text-sm font-semibold">{mapStat.flash_assists}</p>
+            <p className="text-[11px] text-muted-foreground">Flash assists</p>
+          </div>
+          <div>
+            <p className="text-sm font-semibold">{mapStat.flashes_thrown}</p>
+            <p className="text-[11px] text-muted-foreground">Thrown</p>
+          </div>
         </div>
       </div>
     </div>
