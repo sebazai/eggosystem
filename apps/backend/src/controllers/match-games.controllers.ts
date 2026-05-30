@@ -5,7 +5,11 @@ import {
   getGamePlayerStats,
   getGameTeamRoundBreakdown,
   getGameTopPlayers,
-  getGameClip
+  getGameClip,
+  getWeaponStats,
+  getHitStats,
+  getPlayerRoundEvents,
+  getPlayerGameUtilityStats
 } from "../models/match-game.models";
 import {
   getMatchGameAfterplantAnalysis,
@@ -68,8 +72,9 @@ export const getGamePlayerStatsController = async (
 ) => {
   const match_game_id = parseInt(req.params.match_game_id, 10);
   const stat = req.query.stat as "CT" | "T" | undefined;
+  const steam_id = req.query.steam_id as string | undefined;
 
-  const playerstats = await getGamePlayerStats(match_game_id, stat);
+  const playerstats = await getGamePlayerStats(match_game_id, stat, steam_id);
 
   res.json(playerstats);
 };
@@ -201,6 +206,58 @@ export const getRoundUtilitySummaryController = async (
   const match_game_id = parseInt(req.params.match_game_id, 10);
   const data = await getRoundUtilitySummary(match_game_id);
   res.json({ round_utility_summary: data });
+};
+
+export const getWeaponStatsController = async (
+  req: RequestWithParams<{ match_game_id: string }>,
+  res: Response,
+  next: NextFunction
+) => {
+  const match_game_id = parseInt(req.params.match_game_id, 10);
+  const steam_id = req.query.steam_id as string | undefined;
+  if (!steam_id)
+    return next(new BadRequestError("steam_id query param required"));
+  const data = await getWeaponStats(match_game_id, steam_id);
+  res.json({ weapons: data });
+};
+
+export const getHitStatsController = async (
+  req: RequestWithParams<{ match_game_id: string }>,
+  res: Response,
+  next: NextFunction
+) => {
+  const match_game_id = parseInt(req.params.match_game_id, 10);
+  const steam_id = req.query.steam_id as string | undefined;
+  if (!steam_id)
+    return next(new BadRequestError("steam_id query param required"));
+  const data = await getHitStats(match_game_id, steam_id);
+  res.json(data);
+};
+
+export const getPlayerRoundEventsController = async (
+  req: RequestWithParams<{ match_game_id: string }>,
+  res: Response,
+  next: NextFunction
+) => {
+  const match_game_id = parseInt(req.params.match_game_id, 10);
+  const steam_id = req.query.steam_id as string | undefined;
+  if (!steam_id)
+    return next(new BadRequestError("steam_id query param required"));
+  const data = await getPlayerRoundEvents(match_game_id, steam_id);
+  res.json(data);
+};
+
+export const getPlayerUtilityStatsController = async (
+  req: RequestWithParams<{ match_game_id: string }>,
+  res: Response,
+  next: NextFunction
+) => {
+  const match_game_id = parseInt(req.params.match_game_id, 10);
+  const steam_id = req.query.steam_id as string | undefined;
+  if (!steam_id)
+    return next(new BadRequestError("steam_id query param required"));
+  const data = await getPlayerGameUtilityStats(match_game_id, steam_id);
+  res.json(data);
 };
 
 export const getGameClipController = async (
