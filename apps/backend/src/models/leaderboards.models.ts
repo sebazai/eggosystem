@@ -45,7 +45,17 @@ export const leaderboardExpressions: {
   avg_enemy_flash_time:
     "sum(ps.total_ef_duration) / GREATEST(sum(ps.enemies_flashed), 1)",
   avg_teammate_flash_time:
-    "sum(ps.total_mf_duration) / GREATEST(sum(ps.mates_flashed), 1)"
+    "sum(ps.total_mf_duration) / GREATEST(sum(ps.mates_flashed), 1)",
+
+  // KanaRating 3.2 new metrics
+  ace_king: "sum(ps.kills_5)",
+  counter_strafer:
+    "sum(ps.good_strafing_shots) / GREATEST(sum(ps.total_strafing_shots), 1)",
+  marksman: "sum(ps.shots_hit) / GREATEST(sum(ps.shots), 1)",
+  clutch_king: "sum(ps.clutches_won) / GREATEST(sum(ps.clutches), 1)",
+  round_swinger: "COALESCE(SUM(rse_agg.game_impact), 0)",
+  avg_swing_per_event:
+    "COALESCE(SUM(rse_agg.game_impact) / GREATEST(SUM(rse_agg.event_count), 1), 0)"
 };
 
 /**
@@ -102,6 +112,14 @@ export const getLeaderboard = async <K extends keyof LeaderboardResponse>({
       FROM TeamGameScores
       GROUP BY match_game_id
     ) AS game_rounds ON game_rounds.match_game_id = mg.id
+    LEFT JOIN (
+      SELECT match_game_id, primary_player_steam_id,
+             SUM(ABS(delta)) AS game_impact,
+             COUNT(*) AS event_count
+      FROM RoundSwingEvents
+      GROUP BY match_game_id, primary_player_steam_id
+    ) AS rse_agg ON rse_agg.match_game_id = ps.match_game_id
+               AND rse_agg.primary_player_steam_id = ps.steam_id
     WHERE ${query} AND m.status = 'FINISHED'
     GROUP BY p.steam_id, p.nickname, t.name, t.team_logo
     HAVING COUNT(DISTINCT mg.id) > 2

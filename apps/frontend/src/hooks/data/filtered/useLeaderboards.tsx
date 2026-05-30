@@ -439,6 +439,86 @@ export const useLeaderboards = (params: FilterParamsQuery) => {
         matches_played: player.matches_played,
         rank: index + 1
       }))
+    },
+
+    // KanaRating 3.2 new metrics
+    {
+      title: "Ace King",
+      unit: "",
+      players: (data.ace_king || []).map((player, index) => ({
+        steam_id: player.steam_id,
+        nickname: player.nickname,
+        team_name: player.team_name,
+        team_logo: player.team_logo,
+        value: player.ace_king,
+        matches_played: player.matches_played,
+        rank: index + 1
+      }))
+    },
+    {
+      title: "Counter Strafer",
+      unit: "%",
+      players: (data.counter_strafer || []).map((player, index) => ({
+        steam_id: player.steam_id,
+        nickname: player.nickname,
+        team_name: player.team_name,
+        team_logo: player.team_logo,
+        value: Math.round(player.counter_strafer * 1000) / 10,
+        matches_played: player.matches_played,
+        rank: index + 1
+      }))
+    },
+    {
+      title: "Marksman",
+      unit: "%",
+      players: (data.marksman || []).map((player, index) => ({
+        steam_id: player.steam_id,
+        nickname: player.nickname,
+        team_name: player.team_name,
+        team_logo: player.team_logo,
+        value: Math.round(player.marksman * 1000) / 10,
+        matches_played: player.matches_played,
+        rank: index + 1
+      }))
+    },
+    {
+      title: "Clutch King",
+      unit: "%",
+      players: (data.clutch_king || []).map((player, index) => ({
+        steam_id: player.steam_id,
+        nickname: player.nickname,
+        team_name: player.team_name,
+        team_logo: player.team_logo,
+        value: Math.round(player.clutch_king * 1000) / 10,
+        matches_played: player.matches_played,
+        rank: index + 1
+      }))
+    },
+    {
+      title: "Round Swinger",
+      unit: "",
+      players: (data.round_swinger || []).map((player, index) => ({
+        steam_id: player.steam_id,
+        nickname: player.nickname,
+        team_name: player.team_name,
+        team_logo: player.team_logo,
+        value: Math.round(player.round_swinger * 10) / 10,
+        matches_played: player.matches_played,
+        rank: index + 1
+      }))
+    },
+    {
+      title: "Avg Swing per Event",
+      unit: "",
+      players: (data.avg_swing_per_event || []).map((player, index) => ({
+        steam_id: player.steam_id,
+        nickname: player.nickname,
+        team_name: player.team_name,
+        team_logo: player.team_logo,
+        value: Math.round(player.avg_swing_per_event * 100) / 100,
+        matches_played: player.matches_played,
+        rank: index + 1
+      }))
     }
   ];
 

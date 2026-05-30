@@ -45,7 +45,15 @@ export const getFilteredMultipleLeaderboardsController = async (
     "assists_per_round",
     "enemies_flashed_per_flash",
     "avg_enemy_flash_time",
-    "avg_teammate_flash_time"
+    "avg_teammate_flash_time",
+
+    // KanaRating 3.2 new metrics
+    "ace_king",
+    "counter_strafer",
+    "marksman",
+    "clutch_king",
+    "round_swinger",
+    "avg_swing_per_event"
   ] as const satisfies readonly (keyof LeaderboardResponse)[];
 
   const results = await Promise.all(

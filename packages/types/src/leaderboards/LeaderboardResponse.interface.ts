@@ -52,4 +52,11 @@ export type LeaderboardResponse = {
   avg_teammate_flash_time: Array<
     BaseResponse & { avg_teammate_flash_time: number }
   >;
+  // Derived stats — KanaRating 3.2 / new metrics
+  ace_king: Array<BaseResponse & { ace_king: number }>;
+  counter_strafer: Array<BaseResponse & { counter_strafer: number }>;
+  marksman: Array<BaseResponse & { marksman: number }>;
+  clutch_king: Array<BaseResponse & { clutch_king: number }>;
+  round_swinger: Array<BaseResponse & { round_swinger: number }>;
+  avg_swing_per_event: Array<BaseResponse & { avg_swing_per_event: number }>;
 };
