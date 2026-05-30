@@ -360,6 +360,22 @@ export interface WastedUtilityEvent {
 }
 
 /** @public */
+export interface HitEvent {
+  round_number: number;
+  time_in_round: number; // Seconds since round start
+  attacker: number; // SteamID64 as number; equals victim for self-damage
+  attacker_team: "CT" | "T";
+  victim: number; // SteamID64 as number
+  victim_team: "CT" | "T";
+  weapon: string;
+  hit_group: string; // head | chest | stomach | left_arm | right_arm | left_leg | right_leg | neck | gear | generic
+  health_damage: number; // Capped HP damage (no over-damage)
+  armor_damage: number; // Capped armor damage
+  health_remaining: number; // Victim HP after hit; 0 on kill
+  is_kill_hit: boolean; // True for the shot that killed the victim
+}
+
+/** @public */
 export interface RoundUtilitySummaryEntry {
   round_number: number;
   steam_id: number;
@@ -389,6 +405,7 @@ export interface ParsedPayload {
   NewRoundInfo: DemoNewRoundInfo;
   RoundImpacts: DemoRoundImpact[];
   KillLog?: KillEvent[];
+  HitLog?: HitEvent[];
   // KanaRating 3.2 event logs (absent on old parser output — always treat as optional)
   Meta?: ParsedPayloadMeta;
   FlashLog?: FlashEvent[];
