@@ -10,6 +10,7 @@ import { KillMatrixTab } from "./KillMatrixTab";
 import { TradeTab } from "./TradeTab";
 import { InsightsTab } from "./InsightsTab";
 import { RoundSwingTab } from "./RoundSwingTab";
+import { SupportUtilityTab } from "./SupportUtilityTab";
 import { useMatchGameAfterplantAnalysis } from "@/hooks/data/useMatchGameAfterplantAnalysis";
 import { useMatchGameOpeningDuels } from "@/hooks/data/useMatchGameOpeningDuels";
 import { useMatchGameTradeStats } from "@/hooks/data/useMatchGameTradeStats";
@@ -28,7 +29,8 @@ const VALID_TABS = [
   "opening-duels",
   "kill-matrix",
   "trades",
-  "round-swings"
+  "round-swings",
+  "support-utility"
 ] as const;
 type TabValue = (typeof VALID_TABS)[number];
 
@@ -119,6 +121,12 @@ export const MatchGameAnalysis = ({
         >
           Round Swings
         </TabsTrigger>
+        <TabsTrigger
+          value="support-utility"
+          className="col-span-2 sm:col-span-1 h-auto sm:h-full py-2 whitespace-normal sm:whitespace-nowrap text-center text-xs sm:text-sm"
+        >
+          Support &amp; Utility
+        </TabsTrigger>
       </TabsList>
 
       <TabsContent value="insights">
@@ -178,6 +186,17 @@ export const MatchGameAnalysis = ({
           playerNames={playerNames}
           teams={matchInfo.teams}
         />
+      </TabsContent>
+
+      <TabsContent value="support-utility">
+        {isLoadingPlayers && <TableSkeleton rows={6} />}
+        {!isLoadingPlayers && playerStats && (
+          <SupportUtilityTab
+            matchGameId={matchGameId}
+            playerStats={playerStats}
+            teams={matchInfo.teams}
+          />
+        )}
       </TabsContent>
     </Tabs>
   );

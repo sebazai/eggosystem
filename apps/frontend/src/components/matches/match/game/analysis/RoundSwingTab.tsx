@@ -382,8 +382,8 @@ export const RoundSwingTab = ({
 
       {!isLoading && sorted.length > 0 && (
         <p className="text-[10px] text-muted-foreground/50">
-          Win probability = CT team&apos;s chance of winning the round · before and
-          after the pivotal event
+          Win probability = CT team&apos;s chance of winning the round · before
+          and after the pivotal event
         </p>
       )}
     </div>

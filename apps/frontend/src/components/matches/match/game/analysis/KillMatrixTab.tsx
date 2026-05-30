@@ -10,10 +10,7 @@ import {
   type KillMatrixFilters
 } from "@/hooks/data/useMatchGameKillMatrix";
 import { useEntryKills, type EntryKill } from "@/hooks/data/useEntryKills";
-import type {
-  MatchInfo,
-  MatchPlayerStats
-} from "@eggosystem/types";
+import type { MatchInfo, MatchPlayerStats } from "@eggosystem/types";
 import { orderMatchParticipantsBySideHomeLeft } from "@/lib/order-match-teams-home-left-away";
 
 /* ─────────────────────────────────────────── */
@@ -492,7 +489,9 @@ const EntryKillsSection = ({
     );
   }
 
-  const withFlash = entryKills.filter((e) => e.setup_flash_thrower !== null).length;
+  const withFlash = entryKills.filter(
+    (e) => e.setup_flash_thrower !== null
+  ).length;
   const traded = entryKills.filter((e) => e.was_victim_traded === true).length;
   const tEntries = entryKills.filter((e) => e.killer_team === "T").length;
   const ctEntries = entryKills.filter((e) => e.killer_team === "CT").length;
@@ -502,9 +501,21 @@ const EntryKillsSection = ({
       {/* Summary row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "T-side entries", value: tEntries, color: "text-amber-300/80" },
-          { label: "CT-side entries", value: ctEntries, color: "text-sky-300/80" },
-          { label: "Flash-assisted", value: withFlash, color: "text-violet-400/80" },
+          {
+            label: "T-side entries",
+            value: tEntries,
+            color: "text-amber-300/80"
+          },
+          {
+            label: "CT-side entries",
+            value: ctEntries,
+            color: "text-sky-300/80"
+          },
+          {
+            label: "Flash-assisted",
+            value: withFlash,
+            color: "text-violet-400/80"
+          },
           { label: "Entry traded", value: traded, color: "text-emerald-400/80" }
         ].map(({ label, value, color }) => (
           <div key={label} className="rounded-lg border bg-card p-3 space-y-1">
@@ -523,24 +534,37 @@ const EntryKillsSection = ({
           <table className="w-full text-xs border-collapse">
             <thead>
               <tr className="border-b border-border/40 text-muted-foreground/60 uppercase tracking-wide text-[10px]">
-                <th className="text-left py-2 px-4 font-semibold w-14">Round</th>
+                <th className="text-left py-2 px-4 font-semibold w-14">
+                  Round
+                </th>
                 <th className="text-left py-2 px-2 font-semibold w-12">Time</th>
                 <th className="text-left py-2 px-2 font-semibold">Killer</th>
                 <th className="text-left py-2 px-2 font-semibold">Victim</th>
-                <th className="text-center py-2 px-2 font-semibold w-14">Side</th>
-                <th className="text-left py-2 px-2 font-semibold">Flash assist</th>
-                <th className="text-center py-2 px-2 font-semibold w-16">Traded</th>
+                <th className="text-center py-2 px-2 font-semibold w-14">
+                  Side
+                </th>
+                <th className="text-left py-2 px-2 font-semibold">
+                  Flash assist
+                </th>
+                <th className="text-center py-2 px-2 font-semibold w-16">
+                  Traded
+                </th>
               </tr>
             </thead>
             <tbody>
               {entryKills.map((e) => {
-                const killerName = nameMap.get(e.killer_steam_id) ?? e.killer_steam_id;
-                const victimName = nameMap.get(e.victim_steam_id) ?? e.victim_steam_id;
+                const killerName =
+                  nameMap.get(e.killer_steam_id) ?? e.killer_steam_id;
+                const victimName =
+                  nameMap.get(e.victim_steam_id) ?? e.victim_steam_id;
                 const flashThrowerName = e.setup_flash_thrower
-                  ? (nameMap.get(e.setup_flash_thrower) ?? e.setup_flash_thrower)
+                  ? (nameMap.get(e.setup_flash_thrower) ??
+                    e.setup_flash_thrower)
                   : null;
                 const sideColor =
-                  e.killer_team === "T" ? "text-amber-300/80" : "text-sky-300/80";
+                  e.killer_team === "T"
+                    ? "text-amber-300/80"
+                    : "text-sky-300/80";
                 const sideBg =
                   e.killer_team === "T"
                     ? "bg-amber-300/10 text-amber-300/80"
@@ -559,7 +583,9 @@ const EntryKillsSection = ({
                     <td className={cn("py-2 px-2 font-semibold", sideColor)}>
                       {killerName}
                     </td>
-                    <td className="py-2 px-2 text-foreground/70">{victimName}</td>
+                    <td className="py-2 px-2 text-foreground/70">
+                      {victimName}
+                    </td>
                     <td className="py-2 px-2 text-center">
                       <span
                         className={cn(
@@ -577,11 +603,12 @@ const EntryKillsSection = ({
                           className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded bg-violet-400/10 text-violet-400 font-medium border border-violet-400/20"
                         >
                           ⚡ {flashThrowerName}
-                          {e.victim_blind_seconds != null && e.victim_blind_seconds > 0 && (
-                            <span className="text-violet-400/60">
-                              {e.victim_blind_seconds.toFixed(1)}s
-                            </span>
-                          )}
+                          {e.victim_blind_seconds != null &&
+                            e.victim_blind_seconds > 0 && (
+                              <span className="text-violet-400/60">
+                                {e.victim_blind_seconds.toFixed(1)}s
+                              </span>
+                            )}
                         </span>
                       ) : (
                         <span className="text-muted-foreground/25">—</span>
@@ -606,7 +633,8 @@ const EntryKillsSection = ({
           </table>
         </div>
         <p className="text-[10px] text-muted-foreground/40 px-4 py-2">
-          ⚡ flash = setup flash assisted the kill · ↺ = entry was traded within ~5s
+          ⚡ flash = setup flash assisted the kill · ↺ = entry was traded within
+          ~5s
         </p>
       </div>
     </div>
@@ -849,7 +877,9 @@ export const KillMatrixTab = ({
         {/* Chip filter bar — only on kill matrix tab */}
         {tab === "kills" && (
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-[11px] text-muted-foreground/60">Filter:</span>
+            <span className="text-[11px] text-muted-foreground/60">
+              Filter:
+            </span>
             {(
               [
                 { key: "excludeExitKills", label: "Exclude exit kills" },
@@ -1061,10 +1091,7 @@ export const KillMatrixTab = ({
 
       {/* ── Entry Kills tab ── */}
       {tab === "entry" && (
-        <EntryKillsSection
-          entryKills={entryKills}
-          nameMap={nameMap}
-        />
+        <EntryKillsSection entryKills={entryKills} nameMap={nameMap} />
       )}
     </div>
   );
