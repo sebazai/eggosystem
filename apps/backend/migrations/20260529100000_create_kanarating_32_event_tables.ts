@@ -129,7 +129,7 @@ export async function up(knex: Knex): Promise<void> {
     table.decimal("time_in_round", 7, 3).notNullable();
     table.bigInteger("thrower_steam_id").notNullable();
     table
-      .string("utility_type", 16)
+      .string("utility_type", 32)
       .notNullable()
       .comment("HE | Molotov | Incendiary");
     table.timestamp("created_at").defaultTo(knex.fn.now());
