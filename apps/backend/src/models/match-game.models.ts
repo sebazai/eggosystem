@@ -90,7 +90,8 @@ export const getGameRoundInfo = async (match_game_id: number) => {
 
 export const getGamePlayerStats = async (
   match_game_id: number,
-  stat?: "CT" | "T"
+  stat?: "CT" | "T",
+  steam_id?: string
 ) => {
   // Base fields that are always included
   const baseFields = `
@@ -149,6 +150,8 @@ export const getGamePlayerStats = async (
     `;
   }
 
+  const steamIdFilter = steam_id ? "AND ps.steam_id = ?" : "";
+
   const query = `SELECT
         ${baseFields},
         ${statFields}
@@ -159,11 +162,15 @@ export const getGamePlayerStats = async (
       INNER JOIN SeasonTeamPlayers stp ON stp.season_id = m.season_id AND stp.steam_id = p.steam_id
       INNER JOIN MatchTeams mt ON mt.match_id = m.id AND mt.team_id = stp.team_id
       WHERE ps.match_game_id = ?
+      ${steamIdFilter}
       GROUP BY p.steam_id
       ORDER BY stp.team_id, kills DESC, deaths ASC
       `;
 
-  return runQuery<GamePlayerStats[]>(query, [match_game_id]);
+  const params: (number | string)[] = [match_game_id];
+  if (steam_id) params.push(steam_id);
+
+  return runQuery<GamePlayerStats[]>(query, params);
 };
 
 export const getGameTopPlayers = async (match_game_id: number) => {
@@ -519,4 +526,305 @@ export const saveParsedDemoDataForGame = async (
   } finally {
     connection.release();
   }
+};
+
+// ── Weapon stats ────────────────────────────────────────────────────────────
+
+interface WeaponKillRow {
+  weapon: string;
+  kills: number;
+  headshot_kills: number;
+}
+
+interface WeaponDamageRow {
+  weapon: string;
+  total_damage: number;
+  hits: number;
+}
+
+export interface WeaponStat {
+  weapon: string;
+  kills: number;
+  headshot_kills: number;
+  total_damage: number;
+  hits: number;
+}
+
+export const getWeaponStats = async (
+  match_game_id: number,
+  steam_id: string
+): Promise<WeaponStat[]> => {
+  const [kills, damage] = await Promise.all([
+    runQuery<WeaponKillRow[]>(
+      `SELECT weapon,
+              COUNT(*) AS kills,
+              SUM(is_headshot) AS headshot_kills
+       FROM PlayerKillLogs
+       WHERE match_game_id = ? AND killer = ?
+       GROUP BY weapon
+       ORDER BY kills DESC`,
+      [match_game_id, steam_id]
+    ),
+    runQuery<WeaponDamageRow[]>(
+      `SELECT weapon,
+              SUM(health_damage) AS total_damage,
+              COUNT(*) AS hits
+       FROM PlayerHitLogs
+       WHERE match_game_id = ? AND attacker_steam_id = ?
+         AND attacker_steam_id != victim_steam_id
+       GROUP BY weapon`,
+      [match_game_id, steam_id]
+    )
+  ]);
+
+  const damageMap = new Map(damage.map((d) => [d.weapon, d]));
+  return kills.map((k) => {
+    const d = damageMap.get(k.weapon);
+    return {
+      weapon: k.weapon,
+      kills: Number(k.kills),
+      headshot_kills: Number(k.headshot_kills),
+      total_damage: d ? Number(d.total_damage) : 0,
+      hits: d ? Number(d.hits) : 0
+    };
+  });
+};
+
+// ── Hit-location stats ───────────────────────────────────────────────────────
+
+interface HitGroupCount {
+  hit_group: string;
+  hits: number;
+  damage: number;
+}
+
+export interface HitStats {
+  dealt: HitGroupCount[];
+  received: HitGroupCount[];
+}
+
+export const getHitStats = async (
+  match_game_id: number,
+  steam_id: string
+): Promise<HitStats> => {
+  const [dealt, received] = await Promise.all([
+    runQuery<HitGroupCount[]>(
+      `SELECT hit_group,
+              COUNT(*) AS hits,
+              SUM(health_damage) AS damage
+       FROM PlayerHitLogs
+       WHERE match_game_id = ? AND attacker_steam_id = ?
+         AND attacker_steam_id != victim_steam_id
+       GROUP BY hit_group`,
+      [match_game_id, steam_id]
+    ),
+    runQuery<HitGroupCount[]>(
+      `SELECT hit_group,
+              COUNT(*) AS hits,
+              SUM(health_damage) AS damage
+       FROM PlayerHitLogs
+       WHERE match_game_id = ? AND victim_steam_id = ?
+         AND attacker_steam_id != victim_steam_id
+       GROUP BY hit_group`,
+      [match_game_id, steam_id]
+    )
+  ]);
+
+  return {
+    dealt: dealt.map((r) => ({
+      ...r,
+      hits: Number(r.hits),
+      damage: Number(r.damage)
+    })),
+    received: received.map((r) => ({
+      ...r,
+      hits: Number(r.hits),
+      damage: Number(r.damage)
+    }))
+  };
+};
+
+// ── Per-round events ─────────────────────────────────────────────────────────
+
+interface RoundKillEvent {
+  round_number: number;
+  time_in_round: number;
+  victim_nickname: string;
+  weapon: string;
+  is_headshot: boolean;
+}
+
+interface RoundDeathEvent {
+  round_number: number;
+  time_in_round: number;
+  killer_nickname: string;
+  weapon: string;
+  is_headshot: boolean;
+}
+
+interface RoundFlashEvent {
+  round_number: number;
+  time_in_round: number;
+  victim_nickname: string;
+  duration_seconds: number;
+  is_enemy_flash: boolean;
+}
+
+interface RoundUtilityEvent {
+  round_number: number;
+  utility_damage: number;
+  smokes_thrown: number;
+  flashes_thrown: number;
+  enemies_flashed: number;
+  teammates_flashed: number;
+}
+
+export interface PlayerRoundEvents {
+  kills: RoundKillEvent[];
+  deaths: RoundDeathEvent[];
+  flashes: RoundFlashEvent[];
+  utility: RoundUtilityEvent[];
+}
+
+export const getPlayerRoundEvents = async (
+  match_game_id: number,
+  steam_id: string
+): Promise<PlayerRoundEvents> => {
+  const [kills, deaths, flashes, utility] = await Promise.all([
+    runQuery<RoundKillEvent[]>(
+      `SELECT pkl.round_number,
+              pkl.time_in_round,
+              p.nickname AS victim_nickname,
+              pkl.weapon,
+              pkl.is_headshot
+       FROM PlayerKillLogs pkl
+       JOIN SteamPlayers p ON p.steam_id = pkl.victim
+       WHERE pkl.match_game_id = ? AND pkl.killer = ?
+       ORDER BY pkl.round_number, pkl.time_in_round`,
+      [match_game_id, steam_id]
+    ),
+    runQuery<RoundDeathEvent[]>(
+      `SELECT pkl.round_number,
+              pkl.time_in_round,
+              p.nickname AS killer_nickname,
+              pkl.weapon,
+              pkl.is_headshot
+       FROM PlayerKillLogs pkl
+       JOIN SteamPlayers p ON p.steam_id = pkl.killer
+       WHERE pkl.match_game_id = ? AND pkl.victim = ?
+       ORDER BY pkl.round_number, pkl.time_in_round`,
+      [match_game_id, steam_id]
+    ),
+    runQuery<RoundFlashEvent[]>(
+      `SELECT fe.round_number,
+              fe.time_in_round,
+              p.nickname AS victim_nickname,
+              fe.duration_seconds,
+              fe.is_enemy_flash
+       FROM FlashEvents fe
+       JOIN SteamPlayers p ON p.steam_id = fe.victim_steam_id
+       WHERE fe.match_game_id = ? AND fe.thrower_steam_id = ?
+       ORDER BY fe.round_number, fe.time_in_round`,
+      [match_game_id, steam_id]
+    ),
+    runQuery<RoundUtilityEvent[]>(
+      `SELECT round_number,
+              utility_damage,
+              smokes_thrown,
+              flashes_thrown,
+              enemies_flashed,
+              teammates_flashed
+       FROM RoundUtilitySummary
+       WHERE match_game_id = ? AND steam_id = ?
+       ORDER BY round_number`,
+      [match_game_id, steam_id]
+    )
+  ]);
+
+  return {
+    kills: kills.map((r) => ({
+      ...r,
+      time_in_round: Number(r.time_in_round),
+      is_headshot: Boolean(r.is_headshot)
+    })),
+    deaths: deaths.map((r) => ({
+      ...r,
+      time_in_round: Number(r.time_in_round),
+      is_headshot: Boolean(r.is_headshot)
+    })),
+    flashes: flashes.map((r) => ({
+      ...r,
+      time_in_round: Number(r.time_in_round),
+      duration_seconds: Number(r.duration_seconds),
+      is_enemy_flash: Boolean(r.is_enemy_flash)
+    })),
+    utility: utility.map((r) => ({
+      round_number: Number(r.round_number),
+      utility_damage: Number(r.utility_damage),
+      smokes_thrown: Number(r.smokes_thrown),
+      flashes_thrown: Number(r.flashes_thrown),
+      enemies_flashed: Number(r.enemies_flashed),
+      teammates_flashed: Number(r.teammates_flashed)
+    }))
+  };
+};
+
+// ── Aggregate utility stats for a single player in a single game ──────────────
+
+export interface PlayerGameUtilityStats {
+  flashes_thrown: number;
+  enemies_flashed: number;
+  teammates_flashed: number;
+  smokes_thrown: number;
+  utility_damage: number;
+  wasted_utility: number;
+}
+
+export const getPlayerGameUtilityStats = async (
+  match_game_id: number,
+  steam_id: string
+): Promise<PlayerGameUtilityStats> => {
+  const [summary, wasted] = await Promise.all([
+    runQuery<
+      {
+        flashes_thrown: number;
+        enemies_flashed: number;
+        teammates_flashed: number;
+        smokes_thrown: number;
+        utility_damage: number;
+      }[]
+    >(
+      `SELECT
+        SUM(flashes_thrown)   AS flashes_thrown,
+        SUM(enemies_flashed)  AS enemies_flashed,
+        SUM(teammates_flashed) AS teammates_flashed,
+        SUM(smokes_thrown)    AS smokes_thrown,
+        SUM(utility_damage)   AS utility_damage
+       FROM RoundUtilitySummary
+       WHERE match_game_id = ? AND steam_id = ?`,
+      [match_game_id, steam_id]
+    ),
+    runQuery<{ wasted: number }[]>(
+      `SELECT COUNT(*) AS wasted
+       FROM WastedUtilityEvents
+       WHERE match_game_id = ? AND thrower_steam_id = ?`,
+      [match_game_id, steam_id]
+    )
+  ]);
+
+  const s = summary[0] ?? {
+    flashes_thrown: 0,
+    enemies_flashed: 0,
+    teammates_flashed: 0,
+    smokes_thrown: 0,
+    utility_damage: 0
+  };
+  return {
+    flashes_thrown: Number(s.flashes_thrown ?? 0),
+    enemies_flashed: Number(s.enemies_flashed ?? 0),
+    teammates_flashed: Number(s.teammates_flashed ?? 0),
+    smokes_thrown: Number(s.smokes_thrown ?? 0),
+    utility_damage: Number(s.utility_damage ?? 0),
+    wasted_utility: Number(wasted[0]?.wasted ?? 0)
+  };
 };

@@ -14,4 +14,6 @@ export interface GamePlayerStats {
   enemies_flashed: PlayerStats["enemies_flashed"];
   hs_percent: PlayerStats["hs_percent"];
   kana_rating: PlayerStats["kana_rating"];
+  first_kills: PlayerStats["first_kills"];
+  first_deaths: PlayerStats["first_deaths"];
 }
