@@ -45,16 +45,16 @@ describe("getRoundSwingEvents", () => {
     await getRoundSwingEvents(42);
 
     const [query] = mockRunQuery.mock.calls[0];
-    expect(query).toMatch(/ORDER BY ABS\(delta\) DESC/i);
+    expect(query).toMatch(/ORDER BY ABS\(rse\.delta\) DESC/i);
   });
 
-  it("uses default limit of 5 when not specified", async () => {
+  it("uses default limit of 10 when not specified", async () => {
     mockRunQuery.mockResolvedValue([] as never);
 
     await getRoundSwingEvents(42);
 
     const [, params] = mockRunQuery.mock.calls[0];
-    expect((params as unknown[]).at(-1)).toBe(5);
+    expect((params as unknown[]).at(-1)).toBe(10);
   });
 
   it("uses custom limit when provided", async () => {

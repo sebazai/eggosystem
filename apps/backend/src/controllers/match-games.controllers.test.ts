@@ -395,7 +395,13 @@ describe("match-games analysis controllers", () => {
         post_win_prob: 0.31,
         delta: -0.31,
         primary_player_steam_id: "1001",
-        contributors: [{ steam_id: "1001", contribution: 1 }]
+        contributors: [{ steam_id: "1001", contribution: 1 }],
+        victim_steam_id: "1002",
+        weapon: "AK-47",
+        is_headshot: true,
+        is_post_plant: false,
+        cts_alive_after: 3,
+        ts_alive_after: 4
       }
     ];
 
