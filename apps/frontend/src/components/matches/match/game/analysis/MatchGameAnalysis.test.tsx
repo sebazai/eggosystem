@@ -423,7 +423,6 @@ describe("MatchGameAnalysis", () => {
 
       expect(useMatchGameAfterplantAnalysis).toHaveBeenCalledWith(10340);
       expect(useMatchGameOpeningDuels).toHaveBeenCalledWith(10340);
-      expect(useMatchGameKillMatrix).toHaveBeenCalledWith(10340);
       expect(useMatchGameTradeStats).toHaveBeenCalledWith(10340);
       expect(useMatchGameInsights).toHaveBeenCalledWith(10340);
       expect(useGamePlayerStats).toHaveBeenCalledWith(10340);

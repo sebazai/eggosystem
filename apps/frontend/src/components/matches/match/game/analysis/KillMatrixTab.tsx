@@ -5,11 +5,12 @@ import { cn } from "@/lib/utils";
 import { NextImageFallback } from "@/components/layout/NextImageFallback";
 import { createTeamLogoUrl } from "@/lib/utils";
 import { useFlashMatrix, type FlashPair } from "@/hooks/data/useFlashMatrix";
-import type {
-  MatchGameKillMatrix,
-  MatchInfo,
-  MatchPlayerStats
-} from "@eggosystem/types";
+import {
+  useMatchGameKillMatrix,
+  type KillMatrixFilters
+} from "@/hooks/data/useMatchGameKillMatrix";
+import { useEntryKills, type EntryKill } from "@/hooks/data/useEntryKills";
+import type { MatchInfo, MatchPlayerStats } from "@eggosystem/types";
 import { orderMatchParticipantsBySideHomeLeft } from "@/lib/order-match-teams-home-left-away";
 
 /* ─────────────────────────────────────────── */
@@ -18,7 +19,6 @@ import { orderMatchParticipantsBySideHomeLeft } from "@/lib/order-match-teams-ho
 
 interface KillMatrixTabProps {
   matchGameId: number;
-  matrix: MatchGameKillMatrix;
   playerStats: MatchPlayerStats[];
   teams: MatchInfo["teams"];
 }
@@ -471,19 +471,200 @@ const TopMatchups = ({
 };
 
 /* ─────────────────────────────────────────── */
+/*  Entry kills section                        */
+/* ─────────────────────────────────────────── */
+
+const EntryKillsSection = ({
+  entryKills,
+  nameMap
+}: {
+  entryKills: EntryKill[];
+  nameMap: Map<string, string>;
+}) => {
+  if (entryKills.length === 0) {
+    return (
+      <div className="py-8 text-center text-sm text-muted-foreground">
+        No entry kill data for this game.
+      </div>
+    );
+  }
+
+  const withFlash = entryKills.filter(
+    (e) => e.setup_flash_thrower !== null
+  ).length;
+  const traded = entryKills.filter((e) => e.was_victim_traded === true).length;
+  const tEntries = entryKills.filter((e) => e.killer_team === "T").length;
+  const ctEntries = entryKills.filter((e) => e.killer_team === "CT").length;
+
+  return (
+    <div className="space-y-4">
+      {/* Summary row */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[
+          {
+            label: "T-side entries",
+            value: tEntries,
+            color: "text-amber-300/80"
+          },
+          {
+            label: "CT-side entries",
+            value: ctEntries,
+            color: "text-sky-300/80"
+          },
+          {
+            label: "Flash-assisted",
+            value: withFlash,
+            color: "text-violet-400/80"
+          },
+          { label: "Entry traded", value: traded, color: "text-emerald-400/80" }
+        ].map(({ label, value, color }) => (
+          <div key={label} className="rounded-lg border bg-card p-3 space-y-1">
+            <p className="text-xs text-muted-foreground">{label}</p>
+            <p className={cn("text-2xl font-bold", color)}>{value}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Table */}
+      <div className="rounded-lg border bg-card overflow-hidden">
+        <p className="text-[10px] text-muted-foreground/60 px-4 pt-3 pb-1 uppercase tracking-wide font-semibold">
+          First death per round
+        </p>
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs border-collapse">
+            <thead>
+              <tr className="border-b border-border/40 text-muted-foreground/60 uppercase tracking-wide text-[10px]">
+                <th className="text-left py-2 px-4 font-semibold w-14">
+                  Round
+                </th>
+                <th className="text-left py-2 px-2 font-semibold w-12">Time</th>
+                <th className="text-left py-2 px-2 font-semibold">Killer</th>
+                <th className="text-left py-2 px-2 font-semibold">Victim</th>
+                <th className="text-center py-2 px-2 font-semibold w-14">
+                  Side
+                </th>
+                <th className="text-left py-2 px-2 font-semibold">
+                  Flash assist
+                </th>
+                <th className="text-center py-2 px-2 font-semibold w-16">
+                  Traded
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {entryKills.map((e) => {
+                const killerName =
+                  nameMap.get(e.killer_steam_id) ?? e.killer_steam_id;
+                const victimName =
+                  nameMap.get(e.victim_steam_id) ?? e.victim_steam_id;
+                const flashThrowerName = e.setup_flash_thrower
+                  ? (nameMap.get(e.setup_flash_thrower) ??
+                    e.setup_flash_thrower)
+                  : null;
+                const sideColor =
+                  e.killer_team === "T"
+                    ? "text-amber-300/80"
+                    : "text-sky-300/80";
+                const sideBg =
+                  e.killer_team === "T"
+                    ? "bg-amber-300/10 text-amber-300/80"
+                    : "bg-sky-300/10 text-sky-300/80";
+                return (
+                  <tr
+                    key={e.round_number}
+                    className="border-b border-border/20 hover:bg-muted/20"
+                  >
+                    <td className="py-2 px-4 font-mono font-bold text-muted-foreground/60">
+                      R{e.round_number}
+                    </td>
+                    <td className="py-2 px-2 tabular-nums text-muted-foreground/50">
+                      {Math.round(e.time_in_round)}s
+                    </td>
+                    <td className={cn("py-2 px-2 font-semibold", sideColor)}>
+                      {killerName}
+                    </td>
+                    <td className="py-2 px-2 text-foreground/70">
+                      {victimName}
+                    </td>
+                    <td className="py-2 px-2 text-center">
+                      <span
+                        className={cn(
+                          "text-[10px] font-bold px-2 py-0.5 rounded",
+                          sideBg
+                        )}
+                      >
+                        {e.killer_team}
+                      </span>
+                    </td>
+                    <td className="py-2 px-2">
+                      {flashThrowerName ? (
+                        <span
+                          title={`${flashThrowerName} flashed the victim${e.victim_blind_seconds != null && e.victim_blind_seconds > 0 ? ` for ${e.victim_blind_seconds.toFixed(1)}s` : ""}`}
+                          className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded bg-violet-400/10 text-violet-400 font-medium border border-violet-400/20"
+                        >
+                          ⚡ {flashThrowerName}
+                          {e.victim_blind_seconds != null &&
+                            e.victim_blind_seconds > 0 && (
+                              <span className="text-violet-400/60">
+                                {e.victim_blind_seconds.toFixed(1)}s
+                              </span>
+                            )}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground/25">—</span>
+                      )}
+                    </td>
+                    <td className="py-2 px-2 text-center">
+                      {e.was_victim_traded === true ? (
+                        <span
+                          title="Entry was traded back"
+                          className="text-emerald-400 font-bold text-sm"
+                        >
+                          ↺
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground/25">—</span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        <p className="text-[10px] text-muted-foreground/40 px-4 py-2">
+          ⚡ flash = setup flash assisted the kill · ↺ = entry was traded within
+          ~5s
+        </p>
+      </div>
+    </div>
+  );
+};
+
+/* ─────────────────────────────────────────── */
 /*  Main tab                                   */
 /* ─────────────────────────────────────────── */
 
 export const KillMatrixTab = ({
   matchGameId,
-  matrix,
   playerStats,
   teams
 }: KillMatrixTabProps) => {
-  const [tab, setTab] = useState<"kills" | "flashes">("kills");
+  const [tab, setTab] = useState<"kills" | "flashes" | "entry">("kills");
+  const [filters, setFilters] = useState<KillMatrixFilters>({
+    excludeExitKills: false,
+    postPlantOnly: false,
+    excludeEcoKills: false
+  });
 
+  const toggleFilter = (key: keyof KillMatrixFilters) =>
+    setFilters((prev) => ({ ...prev, [key]: !prev[key] }));
+
+  const { killMatrix: matrix, isLoading: isLoadingMatrix } =
+    useMatchGameKillMatrix(matchGameId, filters);
   const { flashMatrix, playerStats: flashPlayerStats } =
     useFlashMatrix(matchGameId);
+  const { entryKills } = useEntryKills(matchGameId);
 
   const teamList = useMemo(
     () => orderMatchParticipantsBySideHomeLeft(Object.values(teams)),
@@ -529,19 +710,19 @@ export const KillMatrixTab = ({
   // Kill lookup maps
   const killMap = useMemo(() => {
     const m = new Map<string, number>();
-    for (const k of matrix.kills) {
+    for (const k of matrix?.kills ?? []) {
       m.set(`${k.killer_steam_id}|${k.victim_steam_id}`, k.count);
     }
     return m;
-  }, [matrix.kills]);
+  }, [matrix?.kills]);
 
   const flashMap = useMemo(() => {
     const m = new Map<string, number>();
-    for (const f of matrix.flash_assists) {
+    for (const f of matrix?.flash_assists ?? []) {
       m.set(`${f.assister_steam_id}|${f.victim_steam_id}`, f.count);
     }
     return m;
-  }, [matrix.flash_assists]);
+  }, [matrix?.flash_assists]);
 
   const getKill = (killer: string, victim: string) =>
     killMap.get(`${killer}|${victim}`) ?? 0;
@@ -578,21 +759,21 @@ export const KillMatrixTab = ({
   // Top matchup data
   const topKills = useMemo(
     () =>
-      matrix.kills.map((k) => ({
+      (matrix?.kills ?? []).map((k) => ({
         aId: k.killer_steam_id,
         bId: k.victim_steam_id,
         count: k.count
       })),
-    [matrix.kills]
+    [matrix?.kills]
   );
   const _topFlashes = useMemo(
     () =>
-      matrix.flash_assists.map((f) => ({
+      (matrix?.flash_assists ?? []).map((f) => ({
         aId: f.assister_steam_id,
         bId: f.victim_steam_id,
         count: f.count
       })),
-    [matrix.flash_assists]
+    [matrix?.flash_assists]
   );
 
   // Rich flash matrix data (from /flash-matrix endpoint, all pairs including self/friendly)
@@ -668,27 +849,68 @@ export const KillMatrixTab = ({
         ))}
       </div>
 
-      {/* ── Tab selector ── */}
-      <div className="flex gap-2">
-        {(
-          [
-            { key: "kills", label: "Kill matrix" },
-            { key: "flashes", label: "Flash matrix" }
-          ] as const
-        ).map(({ key, label }) => (
-          <button
-            key={key}
-            onClick={() => setTab(key)}
-            className={cn(
-              "px-4 py-1.5 rounded-full text-xs font-semibold border transition-colors",
-              tab === key
-                ? "bg-accent text-accent-foreground border-accent"
-                : "bg-transparent text-muted-foreground border-border hover:border-foreground/30"
+      {/* ── Tab selector + chip filters ── */}
+      <div className="space-y-2">
+        <div className="flex gap-2">
+          {(
+            [
+              { key: "kills", label: "Kill matrix" },
+              { key: "flashes", label: "Flash matrix" },
+              { key: "entry", label: "Entry kills" }
+            ] as const
+          ).map(({ key, label }) => (
+            <button
+              key={key}
+              onClick={() => setTab(key)}
+              className={cn(
+                "px-4 py-1.5 rounded-full text-xs font-semibold border transition-colors",
+                tab === key
+                  ? "bg-accent text-accent-foreground border-accent"
+                  : "bg-transparent text-muted-foreground border-border hover:border-foreground/30"
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {/* Chip filter bar — only on kill matrix tab */}
+        {tab === "kills" && (
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[11px] text-muted-foreground/60">
+              Filter:
+            </span>
+            {(
+              [
+                { key: "excludeExitKills", label: "Exclude exit kills" },
+                { key: "postPlantOnly", label: "Post-plant only" },
+                { key: "excludeEcoKills", label: "Eco kills only" }
+              ] as const
+            ).map(({ key, label }) => {
+              const active = !!filters[key];
+              return (
+                <button
+                  key={key}
+                  onClick={() => toggleFilter(key)}
+                  className={cn(
+                    "px-3 py-1 text-[11px] rounded-full border transition-colors",
+                    active
+                      ? "border-accent bg-accent/15 text-accent font-semibold"
+                      : "border-border text-muted-foreground hover:border-foreground/30"
+                  )}
+                >
+                  {active && "✓ "}
+                  {label}
+                </button>
+              );
+            })}
+            {isLoadingMatrix && (
+              <span className="text-[11px] text-muted-foreground/40 animate-pulse">
+                loading…
+              </span>
             )}
-          >
-            {label}
-          </button>
-        ))}
+          </div>
+        )}
       </div>
 
       {/* ── Kill matrix ── */}
@@ -865,6 +1087,11 @@ export const KillMatrixTab = ({
             </div>
           </div>
         </div>
+      )}
+
+      {/* ── Entry Kills tab ── */}
+      {tab === "entry" && (
+        <EntryKillsSection entryKills={entryKills} nameMap={nameMap} />
       )}
     </div>
   );
