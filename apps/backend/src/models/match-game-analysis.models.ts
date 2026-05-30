@@ -2413,6 +2413,13 @@ export interface RoundSwingRow {
   delta: number;
   primary_player_steam_id: string;
   contributors: SwingContributorParsed[];
+  // Kill detail fields — populated when event_type = 'kill'
+  victim_steam_id: string | null;
+  weapon: string | null;
+  is_headshot: boolean | null;
+  is_post_plant: boolean | null;
+  cts_alive_after: number | null;
+  ts_alive_after: number | null;
 }
 
 interface GetRoundSwingEventsOptions {
@@ -2422,44 +2429,72 @@ interface GetRoundSwingEventsOptions {
 
 export const getRoundSwingEvents = async (
   matchGameId: number,
-  { roundNumber, limit = 5 }: GetRoundSwingEventsOptions = {}
+  { roundNumber, limit = 10 }: GetRoundSwingEventsOptions = {}
 ): Promise<RoundSwingRow[]> => {
-  const conditions: string[] = ["match_game_id = ?"];
+  const conditions: string[] = ["rse.match_game_id = ?"];
   const params: (number | string)[] = [matchGameId];
 
   if (roundNumber !== undefined) {
-    conditions.push("round_number = ?");
+    conditions.push("rse.round_number = ?");
     params.push(roundNumber);
   }
 
   const where = conditions.join(" AND ");
-  // Order by |delta| DESC so the most impactful swings come first
+  // Select top N by |delta|, then sort chronologically for display
+  const outerOrder =
+    roundNumber !== undefined
+      ? "time_in_round ASC"
+      : "round_number ASC, time_in_round ASC";
+
   const query = `
-    SELECT
-      round_number,
-      time_in_round,
-      event_type,
-      pre_win_prob,
-      post_win_prob,
-      delta,
-      primary_player_steam_id,
-      contributors
-    FROM RoundSwingEvents
-    WHERE ${where}
-    ORDER BY ABS(delta) DESC
-    LIMIT ?
+    SELECT * FROM (
+      SELECT
+        rse.round_number,
+        rse.time_in_round,
+        rse.event_type,
+        rse.pre_win_prob,
+        rse.post_win_prob,
+        rse.delta,
+        rse.primary_player_steam_id,
+        rse.contributors,
+        pkl.victim            AS victim_steam_id,
+        pkl.weapon,
+        pkl.is_headshot,
+        pkl.is_post_plant,
+        pkl.cts_alive_after,
+        pkl.ts_alive_after
+      FROM RoundSwingEvents rse
+      LEFT JOIN PlayerKillLogs pkl ON (
+        pkl.match_game_id = rse.match_game_id
+        AND pkl.round_number = rse.round_number
+        AND pkl.killer = rse.primary_player_steam_id
+        AND ABS(pkl.time_in_round - rse.time_in_round) < 0.5
+      )
+      WHERE ${where}
+      ORDER BY ABS(rse.delta) DESC
+      LIMIT ?
+    ) AS top_swings
+    ORDER BY ${outerOrder}
   `;
   params.push(limit);
 
   const rows = await runQuery<
-    Array<Omit<RoundSwingRow, "contributors"> & { contributors: string }>
+    Array<
+      Omit<RoundSwingRow, "contributors" | "is_headshot" | "is_post_plant"> & {
+        contributors: string;
+        is_headshot: number | null;
+        is_post_plant: number | null;
+      }
+    >
   >(query, params);
 
   return rows.map((r) => ({
     ...r,
     contributors: r.contributors
       ? (jsonBig.parse(r.contributors) as SwingContributorParsed[])
-      : []
+      : [],
+    is_headshot: r.is_headshot !== null ? r.is_headshot === 1 : null,
+    is_post_plant: r.is_post_plant !== null ? r.is_post_plant === 1 : null
   }));
 };
 
