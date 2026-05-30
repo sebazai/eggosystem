@@ -44,3 +44,41 @@ export const saveWastedUtilityEventsForGame = async ({
     connection
   );
 };
+
+/* ─────────────────────────────────────────────────────────
+ *  Query: Wasted Utility by Player
+ * ─────────────────────────────────────────────────────────*/
+
+export interface WastedUtilityByPlayer {
+  thrower_steam_id: string;
+  utility_type: string;
+  count: number;
+}
+
+export const getWastedUtilityByPlayer = async (
+  match_game_id: number
+): Promise<WastedUtilityByPlayer[]> => {
+  const rows = await runQuery<
+    {
+      thrower_steam_id: string | number;
+      utility_type: string;
+      count: number;
+    }[]
+  >(
+    `SELECT
+      thrower_steam_id,
+      utility_type,
+      COUNT(*) AS count
+    FROM WastedUtilityEvents
+    WHERE match_game_id = ?
+    GROUP BY thrower_steam_id, utility_type
+    ORDER BY count DESC`,
+    [match_game_id]
+  );
+
+  return rows.map((r) => ({
+    thrower_steam_id: String(r.thrower_steam_id),
+    utility_type: r.utility_type,
+    count: r.count
+  }));
+};

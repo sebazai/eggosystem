@@ -13,12 +13,17 @@ import {
   getMatchGameKillMatrix,
   getMatchGameTradeStats,
   getMatchGameInsights,
-  getRoundSwingEvents
+  getRoundSwingEvents,
+  getEntryKills,
+  type KillMatrixFilters
 } from "../models/match-game-analysis.models";
 import {
   getFlashMatrix,
   getPlayerFlashStats
 } from "../models/flash-events.models";
+import { getSetupPairs } from "../models/setup-events.models";
+import { getWastedUtilityByPlayer } from "../models/wasted-utility-events.models";
+import { getRoundUtilitySummary } from "../models/round-utility-summary.models";
 import { BadRequestError, NotFoundError } from "../utils/errors";
 import { getTeamStats } from "../models/match.models";
 
@@ -98,7 +103,12 @@ export const getMatchGameKillMatrixController = async (
   res: Response
 ) => {
   const match_game_id = parseInt(req.params.match_game_id, 10);
-  const data = await getMatchGameKillMatrix(match_game_id);
+  const filters: KillMatrixFilters = {
+    excludeExitKills: req.query.excludeExitKills === "true",
+    postPlantOnly: req.query.postPlantOnly === "true",
+    excludeEcoKills: req.query.excludeEcoKills === "true"
+  };
+  const data = await getMatchGameKillMatrix(match_game_id, filters);
   res.json(data);
 };
 
@@ -155,6 +165,42 @@ export const getFlashMatrixController = async (
     getPlayerFlashStats(match_game_id)
   ]);
   res.json({ flash_matrix: matrix, player_stats: playerStats });
+};
+
+export const getEntryKillsController = async (
+  req: RequestWithParams<{ match_game_id: string }>,
+  res: Response
+) => {
+  const match_game_id = parseInt(req.params.match_game_id, 10);
+  const data = await getEntryKills(match_game_id);
+  res.json({ entry_kills: data });
+};
+
+export const getSetupPairsController = async (
+  req: RequestWithParams<{ match_game_id: string }>,
+  res: Response
+) => {
+  const match_game_id = parseInt(req.params.match_game_id, 10);
+  const data = await getSetupPairs(match_game_id);
+  res.json({ setup_pairs: data });
+};
+
+export const getWastedUtilityController = async (
+  req: RequestWithParams<{ match_game_id: string }>,
+  res: Response
+) => {
+  const match_game_id = parseInt(req.params.match_game_id, 10);
+  const data = await getWastedUtilityByPlayer(match_game_id);
+  res.json({ wasted_utility: data });
+};
+
+export const getRoundUtilitySummaryController = async (
+  req: RequestWithParams<{ match_game_id: string }>,
+  res: Response
+) => {
+  const match_game_id = parseInt(req.params.match_game_id, 10);
+  const data = await getRoundUtilitySummary(match_game_id);
+  res.json({ round_utility_summary: data });
 };
 
 export const getGameClipController = async (

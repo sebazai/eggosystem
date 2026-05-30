@@ -52,3 +52,49 @@ export const saveSetupEventsForGame = async ({
     connection
   );
 };
+
+/* ─────────────────────────────────────────────────────────
+ *  Query: Setup Pairs
+ * ─────────────────────────────────────────────────────────*/
+
+export interface SetupPair {
+  setup_player_steam_id: string;
+  beneficiary_steam_id: string;
+  setup_type: string;
+  count: number;
+  avg_seconds_after_setup: number;
+}
+
+export const getSetupPairs = async (
+  match_game_id: number
+): Promise<SetupPair[]> => {
+  const rows = await runQuery<
+    {
+      setup_player_steam_id: string | number;
+      beneficiary_steam_id: string | number;
+      setup_type: string;
+      count: number;
+      avg_seconds_after_setup: number;
+    }[]
+  >(
+    `SELECT
+      setup_player_steam_id,
+      beneficiary_steam_id,
+      setup_type,
+      COUNT(*) AS count,
+      AVG(seconds_after_setup) AS avg_seconds_after_setup
+    FROM SetupEvents
+    WHERE match_game_id = ?
+    GROUP BY setup_player_steam_id, beneficiary_steam_id, setup_type
+    ORDER BY count DESC`,
+    [match_game_id]
+  );
+
+  return rows.map((r) => ({
+    setup_player_steam_id: String(r.setup_player_steam_id),
+    beneficiary_steam_id: String(r.beneficiary_steam_id),
+    setup_type: r.setup_type,
+    count: r.count,
+    avg_seconds_after_setup: r.avg_seconds_after_setup
+  }));
+};

@@ -283,9 +283,31 @@ type FlashAssistRow = {
   count: number;
 };
 
+export interface KillMatrixFilters {
+  excludeExitKills?: boolean;
+  postPlantOnly?: boolean;
+  excludeEcoKills?: boolean;
+}
+
 export const getMatchGameKillMatrix = async (
-  match_game_id: number
+  match_game_id: number,
+  filters: KillMatrixFilters = {}
 ): Promise<MatchGameKillMatrix> => {
+  const filterClauses: string[] = ["killer_team != victim_team"];
+  if (filters.excludeExitKills) {
+    filterClauses.push("(is_exit_kill = 0 OR is_exit_kill IS NULL)");
+  }
+  if (filters.postPlantOnly) {
+    filterClauses.push("is_post_plant = 1");
+  }
+  if (filters.excludeEcoKills) {
+    filterClauses.push(
+      "(ct_buy_type != 'Eco' OR ct_buy_type IS NULL) AND (t_buy_type != 'Eco' OR t_buy_type IS NULL)"
+    );
+  }
+
+  const whereClause = filterClauses.map((c) => `(${c})`).join(" AND ");
+
   const killsQuery = `
     SELECT
       killer,
@@ -293,7 +315,7 @@ export const getMatchGameKillMatrix = async (
       COUNT(*) AS count
     FROM PlayerKillLogs
     WHERE match_game_id = ?
-      AND killer_team != victim_team
+      AND ${whereClause}
     GROUP BY killer, victim
   `;
 
@@ -306,7 +328,7 @@ export const getMatchGameKillMatrix = async (
     WHERE match_game_id = ?
       AND is_flash_assist = 1
       AND assister IS NOT NULL
-      AND killer_team != victim_team
+      AND ${whereClause}
     GROUP BY assister, victim
   `;
 
@@ -2438,5 +2460,70 @@ export const getRoundSwingEvents = async (
     contributors: r.contributors
       ? (jsonBig.parse(r.contributors) as SwingContributorParsed[])
       : []
+  }));
+};
+
+/* ─────────────────────────────────────────────────────────
+ *  Entry Kills
+ * ─────────────────────────────────────────────────────────*/
+
+export interface EntryKill {
+  round_number: number;
+  time_in_round: number;
+  killer_steam_id: string;
+  victim_steam_id: string;
+  killer_team: string;
+  victim_team: string;
+  setup_flash_thrower: string | null;
+  victim_blind_seconds: number | null;
+  was_victim_traded: boolean | null;
+}
+
+export const getEntryKills = async (
+  match_game_id: number
+): Promise<EntryKill[]> => {
+  const rows = await runQuery<
+    {
+      round_number: number;
+      time_in_round: number;
+      killer: string | number;
+      victim: string | number;
+      killer_team: string;
+      victim_team: string;
+      setup_flash_thrower: string | number | null;
+      victim_blind_seconds: number | null;
+      was_victim_traded: number | null;
+    }[]
+  >(
+    `SELECT
+      round_number,
+      time_in_round,
+      killer,
+      victim,
+      killer_team,
+      victim_team,
+      setup_flash_thrower,
+      victim_blind_seconds,
+      was_victim_traded
+    FROM PlayerKillLogs
+    WHERE match_game_id = ?
+      AND is_first_death = 1
+    ORDER BY round_number ASC, time_in_round ASC`,
+    [match_game_id]
+  );
+
+  return rows.map((r) => ({
+    round_number: r.round_number,
+    time_in_round: r.time_in_round,
+    killer_steam_id: String(r.killer),
+    victim_steam_id: String(r.victim),
+    killer_team: r.killer_team,
+    victim_team: r.victim_team,
+    setup_flash_thrower: r.setup_flash_thrower
+      ? String(r.setup_flash_thrower)
+      : null,
+    victim_blind_seconds: r.victim_blind_seconds,
+    was_victim_traded:
+      r.was_victim_traded !== null ? r.was_victim_traded === 1 : null
   }));
 };

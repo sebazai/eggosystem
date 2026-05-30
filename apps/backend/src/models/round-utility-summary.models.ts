@@ -53,3 +53,60 @@ export const saveRoundUtilitySummaryForGame = async ({
     connection
   );
 };
+
+/* ─────────────────────────────────────────────────────────
+ *  Query: Round Utility Summary
+ * ─────────────────────────────────────────────────────────*/
+
+export interface RoundUtilitySummaryRow {
+  round_number: number;
+  steam_id: string;
+  flashes_thrown: number;
+  enemies_flashed: number;
+  teammates_flashed: number;
+  smokes_thrown: number;
+  utility_damage: number;
+  wasted_utility: number;
+}
+
+export const getRoundUtilitySummary = async (
+  match_game_id: number
+): Promise<RoundUtilitySummaryRow[]> => {
+  const rows = await runQuery<
+    {
+      round_number: number;
+      steam_id: string | number;
+      flashes_thrown: number;
+      enemies_flashed: number;
+      teammates_flashed: number;
+      smokes_thrown: number;
+      utility_damage: number;
+      wasted_utility: number;
+    }[]
+  >(
+    `SELECT
+      round_number,
+      steam_id,
+      flashes_thrown,
+      enemies_flashed,
+      teammates_flashed,
+      smokes_thrown,
+      utility_damage,
+      wasted_utility
+    FROM RoundUtilitySummary
+    WHERE match_game_id = ?
+    ORDER BY round_number ASC, steam_id ASC`,
+    [match_game_id]
+  );
+
+  return rows.map((r) => ({
+    round_number: r.round_number,
+    steam_id: String(r.steam_id),
+    flashes_thrown: r.flashes_thrown,
+    enemies_flashed: r.enemies_flashed,
+    teammates_flashed: r.teammates_flashed,
+    smokes_thrown: r.smokes_thrown,
+    utility_damage: r.utility_damage,
+    wasted_utility: r.wasted_utility
+  }));
+};
