@@ -165,3 +165,99 @@ export const getPlayerFlashStats = async (
     total_duration_seconds: Number(Number(r.total_duration_seconds).toFixed(3))
   }));
 };
+
+/* ─────────────────────────────────────────────────────────
+ *  Query: Cross-game player flash stats
+ * ─────────────────────────────────────────────────────────*/
+
+export interface CrossGamePlayerFlashStats {
+  steam_id: string;
+  games_played: number;
+  total_enemy_flashes: number;
+  total_teammate_flashes: number;
+  total_blind_seconds: number;
+  avg_enemy_flashes_per_game: number;
+  avg_blind_time_per_game: number;
+  discipline_ratio: number;
+  teammate_flash_rate: number;
+  top_victim_steam_id: string | null;
+}
+
+export const getPlayerFlashStatsCrossGame = async (
+  steam_id: string,
+  options: { seasonId?: number } = {}
+): Promise<CrossGamePlayerFlashStats> => {
+  const params: (string | number)[] = [steam_id];
+  const seasonFilter = options.seasonId ? "AND m.season_id = ?" : "";
+  if (options.seasonId) params.push(options.seasonId);
+
+  const [statsRows, topVictimRows] = await Promise.all([
+    runQuery<
+      {
+        games_played: number;
+        total_enemy_flashes: number;
+        total_teammate_flashes: number;
+        total_blind_seconds: number;
+      }[]
+    >(
+      `SELECT
+        COUNT(DISTINCT fe.match_game_id) AS games_played,
+        SUM(fe.is_enemy_flash)           AS total_enemy_flashes,
+        SUM(fe.is_teammate_flash)        AS total_teammate_flashes,
+        SUM(fe.duration_seconds)         AS total_blind_seconds
+      FROM FlashEvents fe
+      JOIN MatchGames mg ON mg.id = fe.match_game_id
+      JOIN Matches m     ON m.id  = mg.match_id
+      WHERE fe.thrower_steam_id = ? ${seasonFilter}`,
+      params
+    ),
+    runQuery<{ victim_steam_id: string | number; cnt: number }[]>(
+      `SELECT
+        fe.victim_steam_id,
+        COUNT(*) AS cnt
+      FROM FlashEvents fe
+      JOIN MatchGames mg ON mg.id = fe.match_game_id
+      JOIN Matches m     ON m.id  = mg.match_id
+      WHERE fe.thrower_steam_id = ?
+        AND fe.is_enemy_flash = 1
+        AND fe.victim_steam_id != 0
+        ${seasonFilter}
+      GROUP BY fe.victim_steam_id
+      ORDER BY cnt DESC
+      LIMIT 1`,
+      params
+    )
+  ]);
+
+  const s = statsRows[0] ?? {
+    games_played: 0,
+    total_enemy_flashes: 0,
+    total_teammate_flashes: 0,
+    total_blind_seconds: 0
+  };
+  const gamesPlayed = Number(s.games_played);
+  const enemyFlashes = Number(s.total_enemy_flashes);
+  const teammateFlashes = Number(s.total_teammate_flashes);
+  const totalFlashes = enemyFlashes + teammateFlashes;
+  const totalBlind = Number(s.total_blind_seconds ?? 0);
+
+  return {
+    steam_id,
+    games_played: gamesPlayed,
+    total_enemy_flashes: enemyFlashes,
+    total_teammate_flashes: teammateFlashes,
+    total_blind_seconds: Number(totalBlind.toFixed(3)),
+    avg_enemy_flashes_per_game:
+      gamesPlayed > 0 ? Number((enemyFlashes / gamesPlayed).toFixed(2)) : 0,
+    avg_blind_time_per_game:
+      gamesPlayed > 0 ? Number((totalBlind / gamesPlayed).toFixed(3)) : 0,
+    discipline_ratio:
+      totalFlashes > 0 ? Number((enemyFlashes / totalFlashes).toFixed(3)) : 0,
+    teammate_flash_rate:
+      totalFlashes > 0
+        ? Number((teammateFlashes / totalFlashes).toFixed(3))
+        : 0,
+    top_victim_steam_id:
+      topVictimRows.length > 0 ? String(topVictimRows[0].victim_steam_id) : null
+  };
+};
