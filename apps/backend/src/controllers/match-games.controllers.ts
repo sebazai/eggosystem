@@ -12,8 +12,13 @@ import {
   getMatchGameOpeningDuels,
   getMatchGameKillMatrix,
   getMatchGameTradeStats,
-  getMatchGameInsights
+  getMatchGameInsights,
+  getRoundSwingEvents
 } from "../models/match-game-analysis.models";
+import {
+  getFlashMatrix,
+  getPlayerFlashStats
+} from "../models/flash-events.models";
 import { BadRequestError, NotFoundError } from "../utils/errors";
 import { getTeamStats } from "../models/match.models";
 
@@ -122,6 +127,34 @@ export const getMatchGameInsightsController = async (
   const match_game_id = parseInt(req.params.match_game_id, 10);
   const data = await getMatchGameInsights(match_game_id);
   res.json(data);
+};
+
+export const getRoundSwingsController = async (
+  req: RequestWithParams<{ match_game_id: string }>,
+  res: Response
+) => {
+  const match_game_id = parseInt(req.params.match_game_id, 10);
+  const roundNumber = req.query.roundNumber
+    ? parseInt(req.query.roundNumber as string, 10)
+    : undefined;
+  const limit = req.query.limit
+    ? parseInt(req.query.limit as string, 10)
+    : undefined;
+
+  const data = await getRoundSwingEvents(match_game_id, { roundNumber, limit });
+  res.json({ round_swings: data });
+};
+
+export const getFlashMatrixController = async (
+  req: RequestWithParams<{ match_game_id: string }>,
+  res: Response
+) => {
+  const match_game_id = parseInt(req.params.match_game_id, 10);
+  const [matrix, playerStats] = await Promise.all([
+    getFlashMatrix(match_game_id),
+    getPlayerFlashStats(match_game_id)
+  ]);
+  res.json({ flash_matrix: matrix, player_stats: playerStats });
 };
 
 export const getGameClipController = async (
