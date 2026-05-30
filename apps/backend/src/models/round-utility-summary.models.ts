@@ -110,3 +110,97 @@ export const getRoundUtilitySummary = async (
     wasted_utility: r.wasted_utility
   }));
 };
+
+/* ─────────────────────────────────────────────────────────
+ *  Query: Cross-game player utility stats
+ * ─────────────────────────────────────────────────────────*/
+
+export interface CrossGamePlayerUtilityStats {
+  steam_id: string;
+  games_played: number;
+  rounds_played: number;
+  avg_flashes_thrown_per_round: number;
+  avg_enemies_flashed_per_round: number;
+  avg_smokes_per_round: number;
+  avg_utility_damage_per_round: number;
+  avg_wasted_utility_per_game: number;
+}
+
+export const getPlayerUtilityStatsCrossGame = async (
+  steam_id: string,
+  options: { seasonId?: number } = {}
+): Promise<CrossGamePlayerUtilityStats> => {
+  const params: (string | number)[] = [steam_id];
+  const seasonFilter = options.seasonId ? "AND m.season_id = ?" : "";
+  if (options.seasonId) params.push(options.seasonId);
+
+  const [summaryRows, wastedRows] = await Promise.all([
+    runQuery<
+      {
+        games_played: number;
+        rounds_played: number;
+        total_flashes_thrown: number;
+        total_enemies_flashed: number;
+        total_smokes_thrown: number;
+        total_utility_damage: number;
+      }[]
+    >(
+      `SELECT
+        COUNT(DISTINCT rus.match_game_id) AS games_played,
+        COUNT(*)                          AS rounds_played,
+        SUM(rus.flashes_thrown)           AS total_flashes_thrown,
+        SUM(rus.enemies_flashed)          AS total_enemies_flashed,
+        SUM(rus.smokes_thrown)            AS total_smokes_thrown,
+        SUM(rus.utility_damage)           AS total_utility_damage
+      FROM RoundUtilitySummary rus
+      JOIN MatchGames mg ON mg.id = rus.match_game_id
+      JOIN Matches m     ON m.id  = mg.match_id
+      WHERE rus.steam_id = ? ${seasonFilter}`,
+      params
+    ),
+    runQuery<{ total_wasted: number }[]>(
+      `SELECT COUNT(*) AS total_wasted
+      FROM WastedUtilityEvents wue
+      JOIN MatchGames mg ON mg.id = wue.match_game_id
+      JOIN Matches m     ON m.id  = mg.match_id
+      WHERE wue.thrower_steam_id = ? ${seasonFilter}`,
+      params
+    )
+  ]);
+
+  const s = summaryRows[0] ?? {
+    games_played: 0,
+    rounds_played: 0,
+    total_flashes_thrown: 0,
+    total_enemies_flashed: 0,
+    total_smokes_thrown: 0,
+    total_utility_damage: 0
+  };
+  const gamesPlayed = Number(s.games_played);
+  const roundsPlayed = Number(s.rounds_played);
+  const totalWasted = Number(wastedRows[0]?.total_wasted ?? 0);
+
+  return {
+    steam_id,
+    games_played: gamesPlayed,
+    rounds_played: roundsPlayed,
+    avg_flashes_thrown_per_round:
+      roundsPlayed > 0
+        ? Number((Number(s.total_flashes_thrown) / roundsPlayed).toFixed(2))
+        : 0,
+    avg_enemies_flashed_per_round:
+      roundsPlayed > 0
+        ? Number((Number(s.total_enemies_flashed) / roundsPlayed).toFixed(2))
+        : 0,
+    avg_smokes_per_round:
+      roundsPlayed > 0
+        ? Number((Number(s.total_smokes_thrown) / roundsPlayed).toFixed(2))
+        : 0,
+    avg_utility_damage_per_round:
+      roundsPlayed > 0
+        ? Number((Number(s.total_utility_damage) / roundsPlayed).toFixed(2))
+        : 0,
+    avg_wasted_utility_per_game:
+      gamesPlayed > 0 ? Number((totalWasted / gamesPlayed).toFixed(2)) : 0
+  };
+};

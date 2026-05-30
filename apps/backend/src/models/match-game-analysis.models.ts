@@ -2527,3 +2527,66 @@ export const getEntryKills = async (
       r.was_victim_traded !== null ? r.was_victim_traded === 1 : null
   }));
 };
+
+/* ─────────────────────────────────────────────────────────
+ *  Query: Cross-game player round impact
+ * ─────────────────────────────────────────────────────────*/
+
+export interface CrossGamePlayerRoundImpact {
+  steam_id: string;
+  games_played: number;
+  total_events: number;
+  total_impact_score: number;
+  avg_impact_per_event: number;
+  biggest_single_swing: number;
+}
+
+export const getPlayerRoundImpact = async (
+  steam_id: string,
+  options: { seasonId?: number } = {}
+): Promise<CrossGamePlayerRoundImpact> => {
+  const params: (string | number)[] = [steam_id];
+  const seasonFilter = options.seasonId ? "AND m.season_id = ?" : "";
+  if (options.seasonId) params.push(options.seasonId);
+
+  const rows = await runQuery<
+    {
+      games_played: number;
+      total_events: number;
+      total_impact_score: number;
+      avg_impact_per_event: number;
+      biggest_single_swing: number;
+    }[]
+  >(
+    `SELECT
+      COUNT(DISTINCT rse.match_game_id) AS games_played,
+      COUNT(*)                          AS total_events,
+      SUM(ABS(rse.delta))               AS total_impact_score,
+      AVG(ABS(rse.delta))               AS avg_impact_per_event,
+      MAX(ABS(rse.delta))               AS biggest_single_swing
+    FROM RoundSwingEvents rse
+    JOIN MatchGames mg ON mg.id = rse.match_game_id
+    JOIN Matches m     ON m.id  = mg.match_id
+    WHERE rse.primary_player_steam_id = ? ${seasonFilter}`,
+    params
+  );
+
+  const r = rows[0] ?? {
+    games_played: 0,
+    total_events: 0,
+    total_impact_score: 0,
+    avg_impact_per_event: 0,
+    biggest_single_swing: 0
+  };
+
+  return {
+    steam_id,
+    games_played: Number(r.games_played),
+    total_events: Number(r.total_events),
+    total_impact_score: Number(Number(r.total_impact_score ?? 0).toFixed(4)),
+    avg_impact_per_event: Number(
+      Number(r.avg_impact_per_event ?? 0).toFixed(4)
+    ),
+    biggest_single_swing: Number(Number(r.biggest_single_swing ?? 0).toFixed(4))
+  };
+};

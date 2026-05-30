@@ -641,27 +641,102 @@ Extend the existing kill/entry-analysis endpoints rather than creating new ones.
 
 ---
 
+## Phase 15 — Frontend: Player Detail — Utility & Flash Section
+
+**Goal:** Surface the Phase 9 cross-game stats on the player detail page's existing "Utility" section, giving coaches and players a tournament-scoped view of flash discipline and utility output.
+
+### PR 15: Player flash & utility stats UI
+
+**Where it lives:** Player detail page, "Utility" tab / section (already exists for basic stats).
+
+**UI additions:**
+
+- **Flash discipline card** — enemy flashes, avg blind time per game, discipline ratio bar (enemy% vs teammate%), top victim callout
+- **Utility stats card** — avg flashes/round, avg smokes/round, avg utility damage/round, avg wasted utility/game
+- **Round impact card** — total impact score, avg impact per event, biggest single swing (with round reference)
+- All cards show "No data (pre-parser-update)" gracefully when stats are all zero
+
+**API hooks:**
+
+- `usePlayerFlashStats(steamId, tournamentId)` → `GET /api/v1/players/:steamId/flash-stats?tournamentId=...`
+- `usePlayerUtilityStats(steamId, tournamentId)` → `GET /api/v1/players/:steamId/utility-stats?tournamentId=...`
+- `usePlayerRoundImpact(steamId, tournamentId)` → `GET /api/v1/players/:steamId/round-impact?tournamentId=...`
+
+**Files:**
+
+- `apps/frontend/src/components/player/flash-discipline-card.tsx` — new component
+- `apps/frontend/src/components/player/utility-stats-card.tsx` — new component
+- `apps/frontend/src/components/player/round-impact-card.tsx` — new component
+- Integration into existing player detail utility section
+
+**Tests:**
+
+- Cards render with mock data
+- Empty/zero state renders gracefully without crashing
+- `tournamentId` passed correctly to API hooks
+
+---
+
+## Phase 16 — Frontend: Tournament Leaderboard Pages
+
+**Goal:** New leaderboard views on the tournament/season page powered by the Phase 10 leaderboard APIs. These are metrics that never existed before — blind time created, flash discipline, round impact.
+
+### PR 16: Tournament leaderboard UI
+
+**Where it lives:** Tournament/season detail page, new "Leaderboards" tab (alongside existing standings/stats tabs).
+
+**UI additions:**
+
+- **Flash leaderboard table** — sortable by blind time / flash count / discipline; columns: rank, player, games played, total blind time, avg/game, discipline %
+- **Round impact leaderboard table** — rank, player, games, total impact score, avg/event, biggest swing
+- **Utility discipline leaderboard table** — sortable by wasted (asc) or utility damage (desc); columns: rank, player, games, avg wasted/game, avg util damage/round, avg enemies flashed/round
+- `minGames` filter input to exclude small-sample players
+- All tables handle empty state (no new-parser games yet in this tournament)
+
+**API hooks:**
+
+- `useFlashLeaderboard(tournamentId, options)` → `GET /api/v1/tournaments/:tournamentId/leaderboards/flash`
+- `useRoundImpactLeaderboard(tournamentId, options)` → `GET /api/v1/tournaments/:tournamentId/leaderboards/round-impact`
+- `useUtilityDisciplineLeaderboard(tournamentId, options)` → `GET /api/v1/tournaments/:tournamentId/leaderboards/utility-discipline`
+
+**Files:**
+
+- `apps/frontend/src/components/tournament/flash-leaderboard.tsx`
+- `apps/frontend/src/components/tournament/round-impact-leaderboard.tsx`
+- `apps/frontend/src/components/tournament/utility-discipline-leaderboard.tsx`
+- Integration into tournament detail page leaderboards tab
+
+**Tests:**
+
+- Tables render sorted correctly with mock data
+- Sort toggle and minGames filter work
+- Empty state renders when leaderboard array is empty
+
+---
+
 ## Implementation Order Summary
 
-| Phase | PR                                       | Content | Depends on |
-| ----- | ---------------------------------------- | ------- | ---------- |
-| 1A    | DB: KillLogs enrichment columns          | —       |
-| 1B    | DB: New event tables                     | 1A      |
-| 2     | Types + KillLog ingest                   | 1A, 1B  |
-| 3     | RoundSwing + Flash ingest                | 1B, 2   |
-| 4     | Setup + WastedUtil + RoundUtility ingest | 1B, 3   |
-| 5     | API: Round swing timeline (per-match)    | 3       |
-| 6     | API: Flash matrix (per-match)            | 3       |
-| 7     | API: Kill filters (per-match)            | 2       |
-| 8     | API: Setup + utility (per-match)         | 4       |
-| 9     | API: Player-level flash & utility stats  | 3, 4    |
-| 10    | API: Leaderboard rankings                | 9       |
-| 11    | Frontend: Round swing UI                 | 5       |
-| 12    | Frontend: Flash matrix UI                | 6       |
-| 13    | Frontend: Kill filter UI                 | 7       |
-| 14    | Frontend: Support + utility UI           | 8       |
+| Phase | PR                                         | Content | Depends on |
+| ----- | ------------------------------------------ | ------- | ---------- |
+| 1A    | DB: KillLogs enrichment columns            | —       |            |
+| 1B    | DB: New event tables                       | 1A      |            |
+| 2     | Types + KillLog ingest                     | 1A, 1B  |            |
+| 3     | RoundSwing + Flash ingest                  | 1B, 2   |            |
+| 4     | Setup + WastedUtil + RoundUtility ingest   | 1B, 3   |            |
+| 5     | API: Round swing timeline (per-match)      | 3       |            |
+| 6     | API: Flash matrix (per-match)              | 3       |            |
+| 7     | API: Kill filters (per-match)              | 2       |            |
+| 8     | API: Setup + utility (per-match)           | 4       |            |
+| 9     | API: Player-level flash & utility stats    | 3, 4    |            |
+| 10    | API: Leaderboard rankings                  | 9       |            |
+| 11    | Frontend: Round swing UI (per-match)       | 5       |            |
+| 12    | Frontend: Flash matrix UI (per-match)      | 6       |            |
+| 13    | Frontend: Kill filter UI (per-match)       | 7       |            |
+| 14    | Frontend: Support + utility UI (per-match) | 8       |            |
+| 15    | Frontend: Player detail — flash & utility  | 9       |            |
+| 16    | Frontend: Tournament leaderboard pages     | 10      |            |
 
-Phases 1–4 are backend-only and can ship before the parser team deploys 3.2. Once 3.2 parser lands, the data starts flowing and API + frontend phases can go out incrementally. Phases 9–10 add cross-game aggregation on top of the per-match APIs, enabling the player detail page and leaderboards.
+Phases 1–4 are backend-only and can ship before the parser team deploys 3.2. Once 3.2 parser lands, the data starts flowing and API + frontend phases can go out incrementally. Phases 9–10 add cross-game aggregation on top of the per-match APIs. Phases 15–16 are the frontend counterparts to 9–10, surfacing player-level and tournament-wide views that weren't possible before.
 
 ---
 
