@@ -23,8 +23,8 @@ import type { Knex } from "knex";
 //    teammates_flashed → derivable from FlashEvents (COUNT WHERE is_teammate_flash)
 //    wasted_utility   → derivable from WastedUtilityEvents (COUNT per round/player)
 //
-// Run the db-invariants.integration.test.ts suite BEFORE this migration to
-// confirm that all derived values are consistent with their source data.
+// Run the db-invariants.integration.test.ts suite to confirm VIRTUAL GENERATED
+// columns and PlayerKillLogs denormalization invariants hold after this migration.
 export async function up(knex: Knex): Promise<void> {
   // ── FlashEvents: flash classification flags → VIRTUAL GENERATED ───────────
   await knex.raw(`ALTER TABLE FlashEvents DROP COLUMN is_enemy_flash`);
