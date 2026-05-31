@@ -53,21 +53,16 @@ export const saveFlashEventsForGame = async ({
     e.thrower_team,
     String(e.victim),
     e.victim_team,
-    e.duration_seconds,
-    e.is_enemy_flash ? 1 : 0,
-    e.is_teammate_flash ? 1 : 0,
-    e.is_self_flash ? 1 : 0
+    e.duration_seconds
   ]);
 
-  const placeholders = values
-    .map(() => "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
-    .join(", ");
+  const placeholders = values.map(() => "(?, ?, ?, ?, ?, ?, ?, ?)").join(", ");
 
   await runQuery(
     `INSERT INTO FlashEvents (
       match_game_id, round_number, time_in_round,
       thrower_steam_id, thrower_team, victim_steam_id, victim_team,
-      duration_seconds, is_enemy_flash, is_teammate_flash, is_self_flash
+      duration_seconds
     ) VALUES ${placeholders}`,
     values.flat(),
     connection

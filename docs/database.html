@@ -65,6 +65,7 @@ erDiagram
 "FantasyTeamPlayers" }o--|| "FantasyTeams" : ""
 "FantasyTeams" }o--|| "Leagues" : ""
 "FantasyTeams" }o--|| "Seasons" : ""
+"FlashEvents" }o--|| "MatchGames" : ""
 "GameTypes" }o--|| "Games" : ""
 "GlobalPlayerPoints" }o--|| "Seasons" : ""
 "GlobalPlayerPointsLog" }o--|| "MatchGames" : ""
@@ -91,6 +92,7 @@ erDiagram
 "OrganizerGames" }o--|| "Games" : ""
 "OrganizerGames" }o--|| "Organizers" : ""
 "PlayerClutches" }o--|| "MatchGames" : ""
+"PlayerHitLogs" }o--|| "MatchGames" : ""
 "PlayerKillLogs" }o--|| "MatchGames" : ""
 "PlayerRoundImpacts" }o--|| "MatchGames" : ""
 "PlayerStats" }o--|| "MatchGames" : ""
@@ -103,6 +105,8 @@ erDiagram
 "Reservations" }o--|| "Matches" : ""
 "RolePermissions" }o--|| "Permissions" : ""
 "RolePermissions" }o--|| "Roles" : ""
+"RoundSwingEvents" }o--|| "MatchGames" : ""
+"RoundUtilitySummary" }o--|| "MatchGames" : ""
 "SeasonActiveMapPool" }o--|| "Maps" : ""
 "SeasonActiveMapPool" }o--|| "Seasons" : ""
 "SeasonLeagueExternalIds" }o--|| "SeasonLeagues" : ""
@@ -131,6 +135,7 @@ erDiagram
 "SeasonTeamRegistrations" }o--o| "Accounts" : ""
 "SeasonTeamRegistrations" }o--|| "Seasons" : ""
 "SeasonTeamRegistrations" }o--|| "Teams" : ""
+"SetupEvents" }o--|| "MatchGames" : ""
 "SteamPlayerKanaElo" |o--|| "SteamPlayers" : ""
 "SteamPlayers" }o--o| "Accounts" : ""
 "TeamGameScores" }o--|| "MatchGames" : ""
@@ -145,6 +150,7 @@ erDiagram
 "TrophyAssignments" }o--o| "Teams" : ""
 "TrophyAssignments" }o--|| "Trophies" : ""
 "UserPolicyAcceptances" }o--|| "Accounts" : ""
+"WastedUtilityEvents" }o--|| "MatchGames" : ""
 
 "AccountCasterUrls" {
   int_10__unsigned id PK
@@ -207,6 +213,10 @@ erDiagram
   int_10__unsigned id PK
   int_10__unsigned season_id FK
   int_10__unsigned league_id FK
+}
+"FlashEvents" {
+  bigint_20__unsigned id PK
+  int_10__unsigned match_game_id FK
 }
 "Games" {
   int_10__unsigned id PK
@@ -305,6 +315,10 @@ erDiagram
   int_10__unsigned id PK
   int_10__unsigned match_game_id FK
 }
+"PlayerHitLogs" {
+  bigint_20__unsigned id PK
+  int_10__unsigned match_game_id FK
+}
 "PlayerKillLogs" {
   int_10__unsigned id PK
   int_10__unsigned match_game_id FK
@@ -339,6 +353,15 @@ erDiagram
 }
 "Roles" {
   int_10__unsigned id PK
+}
+"RoundSwingEvents" {
+  bigint_20__unsigned id PK
+  int_10__unsigned match_game_id FK
+}
+"RoundUtilitySummary" {
+  int_10__unsigned match_game_id PK
+  tinyint_3__unsigned round_number PK
+  bigint_20_ steam_id PK
 }
 "SeasonActiveMapPool" {
   int_10__unsigned season_id PK
@@ -397,6 +420,10 @@ erDiagram
   int_10__unsigned approved_by FK
   int_10__unsigned manual_validity_check_by FK
 }
+"SetupEvents" {
+  bigint_20__unsigned id PK
+  int_10__unsigned match_game_id FK
+}
 "Stages" {
   int_10__unsigned id PK
 }
@@ -437,6 +464,10 @@ erDiagram
 "UserPolicyAcceptances" {
   int_10__unsigned id PK
   int_10__unsigned account_id FK
+}
+"WastedUtilityEvents" {
+  bigint_20__unsigned id PK
+  int_10__unsigned match_game_id FK
 }
   </pre>
   <div class="footer">Pan: Left Mouse Button | Zoom: Scroll Wheel</div>

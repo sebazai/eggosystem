@@ -17,7 +17,7 @@ function createSwingEvent(
     event_type: "kill",
     pre_win_prob: 0.62,
     post_win_prob: 0.31,
-    delta: -0.31,
+    delta: -0.31, // accepted from parser but not inserted; DB derives from post_win_prob - pre_win_prob
     primary_player: 100000001,
     contributors: [
       { steam_id: 100000001, contribution: 0.85 },
@@ -67,7 +67,7 @@ describe("saveRoundSwingEventsForGame", () => {
     expect(mockRunQuery).toHaveBeenCalledTimes(2);
     const [insertQuery, insertValues] = mockRunQuery.mock.calls[1];
     expect(insertQuery).toMatch(/INSERT INTO RoundSwingEvents/i);
-    expect((insertValues as unknown[]).length).toBe(18); // 9 cols × 2 rows
+    expect((insertValues as unknown[]).length).toBe(16); // 8 cols × 2 rows
   });
 
   it("serialises contributors as a JSON string with steam IDs as strings", async () => {
@@ -78,7 +78,7 @@ describe("saveRoundSwingEventsForGame", () => {
     });
 
     const [, values] = mockRunQuery.mock.calls[1];
-    const contributorsJson = (values as unknown[])[8] as string;
+    const contributorsJson = (values as unknown[])[7] as string;
     const parsed = JSON.parse(contributorsJson) as Array<{
       steam_id: string;
       contribution: number;
@@ -100,7 +100,7 @@ describe("saveRoundSwingEventsForGame", () => {
     });
 
     const [, values] = mockRunQuery.mock.calls[1];
-    expect((values as unknown[])[8]).toBe("[]");
+    expect((values as unknown[])[7]).toBe("[]");
   });
 
   it("stores primary_player as a string", async () => {
@@ -111,6 +111,6 @@ describe("saveRoundSwingEventsForGame", () => {
     });
 
     const [, values] = mockRunQuery.mock.calls[1];
-    expect((values as unknown[])[7]).toBe("100000099");
+    expect((values as unknown[])[6]).toBe("100000099");
   });
 });

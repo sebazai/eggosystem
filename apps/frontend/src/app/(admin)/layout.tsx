@@ -8,14 +8,14 @@ import { Suspense } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { AcceptPolicyProvider } from "@/context/AcceptPolicyContext";
 import { ThemeProvider } from "@/providers/ThemeProvider";
+import {
+  createThemeBlockingScript,
+  META_THEME_COLORS,
+  themeClassName
+} from "@/lib/theme-init";
 import { createPageMetadata } from "@/lib/metadata";
 import { WithRoleProtection } from "@/components/dashboard/WithRoleProtection";
 import { TooltipProvider } from "@/components/ui/tooltip";
-
-const META_THEME_COLORS = {
-  light: "#ffffff",
-  dark: "#09090b"
-};
 
 const kanaHeadingFonts = localFont({
   fallback: ["system-ui", "arial"],
@@ -91,17 +91,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html
+      lang="en"
+      className={themeClassName("light")}
+      suppressHydrationWarning
+    >
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `
-            try {
-              if (localStorage.theme === 'dark' || ((!('theme' in localStorage) || localStorage.theme === 'system') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                document.querySelector('meta[name="theme-color"]').setAttribute('content', '${META_THEME_COLORS.dark}')
-              }
-            } catch (_) {}
-          `
+            __html: createThemeBlockingScript("light")
           }}
         />
       </head>

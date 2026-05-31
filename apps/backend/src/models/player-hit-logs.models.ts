@@ -37,12 +37,11 @@ export const savePlayerHitLogsForGame = async ({
     e.hit_group,
     e.health_damage,
     e.armor_damage,
-    e.health_remaining,
-    e.is_kill_hit ? 1 : 0
+    e.health_remaining
   ]);
 
   const placeholders = values
-    .map(() => "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+    .map(() => "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
     .join(", ");
 
   await runQuery(
@@ -51,8 +50,7 @@ export const savePlayerHitLogsForGame = async ({
       attacker_steam_id, attacker_team,
       victim_steam_id, victim_team,
       weapon, hit_group,
-      health_damage, armor_damage, health_remaining,
-      is_kill_hit
+      health_damage, armor_damage, health_remaining
     ) VALUES ${placeholders}`,
     values.flat(),
     connection

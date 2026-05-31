@@ -72,7 +72,7 @@ describe("saveFlashEventsForGame", () => {
     expect(mockRunQuery).toHaveBeenCalledTimes(2); // delete + insert
     const [insertQuery, insertValues] = mockRunQuery.mock.calls[1];
     expect(insertQuery).toMatch(/INSERT INTO FlashEvents/i);
-    expect((insertValues as unknown[]).length).toBe(22); // 11 cols × 2 rows
+    expect((insertValues as unknown[]).length).toBe(16); // 8 cols × 2 rows
   });
 
   it("stores steam IDs as strings", async () => {
@@ -88,23 +88,21 @@ describe("saveFlashEventsForGame", () => {
     expect(flat[5]).toBe("100000002"); // victim_steam_id
   });
 
-  it("correctly maps boolean flash type flags to 0/1", async () => {
+  it("stores time_in_round and duration_seconds at expected column positions", async () => {
     await saveFlashEventsForGame({
       matchGameId: 1,
       events: [
-        createFlashEvent({
-          is_enemy_flash: true,
-          is_teammate_flash: false,
-          is_self_flash: false
-        })
+        createFlashEvent({ time_in_round: 12.5, duration_seconds: 2.5 })
       ],
       connection: mockConnection
     });
 
     const [, values] = mockRunQuery.mock.calls[1];
     const flat = values as unknown[];
-    expect(flat[8]).toBe(1); // is_enemy_flash
-    expect(flat[9]).toBe(0); // is_teammate_flash
-    expect(flat[10]).toBe(0); // is_self_flash
+    // Columns: match_game_id(0), round_number(1), time_in_round(2),
+    //          thrower_steam_id(3), thrower_team(4),
+    //          victim_steam_id(5), victim_team(6), duration_seconds(7)
+    expect(flat[2]).toBe(12.5); // time_in_round
+    expect(flat[7]).toBe(2.5); // duration_seconds
   });
 });

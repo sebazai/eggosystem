@@ -167,11 +167,13 @@ describe("getUtilityDisciplineLeaderboard", () => {
     expect(params).toContain(42);
   });
 
-  it("sorts by wasted_asc by default", async () => {
+  it("sorts by wasted_asc by default using WastedUtilityEvents subquery", async () => {
     await getUtilityDisciplineLeaderboard(42);
 
     const [query] = mockRunQuery.mock.calls[0];
-    expect(query).toMatch(/SUM\(rus\.wasted_utility\) \/ COUNT/i);
+    expect(query).toMatch(
+      /COALESCE\(wasted\.total_wasted, 0\) \/ COUNT\(DISTINCT/i
+    );
   });
 
   it("sorts by utility_damage_desc when specified", async () => {
@@ -180,7 +182,7 @@ describe("getUtilityDisciplineLeaderboard", () => {
     });
 
     const [query] = mockRunQuery.mock.calls[0];
-    expect(query).toMatch(/SUM\(rus\.utility_damage\) \/ COUNT/i);
+    expect(query).toMatch(/SUM\(rus\.utility_damage\) \/ COUNT\(\*\) DESC/i);
   });
 
   it("calculates per-game and per-round averages correctly", async () => {

@@ -32,22 +32,16 @@ export const saveRoundUtilitySummaryForGame = async ({
     e.round_number,
     String(e.steam_id),
     e.flashes_thrown,
-    e.enemies_flashed,
-    e.teammates_flashed,
     e.smokes_thrown,
-    e.utility_damage,
-    e.wasted_utility
+    e.utility_damage
   ]);
 
-  const placeholders = values
-    .map(() => "(?, ?, ?, ?, ?, ?, ?, ?, ?)")
-    .join(", ");
+  const placeholders = values.map(() => "(?, ?, ?, ?, ?, ?)").join(", ");
 
   await runQuery(
     `INSERT INTO RoundUtilitySummary (
       match_game_id, round_number, steam_id,
-      flashes_thrown, enemies_flashed, teammates_flashed,
-      smokes_thrown, utility_damage, wasted_utility
+      flashes_thrown, smokes_thrown, utility_damage
     ) VALUES ${placeholders}`,
     values.flat(),
     connection
@@ -62,11 +56,8 @@ export interface RoundUtilitySummaryRow {
   round_number: number;
   steam_id: string;
   flashes_thrown: number;
-  enemies_flashed: number;
-  teammates_flashed: number;
   smokes_thrown: number;
   utility_damage: number;
-  wasted_utility: number;
 }
 
 export const getRoundUtilitySummary = async (
@@ -77,22 +68,16 @@ export const getRoundUtilitySummary = async (
       round_number: number;
       steam_id: string | number;
       flashes_thrown: number;
-      enemies_flashed: number;
-      teammates_flashed: number;
       smokes_thrown: number;
       utility_damage: number;
-      wasted_utility: number;
     }[]
   >(
     `SELECT
       round_number,
       steam_id,
       flashes_thrown,
-      enemies_flashed,
-      teammates_flashed,
       smokes_thrown,
-      utility_damage,
-      wasted_utility
+      utility_damage
     FROM RoundUtilitySummary
     WHERE match_game_id = ?
     ORDER BY round_number ASC, steam_id ASC`,
@@ -103,11 +88,8 @@ export const getRoundUtilitySummary = async (
     round_number: r.round_number,
     steam_id: String(r.steam_id),
     flashes_thrown: r.flashes_thrown,
-    enemies_flashed: r.enemies_flashed,
-    teammates_flashed: r.teammates_flashed,
     smokes_thrown: r.smokes_thrown,
-    utility_damage: r.utility_damage,
-    wasted_utility: r.wasted_utility
+    utility_damage: r.utility_damage
   }));
 };
 
@@ -134,13 +116,12 @@ export const getPlayerUtilityStatsCrossGame = async (
   const seasonFilter = options.seasonId ? "AND m.season_id = ?" : "";
   if (options.seasonId) params.push(options.seasonId);
 
-  const [summaryRows, wastedRows] = await Promise.all([
+  const [summaryRows, wastedRows, flashRows] = await Promise.all([
     runQuery<
       {
         games_played: number;
         rounds_played: number;
         total_flashes_thrown: number;
-        total_enemies_flashed: number;
         total_smokes_thrown: number;
         total_utility_damage: number;
       }[]
@@ -149,7 +130,6 @@ export const getPlayerUtilityStatsCrossGame = async (
         COUNT(DISTINCT rus.match_game_id) AS games_played,
         COUNT(*)                          AS rounds_played,
         SUM(rus.flashes_thrown)           AS total_flashes_thrown,
-        SUM(rus.enemies_flashed)          AS total_enemies_flashed,
         SUM(rus.smokes_thrown)            AS total_smokes_thrown,
         SUM(rus.utility_damage)           AS total_utility_damage
       FROM RoundUtilitySummary rus
@@ -165,6 +145,14 @@ export const getPlayerUtilityStatsCrossGame = async (
       JOIN Matches m     ON m.id  = mg.match_id
       WHERE wue.thrower_steam_id = ? ${seasonFilter}`,
       params
+    ),
+    runQuery<{ total_enemy_flashes: number }[]>(
+      `SELECT SUM(fe.is_enemy_flash) AS total_enemy_flashes
+      FROM FlashEvents fe
+      JOIN MatchGames mg ON mg.id = fe.match_game_id
+      JOIN Matches m     ON m.id  = mg.match_id
+      WHERE fe.thrower_steam_id = ? ${seasonFilter}`,
+      params
     )
   ]);
 
@@ -172,13 +160,13 @@ export const getPlayerUtilityStatsCrossGame = async (
     games_played: 0,
     rounds_played: 0,
     total_flashes_thrown: 0,
-    total_enemies_flashed: 0,
     total_smokes_thrown: 0,
     total_utility_damage: 0
   };
   const gamesPlayed = Number(s.games_played);
   const roundsPlayed = Number(s.rounds_played);
   const totalWasted = Number(wastedRows[0]?.total_wasted ?? 0);
+  const totalEnemyFlashes = Number(flashRows[0]?.total_enemy_flashes ?? 0);
 
   return {
     steam_id,
@@ -190,7 +178,7 @@ export const getPlayerUtilityStatsCrossGame = async (
         : 0,
     avg_enemies_flashed_per_round:
       roundsPlayed > 0
-        ? Number((Number(s.total_enemies_flashed) / roundsPlayed).toFixed(2))
+        ? Number((totalEnemyFlashes / roundsPlayed).toFixed(2))
         : 0,
     avg_smokes_per_round:
       roundsPlayed > 0
