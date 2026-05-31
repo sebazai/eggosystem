@@ -315,9 +315,10 @@ export interface FlashEvent {
   victim: number; // Steam ID
   victim_team: "CT" | "T";
   duration_seconds: number;
-  is_self_flash: boolean;
-  is_teammate_flash: boolean;
-  is_enemy_flash: boolean;
+  // Accepted from parser for backward compat; no longer persisted in DB (VIRTUAL GENERATED)
+  is_self_flash?: boolean;
+  is_teammate_flash?: boolean;
+  is_enemy_flash?: boolean;
 }
 
 /** @public */
@@ -380,11 +381,12 @@ export interface RoundUtilitySummaryEntry {
   round_number: number;
   steam_id: number;
   flashes_thrown: number;
-  enemies_flashed: number;
-  teammates_flashed: number;
   smokes_thrown: number;
   utility_damage: number;
-  wasted_utility: number;
+  // Accepted from parser for backward compat; no longer persisted in DB
+  enemies_flashed?: number;
+  teammates_flashed?: number;
+  wasted_utility?: number;
 }
 
 /** @public */

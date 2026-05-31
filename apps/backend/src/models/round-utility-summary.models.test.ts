@@ -1,4 +1,7 @@
-import { saveRoundUtilitySummaryForGame } from "./round-utility-summary.models";
+import {
+  saveRoundUtilitySummaryForGame,
+  getRoundUtilitySummary
+} from "./round-utility-summary.models";
 import { runQuery } from "../db/mysqlRunQuery";
 import { type RoundUtilitySummaryEntry } from "../types/parse-queue.types";
 import { type PoolConnection } from "mysql2/promise";
@@ -15,11 +18,8 @@ function createSummaryEntry(
     round_number: 1,
     steam_id: 1001,
     flashes_thrown: 2,
-    enemies_flashed: 1,
-    teammates_flashed: 0,
     smokes_thrown: 1,
     utility_damage: 40,
-    wasted_utility: 0,
     ...overrides
   };
 }
@@ -73,7 +73,7 @@ describe("saveRoundUtilitySummaryForGame", () => {
     expect(mockRunQuery).toHaveBeenCalledTimes(2);
     const [insertQuery, insertValues] = mockRunQuery.mock.calls[1];
     expect(insertQuery).toMatch(/INSERT INTO RoundUtilitySummary/i);
-    expect((insertValues as unknown[]).length).toBe(18); // 9 cols × 2 rows
+    expect((insertValues as unknown[]).length).toBe(12); // 6 cols × 2 rows
   });
 
   it("stores steam_id as string", async () => {
@@ -88,17 +88,14 @@ describe("saveRoundUtilitySummaryForGame", () => {
     expect(flat[2]).toBe("1001"); // steam_id (col index 2 = after match_game_id, round_number)
   });
 
-  it("stores all utility counters in correct column order", async () => {
+  it("stores utility counters in correct column order", async () => {
     await saveRoundUtilitySummaryForGame({
       matchGameId: 1,
       entries: [
         createSummaryEntry({
           flashes_thrown: 3,
-          enemies_flashed: 2,
-          teammates_flashed: 1,
           smokes_thrown: 4,
-          utility_damage: 88,
-          wasted_utility: 1
+          utility_damage: 88
         })
       ],
       connection: mockConnection
@@ -107,13 +104,56 @@ describe("saveRoundUtilitySummaryForGame", () => {
     const [, values] = mockRunQuery.mock.calls[1];
     const flat = values as unknown[];
     // Columns: match_game_id(0), round_number(1), steam_id(2),
-    //          flashes_thrown(3), enemies_flashed(4), teammates_flashed(5),
-    //          smokes_thrown(6), utility_damage(7), wasted_utility(8)
+    //          flashes_thrown(3), smokes_thrown(4), utility_damage(5)
     expect(flat[3]).toBe(3); // flashes_thrown
-    expect(flat[4]).toBe(2); // enemies_flashed
-    expect(flat[5]).toBe(1); // teammates_flashed
-    expect(flat[6]).toBe(4); // smokes_thrown
-    expect(flat[7]).toBe(88); // utility_damage
-    expect(flat[8]).toBe(1); // wasted_utility
+    expect(flat[4]).toBe(4); // smokes_thrown
+    expect(flat[5]).toBe(88); // utility_damage
+  });
+});
+
+describe("getRoundUtilitySummary", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("queries by match_game_id and orders by round_number", async () => {
+    mockRunQuery.mockResolvedValue([] as never);
+
+    await getRoundUtilitySummary(42);
+
+    const [query, params] = mockRunQuery.mock.calls[0];
+    expect(query).toMatch(/FROM RoundUtilitySummary/i);
+    expect(query).toMatch(/WHERE match_game_id = \?/i);
+    expect(query).toMatch(/ORDER BY round_number ASC/i);
+    expect(query).toMatch(/steam_id ASC/i);
+    expect(params).toEqual([42]);
+  });
+
+  it("coerces steam_id to string in returned rows", async () => {
+    mockRunQuery.mockResolvedValue([
+      {
+        round_number: 1,
+        steam_id: 100000001,
+        flashes_thrown: 2,
+        smokes_thrown: 1,
+        utility_damage: 40
+      }
+    ] as never);
+
+    const result = await getRoundUtilitySummary(1);
+
+    expect(result[0].steam_id).toBe("100000001");
+    expect(result[0].round_number).toBe(1);
+    expect(result[0].flashes_thrown).toBe(2);
+    expect(result[0].smokes_thrown).toBe(1);
+    expect(result[0].utility_damage).toBe(40);
+  });
+
+  it("returns an empty array when no rows exist", async () => {
+    mockRunQuery.mockResolvedValue([] as never);
+
+    const result = await getRoundUtilitySummary(999);
+
+    expect(result).toEqual([]);
   });
 });

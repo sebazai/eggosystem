@@ -1,4 +1,7 @@
-import { saveWastedUtilityEventsForGame } from "./wasted-utility-events.models";
+import {
+  saveWastedUtilityEventsForGame,
+  getWastedUtilityByPlayer
+} from "./wasted-utility-events.models";
 import { runQuery } from "../db/mysqlRunQuery";
 import { type WastedUtilityEvent } from "../types/parse-queue.types";
 import { type PoolConnection } from "mysql2/promise";
@@ -90,5 +93,43 @@ describe("saveWastedUtilityEventsForGame", () => {
     const [, values] = mockRunQuery.mock.calls[1];
     const flat = values as unknown[];
     expect(flat[4]).toBe("Incendiary"); // utility_type
+  });
+});
+
+describe("getWastedUtilityByPlayer", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("queries by match_game_id and groups by thrower and utility_type", async () => {
+    mockRunQuery.mockResolvedValue([] as never);
+
+    await getWastedUtilityByPlayer(42);
+
+    const [query, params] = mockRunQuery.mock.calls[0];
+    expect(query).toMatch(/FROM WastedUtilityEvents/i);
+    expect(query).toMatch(/WHERE match_game_id = \?/i);
+    expect(query).toMatch(/GROUP BY thrower_steam_id, utility_type/i);
+    expect(params).toEqual([42]);
+  });
+
+  it("coerces thrower_steam_id to string in returned rows", async () => {
+    mockRunQuery.mockResolvedValue([
+      { thrower_steam_id: 100000001, utility_type: "HE", count: 2 }
+    ] as never);
+
+    const result = await getWastedUtilityByPlayer(1);
+
+    expect(result[0].thrower_steam_id).toBe("100000001");
+    expect(result[0].utility_type).toBe("HE");
+    expect(result[0].count).toBe(2);
+  });
+
+  it("returns an empty array when no wasted events exist", async () => {
+    mockRunQuery.mockResolvedValue([] as never);
+
+    const result = await getWastedUtilityByPlayer(999);
+
+    expect(result).toEqual([]);
   });
 });

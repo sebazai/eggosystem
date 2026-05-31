@@ -33,7 +33,6 @@ export const saveRoundSwingEventsForGame = async ({
     e.event_type,
     e.pre_win_prob,
     e.post_win_prob,
-    e.delta,
     String(e.primary_player),
     JSON.stringify(
       (e.contributors ?? []).map((c) => ({
@@ -43,14 +42,12 @@ export const saveRoundSwingEventsForGame = async ({
     )
   ]);
 
-  const placeholders = values
-    .map(() => "(?, ?, ?, ?, ?, ?, ?, ?, ?)")
-    .join(", ");
+  const placeholders = values.map(() => "(?, ?, ?, ?, ?, ?, ?, ?)").join(", ");
 
   await runQuery(
     `INSERT INTO RoundSwingEvents (
       match_game_id, round_number, time_in_round,
-      event_type, pre_win_prob, post_win_prob, delta,
+      event_type, pre_win_prob, post_win_prob,
       primary_player_steam_id, contributors
     ) VALUES ${placeholders}`,
     values.flat(),

@@ -175,7 +175,7 @@ export const getUtilityDisciplineLeaderboard = async (
 
   const orderClause =
     sortBy === "wasted_asc"
-      ? "SUM(rus.wasted_utility) / COUNT(DISTINCT rus.match_game_id) ASC"
+      ? "COALESCE(wasted.total_wasted, 0) / COUNT(DISTINCT rus.match_game_id) ASC"
       : "SUM(rus.utility_damage) / COUNT(*) DESC";
 
   const rows = await runQuery<
@@ -190,19 +190,35 @@ export const getUtilityDisciplineLeaderboard = async (
   >(
     `SELECT
       rus.steam_id,
-      COUNT(DISTINCT rus.match_game_id) AS games_played,
-      COUNT(*)                          AS rounds_played,
-      SUM(rus.wasted_utility)           AS total_wasted_utility,
-      SUM(rus.utility_damage)           AS total_utility_damage,
-      SUM(rus.enemies_flashed)          AS total_enemies_flashed
+      COUNT(DISTINCT rus.match_game_id)   AS games_played,
+      COUNT(*)                            AS rounds_played,
+      SUM(rus.utility_damage)             AS total_utility_damage,
+      COALESCE(wasted.total_wasted, 0)    AS total_wasted_utility,
+      COALESCE(flashes.total_enemy, 0)    AS total_enemies_flashed
     FROM RoundUtilitySummary rus
     JOIN MatchGames mg ON mg.id = rus.match_game_id
     JOIN Matches m     ON m.id  = mg.match_id
+    LEFT JOIN (
+      SELECT wue.thrower_steam_id, COUNT(*) AS total_wasted
+      FROM WastedUtilityEvents wue
+      JOIN MatchGames mg2 ON mg2.id = wue.match_game_id
+      JOIN Matches m2     ON m2.id  = mg2.match_id
+      WHERE m2.season_id = ?
+      GROUP BY wue.thrower_steam_id
+    ) wasted  ON wasted.thrower_steam_id  = rus.steam_id
+    LEFT JOIN (
+      SELECT fe.thrower_steam_id, SUM(fe.is_enemy_flash) AS total_enemy
+      FROM FlashEvents fe
+      JOIN MatchGames mg3 ON mg3.id = fe.match_game_id
+      JOIN Matches m3     ON m3.id  = mg3.match_id
+      WHERE m3.season_id = ?
+      GROUP BY fe.thrower_steam_id
+    ) flashes ON flashes.thrower_steam_id = rus.steam_id
     WHERE m.season_id = ?
     GROUP BY rus.steam_id
     HAVING games_played >= ?
     ORDER BY ${orderClause}`,
-    [tournament_id, minGames]
+    [tournament_id, tournament_id, tournament_id, minGames]
   );
 
   return rows.map((r, i) => {

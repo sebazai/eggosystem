@@ -679,6 +679,12 @@ interface RoundUtilityEvent {
   teammates_flashed: number;
 }
 
+interface RoundFlashCount {
+  round_number: number;
+  enemies_flashed: number;
+  teammates_flashed: number;
+}
+
 export interface PlayerRoundEvents {
   kills: RoundKillEvent[];
   deaths: RoundDeathEvent[];
@@ -690,7 +696,7 @@ export const getPlayerRoundEvents = async (
   match_game_id: number,
   steam_id: string
 ): Promise<PlayerRoundEvents> => {
-  const [kills, deaths, flashes, utility] = await Promise.all([
+  const [kills, deaths, flashes, utilityBase, flashCounts] = await Promise.all([
     runQuery<RoundKillEvent[]>(
       `SELECT pkl.round_number,
               pkl.time_in_round,
@@ -727,19 +733,38 @@ export const getPlayerRoundEvents = async (
        ORDER BY fe.round_number, fe.time_in_round`,
       [match_game_id, steam_id]
     ),
-    runQuery<RoundUtilityEvent[]>(
+    runQuery<
+      {
+        round_number: number;
+        utility_damage: number;
+        smokes_thrown: number;
+        flashes_thrown: number;
+      }[]
+    >(
       `SELECT round_number,
               utility_damage,
               smokes_thrown,
-              flashes_thrown,
-              enemies_flashed,
-              teammates_flashed
+              flashes_thrown
        FROM RoundUtilitySummary
        WHERE match_game_id = ? AND steam_id = ?
        ORDER BY round_number`,
       [match_game_id, steam_id]
+    ),
+    runQuery<RoundFlashCount[]>(
+      `SELECT round_number,
+              SUM(is_enemy_flash)   AS enemies_flashed,
+              SUM(is_teammate_flash) AS teammates_flashed
+       FROM FlashEvents
+       WHERE match_game_id = ? AND thrower_steam_id = ?
+       GROUP BY round_number
+       ORDER BY round_number`,
+      [match_game_id, steam_id]
     )
   ]);
+
+  const flashCountByRound = new Map(
+    flashCounts.map((r) => [Number(r.round_number), r])
+  );
 
   return {
     kills: kills.map((r) => ({
@@ -758,14 +783,17 @@ export const getPlayerRoundEvents = async (
       duration_seconds: Number(r.duration_seconds),
       is_enemy_flash: Boolean(r.is_enemy_flash)
     })),
-    utility: utility.map((r) => ({
-      round_number: Number(r.round_number),
-      utility_damage: Number(r.utility_damage),
-      smokes_thrown: Number(r.smokes_thrown),
-      flashes_thrown: Number(r.flashes_thrown),
-      enemies_flashed: Number(r.enemies_flashed),
-      teammates_flashed: Number(r.teammates_flashed)
-    }))
+    utility: utilityBase.map((r) => {
+      const fc = flashCountByRound.get(Number(r.round_number));
+      return {
+        round_number: Number(r.round_number),
+        utility_damage: Number(r.utility_damage),
+        smokes_thrown: Number(r.smokes_thrown),
+        flashes_thrown: Number(r.flashes_thrown),
+        enemies_flashed: fc ? Number(fc.enemies_flashed) : 0,
+        teammates_flashed: fc ? Number(fc.teammates_flashed) : 0
+      };
+    })
   };
 };
 
@@ -784,22 +812,18 @@ export const getPlayerGameUtilityStats = async (
   match_game_id: number,
   steam_id: string
 ): Promise<PlayerGameUtilityStats> => {
-  const [summary, wasted] = await Promise.all([
+  const [summary, wasted, flashCounts] = await Promise.all([
     runQuery<
       {
         flashes_thrown: number;
-        enemies_flashed: number;
-        teammates_flashed: number;
         smokes_thrown: number;
         utility_damage: number;
       }[]
     >(
       `SELECT
-        SUM(flashes_thrown)   AS flashes_thrown,
-        SUM(enemies_flashed)  AS enemies_flashed,
-        SUM(teammates_flashed) AS teammates_flashed,
-        SUM(smokes_thrown)    AS smokes_thrown,
-        SUM(utility_damage)   AS utility_damage
+        SUM(flashes_thrown) AS flashes_thrown,
+        SUM(smokes_thrown)  AS smokes_thrown,
+        SUM(utility_damage) AS utility_damage
        FROM RoundUtilitySummary
        WHERE match_game_id = ? AND steam_id = ?`,
       [match_game_id, steam_id]
@@ -809,20 +833,26 @@ export const getPlayerGameUtilityStats = async (
        FROM WastedUtilityEvents
        WHERE match_game_id = ? AND thrower_steam_id = ?`,
       [match_game_id, steam_id]
+    ),
+    runQuery<{ enemies_flashed: number; teammates_flashed: number }[]>(
+      `SELECT
+        SUM(is_enemy_flash)    AS enemies_flashed,
+        SUM(is_teammate_flash) AS teammates_flashed
+       FROM FlashEvents
+       WHERE match_game_id = ? AND thrower_steam_id = ?`,
+      [match_game_id, steam_id]
     )
   ]);
 
   const s = summary[0] ?? {
     flashes_thrown: 0,
-    enemies_flashed: 0,
-    teammates_flashed: 0,
     smokes_thrown: 0,
     utility_damage: 0
   };
   return {
     flashes_thrown: Number(s.flashes_thrown ?? 0),
-    enemies_flashed: Number(s.enemies_flashed ?? 0),
-    teammates_flashed: Number(s.teammates_flashed ?? 0),
+    enemies_flashed: Number(flashCounts[0]?.enemies_flashed ?? 0),
+    teammates_flashed: Number(flashCounts[0]?.teammates_flashed ?? 0),
     smokes_thrown: Number(s.smokes_thrown ?? 0),
     utility_damage: Number(s.utility_damage ?? 0),
     wasted_utility: Number(wasted[0]?.wasted ?? 0)
