@@ -3,6 +3,13 @@
 import React, { useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select";
 import { TableSkeleton } from "@/components/loading";
 import { AfterplantTab } from "./AfterplantTab";
 import { OpeningDuelsTab } from "./OpeningDuelsTab";
@@ -33,6 +40,16 @@ const VALID_TABS = [
   "support-utility"
 ] as const;
 type TabValue = (typeof VALID_TABS)[number];
+
+const TAB_LABELS: Record<TabValue, string> = {
+  insights: "Overview",
+  afterplant: "Afterplants",
+  "opening-duels": "Opening Duels",
+  "kill-matrix": "Kill Matrix",
+  trades: "Trades",
+  "round-swings": "Round Swings",
+  "support-utility": "Support & Utility"
+};
 
 export const MatchGameAnalysis = ({
   matchGameId,
@@ -66,13 +83,6 @@ export const MatchGameAnalysis = ({
   const { playerStats, isLoading: isLoadingPlayers } =
     useGamePlayerStats(matchGameId);
 
-  const isLoadingLegacy =
-    isLoadingAfterplant ||
-    isLoadingPlayers ||
-    isLoadingDuels ||
-    isLoadingTrades;
-
-  // Build a steam_id → nickname map from playerStats for the insights tab
   const playerNames = useMemo(() => {
     const map = new Map<string, string>();
     if (!playerStats) return map;
@@ -84,87 +94,94 @@ export const MatchGameAnalysis = ({
 
   return (
     <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-      <TabsList className="mb-4 grid grid-cols-2 sm:flex w-full h-auto sm:h-9 items-stretch sm:items-center">
-        <TabsTrigger
-          value="insights"
-          className="h-auto sm:h-full py-2 whitespace-normal sm:whitespace-nowrap text-center text-xs sm:text-sm"
-        >
-          Insights
-        </TabsTrigger>
-        <TabsTrigger
-          value="afterplant"
-          className="h-auto sm:h-full py-2 whitespace-normal sm:whitespace-nowrap text-center text-xs sm:text-sm"
-        >
-          Afterplants &amp; Retakes
-        </TabsTrigger>
-        <TabsTrigger
-          value="opening-duels"
-          className="h-auto sm:h-full py-2 whitespace-normal sm:whitespace-nowrap text-center text-xs sm:text-sm"
-        >
-          Opening Duels
-        </TabsTrigger>
-        <TabsTrigger
-          value="kill-matrix"
-          className="h-auto sm:h-full py-2 whitespace-normal sm:whitespace-nowrap text-center text-xs sm:text-sm"
-        >
-          Kill &amp; Flash Matrix
-        </TabsTrigger>
-        <TabsTrigger
-          value="trades"
-          className="col-span-2 sm:col-span-1 h-auto sm:h-full py-2 whitespace-normal sm:whitespace-nowrap text-center text-xs sm:text-sm"
-        >
-          Trades
-        </TabsTrigger>
-        <TabsTrigger
-          value="round-swings"
-          className="col-span-2 sm:col-span-1 h-auto sm:h-full py-2 whitespace-normal sm:whitespace-nowrap text-center text-xs sm:text-sm"
-        >
-          Round Swings
-        </TabsTrigger>
-        <TabsTrigger
-          value="support-utility"
-          className="col-span-2 sm:col-span-1 h-auto sm:h-full py-2 whitespace-normal sm:whitespace-nowrap text-center text-xs sm:text-sm"
-        >
-          Support &amp; Utility
-        </TabsTrigger>
-      </TabsList>
+      {/* Mobile: shadcn select */}
+      <div className="mb-4 min-[773px]:hidden">
+        <Select value={activeTab} onValueChange={handleTabChange}>
+          <SelectTrigger className="w-full rounded-xl border-border/50 bg-card/80 text-xs font-headings focus:ring-1 focus:ring-kanaliiga-orange">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {VALID_TABS.map((tab) => (
+              <SelectItem
+                key={tab}
+                value={tab}
+                className="text-xs font-headings"
+              >
+                {TAB_LABELS[tab]}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Desktop: horizontal tab bar */}
+      <div className="mb-4 hidden min-[773px]:block">
+        <TabsList className="inline-flex h-auto min-w-full w-max gap-0 bg-card/80 border border-border/50 p-0.5 rounded-xl">
+          {VALID_TABS.map((tab) => (
+            <TabsTrigger
+              key={tab}
+              value={tab}
+              className="shrink-0 px-3 py-2 text-xs whitespace-nowrap rounded-lg font-headings data-[state=active]:bg-background data-[state=active]:text-kanaliiga-orange data-[state=active]:shadow-sm"
+            >
+              {TAB_LABELS[tab]}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </div>
 
       <TabsContent value="insights">
-        {(isLoadingInsights || isLoadingPlayers) && <TableSkeleton rows={6} />}
-        {!isLoadingInsights && !isLoadingPlayers && insights && (
-          <InsightsTab
-            insights={insights}
-            playerNames={playerNames}
-            matchTeams={matchInfo.teams}
-          />
+        {(isLoadingInsights || isLoadingPlayers || isLoadingDuels) && (
+          <TableSkeleton rows={6} />
         )}
+        {!isLoadingInsights &&
+          !isLoadingPlayers &&
+          !isLoadingDuels &&
+          insights && (
+            <InsightsTab
+              matchGameId={matchGameId}
+              insights={insights}
+              playerNames={playerNames}
+              playerStats={playerStats ?? []}
+              openingDuels={openingDuels ?? []}
+              matchTeams={matchInfo.teams}
+            />
+          )}
       </TabsContent>
 
       <TabsContent value="afterplant">
-        {isLoadingLegacy && <TableSkeleton rows={6} />}
-        {!isLoadingLegacy && afterplantRounds && playerStats && (
-          <AfterplantTab
-            afterplantRounds={afterplantRounds}
-            playerStats={playerStats}
-            teams={matchInfo.teams}
-          />
+        {(isLoadingAfterplant || isLoadingPlayers) && (
+          <TableSkeleton rows={6} />
         )}
+        {!isLoadingAfterplant &&
+          !isLoadingPlayers &&
+          afterplantRounds &&
+          playerStats && (
+            <AfterplantTab
+              afterplantRounds={afterplantRounds}
+              playerStats={playerStats}
+              teams={matchInfo.teams}
+            />
+          )}
       </TabsContent>
 
       <TabsContent value="opening-duels">
-        {isLoadingLegacy && <TableSkeleton rows={6} />}
-        {!isLoadingLegacy && openingDuels && playerStats && (
-          <OpeningDuelsTab
-            duels={openingDuels}
-            playerStats={playerStats}
-            teams={matchInfo.teams}
-          />
-        )}
+        {(isLoadingPlayers || isLoadingDuels) && <TableSkeleton rows={6} />}
+        {!isLoadingPlayers &&
+          !isLoadingDuels &&
+          openingDuels &&
+          playerStats && (
+            <OpeningDuelsTab
+              matchGameId={matchGameId}
+              duels={openingDuels}
+              playerStats={playerStats}
+              teams={matchInfo.teams}
+            />
+          )}
       </TabsContent>
 
       <TabsContent value="kill-matrix">
-        {isLoadingLegacy && <TableSkeleton rows={6} />}
-        {!isLoadingLegacy && playerStats && (
+        {isLoadingPlayers && <TableSkeleton rows={6} />}
+        {!isLoadingPlayers && playerStats && (
           <KillMatrixTab
             matchGameId={matchGameId}
             playerStats={playerStats}
@@ -174,8 +191,8 @@ export const MatchGameAnalysis = ({
       </TabsContent>
 
       <TabsContent value="trades">
-        {isLoadingLegacy && <TableSkeleton rows={6} />}
-        {!isLoadingLegacy && tradeStats && (
+        {isLoadingTrades && <TableSkeleton rows={6} />}
+        {!isLoadingTrades && tradeStats && (
           <TradeTab tradeStats={tradeStats} teams={matchInfo.teams} />
         )}
       </TabsContent>

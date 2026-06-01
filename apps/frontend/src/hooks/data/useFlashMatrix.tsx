@@ -1,7 +1,7 @@
 import { expressFetcher } from "@/lib/utils";
 import useSWR from "swr";
 
-export interface FlashPair {
+interface FlashPair {
   thrower_steam_id: string;
   victim_steam_id: string;
   flash_count: number;
