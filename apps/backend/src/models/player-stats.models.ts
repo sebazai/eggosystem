@@ -1,6 +1,7 @@
 import { type PlayerStats } from "@eggosystem/types";
 import { type PoolConnection } from "mysql2/promise";
 import { runQuery } from "../db/mysqlRunQuery";
+import { replaceMatchGameRows } from "../db/replaceMatchGameRows";
 import { type DemoPlayer } from "../types/parse-queue.types";
 
 const createDemoPlayerToPlayerStatQueryMapper = (
@@ -127,32 +128,39 @@ const createDemoPlayerToPlayerStatQueryMapper = (
   } satisfies Omit<PlayerStats, "id">;
 };
 
-export const upsertPlayerStatsForGame = async ({
+/**
+ * Replaces all player stats for a match game within the caller's transaction.
+ */
+export const savePlayerStatsForGame = async ({
   matchGameId,
-  playerStats,
+  players,
   connection
 }: {
   matchGameId: number;
-  playerStats: DemoPlayer;
-  connection?: PoolConnection;
-}) => {
-  const playerStat = createDemoPlayerToPlayerStatQueryMapper(
+  players: DemoPlayer[];
+  connection: PoolConnection;
+}): Promise<void> => {
+  await replaceMatchGameRows(
+    connection,
     matchGameId,
-    playerStats
+    "PlayerStats",
+    async () => {
+      if (players.length === 0) return;
+
+      const rows = players.map((player) =>
+        createDemoPlayerToPlayerStatQueryMapper(matchGameId, player)
+      );
+      const keys = Object.keys(rows[0]);
+      const insertIntoKeysString = keys.join(", ");
+      const rowPlaceholders = rows
+        .map(() => `(${keys.map(() => "?").join(", ")})`)
+        .join(", ");
+
+      await runQuery(
+        `INSERT INTO PlayerStats (${insertIntoKeysString}) VALUES ${rowPlaceholders}`,
+        rows.flatMap((row) => Object.values(row)),
+        connection
+      );
+    }
   );
-  // Build the keys and values strings properly
-  const keys = Object.keys(playerStat);
-  const insertIntoKeysString = keys.map((key) => `${key}`).join(", ");
-
-  const insertIntoValuesQuestionMarks = keys.map(() => "?").join(", ");
-
-  // Build the ON DUPLICATE KEY UPDATE clause
-  const updateClause = keys
-    .filter((key) => !["id", "steam_id", "match_game_id"].includes(key))
-    .map((key) => `${key} = VALUES(${key})`)
-    .join(", ");
-
-  const query = `INSERT INTO PlayerStats (${insertIntoKeysString}) VALUES (${insertIntoValuesQuestionMarks})
-    ON DUPLICATE KEY UPDATE ${updateClause}`;
-  return runQuery(query, Object.values(playerStat), connection);
 };

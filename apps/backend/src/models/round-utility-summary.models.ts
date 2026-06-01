@@ -1,5 +1,6 @@
 import { type PoolConnection } from "mysql2/promise";
 import { runQuery } from "../db/mysqlRunQuery";
+import { replaceMatchGameRows } from "../db/replaceMatchGameRows";
 import { type RoundUtilitySummaryEntry } from "../types/parse-queue.types";
 
 interface SaveRoundUtilitySummaryParams {
@@ -19,32 +20,33 @@ export const saveRoundUtilitySummaryForGame = async ({
   entries,
   connection
 }: SaveRoundUtilitySummaryParams): Promise<void> => {
-  await runQuery(
-    "DELETE FROM RoundUtilitySummary WHERE match_game_id = ?",
-    [matchGameId],
-    connection
-  );
-
-  if (!entries || entries.length === 0) return;
-
-  const values = entries.map((e) => [
+  await replaceMatchGameRows(
+    connection,
     matchGameId,
-    e.round_number,
-    String(e.steam_id),
-    e.flashes_thrown,
-    e.smokes_thrown,
-    e.utility_damage
-  ]);
+    "RoundUtilitySummary",
+    async () => {
+      if (!entries || entries.length === 0) return;
 
-  const placeholders = values.map(() => "(?, ?, ?, ?, ?, ?)").join(", ");
+      const values = entries.map((e) => [
+        matchGameId,
+        e.round_number,
+        String(e.steam_id),
+        e.flashes_thrown,
+        e.smokes_thrown,
+        e.utility_damage
+      ]);
 
-  await runQuery(
-    `INSERT INTO RoundUtilitySummary (
-      match_game_id, round_number, steam_id,
-      flashes_thrown, smokes_thrown, utility_damage
-    ) VALUES ${placeholders}`,
-    values.flat(),
-    connection
+      const placeholders = values.map(() => "(?, ?, ?, ?, ?, ?)").join(", ");
+
+      await runQuery(
+        `INSERT INTO RoundUtilitySummary (
+          match_game_id, round_number, steam_id,
+          flashes_thrown, smokes_thrown, utility_damage
+        ) VALUES ${placeholders}`,
+        values.flat(),
+        connection
+      );
+    }
   );
 };
 

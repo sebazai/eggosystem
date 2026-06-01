@@ -1,5 +1,6 @@
 import { type PoolConnection } from "mysql2/promise";
 import { runQuery } from "../db/mysqlRunQuery";
+import { replaceMatchGameRows } from "../db/replaceMatchGameRows";
 import { type RoundSwingEvent } from "../types/parse-queue.types";
 
 interface SaveRoundSwingEventsParams {
@@ -18,39 +19,42 @@ export const saveRoundSwingEventsForGame = async ({
   events,
   connection
 }: SaveRoundSwingEventsParams): Promise<void> => {
-  await runQuery(
-    "DELETE FROM RoundSwingEvents WHERE match_game_id = ?",
-    [matchGameId],
-    connection
-  );
-
-  if (!events || events.length === 0) return;
-
-  const values = events.map((e) => [
+  await replaceMatchGameRows(
+    connection,
     matchGameId,
-    e.round_number,
-    e.time_in_round,
-    e.event_type,
-    e.pre_win_prob,
-    e.post_win_prob,
-    String(e.primary_player),
-    JSON.stringify(
-      (e.contributors ?? []).map((c) => ({
-        steam_id: String(c.steam_id),
-        contribution: c.contribution
-      }))
-    )
-  ]);
+    "RoundSwingEvents",
+    async () => {
+      if (!events || events.length === 0) return;
 
-  const placeholders = values.map(() => "(?, ?, ?, ?, ?, ?, ?, ?)").join(", ");
+      const values = events.map((e) => [
+        matchGameId,
+        e.round_number,
+        e.time_in_round,
+        e.event_type,
+        e.pre_win_prob,
+        e.post_win_prob,
+        String(e.primary_player),
+        JSON.stringify(
+          (e.contributors ?? []).map((c) => ({
+            steam_id: String(c.steam_id),
+            contribution: c.contribution
+          }))
+        )
+      ]);
 
-  await runQuery(
-    `INSERT INTO RoundSwingEvents (
-      match_game_id, round_number, time_in_round,
-      event_type, pre_win_prob, post_win_prob,
-      primary_player_steam_id, contributors
-    ) VALUES ${placeholders}`,
-    values.flat(),
-    connection
+      const placeholders = values
+        .map(() => "(?, ?, ?, ?, ?, ?, ?, ?)")
+        .join(", ");
+
+      await runQuery(
+        `INSERT INTO RoundSwingEvents (
+          match_game_id, round_number, time_in_round,
+          event_type, pre_win_prob, post_win_prob,
+          primary_player_steam_id, contributors
+        ) VALUES ${placeholders}`,
+        values.flat(),
+        connection
+      );
+    }
   );
 };

@@ -122,8 +122,10 @@ The system is season-centric with support for multiple external tournament platf
 - **`SeasonTeamRegistrationPlayers`** - Initial team registrations
 - **`SeasonTeamPlayers`** - Active rosters during competition
 - **`SeasonPlayerApprovals`** - Employment verification for players without work emails
-- **`SeasonPlayerRanks`** - Player rankings from multiple platforms
-- **`SteamPlayerKanaElo`** - Global ELO system (not season-specific)
+- **`SeasonPlayerRanks`** - Player rankings from multiple platforms (includes per-season `kana_elo` snapshot at registration/Sortter time)
+- **`SteamPlayerKanaElo`** - Live global kana_elo from CSRankker bulk recalculation
+
+**Kana elo dual-table contract:** `SteamPlayerKanaElo` holds the current live rating (written by bulk CSRankker recalc). `SeasonPlayerRanks.kana_elo` is the per-season snapshot used by Sortter and historical views. API reads prefer `SteamPlayerKanaElo` and fall back to the latest non-null `SeasonPlayerRanks.kana_elo`. Bulk recalc updates both tables for the player's latest season row when one exists.
 
 Uses a dual-roster system: registration → sorting → competition.
 
