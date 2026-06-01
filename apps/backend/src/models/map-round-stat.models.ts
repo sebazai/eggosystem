@@ -2,6 +2,7 @@ import { type PoolConnection } from "mysql2/promise";
 import { type ParsedPayload } from "../types/parse-queue.types";
 import { runQuery } from "../db/mysqlRunQuery";
 import { replaceMatchGameRows } from "../db/replaceMatchGameRows";
+import { keepLastByKey } from "../utils/keep-last-by-key";
 
 interface SaveMapRoundStatsParams {
   matchGameId: number;
@@ -25,7 +26,11 @@ export const saveMapRoundStatsForGame = async ({
     async () => {
       if (!mapRoundStats || mapRoundStats.length === 0) return;
 
-      const values = mapRoundStats.map((round) => [
+      const uniqueRounds = keepLastByKey(mapRoundStats, (round) =>
+        String(round.RoundNumber)
+      );
+
+      const values = uniqueRounds.map((round) => [
         matchGameId,
         round.CT_Team === 1 ? tTeamIdTeam1 : ctTeamIdTeam2,
         round.T_Team === 1 ? tTeamIdTeam1 : ctTeamIdTeam2,

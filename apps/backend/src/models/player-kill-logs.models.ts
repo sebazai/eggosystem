@@ -2,6 +2,7 @@ import { type PoolConnection } from "mysql2/promise";
 import { runQuery } from "../db/mysqlRunQuery";
 import { replaceMatchGameRows } from "../db/replaceMatchGameRows";
 import { type KillEvent } from "../types/parse-queue.types";
+import { keepLastByKey } from "../utils/keep-last-by-key";
 
 interface SavePlayerKillLogsParams {
   matchGameId: number;
@@ -26,7 +27,13 @@ export const savePlayerKillLogsForGame = async ({
     async () => {
       if (!killLogs || killLogs.length === 0) return;
 
-      const values = killLogs.map((kill) => [
+      const uniqueKills = keepLastByKey(
+        killLogs,
+        (kill) =>
+          `${kill.round_number}:${kill.killer}:${kill.victim}:${kill.time_in_round}`
+      );
+
+      const values = uniqueKills.map((kill) => [
         matchGameId,
         kill.round_number,
         kill.time_in_round,

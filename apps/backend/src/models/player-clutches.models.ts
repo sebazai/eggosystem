@@ -2,6 +2,7 @@ import { type PoolConnection } from "mysql2/promise";
 import { runQuery } from "../db/mysqlRunQuery";
 import { replaceMatchGameRows } from "../db/replaceMatchGameRows";
 import { type DemoClutches } from "../types/parse-queue.types";
+import { keepLastByKey } from "../utils/keep-last-by-key";
 
 export const savePlayerClutchesForGame = async ({
   matchGameId,
@@ -17,7 +18,10 @@ export const savePlayerClutchesForGame = async ({
     matchGameId,
     "PlayerClutches",
     async () => {
-      const infos = clutches?.Infos ?? [];
+      const infos = keepLastByKey(
+        clutches?.Infos ?? [],
+        (clutch) => `${clutch.RoundNumber}:${clutch.SteamID}`
+      );
       if (infos.length === 0) return;
 
       const values = infos.map((clutch) => [

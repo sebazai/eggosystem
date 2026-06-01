@@ -2,6 +2,7 @@ import { type PoolConnection } from "mysql2/promise";
 import { runQuery } from "../db/mysqlRunQuery";
 import { replaceMatchGameRows } from "../db/replaceMatchGameRows";
 import { type DemoRoundImpact } from "../types/parse-queue.types";
+import { keepLastByKey } from "../utils/keep-last-by-key";
 
 function toNumber(v: string | number): number {
   return typeof v === "string" ? parseFloat(v) : v;
@@ -23,7 +24,12 @@ export const savePlayerRoundImpactsForGame = async ({
     async () => {
       if (!roundImpacts?.length) return;
 
-      const values = roundImpacts.map((impact) => [
+      const uniqueImpacts = keepLastByKey(
+        roundImpacts,
+        (impact) => `${impact.RoundNumber}:${impact.SteamID}`
+      );
+
+      const values = uniqueImpacts.map((impact) => [
         matchGameId,
         impact.RoundNumber,
         String(impact.SteamID),

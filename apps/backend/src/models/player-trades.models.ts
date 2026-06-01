@@ -2,6 +2,7 @@ import { type PoolConnection } from "mysql2/promise";
 import { type DemoTrades } from "../types/parse-queue.types";
 import { runQuery } from "../db/mysqlRunQuery";
 import { replaceMatchGameRows } from "../db/replaceMatchGameRows";
+import { keepLastByKey } from "../utils/keep-last-by-key";
 
 export const savePlayerTradesForGame = async ({
   matchGameId,
@@ -17,8 +18,12 @@ export const savePlayerTradesForGame = async ({
     matchGameId,
     "PlayerTrades",
     async () => {
-      const tradesToBeAdded = Object.values(playerTrades).flatMap((trades) =>
-        Object.values(trades).flatMap((trade) => trade)
+      const tradesToBeAdded = keepLastByKey(
+        Object.values(playerTrades).flatMap((trades) =>
+          Object.values(trades).flatMap((trade) => trade)
+        ),
+        (trade) =>
+          `${trade.RoundNumber}:${trade.Trader}:${trade.Killer}:${trade.Victim}`
       );
 
       if (tradesToBeAdded.length === 0) return;
