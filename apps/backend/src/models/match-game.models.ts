@@ -16,12 +16,12 @@ import { type PoolConnection } from "mysql2/promise";
 import { type ParsedPayload } from "../types/parse-queue.types";
 import { generateQueryWithFilters } from "../utils/queryFilter";
 import { upsertTeamGameScore } from "./team-game-score.models";
-import { upsertPlayerStatsForGame } from "./player-stats.models";
-import { upsertPlayerTradesForGame } from "./player-trades.models";
-import { upsertMapRoundStats } from "./map-round-stat.models";
-import { upsertPlayerKillLogsForGame } from "./player-kill-logs.models";
-import { upsertPlayerClutchesForGame } from "./player-clutches.models";
-import { upsertPlayerRoundImpactsForGame } from "./player-round-impacts.models";
+import { savePlayerStatsForGame } from "./player-stats.models";
+import { savePlayerTradesForGame } from "./player-trades.models";
+import { saveMapRoundStatsForGame } from "./map-round-stat.models";
+import { savePlayerKillLogsForGame } from "./player-kill-logs.models";
+import { savePlayerClutchesForGame } from "./player-clutches.models";
+import { savePlayerRoundImpactsForGame } from "./player-round-impacts.models";
 import { saveFlashEventsForGame } from "./flash-events.models";
 import { saveRoundSwingEventsForGame } from "./round-swing-events.models";
 import { saveSetupEventsForGame } from "./setup-events.models";
@@ -419,105 +419,93 @@ export const saveParsedDemoDataForGame = async (
       );
     }
 
-    const teamScoreWrites = skipTeamGameScoreUpsert
-      ? []
-      : [
-          upsertTeamGameScore({
-            match_id: match.match_id,
-            team_id: terroristTeam.team_id,
-            match_game_id: matchGameId,
-            starting_side: "T",
-            score: Score.Team1Score,
-            halftime_score: Score.Team1HTScore,
-            overtime_score: Score.Team1OTScore,
-            connection
-          }),
-          upsertTeamGameScore({
-            match_id: match.match_id,
-            team_id: counterTerroristTeam.team_id,
-            match_game_id: matchGameId,
-            starting_side: "CT",
-            score: Score.Team2Score,
-            halftime_score: Score.Team2HTScore,
-            overtime_score: Score.Team2OTScore,
-            connection
-          })
-        ];
+    // All analytics writes share one transaction: any failure rolls back every
+    // delete+insert pair — no table is left empty while others commit.
+    if (!skipTeamGameScoreUpsert) {
+      await upsertTeamGameScore({
+        match_id: match.match_id,
+        team_id: terroristTeam.team_id,
+        match_game_id: matchGameId,
+        starting_side: "T",
+        score: Score.Team1Score,
+        halftime_score: Score.Team1HTScore,
+        overtime_score: Score.Team1OTScore,
+        connection
+      });
+      await upsertTeamGameScore({
+        match_id: match.match_id,
+        team_id: counterTerroristTeam.team_id,
+        match_game_id: matchGameId,
+        starting_side: "CT",
+        score: Score.Team2Score,
+        halftime_score: Score.Team2HTScore,
+        overtime_score: Score.Team2OTScore,
+        connection
+      });
+    }
 
-    await Promise.all([
-      ...teamScoreWrites,
-      ...Object.values(Players).map((player) =>
-        upsertPlayerStatsForGame({
-          matchGameId: matchGameId,
-          playerStats: player,
-          connection
-        })
-      ),
-      upsertPlayerTradesForGame({
-        matchGameId,
-        playerTrades: Trades,
-        connection
-      }),
-      upsertPlayerClutchesForGame({
-        matchGameId,
-        clutches: Clutches,
-        connection
-      }),
-      upsertPlayerRoundImpactsForGame({
-        matchGameId,
-        roundImpacts: RoundImpacts,
-        connection
-      }),
-      upsertMapRoundStats({
-        matchGameId,
-        tTeamIdTeam1: terroristTeam.team_id,
-        ctTeamIdTeam2: counterTerroristTeam.team_id,
-        mapRoundStats: RoundInfo.Rounds,
-        connection
-      }),
-      // Save kill logs if present (new field from parser)
-      ...(KillLog && KillLog.length > 0
-        ? [
-            upsertPlayerKillLogsForGame({
-              matchGameId,
-              killLogs: KillLog,
-              connection
-            })
-          ]
-        : []),
-      // Hit logs — delete+insert for idempotent reparse (absent on old parser output)
-      savePlayerHitLogsForGame({
-        matchGameId,
-        events: HitLog ?? [],
-        connection
-      }),
-      // Parser 3.2 event logs — always call (delete+insert handles empty arrays and reparse)
-      saveFlashEventsForGame({
-        matchGameId,
-        events: FlashLog ?? [],
-        connection
-      }),
-      saveRoundSwingEventsForGame({
-        matchGameId,
-        events: RoundSwingLog ?? [],
-        connection
-      }),
-      saveSetupEventsForGame({
-        matchGameId,
-        events: SetupEventLog ?? [],
-        connection
-      }),
-      saveWastedUtilityEventsForGame({
-        matchGameId,
-        events: WastedUtilityLog ?? [],
-        connection
-      }),
-      saveRoundUtilitySummaryForGame({
-        matchGameId,
-        entries: RoundUtilitySummary ?? [],
-        connection
-      })
-    ]);
+    await savePlayerStatsForGame({
+      matchGameId,
+      players: Object.values(Players),
+      connection
+    });
+    await savePlayerTradesForGame({
+      matchGameId,
+      playerTrades: Trades,
+      connection
+    });
+    await savePlayerClutchesForGame({
+      matchGameId,
+      clutches: Clutches,
+      connection
+    });
+    await savePlayerRoundImpactsForGame({
+      matchGameId,
+      roundImpacts: RoundImpacts,
+      connection
+    });
+    await saveMapRoundStatsForGame({
+      matchGameId,
+      tTeamIdTeam1: terroristTeam.team_id,
+      ctTeamIdTeam2: counterTerroristTeam.team_id,
+      mapRoundStats: RoundInfo.Rounds,
+      connection
+    });
+    await savePlayerKillLogsForGame({
+      matchGameId,
+      killLogs: KillLog ?? [],
+      connection
+    });
+    await savePlayerHitLogsForGame({
+      matchGameId,
+      events: HitLog ?? [],
+      connection
+    });
+    await saveFlashEventsForGame({
+      matchGameId,
+      events: FlashLog ?? [],
+      connection
+    });
+    await saveRoundSwingEventsForGame({
+      matchGameId,
+      events: RoundSwingLog ?? [],
+      connection
+    });
+    await saveSetupEventsForGame({
+      matchGameId,
+      events: SetupEventLog ?? [],
+      connection
+    });
+    await saveWastedUtilityEventsForGame({
+      matchGameId,
+      events: WastedUtilityLog ?? [],
+      connection
+    });
+    await saveRoundUtilitySummaryForGame({
+      matchGameId,
+      entries: RoundUtilitySummary ?? [],
+      connection
+    });
 
     await connection.commit();
   } catch (error) {

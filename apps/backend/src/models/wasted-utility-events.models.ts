@@ -1,5 +1,6 @@
 import { type PoolConnection } from "mysql2/promise";
 import { runQuery } from "../db/mysqlRunQuery";
+import { replaceMatchGameRows } from "../db/replaceMatchGameRows";
 import { type WastedUtilityEvent } from "../types/parse-queue.types";
 
 interface SaveWastedUtilityEventsParams {
@@ -17,31 +18,32 @@ export const saveWastedUtilityEventsForGame = async ({
   events,
   connection
 }: SaveWastedUtilityEventsParams): Promise<void> => {
-  await runQuery(
-    "DELETE FROM WastedUtilityEvents WHERE match_game_id = ?",
-    [matchGameId],
-    connection
-  );
-
-  if (!events || events.length === 0) return;
-
-  const values = events.map((e) => [
+  await replaceMatchGameRows(
+    connection,
     matchGameId,
-    e.round_number,
-    e.time_in_round,
-    String(e.thrower),
-    e.utility_type
-  ]);
+    "WastedUtilityEvents",
+    async () => {
+      if (!events || events.length === 0) return;
 
-  const placeholders = values.map(() => "(?, ?, ?, ?, ?)").join(", ");
+      const values = events.map((e) => [
+        matchGameId,
+        e.round_number,
+        e.time_in_round,
+        String(e.thrower),
+        e.utility_type
+      ]);
 
-  await runQuery(
-    `INSERT INTO WastedUtilityEvents (
-      match_game_id, round_number, time_in_round,
-      thrower_steam_id, utility_type
-    ) VALUES ${placeholders}`,
-    values.flat(),
-    connection
+      const placeholders = values.map(() => "(?, ?, ?, ?, ?)").join(", ");
+
+      await runQuery(
+        `INSERT INTO WastedUtilityEvents (
+          match_game_id, round_number, time_in_round,
+          thrower_steam_id, utility_type
+        ) VALUES ${placeholders}`,
+        values.flat(),
+        connection
+      );
+    }
   );
 };
 

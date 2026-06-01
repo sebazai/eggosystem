@@ -333,6 +333,18 @@ describe("saveParsedDemoDataForGame Integration Tests", () => {
     );
     await runQuery("DELETE FROM PlayerStats WHERE match_game_id = ?", [123123]);
     await runQuery(
+      "DELETE FROM PlayerClutches WHERE match_game_id = ?",
+      [123123]
+    );
+    await runQuery(
+      "DELETE FROM PlayerRoundImpacts WHERE match_game_id = ?",
+      [123123]
+    );
+    await runQuery(
+      "DELETE FROM PlayerKillLogs WHERE match_game_id = ?",
+      [123123]
+    );
+    await runQuery(
       "DELETE FROM TeamGameScores WHERE match_game_id = ?",
       [123123]
     );
@@ -546,6 +558,69 @@ describe("saveParsedDemoDataForGame Integration Tests", () => {
       // NewRoundInfo fields persisted from parser (round 1 in mock: Winner "CT", RoundType "CT:eco-T:eco")
       expect(mapRoundStats[0].winner).toBe("CT");
       expect(mapRoundStats[0].round_type).toBe("CT:eco-T:eco");
+    });
+
+    it("should remove stale analytics rows on reparse with fewer events", async () => {
+      await saveParsedDemoDataForGame(
+        MOCK_MATCH_GAME_ID,
+        MOCK_PARSED_DEMO_DATA
+      );
+
+      const [tradesBefore] = await runQuery<CountResult[]>(
+        "SELECT COUNT(*) AS count FROM PlayerTrades WHERE match_game_id = ?",
+        [123123]
+      );
+      const [roundsBefore] = await runQuery<CountResult[]>(
+        "SELECT COUNT(*) AS count FROM MapRoundStats WHERE match_game_id = ?",
+        [123123]
+      );
+
+      expect(Number(tradesBefore.count)).toBe(75);
+      expect(Number(roundsBefore.count)).toBe(22);
+
+      const reducedPayload = {
+        ...MOCK_PARSED_DEMO_DATA,
+        Trades: {},
+        Clutches: { Infos: [] },
+        RoundImpacts: [],
+        NewRoundInfo: { Rounds: [] },
+        KillLog: []
+      };
+
+      await saveParsedDemoDataForGame(MOCK_MATCH_GAME_ID, reducedPayload);
+
+      const [tradesAfter] = await runQuery<CountResult[]>(
+        "SELECT COUNT(*) AS count FROM PlayerTrades WHERE match_game_id = ?",
+        [123123]
+      );
+      const [roundsAfter] = await runQuery<CountResult[]>(
+        "SELECT COUNT(*) AS count FROM MapRoundStats WHERE match_game_id = ?",
+        [123123]
+      );
+      const [impactsAfter] = await runQuery<CountResult[]>(
+        "SELECT COUNT(*) AS count FROM PlayerRoundImpacts WHERE match_game_id = ?",
+        [123123]
+      );
+      const [clutchesAfter] = await runQuery<CountResult[]>(
+        "SELECT COUNT(*) AS count FROM PlayerClutches WHERE match_game_id = ?",
+        [123123]
+      );
+      const [killsAfter] = await runQuery<CountResult[]>(
+        "SELECT COUNT(*) AS count FROM PlayerKillLogs WHERE match_game_id = ?",
+        [123123]
+      );
+
+      expect(Number(tradesAfter.count)).toBe(0);
+      expect(Number(roundsAfter.count)).toBe(0);
+      expect(Number(impactsAfter.count)).toBe(0);
+      expect(Number(clutchesAfter.count)).toBe(0);
+      expect(Number(killsAfter.count)).toBe(0);
+
+      const playerStats = await runQuery<PlayerStat[]>(
+        "SELECT * FROM PlayerStats WHERE match_game_id = ?",
+        [123123]
+      );
+      expect(playerStats).toHaveLength(10);
     });
   });
 

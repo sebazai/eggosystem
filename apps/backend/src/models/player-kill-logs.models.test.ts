@@ -1,4 +1,4 @@
-import { upsertPlayerKillLogsForGame } from "./player-kill-logs.models";
+import { savePlayerKillLogsForGame } from "./player-kill-logs.models";
 import { runQuery } from "../db/mysqlRunQuery";
 import { type KillEvent } from "../types/parse-queue.types";
 import { type PoolConnection } from "mysql2/promise";
@@ -31,36 +31,46 @@ function createKillEvent(overrides: Partial<KillEvent> = {}): KillEvent {
   };
 }
 
-describe("upsertPlayerKillLogsForGame", () => {
+describe("savePlayerKillLogsForGame", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockRunQuery.mockResolvedValue([] as never);
   });
 
   describe("empty / no-op cases", () => {
-    it("does nothing when killLogs is empty", async () => {
-      await upsertPlayerKillLogsForGame({
+    it("deletes existing rows even when killLogs is empty", async () => {
+      await savePlayerKillLogsForGame({
         matchGameId: 1,
         killLogs: [],
         connection: mockConnection
       });
-      expect(mockRunQuery).not.toHaveBeenCalled();
+
+      expect(mockRunQuery).toHaveBeenCalledTimes(1);
+      expect(mockRunQuery).toHaveBeenCalledWith(
+        "DELETE FROM PlayerKillLogs WHERE match_game_id = ?",
+        [1],
+        mockConnection
+      );
     });
 
-    it("does nothing when killLogs is undefined-ish (null guard)", async () => {
-      await upsertPlayerKillLogsForGame({
+    it("deletes existing rows when killLogs is null-ish", async () => {
+      await savePlayerKillLogsForGame({
         matchGameId: 1,
         killLogs: null as unknown as KillEvent[],
         connection: mockConnection
       });
-      expect(mockRunQuery).not.toHaveBeenCalled();
+
+      expect(mockRunQuery).toHaveBeenCalledTimes(1);
+      expect(mockRunQuery).toHaveBeenCalledWith(
+        "DELETE FROM PlayerKillLogs WHERE match_game_id = ?",
+        [1],
+        mockConnection
+      );
     });
   });
 
   describe("KanaRating 3.2 enrichment fields present", () => {
     it("maps all new fields into the query values", async () => {
-      // Use safe integers — real steam IDs (>2^53) lose precision as JS numbers.
-      // The model converts them to strings; safe integers are sufficient for unit tests.
       const kill = createKillEvent({
         is_first_death: true,
         is_exit_kill: false,
@@ -73,36 +83,35 @@ describe("upsertPlayerKillLogsForGame", () => {
         victim_blind_seconds: 2.84
       });
 
-      await upsertPlayerKillLogsForGame({
+      await savePlayerKillLogsForGame({
         matchGameId: 42,
         killLogs: [kill],
         connection: mockConnection
       });
 
-      expect(mockRunQuery).toHaveBeenCalledTimes(1);
-      const [, flatValues] = mockRunQuery.mock.calls[0];
+      expect(mockRunQuery).toHaveBeenCalledTimes(2);
+      const [, flatValues] = mockRunQuery.mock.calls[1];
       const values = flatValues as unknown[];
 
-      // New fields are at positions 16–24 (0-indexed) in the flattened row
-      expect(values[16]).toBe(true); // is_first_death
-      expect(values[17]).toBe(false); // is_exit_kill
-      expect(values[18]).toBe(true); // is_post_plant
-      expect(values[19]).toBe(false); // was_victim_traded
-      expect(values[20]).toBe("Full Buy"); // ct_buy_type
-      expect(values[21]).toBe("Eco"); // t_buy_type
-      expect(values[22]).toBe("100000001"); // setup_flash_thrower as string
-      expect(values[23]).toBe("100000002"); // setup_damage_player as string
-      expect(values[24]).toBe(2.84); // victim_blind_seconds
+      expect(values[16]).toBe(true);
+      expect(values[17]).toBe(false);
+      expect(values[18]).toBe(true);
+      expect(values[19]).toBe(false);
+      expect(values[20]).toBe("Full Buy");
+      expect(values[21]).toBe("Eco");
+      expect(values[22]).toBe("100000001");
+      expect(values[23]).toBe("100000002");
+      expect(values[24]).toBe(2.84);
     });
 
     it("includes all 25 column placeholders per row", async () => {
-      await upsertPlayerKillLogsForGame({
+      await savePlayerKillLogsForGame({
         matchGameId: 1,
         killLogs: [createKillEvent()],
         connection: mockConnection
       });
 
-      const [query] = mockRunQuery.mock.calls[0];
+      const [query] = mockRunQuery.mock.calls[1];
       const placeholderCount = ((query as string).match(/\?/g) ?? []).length;
       expect(placeholderCount).toBe(25);
     });
@@ -110,68 +119,60 @@ describe("upsertPlayerKillLogsForGame", () => {
 
   describe("backward compatibility — old parser output (fields absent)", () => {
     it("stores NULL for all 3.2 fields when they are missing", async () => {
-      const kill = createKillEvent(); // no 3.2 fields
+      const kill = createKillEvent();
 
-      await upsertPlayerKillLogsForGame({
+      await savePlayerKillLogsForGame({
         matchGameId: 1,
         killLogs: [kill],
         connection: mockConnection
       });
 
-      const [, flatValues] = mockRunQuery.mock.calls[0];
+      const [, flatValues] = mockRunQuery.mock.calls[1];
       const values = flatValues as unknown[];
 
-      expect(values[16]).toBeNull(); // is_first_death
-      expect(values[17]).toBeNull(); // is_exit_kill
-      expect(values[18]).toBeNull(); // is_post_plant
-      expect(values[19]).toBeNull(); // was_victim_traded
-      expect(values[20]).toBeNull(); // ct_buy_type
-      expect(values[21]).toBeNull(); // t_buy_type
-      expect(values[22]).toBeNull(); // setup_flash_thrower
-      expect(values[23]).toBeNull(); // setup_damage_player
-      expect(values[24]).toBeNull(); // victim_blind_seconds
+      expect(values[16]).toBeNull();
+      expect(values[17]).toBeNull();
+      expect(values[18]).toBeNull();
+      expect(values[19]).toBeNull();
+      expect(values[20]).toBeNull();
+      expect(values[21]).toBeNull();
+      expect(values[22]).toBeNull();
+      expect(values[23]).toBeNull();
+      expect(values[24]).toBeNull();
     });
   });
 
   describe("setup steam ID zero-to-null conversion", () => {
     it("converts setup_flash_thrower = 0 to NULL", async () => {
-      const kill = createKillEvent({ setup_flash_thrower: 0 });
-
-      await upsertPlayerKillLogsForGame({
+      await savePlayerKillLogsForGame({
         matchGameId: 1,
-        killLogs: [kill],
+        killLogs: [createKillEvent({ setup_flash_thrower: 0 })],
         connection: mockConnection
       });
 
-      const [, flatValues] = mockRunQuery.mock.calls[0];
+      const [, flatValues] = mockRunQuery.mock.calls[1];
       expect((flatValues as unknown[])[22]).toBeNull();
     });
 
     it("converts setup_damage_player = 0 to NULL", async () => {
-      const kill = createKillEvent({ setup_damage_player: 0 });
-
-      await upsertPlayerKillLogsForGame({
+      await savePlayerKillLogsForGame({
         matchGameId: 1,
-        killLogs: [kill],
+        killLogs: [createKillEvent({ setup_damage_player: 0 })],
         connection: mockConnection
       });
 
-      const [, flatValues] = mockRunQuery.mock.calls[0];
+      const [, flatValues] = mockRunQuery.mock.calls[1];
       expect((flatValues as unknown[])[23]).toBeNull();
     });
 
     it("preserves a real steam ID for setup_flash_thrower", async () => {
-      const kill = createKillEvent({
-        setup_flash_thrower: 100000001
-      });
-
-      await upsertPlayerKillLogsForGame({
+      await savePlayerKillLogsForGame({
         matchGameId: 1,
-        killLogs: [kill],
+        killLogs: [createKillEvent({ setup_flash_thrower: 100000001 })],
         connection: mockConnection
       });
 
-      const [, flatValues] = mockRunQuery.mock.calls[0];
+      const [, flatValues] = mockRunQuery.mock.calls[1];
       expect((flatValues as unknown[])[22]).toBe("100000001");
     });
   });
@@ -180,14 +181,14 @@ describe("upsertPlayerKillLogsForGame", () => {
     it("generates one placeholder group per kill", async () => {
       const kills = [createKillEvent(), createKillEvent({ round_number: 2 })];
 
-      await upsertPlayerKillLogsForGame({
+      await savePlayerKillLogsForGame({
         matchGameId: 1,
         killLogs: kills,
         connection: mockConnection
       });
 
-      const [, flatValues] = mockRunQuery.mock.calls[0];
-      expect((flatValues as unknown[]).length).toBe(50); // 25 columns × 2 kills
+      const [, flatValues] = mockRunQuery.mock.calls[1];
+      expect((flatValues as unknown[]).length).toBe(50);
     });
   });
 });
