@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { TableSkeleton } from "@/components/loading";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   useRoundSwings,
   type RoundSwingEntry
@@ -662,7 +662,20 @@ export const RoundSwingTab = ({
         title="Key rounds by momentum"
         sub="Ranked by total win-probability shifted — events listed chronologically"
       >
-        {isLoading && <TableSkeleton rows={5} />}
+        {isLoading && (
+          <div className="flex flex-col gap-2">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div
+                key={i}
+                className="flex items-center gap-3 py-2 border-b border-border/20"
+              >
+                <Skeleton className="h-4 w-8 opacity-60" />
+                <Skeleton className="h-3 flex-1 rounded-full opacity-40" />
+                <Skeleton className="h-3 w-12 opacity-50" />
+              </div>
+            ))}
+          </div>
+        )}
         {!isLoading && rankedGroups.length === 0 && (
           <div className="text-sm text-muted-foreground/60 py-4 text-center">
             No swing data available

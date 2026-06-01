@@ -6,7 +6,7 @@ import { useFlashMatrix } from "@/hooks/data/useFlashMatrix";
 import { useSetupPairs } from "@/hooks/data/useSetupPairs";
 import { useWastedUtility } from "@/hooks/data/useWastedUtility";
 import { useRoundUtilitySummary } from "@/hooks/data/useRoundUtilitySummary";
-import { TableSkeleton } from "@/components/loading";
+import { AnalysisGenericSkeleton } from "./AnalysisSkeleton";
 import {
   AnalysisCard,
   VersusStat,
@@ -312,7 +312,7 @@ export const SupportUtilityTab = ({
     isLoadingWasted ||
     isLoadingRoundUtil
   ) {
-    return <TableSkeleton rows={6} />;
+    return <AnalysisGenericSkeleton cards={2} />;
   }
 
   return (

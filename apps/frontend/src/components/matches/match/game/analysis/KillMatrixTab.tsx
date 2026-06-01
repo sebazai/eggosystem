@@ -4,7 +4,7 @@ import React, { useMemo, useState } from "react";
 import { useFlashMatrix } from "@/hooks/data/useFlashMatrix";
 import { useMatchGameKillMatrix } from "@/hooks/data/useMatchGameKillMatrix";
 import { useEntryKills } from "@/hooks/data/useEntryKills";
-import { TableSkeleton } from "@/components/loading";
+import { AnalysisGenericSkeleton } from "./AnalysisSkeleton";
 import { orderMatchParticipantsBySideHomeLeft } from "@/lib/order-match-teams-home-left-away";
 import {
   AnalysisCard,
@@ -396,7 +396,7 @@ export const KillMatrixTab = ({
   }, [entryKills]);
 
   if (isLoadingMatrix || isLoadingFlash || isLoadingEntries)
-    return <TableSkeleton rows={6} />;
+    return <AnalysisGenericSkeleton cards={2} />;
 
   return (
     <div className="flex flex-col gap-3.5">

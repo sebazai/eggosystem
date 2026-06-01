@@ -10,7 +10,10 @@ import {
   SelectTrigger,
   SelectValue
 } from "@/components/ui/select";
-import { TableSkeleton } from "@/components/loading";
+import {
+  AnalysisInsightsSkeleton,
+  AnalysisGenericSkeleton
+} from "./AnalysisSkeleton";
 import { AfterplantTab } from "./AfterplantTab";
 import { OpeningDuelsTab } from "./OpeningDuelsTab";
 import { KillMatrixTab } from "./KillMatrixTab";
@@ -131,7 +134,7 @@ export const MatchGameAnalysis = ({
 
       <TabsContent value="insights">
         {(isLoadingInsights || isLoadingPlayers || isLoadingDuels) && (
-          <TableSkeleton rows={6} />
+          <AnalysisInsightsSkeleton />
         )}
         {!isLoadingInsights &&
           !isLoadingPlayers &&
@@ -150,7 +153,7 @@ export const MatchGameAnalysis = ({
 
       <TabsContent value="afterplant">
         {(isLoadingAfterplant || isLoadingPlayers) && (
-          <TableSkeleton rows={6} />
+          <AnalysisGenericSkeleton cards={2} />
         )}
         {!isLoadingAfterplant &&
           !isLoadingPlayers &&
@@ -165,7 +168,9 @@ export const MatchGameAnalysis = ({
       </TabsContent>
 
       <TabsContent value="opening-duels">
-        {(isLoadingPlayers || isLoadingDuels) && <TableSkeleton rows={6} />}
+        {(isLoadingPlayers || isLoadingDuels) && (
+          <AnalysisGenericSkeleton cards={2} />
+        )}
         {!isLoadingPlayers &&
           !isLoadingDuels &&
           openingDuels &&
@@ -180,7 +185,7 @@ export const MatchGameAnalysis = ({
       </TabsContent>
 
       <TabsContent value="kill-matrix">
-        {isLoadingPlayers && <TableSkeleton rows={6} />}
+        {isLoadingPlayers && <AnalysisGenericSkeleton cards={1} />}
         {!isLoadingPlayers && playerStats && (
           <KillMatrixTab
             matchGameId={matchGameId}
@@ -191,7 +196,7 @@ export const MatchGameAnalysis = ({
       </TabsContent>
 
       <TabsContent value="trades">
-        {isLoadingTrades && <TableSkeleton rows={6} />}
+        {isLoadingTrades && <AnalysisGenericSkeleton cards={2} />}
         {!isLoadingTrades && tradeStats && (
           <TradeTab tradeStats={tradeStats} teams={matchInfo.teams} />
         )}
@@ -206,7 +211,7 @@ export const MatchGameAnalysis = ({
       </TabsContent>
 
       <TabsContent value="support-utility">
-        {isLoadingPlayers && <TableSkeleton rows={6} />}
+        {isLoadingPlayers && <AnalysisGenericSkeleton cards={2} />}
         {!isLoadingPlayers && playerStats && (
           <SupportUtilityTab
             matchGameId={matchGameId}

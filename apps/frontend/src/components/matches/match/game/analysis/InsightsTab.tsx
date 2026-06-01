@@ -2,7 +2,6 @@
 
 import React, { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
-import { TableSkeleton } from "@/components/loading";
 import { useGameRoundInfo } from "@/hooks/data/useGameRoundInfo";
 import { orderMatchParticipantsBySideHomeLeft } from "@/lib/order-match-teams-home-left-away";
 import {
@@ -859,7 +858,9 @@ export const InsightsTab = ({
           patterns from this map.
         </div>
         {insights.teams.length === 0 ? (
-          <TableSkeleton rows={3} />
+          <div className="text-xs text-muted-foreground/40 py-6 text-center italic">
+            No patterns available for this map.
+          </div>
         ) : (
           <div className="flex flex-col sm:flex-row gap-3">
             {teamA && (
