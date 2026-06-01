@@ -1,6 +1,23 @@
 import { type PoolConnection } from "mysql2/promise";
 import { runQuery } from "./mysqlRunQuery";
 
+const _MATCH_GAME_TABLES = [
+  "FlashEvents",
+  "MapRoundStats",
+  "PlayerClutches",
+  "PlayerHitLogs",
+  "PlayerKillLogs",
+  "PlayerRoundImpacts",
+  "PlayerStats",
+  "PlayerTrades",
+  "RoundSwingEvents",
+  "RoundUtilitySummary",
+  "SetupEvents",
+  "WastedUtilityEvents"
+] as const;
+
+export type MatchGameTable = (typeof _MATCH_GAME_TABLES)[number];
+
 /**
  * Deletes all rows for a match game, then runs insert.
  *
@@ -12,7 +29,7 @@ import { runQuery } from "./mysqlRunQuery";
 export async function replaceMatchGameRows(
   connection: PoolConnection,
   matchGameId: number,
-  tableName: string,
+  tableName: MatchGameTable,
   insert: () => Promise<void>
 ): Promise<void> {
   await runQuery(

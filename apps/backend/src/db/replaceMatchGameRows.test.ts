@@ -1,5 +1,8 @@
 import { type PoolConnection } from "mysql2/promise";
-import { replaceMatchGameRows } from "./replaceMatchGameRows";
+import {
+  replaceMatchGameRows,
+  type MatchGameTable
+} from "./replaceMatchGameRows";
 import { runQuery } from "./mysqlRunQuery";
 
 jest.mock("./mysqlRunQuery", () => ({
@@ -45,6 +48,13 @@ describe("replaceMatchGameRows", () => {
     expect(mockRunQuery.mock.calls[0][0]).toBe(
       "DELETE FROM PlayerTrades WHERE match_game_id = ?"
     );
+  });
+
+  it("only accepts known table names (enforced at compile time)", () => {
+    const table: MatchGameTable = "PlayerStats";
+    // @ts-expect-error — unknown tables are rejected by the type system
+    const _invalid: MatchGameTable = "UnknownTable";
+    expect(table).toBe("PlayerStats");
   });
 
   it("propagates insert errors after delete (caller must rollback)", async () => {
