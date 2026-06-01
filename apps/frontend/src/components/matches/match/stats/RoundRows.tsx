@@ -302,7 +302,7 @@ export const RoundInfo = ({
           {!isProcessing && hasViewerData && (
             <Button
               variant="kanaliigaOrange"
-              size="xs"
+              size="sm"
               onClick={() => setIs2DViewerOpen(true)}
             >
               Open 2D Viewer

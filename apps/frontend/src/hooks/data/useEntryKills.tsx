@@ -1,7 +1,7 @@
 import { expressFetcher } from "@/lib/utils";
 import useSWR from "swr";
 
-export interface EntryKill {
+interface EntryKill {
   round_number: number;
   time_in_round: number;
   killer_steam_id: string;

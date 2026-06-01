@@ -4,7 +4,6 @@ import { ContentContainer } from "@/components/layout/ContentContainer";
 import { MatchGameAnalysis } from "@/components/matches/match/game/analysis/MatchGameAnalysis";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
-import { Button } from "@/components/ui/button";
 
 interface PageProps {
   params: Promise<{ match_id: string; match_game_id: string }>;
@@ -30,13 +29,14 @@ export default async function MatchGameAnalysisPage({ params }: PageProps) {
   const matchInfo = await getMatchInfo<MatchInfo>(matchId);
 
   return (
-    <div className="space-y-4 sm:space-y-6 p-1 sm:p-3 max-w-5xl mx-auto">
-      <Button variant="outline" size="sm" asChild>
-        <Link href={`/matches/${matchId}/games/${matchGameId}`}>
-          <ChevronLeft className="size-4" />
-          Back to game stats
-        </Link>
-      </Button>
+    <div className="space-y-4 sm:space-y-6 p-1 sm:p-3 w-full">
+      <Link
+        href={`/matches/${matchId}/games/${matchGameId}`}
+        className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors w-fit"
+      >
+        <ChevronLeft className="size-4" />
+        Back to game stats
+      </Link>
 
       <div>
         <h1 className="text-xl font-bold uppercase tracking-wide">
