@@ -3,8 +3,8 @@ import type { Metadata } from "next";
 import { MatchesView } from "@/components/matches/MatchesView";
 
 export const metadata: Metadata = createPageMetadata({
-  title: "Recent matches",
-  description: "Recent matches played in Kanaliiga"
+  title: "Match History",
+  description: "Browse match history from Kanaliiga seasons"
 });
 
 export default function AllMatches() {

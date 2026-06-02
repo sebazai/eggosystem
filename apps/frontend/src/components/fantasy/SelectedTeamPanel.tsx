@@ -178,6 +178,7 @@ export default function SelectedTeamPanel({
                           src={player.photo}
                           alt={player.name}
                           fill
+                          sizes="(max-width: 640px) 30vw, 120px"
                           className="object-cover"
                           unoptimized
                         />

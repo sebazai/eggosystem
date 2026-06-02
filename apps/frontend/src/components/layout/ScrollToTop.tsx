@@ -1,16 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowUpCircle } from "lucide-react"; // Optional icon library
-import { useScrolled } from "@/hooks/useScrolled";
+import { ArrowUpCircle } from "lucide-react";
 
-const ScrollToTop = () => {
-  const [show, setShow] = useState(false);
-  const { scrolledTo } = useScrolled();
+export default function ScrollToTop() {
+  const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    setShow(scrolledTo > 500);
-  }, [scrolledTo]);
+    const handleScroll = () => {
+      setIsVisible(window.scrollY > 500);
+    };
+
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -18,15 +23,14 @@ const ScrollToTop = () => {
 
   return (
     <button
+      type="button"
       onClick={scrollToTop}
-      className={`z-40 fixed bottom-3 right-3 p-3 bg-secondary border-1 border-ring rounded-full shadow-lg transition-opacity duration-300 ${
-        show ? "opacity-100" : "opacity-0 pointer-events-none"
+      className={`fixed bottom-3 right-3 z-40 rounded-full border border-ring bg-secondary p-3 shadow-lg transition-opacity duration-300 ${
+        isVisible ? "opacity-100" : "pointer-events-none opacity-0"
       }`}
       aria-label="Scroll to Top"
     >
-      <ArrowUpCircle className="w-4 h-4" />
+      <ArrowUpCircle className="size-4" />
     </button>
   );
-};
-
-export default ScrollToTop;
+}

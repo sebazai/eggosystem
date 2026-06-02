@@ -22,8 +22,12 @@ export default function UserDropdown() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline">
-          {user ? <UserCheckIcon /> : <UserIcon />}
+        <Button variant="outline" size="lg" className="h-9 w-9 lg:h-10 lg:w-10">
+          {user ? (
+            <UserCheckIcon className="size-4" />
+          ) : (
+            <UserIcon className="size-4" />
+          )}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-66">

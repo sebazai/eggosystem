@@ -1,15 +1,15 @@
 import { screen } from "@testing-library/react";
 import { Navigation } from "./Navigation";
 import { useActiveSignupOrActiveSeasonForApp } from "@/hooks/data/useActiveSignupOrActiveSeasonForApp";
-import { SeasonPlatform } from "@eggosystem/types";
+import {
+  createMockActiveSignupOrSeasonForAppId,
+  SeasonPlatform
+} from "@eggosystem/types";
 import {
   renderWithAuthAndSWR,
-  resetMockAuthState,
-  createMockUser,
-  getMockAuthState
+  resetMockAuthState
 } from "@/test-utils/test-utils";
 
-// Mock useAuth hook - MUST be before other mocks
 jest.mock("@/context/AuthContext", () => ({
   useAuth: jest.fn(() => {
     const { getMockAuthState } = jest.requireActual("@/test-utils/test-utils");
@@ -17,36 +17,25 @@ jest.mock("@/context/AuthContext", () => ({
   })
 }));
 
-// Mock the hook
 jest.mock("@/hooks/data/useActiveSignupOrActiveSeasonForApp");
 const mockUseActiveSignupOrActiveSeasonForApp =
   useActiveSignupOrActiveSeasonForApp as jest.MockedFunction<
     typeof useActiveSignupOrActiveSeasonForApp
   >;
 
-// Mock Next.js navigation
 jest.mock("next/navigation", () => ({
-  usePathname: () => "/",
   useSearchParams: () => new URLSearchParams()
 }));
 
-// Mock the mobile hook
 jest.mock("@/hooks/use-mobile", () => ({
   useIsMobile: () => false
 }));
 
-// Mock the scroll hook
-jest.mock("@/hooks/useScrolled", () => ({
-  useScrolled: () => false
-}));
-
-// Mock UserMenuDropdown to avoid useAuth dependency
 jest.mock("./UserMenuDropdown", () => ({
   __esModule: true,
   default: () => <div data-testid="user-menu-dropdown">User Menu</div>
 }));
 
-// Mock MobileUserMenu to avoid useAuth dependency
 jest.mock("./mobile/MobileUserMenu", () => ({
   MobileUserMenu: ({
     setIsSheetOpen: _setIsSheetOpen
@@ -55,66 +44,33 @@ jest.mock("./mobile/MobileUserMenu", () => ({
   }) => <div data-testid="mobile-user-menu">Mobile User Menu</div>
 }));
 
+function createLiveSeason() {
+  const futureDate = new Date();
+  futureDate.setDate(futureDate.getDate() + 30);
+
+  const pastDate = new Date();
+  pastDate.setDate(pastDate.getDate() - 30);
+
+  const toDateString = (date: Date) => date.toISOString().split("T")[0]!;
+
+  return createMockActiveSignupOrSeasonForAppId({
+    season_id: 17,
+    platform: SeasonPlatform.Kanaliiga,
+    full_name: "CS2 Season 5",
+    signup_end_date: toDateString(futureDate),
+    signup_start_date: toDateString(pastDate),
+    start_date: toDateString(pastDate),
+    end_date: toDateString(futureDate)
+  });
+}
+
 describe("Navigation", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     resetMockAuthState();
   });
 
-  it("should render season dropdown menu when season is active", () => {
-    // Mock active season data
-    mockUseActiveSignupOrActiveSeasonForApp.mockReturnValue({
-      signupOrActiveSeason: {
-        season_id: 14,
-        platform: SeasonPlatform.Kanaliiga,
-        full_name: "Season 14",
-        signup_end_date: "2024-12-31",
-        signup_start_date: "2024-01-01",
-        start_date: "2024-01-31",
-        end_date: "2024-03-31"
-      },
-      isLoading: false,
-      isError: false,
-      isValidating: false
-    });
-
-    renderWithAuthAndSWR(<Navigation />);
-
-    // Check that the season dropdown trigger is rendered (S14)
-    expect(screen.getByText("S14")).toBeInTheDocument();
-
-    // Check that the season dropdown is a button (dropdown trigger)
-    const seasonDropdown = screen.getByText("S14").closest("button");
-    expect(seasonDropdown).toBeInTheDocument();
-  });
-
-  it("should render season dropdown with correct structure", () => {
-    mockUseActiveSignupOrActiveSeasonForApp.mockReturnValue({
-      signupOrActiveSeason: {
-        season_id: 14,
-        platform: SeasonPlatform.Kanaliiga,
-        full_name: "Season 14",
-        signup_end_date: "2024-12-31",
-        signup_start_date: "2024-01-01",
-        start_date: "2024-01-31",
-        end_date: "2024-03-31"
-      },
-      isLoading: false,
-      isError: false,
-      isValidating: false
-    });
-
-    renderWithAuthAndSWR(<Navigation />);
-
-    // Check that the season dropdown trigger is rendered
-    expect(screen.getByText("S14")).toBeInTheDocument();
-
-    // Check that it's a dropdown trigger button
-    const seasonDropdown = screen.getByText("S14").closest("button");
-    expect(seasonDropdown).toHaveAttribute("aria-expanded", "false");
-  });
-
-  it("should not render season menu when no active season", () => {
+  it("should render the three top-level navigation items", () => {
     mockUseActiveSignupOrActiveSeasonForApp.mockReturnValue({
       signupOrActiveSeason: undefined,
       isLoading: false,
@@ -124,11 +80,28 @@ describe("Navigation", () => {
 
     renderWithAuthAndSWR(<Navigation />);
 
-    // Season menu should not be rendered
-    expect(screen.queryByText("S14")).not.toBeInTheDocument();
+    expect(screen.getByText("Community")).toBeInTheDocument();
+    expect(screen.getByText("Season")).toBeInTheDocument();
+    expect(screen.getByText("Stats")).toBeInTheDocument();
   });
 
-  it("should render basic navigation structure", () => {
+  it("should label the active season as CS2 Season X", () => {
+    mockUseActiveSignupOrActiveSeasonForApp.mockReturnValue({
+      signupOrActiveSeason: createLiveSeason(),
+      isLoading: false,
+      isError: false,
+      isValidating: false
+    });
+
+    renderWithAuthAndSWR(<Navigation />);
+
+    expect(screen.getByText("CS2 Season 5")).toBeInTheDocument();
+    expect(
+      screen.getByText("CS2 Season 5").closest("button")
+    ).toBeInTheDocument();
+  });
+
+  it("should keep Season in the nav when no active season is available", () => {
     mockUseActiveSignupOrActiveSeasonForApp.mockReturnValue({
       signupOrActiveSeason: undefined,
       isLoading: false,
@@ -138,30 +111,12 @@ describe("Navigation", () => {
 
     renderWithAuthAndSWR(<Navigation />);
 
-    // Check that basic navigation items are rendered
-    expect(screen.getByText("Organizations")).toBeInTheDocument();
-    expect(screen.getByText("Teams")).toBeInTheDocument();
-    expect(screen.getByText("Players")).toBeInTheDocument();
-    expect(screen.getByText("Matches")).toBeInTheDocument();
-    expect(screen.getByText("Leaderboards")).toBeInTheDocument();
-    expect(screen.getByText("Kanahautomo")).toBeInTheDocument();
+    expect(screen.getByText("Season")).toBeInTheDocument();
   });
 
-  it("should render season menu when season is active and signup is open", () => {
-    // Mock active season with future signup end date
-    const futureDate = new Date();
-    futureDate.setDate(futureDate.getDate() + 30); // 30 days from now
-
+  it("should render register CTA when signup is open during a live season", () => {
     mockUseActiveSignupOrActiveSeasonForApp.mockReturnValue({
-      signupOrActiveSeason: {
-        season_id: 14,
-        platform: SeasonPlatform.Kanaliiga,
-        full_name: "Season 14",
-        signup_end_date: futureDate.toISOString().split("T")[0] || null,
-        signup_start_date: "2024-01-01",
-        start_date: "2024-01-31",
-        end_date: "2024-03-31"
-      },
+      signupOrActiveSeason: createLiveSeason(),
       isLoading: false,
       isError: false,
       isValidating: false
@@ -169,11 +124,27 @@ describe("Navigation", () => {
 
     renderWithAuthAndSWR(<Navigation />);
 
-    // Check that the season dropdown is rendered
-    expect(screen.getByText("S14")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Register" })).toHaveAttribute(
+      "href",
+      expect.stringContaining("/seasons/17/signup")
+    );
+  });
 
-    // Check that it's a dropdown trigger
-    const seasonDropdown = screen.getByText("S14").closest("button");
-    expect(seasonDropdown).toBeInTheDocument();
+  it("should not render old top-level navigation items", () => {
+    mockUseActiveSignupOrActiveSeasonForApp.mockReturnValue({
+      signupOrActiveSeason: undefined,
+      isLoading: false,
+      isError: false,
+      isValidating: false
+    });
+
+    renderWithAuthAndSWR(<Navigation />);
+
+    expect(screen.queryByText("Organizations")).not.toBeInTheDocument();
+    expect(screen.queryByText("Teams")).not.toBeInTheDocument();
+    expect(screen.queryByText("Players")).not.toBeInTheDocument();
+    expect(screen.queryByText("Matches")).not.toBeInTheDocument();
+    expect(screen.queryByText("Leaderboards")).not.toBeInTheDocument();
+    expect(screen.queryByText("Kanahautomo")).not.toBeInTheDocument();
   });
 });

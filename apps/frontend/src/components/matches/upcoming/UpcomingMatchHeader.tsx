@@ -118,6 +118,7 @@ export function UpcomingMatchHeader({
               }
               alt={`${team1.name} logo`}
               fill
+              sizes="(max-width: 768px) 40px, 56px"
               className="object-contain"
             />
           </Link>
@@ -222,6 +223,7 @@ export function UpcomingMatchHeader({
               }
               alt={`${team2.name} logo`}
               fill
+              sizes="(max-width: 768px) 40px, 56px"
               className="object-contain"
             />
           </Link>
