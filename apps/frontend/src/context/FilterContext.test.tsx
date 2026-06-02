@@ -3,14 +3,14 @@ import { FilterProvider, useFilters } from "./FilterContext";
 import useSWR from "swr";
 import { useSearchParams, usePathname } from "next/navigation";
 
-// Mock SWR
+// Mock SWR — typed as jest.Mock so mockReturnValue accepts partial SWR shapes
 jest.mock("swr");
-const mockUseSWR = useSWR as jest.MockedFunction<typeof useSWR>;
+const mockUseSWR = useSWR as jest.Mock;
 
 // Mock Next.js navigation
-const mockUseSearchParams = useSearchParams as jest.MockedFunction<
-  typeof useSearchParams
->;
+// useSearchParams returns ReadonlyURLSearchParams; typing as jest.Mock lets us
+// pass plain URLSearchParams without a type cast.
+const mockUseSearchParams = useSearchParams as jest.Mock;
 const mockUsePathname = usePathname as jest.MockedFunction<typeof usePathname>;
 
 jest.mock("next/navigation", () => ({
@@ -56,7 +56,7 @@ describe("FilterContext", () => {
 
   it("should set ready to true when searchParams exist", async () => {
     const searchParams = new URLSearchParams("seasons=1&leagues=2");
-    mockUseSearchParams.mockReturnValue(searchParams as any);
+    mockUseSearchParams.mockReturnValue(searchParams);
 
     mockUseSWR.mockReturnValue({
       data: { season_id: 1 },
@@ -64,7 +64,7 @@ describe("FilterContext", () => {
       isLoading: false,
       isValidating: false,
       mutate: mockMutate
-    } as any);
+    });
 
     render(
       <FilterProvider appId="1">
@@ -80,7 +80,7 @@ describe("FilterContext", () => {
   it("should set ready to true when path is in excludePrefixPaths", async () => {
     mockUsePathname.mockReturnValue("/players/123");
     const searchParams = new URLSearchParams();
-    mockUseSearchParams.mockReturnValue(searchParams as any);
+    mockUseSearchParams.mockReturnValue(searchParams);
 
     mockUseSWR.mockReturnValue({
       data: { season_id: 1 },
@@ -88,7 +88,7 @@ describe("FilterContext", () => {
       isLoading: false,
       isValidating: false,
       mutate: mockMutate
-    } as any);
+    });
 
     render(
       <FilterProvider appId="1">
@@ -104,7 +104,7 @@ describe("FilterContext", () => {
   it("should add season to URL when path is in includeExactPaths and no searchParams", async () => {
     mockUsePathname.mockReturnValue("/matches");
     const searchParams = new URLSearchParams();
-    mockUseSearchParams.mockReturnValue(searchParams as any);
+    mockUseSearchParams.mockReturnValue(searchParams);
 
     mockUseSWR.mockReturnValue({
       data: { season_id: 5 },
@@ -112,7 +112,7 @@ describe("FilterContext", () => {
       isLoading: false,
       isValidating: false,
       mutate: mockMutate
-    } as any);
+    });
 
     render(
       <FilterProvider appId="1">
@@ -133,7 +133,7 @@ describe("FilterContext", () => {
     const searchParams = new URLSearchParams(
       "seasons=1&leagues=2&stages=3&teams=4&maps=5&playerName=test"
     );
-    mockUseSearchParams.mockReturnValue(searchParams as any);
+    mockUseSearchParams.mockReturnValue(searchParams);
 
     mockUseSWR.mockReturnValue({
       data: { season_id: 1 },
@@ -141,7 +141,7 @@ describe("FilterContext", () => {
       isLoading: false,
       isValidating: false,
       mutate: mockMutate
-    } as any);
+    });
 
     render(
       <FilterProvider appId="1">
@@ -163,7 +163,7 @@ describe("FilterContext", () => {
 
   it("should indicate filters are empty when no filter params", async () => {
     const searchParams = new URLSearchParams();
-    mockUseSearchParams.mockReturnValue(searchParams as any);
+    mockUseSearchParams.mockReturnValue(searchParams);
 
     mockUseSWR.mockReturnValue({
       data: { season_id: 1 },
@@ -171,7 +171,7 @@ describe("FilterContext", () => {
       isLoading: false,
       isValidating: false,
       mutate: mockMutate
-    } as any);
+    });
 
     render(
       <FilterProvider appId="1">
@@ -186,7 +186,7 @@ describe("FilterContext", () => {
 
   it("should indicate filters are not empty when filter params exist", async () => {
     const searchParams = new URLSearchParams("seasons=1");
-    mockUseSearchParams.mockReturnValue(searchParams as any);
+    mockUseSearchParams.mockReturnValue(searchParams);
 
     mockUseSWR.mockReturnValue({
       data: { season_id: 1 },
@@ -194,7 +194,7 @@ describe("FilterContext", () => {
       isLoading: false,
       isValidating: false,
       mutate: mockMutate
-    } as any);
+    });
 
     render(
       <FilterProvider appId="1">
@@ -211,7 +211,7 @@ describe("FilterContext", () => {
 
   it("should update ready state when searchParams change", async () => {
     const searchParams1 = new URLSearchParams();
-    mockUseSearchParams.mockReturnValue(searchParams1 as any);
+    mockUseSearchParams.mockReturnValue(searchParams1);
 
     mockUseSWR.mockReturnValue({
       data: { season_id: 1 },
@@ -219,7 +219,7 @@ describe("FilterContext", () => {
       isLoading: false,
       isValidating: false,
       mutate: mockMutate
-    } as any);
+    });
 
     const { rerender } = render(
       <FilterProvider appId="1">
@@ -235,7 +235,7 @@ describe("FilterContext", () => {
 
     // Change searchParams
     const searchParams2 = new URLSearchParams("seasons=1");
-    mockUseSearchParams.mockReturnValue(searchParams2 as any);
+    mockUseSearchParams.mockReturnValue(searchParams2);
     rerender(
       <FilterProvider appId="1">
         <TestComponent />
@@ -249,7 +249,7 @@ describe("FilterContext", () => {
 
   it("should expose request errors instead of staying in loading state", async () => {
     mockUsePathname.mockReturnValue("/matches");
-    mockUseSearchParams.mockReturnValue(new URLSearchParams() as any);
+    mockUseSearchParams.mockReturnValue(new URLSearchParams());
 
     mockUseSWR.mockReturnValue({
       data: undefined,
@@ -257,7 +257,7 @@ describe("FilterContext", () => {
       isLoading: false,
       isValidating: false,
       mutate: mockMutate
-    } as any);
+    });
 
     render(
       <FilterProvider appId="1">

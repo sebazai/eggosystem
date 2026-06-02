@@ -316,4 +316,24 @@ describe("clientApiFetch", () => {
     // The module dedups refresh calls; at most one refresh should have fired
     expect(refreshCallCount).toBeLessThanOrEqual(2);
   });
+
+  it("rejects concurrent refreshAccessToken callers when the in-flight refresh fails", async () => {
+    // p1 starts the refresh; p2 calls refreshAccessToken concurrently and queues
+    // via refreshFailureCallbacks. When the refresh rejects, both must reject
+    // (not silently resolve via the old setInterval path).
+    let rejectRefresh!: (err: Error) => void;
+    const refreshPending = new Promise<Response>((_res, rej) => {
+      rejectRefresh = rej;
+    });
+
+    mockFetch.mockImplementationOnce(() => refreshPending); // p1 refresh → pending
+
+    const p1 = refreshAccessToken(); // starts refresh, isRefreshing=true
+    const p2 = refreshAccessToken(); // concurrent caller — queues via refreshFailureCallbacks
+
+    rejectRefresh(new Error("Network error")); // in-flight refresh fails
+
+    await expect(p1).rejects.toThrow("Network error");
+    await expect(p2).rejects.toThrow("Network error");
+  });
 });

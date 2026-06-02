@@ -27,8 +27,9 @@ describe("SeasonStatusSection", () => {
     mockUseSeasonResultsSeasons.mockReturnValue({
       seasons: [],
       isLoading: false,
-      isError: undefined
-    } as any);
+      isValidating: false,
+      error: undefined
+    });
   });
 
   it("renders loading skeleton when isLoading is true", () => {
@@ -39,7 +40,7 @@ describe("SeasonStatusSection", () => {
       isError: undefined,
       isValidating: false,
       signupOrActiveSeason: null
-    } as any);
+    });
 
     render(<SeasonStatusSection />);
 
@@ -55,7 +56,7 @@ describe("SeasonStatusSection", () => {
       isError: undefined,
       isValidating: false,
       signupOrActiveSeason: null
-    } as any);
+    });
 
     render(<SeasonStatusSection />);
 
@@ -78,7 +79,7 @@ describe("SeasonStatusSection", () => {
       isError: undefined,
       isValidating: false,
       signupOrActiveSeason: null
-    } as any);
+    });
 
     render(<SeasonStatusSection />);
 
@@ -104,13 +105,14 @@ describe("SeasonStatusSection", () => {
       isError: undefined,
       isValidating: false,
       signupOrActiveSeason: null
-    } as any);
+    });
 
     mockUseSeasonResultsSeasons.mockReturnValue({
       seasons: [{ season_id: 14, season_name: "Season 14" }],
       isLoading: false,
-      isError: undefined
-    } as any);
+      isValidating: false,
+      error: undefined
+    });
 
     render(<SeasonStatusSection />);
 
@@ -127,7 +129,7 @@ describe("SeasonStatusSection", () => {
       isError: undefined,
       isValidating: false,
       signupOrActiveSeason: null
-    } as any);
+    });
 
     render(<SeasonStatusSection />);
 

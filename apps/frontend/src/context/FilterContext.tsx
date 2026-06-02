@@ -73,6 +73,7 @@ export const FilterProvider = ({
         params.append("seasons", data.season_id.toString());
         const newUrl = `${path}?${params.toString()}`;
         window.history.replaceState(null, "", newUrl);
+        setReady(true);
         return;
       }
 
@@ -111,11 +112,7 @@ export const FilterProvider = ({
     [filterParams]
   );
 
-  if (
-    !ready ||
-    !filterParams ||
-    (!data && !error && (isLoading || isValidating))
-  ) {
+  if (!ready || !filterParams) {
     return (
       <FilterContext.Provider
         value={{

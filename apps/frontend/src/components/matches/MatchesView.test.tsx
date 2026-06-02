@@ -44,12 +44,34 @@ const mockUseRecentMatches = useRecentMatches as jest.MockedFunction<
   typeof useRecentMatches
 >;
 
+const makeFiltersValue = (
+  overrides: Partial<ReturnType<typeof useFilters>>
+): ReturnType<typeof useFilters> => ({
+  activeSeason: null,
+  filterParams: {
+    seasons: null,
+    leagues: null,
+    stages: null,
+    teams: null,
+    maps: null,
+    player_name: null
+  },
+  filterQueryString: "",
+  getFilteredQueryString: jest.fn().mockReturnValue(""),
+  isLoading: false,
+  isValidating: false,
+  error: undefined,
+  areFiltersEmpty: true,
+  ...overrides
+});
+
 const defaultFilterParams = {
   seasons: [1],
   leagues: [],
   stages: null,
   teams: null,
-  maps: null
+  maps: null,
+  player_name: null
 };
 
 const emptyFilterParams = {
@@ -57,7 +79,8 @@ const emptyFilterParams = {
   leagues: null,
   stages: null,
   teams: null,
-  maps: null
+  maps: null,
+  player_name: null
 };
 
 describe("MatchesView", () => {
@@ -66,12 +89,9 @@ describe("MatchesView", () => {
   });
 
   it("renders match page header always", () => {
-    mockUseFilters.mockReturnValue({
-      filterParams: emptyFilterParams,
-      isLoading: true,
-      error: undefined,
-      isValidating: false
-    } as any);
+    mockUseFilters.mockReturnValue(
+      makeFiltersValue({ filterParams: emptyFilterParams, isLoading: true })
+    );
     mockUseRecentMatches.mockReturnValue({
       matches: undefined,
       isLoading: true,
@@ -84,12 +104,9 @@ describe("MatchesView", () => {
   });
 
   it("shows skeleton when filters are loading", () => {
-    mockUseFilters.mockReturnValue({
-      filterParams: emptyFilterParams,
-      isLoading: true,
-      error: undefined,
-      isValidating: false
-    } as any);
+    mockUseFilters.mockReturnValue(
+      makeFiltersValue({ filterParams: emptyFilterParams, isLoading: true })
+    );
     mockUseRecentMatches.mockReturnValue({
       matches: undefined,
       isLoading: false,
@@ -102,12 +119,9 @@ describe("MatchesView", () => {
   });
 
   it("shows filter bars when filterParams are loaded", () => {
-    mockUseFilters.mockReturnValue({
-      filterParams: defaultFilterParams,
-      isLoading: false,
-      error: undefined,
-      isValidating: false
-    } as any);
+    mockUseFilters.mockReturnValue(
+      makeFiltersValue({ filterParams: defaultFilterParams })
+    );
     mockUseRecentMatches.mockReturnValue({
       matches: [],
       isLoading: false,
@@ -121,12 +135,12 @@ describe("MatchesView", () => {
   });
 
   it("shows filter error message when filters fail", () => {
-    mockUseFilters.mockReturnValue({
-      filterParams: emptyFilterParams,
-      isLoading: false,
-      error: new Error("filter error"),
-      isValidating: false
-    } as any);
+    mockUseFilters.mockReturnValue(
+      makeFiltersValue({
+        filterParams: emptyFilterParams,
+        error: new Error("filter error")
+      })
+    );
     mockUseRecentMatches.mockReturnValue({
       matches: undefined,
       isLoading: false,
@@ -139,12 +153,9 @@ describe("MatchesView", () => {
   });
 
   it("shows matches error message when matches request fails", () => {
-    mockUseFilters.mockReturnValue({
-      filterParams: defaultFilterParams,
-      isLoading: false,
-      error: undefined,
-      isValidating: false
-    } as any);
+    mockUseFilters.mockReturnValue(
+      makeFiltersValue({ filterParams: defaultFilterParams })
+    );
     mockUseRecentMatches.mockReturnValue({
       matches: undefined,
       isLoading: false,
@@ -157,12 +168,9 @@ describe("MatchesView", () => {
   });
 
   it("shows no matches message when matches list is empty", () => {
-    mockUseFilters.mockReturnValue({
-      filterParams: defaultFilterParams,
-      isLoading: false,
-      error: undefined,
-      isValidating: false
-    } as any);
+    mockUseFilters.mockReturnValue(
+      makeFiltersValue({ filterParams: defaultFilterParams })
+    );
     mockUseRecentMatches.mockReturnValue({
       matches: [],
       isLoading: false,
@@ -175,13 +183,12 @@ describe("MatchesView", () => {
   });
 
   it("renders match list when matches are available", () => {
-    const mockMatches = [{ match_id: 1 }, { match_id: 2 }] as any[];
-    mockUseFilters.mockReturnValue({
-      filterParams: defaultFilterParams,
-      isLoading: false,
-      error: undefined,
-      isValidating: false
-    } as any);
+    const mockMatches = [{ match_id: 1 }, { match_id: 2 }] as ReturnType<
+      typeof useRecentMatches
+    >["matches"];
+    mockUseFilters.mockReturnValue(
+      makeFiltersValue({ filterParams: defaultFilterParams })
+    );
     mockUseRecentMatches.mockReturnValue({
       matches: mockMatches,
       isLoading: false,
@@ -195,13 +202,12 @@ describe("MatchesView", () => {
   });
 
   it("shows summary strip when matches are available", () => {
-    const mockMatches = [{ match_id: 1 }] as any[];
-    mockUseFilters.mockReturnValue({
-      filterParams: defaultFilterParams,
-      isLoading: false,
-      error: undefined,
-      isValidating: false
-    } as any);
+    const mockMatches = [{ match_id: 1 }] as ReturnType<
+      typeof useRecentMatches
+    >["matches"];
+    mockUseFilters.mockReturnValue(
+      makeFiltersValue({ filterParams: defaultFilterParams })
+    );
     mockUseRecentMatches.mockReturnValue({
       matches: mockMatches,
       isLoading: false,
@@ -214,12 +220,9 @@ describe("MatchesView", () => {
   });
 
   it("shows skeleton when matches are fetching", () => {
-    mockUseFilters.mockReturnValue({
-      filterParams: defaultFilterParams,
-      isLoading: false,
-      error: undefined,
-      isValidating: false
-    } as any);
+    mockUseFilters.mockReturnValue(
+      makeFiltersValue({ filterParams: defaultFilterParams })
+    );
     mockUseRecentMatches.mockReturnValue({
       matches: undefined,
       isLoading: true,

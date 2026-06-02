@@ -75,48 +75,94 @@ const mockGetFilteredQueryString = jest
   .fn()
   .mockReturnValue("seasons=1&leagues=2");
 
+// ---------------------------------------------------------------------------
+// Typed mock factories — no blanket `as any`, each defaults match the real shape
+// ---------------------------------------------------------------------------
+const makeFiltersValue = (
+  overrides: Partial<ReturnType<typeof useFilters>>
+): ReturnType<typeof useFilters> => ({
+  activeSeason: null,
+  filterParams: {
+    seasons: [],
+    leagues: [],
+    stages: null,
+    teams: null,
+    maps: null,
+    player_name: null
+  },
+  filterQueryString: "",
+  getFilteredQueryString: mockGetFilteredQueryString,
+  isLoading: false,
+  isValidating: false,
+  error: undefined,
+  areFiltersEmpty: true,
+  ...overrides
+});
+
+const makePlayerTeamDetailsValue = (
+  overrides: Partial<ReturnType<typeof usePlayerTeamDetails>>
+): ReturnType<typeof usePlayerTeamDetails> => ({
+  playerTeamDetails: undefined,
+  isLoading: false,
+  isError: undefined,
+  isValidating: false,
+  ...overrides
+});
+
+const makeSteamPlayerValue = (
+  overrides: Partial<ReturnType<typeof useSteamPlayer>>
+): ReturnType<typeof useSteamPlayer> => ({
+  steamPlayer: undefined,
+  isLoading: false,
+  isError: undefined,
+  isValidating: false,
+  ...overrides
+});
+
+const makeFaceITRankValue = (
+  overrides: Partial<ReturnType<typeof useFaceITRank>>
+): ReturnType<typeof useFaceITRank> => ({
+  faceItRank: undefined,
+  isLoading: false,
+  isError: undefined,
+  isValidating: false,
+  ...overrides
+});
+
+const makeCS2RankValue = (
+  overrides: Partial<ReturnType<typeof useCS2PremierRank>>
+): ReturnType<typeof useCS2PremierRank> => ({
+  cs2Rank: undefined,
+  isLoading: false,
+  isError: undefined,
+  isValidating: false,
+  ...overrides
+});
+
+const makeFaceitPlayerDataValue = (
+  overrides: Partial<ReturnType<typeof useFaceitPlayerData>>
+): ReturnType<typeof useFaceitPlayerData> => ({
+  faceitPlayerData: undefined,
+  isLoading: false,
+  isError: undefined,
+  isValidating: false,
+  ...overrides
+});
+
 function setupDefaultMocks() {
-  mockUseFilters.mockReturnValue({
-    filterParams: {
-      seasons: [],
-      leagues: [],
-      stages: null,
-      teams: null,
-      maps: null
-    },
-    isLoading: false,
-    error: undefined,
-    isValidating: false,
-    getFilteredQueryString: mockGetFilteredQueryString
-  } as any);
-
-  mockUseSteamPlayer.mockReturnValue({
-    steamPlayer: { nickname: "ProGamer", avatar: null },
-    isLoading: false,
-    isError: undefined,
-    isValidating: false
-  } as any);
-
-  mockUseFaceITRank.mockReturnValue({
-    faceItRank: null,
-    isLoading: false,
-    isError: undefined,
-    isValidating: false
-  } as any);
-
-  mockUseCS2PremierRank.mockReturnValue({
-    cs2Rank: null,
-    isLoading: false,
-    isError: undefined,
-    isValidating: false
-  } as any);
-
-  mockUseFaceitPlayerData.mockReturnValue({
-    faceitPlayerData: null,
-    isLoading: false,
-    isError: undefined,
-    isValidating: false
-  } as any);
+  mockUseFilters.mockReturnValue(makeFiltersValue({}));
+  mockUseSteamPlayer.mockReturnValue(
+    makeSteamPlayerValue({
+      steamPlayer: { nickname: "ProGamer", avatar: null } as ReturnType<
+        typeof useSteamPlayer
+      >["steamPlayer"]
+    })
+  );
+  mockUseFaceITRank.mockReturnValue(makeFaceITRankValue({ faceItRank: null }));
+  mockUseCS2PremierRank.mockReturnValue(makeCS2RankValue({ cs2Rank: null }));
+  mockUseFaceitPlayerData.mockReturnValue(
+    makeFaceitPlayerDataValue({ faceitPlayerData: null })
+  );
 }
 
 describe("PlayerDetailsHeader", () => {
@@ -127,24 +173,18 @@ describe("PlayerDetailsHeader", () => {
   });
 
   it("renders loading skeleton when team details are loading", () => {
-    mockUsePlayerTeamDetails.mockReturnValue({
-      playerTeamDetails: undefined,
-      isLoading: true,
-      isError: undefined,
-      isValidating: false
-    } as any);
+    mockUsePlayerTeamDetails.mockReturnValue(
+      makePlayerTeamDetailsValue({ isLoading: true })
+    );
 
     const { container } = render(<PlayerDetailsHeader steamId="12345" />);
     expect(container.querySelector(".animate-pulse")).toBeInTheDocument();
   });
 
   it("renders error message when player details fail to load", () => {
-    mockUsePlayerTeamDetails.mockReturnValue({
-      playerTeamDetails: undefined,
-      isLoading: false,
-      isError: new Error("error"),
-      isValidating: false
-    } as any);
+    mockUsePlayerTeamDetails.mockReturnValue(
+      makePlayerTeamDetailsValue({ isError: new Error("error") })
+    );
 
     render(<PlayerDetailsHeader steamId="12345" />);
     expect(
@@ -153,42 +193,34 @@ describe("PlayerDetailsHeader", () => {
   });
 
   it("displays the player nickname", () => {
-    mockUsePlayerTeamDetails.mockReturnValue({
-      playerTeamDetails: [],
-      isLoading: false,
-      isError: undefined,
-      isValidating: false
-    } as any);
+    mockUsePlayerTeamDetails.mockReturnValue(
+      makePlayerTeamDetailsValue({ playerTeamDetails: [] })
+    );
 
     render(<PlayerDetailsHeader steamId="12345" />);
     expect(screen.getByText("ProGamer")).toBeInTheDocument();
   });
 
   it("shows first letter of nickname as avatar when no avatar URL", () => {
-    mockUsePlayerTeamDetails.mockReturnValue({
-      playerTeamDetails: [],
-      isLoading: false,
-      isError: undefined,
-      isValidating: false
-    } as any);
+    mockUsePlayerTeamDetails.mockReturnValue(
+      makePlayerTeamDetailsValue({ playerTeamDetails: [] })
+    );
 
     render(<PlayerDetailsHeader steamId="12345" />);
     expect(screen.getByText("P")).toBeInTheDocument();
   });
 
   it("shows player avatar image when avatar is available", () => {
-    mockUseSteamPlayer.mockReturnValue({
-      steamPlayer: { nickname: "ProGamer", avatar: "hash123" },
-      isLoading: false,
-      isError: undefined,
-      isValidating: false
-    } as any);
-    mockUsePlayerTeamDetails.mockReturnValue({
-      playerTeamDetails: [],
-      isLoading: false,
-      isError: undefined,
-      isValidating: false
-    } as any);
+    mockUseSteamPlayer.mockReturnValue(
+      makeSteamPlayerValue({
+        steamPlayer: { nickname: "ProGamer", avatar: "hash123" } as ReturnType<
+          typeof useSteamPlayer
+        >["steamPlayer"]
+      })
+    );
+    mockUsePlayerTeamDetails.mockReturnValue(
+      makePlayerTeamDetailsValue({ playerTeamDetails: [] })
+    );
 
     render(<PlayerDetailsHeader steamId="12345" />);
     const avatar = screen.getByAltText("ProGamer");
@@ -196,80 +228,70 @@ describe("PlayerDetailsHeader", () => {
   });
 
   it("renders wins/losses component", () => {
-    mockUsePlayerTeamDetails.mockReturnValue({
-      playerTeamDetails: [],
-      isLoading: false,
-      isError: undefined,
-      isValidating: false
-    } as any);
+    mockUsePlayerTeamDetails.mockReturnValue(
+      makePlayerTeamDetailsValue({ playerTeamDetails: [] })
+    );
 
     render(<PlayerDetailsHeader steamId="12345" />);
     expect(screen.getByTestId("player-wins-losses")).toBeInTheDocument();
   });
 
   it("renders team link when player is in exactly one team", () => {
-    mockUsePlayerTeamDetails.mockReturnValue({
-      playerTeamDetails: [
-        { team_id: 5, team_name: "Alpha Team", team_logo: null }
-      ],
-      isLoading: false,
-      isError: undefined,
-      isValidating: false
-    } as any);
+    mockUsePlayerTeamDetails.mockReturnValue(
+      makePlayerTeamDetailsValue({
+        playerTeamDetails: [
+          { team_id: 5, team_name: "Alpha Team", team_logo: null }
+        ] as ReturnType<typeof usePlayerTeamDetails>["playerTeamDetails"]
+      })
+    );
 
     render(<PlayerDetailsHeader steamId="12345" />);
     const teamLink = screen.getByText("Alpha Team").closest("a");
-
     expect(teamLink).toHaveAttribute("href", "/teams/5?seasons=1&leagues=2");
     expect(mockGetFilteredQueryString).toHaveBeenCalledWith(["teams"]);
   });
 
   it("shows count when player is in multiple teams", () => {
-    mockUsePlayerTeamDetails.mockReturnValue({
-      playerTeamDetails: [
-        { team_id: 5, team_name: "Alpha Team", team_logo: null },
-        { team_id: 6, team_name: "Beta Team", team_logo: null }
-      ],
-      isLoading: false,
-      isError: undefined,
-      isValidating: false
-    } as any);
+    mockUsePlayerTeamDetails.mockReturnValue(
+      makePlayerTeamDetailsValue({
+        playerTeamDetails: [
+          { team_id: 5, team_name: "Alpha Team", team_logo: null },
+          { team_id: 6, team_name: "Beta Team", team_logo: null }
+        ] as ReturnType<typeof usePlayerTeamDetails>["playerTeamDetails"]
+      })
+    );
 
     render(<PlayerDetailsHeader steamId="12345" />);
     expect(screen.getByText("In 2 teams")).toBeInTheDocument();
   });
 
   it("renders FaceIT level icon when rank data is available", () => {
-    mockUseFaceITRank.mockReturnValue({
-      faceItRank: { faceit_level: 10 },
-      isLoading: false,
-      isError: undefined,
-      isValidating: false
-    } as any);
-    mockUsePlayerTeamDetails.mockReturnValue({
-      playerTeamDetails: [],
-      isLoading: false,
-      isError: undefined,
-      isValidating: false
-    } as any);
+    mockUseFaceITRank.mockReturnValue(
+      makeFaceITRankValue({
+        faceItRank: { faceit_level: 10 } as ReturnType<
+          typeof useFaceITRank
+        >["faceItRank"]
+      })
+    );
+    mockUsePlayerTeamDetails.mockReturnValue(
+      makePlayerTeamDetailsValue({ playerTeamDetails: [] })
+    );
 
     render(<PlayerDetailsHeader steamId="12345" />);
     expect(screen.getByTestId("faceit-level-10")).toBeInTheDocument();
   });
 
   it("renders CS2 premier rank badge when rank data is available", () => {
-    mockUseCS2PremierRank.mockReturnValue({
-      cs2Rank: { average_rank: 15000 },
-      isLoading: false,
-      isError: undefined,
-      isValidating: false
-    } as any);
-    mockUsePlayerTeamDetails.mockReturnValue({
-      playerTeamDetails: [],
-      isLoading: false,
-      isError: undefined,
-      isValidating: false
-    } as any);
+    mockUseCS2PremierRank.mockReturnValue(
+      makeCS2RankValue({
+        cs2Rank: { average_rank: 15000 } as ReturnType<
+          typeof useCS2PremierRank
+        >["cs2Rank"]
+      })
+    );
+    mockUsePlayerTeamDetails.mockReturnValue(
+      makePlayerTeamDetailsValue({ playerTeamDetails: [] })
+    );
 
     render(<PlayerDetailsHeader steamId="12345" />);
     expect(screen.getByTestId("cs2-rank-15000")).toBeInTheDocument();
