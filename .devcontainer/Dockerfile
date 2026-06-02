@@ -3,7 +3,7 @@ ENV TBLS_VERSION=1.92.3
 WORKDIR /workspace
 
 RUN npm install -g typescript
-RUN npm install -g pnpm@10.27.0
+RUN npm install -g pnpm@11.16.0
 RUN npm install -g @anthropic-ai/claude-code
 
 # Install rtk (CLI proxy) into PATH
@@ -30,12 +30,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends git xvfb xauth 
 # Pins 3.11 for MariaDB MCP venv parity with former feature default.
 USER node
 # Prefer image Node 24 over Cursor remote-server Node on PATH (pnpm 11 needs >= 22.13).
-ENV PATH="/usr/local/bin:/home/node/.local/bin:${PATH}"
+ENV PATH="/usr/local/bin:/usr/local/share/npm-global/bin:/home/node/.local/bin:${PATH}"
 RUN printf '%s\n' \
-  'export PATH="/usr/local/bin:/home/node/.local/bin:${PATH}"' \
+  'export PATH="/usr/local/bin:/usr/local/share/npm-global/bin:/home/node/.local/bin:${PATH}"' \
   >> /home/node/.bashrc \
   && printf '%s\n' \
-  'export PATH="/usr/local/bin:/home/node/.local/bin:${PATH}"' \
+  'export PATH="/usr/local/bin:/usr/local/share/npm-global/bin:/home/node/.local/bin:${PATH}"' \
   >> /home/node/.profile
 # MariaDB MCP deps (PyTorch etc.) are huge — baking them in Dockerfile slows every image build.
 # Install in background after container start: scripts/install-mariadb-mcp-local-venv.sh (see post-start + run-mariadb-mcp.sh).

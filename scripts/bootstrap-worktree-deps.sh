@@ -3,7 +3,7 @@
 # Uses devcontainer Node (pnpm 11 requires >= 22.13); Cursor may shadow node on PATH.
 set -euo pipefail
 
-export PATH="/usr/local/bin:/home/node/.local/bin:${PATH}"
+export PATH="/usr/local/bin:/usr/local/share/npm-global/bin:/home/node/.local/bin:${PATH}"
 
 if ! command -v node >/dev/null; then
   echo "[bootstrap-worktree-deps] node not found on PATH" >&2

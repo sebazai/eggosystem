@@ -2,7 +2,9 @@
  * Prefer the devcontainer image Node (/usr/local/bin) over Cursor's bundled Node on PATH.
  * pnpm 11+ requires Node >= 22.13 (uses node:sqlite).
  */
-const PATH_PREFIX = "/usr/local/bin:/home/node/.local/bin";
+/** Keep in sync with .devcontainer/* and scripts that export PATH for non-interactive shells. */
+export const PATH_PREFIX =
+  "/usr/local/bin:/usr/local/share/npm-global/bin:/home/node/.local/bin";
 
 const CONTAINER_NODE = "/usr/local/bin/node";
 

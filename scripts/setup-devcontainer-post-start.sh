@@ -8,7 +8,7 @@ echo "Running devcontainer post-start setup..."
 echo "========================================="
 
 # Image Node 24 before Cursor remote-server Node (pnpm 11 needs >= 22.13)
-export PATH="/usr/local/bin:/home/node/.local/bin:${PATH}"
+export PATH="/usr/local/bin:/usr/local/share/npm-global/bin:/home/node/.local/bin:${PATH}"
 
 # Handle macOS X11 forwarding (if needed)
 if [ "$(uname)" = "Darwin" ]; then
