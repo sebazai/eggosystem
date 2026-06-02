@@ -98,9 +98,7 @@ export function SeasonStatusSection() {
             asChild
             className="bg-kanaliiga-orange hover:bg-kanaliiga-orange/90 text-white text-lg py-2 px-6 h-auto"
           >
-            <Link
-              href={createNextUrl(`/seasons/${referenceSeasonId}/signup`)}
-            >
+            <Link href={createNextUrl(`/seasons/${referenceSeasonId}/signup`)}>
               Register Your Team →
             </Link>
           </Button>
@@ -124,7 +122,9 @@ export function SeasonStatusSection() {
       </p>
 
       <p className="mb-6 text-muted-foreground">
-        {concludedSeasonLabel ? `${concludedSeasonLabel} has` : "The season has"}{" "}
+        {concludedSeasonLabel
+          ? `${concludedSeasonLabel} has`
+          : "The season has"}{" "}
         concluded. Stay tuned for announcements about the next season and
         registration opening. In the meantime, browse our archive of past
         matches and team statistics.

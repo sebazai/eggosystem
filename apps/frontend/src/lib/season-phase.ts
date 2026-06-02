@@ -14,7 +14,7 @@ function extractSeasonNumber(
   const seasonName =
     season.full_name || `Season ${season.season_id ?? "Unknown"}`;
   const seasonNumberMatch = seasonName.match(/Season\s+(\d+)/i);
-  return seasonNumberMatch?.[1] ?? (season.season_id?.toString() ?? null);
+  return seasonNumberMatch?.[1] ?? season.season_id?.toString() ?? null;
 }
 
 export function getSeasonPhaseInfo(
@@ -44,11 +44,11 @@ export function getSeasonPhaseInfo(
 
   const isSignupOpen = Boolean(
     signupStartDate &&
-      signupStartDate <= now &&
-      signupEndDate &&
-      signupEndDate >= now &&
-      startDate &&
-      startDate > now
+    signupStartDate <= now &&
+    signupEndDate &&
+    signupEndDate >= now &&
+    startDate &&
+    startDate > now
   );
 
   if (isSeasonLive) {

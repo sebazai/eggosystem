@@ -20,10 +20,7 @@ function SeasonHighlightsSkeleton() {
   return (
     <div className="space-y-4">
       {[...Array(3)].map((_, index) => (
-        <Card
-          key={index}
-          className="bg-white/5 border-white/10 animate-pulse"
-        >
+        <Card key={index} className="bg-white/5 border-white/10 animate-pulse">
           <CardContent className="p-4">
             <div className="h-4 bg-muted rounded w-3/4 mb-2" />
             <div className="h-3 bg-muted rounded w-1/2" />

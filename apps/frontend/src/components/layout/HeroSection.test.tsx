@@ -43,11 +43,7 @@ jest.mock("@/components/ui/card", () => ({
 
 jest.mock("@/components/ui/button", () => ({
   Button: ({ children, onClick, asChild }: any) =>
-    asChild ? (
-      children
-    ) : (
-      <button onClick={onClick}>{children}</button>
-    )
+    asChild ? children : <button onClick={onClick}>{children}</button>
 }));
 
 jest.mock("@/components/ui/badge", () => ({
@@ -60,13 +56,17 @@ jest.mock("next/link", () => ({
 }));
 
 const mockUseLandingSeasonContext =
-  useLandingSeasonContext as jest.MockedFunction<typeof useLandingSeasonContext>;
+  useLandingSeasonContext as jest.MockedFunction<
+    typeof useLandingSeasonContext
+  >;
 const mockUseSeasonCalendarMatches =
   useSeasonCalendarMatches as jest.MockedFunction<
     typeof useSeasonCalendarMatches
   >;
 const mockUseSeasonResultsSeasons =
-  useSeasonResultsSeasons as jest.MockedFunction<typeof useSeasonResultsSeasons>;
+  useSeasonResultsSeasons as jest.MockedFunction<
+    typeof useSeasonResultsSeasons
+  >;
 const mockUseRouter = useRouter as jest.MockedFunction<typeof useRouter>;
 
 describe("HeroSection", () => {

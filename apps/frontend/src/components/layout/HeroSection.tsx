@@ -547,9 +547,7 @@ export default function HeroSection({ device: _device }: HeroSectionProps) {
                   <TrendingUp className="h-8 w-8 lg:h-10 lg:w-10 2xl:h-12 2xl:w-12 text-kanaliiga-orange mb-3 flex-shrink-0" />
                   <div className="flex flex-col flex-grow">
                     <h3 className="text-lg lg:text-xl 2xl:text-2xl mb-2">
-                      {isSeasonConcluded
-                        ? "Season Results"
-                        : "View Standings"}
+                      {isSeasonConcluded ? "Season Results" : "View Standings"}
                     </h3>
                     <p className="text-sm lg:text-base 2xl:text-lg text-muted-foreground">
                       {isSeasonConcluded
