@@ -24,16 +24,11 @@ const mockUseActiveSignupOrActiveSeasonForApp =
   >;
 
 jest.mock("next/navigation", () => ({
-  usePathname: () => "/",
   useSearchParams: () => new URLSearchParams()
 }));
 
 jest.mock("@/hooks/use-mobile", () => ({
   useIsMobile: () => false
-}));
-
-jest.mock("@/hooks/useScrolled", () => ({
-  useScrolled: () => false
 }));
 
 jest.mock("./UserMenuDropdown", () => ({

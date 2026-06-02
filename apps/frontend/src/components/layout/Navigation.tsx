@@ -5,7 +5,6 @@ import Image from "next/image";
 import { Logo } from "@/components/kanaliiga";
 import {
   useEffect,
-  useReducer,
   useRef,
   useState,
   type JSX,
@@ -41,13 +40,8 @@ import {
 import UserMenuDropdown from "./UserMenuDropdown";
 import { MobileUserMenu } from "./mobile/MobileUserMenu";
 import { cn, createNextUrl } from "@/lib/utils";
-import {
-  ReadonlyURLSearchParams,
-  usePathname,
-  useSearchParams
-} from "next/navigation";
+import { ReadonlyURLSearchParams, useSearchParams } from "next/navigation";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useScrolled } from "@/hooks/useScrolled";
 import { useActiveSignupOrActiveSeasonForApp } from "@/hooks/data/useActiveSignupOrActiveSeasonForApp";
 import { Separator } from "../ui/separator";
 import { MobileLogOut } from "../profile/MobileLogOut";
@@ -59,8 +53,11 @@ import {
   type RegisterCta
 } from "./navigation-menu-items";
 
+const desktopLogoWidth = 120;
+const desktopLogoHeight = 138;
+
 const desktopNavTriggerClassName =
-  "h-11 min-w-[7.5rem] px-6 text-base font-headings lg:h-12 lg:min-w-[9rem] lg:px-8 lg:text-lg [&_svg]:size-4 lg:[&_svg]:size-5";
+  "h-9 min-w-[6.5rem] px-4 text-sm font-headings lg:h-10 lg:min-w-[7.5rem] lg:px-5 lg:text-base [&_svg]:size-3.5 lg:[&_svg]:size-4";
 
 const desktopSubmenuRowClassName =
   "flex min-h-10 w-full flex-row items-center justify-start gap-2 rounded-sm px-3 text-sm";
@@ -99,12 +96,10 @@ interface NavbarProps {
   }[];
   options?: {
     removeBottomPadding?: boolean;
-    fullWidth?: boolean;
   };
 }
 
 export const Navigation = (props: NavbarProps) => {
-  const pathname = usePathname();
   const { user, logout } = useAuth();
   const { signupOrActiveSeason } = useActiveSignupOrActiveSeasonForApp(730);
   const { options, ...otherProps } = props;
@@ -132,10 +127,7 @@ export const Navigation = (props: NavbarProps) => {
 
   const { logo, menu, mobileExtraLinks, registerCta } = navigationProps;
 
-  const navRef = useRef<HTMLDivElement>(null); // Ref for the navbar
-  const logoRef = useRef<HTMLImageElement>(null); // Ref for the logo
-
-  const { isScrolled } = useScrolled();
+  const navRef = useRef<HTMLDivElement>(null);
 
   const { isMobile } = useIsMobile();
   const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -148,42 +140,20 @@ export const Navigation = (props: NavbarProps) => {
     }
   };
 
-  const [hasScrolled, markAsScrolled] = useReducer(() => true, false);
-
   useEffect(() => {
-    if (isScrolled && !hasScrolled) {
-      markAsScrolled();
-    }
-  }, [isScrolled, hasScrolled]);
-
-  const hasScrolledValue = isScrolled || hasScrolled;
-
-  useEffect(() => {
-    const logoEl = logoRef.current;
-    if (!logoEl) return;
-
-    const updateNavHeightAndCheckMobile = () => {
+    const updateNavHeight = () => {
       if (navRef.current) {
-        const newHeight = navRef.current.offsetHeight;
         document.documentElement.style.setProperty(
           "--nav-height",
-          `${newHeight}px`
+          `${navRef.current.offsetHeight}px`
         );
       }
     };
 
-    updateNavHeightAndCheckMobile();
+    updateNavHeight();
+    window.addEventListener("resize", updateNavHeight);
 
-    logoEl.addEventListener("transitionend", updateNavHeightAndCheckMobile);
-    logoEl.addEventListener("resize", updateNavHeightAndCheckMobile);
-
-    return () => {
-      logoEl.removeEventListener(
-        "transitionend",
-        updateNavHeightAndCheckMobile
-      );
-      logoEl.removeEventListener("resize", updateNavHeightAndCheckMobile);
-    };
+    return () => window.removeEventListener("resize", updateNavHeight);
   }, []);
 
   return (
@@ -191,38 +161,31 @@ export const Navigation = (props: NavbarProps) => {
       ref={navRef}
       id="navigation"
       className={cn(
-        `pointer-events-none w-full mx-auto sm:landscape:px-4 md:landscape:px-8 px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 z-50 ${isScrolled ? "scrolled" : ""}`,
+        `pointer-events-none w-full mx-auto sm:landscape:px-4 md:landscape:px-8 px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 z-50`,
         // Always use backdrop blur for consistent appearance
         "backdrop-blur-xs landscape:backdrop-blur-none md:landscape:backdrop-blur-xs",
         // Always use sticky positioning to prevent jumping
         "sticky top-0",
         options?.removeBottomPadding ? "mb-3" : "mb-3 sm:mb-10",
-        options?.fullWidth ? "max-w-[1920px]" : "max-w-screen-2xl"
+        "max-w-[1920px]"
       )}
     >
       <div
         className={cn(
-          "mx-auto max-w-screen-2xl ",
-          options?.removeBottomPadding ? "pt-4 lg:pt-8" : "py-4 lg:py-8",
-          options?.fullWidth ? "max-w-[1920px]" : "max-w-screen-2xl"
+          "mx-auto max-w-[1920px]",
+          options?.removeBottomPadding ? "pt-4 lg:pt-8" : "py-4 lg:py-8"
         )}
       >
         {/* Desktop Navigation - Sticky by Default */}
-        <div className="hidden w-full items-center justify-center gap-8 lg:flex pointer-events-auto">
+        <div className="hidden w-full items-center justify-start lg:flex lg:pl-6 pointer-events-auto">
           {logo && (
             <Link href={logo.url}>
               <Image
-                ref={logoRef}
-                className={cn(
-                  "logo transition-all duration-500",
-                  hasScrolledValue || pathname === "/"
-                    ? "logo-small"
-                    : "logo-large"
-                )}
+                className="h-[138px] w-[120px]"
                 src={logo.src}
                 alt={logo.alt}
-                width={153}
-                height={175}
+                width={desktopLogoWidth}
+                height={desktopLogoHeight}
                 priority
               />
             </Link>
@@ -231,9 +194,9 @@ export const Navigation = (props: NavbarProps) => {
             key={menu?.length || 0}
             delayDuration={0}
             viewport={false}
-            className="max-w-none flex-1 justify-center"
+            className="max-w-none flex-1 justify-start lg:ml-16"
           >
-            <NavigationMenuList className="gap-3 lg:gap-8">
+            <NavigationMenuList className="justify-start gap-3 lg:gap-8">
               {menu?.map((m) => renderMenuItem(m, params))}
             </NavigationMenuList>
           </NavigationMenu>
@@ -242,7 +205,7 @@ export const Navigation = (props: NavbarProps) => {
               <Button
                 asChild
                 size="lg"
-                className="h-11 bg-kanaliiga-orange px-6 text-base text-white hover:bg-kanaliiga-orange/90 lg:h-12 lg:px-8 lg:text-lg"
+                className="h-9 bg-kanaliiga-orange px-4 text-sm text-white hover:bg-kanaliiga-orange/90 lg:h-10 lg:px-5 lg:text-base"
               >
                 <Link href={createNextUrl(registerCta.url)}>
                   {registerCta.title}

@@ -52,7 +52,7 @@ export default async function Home() {
 
   return (
     <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 min-h-screen">
-      <Navigation options={{ removeBottomPadding: true, fullWidth: true }} />
+      <Navigation options={{ removeBottomPadding: true }} />
       <section>
         <HeroSection />
       </section>
