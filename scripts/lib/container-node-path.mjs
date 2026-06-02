@@ -51,7 +51,10 @@ export function isNodeVersionSufficient(parsed) {
  * @param {import("node:child_process").ExecFileSync} execFileSync
  * @param {string} [nodePath]
  */
-export function assertContainerNodeVersion(execFileSync, nodePath = CONTAINER_NODE) {
+export function assertContainerNodeVersion(
+  execFileSync,
+  nodePath = CONTAINER_NODE
+) {
   let versionOutput;
   try {
     versionOutput = execFileSync(nodePath, ["-p", "process.version"], {
