@@ -39,7 +39,7 @@ describe("SeasonStatusSection", () => {
       isLoading: true,
       isError: undefined,
       isValidating: false,
-      signupOrActiveSeason: null
+      signupOrActiveSeason: undefined
     });
 
     render(<SeasonStatusSection />);
@@ -50,12 +50,16 @@ describe("SeasonStatusSection", () => {
 
   it("renders live season content when phase is live", () => {
     mockUseLandingSeasonContext.mockReturnValue({
-      seasonPhase: { phase: "live", seasonNumber: 15, seasonName: "Season 15" },
+      seasonPhase: {
+        phase: "live",
+        seasonNumber: "15",
+        seasonName: "Season 15"
+      },
       referenceSeasonId: 15,
       isLoading: false,
       isError: undefined,
       isValidating: false,
-      signupOrActiveSeason: null
+      signupOrActiveSeason: undefined
     });
 
     render(<SeasonStatusSection />);
@@ -71,14 +75,14 @@ describe("SeasonStatusSection", () => {
     mockUseLandingSeasonContext.mockReturnValue({
       seasonPhase: {
         phase: "signup",
-        seasonNumber: 16,
+        seasonNumber: "16",
         seasonName: "Season 16"
       },
       referenceSeasonId: 16,
       isLoading: false,
       isError: undefined,
       isValidating: false,
-      signupOrActiveSeason: null
+      signupOrActiveSeason: undefined
     });
 
     render(<SeasonStatusSection />);
@@ -99,12 +103,12 @@ describe("SeasonStatusSection", () => {
 
   it("renders concluded content when phase is concluded", () => {
     mockUseLandingSeasonContext.mockReturnValue({
-      seasonPhase: { phase: "concluded", seasonNumber: 14, seasonName: null },
+      seasonPhase: { phase: "concluded", seasonNumber: "14", seasonName: null },
       referenceSeasonId: 14,
       isLoading: false,
       isError: undefined,
       isValidating: false,
-      signupOrActiveSeason: null
+      signupOrActiveSeason: undefined
     });
 
     mockUseSeasonResultsSeasons.mockReturnValue({
@@ -128,7 +132,7 @@ describe("SeasonStatusSection", () => {
       isLoading: false,
       isError: undefined,
       isValidating: false,
-      signupOrActiveSeason: null
+      signupOrActiveSeason: undefined
     });
 
     render(<SeasonStatusSection />);

@@ -158,10 +158,14 @@ function setupDefaultMocks() {
       >["steamPlayer"]
     })
   );
-  mockUseFaceITRank.mockReturnValue(makeFaceITRankValue({ faceItRank: null }));
-  mockUseCS2PremierRank.mockReturnValue(makeCS2RankValue({ cs2Rank: null }));
+  mockUseFaceITRank.mockReturnValue(
+    makeFaceITRankValue({ faceItRank: undefined })
+  );
+  mockUseCS2PremierRank.mockReturnValue(
+    makeCS2RankValue({ cs2Rank: undefined })
+  );
   mockUseFaceitPlayerData.mockReturnValue(
-    makeFaceitPlayerDataValue({ faceitPlayerData: null })
+    makeFaceitPlayerDataValue({ faceitPlayerData: undefined })
   );
 }
 
@@ -240,8 +244,16 @@ describe("PlayerDetailsHeader", () => {
     mockUsePlayerTeamDetails.mockReturnValue(
       makePlayerTeamDetailsValue({
         playerTeamDetails: [
-          { team_id: 5, team_name: "Alpha Team", team_logo: null }
-        ] as ReturnType<typeof usePlayerTeamDetails>["playerTeamDetails"]
+          {
+            team_id: 5,
+            team_name: "Alpha Team",
+            team_logo: null,
+            steam_id: "12345",
+            nickname: "ProGamer"
+          }
+        ] as unknown as ReturnType<
+          typeof usePlayerTeamDetails
+        >["playerTeamDetails"]
       })
     );
 
@@ -255,9 +267,23 @@ describe("PlayerDetailsHeader", () => {
     mockUsePlayerTeamDetails.mockReturnValue(
       makePlayerTeamDetailsValue({
         playerTeamDetails: [
-          { team_id: 5, team_name: "Alpha Team", team_logo: null },
-          { team_id: 6, team_name: "Beta Team", team_logo: null }
-        ] as ReturnType<typeof usePlayerTeamDetails>["playerTeamDetails"]
+          {
+            team_id: 5,
+            team_name: "Alpha Team",
+            team_logo: null,
+            steam_id: "12345",
+            nickname: "ProGamer"
+          },
+          {
+            team_id: 6,
+            team_name: "Beta Team",
+            team_logo: null,
+            steam_id: "12345",
+            nickname: "ProGamer"
+          }
+        ] as unknown as ReturnType<
+          typeof usePlayerTeamDetails
+        >["playerTeamDetails"]
       })
     );
 
