@@ -88,3 +88,6 @@ docs/ench/
 
 # Agentic workflow worktrees (legacy; ops default is branch in primary clone)
 .worktrees/
+.claude/worktrees/
+
+.claude/scheduled_tasks.lock
