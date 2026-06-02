@@ -8,11 +8,7 @@ services:
     env_file: "../.env.development"
     environment:
       - NEXT_PUBLIC_API_URL=http://localhost:3001 # Override frontend API URL
-      # Image Node 24 before Cursor remote-server Node (pnpm 11 needs >= 22.13)
-      - PATH=/usr/local/bin:/usr/local/share/npm-global/bin:/home/node/.local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin
-      # Next.js/webpack file watching on bind mounts (inotify often does not fire)
       - WATCHPACK_POLLING=true
-      - DEVCONTAINER=true
     # Clear node image entrypoint (otherwise docker-entrypoint.sh runs `node sleep`).
     entrypoint: []
     command: ["sleep", "infinity"]

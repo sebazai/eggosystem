@@ -1,2 +1,1 @@
-export PATH="/usr/local/bin:/usr/local/share/npm-global/bin:/home/node/.local/bin:$PATH"
 pnpm lint-staged

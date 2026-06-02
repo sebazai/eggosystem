@@ -2,27 +2,9 @@ FROM mcr.microsoft.com/devcontainers/javascript-node:24-trixie
 ENV TBLS_VERSION=1.92.3
 WORKDIR /workspace
 
-# npm registry can flake during image build (ECONNRESET); retry + combine globals into one layer.
-RUN npm config set fetch-retries 5 \
-  && npm config set fetch-retry-mintimeout 20000 \
-  && npm config set fetch-retry-maxtimeout 120000 \
-  && bash -euxo pipefail -c '\
-    for attempt in 1 2 3 4 5; do \
-      npm install -g typescript @anthropic-ai/claude-code && exit 0; \
-      echo "npm global install attempt ${attempt} failed; retrying in ${attempt}0s..." >&2; \
-      sleep $((attempt * 10)); \
-    done; \
-    exit 1'
-
-# Same pnpm pin as package.json / GitLab CI (corepack avoids a separate npm -g pnpm fetch).
-RUN corepack enable \
-  && bash -euxo pipefail -c '\
-    for attempt in 1 2 3 4 5; do \
-      corepack prepare pnpm@11.5.0 --activate && exit 0; \
-      echo "corepack prepare attempt ${attempt} failed; retrying in ${attempt}0s..." >&2; \
-      sleep $((attempt * 10)); \
-    done; \
-    exit 1'
+RUN npm install -g typescript
+RUN npm install -g pnpm@10.27.0
+RUN npm install -g @anthropic-ai/claude-code
 
 # Install rtk (CLI proxy) into PATH
 RUN curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | env RTK_INSTALL_DIR="/usr/local/bin" sh
@@ -47,14 +29,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends git xvfb xauth 
 # Managed Python via uv (prebuilt; no devcontainers/features/python gpg keyservers).
 # Pins 3.11 for MariaDB MCP venv parity with former feature default.
 USER node
-# Prefer image Node 24 over Cursor remote-server Node on PATH (pnpm 11 needs >= 22.13).
-ENV PATH="/usr/local/bin:/usr/local/share/npm-global/bin:/home/node/.local/bin:${PATH}"
-RUN printf '%s\n' \
-  'export PATH="/usr/local/bin:/usr/local/share/npm-global/bin:/home/node/.local/bin:${PATH}"' \
-  >> /home/node/.bashrc \
-  && printf '%s\n' \
-  'export PATH="/usr/local/bin:/usr/local/share/npm-global/bin:/home/node/.local/bin:${PATH}"' \
-  >> /home/node/.profile
+ENV PATH="/home/node/.local/bin:${PATH}"
 # MariaDB MCP deps (PyTorch etc.) are huge — baking them in Dockerfile slows every image build.
 # Install in background after container start: scripts/install-mariadb-mcp-local-venv.sh (see post-start + run-mariadb-mcp.sh).
 RUN uv python install 3.11
@@ -66,6 +41,3 @@ RUN PY311="$(su - node -c 'export PATH="/usr/local/bin:$PATH"; uv python find 3.
     && test -x "$PY311" \
     && ln -sf "$PY311" /usr/local/bin/python3.11
 USER node
-
-# Keep container alive when devcontainer CLI does not override command (compose + overrideCommand: false).
-CMD ["sleep", "infinity"]
