@@ -585,7 +585,7 @@ describe("POST /api/v1/dashboard/demos/placements/replay-grand-final", () => {
     cleanup();
   });
 
-  it("returns 400 when both identifiers are provided", async () => {
+  it("returns 400 when multiple identifier modes are provided", async () => {
     const { app, cleanup } = createDemoDashboardTestApp();
     mockGetPermissions.mockResolvedValue([]);
     mockGetRoles.mockResolvedValue(["admin"]);
@@ -596,6 +596,50 @@ describe("POST /api/v1/dashboard/demos/placements/replay-grand-final", () => {
 
     expect(res.status).toBe(400);
     expect(mockReplayGrandFinalPlacements).not.toHaveBeenCalled();
+    cleanup();
+  });
+
+  it("returns 400 when only season_id is provided", async () => {
+    const { app, cleanup } = createDemoDashboardTestApp();
+    mockGetPermissions.mockResolvedValue([]);
+    mockGetRoles.mockResolvedValue(["admin"]);
+
+    const res = await request(app)
+      .post("/api/v1/dashboard/demos/placements/replay-grand-final")
+      .send({ season_id: 17 });
+
+    expect(res.status).toBe(400);
+    expect(mockReplayGrandFinalPlacements).not.toHaveBeenCalled();
+    cleanup();
+  });
+
+  it("returns 200 and replays placements by season and league", async () => {
+    const { app, cleanup } = createDemoDashboardTestApp();
+    mockGetPermissions.mockResolvedValue([]);
+    mockGetRoles.mockResolvedValue(["admin"]);
+    mockReplayGrandFinalPlacements.mockResolvedValue({
+      applied: true,
+      season_id: 17,
+      league_id: 3,
+      stage_id: 2,
+      external_match_room_id: "room-gf",
+      placements: [
+        { team_id: 1, placement: 1 },
+        { team_id: 2, placement: 2 },
+        { team_id: 3, placement: 3 }
+      ],
+      skipped_reason: null
+    });
+
+    const res = await request(app)
+      .post("/api/v1/dashboard/demos/placements/replay-grand-final")
+      .send({ season_id: 17, league_id: 3 });
+
+    expect(res.status).toBe(200);
+    expect(mockReplayGrandFinalPlacements).toHaveBeenCalledWith({
+      season_id: 17,
+      league_id: 3
+    });
     cleanup();
   });
 

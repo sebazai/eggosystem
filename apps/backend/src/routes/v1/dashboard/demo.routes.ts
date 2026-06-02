@@ -111,22 +111,43 @@ const reparseRequestSchema = z.object({
 const replayGrandFinalPlacementsBodySchema = z
   .object({
     external_match_room_id: z.string().min(1).optional(),
-    match_id: z.coerce.number().int().positive().optional()
+    match_id: z.coerce.number().int().positive().optional(),
+    season_id: z.coerce.number().int().positive().optional(),
+    league_id: z.coerce.number().int().positive().optional()
   })
   .superRefine((val, ctx) => {
-    const count =
-      (val.external_match_room_id ? 1 : 0) + (val.match_id != null ? 1 : 0);
-    if (count === 0) {
+    const hasMatchId = val.match_id != null;
+    const hasExternalRoomId = val.external_match_room_id != null;
+    const hasSeasonLeague = val.season_id != null && val.league_id != null;
+    const hasPartialSeasonLeague =
+      (val.season_id != null) !== (val.league_id != null);
+
+    if (hasPartialSeasonLeague) {
       ctx.addIssue({
         code: "custom",
-        message: "Either external_match_room_id or match_id must be provided",
+        message: "season_id and league_id must be provided together",
+        path: ["season_id"]
+      });
+    }
+
+    const modeCount =
+      (hasMatchId ? 1 : 0) +
+      (hasExternalRoomId ? 1 : 0) +
+      (hasSeasonLeague ? 1 : 0);
+
+    if (modeCount === 0) {
+      ctx.addIssue({
+        code: "custom",
+        message:
+          "Provide match_id, external_match_room_id, or season_id and league_id",
         path: ["match_id"]
       });
     }
-    if (count > 1) {
+    if (modeCount > 1) {
       ctx.addIssue({
         code: "custom",
-        message: "Provide only one of external_match_room_id or match_id",
+        message:
+          "Provide only one of match_id, external_match_room_id, or season_id and league_id",
         path: ["external_match_room_id"]
       });
     }
@@ -155,7 +176,9 @@ router.post(
     logger.info("Replay grand-final placements request", {
       actorAccountId,
       hasMatchId: parsed.data.match_id != null,
-      hasExternalRoomId: parsed.data.external_match_room_id != null
+      hasExternalRoomId: parsed.data.external_match_room_id != null,
+      hasSeasonLeague:
+        parsed.data.season_id != null && parsed.data.league_id != null
     });
 
     const result = await replayGrandFinalPlacements(parsed.data);
