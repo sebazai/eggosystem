@@ -30,6 +30,8 @@ export interface MatchGameAfterplantRound {
   t_team_name: string;
   ct_team_logo: string | null;
   t_team_logo: string | null;
+  /** Seconds into the round when the bomb was planted (from MapRoundStats.plant_time). */
+  plant_time_in_round: number | null;
   /** All kills that occurred after the bomb was planted in this round, sorted by time */
   kills_after_plant: AfterplantKillEvent[];
 }

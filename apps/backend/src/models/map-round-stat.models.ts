@@ -3,6 +3,15 @@ import { type ParsedPayload } from "../types/parse-queue.types";
 import { runQuery } from "../db/mysqlRunQuery";
 import { replaceMatchGameRows } from "../db/replaceMatchGameRows";
 import { keepLastByKey } from "../utils/keep-last-by-key";
+import { plantTimeSecondsOrNull } from "../utils/plant-time";
+
+function parsePlantTimeSeconds(
+  plantSite: string | null,
+  bombplant: ParsedPayload["NewRoundInfo"]["Rounds"][number]["Bombplant"]
+): number | null {
+  if (plantSite !== "A" && plantSite !== "B") return null;
+  return plantTimeSecondsOrNull(bombplant.Time);
+}
 
 interface SaveMapRoundStatsParams {
   matchGameId: number;
@@ -30,42 +39,46 @@ export const saveMapRoundStatsForGame = async ({
         String(round.RoundNumber)
       );
 
-      const values = uniqueRounds.map((round) => [
-        matchGameId,
-        round.CT_Team === 1 ? tTeamIdTeam1 : ctTeamIdTeam2,
-        round.T_Team === 1 ? tTeamIdTeam1 : ctTeamIdTeam2,
-        round.RoundNumber,
-        round.RoundEndInfo,
-        JSON.stringify(round.Bombplant.Alive),
-        round.FirstKill,
-        round.Bombplant.Site || null,
-        round.CTBuyType || null,
-        round.TBuyType || null,
-        round.CTPreBuyBank ?? null,
-        round.TPreBuyBank ?? null,
-        round.CTEquipmentValue ?? null,
-        round.TEquipmentValue ?? null,
-        round.Importance ?? null,
-        round.Winner ?? null,
-        round.RoundType ?? null,
-        round.CTAvgBank ?? null,
-        round.TAvgBank ?? null,
-        round.CTTotalBank ?? null,
-        round.TTotalBank ?? null,
-        round.CTPreBuyEqValue ?? null,
-        round.TPreBuyEqValue ?? null,
-        round.CTEndBank ?? null,
-        round.TEndBank ?? null,
-        round.CTEndEqValue ?? null,
-        round.TEndEqValue ?? null,
-        round.CTBuyStrategy ?? null,
-        round.TBuyStrategy ?? null
-      ]);
+      const values = uniqueRounds.map((round) => {
+        const plantSite = round.Bombplant.Site || null;
+        return [
+          matchGameId,
+          round.CT_Team === 1 ? tTeamIdTeam1 : ctTeamIdTeam2,
+          round.T_Team === 1 ? tTeamIdTeam1 : ctTeamIdTeam2,
+          round.RoundNumber,
+          round.RoundEndInfo,
+          JSON.stringify(round.Bombplant.Alive),
+          round.FirstKill,
+          plantSite,
+          parsePlantTimeSeconds(plantSite, round.Bombplant),
+          round.CTBuyType || null,
+          round.TBuyType || null,
+          round.CTPreBuyBank ?? null,
+          round.TPreBuyBank ?? null,
+          round.CTEquipmentValue ?? null,
+          round.TEquipmentValue ?? null,
+          round.Importance ?? null,
+          round.Winner ?? null,
+          round.RoundType ?? null,
+          round.CTAvgBank ?? null,
+          round.TAvgBank ?? null,
+          round.CTTotalBank ?? null,
+          round.TTotalBank ?? null,
+          round.CTPreBuyEqValue ?? null,
+          round.TPreBuyEqValue ?? null,
+          round.CTEndBank ?? null,
+          round.TEndBank ?? null,
+          round.CTEndEqValue ?? null,
+          round.TEndEqValue ?? null,
+          round.CTBuyStrategy ?? null,
+          round.TBuyStrategy ?? null
+        ];
+      });
 
       const placeholders = values
         .map(
           () =>
-            "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+            "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
         )
         .join(", ");
 
@@ -79,6 +92,7 @@ export const saveMapRoundStatsForGame = async ({
         ct_t,
         first_kill,
         plant_site,
+        plant_time,
         ct_buy_type,
         t_buy_type,
         ct_pre_buy_bank,

@@ -93,7 +93,7 @@ export const getActiveSignupOrActiveSeasonForAppController = async (
 
   const ActiveSignupOrActiveSeason =
     await getActiveSignupOrActiveSeasonForAppId(organizer_id, app_id);
-  res.json(ActiveSignupOrActiveSeason);
+  res.json(ActiveSignupOrActiveSeason ?? null);
 };
 
 /**

@@ -176,8 +176,11 @@ export const SupportUtilityTab = ({
   playerStats,
   teams
 }: SupportUtilityTabProps) => {
-  const { playerStats: flashStats, isLoading: isLoadingFlash } =
-    useFlashMatrix(matchGameId);
+  const {
+    flashMatrix,
+    playerStats: flashStats,
+    isLoading: isLoadingFlash
+  } = useFlashMatrix(matchGameId);
   const { setupPairs, isLoading: isLoadingSetup } = useSetupPairs(matchGameId);
   const { wastedUtility, isLoading: isLoadingWasted } =
     useWastedUtility(matchGameId);
@@ -222,6 +225,19 @@ export const SupportUtilityTab = ({
     [flashStats]
   );
   const fScale = flashSorted[0]?.enemy_flashes ?? 1;
+
+  const flashPairMap = useMemo(() => {
+    const m = new Map<string, (typeof flashMatrix)[number]>();
+    for (const f of flashMatrix) {
+      m.set(`${f.thrower_steam_id}:${f.victim_steam_id}`, f);
+    }
+    return m;
+  }, [flashMatrix]);
+
+  const flashMaxDur = useMemo(
+    () => Math.max(0.1, ...flashMatrix.map((f) => f.total_duration_seconds)),
+    [flashMatrix]
+  );
 
   // Setup pair stats
   const setupTeamA = useMemo(
@@ -373,6 +389,128 @@ export const SupportUtilityTab = ({
           );
         })}
       </AnalysisCard>
+
+      {flashMatrix.length > 0 && (
+        <AnalysisCard
+          title="Flash exposure"
+          sub="Seconds blinded by each thrower · diagonal cells are self-flashes"
+          right={
+            <Legend
+              items={[
+                { label: "Enemy", color: TEAM_A_COLOR },
+                { label: "Teammate", color: "var(--analysis-bad)" },
+                { label: "Self", color: "var(--kanaliiga-orange)" }
+              ]}
+            />
+          }
+        >
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ borderCollapse: "collapse", minWidth: 420 }}>
+              <thead>
+                <tr>
+                  <th
+                    style={{
+                      width: 100,
+                      textAlign: "left",
+                      fontSize: 10,
+                      color: "var(--muted-foreground)",
+                      paddingBottom: 4
+                    }}
+                  >
+                    Thrower ↓ / Victim →
+                  </th>
+                  {playerStats.map((p) => (
+                    <th
+                      key={p.steam_id}
+                      style={{
+                        width: 56,
+                        minWidth: 56,
+                        textAlign: "center",
+                        fontSize: 9,
+                        color: "var(--muted-foreground)",
+                        fontWeight: 600,
+                        paddingBottom: 4,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap"
+                      }}
+                      title={playerNames.get(p.steam_id) ?? p.nickname}
+                    >
+                      {playerNames.get(p.steam_id) ?? p.nickname}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {playerStats.map((thrower) => (
+                  <tr key={thrower.steam_id}>
+                    <td
+                      style={{
+                        fontSize: 10,
+                        fontWeight: 600,
+                        paddingRight: 8,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                        minWidth: 80,
+                        maxWidth: 100
+                      }}
+                    >
+                      {playerNames.get(thrower.steam_id) ?? thrower.nickname}
+                    </td>
+                    {playerStats.map((victim) => {
+                      const isSelf = thrower.steam_id === victim.steam_id;
+                      const pair = flashPairMap.get(
+                        `${thrower.steam_id}:${victim.steam_id}`
+                      );
+                      const dur = pair?.total_duration_seconds ?? 0;
+                      const alpha =
+                        dur > 0 ? Math.round(10 + 55 * (dur / flashMaxDur)) : 0;
+                      const isEnemy =
+                        !isSelf && thrower.team_id !== victim.team_id;
+                      const color = isSelf
+                        ? "var(--kanaliiga-orange)"
+                        : isEnemy
+                          ? TEAM_A_COLOR
+                          : "var(--analysis-bad)";
+                      return (
+                        <td
+                          key={victim.steam_id}
+                          style={{
+                            width: 56,
+                            minWidth: 56,
+                            height: 36,
+                            textAlign: "center",
+                            background:
+                              alpha > 0
+                                ? `color-mix(in oklab, ${color} ${alpha}%, transparent)`
+                                : "var(--muted)",
+                            borderRadius: 3,
+                            fontSize: 11,
+                            fontWeight: 700,
+                            color:
+                              dur > 0 ? "var(--foreground)" : "transparent",
+                            border: "1px solid var(--border)"
+                          }}
+                          title={
+                            pair
+                              ? `${isSelf ? "Self-flash" : isEnemy ? "Enemy flash" : "Teammate flash"} · ${pair.flash_count} flash${pair.flash_count !== 1 ? "es" : ""} · ${dur.toFixed(1)}s`
+                              : isSelf
+                                ? "No self-flashes"
+                                : ""
+                          }
+                        >
+                          {dur > 0 ? dur.toFixed(1) : ""}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </AnalysisCard>
+      )}
 
       {/* Grenade impact — smokes + utility damage */}
       <AnalysisCard

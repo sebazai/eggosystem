@@ -291,6 +291,12 @@ describe("Fantasy Models", () => {
         .mockResolvedValueOnce([{ value: 200000 }] as never) // Player 3 value
         .mockResolvedValueOnce([{ value: 200000 }] as never) // Player 4 value
         .mockResolvedValueOnce([{ value: 200000 }] as never) // Player 5 value
+        // League validation for each player (5 queries)
+        .mockResolvedValueOnce([{ league_id: 1 }] as never) // Player 1 league
+        .mockResolvedValueOnce([{ league_id: 1 }] as never) // Player 2 league
+        .mockResolvedValueOnce([{ league_id: 1 }] as never) // Player 3 league
+        .mockResolvedValueOnce([{ league_id: 1 }] as never) // Player 4 league
+        .mockResolvedValueOnce([{ league_id: 1 }] as never) // Player 5 league
         .mockResolvedValueOnce([] as never) // Check existing team
         .mockResolvedValueOnce({ insertId: 1 } as never) // Insert team
         .mockResolvedValueOnce({ insertId: 1 } as never) // Insert player 1
@@ -342,7 +348,13 @@ describe("Fantasy Models", () => {
         .mockResolvedValueOnce([{ value: 300000 }] as never) // Player 2 value
         .mockResolvedValueOnce([{ value: 300000 }] as never) // Player 3 value
         .mockResolvedValueOnce([{ value: 300000 }] as never) // Player 4 value
-        .mockResolvedValueOnce([{ value: 300000 }] as never); // Player 5 value
+        .mockResolvedValueOnce([{ value: 300000 }] as never) // Player 5 value
+        // League validation passes (budget check happens after)
+        .mockResolvedValueOnce([{ league_id: 1 }] as never)
+        .mockResolvedValueOnce([{ league_id: 1 }] as never)
+        .mockResolvedValueOnce([{ league_id: 1 }] as never)
+        .mockResolvedValueOnce([{ league_id: 1 }] as never)
+        .mockResolvedValueOnce([{ league_id: 1 }] as never);
 
       await expect(createFantasyTeam(teamData)).rejects.toThrow(
         "Total player value exceeds budget"
@@ -399,6 +411,12 @@ describe("Fantasy Models", () => {
         .mockResolvedValueOnce([{ value: 200000 }] as never) // Player 3 value
         .mockResolvedValueOnce([{ value: 200000 }] as never) // Player 4 value
         .mockResolvedValueOnce([{ value: 200000 }] as never) // Player 5 value
+        // League validation passes before duplicate check
+        .mockResolvedValueOnce([{ league_id: 1 }] as never)
+        .mockResolvedValueOnce([{ league_id: 1 }] as never)
+        .mockResolvedValueOnce([{ league_id: 1 }] as never)
+        .mockResolvedValueOnce([{ league_id: 1 }] as never)
+        .mockResolvedValueOnce([{ league_id: 1 }] as never)
         .mockResolvedValueOnce([{ id: 1 }] as never); // Check existing team - already exists!
 
       await expect(createFantasyTeam(teamData)).rejects.toThrow(
@@ -440,11 +458,12 @@ describe("Fantasy Models", () => {
 
       mockRunQuery
         .mockResolvedValueOnce([
-          { id: 1, season_id: 1, budget_remaining: 500000 }
+          { id: 1, season_id: 1, league_id: 1, budget_remaining: 500000 }
         ]) // Get team
         .mockResolvedValueOnce([{ count: 0 }]) // Check substitution limit
         .mockResolvedValueOnce([{ player_value: 190000, role: "rifler" }]) // Get old player
         .mockResolvedValueOnce([{ count: 0 }]) // Check played this week
+        .mockResolvedValueOnce([{ league_id: 1 }]) // League validation for new player
         .mockResolvedValueOnce([{ value: 200000 }]) // Get new player value from database
         .mockResolvedValueOnce(undefined) // Deactivate old player
         .mockResolvedValueOnce({ insertId: 2 }) // Insert new player
@@ -473,11 +492,12 @@ describe("Fantasy Models", () => {
       mockRunQuery.mockReset();
       mockRunQuery
         .mockResolvedValueOnce([
-          { id: 1, season_id: 1, budget_remaining: 500000 }
+          { id: 1, season_id: 1, league_id: 1, budget_remaining: 500000 }
         ])
         .mockResolvedValueOnce([{ count: 0 }])
         .mockResolvedValueOnce([{ player_value: 190000, role: "rifler" }])
         .mockResolvedValueOnce([{ count: 0 }])
+        .mockResolvedValueOnce([{ league_id: 1 }]) // League validation for new player
         .mockResolvedValueOnce([{ value: 200000 }]) // Get new player value from database
         .mockResolvedValueOnce(undefined)
         .mockResolvedValueOnce({ insertId: 2 })

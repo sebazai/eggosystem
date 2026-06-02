@@ -2,56 +2,27 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
-import { useActiveSignupOrActiveSeasonForApp } from "@/hooks/data/useActiveSignupOrActiveSeasonForApp";
+import { useLandingSeasonContext } from "@/hooks/data/useLandingSeasonContext";
+import { useSeasonResultsSeasons } from "@/hooks/data/useSeasonResults";
 import { createNextUrl } from "@/lib/utils";
 import { SeasonButtons } from "./SeasonButtons";
 import { Button } from "@/components/ui/button";
 
 export function SeasonStatusSection() {
-  const { signupOrActiveSeason, isLoading } =
-    useActiveSignupOrActiveSeasonForApp(730);
-  const currentSeasonId = signupOrActiveSeason?.season_id?.toString() || "16";
+  const { seasonPhase, referenceSeasonId, isLoading } =
+    useLandingSeasonContext();
+  const { seasons } = useSeasonResultsSeasons();
 
-  const seasonStatus = useMemo(() => {
-    if (!signupOrActiveSeason) {
-      return { isSeasonLive: false, isSignupOpen: false, seasonNumber: null };
+  const concludedSeasonLabel = useMemo(() => {
+    if (seasonPhase.seasonName) {
+      return seasonPhase.seasonName;
     }
 
-    const now = new Date();
-    const startDate = signupOrActiveSeason.start_date
-      ? new Date(signupOrActiveSeason.start_date)
-      : null;
-    const endDate = signupOrActiveSeason.end_date
-      ? new Date(signupOrActiveSeason.end_date)
-      : null;
-    const signupStartDate = signupOrActiveSeason.signup_start_date
-      ? new Date(signupOrActiveSeason.signup_start_date)
-      : null;
-    const signupEndDate = signupOrActiveSeason.signup_end_date
-      ? new Date(signupOrActiveSeason.signup_end_date)
-      : null;
-
-    const isSeasonLive =
-      startDate && startDate <= now && (endDate === null || endDate >= now);
-
-    const isSignupOpen =
-      signupStartDate &&
-      signupStartDate <= now &&
-      signupEndDate &&
-      signupEndDate >= now &&
-      startDate &&
-      startDate > now;
-
-    const seasonName =
-      signupOrActiveSeason.full_name ||
-      `Season ${signupOrActiveSeason.season_id ?? "Unknown"}`;
-    const seasonNumberMatch = seasonName.match(/Season\s+(\d+)/i);
-    const seasonNumber = seasonNumberMatch
-      ? seasonNumberMatch[1]
-      : (signupOrActiveSeason.season_id?.toString() ?? "Unknown");
-
-    return { isSeasonLive, isSignupOpen, seasonNumber };
-  }, [signupOrActiveSeason]);
+    const latestSeason = seasons.find(
+      (season) => season.season_id === referenceSeasonId
+    );
+    return latestSeason?.season_name ?? null;
+  }, [referenceSeasonId, seasonPhase.seasonName, seasons]);
 
   if (isLoading) {
     return (
@@ -63,11 +34,11 @@ export function SeasonStatusSection() {
     );
   }
 
-  if (seasonStatus.isSeasonLive) {
+  if (seasonPhase.phase === "live") {
     return (
       <>
         <h2 className="text-2xl sm:text-3xl mb-6">
-          CS2 Season {seasonStatus.seasonNumber} – Live Now
+          CS2 Season {seasonPhase.seasonNumber} – Live Now
         </h2>
         <p className="text-lg mb-2 text-muted-foreground">
           <strong>Season is currently in progress</strong>
@@ -78,7 +49,7 @@ export function SeasonStatusSection() {
         <p className="mb-6 text-muted-foreground">
           The latest installment of our CS2 season is now live. Hundreds of
           teams compete across multiple divisions —{" "}
-          <strong>CS2 Season {seasonStatus.seasonNumber}</strong> delivers
+          <strong>CS2 Season {seasonPhase.seasonNumber}</strong> delivers
           intense matches and corporate competition every week.
         </p>
 
@@ -94,11 +65,11 @@ export function SeasonStatusSection() {
     );
   }
 
-  if (seasonStatus.isSignupOpen) {
+  if (seasonPhase.phase === "signup") {
     return (
       <>
         <h2 className="text-2xl sm:text-3xl mb-6">
-          Registration for Season {seasonStatus.seasonNumber} Open
+          Registration for Season {seasonPhase.seasonNumber} Open
         </h2>
         <p className="text-lg mb-2 text-muted-foreground">
           <strong>Sign up your team for the upcoming season</strong>
@@ -110,7 +81,7 @@ export function SeasonStatusSection() {
 
         <p className="mb-6 text-muted-foreground">
           Register your team now and be part of{" "}
-          <strong>CS2 Season {seasonStatus.seasonNumber}</strong>. Whether
+          <strong>CS2 Season {seasonPhase.seasonNumber}</strong>. Whether
           you&apos;re returning champions or new challengers, there&apos;s a
           division for your team.
         </p>
@@ -127,7 +98,7 @@ export function SeasonStatusSection() {
             asChild
             className="bg-kanaliiga-orange hover:bg-kanaliiga-orange/90 text-white text-lg py-2 px-6 h-auto"
           >
-            <Link href={createNextUrl(`/seasons/${currentSeasonId}/signup`)}>
+            <Link href={createNextUrl(`/seasons/${referenceSeasonId}/signup`)}>
               Register Your Team →
             </Link>
           </Button>
@@ -151,8 +122,11 @@ export function SeasonStatusSection() {
       </p>
 
       <p className="mb-6 text-muted-foreground">
-        Season has concluded. Stay tuned for announcements about the next season
-        and registration opening. In the meantime, browse our archive of past
+        {concludedSeasonLabel
+          ? `${concludedSeasonLabel} has`
+          : "The season has"}{" "}
+        concluded. Stay tuned for announcements about the next season and
+        registration opening. In the meantime, browse our archive of past
         matches and team statistics.
       </p>
 

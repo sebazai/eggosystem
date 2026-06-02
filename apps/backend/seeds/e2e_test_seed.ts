@@ -289,10 +289,12 @@ export async function seed(knex: Knex): Promise<void> {
       user.id ===
       getE2ESteamPlayerBySteamId(IncompleteDetailsPlayerSteamId)?.account_id
     ) {
-      // Set up incomplete/invalid data for testing
+      // Invalid full_name for Kanahub signup message; verified work email so
+      // fixing full_name via accounts/update does not reset email verification.
       await knex("Accounts").where({ id: user.id }).update({
-        work_email: null, // Missing work email
-        work_email_verified: 0, // Not verified
+        work_email: "test+15012@kanaliiga.fi",
+        work_email_verified: 1,
+        is_work_email_personal_email: 0,
         full_name: "IncompletePlayer" // Missing space - invalid full name
       });
     }

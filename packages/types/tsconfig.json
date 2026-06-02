@@ -1,6 +1,7 @@
 {
   "extends": "@eggosystem/tsconfig/types.json",
   "compilerOptions": {
+    "tsBuildInfoFile": "./.tsbuildinfo",
     "rootDir": "./src",
     "outDir": "./dist",
     "target": "ES2018",

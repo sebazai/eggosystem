@@ -722,6 +722,12 @@ describe("Fantasy Points Service", () => {
 
       // Default mocks - return safe defaults for runQuery
       mockRunQuery.mockImplementation((query: string) => {
+        // Stage + timestamp check (must come first to pass the playoff guard)
+        if (query.includes("m.stage") && query.includes("m.start_timestamp")) {
+          return Promise.resolve([
+            { stage: 1, start_timestamp: new Date("2024-01-15") }
+          ]);
+        }
         // For match info queries, return the expected result
         if (query.includes("m.season_id, m.league_id")) {
           return Promise.resolve([
@@ -750,6 +756,11 @@ describe("Fantasy Points Service", () => {
       // Reset default mock and set up specific mocks
       mockRunQuery.mockReset();
       mockRunQuery.mockResolvedValue([]);
+
+      // Mock stage check - must return stage=1 to pass the playoff guard
+      mockRunQuery.mockResolvedValueOnce([
+        { stage: 1, start_timestamp: new Date("2024-01-15") }
+      ] as never);
 
       // Mock getPlayerStatsForGame - returns array
       mockRunQuery.mockResolvedValueOnce(mockPlayerStats);
@@ -805,6 +816,11 @@ describe("Fantasy Points Service", () => {
       mockRunQuery.mockReset();
       mockRunQuery.mockResolvedValue([]);
 
+      // Mock stage check - must return stage=1 to pass the playoff guard
+      mockRunQuery.mockResolvedValueOnce([
+        { stage: 1, start_timestamp: new Date("2024-01-15") }
+      ] as never);
+
       // Mock getPlayerStatsForGame - returns array
       mockRunQuery.mockResolvedValueOnce(mockPlayerStats);
 
@@ -843,20 +859,30 @@ describe("Fantasy Points Service", () => {
       mockRunQuery.mockReset();
       mockRunQuery.mockResolvedValue([]);
 
+      // Mock stage check - returns stage=1 so function proceeds past the playoff guard
+      mockRunQuery.mockResolvedValueOnce([
+        { stage: 1, start_timestamp: new Date("2024-01-15") }
+      ] as never);
+
       // Mock getPlayerStatsForGame (empty array) - this should cause early return
       mockRunQuery.mockResolvedValueOnce([]);
 
       await calculateFantasyPointsForGame(matchGameId);
 
       expect(mockConnection.commit).toHaveBeenCalled();
-      // Should only call getPlayerStatsForGame, then commit (no other queries)
-      expect(mockRunQuery).toHaveBeenCalledTimes(1);
+      // Stage check + getPlayerStatsForGame (empty), then commit (no other queries)
+      expect(mockRunQuery).toHaveBeenCalledTimes(2);
     });
 
     it("should prevent duplicate point logging (race condition)", async () => {
       // Reset default mock
       mockRunQuery.mockReset();
       mockRunQuery.mockResolvedValue([]);
+
+      // Mock stage check - must return stage=1 to pass the playoff guard
+      mockRunQuery.mockResolvedValueOnce([
+        { stage: 1, start_timestamp: new Date("2024-01-15") }
+      ] as never);
 
       // Mock getPlayerStatsForGame - returns array
       mockRunQuery.mockResolvedValueOnce(mockPlayerStats);
@@ -901,6 +927,11 @@ describe("Fantasy Points Service", () => {
       // Reset mocks
       mockRunQuery.mockReset();
       mockRunQuery.mockResolvedValue([]);
+
+      // Mock stage check - must return stage=1 to pass the playoff guard
+      mockRunQuery.mockResolvedValueOnce([
+        { stage: 1, start_timestamp: new Date("2024-01-15") }
+      ] as never);
 
       // Mock getPlayerStatsForGame - returns array
       mockRunQuery.mockResolvedValueOnce(mockPlayerStats);
@@ -951,6 +982,11 @@ describe("Fantasy Points Service", () => {
       mockRunQuery.mockReset();
       mockRunQuery.mockResolvedValue([]);
 
+      // Mock stage check - must return stage=1 to pass the playoff guard
+      mockRunQuery.mockResolvedValueOnce([
+        { stage: 1, start_timestamp: new Date("2024-01-15") }
+      ] as never);
+
       // Mock getPlayerStatsForGame - returns array
       mockRunQuery.mockResolvedValueOnce(mockPlayerStats);
 
@@ -999,6 +1035,11 @@ describe("Fantasy Points Service", () => {
       // Reset mocks
       mockRunQuery.mockReset();
       mockRunQuery.mockResolvedValue([]);
+
+      // Mock stage check - must return stage=1 to pass the playoff guard
+      mockRunQuery.mockResolvedValueOnce([
+        { stage: 1, start_timestamp: new Date("2024-01-15") }
+      ] as never);
 
       // Mock getPlayerStatsForGame - returns array
       mockRunQuery.mockResolvedValueOnce(mockPlayerStats);
@@ -1117,6 +1158,11 @@ describe("Fantasy Points Service", () => {
       // Reset default mock
       mockRunQuery.mockReset();
 
+      // Mock stage check - must return stage=1 to pass the playoff guard
+      mockRunQuery.mockResolvedValueOnce([
+        { stage: 1, start_timestamp: new Date("2024-01-15") }
+      ] as never);
+
       // Mock getPlayerStatsForGame - returns array
       mockRunQuery.mockResolvedValueOnce(mockPlayerStats);
 
@@ -1138,6 +1184,11 @@ describe("Fantasy Points Service", () => {
       // Reset default mock
       mockRunQuery.mockReset();
       mockRunQuery.mockResolvedValue([]);
+
+      // Mock stage check - must return stage=1 to pass the playoff guard
+      mockRunQuery.mockResolvedValueOnce([
+        { stage: 1, start_timestamp: new Date("2024-01-15") }
+      ] as never);
 
       // Mock getPlayerStatsForGame - returns array
       mockRunQuery.mockResolvedValueOnce(mockPlayerStats);
@@ -1169,6 +1220,11 @@ describe("Fantasy Points Service", () => {
       // Reset default mock
       mockRunQuery.mockReset();
       mockRunQuery.mockResolvedValue([]);
+
+      // Mock stage check - must return stage=1 to pass the playoff guard
+      mockRunQuery.mockResolvedValueOnce([
+        { stage: 1, start_timestamp: new Date("2024-01-15") }
+      ] as never);
 
       // Mock getPlayerStatsForGame - returns array
       mockRunQuery.mockResolvedValueOnce(mockPlayerStats);
@@ -1225,6 +1281,11 @@ describe("Fantasy Points Service", () => {
         valueChange: 10000
       });
 
+      // Mock stage check - must return stage=1 to pass the playoff guard
+      mockRunQuery.mockResolvedValueOnce([
+        { stage: 1, start_timestamp: new Date("2024-01-15") }
+      ] as never);
+
       // Mock getPlayerStatsForGame - returns array
       mockRunQuery.mockResolvedValueOnce(mockPlayerStats);
 
@@ -1267,6 +1328,11 @@ describe("Fantasy Points Service", () => {
       // Reset default mock
       mockRunQuery.mockReset();
       mockRunQuery.mockResolvedValue([]);
+
+      // Mock stage check - must return stage=1 to pass the playoff guard
+      mockRunQuery.mockResolvedValueOnce([
+        { stage: 1, start_timestamp: new Date("2024-01-15") }
+      ] as never);
 
       // Mock getPlayerStatsForGame - returns array
       mockRunQuery.mockResolvedValueOnce(mockPlayerStats);

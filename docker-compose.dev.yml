@@ -85,7 +85,7 @@ services:
     restart: always
 
   eggo-dev-db:
-    image: mariadb:12.2.2
+    image: mariadb:12.3.2
     container_name: eggo-dev-db
     restart: always
     environment:
@@ -202,7 +202,7 @@ services:
     restart: no
 
   eggo-dev-rabbitmq:
-    image: rabbitmq:4.3.0-management
+    image: rabbitmq:4.3.1-management
     container_name: eggo-dev-rabbitmq
     restart: always
     environment:

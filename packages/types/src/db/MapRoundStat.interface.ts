@@ -18,6 +18,8 @@ export interface MapRoundStat {
   } | null; // optional, can be null
   first_kill: Nullable<"CT" | "T">; // 'CT' or 'T', can be null
   plant_site?: "A" | "B" | null; // CHAR(1), optional, can be null
+  /** Seconds into the round at bomb plant (parser Bombplant.Time); null when no plant. */
+  plant_time?: number | null;
   // Buy types and pre-buy bank (from add_round_info migration)
   ct_buy_type?: string | null;
   t_buy_type?: string | null;

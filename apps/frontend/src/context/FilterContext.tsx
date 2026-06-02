@@ -60,28 +60,33 @@ export const FilterProvider = ({
   });
 
   useEffect(() => {
-    if (
-      searchParams.size === 0 &&
-      data?.season_id &&
-      !ready &&
-      (includeExactPaths.includes(path) ||
-        includePrefixPaths.some((p) => path === p || path.startsWith(`${p}/`)))
-    ) {
-      const params = new URLSearchParams();
-      params.append("seasons", data.season_id.toString());
-      const newUrl = `${path}?${params.toString()}`;
-      window.history.replaceState(null, "", newUrl);
+    const isIncludedPath =
+      includeExactPaths.includes(path) ||
+      includePrefixPaths.some((p) => path === p || path.startsWith(`${p}/`));
+    const isExcludedPath = excludePrefixPaths.some(
+      (p) => path === p || path.startsWith(`${p}`)
+    );
+
+    if (searchParams.size === 0 && !ready && isIncludedPath) {
+      if (data?.season_id) {
+        const params = new URLSearchParams();
+        params.append("seasons", data.season_id.toString());
+        const newUrl = `${path}?${params.toString()}`;
+        window.history.replaceState(null, "", newUrl);
+        setReady(true);
+        return;
+      }
+
+      if (error || (!isLoading && !isValidating && !data)) {
+        setReady(true);
+        return;
+      }
     }
-    if (
-      (searchParams.size !== 0 ||
-        excludePrefixPaths.some(
-          (p) => path === p || path.startsWith(`${p}`)
-        )) &&
-      !ready
-    ) {
+
+    if ((searchParams.size !== 0 || isExcludedPath) && !ready) {
       setReady(true);
     }
-  }, [searchParams, data?.season_id, ready, path]);
+  }, [searchParams, data, error, isLoading, isValidating, ready, path]);
 
   const filterParams = useMemo(() => {
     if (!ready) return null;
@@ -107,7 +112,7 @@ export const FilterProvider = ({
     [filterParams]
   );
 
-  if (!ready || !filterParams || !data) {
+  if (!ready || !filterParams) {
     return (
       <FilterContext.Provider
         value={{
@@ -142,7 +147,7 @@ export const FilterProvider = ({
   return (
     <FilterContext.Provider
       value={{
-        activeSeason: data,
+        activeSeason: data ?? null,
         filterParams,
         filterQueryString,
         getFilteredQueryString,

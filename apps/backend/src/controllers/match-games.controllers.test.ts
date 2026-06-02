@@ -136,6 +136,7 @@ describe("match-games analysis controllers", () => {
         t_team_name: "Team T",
         ct_team_logo: null,
         t_team_logo: null,
+        plant_time_in_round: null,
         kills_after_plant: []
       }
     ];

@@ -11,7 +11,8 @@ import {
   TEAM_A_COLOR,
   TEAM_B_COLOR,
   BAD_COLOR,
-  GOOD_COLOR
+  GOOD_COLOR,
+  NEUTRAL_COLOR
 } from "./AnalysisVizComponents";
 import type {
   MatchGameOpeningDuel,
@@ -28,15 +29,15 @@ interface OpeningDuelsTabProps {
 }
 
 const TRADE_COLORS: Record<OpeningDuelTradeStatus, string> = {
-  isolated: "var(--muted-foreground)",
+  isolated: NEUTRAL_COLOR,
   attempted: BAD_COLOR,
   converted: GOOD_COLOR
 };
 
 const TRADE_LABELS: Record<OpeningDuelTradeStatus, string> = {
-  isolated: "left alone",
-  attempted: "trade failed",
-  converted: "traded back"
+  isolated: "Isolated",
+  attempted: "Trade failed",
+  converted: "Traded back"
 };
 
 /* ─── Opener strip ───────────────────────────────────────────────── */
@@ -519,6 +520,14 @@ export const OpeningDuelsTab = ({
       <AnalysisCard
         title="First-blood battle"
         sub="Who wins the opening duel — and whether it converts"
+        right={
+          <Legend
+            items={[
+              { label: teamA?.name ?? "Team A", color: TEAM_A_COLOR },
+              { label: teamB?.name ?? "Team B", color: TEAM_B_COLOR }
+            ]}
+          />
+        }
       >
         <div className="flex flex-col gap-4">
           <VersusStat

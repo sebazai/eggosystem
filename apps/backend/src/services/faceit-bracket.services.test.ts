@@ -28,6 +28,7 @@ const { redisClient } = jest.requireMock("../utils/redisClient") as {
 describe("faceit-bracket.services", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    global.fetch = jest.fn();
   });
 
   it("fetches groups 1..3 bracket endpoints and normalizes to championship match items", async () => {
@@ -59,19 +60,17 @@ describe("faceit-bracket.services", () => {
       }
     });
 
-    const fetchMock = jest
-      .spyOn(global, "fetch")
-      .mockImplementation(async (url: unknown) => {
-        const u = String(url);
-        if (u.includes("/group/1/")) return makeResponse(groupPayload(1));
-        if (u.includes("/group/2/")) return makeResponse(groupPayload(2));
-        if (u.includes("/group/3/")) return makeResponse(groupPayload(3));
-        throw new Error(`unexpected url: ${u}`);
-      });
+    (global.fetch as jest.Mock).mockImplementation(async (url: unknown) => {
+      const u = String(url);
+      if (u.includes("/group/1/")) return makeResponse(groupPayload(1));
+      if (u.includes("/group/2/")) return makeResponse(groupPayload(2));
+      if (u.includes("/group/3/")) return makeResponse(groupPayload(3));
+      throw new Error(`unexpected url: ${u}`);
+    });
 
     const items = await getChampionshipBracketMatchesCached("champ-x");
 
-    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(global.fetch).toHaveBeenCalledTimes(3);
     expect(items).toHaveLength(3);
 
     const g1 = items.find((i) => i.group === 1);
@@ -108,10 +107,9 @@ describe("faceit-bracket.services", () => {
     ];
     redisClient.get.mockResolvedValue(JSON.stringify(cached));
 
-    const fetchMock = jest.spyOn(global, "fetch");
     const items = await getChampionshipBracketMatchesCached("champ-cache");
 
     expect(items).toEqual(cached);
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(global.fetch).not.toHaveBeenCalled();
   });
 });

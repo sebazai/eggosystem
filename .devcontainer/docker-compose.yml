@@ -8,7 +8,10 @@ services:
     env_file: "../.env.development"
     environment:
       - NEXT_PUBLIC_API_URL=http://localhost:3001 # Override frontend API URL
-    command: sleep infinity
+      - WATCHPACK_POLLING=true
+    # Clear node image entrypoint (otherwise docker-entrypoint.sh runs `node sleep`).
+    entrypoint: []
+    command: ["sleep", "infinity"]
     networks:
       - eggo-dev
 
