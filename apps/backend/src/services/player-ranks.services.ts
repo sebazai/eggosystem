@@ -1,6 +1,7 @@
 import {
   type SeasonPlayerRank,
   type CS2LeetifyAvgRank,
+  type KanaRank,
   SeasonPlatform,
   isFaceITCSRank
 } from "@eggosystem/types";
@@ -359,7 +360,11 @@ export const getPlayerRankForPlatform = async (
 
 // Kanarank rank configuration based on elo thresholds
 // Updated for Season 17 distribution (697 players, range 29-224, avg 115)
-export const KANARANK_THRESHOLDS = [
+export const KANARANK_THRESHOLDS: {
+  rank: KanaRank;
+  subrank: number;
+  min_elo: number;
+}[] = [
   { rank: "COCK", subrank: 1, min_elo: 190 }, // COCK_1: 190+ elo (~top 3%)
   { rank: "COCK", subrank: 2, min_elo: 180 }, // COCK_2: 180-189 elo (~top 5%)
   { rank: "COCK", subrank: 3, min_elo: 170 }, // COCK_3: 170-179 elo (~top 10%)

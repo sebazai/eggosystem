@@ -30,6 +30,12 @@ export const KANA_TIERS = [
 export type KanaTier = (typeof KANA_TIERS)[number];
 
 /**
+ * Broad kana rank groupings assigned to a leaderboard entry. `TOP_COCK` is the
+ * top-10 global positions; the rest are derived from kana elo thresholds.
+ */
+export type KanaRank = "TOP_COCK" | "COCK" | "CHICKEN" | "CHICK" | "EGG";
+
+/**
  * A single entry in the kana elo leaderboard.
  *
  * `position` is the player's 1-based rank within the global top 50 (highest
@@ -42,7 +48,7 @@ export interface KanaLeaderboardEntry {
   nickname: string;
   kana_elo: number;
   /** Kana rank, e.g. `TOP_COCK`, `COCK`, `CHICKEN`, `CHICK`, `EGG`. */
-  rank: string;
+  rank: KanaRank;
   /** Sub-rank within the rank (1-3); `1` for `TOP_COCK`. */
   subrank: number;
   /** Steam community profile URL for the player. */

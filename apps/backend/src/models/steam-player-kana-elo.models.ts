@@ -26,6 +26,7 @@ export const getTopLiveKanaEloPlayers = async (
        FROM SteamPlayerKanaElo spke
        JOIN SteamPlayers sp ON sp.steam_id = spke.steam_id
       WHERE spke.kana_elo IS NOT NULL
+        AND spke.kana_elo >= 0
       ORDER BY spke.kana_elo DESC
       LIMIT ?`,
     [limit]
