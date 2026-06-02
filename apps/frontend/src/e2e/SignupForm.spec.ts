@@ -296,7 +296,9 @@ async function fillValidPlayers(page: Page, authenticatedUserId?: string) {
     await steamIdInput.fill(steamId);
     await page.keyboard.press("Tab");
     await detailsLoaded;
-    await expect(steamIdInput).toHaveClass(/border-green-500/, { timeout: 20000 });
+    await expect(steamIdInput).toHaveClass(/border-green-500/, {
+      timeout: 20000
+    });
   }
 }
 
@@ -1100,112 +1102,112 @@ test.describe("Signup Form", () => {
         page,
         request
       }) => {
-      await setupAuthForUser(
-        page,
-        15016,
-        ValidWorkEmail3SteamId,
-        "ValidWorkEmail3"
-      );
+        await setupAuthForUser(
+          page,
+          15016,
+          ValidWorkEmail3SteamId,
+          "ValidWorkEmail3"
+        );
 
-      await setupCompleteRegistrationForm(
-        page,
-        generateUniqueOrgName("Profile Data Test Org"),
-        generateUniqueTeamName("Profile Data Test Team")
-      );
+        await setupCompleteRegistrationForm(
+          page,
+          generateUniqueOrgName("Profile Data Test Org"),
+          generateUniqueTeamName("Profile Data Test Team")
+        );
 
-      const lineupWithInvalidProfile = [
-        IncompleteDetailsPlayerSteamId, // Seed: invalid full_name
-        ValidWorkEmail1SteamId,
-        ValidWorkEmail2SteamId,
-        ValidWorkEmail3SteamId,
-        ValidWorkEmail4SteamId
-      ];
+        const lineupWithInvalidProfile = [
+          IncompleteDetailsPlayerSteamId, // Seed: invalid full_name
+          ValidWorkEmail1SteamId,
+          ValidWorkEmail2SteamId,
+          ValidWorkEmail3SteamId,
+          ValidWorkEmail4SteamId
+        ];
 
-      for (let i = 0; i < lineupWithInvalidProfile.length; i++) {
-        const steamId = lineupWithInvalidProfile[i]!;
-        const input = page.locator(`[data-testid="steam-id-input-${i}"]`);
-        const detailsLoaded = waitForPlayerDetailsLoaded(page, steamId);
-        await input.fill(steamId);
-        await page.keyboard.press("Tab");
-        await detailsLoaded;
-        if (i > 0) {
-          await expect(input).toHaveClass(/border-green-500/, {
-            timeout: 20000
-          });
-        }
-      }
-
-      // Assign player 1 (ValidWorkEmail1) as captain instead of player 0
-      // since player 0 (IncompleteDetailsPlayer) doesn't have Discord linked
-      await assignPlayerRole(page, 1, "captain");
-      await assignPlayerRole(page, 2, "co-captain");
-
-      const termsCheckbox = page.locator(
-        '[data-testid="terms-conditions-checkbox"]'
-      );
-      await termsCheckbox.waitFor({ state: "visible", timeout: 5000 });
-      if (!(await termsCheckbox.isChecked().catch(() => false))) {
-        await termsCheckbox.click();
-      }
-
-      // Check: frontend shows error and submit is disabled
-      const kanahubMessage = page
-        .locator('[data-testid="policy-acceptance-error-0"]')
-        .or(page.locator("text=Ask the player to sign up for Kanahub"));
-      await expect(kanahubMessage).toBeVisible({ timeout: 10000 });
-
-      const submitButton = page
-        .locator('button[type="submit"]')
-        .filter({ hasText: /Submit/i });
-      await expect(submitButton).toBeDisabled();
-
-      // Act: fix profile as IncompleteDetailsPlayer (account 15012) via account update API
-      await setupAuthForUser(
-        page,
-        15012,
-        IncompleteDetailsPlayerSteamId,
-        "IncompleteDetailsPlayer"
-      );
-      const apiBaseUrl = "http://localhost:3001";
-      const jwt = generateTestJWTForUser(
-        15012,
-        IncompleteDetailsPlayerSteamId,
-        "IncompleteDetailsPlayer"
-      );
-      const updateResponse = await request.post(
-        `${apiBaseUrl}/api/v1/accounts/update`,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${jwt}`
-          },
-          data: {
-            nickname: "IncompleteDetailsPlayer",
-            full_name: "Incomplete Details Player",
-            work_email: "test+15012@kanaliiga.fi",
-            acceptPrivacyPolicy: true
+        for (let i = 0; i < lineupWithInvalidProfile.length; i++) {
+          const steamId = lineupWithInvalidProfile[i]!;
+          const input = page.locator(`[data-testid="steam-id-input-${i}"]`);
+          const detailsLoaded = waitForPlayerDetailsLoaded(page, steamId);
+          await input.fill(steamId);
+          await page.keyboard.press("Tab");
+          await detailsLoaded;
+          if (i > 0) {
+            await expect(input).toHaveClass(/border-green-500/, {
+              timeout: 20000
+            });
           }
         }
-      );
-      expect(updateResponse.ok()).toBeTruthy();
 
-      // Switch back to form user and trigger re-fetch of player 0
-      await setupAuthForUser(
-        page,
-        15016,
-        ValidWorkEmail3SteamId,
-        "ValidWorkEmail3"
-      );
-      await waitForPlayerSteamIdValidated(
-        page,
-        0,
-        IncompleteDetailsPlayerSteamId,
-        { clearFirst: true }
-      );
+        // Assign player 1 (ValidWorkEmail1) as captain instead of player 0
+        // since player 0 (IncompleteDetailsPlayer) doesn't have Discord linked
+        await assignPlayerRole(page, 1, "captain");
+        await assignPlayerRole(page, 2, "co-captain");
 
-      // Check: error gone and submit enabled
-      await expect(kanahubMessage).not.toBeVisible({ timeout: 10000 });
-      await expect(submitButton).toBeEnabled({ timeout: 10000 });
+        const termsCheckbox = page.locator(
+          '[data-testid="terms-conditions-checkbox"]'
+        );
+        await termsCheckbox.waitFor({ state: "visible", timeout: 5000 });
+        if (!(await termsCheckbox.isChecked().catch(() => false))) {
+          await termsCheckbox.click();
+        }
+
+        // Check: frontend shows error and submit is disabled
+        const kanahubMessage = page
+          .locator('[data-testid="policy-acceptance-error-0"]')
+          .or(page.locator("text=Ask the player to sign up for Kanahub"));
+        await expect(kanahubMessage).toBeVisible({ timeout: 10000 });
+
+        const submitButton = page
+          .locator('button[type="submit"]')
+          .filter({ hasText: /Submit/i });
+        await expect(submitButton).toBeDisabled();
+
+        // Act: fix profile as IncompleteDetailsPlayer (account 15012) via account update API
+        await setupAuthForUser(
+          page,
+          15012,
+          IncompleteDetailsPlayerSteamId,
+          "IncompleteDetailsPlayer"
+        );
+        const apiBaseUrl = "http://localhost:3001";
+        const jwt = generateTestJWTForUser(
+          15012,
+          IncompleteDetailsPlayerSteamId,
+          "IncompleteDetailsPlayer"
+        );
+        const updateResponse = await request.post(
+          `${apiBaseUrl}/api/v1/accounts/update`,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${jwt}`
+            },
+            data: {
+              nickname: "IncompleteDetailsPlayer",
+              full_name: "Incomplete Details Player",
+              work_email: "test+15012@kanaliiga.fi",
+              acceptPrivacyPolicy: true
+            }
+          }
+        );
+        expect(updateResponse.ok()).toBeTruthy();
+
+        // Switch back to form user and trigger re-fetch of player 0
+        await setupAuthForUser(
+          page,
+          15016,
+          ValidWorkEmail3SteamId,
+          "ValidWorkEmail3"
+        );
+        await waitForPlayerSteamIdValidated(
+          page,
+          0,
+          IncompleteDetailsPlayerSteamId,
+          { clearFirst: true }
+        );
+
+        // Check: error gone and submit enabled
+        await expect(kanahubMessage).not.toBeVisible({ timeout: 10000 });
+        await expect(submitButton).toBeEnabled({ timeout: 10000 });
       });
     });
   });
