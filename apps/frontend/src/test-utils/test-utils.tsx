@@ -48,12 +48,6 @@ export const resetMockAuthState = () => {
   };
 };
 
-/**
- * Gets the current mock auth state
- * This is used internally by the mocked useAuth hook
- */
-export const getMockAuthState = () => mockAuthState;
-
 // Mock fetch API globally
 if (!global.fetch) {
   global.fetch = jest.fn();

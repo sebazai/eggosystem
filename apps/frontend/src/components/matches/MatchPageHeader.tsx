@@ -26,7 +26,7 @@ export function MatchPageHeader() {
       <p className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground">
         Loaded {updatedLabel}
       </p>
-      <h1 className="tracking-[0.02em] text-4xl md:text-5xl">Recent Matches</h1>
+      <h1 className="tracking-[0.02em] text-4xl md:text-5xl">Match History</h1>
       <hr
         className="mt-4"
         style={{
