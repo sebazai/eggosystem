@@ -101,11 +101,14 @@ async function assignCaptain(page: Page) {
 
 async function fillSteamIdLineup(page: Page, lineup: string[]) {
   for (let i = 0; i < lineup.length; i++) {
+    const steamId = lineup[i]!;
     const input = page.locator(`[data-testid="steam-id-input-${i}"]`);
     await expect(input).toBeVisible();
     await expect(input).toBeEnabled({ timeout: 15000 });
-    await input.fill(lineup[i]!);
-    await input.blur();
+    const detailsLoaded = waitForPlayerDetailsLoaded(page, steamId);
+    await input.fill(steamId);
+    await page.keyboard.press("Tab");
+    await detailsLoaded;
   }
 }
 
@@ -979,14 +982,7 @@ test.describe("Signup Form", () => {
         ValidWorkEmail2SteamId,
         ValidWorkEmail3SteamId
       ];
-      for (let i = 0; i < 5; i++) {
-        const steamIdInput = page.locator(
-          `[data-testid="steam-id-input-${i}"]`
-        );
-        await expect(steamIdInput).toBeVisible();
-        await steamIdInput.fill(approvalOnlyLineup[i]!);
-        await page.keyboard.press("Tab");
-      }
+      await fillSteamIdLineup(page, approvalOnlyLineup);
 
       await expect(
         page.locator('[data-testid="steam-id-input-4"]')
@@ -1730,12 +1726,7 @@ test.describe("Signup Form", () => {
         AddTeamSignupSteamId4,
         AddTeamSignupSteamId5
       ];
-      for (let i = 0; i < 5; i++) {
-        const input = page.locator(`[data-testid="steam-id-input-${i}"]`);
-        await expect(input).toBeVisible();
-        await input.fill(a5Lineup[i]!);
-        await page.keyboard.press("Tab");
-      }
+      await fillSteamIdLineup(page, a5Lineup);
 
       await expect(
         page.locator('[data-testid="steam-id-input-4"]')
