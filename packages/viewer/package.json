@@ -11,7 +11,7 @@
     "dev": "node dev-server.js",
     "dev:direct": "vite",
     "dev:build": "tsc --watch",
-    "clean": "rm -rf cache dist"
+    "clean": "rm -rf cache dist .tsbuildinfo"
   },
   "keywords": [
     "cs2",
