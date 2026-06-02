@@ -1,36 +1,49 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import HeroSection from "./HeroSection";
-import { useActiveSignupOrActiveSeasonForApp } from "@/hooks/data/useActiveSignupOrActiveSeasonForApp";
+import { useLandingSeasonContext } from "@/hooks/data/useLandingSeasonContext";
 import { useSeasonCalendarMatches } from "@/hooks/data/useSeasonCalendarMatches";
+import { useSeasonResultsSeasons } from "@/hooks/data/useSeasonResults";
 import { useRouter } from "next/navigation";
 
-// Mock hooks
-jest.mock("@/hooks/data/useActiveSignupOrActiveSeasonForApp");
+jest.mock("@/hooks/data/useLandingSeasonContext");
 jest.mock("@/hooks/data/useSeasonCalendarMatches");
+jest.mock("@/hooks/data/useSeasonResults", () => ({
+  useSeasonResults: jest.fn(() => ({
+    data: undefined,
+    isLoading: false,
+    error: undefined,
+    isValidating: false
+  })),
+  useSeasonResultsSeasons: jest.fn(() => ({
+    seasons: [],
+    isLoading: false,
+    isValidating: false,
+    error: undefined
+  }))
+}));
+jest.mock("@/components/landing/SeasonHighlightsPanel", () => ({
+  SeasonHighlightsPanel: () => <div>Season Highlights Panel</div>
+}));
 
-// Mock utility functions
 jest.mock("@/lib/calendar-utils", () => ({
   getUpcomingMatchesSorted: jest.fn((matches) => matches || []),
   getUpcomingStreamedMatchesSorted: jest.fn((matches) => matches || []),
   DIVISIONS: {}
 }));
 
-// Mock Next.js router
 const mockPush = jest.fn();
 jest.mock("next/navigation", () => ({
   useRouter: jest.fn()
 }));
 
-// Mock UI components
 jest.mock("@/components/ui/card", () => ({
   Card: ({ children }: any) => <div data-testid="card">{children}</div>,
   CardContent: ({ children }: any) => <div>{children}</div>
 }));
 
 jest.mock("@/components/ui/button", () => ({
-  Button: ({ children, onClick }: any) => (
-    <button onClick={onClick}>{children}</button>
-  )
+  Button: ({ children, onClick, asChild }: any) =>
+    asChild ? children : <button onClick={onClick}>{children}</button>
 }));
 
 jest.mock("@/components/ui/badge", () => ({
@@ -42,13 +55,17 @@ jest.mock("next/link", () => ({
   default: ({ children, href }: any) => <a href={href}>{children}</a>
 }));
 
-const mockUseActiveSignupOrActiveSeasonForApp =
-  useActiveSignupOrActiveSeasonForApp as jest.MockedFunction<
-    typeof useActiveSignupOrActiveSeasonForApp
+const mockUseLandingSeasonContext =
+  useLandingSeasonContext as jest.MockedFunction<
+    typeof useLandingSeasonContext
   >;
 const mockUseSeasonCalendarMatches =
   useSeasonCalendarMatches as jest.MockedFunction<
     typeof useSeasonCalendarMatches
+  >;
+const mockUseSeasonResultsSeasons =
+  useSeasonResultsSeasons as jest.MockedFunction<
+    typeof useSeasonResultsSeasons
   >;
 const mockUseRouter = useRouter as jest.MockedFunction<typeof useRouter>;
 
@@ -67,19 +84,37 @@ describe("HeroSection", () => {
       asPath: "/"
     } as any);
 
-    mockUseActiveSignupOrActiveSeasonForApp.mockReturnValue({
+    mockUseLandingSeasonContext.mockReturnValue({
       signupOrActiveSeason: {
-        season_id: 1,
-        full_name: "CS2 Season 4",
-        platform: "kanaliiga" as const,
-        start_date: "2024-01-01",
-        end_date: "2024-04-30",
-        signup_start_date: "2023-12-01",
-        signup_end_date: "2023-12-31"
+        season_id: 17,
+        full_name: "CS2 Season 5",
+        platform: "faceit" as const,
+        start_date: "2026-01-16",
+        end_date: "2026-05-26",
+        signup_start_date: "2025-12-21T16:00:00.000Z",
+        signup_end_date: "2026-01-13T18:40:00.000Z"
       },
+      seasonPhase: {
+        phase: "live",
+        seasonNumber: "5",
+        seasonName: "CS2 Season 5"
+      },
+      referenceSeasonId: 17,
       isLoading: false,
       isError: false,
       isValidating: false
+    });
+
+    mockUseSeasonResultsSeasons.mockReturnValue({
+      seasons: [
+        {
+          season_id: 17,
+          season_name: "CS2 Season 5"
+        }
+      ],
+      isLoading: false,
+      isValidating: false,
+      error: undefined
     });
 
     mockUseSeasonCalendarMatches.mockReturnValue({
@@ -91,172 +126,41 @@ describe("HeroSection", () => {
     } as any);
   });
 
-  it("should set isMounted to true after mount", async () => {
-    render(<HeroSection />);
-
-    // Component should render
-    await waitFor(() => {
-      // The component should be mounted and ready - check for section element
-      expect(screen.getByText("Finland's Premier")).toBeInTheDocument();
-    });
-  });
-
-  it("should set matchFilter to streamed when hasStreamedMatches is true", async () => {
-    const mockMatches = [
-      {
-        match_id: "1",
-        stream_urls: ["https://twitch.tv/test"],
-        match_status: "UPCOMING" as const,
-        league_tier: 1,
-        title: "Test Match",
-        match_start: "2024-01-15T14:30:00Z",
-        match_end: "2024-01-15T16:30:00Z",
-        league_name: "Test League",
-        match_team1: "Team 1",
-        match_team2: "Team 2",
-        external_match_room_id: null,
-        season_platform: "steam" as const
-      }
-    ];
-
-    mockUseSeasonCalendarMatches.mockReturnValue({
-      data: mockMatches,
-      isLoading: false,
-      isError: false,
-      isValidating: false,
-      mutate: jest.fn()
-    } as any);
-
+  it("renders the live season hero", async () => {
     render(<HeroSection />);
 
     await waitFor(() => {
-      // Component should render
       expect(screen.getByText("Finland's Premier")).toBeInTheDocument();
+      expect(screen.getByText("Upcoming Matches")).toBeInTheDocument();
+      expect(screen.getByText("View Match Calendar")).toBeInTheDocument();
     });
   });
 
-  it("should set matchFilter to all when hasStreamedMatches is false", async () => {
-    const mockMatches = [
-      {
-        match_id: "1",
-        stream_urls: [],
-        match_status: "UPCOMING" as const,
-        league_tier: 1,
-        title: "Test Match",
-        match_start: "2024-01-15T14:30:00Z",
-        match_end: "2024-01-15T16:30:00Z",
-        league_name: "Test League",
-        match_team1: "Team 1",
-        match_team2: "Team 2",
-        external_match_room_id: null,
-        season_platform: "steam" as const
-      }
-    ];
-
-    mockUseSeasonCalendarMatches.mockReturnValue({
-      data: mockMatches,
-      isLoading: false,
-      isError: false,
-      isValidating: false,
-      mutate: jest.fn()
-    } as any);
-
-    render(<HeroSection />);
-
-    await waitFor(() => {
-      // Component should render
-      expect(screen.getByText("Finland's Premier")).toBeInTheDocument();
-    });
-  });
-
-  it("should update matchFilter when hasStreamedMatches changes", async () => {
-    const mockMatchesNoStream = [
-      {
-        match_id: "1",
-        stream_urls: [],
-        match_status: "UPCOMING" as const,
-        league_tier: 1,
-        title: "Test Match",
-        match_start: "2024-01-15T14:30:00Z",
-        match_end: "2024-01-15T16:30:00Z",
-        league_name: "Test League",
-        match_team1: "Team 1",
-        match_team2: "Team 2",
-        external_match_room_id: null,
-        season_platform: "steam" as const
-      }
-    ];
-
-    mockUseSeasonCalendarMatches.mockReturnValue({
-      data: mockMatchesNoStream,
-      isLoading: false,
-      isError: false,
-      isValidating: false,
-      mutate: jest.fn()
-    } as any);
-
-    const { rerender } = render(<HeroSection />);
-
-    await waitFor(() => {
-      expect(screen.getByText("Finland's Premier")).toBeInTheDocument();
-    });
-
-    // Update to have streamed matches
-    const mockMatchesWithStream = [
-      {
-        match_id: "1",
-        stream_urls: ["https://twitch.tv/test"],
-        match_status: "UPCOMING" as const,
-        league_tier: 1,
-        title: "Test Match",
-        match_start: "2024-01-15T14:30:00Z",
-        match_end: "2024-01-15T16:30:00Z",
-        league_name: "Test League",
-        match_team1: "Team 1",
-        match_team2: "Team 2",
-        external_match_room_id: null,
-        season_platform: "steam" as const
-      }
-    ];
-
-    mockUseSeasonCalendarMatches.mockReturnValue({
-      data: mockMatchesWithStream,
-      isLoading: false,
-      isError: false,
-      isValidating: false,
-      mutate: jest.fn()
-    } as any);
-
-    rerender(<HeroSection />);
-
-    await waitFor(() => {
-      expect(screen.getByText("Finland's Premier")).toBeInTheDocument();
-    });
-  });
-
-  it("should calculate seasonStatus only when mounted", async () => {
-    render(<HeroSection />);
-
-    await waitFor(() => {
-      // Component should render and calculate season status
-      expect(screen.getByText("Finland's Premier")).toBeInTheDocument();
-    });
-  });
-
-  it("should handle loading state for season data", () => {
-    mockUseActiveSignupOrActiveSeasonForApp.mockReturnValue({
+  it("renders the concluded season hero", async () => {
+    mockUseLandingSeasonContext.mockReturnValue({
       signupOrActiveSeason: undefined,
-      isLoading: true,
-      isError: undefined,
+      seasonPhase: {
+        phase: "concluded",
+        seasonNumber: null,
+        seasonName: null
+      },
+      referenceSeasonId: 17,
+      isLoading: false,
+      isError: false,
       isValidating: false
     });
 
     render(<HeroSection />);
 
-    expect(screen.getByText("Finland's Premier")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText("CS2 Season 5 Concluded")).toBeInTheDocument();
+      expect(screen.getByText("View Season Results")).toBeInTheDocument();
+      expect(screen.getByText("Season Highlights Panel")).toBeInTheDocument();
+      expect(screen.queryByText("View Match Calendar")).not.toBeInTheDocument();
+    });
   });
 
-  it("should handle loading state for matches data", () => {
+  it("handles loading state for matches data", () => {
     mockUseSeasonCalendarMatches.mockReturnValue({
       data: undefined,
       isLoading: true,

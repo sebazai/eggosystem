@@ -3,7 +3,7 @@ ENV TBLS_VERSION=1.92.3
 WORKDIR /workspace
 
 RUN npm install -g typescript
-RUN npm install -g pnpm@11.16.0
+RUN npm install -g pnpm@11.5.0
 RUN npm install -g @anthropic-ai/claude-code
 
 # Install rtk (CLI proxy) into PATH

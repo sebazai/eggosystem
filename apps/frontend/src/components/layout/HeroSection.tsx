@@ -15,7 +15,9 @@ import {
 } from "lucide-react";
 import { formatInTimezone } from "@/lib/timezone";
 import { useSeasonCalendarMatches } from "@/hooks/data/useSeasonCalendarMatches";
-import { useActiveSignupOrActiveSeasonForApp } from "@/hooks/data/useActiveSignupOrActiveSeasonForApp";
+import { useLandingSeasonContext } from "@/hooks/data/useLandingSeasonContext";
+import { useSeasonResultsSeasons } from "@/hooks/data/useSeasonResults";
+import { SeasonHighlightsPanel } from "@/components/landing/SeasonHighlightsPanel";
 import { MatchStatus, type MatchWithStreamUrls } from "@eggosystem/types";
 import {
   getUpcomingMatchesSorted,
@@ -267,57 +269,25 @@ function MatchesLoadingSkeleton() {
 export default function HeroSection({ device: _device }: HeroSectionProps) {
   const router = useRouter();
 
-  const { signupOrActiveSeason } = useActiveSignupOrActiveSeasonForApp(730);
-  const currentSeasonId = signupOrActiveSeason?.season_id?.toString() || "16";
+  const { seasonPhase, referenceSeasonId } = useLandingSeasonContext();
+  const { seasons } = useSeasonResultsSeasons();
+  const currentSeasonId = referenceSeasonId?.toString();
+  const isSeasonConcluded = seasonPhase.phase === "concluded";
+  const showLiveHero = !isSeasonConcluded && Boolean(currentSeasonId);
 
-  const seasonStatus = useMemo(() => {
-    if (!signupOrActiveSeason) {
-      return {
-        isSeasonLive: false,
-        isSignupOpen: false,
-        seasonName: null,
-        seasonNumber: null
-      };
+  const concludedSeasonLabel = useMemo(() => {
+    if (seasonPhase.seasonName) {
+      return seasonPhase.seasonName;
     }
 
-    const now = new Date();
-    const startDate = signupOrActiveSeason.start_date
-      ? new Date(signupOrActiveSeason.start_date)
-      : null;
-    const endDate = signupOrActiveSeason.end_date
-      ? new Date(signupOrActiveSeason.end_date)
-      : null;
-    const signupStartDate = signupOrActiveSeason.signup_start_date
-      ? new Date(signupOrActiveSeason.signup_start_date)
-      : null;
-    const signupEndDate = signupOrActiveSeason.signup_end_date
-      ? new Date(signupOrActiveSeason.signup_end_date)
-      : null;
-
-    const isSeasonLive =
-      startDate && startDate <= now && (endDate === null || endDate >= now);
-
-    const isSignupOpen =
-      signupStartDate &&
-      signupStartDate <= now &&
-      signupEndDate &&
-      signupEndDate >= now &&
-      startDate &&
-      startDate > now;
-
-    const seasonName =
-      signupOrActiveSeason.full_name ||
-      `Season ${signupOrActiveSeason.season_id ?? "Unknown"}`;
-    const seasonNumberMatch = seasonName.match(/Season\s+(\d+)/i);
-    const seasonNumber = seasonNumberMatch
-      ? seasonNumberMatch[1]
-      : (signupOrActiveSeason.season_id?.toString() ?? "Unknown");
-
-    return { isSeasonLive, isSignupOpen, seasonName, seasonNumber };
-  }, [signupOrActiveSeason]);
+    const latestSeason = seasons.find(
+      (season) => season.season_id === referenceSeasonId
+    );
+    return latestSeason?.season_name ?? null;
+  }, [referenceSeasonId, seasonPhase.seasonName, seasons]);
 
   const { data: calendarMatches, isLoading: isLoadingMatches } =
-    useSeasonCalendarMatches(currentSeasonId, "all");
+    useSeasonCalendarMatches(showLiveHero ? currentSeasonId : null, "all");
 
   const allUpcomingMatches = getUpcomingMatchesSorted(
     calendarMatches || [],
@@ -367,14 +337,14 @@ export default function HeroSection({ device: _device }: HeroSectionProps) {
           {/* Left Side - Hero Content */}
           <div className="space-y-6">
             <div className="space-y-3">
-              {seasonStatus.isSeasonLive ? (
+              {seasonPhase.phase === "live" ? (
                 <Badge
                   variant="secondary"
                   className="bg-kanaliiga-orange/20 text-kanaliiga-orange border-kanaliiga-orange/30 text-sm sm:text-base lg:text-lg 2xl:text-xl"
                 >
-                  CS2 Season {seasonStatus.seasonNumber} • Live Now
+                  CS2 Season {seasonPhase.seasonNumber} • Live Now
                 </Badge>
-              ) : seasonStatus.isSignupOpen ? (
+              ) : seasonPhase.phase === "signup" ? (
                 <Link
                   href={createNextUrl(`/seasons/${currentSeasonId}/signup`)}
                 >
@@ -382,7 +352,7 @@ export default function HeroSection({ device: _device }: HeroSectionProps) {
                     variant="secondary"
                     className="bg-kanaliiga-orange/20 text-kanaliiga-orange border-kanaliiga-orange/30 text-sm sm:text-base lg:text-lg 2xl:text-xl hover:bg-kanaliiga-orange/30 cursor-pointer transition-colors"
                   >
-                    Registration for Season {seasonStatus.seasonNumber} Open →
+                    Registration for Season {seasonPhase.seasonNumber} Open →
                   </Badge>
                 </Link>
               ) : (
@@ -390,7 +360,9 @@ export default function HeroSection({ device: _device }: HeroSectionProps) {
                   variant="secondary"
                   className="bg-kanaliiga-orange/20 text-kanaliiga-orange border-kanaliiga-orange/30 text-sm sm:text-base lg:text-lg 2xl:text-xl"
                 >
-                  CS2 Corporate League
+                  {concludedSeasonLabel
+                    ? `${concludedSeasonLabel} Concluded`
+                    : "CS2 Corporate League"}
                 </Badge>
               )}
 
@@ -402,8 +374,9 @@ export default function HeroSection({ device: _device }: HeroSectionProps) {
               </h1>
 
               <p className="text-lg sm:text-xl 2xl:text-2xl text-muted-foreground leading-relaxed">
-                Finland&apos;s corporate CS2 league. Watch live matches, follow
-                your team, and compete across multiple divisions.
+                {isSeasonConcluded
+                  ? "The latest season has wrapped. Explore final standings, season highlights, and match history while we prepare the next registration window."
+                  : "Finland's corporate CS2 league. Watch live matches, follow your team, and compete across multiple divisions."}
               </p>
             </div>
 
@@ -437,77 +410,111 @@ export default function HeroSection({ device: _device }: HeroSectionProps) {
 
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4">
-              <Button
-                size="lg"
-                className="bg-kanaliiga-orange hover:bg-kanaliiga-orange/90 text-white px-6 sm:px-8 py-3 text-sm sm:text-base 2xl:text-lg h-auto"
-                onClick={() =>
-                  router.push(`/seasons/${currentSeasonId}/calendar`)
-                }
-              >
-                <Calendar className="mr-2 h-4 w-4 sm:h-5 sm:w-5 2xl:h-6 2xl:w-6" />
-                View Match Calendar
-              </Button>
+              {isSeasonConcluded ? (
+                <>
+                  <Button
+                    size="lg"
+                    className="bg-kanaliiga-orange hover:bg-kanaliiga-orange/90 text-white px-6 sm:px-8 py-3 text-sm sm:text-base 2xl:text-lg h-auto"
+                    onClick={() =>
+                      router.push(
+                        currentSeasonId
+                          ? `/season-results?season=${currentSeasonId}`
+                          : "/season-results"
+                      )
+                    }
+                  >
+                    <TrendingUp className="mr-2 h-4 w-4 sm:h-5 sm:w-5 2xl:h-6 2xl:w-6" />
+                    View Season Results
+                  </Button>
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="border-white/20 px-6 sm:px-8 py-3 text-sm sm:text-base 2xl:text-lg h-auto"
+                    onClick={() => router.push("/matches")}
+                  >
+                    <Play className="mr-2 h-4 w-4 sm:h-5 sm:w-5 2xl:h-6 2xl:w-6" />
+                    Browse Past Matches
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  size="lg"
+                  className="bg-kanaliiga-orange hover:bg-kanaliiga-orange/90 text-white px-6 sm:px-8 py-3 text-sm sm:text-base 2xl:text-lg h-auto"
+                  onClick={() =>
+                    router.push(`/seasons/${currentSeasonId}/calendar`)
+                  }
+                >
+                  <Calendar className="mr-2 h-4 w-4 sm:h-5 sm:w-5 2xl:h-6 2xl:w-6" />
+                  View Match Calendar
+                </Button>
+              )}
             </div>
           </div>
 
-          {/* Right Side - Upcoming Matches */}
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl sm:text-2xl 2xl:text-3xl flex items-center gap-2">
-                <Calendar className="h-5 w-5 sm:h-6 sm:w-6 2xl:h-7 2xl:w-7 text-kanaliiga-orange" />
-                Upcoming Matches
-              </h2>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-kanaliiga-orange hover:text-kanaliiga-orange/80 text-sm sm:text-base 2xl:text-lg h-auto px-2 sm:px-4"
-                onClick={() =>
-                  router.push(`/seasons/${currentSeasonId}/calendar`)
-                }
-              >
-                View Calendar
-              </Button>
-            </div>
+          {/* Right Side - Upcoming Matches or Season Highlights */}
+          {isSeasonConcluded ? (
+            <SeasonHighlightsPanel />
+          ) : (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl sm:text-2xl 2xl:text-3xl flex items-center gap-2">
+                  <Calendar className="h-5 w-5 sm:h-6 sm:w-6 2xl:h-7 2xl:w-7 text-kanaliiga-orange" />
+                  Upcoming Matches
+                </h2>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-kanaliiga-orange hover:text-kanaliiga-orange/80 text-sm sm:text-base 2xl:text-lg h-auto px-2 sm:px-4"
+                  onClick={() =>
+                    router.push(`/seasons/${currentSeasonId}/calendar`)
+                  }
+                >
+                  View Calendar
+                </Button>
+              </div>
 
-            {/* Filter Buttons */}
-            <div className="flex items-center gap-2">
-              <Button
-                variant={matchFilter === "all" ? "default" : "ghost"}
-                size="sm"
-                className={`text-sm ${
-                  matchFilter === "all"
-                    ? "bg-kanaliiga-orange text-white hover:bg-kanaliiga-orange/90"
-                    : "text-muted-foreground hover:text-foreground hover:bg-white/10"
-                }`}
-                onClick={() => setMatchFilter("all")}
-              >
-                All ({allUpcomingMatches.length})
-              </Button>
-              <Button
-                variant={matchFilter === "streamed" ? "default" : "ghost"}
-                size="sm"
-                className={`text-sm ${
-                  matchFilter === "streamed"
-                    ? "bg-kanaliiga-orange text-white hover:bg-kanaliiga-orange/90"
-                    : "text-muted-foreground hover:text-foreground hover:bg-white/10"
-                } ${!hasStreamedMatches ? "opacity-50 cursor-not-allowed" : ""}`}
-                onClick={() => hasStreamedMatches && setMatchFilter("streamed")}
-                disabled={!hasStreamedMatches}
-              >
-                <TwitchIcon size={14} className="mr-1.5" />
-                Streamed ({allUpcomingStreamedMatches.length})
-              </Button>
-            </div>
+              {/* Filter Buttons */}
+              <div className="flex items-center gap-2">
+                <Button
+                  variant={matchFilter === "all" ? "default" : "ghost"}
+                  size="sm"
+                  className={`text-sm ${
+                    matchFilter === "all"
+                      ? "bg-kanaliiga-orange text-white hover:bg-kanaliiga-orange/90"
+                      : "text-muted-foreground hover:text-foreground hover:bg-white/10"
+                  }`}
+                  onClick={() => setMatchFilter("all")}
+                >
+                  All ({allUpcomingMatches.length})
+                </Button>
+                <Button
+                  variant={matchFilter === "streamed" ? "default" : "ghost"}
+                  size="sm"
+                  className={`text-sm ${
+                    matchFilter === "streamed"
+                      ? "bg-kanaliiga-orange text-white hover:bg-kanaliiga-orange/90"
+                      : "text-muted-foreground hover:text-foreground hover:bg-white/10"
+                  } ${!hasStreamedMatches ? "opacity-50 cursor-not-allowed" : ""}`}
+                  onClick={() =>
+                    hasStreamedMatches && setMatchFilter("streamed")
+                  }
+                  disabled={!hasStreamedMatches}
+                >
+                  <TwitchIcon size={14} className="mr-1.5" />
+                  Streamed ({allUpcomingStreamedMatches.length})
+                </Button>
+              </div>
 
-            {/* Match Content */}
-            {isLoadingMatches ? (
-              <MatchesLoadingSkeleton />
-            ) : matchFilter === "streamed" ? (
-              <StreamedMatchesTab matches={upcomingMatches} />
-            ) : (
-              <AllMatchesTab matches={upcomingMatches} />
-            )}
-          </div>
+              {/* Match Content */}
+              {isLoadingMatches ? (
+                <MatchesLoadingSkeleton />
+              ) : matchFilter === "streamed" ? (
+                <StreamedMatchesTab matches={upcomingMatches} />
+              ) : (
+                <AllMatchesTab matches={upcomingMatches} />
+              )}
+            </div>
+          )}
         </div>
 
         {/* Bottom Section - Quick Links */}
@@ -527,22 +534,44 @@ export default function HeroSection({ device: _device }: HeroSectionProps) {
               </div>
             </Link>
 
-            <Link
-              href={createNextUrl(`/seasons/${currentSeasonId}/standings`)}
-              className="group"
-            >
-              <div className="p-6 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-all duration-300 min-h-[120px] md:min-h-[140px] lg:min-h-[160px] 2xl:min-h-[180px] flex flex-col">
-                <TrendingUp className="h-8 w-8 lg:h-10 lg:w-10 2xl:h-12 2xl:w-12 text-kanaliiga-orange mb-3 flex-shrink-0" />
-                <div className="flex flex-col flex-grow">
-                  <h3 className="text-lg lg:text-xl 2xl:text-2xl mb-2">
-                    View Standings
-                  </h3>
-                  <p className="text-sm lg:text-base 2xl:text-lg text-muted-foreground">
-                    Check current league rankings
-                  </p>
+            {currentSeasonId ? (
+              <Link
+                href={createNextUrl(
+                  isSeasonConcluded
+                    ? `/season-results?season=${currentSeasonId}`
+                    : `/seasons/${currentSeasonId}/standings`
+                )}
+                className="group"
+              >
+                <div className="p-6 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-all duration-300 min-h-[120px] md:min-h-[140px] lg:min-h-[160px] 2xl:min-h-[180px] flex flex-col">
+                  <TrendingUp className="h-8 w-8 lg:h-10 lg:w-10 2xl:h-12 2xl:w-12 text-kanaliiga-orange mb-3 flex-shrink-0" />
+                  <div className="flex flex-col flex-grow">
+                    <h3 className="text-lg lg:text-xl 2xl:text-2xl mb-2">
+                      {isSeasonConcluded ? "Season Results" : "View Standings"}
+                    </h3>
+                    <p className="text-sm lg:text-base 2xl:text-lg text-muted-foreground">
+                      {isSeasonConcluded
+                        ? "See final placements and champions"
+                        : "Check current league rankings"}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            </Link>
+              </Link>
+            ) : (
+              <Link href={createNextUrl("/past-seasons")} className="group">
+                <div className="p-6 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-all duration-300 min-h-[120px] md:min-h-[140px] lg:min-h-[160px] 2xl:min-h-[180px] flex flex-col">
+                  <TrendingUp className="h-8 w-8 lg:h-10 lg:w-10 2xl:h-12 2xl:w-12 text-kanaliiga-orange mb-3 flex-shrink-0" />
+                  <div className="flex flex-col flex-grow">
+                    <h3 className="text-lg lg:text-xl 2xl:text-2xl mb-2">
+                      Past Seasons
+                    </h3>
+                    <p className="text-sm lg:text-base 2xl:text-lg text-muted-foreground">
+                      Explore previous season archives
+                    </p>
+                  </div>
+                </div>
+              </Link>
+            )}
 
             <Link href={createNextUrl("/matches")} className="group">
               <div className="p-6 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-all duration-300 min-h-[120px] md:min-h-[140px] lg:min-h-[160px] 2xl:min-h-[180px] flex flex-col">
