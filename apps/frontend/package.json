@@ -6,7 +6,7 @@
     "agents-md": "npx @next/codemod@canary agents-md --output AGENTS.md",
     "postinstall": "[ -f scripts/agents-md-if-needed.cjs ] && node scripts/agents-md-if-needed.cjs || true",
     "shadcn:add": "pnpm dlx shadcn@latest add",
-    "dev": "next dev --webpack",
+    "dev": "next dev --turbopack",
     "build": "next build",
     "build:e2e": "NEXT_PUBLIC_IMAGE_SERVICE_URL=https://img.kanaliiga.fi next build",
     "postbuild": "pnpm copy-standalone",

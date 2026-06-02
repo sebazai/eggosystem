@@ -10,6 +10,7 @@ const isBindMountDev =
 const nextConfig: NextConfig = {
   output: "standalone",
   reactStrictMode: true,
+  allowedDevOrigins: ["hubdev.kanaliiga.fi"],
   basePath: process.env.NEXT_PUBLIC_BASE_PATH || "",
   turbopack: {
     root: path.join(__dirname, "..", "..")
