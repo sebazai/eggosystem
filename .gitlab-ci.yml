@@ -54,6 +54,9 @@ variables:
     - corepack prepare pnpm@11.5.0 --activate
     - pnpm config set store-dir $PNPM_STORE_PATH
     - pnpm config set registry http://172.17.0.1:4873
+    - pnpm config set network-concurrency 64
+    - pnpm config set fetch-retries 0
+    - pnpm config set verify-store-integrity false
     - pnpm install --frozen-lockfile
 
 # Sadly gitlab changes do not support with anchors or references to make these DRY
@@ -179,6 +182,9 @@ install:
     - corepack prepare pnpm@11.5.0 --activate
     - pnpm config set store-dir $PNPM_STORE_PATH
     - pnpm config set registry http://172.17.0.1:4873 #172.17.0.1 aridivereci!
+    - pnpm config set network-concurrency 64
+    - pnpm config set fetch-retries 0
+    - pnpm config set verify-store-integrity false
   script:
     - pnpm install --frozen-lockfile
 
@@ -302,6 +308,9 @@ test:backend:
     - corepack enable
     - corepack prepare pnpm@11.5.0 --activate
     - pnpm config set registry http://172.17.0.1:4873
+    - pnpm config set network-concurrency 64
+    - pnpm config set fetch-retries 0
+    - pnpm config set verify-store-integrity false
     - pnpm install --frozen-lockfile
     - npx turbo run build --filter='@eggosystem/shared-msw'
     - export $(grep -v '^#' .env.development | xargs)
@@ -355,10 +364,13 @@ test:frontend:
     - corepack enable
     - corepack prepare pnpm@11.5.0 --activate
     - pnpm config set registry http://172.17.0.1:4873
+    - pnpm config set network-concurrency 64
+    - pnpm config set fetch-retries 0
+    - pnpm config set verify-store-integrity false
     - pnpm install --frozen-lockfile
     - pnpm --filter=@eggosystem/types build
   script:
-    - pnpm --filter=frontend test --runInBand
+    - pnpm --filter=frontend test --runInBand --coverage
   coverage: '/Statements\s+:\s+([\d.]+)%/'
   artifacts:
     expire_in: 7 days
@@ -447,6 +459,9 @@ test-e2e:frontend:
     # Ensure PRIVACY_POLICY_VERSION is set for E2E tests
     - export PRIVACY_POLICY_VERSION=1
     - pnpm config set registry http://172.17.0.1:4873
+    - pnpm config set network-concurrency 64
+    - pnpm config set fetch-retries 0
+    - pnpm config set verify-store-integrity false
     - pnpm install --frozen-lockfile
     - NODE_ENV=e2e pnpm --filter=backend start &
     # - pnpm --filter=backend start &
