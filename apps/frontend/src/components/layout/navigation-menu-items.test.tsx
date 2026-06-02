@@ -35,6 +35,7 @@ describe("navigation-menu-items", () => {
     expect(stats).toEqual([
       "Match History",
       "Player Leaderboards",
+      "Kana Leaderboard",
       "Top Teams",
       "Hall of Fame",
       "Season Results"

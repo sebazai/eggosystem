@@ -295,6 +295,11 @@ export function getDefaultMenuItems(
             hasFilters: true
           },
           {
+            title: "Kana Leaderboard",
+            url: "/kana-leaderboard",
+            hasFilters: false
+          },
+          {
             title: "Top Teams",
             url: "/topteams",
             hasFilters: true
