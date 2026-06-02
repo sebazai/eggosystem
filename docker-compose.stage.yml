@@ -95,7 +95,7 @@ services:
     restart: always
 
   eggo-stage-db:
-    image: mariadb:12.2.2
+    image: mariadb:12.3.2
     container_name: eggo-stage-db
     restart: always
     environment:
