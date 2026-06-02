@@ -79,6 +79,14 @@ const mockResolveOrCreateMatchGameIdForHubMatchDemo = jest.mocked(
 
 const testAuthHeader = "x-test-auth";
 
+const placementsNotRequested = {
+  applied: false,
+  skipped_reason: "not_requested",
+  season_id: null,
+  league_id: null,
+  updated: [] as Array<{ team_id: number; placement: number }>
+};
+
 const attachTestAuth: RequestHandler = (req, _res, next) => {
   if (req.get(testAuthHeader) === "none") {
     return next();
@@ -249,7 +257,8 @@ describe("POST /api/v1/dashboard/demos/manual/parse-queue", () => {
         match_ids: [],
         end_timestamp: null,
         skipped_reason: "not_requested"
-      }
+      },
+      placements: placementsNotRequested
     });
 
     expect(mockPublishToParseQueue).toHaveBeenCalledTimes(1);
@@ -295,7 +304,8 @@ describe("POST /api/v1/dashboard/demos/manual/parse-queue", () => {
         match_ids: [],
         end_timestamp: null,
         skipped_reason: "not_requested"
-      }
+      },
+      placements: placementsNotRequested
     });
     expect(mockResolveOrCreateMatchGameIdForHubMatchDemo).toHaveBeenCalledWith(
       expect.objectContaining({ matchId: 42, mapOrder: 1 })
@@ -342,7 +352,8 @@ describe("POST /api/v1/dashboard/demos/manual/parse-queue", () => {
         match_ids: [],
         end_timestamp: null,
         skipped_reason: "not_requested"
-      }
+      },
+      placements: placementsNotRequested
     });
     expect(mockResolveOrCreateMatchGameIdForDemoUrl).toHaveBeenCalledWith(
       expect.objectContaining({

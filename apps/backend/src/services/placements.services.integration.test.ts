@@ -24,6 +24,10 @@ import faceitRouter from "../routes/v1/faceit.routes";
 import { expressErrorHandler } from "../middlewares/express-error-handler";
 import { runQuery } from "../db/mysqlRunQuery";
 import * as faceitMatchModule from "./faceit-match.services";
+import {
+  assignGrandFinalPlacementsForFinishedMatch,
+  assignGrandFinalPlacementsIfEligible
+} from "./placements.services";
 import { type ChampionshipDetailsFinished } from "@eggosystem/types";
 
 // Synthetic IDs — high enough not to collide with production data
@@ -305,5 +309,56 @@ describe("placements.services — grand final placement assignment", () => {
     expect(placements[TEAM_C.id]).toBe(1);
     expect(placements[TEAM_B.id]).toBe(2);
     expect(placements[TEAM_A.id]).toBeNull(); // no LB final — 3rd place not set
+  });
+
+  it("assignGrandFinalPlacementsForFinishedMatch sets 1/2/3 for a finished GF match row", async () => {
+    const gfRows = await runQuery<Array<{ id: number }>>(
+      `SELECT id FROM Matches WHERE season_id = ? AND \`group\` = 3 AND round = 1`,
+      [S_ID]
+    );
+    const gfMatch = gfRows[0];
+    expect(gfMatch).toBeDefined();
+
+    const result = await assignGrandFinalPlacementsForFinishedMatch({
+      id: gfMatch.id,
+      group: 3,
+      round: 1,
+      external_match_room_id: GF_ROOM_ID,
+      season_id: S_ID,
+      league_id: L_ID,
+      stage: STAGE_ID
+    });
+
+    expect(result.applied).toBe(true);
+    expect(result.updated).toEqual(
+      expect.arrayContaining([
+        { team_id: TEAM_C.id, placement: 1 },
+        { team_id: TEAM_B.id, placement: 2 },
+        { team_id: TEAM_A.id, placement: 3 }
+      ])
+    );
+
+    const placements = await getPlacements();
+    expect(placements[TEAM_C.id]).toBe(1);
+    expect(placements[TEAM_B.id]).toBe(2);
+    expect(placements[TEAM_A.id]).toBe(3);
+  });
+
+  it("assignGrandFinalPlacementsIfEligible skips non-grand-final match details", async () => {
+    const details = { ...makeMatchDetails(), group: 1, round: 4 };
+    const result = await assignGrandFinalPlacementsIfEligible({
+      matchDetails: details,
+      seasonId: S_ID,
+      leagueId: L_ID,
+      stageId: STAGE_ID
+    });
+
+    expect(result).toEqual({
+      applied: false,
+      skipped_reason: "not_grand_final",
+      season_id: S_ID,
+      league_id: L_ID,
+      updated: []
+    });
   });
 });

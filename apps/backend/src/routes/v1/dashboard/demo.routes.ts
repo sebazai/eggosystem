@@ -198,7 +198,8 @@ router.post(
     res.status(200).json({
       status: "enqueued",
       match_game_id: result.match_game_id,
-      mark_finished: result.mark_finished
+      mark_finished: result.mark_finished,
+      placements: result.placements
     });
   }
 );
