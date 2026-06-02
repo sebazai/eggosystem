@@ -5,6 +5,12 @@
   "workspaceFolder": "/workspace",
   "shutdownAction": "stopCompose",
   "remoteUser": "node",
+  "containerEnv": {
+    "PATH": "/usr/local/bin:/home/node/.local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin"
+  },
+  "remoteEnv": {
+    "PATH": "/usr/local/bin:/home/node/.local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin"
+  },
   "customizations": {
     // Configure properties specific to VS Code.
     "vscode": {
@@ -50,7 +56,7 @@
       ]
     }
   },
-  "postCreateCommand": "pnpm install",
+  "postCreateCommand": "bash -lc 'export PATH=\"/usr/local/bin:/home/node/.local/bin:$PATH\" && pnpm install'",
   // Use 'forwardPorts' to make a list of ports inside the container available locally.
   "forwardPorts": [3000, 3001],
   // Use 'portsAttributes' to set default properties for specific forwarded ports.

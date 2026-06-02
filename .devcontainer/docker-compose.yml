@@ -8,7 +8,11 @@ services:
     env_file: "../.env.development"
     environment:
       - NEXT_PUBLIC_API_URL=http://localhost:3001 # Override frontend API URL
-    command: sleep infinity
+      # Image Node 24 before Cursor remote-server Node (pnpm 11 needs >= 22.13)
+      - PATH=/usr/local/bin:/home/node/.local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin
+    # Clear node image entrypoint (otherwise docker-entrypoint.sh runs `node sleep`).
+    entrypoint: []
+    command: ["sleep", "infinity"]
     networks:
       - eggo-dev
 
