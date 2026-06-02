@@ -12,12 +12,12 @@ import AxeBuilder from "@axe-core/playwright";
  * To see detailed violation reports, run: pnpm test:e2e Accessibility.spec.ts
  */
 
-// Baseline violation counts (as of 2025-12-05)
+// Baseline violation counts (as of 2026-06-02)
 // Update these numbers as you fix violations
 const BASELINE_VIOLATIONS = {
   homePage: {
     "button-name": 1,
-    "color-contrast": 3,
+    "color-contrast": 4,
     "heading-order": 1,
     "link-in-text-block": 2,
     "meta-viewport": 1

@@ -97,9 +97,9 @@ export const MatchMapsHeader = ({
       </div>
       {matchGameId && (
         <div>
-          <Button variant="kanaliigaOrange" size="xs" asChild>
+          <Button variant="kanaliigaOrange" size="sm" asChild>
             <Link href={`/matches/${matchId}/games/${matchGameId}/analysis`}>
-              <BarChart2 className="size-3 mr-1" />
+              <BarChart2 className="size-4" />
               Detailed Analysis
             </Link>
           </Button>

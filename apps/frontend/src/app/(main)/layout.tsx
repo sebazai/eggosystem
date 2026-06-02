@@ -16,11 +16,11 @@ import { AcceptPolicyProvider } from "@/context/AcceptPolicyContext";
 import { createPageMetadata } from "@/lib/metadata";
 import { UpcomingMatchToast } from "@/components/matches/UpcomingMatchBanner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-
-const META_THEME_COLORS = {
-  light: "#ffffff",
-  dark: "#09090b"
-};
+import {
+  createThemeBlockingScript,
+  META_THEME_COLORS,
+  themeClassName
+} from "@/lib/theme-init";
 
 const kanaHeadingFonts = localFont({
   fallback: ["system-ui", "arial"],
@@ -87,7 +87,7 @@ export async function generateMetadata() {
 }
 
 export const viewport: Viewport = {
-  themeColor: META_THEME_COLORS.light,
+  themeColor: META_THEME_COLORS.dark,
   width: "device-width",
   initialScale: 1,
   maximumScale: 1
@@ -99,17 +99,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className={themeClassName("dark")} suppressHydrationWarning>
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `
-            try {
-              if (localStorage.theme === 'dark' || ((!('theme' in localStorage) || localStorage.theme === 'system') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                document.querySelector('meta[name="theme-color"]').setAttribute('content', '${META_THEME_COLORS.dark}')
-              }
-            } catch (_) {}
-          `
+            __html: createThemeBlockingScript("dark")
           }}
         />
       </head>
@@ -123,8 +117,7 @@ export default function RootLayout({
       >
         <ThemeProvider
           attribute="class"
-          defaultTheme="dark"
-          enableSystem={false}
+          forcedTheme="dark"
           disableTransitionOnChange
         >
           <Suspense>

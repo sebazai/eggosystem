@@ -91,6 +91,7 @@ export function MatchHeader({
               src={createTeamLogoUrl(team1.logo)}
               alt={`${team1.name} logo`}
               fill
+              sizes="(max-width: 768px) 40px, 56px"
               className="object-contain"
             />
           </Link>
@@ -180,6 +181,7 @@ export function MatchHeader({
               src={createTeamLogoUrl(team2.logo)}
               alt={`${team2.name} logo`}
               fill
+              sizes="(max-width: 768px) 40px, 56px"
               className="object-contain"
             />
           </Link>

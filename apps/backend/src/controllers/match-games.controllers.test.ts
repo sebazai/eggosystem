@@ -5,15 +5,30 @@ import {
   getMatchGameKillMatrixController,
   getMatchGameOpeningDuelsController,
   getMatchGameTradeStatsController,
-  getMatchGameInsightsController
+  getMatchGameInsightsController,
+  getRoundSwingsController,
+  getFlashMatrixController,
+  getEntryKillsController,
+  getSetupPairsController,
+  getWastedUtilityController,
+  getRoundUtilitySummaryController
 } from "./match-games.controllers";
 import {
   getMatchGameAfterplantAnalysis,
   getMatchGameKillMatrix,
   getMatchGameOpeningDuels,
   getMatchGameTradeStats,
-  getMatchGameInsights
+  getMatchGameInsights,
+  getRoundSwingEvents,
+  getEntryKills
 } from "../models/match-game-analysis.models";
+import {
+  getFlashMatrix,
+  getPlayerFlashStats
+} from "../models/flash-events.models";
+import { getSetupPairs } from "../models/setup-events.models";
+import { getWastedUtilityByPlayer } from "../models/wasted-utility-events.models";
+import { getRoundUtilitySummary } from "../models/round-utility-summary.models";
 import { RoundEndReasonInfo } from "@eggosystem/types";
 
 jest.mock("../models/match-game-analysis.models", () => ({
@@ -21,7 +36,30 @@ jest.mock("../models/match-game-analysis.models", () => ({
   getMatchGameKillMatrix: jest.fn(),
   getMatchGameOpeningDuels: jest.fn(),
   getMatchGameTradeStats: jest.fn(),
-  getMatchGameInsights: jest.fn()
+  getMatchGameInsights: jest.fn(),
+  getRoundSwingEvents: jest.fn(),
+  getEntryKills: jest.fn()
+}));
+
+jest.mock("../models/flash-events.models", () => ({
+  saveFlashEventsForGame: jest.fn(),
+  getFlashMatrix: jest.fn(),
+  getPlayerFlashStats: jest.fn()
+}));
+
+jest.mock("../models/setup-events.models", () => ({
+  saveSetupEventsForGame: jest.fn(),
+  getSetupPairs: jest.fn()
+}));
+
+jest.mock("../models/wasted-utility-events.models", () => ({
+  saveWastedUtilityEventsForGame: jest.fn(),
+  getWastedUtilityByPlayer: jest.fn()
+}));
+
+jest.mock("../models/round-utility-summary.models", () => ({
+  saveRoundUtilitySummaryForGame: jest.fn(),
+  getRoundUtilitySummary: jest.fn()
 }));
 
 const mockAfterplantAnalysis =
@@ -41,10 +79,33 @@ const mockInsights = getMatchGameInsights as jest.MockedFunction<
   typeof getMatchGameInsights
 >;
 
-function makeReq(match_game_id: string) {
+const mockRoundSwingEvents = getRoundSwingEvents as jest.MockedFunction<
+  typeof getRoundSwingEvents
+>;
+const mockGetFlashMatrix = getFlashMatrix as jest.MockedFunction<
+  typeof getFlashMatrix
+>;
+const mockGetPlayerFlashStats = getPlayerFlashStats as jest.MockedFunction<
+  typeof getPlayerFlashStats
+>;
+const mockGetEntryKills = getEntryKills as jest.MockedFunction<
+  typeof getEntryKills
+>;
+const mockGetSetupPairs = getSetupPairs as jest.MockedFunction<
+  typeof getSetupPairs
+>;
+const mockGetWastedUtilityByPlayer =
+  getWastedUtilityByPlayer as jest.MockedFunction<
+    typeof getWastedUtilityByPlayer
+  >;
+const mockGetRoundUtilitySummary =
+  getRoundUtilitySummary as jest.MockedFunction<typeof getRoundUtilitySummary>;
+
+function makeReq(match_game_id: string, query: Record<string, string> = {}) {
   return {
-    params: { match_game_id }
-  } as RequestWithParams<{ match_game_id: string }>;
+    params: { match_game_id },
+    query
+  } as unknown as RequestWithParams<{ match_game_id: string }>;
 }
 
 function makeRes() {
@@ -128,14 +189,18 @@ describe("match-games analysis controllers", () => {
       ]
     };
 
-    it("parses match_game_id and calls model with numeric id", async () => {
+    it("parses match_game_id and calls model with numeric id and default filters", async () => {
       mockKillMatrix.mockResolvedValue(mockMatrix);
       const req = makeReq("10340");
       const { res } = makeRes();
 
       await getMatchGameKillMatrixController(req, res);
 
-      expect(mockKillMatrix).toHaveBeenCalledWith(10340);
+      expect(mockKillMatrix).toHaveBeenCalledWith(10340, {
+        excludeExitKills: false,
+        postPlantOnly: false,
+        excludeEcoKills: false
+      });
     });
 
     it("returns kill matrix data as JSON", async () => {
@@ -146,6 +211,34 @@ describe("match-games analysis controllers", () => {
       await getMatchGameKillMatrixController(req, res);
 
       expect(jsonSpy).toHaveBeenCalledWith(mockMatrix);
+    });
+
+    it("passes excludeExitKills filter when query param is true", async () => {
+      mockKillMatrix.mockResolvedValue(mockMatrix);
+      const req = makeReq("10340", { excludeExitKills: "true" });
+      const { res } = makeRes();
+
+      await getMatchGameKillMatrixController(req, res);
+
+      expect(mockKillMatrix).toHaveBeenCalledWith(10340, {
+        excludeExitKills: true,
+        postPlantOnly: false,
+        excludeEcoKills: false
+      });
+    });
+
+    it("passes postPlantOnly filter when query param is true", async () => {
+      mockKillMatrix.mockResolvedValue(mockMatrix);
+      const req = makeReq("10340", { postPlantOnly: "true" });
+      const { res } = makeRes();
+
+      await getMatchGameKillMatrixController(req, res);
+
+      expect(mockKillMatrix).toHaveBeenCalledWith(10340, {
+        excludeExitKills: false,
+        postPlantOnly: true,
+        excludeEcoKills: false
+      });
     });
   });
 
@@ -289,6 +382,307 @@ describe("match-games analysis controllers", () => {
       await getMatchGameInsightsController(req, res);
 
       expect(jsonSpy).toHaveBeenCalledWith({ teams: [] });
+    });
+  });
+
+  describe("getRoundSwingsController", () => {
+    const mockSwings = [
+      {
+        round_number: 14,
+        time_in_round: 42.18,
+        event_type: "kill",
+        pre_win_prob: 0.62,
+        post_win_prob: 0.31,
+        delta: -0.31,
+        primary_player_steam_id: "1001",
+        contributors: [{ steam_id: "1001", contribution: 1 }],
+        victim_steam_id: "1002",
+        weapon: "AK-47",
+        is_headshot: true,
+        is_post_plant: false,
+        cts_alive_after: 3,
+        ts_alive_after: 4
+      }
+    ];
+
+    it("parses match_game_id and calls model with numeric id and defaults", async () => {
+      mockRoundSwingEvents.mockResolvedValue(mockSwings);
+      const req = makeReq("42");
+      const { res } = makeRes();
+
+      await getRoundSwingsController(req, res);
+
+      expect(mockRoundSwingEvents).toHaveBeenCalledWith(42, {
+        roundNumber: undefined,
+        limit: undefined
+      });
+    });
+
+    it("passes roundNumber and limit query params to model", async () => {
+      mockRoundSwingEvents.mockResolvedValue(mockSwings);
+      const req = makeReq("42", { roundNumber: "3", limit: "10" });
+      const { res } = makeRes();
+
+      await getRoundSwingsController(req, res);
+
+      expect(mockRoundSwingEvents).toHaveBeenCalledWith(42, {
+        roundNumber: 3,
+        limit: 10
+      });
+    });
+
+    it("wraps result in round_swings envelope", async () => {
+      mockRoundSwingEvents.mockResolvedValue(mockSwings);
+      const req = makeReq("42");
+      const { res, jsonSpy } = makeRes();
+
+      await getRoundSwingsController(req, res);
+
+      expect(jsonSpy).toHaveBeenCalledWith({ round_swings: mockSwings });
+    });
+
+    it("returns empty round_swings array for games with no swing data", async () => {
+      mockRoundSwingEvents.mockResolvedValue([]);
+      const req = makeReq("999");
+      const { res, jsonSpy } = makeRes();
+
+      await getRoundSwingsController(req, res);
+
+      expect(jsonSpy).toHaveBeenCalledWith({ round_swings: [] });
+    });
+  });
+
+  describe("getFlashMatrixController", () => {
+    const mockMatrix = [
+      {
+        thrower_steam_id: "1001",
+        victim_steam_id: "1002",
+        flash_count: 5,
+        avg_duration_seconds: 2.4,
+        total_duration_seconds: 12.0
+      }
+    ];
+    const mockStats = [
+      {
+        steam_id: "1001",
+        enemy_flashes: 5,
+        teammate_flashes: 1,
+        self_flashes: 0,
+        total_flashes: 6,
+        avg_duration_seconds: 2.0,
+        total_duration_seconds: 12.0
+      }
+    ];
+
+    it("calls both model functions with match_game_id", async () => {
+      mockGetFlashMatrix.mockResolvedValue(mockMatrix);
+      mockGetPlayerFlashStats.mockResolvedValue(mockStats);
+      const req = makeReq("42");
+      const { res } = makeRes();
+
+      await getFlashMatrixController(req, res);
+
+      expect(mockGetFlashMatrix).toHaveBeenCalledWith(42, { enemyOnly: false });
+      expect(mockGetPlayerFlashStats).toHaveBeenCalledWith(42);
+    });
+
+    it("returns flash_matrix and player_stats in response", async () => {
+      mockGetFlashMatrix.mockResolvedValue(mockMatrix);
+      mockGetPlayerFlashStats.mockResolvedValue(mockStats);
+      const req = makeReq("42");
+      const { res, jsonSpy } = makeRes();
+
+      await getFlashMatrixController(req, res);
+
+      expect(jsonSpy).toHaveBeenCalledWith({
+        flash_matrix: mockMatrix,
+        player_stats: mockStats
+      });
+    });
+
+    it("returns empty arrays for old-parser games with no flash events", async () => {
+      mockGetFlashMatrix.mockResolvedValue([]);
+      mockGetPlayerFlashStats.mockResolvedValue([]);
+      const req = makeReq("999");
+      const { res, jsonSpy } = makeRes();
+
+      await getFlashMatrixController(req, res);
+
+      expect(jsonSpy).toHaveBeenCalledWith({
+        flash_matrix: [],
+        player_stats: []
+      });
+    });
+  });
+
+  describe("getEntryKillsController", () => {
+    const mockEntryKills = [
+      {
+        round_number: 5,
+        time_in_round: 12.5,
+        killer_steam_id: "1001",
+        victim_steam_id: "1002",
+        killer_team: "CT",
+        victim_team: "T",
+        setup_flash_thrower: "1003",
+        victim_blind_seconds: 2.1,
+        was_victim_traded: false
+      }
+    ];
+
+    it("calls model with numeric match_game_id", async () => {
+      mockGetEntryKills.mockResolvedValue(mockEntryKills);
+      const req = makeReq("42");
+      const { res } = makeRes();
+
+      await getEntryKillsController(req, res);
+
+      expect(mockGetEntryKills).toHaveBeenCalledWith(42);
+    });
+
+    it("wraps result in entry_kills envelope", async () => {
+      mockGetEntryKills.mockResolvedValue(mockEntryKills);
+      const req = makeReq("42");
+      const { res, jsonSpy } = makeRes();
+
+      await getEntryKillsController(req, res);
+
+      expect(jsonSpy).toHaveBeenCalledWith({ entry_kills: mockEntryKills });
+    });
+
+    it("returns empty entry_kills array for old-parser games", async () => {
+      mockGetEntryKills.mockResolvedValue([]);
+      const req = makeReq("999");
+      const { res, jsonSpy } = makeRes();
+
+      await getEntryKillsController(req, res);
+
+      expect(jsonSpy).toHaveBeenCalledWith({ entry_kills: [] });
+    });
+  });
+
+  describe("getSetupPairsController", () => {
+    const mockPairs = [
+      {
+        setup_player_steam_id: "1001",
+        beneficiary_steam_id: "1002",
+        setup_type: "flash",
+        count: 3,
+        avg_seconds_after_setup: 1.5
+      }
+    ];
+
+    it("calls model with numeric match_game_id", async () => {
+      mockGetSetupPairs.mockResolvedValue(mockPairs);
+      const req = makeReq("42");
+      const { res } = makeRes();
+
+      await getSetupPairsController(req, res);
+
+      expect(mockGetSetupPairs).toHaveBeenCalledWith(42);
+    });
+
+    it("wraps result in setup_pairs envelope", async () => {
+      mockGetSetupPairs.mockResolvedValue(mockPairs);
+      const req = makeReq("42");
+      const { res, jsonSpy } = makeRes();
+
+      await getSetupPairsController(req, res);
+
+      expect(jsonSpy).toHaveBeenCalledWith({ setup_pairs: mockPairs });
+    });
+
+    it("returns empty setup_pairs for games with no setup events", async () => {
+      mockGetSetupPairs.mockResolvedValue([]);
+      const req = makeReq("999");
+      const { res, jsonSpy } = makeRes();
+
+      await getSetupPairsController(req, res);
+
+      expect(jsonSpy).toHaveBeenCalledWith({ setup_pairs: [] });
+    });
+  });
+
+  describe("getWastedUtilityController", () => {
+    const mockWasted = [
+      { thrower_steam_id: "1001", utility_type: "HE", count: 2 }
+    ];
+
+    it("calls model with numeric match_game_id", async () => {
+      mockGetWastedUtilityByPlayer.mockResolvedValue(mockWasted);
+      const req = makeReq("42");
+      const { res } = makeRes();
+
+      await getWastedUtilityController(req, res);
+
+      expect(mockGetWastedUtilityByPlayer).toHaveBeenCalledWith(42);
+    });
+
+    it("wraps result in wasted_utility envelope", async () => {
+      mockGetWastedUtilityByPlayer.mockResolvedValue(mockWasted);
+      const req = makeReq("42");
+      const { res, jsonSpy } = makeRes();
+
+      await getWastedUtilityController(req, res);
+
+      expect(jsonSpy).toHaveBeenCalledWith({ wasted_utility: mockWasted });
+    });
+
+    it("returns empty wasted_utility for games with no data", async () => {
+      mockGetWastedUtilityByPlayer.mockResolvedValue([]);
+      const req = makeReq("999");
+      const { res, jsonSpy } = makeRes();
+
+      await getWastedUtilityController(req, res);
+
+      expect(jsonSpy).toHaveBeenCalledWith({ wasted_utility: [] });
+    });
+  });
+
+  describe("getRoundUtilitySummaryController", () => {
+    const mockSummary = [
+      {
+        round_number: 3,
+        steam_id: "1001",
+        flashes_thrown: 2,
+        enemies_flashed: 1,
+        teammates_flashed: 0,
+        smokes_thrown: 1,
+        utility_damage: 45,
+        wasted_utility: 0
+      }
+    ];
+
+    it("calls model with numeric match_game_id", async () => {
+      mockGetRoundUtilitySummary.mockResolvedValue(mockSummary);
+      const req = makeReq("42");
+      const { res } = makeRes();
+
+      await getRoundUtilitySummaryController(req, res);
+
+      expect(mockGetRoundUtilitySummary).toHaveBeenCalledWith(42);
+    });
+
+    it("wraps result in round_utility_summary envelope", async () => {
+      mockGetRoundUtilitySummary.mockResolvedValue(mockSummary);
+      const req = makeReq("42");
+      const { res, jsonSpy } = makeRes();
+
+      await getRoundUtilitySummaryController(req, res);
+
+      expect(jsonSpy).toHaveBeenCalledWith({
+        round_utility_summary: mockSummary
+      });
+    });
+
+    it("returns empty round_utility_summary for games with no data", async () => {
+      mockGetRoundUtilitySummary.mockResolvedValue([]);
+      const req = makeReq("999");
+      const { res, jsonSpy } = makeRes();
+
+      await getRoundUtilitySummaryController(req, res);
+
+      expect(jsonSpy).toHaveBeenCalledWith({ round_utility_summary: [] });
     });
   });
 });

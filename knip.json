@@ -9,7 +9,8 @@
       "next": false,
       "ignoreDependencies": [
         "@opentelemetry/auto-instrumentations-node",
-        "@opentelemetry/api"
+        "@opentelemetry/api",
+        "lint-staged"
       ]
     },
     "apps/backend": {
@@ -59,6 +60,7 @@
     "**/node_modules/**",
     "**/src/components/ui/**",
     "**/.lintstagedrc.mjs",
-    "**/apps/frontend/jest.config.js"
+    "**/apps/frontend/jest.config.js",
+    "**/src/test-utils/**"
   ]
 }

@@ -7966,6 +7966,64 @@ const demoData = {
         KillOpponentValue: 0,
         WinProbImpact: 0
       }
+    ],
+    SetupEventLog: [
+      {
+        round_number: 3,
+        time_in_round: 22.1,
+        setup_type: "flash",
+        setup_player: 1001,
+        beneficiary: 1002,
+        victim: 1003,
+        seconds_after_setup: 1.5,
+        flash_duration: 2.3
+      },
+      {
+        round_number: 7,
+        time_in_round: 45.8,
+        setup_type: "utility_damage",
+        setup_player: 1004,
+        beneficiary: 1002,
+        victim: 1005,
+        seconds_after_setup: 3.2,
+        damage_dealt: 55
+      }
+    ],
+    WastedUtilityLog: [
+      {
+        round_number: 2,
+        time_in_round: 18.4,
+        thrower: 1001,
+        utility_type: "HE"
+      },
+      {
+        round_number: 5,
+        time_in_round: 60.0,
+        thrower: 1002,
+        utility_type: "Molotov"
+      }
+    ],
+    RoundUtilitySummary: [
+      {
+        round_number: 1,
+        steam_id: 1001,
+        flashes_thrown: 2,
+        enemies_flashed: 1,
+        teammates_flashed: 0,
+        smokes_thrown: 1,
+        utility_damage: 40,
+        wasted_utility: 0
+      },
+      {
+        round_number: 1,
+        steam_id: 1002,
+        flashes_thrown: 0,
+        enemies_flashed: 0,
+        teammates_flashed: 0,
+        smokes_thrown: 2,
+        utility_damage: 75,
+        wasted_utility: 1
+      }
     ]
   }
 } satisfies ParseResultMessage;

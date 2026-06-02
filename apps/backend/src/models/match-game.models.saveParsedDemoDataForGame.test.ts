@@ -18,42 +18,47 @@ jest.mock("./player-clutches.models");
 jest.mock("./player-round-impacts.models");
 jest.mock("./player-kill-logs.models");
 jest.mock("./map-round-stat.models");
+jest.mock("./flash-events.models");
+jest.mock("./round-swing-events.models");
+jest.mock("./setup-events.models");
+jest.mock("./wasted-utility-events.models");
+jest.mock("./round-utility-summary.models");
+jest.mock("./player-hit-logs.models");
 
 // Import the mocked functions
 import { upsertTeamGameScore } from "./team-game-score.models";
-import { upsertPlayerStatsForGame } from "./player-stats.models";
-import { upsertPlayerTradesForGame } from "./player-trades.models";
-import { upsertPlayerClutchesForGame } from "./player-clutches.models";
-import { upsertPlayerRoundImpactsForGame } from "./player-round-impacts.models";
-import { upsertPlayerKillLogsForGame } from "./player-kill-logs.models";
-import { upsertMapRoundStats } from "./map-round-stat.models";
+import { savePlayerStatsForGame } from "./player-stats.models";
+import { savePlayerTradesForGame } from "./player-trades.models";
+import { savePlayerClutchesForGame } from "./player-clutches.models";
+import { savePlayerRoundImpactsForGame } from "./player-round-impacts.models";
+import { savePlayerKillLogsForGame } from "./player-kill-logs.models";
+import { saveMapRoundStatsForGame } from "./map-round-stat.models";
 
 const mockUpsertTeamGameScore = upsertTeamGameScore as jest.MockedFunction<
   typeof upsertTeamGameScore
 >;
-const mockUpsertPlayerStatsForGame =
-  upsertPlayerStatsForGame as jest.MockedFunction<
-    typeof upsertPlayerStatsForGame
+const mockSavePlayerStatsForGame =
+  savePlayerStatsForGame as jest.MockedFunction<typeof savePlayerStatsForGame>;
+const mockSavePlayerTradesForGame =
+  savePlayerTradesForGame as jest.MockedFunction<
+    typeof savePlayerTradesForGame
   >;
-const mockUpsertPlayerTradesForGame =
-  upsertPlayerTradesForGame as jest.MockedFunction<
-    typeof upsertPlayerTradesForGame
+const mockSavePlayerClutchesForGame =
+  savePlayerClutchesForGame as jest.MockedFunction<
+    typeof savePlayerClutchesForGame
   >;
-const mockUpsertPlayerClutchesForGame =
-  upsertPlayerClutchesForGame as jest.MockedFunction<
-    typeof upsertPlayerClutchesForGame
+const mockSavePlayerRoundImpactsForGame =
+  savePlayerRoundImpactsForGame as jest.MockedFunction<
+    typeof savePlayerRoundImpactsForGame
   >;
-const mockUpsertPlayerRoundImpactsForGame =
-  upsertPlayerRoundImpactsForGame as jest.MockedFunction<
-    typeof upsertPlayerRoundImpactsForGame
+const mockSavePlayerKillLogsForGame =
+  savePlayerKillLogsForGame as jest.MockedFunction<
+    typeof savePlayerKillLogsForGame
   >;
-const mockUpsertPlayerKillLogsForGame =
-  upsertPlayerKillLogsForGame as jest.MockedFunction<
-    typeof upsertPlayerKillLogsForGame
+const mockSaveMapRoundStatsForGame =
+  saveMapRoundStatsForGame as jest.MockedFunction<
+    typeof saveMapRoundStatsForGame
   >;
-const mockUpsertMapRoundStats = upsertMapRoundStats as jest.MockedFunction<
-  typeof upsertMapRoundStats
->;
 
 const mockRunQuery = runQuery as jest.MockedFunction<typeof runQuery>;
 const mockGetConnection = getConnection as jest.MockedFunction<
@@ -102,12 +107,12 @@ describe("saveParsedDemoDataForGame", () => {
 
     // Setup default mocks for the upsert functions
     mockUpsertTeamGameScore.mockResolvedValue({ insertId: 1 });
-    mockUpsertPlayerStatsForGame.mockResolvedValue(undefined);
-    mockUpsertPlayerTradesForGame.mockResolvedValue(undefined);
-    mockUpsertPlayerClutchesForGame.mockResolvedValue(undefined);
-    mockUpsertPlayerRoundImpactsForGame.mockResolvedValue(undefined);
-    mockUpsertPlayerKillLogsForGame.mockResolvedValue(undefined);
-    mockUpsertMapRoundStats.mockResolvedValue(undefined);
+    mockSavePlayerStatsForGame.mockResolvedValue(undefined);
+    mockSavePlayerTradesForGame.mockResolvedValue(undefined);
+    mockSavePlayerClutchesForGame.mockResolvedValue(undefined);
+    mockSavePlayerRoundImpactsForGame.mockResolvedValue(undefined);
+    mockSavePlayerKillLogsForGame.mockResolvedValue(undefined);
+    mockSaveMapRoundStatsForGame.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -217,7 +222,7 @@ describe("saveParsedDemoDataForGame", () => {
       );
 
       expect(mockUpsertTeamGameScore).not.toHaveBeenCalled();
-      expect(mockUpsertPlayerStatsForGame).toHaveBeenCalled();
+      expect(mockSavePlayerStatsForGame).toHaveBeenCalled();
       expect(mockConnection.commit).toHaveBeenCalledTimes(1);
     });
   });
@@ -265,6 +270,26 @@ describe("saveParsedDemoDataForGame", () => {
       ).rejects.toThrow("Database connection failed");
 
       expect(mockConnection.rollback).not.toHaveBeenCalled(); // No transaction started
+      expect(mockConnection.commit).not.toHaveBeenCalled();
+    });
+
+    it("should rollback transaction when player stats save fails after delete", async () => {
+      mockRunQuery
+        .mockResolvedValueOnce([
+          { match_id: 1, team_game_scores_staff_lock: 0 }
+        ])
+        .mockResolvedValueOnce([{ team_id: 1 }])
+        .mockResolvedValueOnce([{ team_id: 2 }]);
+
+      mockSavePlayerStatsForGame.mockRejectedValueOnce(
+        new Error("PlayerStats insert failed")
+      );
+
+      await expect(
+        saveParsedDemoDataForGame(MOCK_MATCH_GAME_ID, MOCK_PARSED_DEMO_DATA)
+      ).rejects.toThrow("PlayerStats insert failed");
+
+      expect(mockConnection.rollback).toHaveBeenCalledTimes(1);
       expect(mockConnection.commit).not.toHaveBeenCalled();
     });
 
@@ -442,9 +467,9 @@ describe("saveParsedDemoDataForGame", () => {
       // Assert
       // Verify that the function completed successfully
       expect(mockConnection.commit).toHaveBeenCalledTimes(1);
-      expect(mockUpsertPlayerTradesForGame).toHaveBeenCalled();
-      expect(mockUpsertPlayerClutchesForGame).toHaveBeenCalled();
-      expect(mockUpsertPlayerRoundImpactsForGame).toHaveBeenCalled();
+      expect(mockSavePlayerTradesForGame).toHaveBeenCalled();
+      expect(mockSavePlayerClutchesForGame).toHaveBeenCalled();
+      expect(mockSavePlayerRoundImpactsForGame).toHaveBeenCalled();
     });
 
     it("should handle round stats data correctly", async () => {

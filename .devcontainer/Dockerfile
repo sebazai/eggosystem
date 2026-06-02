@@ -3,7 +3,7 @@ ENV TBLS_VERSION=1.92.3
 WORKDIR /workspace
 
 RUN npm install -g typescript
-RUN npm install -g pnpm@10.27.0
+RUN npm install -g pnpm@11.5.0
 RUN npm install -g @anthropic-ai/claude-code
 
 # Install rtk (CLI proxy) into PATH
@@ -29,7 +29,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends git xvfb xauth 
 # Managed Python via uv (prebuilt; no devcontainers/features/python gpg keyservers).
 # Pins 3.11 for MariaDB MCP venv parity with former feature default.
 USER node
-ENV PATH="/home/node/.local/bin:${PATH}"
+# Prefer image Node 24 over Cursor remote-server Node on PATH (pnpm 11 needs >= 22.13).
+ENV PATH="/usr/local/bin:/usr/local/share/npm-global/bin:/home/node/.local/bin:${PATH}"
+RUN printf '%s\n' \
+  'export PATH="/usr/local/bin:/usr/local/share/npm-global/bin:/home/node/.local/bin:${PATH}"' \
+  >> /home/node/.bashrc \
+  && printf '%s\n' \
+  'export PATH="/usr/local/bin:/usr/local/share/npm-global/bin:/home/node/.local/bin:${PATH}"' \
+  >> /home/node/.profile
 # MariaDB MCP deps (PyTorch etc.) are huge — baking them in Dockerfile slows every image build.
 # Install in background after container start: scripts/install-mariadb-mcp-local-venv.sh (see post-start + run-mariadb-mcp.sh).
 RUN uv python install 3.11
@@ -41,3 +48,6 @@ RUN PY311="$(su - node -c 'export PATH="/usr/local/bin:$PATH"; uv python find 3.
     && test -x "$PY311" \
     && ln -sf "$PY311" /usr/local/bin/python3.11
 USER node
+
+# Keep container alive when devcontainer CLI does not override command (compose + overrideCommand: false).
+CMD ["sleep", "infinity"]
