@@ -44,6 +44,7 @@ import hallOfFameRouter from "./v1/hall-of-fame.routes";
 import seasonResultsRouter from "./v1/season-results.routes";
 import sponsorsRouter from "./v1/sponsors.routes";
 import tournamentsRouter from "./v1/tournament.routes";
+import kanaLeaderboardRouter from "./v1/kana-leaderboard.routes";
 
 // Create a new Router instance
 const v1Router = Router();
@@ -125,6 +126,7 @@ v1Router.use("/hall-of-fame", hallOfFameRouter);
 v1Router.use("/season-results", seasonResultsRouter);
 v1Router.use("/sponsors", sponsorsRouter);
 v1Router.use("/tournaments", tournamentsRouter);
+v1Router.use("/kana-leaderboard", corsMiddleware, kanaLeaderboardRouter);
 
 v1Router.get("/stats", async (req, res) => {
   const stats = await landingPageStatistics();

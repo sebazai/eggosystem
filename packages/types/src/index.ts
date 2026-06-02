@@ -13,6 +13,7 @@ export * from "./enums/index";
 export * from "./profile/index";
 export * from "./seasons/index";
 export * from "./player-ranks/index";
+export * from "./kana-leaderboard/index";
 export * from "./faceit/index";
 export * from "./topteams/index";
 export * from "./auth/index";

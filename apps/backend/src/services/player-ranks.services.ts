@@ -359,7 +359,7 @@ export const getPlayerRankForPlatform = async (
 
 // Kanarank rank configuration based on elo thresholds
 // Updated for Season 17 distribution (697 players, range 29-224, avg 115)
-const KANARANK_THRESHOLDS = [
+export const KANARANK_THRESHOLDS = [
   { rank: "COCK", subrank: 1, min_elo: 190 }, // COCK_1: 190+ elo (~top 3%)
   { rank: "COCK", subrank: 2, min_elo: 180 }, // COCK_2: 180-189 elo (~top 5%)
   { rank: "COCK", subrank: 3, min_elo: 170 }, // COCK_3: 170-179 elo (~top 10%)
@@ -376,9 +376,9 @@ const KANARANK_THRESHOLDS = [
 
 // Top rankings configuration
 const TOP_PLAYERS_COUNT = 50; // Total players to track positions for
-const TOP_COCK_COUNT = 10; // Only top 10 get the TOP_COCK rank
+export const TOP_COCK_COUNT = 10; // Only top 10 get the TOP_COCK rank
 
-const getPlayerThreshold = (kana_elo: number) => {
+export const getPlayerThreshold = (kana_elo: number) => {
   for (const threshold of KANARANK_THRESHOLDS) {
     if (kana_elo >= threshold.min_elo) {
       return threshold;

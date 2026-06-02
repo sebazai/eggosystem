@@ -1,4 +1,36 @@
+import { type SteamPlayer, type SteamPlayerKanaElo } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
+
+export interface LiveKanaEloPlayer {
+  steam_id: SteamPlayer["steam_id"];
+  kana_elo: SteamPlayerKanaElo["kana_elo"];
+  nickname: SteamPlayer["nickname"];
+}
+
+/**
+ * Read the live top-X players by kana elo straight from SteamPlayerKanaElo
+ * (the source of truth for current ratings), joined to SteamPlayers for the
+ * nickname. Ordered highest kana elo first.
+ *
+ * NOTE: This intentionally does NOT use getTopXPlayersKanaElo, which reads
+ * per-season snapshots from SeasonPlayerRanks. Live ratings live here.
+ *
+ * @param limit Maximum number of players to return.
+ * @returns Players ordered by kana_elo descending.
+ */
+export const getTopLiveKanaEloPlayers = async (
+  limit: number
+): Promise<LiveKanaEloPlayer[]> => {
+  return runQuery<LiveKanaEloPlayer[]>(
+    `SELECT spke.steam_id, spke.kana_elo, sp.nickname
+       FROM SteamPlayerKanaElo spke
+       JOIN SteamPlayers sp ON sp.steam_id = spke.steam_id
+      WHERE spke.kana_elo IS NOT NULL
+      ORDER BY spke.kana_elo DESC
+      LIMIT ?`,
+    [limit]
+  );
+};
 
 /**
  * Insert or update player kana_elo in SteamPlayerKanaElo table
