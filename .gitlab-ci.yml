@@ -19,7 +19,7 @@ variables:
   MIGRATIONS_TAG: $CI_COMMIT_SHA
   DOCKER_IMAGE_TAG: 29.4.1-alpine3.23
   DOCKER_DIND_IMAGE_TAG: 29.4.1-dind-alpine3.23
-  MARIADB_TAG: 12.2.2
+  MARIADB_TAG: 12.3.2
 
 # Define on-demand environment variables
 .overwrite-variables: &overwrite-variables

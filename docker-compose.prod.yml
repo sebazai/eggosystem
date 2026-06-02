@@ -103,7 +103,7 @@ services:
     restart: always
 
   eggo-prod-db:
-    image: mariadb:12.2.2
+    image: mariadb:12.3.2
     container_name: eggo-prod-db
     restart: always
     environment:
@@ -228,7 +228,7 @@ services:
       - "traefik.docker.network=web"
 
   eggo-db-backup:
-    image: mariadb:12.2.2
+    image: mariadb:12.3.2
     restart: always
     depends_on:
       eggo-prod-db:
