@@ -1627,6 +1627,21 @@ export const getMatchTeamIdsByMatchId = async (
   return rows.map((r) => r.team_id);
 };
 
+export const getGrandFinalMatchBySeasonAndLeague = async (
+  seasonId: number,
+  leagueId: number,
+  connection?: PoolConnection
+): Promise<Match[]> => {
+  return runQuery<Match[]>(
+    `SELECT * FROM Matches
+     WHERE season_id = ? AND league_id = ? AND \`group\` = 3 AND round = 1
+     ORDER BY id ASC
+     LIMIT 1`,
+    [seasonId, leagueId],
+    connection
+  );
+};
+
 export const getLowerBracketFinalMatch = async (
   seasonId: number,
   leagueId: number,
