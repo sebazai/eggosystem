@@ -20,7 +20,7 @@ jest.mock("next/navigation", () => ({
 
 // Test component that uses the filter context
 const TestComponent = () => {
-  const { filterParams, activeSeason, areFiltersEmpty, isLoading } =
+  const { filterParams, activeSeason, areFiltersEmpty, error, isLoading } =
     useFilters();
 
   return (
@@ -33,6 +33,7 @@ const TestComponent = () => {
       <div data-testid="filters-empty">
         {areFiltersEmpty ? "empty" : "not-empty"}
       </div>
+      <div data-testid="error-message">{error?.message || "none"}</div>
     </div>
   );
 };
@@ -244,5 +245,34 @@ describe("FilterContext", () => {
     await waitFor(() => {
       expect(screen.getByTestId("ready")).toHaveTextContent("ready");
     });
+  });
+
+  it("should expose request errors instead of staying in loading state", async () => {
+    mockUsePathname.mockReturnValue("/matches");
+    mockUseSearchParams.mockReturnValue(new URLSearchParams() as any);
+
+    mockUseSWR.mockReturnValue({
+      data: undefined,
+      error: new Error("Failed to load active season"),
+      isLoading: false,
+      isValidating: false,
+      mutate: mockMutate
+    } as any);
+
+    render(
+      <FilterProvider appId="1">
+        <TestComponent />
+      </FilterProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("ready")).toHaveTextContent("ready");
+    });
+
+    expect(screen.getByTestId("active-season")).toHaveTextContent("none");
+    expect(screen.getByTestId("error-message")).toHaveTextContent(
+      "Failed to load active season"
+    );
+    expect(window.history.replaceState).not.toHaveBeenCalled();
   });
 });
