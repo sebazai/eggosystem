@@ -8,6 +8,7 @@ export const TEAM_A_COLOR = "var(--analysis-team-a)";
 export const TEAM_B_COLOR = "var(--analysis-team-b)";
 export const GOOD_COLOR = "var(--analysis-good)";
 export const BAD_COLOR = "var(--analysis-bad)";
+export const NEUTRAL_COLOR = "var(--analysis-neutral)";
 
 /* ─── TeamDot ────────────────────────────────────────────────────── */
 export function TeamDot({ color, size = 8 }: { color: string; size?: number }) {

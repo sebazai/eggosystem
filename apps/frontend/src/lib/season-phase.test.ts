@@ -48,4 +48,12 @@ describe("getSeasonPhaseInfo", () => {
       seasonName: null
     });
   });
+
+  it("returns concluded when season payload has no season_id (empty API body)", () => {
+    expect(getSeasonPhaseInfo({} as typeof baseSeason)).toEqual({
+      phase: "concluded",
+      seasonNumber: null,
+      seasonName: null
+    });
+  });
 });

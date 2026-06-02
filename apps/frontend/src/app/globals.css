@@ -66,6 +66,7 @@ Vaaleanruskea: #d09158 / hsl(29, 56%, 58%) */
   --analysis-team-b: oklch(0.71 0.14 354);
   --analysis-good: oklch(0.74 0.13 155);
   --analysis-bad: oklch(0.66 0.16 18);
+  --analysis-neutral: oklch(0.52 0.03 48);
 
   /* ---------- Tier colors (masters → default) ---------- */
   --tier-masters: 35 78% 56%;

@@ -1,9 +1,7 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { useFlashMatrix } from "@/hooks/data/useFlashMatrix";
 import { useMatchGameKillMatrix } from "@/hooks/data/useMatchGameKillMatrix";
-import { useEntryKills } from "@/hooks/data/useEntryKills";
 import { AnalysisGenericSkeleton } from "./AnalysisSkeleton";
 import { orderMatchParticipantsBySideHomeLeft } from "@/lib/order-match-teams-home-left-away";
 import {
@@ -257,10 +255,6 @@ export const KillMatrixTab = ({
 }: KillMatrixTabProps) => {
   const { killMatrix, isLoading: isLoadingMatrix } =
     useMatchGameKillMatrix(matchGameId);
-  const { flashMatrix, isLoading: isLoadingFlash } =
-    useFlashMatrix(matchGameId);
-  const { entryKills, isLoading: isLoadingEntries } =
-    useEntryKills(matchGameId);
 
   const [teamA, teamB] = useMemo(() => {
     const list = orderMatchParticipantsBySideHomeLeft(Object.values(teams));
@@ -349,54 +343,7 @@ export const KillMatrixTab = ({
   // Flash assists from kill matrix
   const flashAssists = killMatrix?.flash_assists ?? [];
 
-  // Pre-compute flash lookup and maxDur once (avoids O(N²) per-cell work)
-  const flashPairMap = useMemo(() => {
-    const m = new Map<string, (typeof flashMatrix)[number]>();
-    if (!flashMatrix) return m;
-    for (const f of flashMatrix) {
-      m.set(`${f.thrower_steam_id}:${f.victim_steam_id}`, f);
-    }
-    return m;
-  }, [flashMatrix]);
-
-  const flashMaxDur = useMemo(
-    () =>
-      Math.max(
-        0.1,
-        ...(flashMatrix ?? []).map((f) => f.total_duration_seconds)
-      ),
-    [flashMatrix]
-  );
-
-  // Entry kill aggregates
-  const entryStats = useMemo(() => {
-    const tEntries = entryKills.filter((e) => e.killer_team === "T");
-    const ctEntries = entryKills.filter((e) => e.killer_team === "CT");
-    const flashAssisted = entryKills.filter(
-      (e) => e.setup_flash_thrower !== null
-    );
-
-    const perPlayer = new Map<string, { entries: number; traded: number }>();
-    for (const e of entryKills) {
-      const cur = perPlayer.get(e.killer_steam_id) ?? { entries: 0, traded: 0 };
-      cur.entries++;
-      if (e.was_victim_traded) cur.traded++;
-      perPlayer.set(e.killer_steam_id, cur);
-    }
-    const leaderboard = [...perPlayer.entries()]
-      .map(([id, s]) => ({ id, ...s }))
-      .sort((a, b) => b.entries - a.entries);
-
-    return {
-      tEntries: tEntries.length,
-      ctEntries: ctEntries.length,
-      flashAssisted: flashAssisted.length,
-      leaderboard
-    };
-  }, [entryKills]);
-
-  if (isLoadingMatrix || isLoadingFlash || isLoadingEntries)
-    return <AnalysisGenericSkeleton cards={2} />;
+  if (isLoadingMatrix) return <AnalysisGenericSkeleton cards={2} />;
 
   return (
     <div className="flex flex-col gap-3.5">
@@ -404,6 +351,14 @@ export const KillMatrixTab = ({
       <AnalysisCard
         title="The matchup"
         sub="Kills traded between the two sides across the map"
+        right={
+          <Legend
+            items={[
+              { label: teamA?.name ?? "Team A", color: TEAM_A_COLOR },
+              { label: teamB?.name ?? "Team B", color: TEAM_B_COLOR }
+            ]}
+          />
+        }
       >
         <div className="flex flex-col gap-4">
           <VersusStat
@@ -524,192 +479,6 @@ export const KillMatrixTab = ({
           </div>
         )}
       </AnalysisCard>
-
-      {/* Flash duration heat grid */}
-      {flashMatrix && flashMatrix.length > 0 && (
-        <AnalysisCard
-          title="Flash exposure"
-          sub="Seconds each player was blinded by each thrower"
-        >
-          <div style={{ overflowX: "auto" }}>
-            <table style={{ borderCollapse: "collapse", minWidth: 420 }}>
-              <thead>
-                <tr>
-                  <th
-                    style={{
-                      width: 100,
-                      textAlign: "left",
-                      fontSize: 10,
-                      color: "var(--muted-foreground)",
-                      paddingBottom: 4
-                    }}
-                  >
-                    Thrower ↓ / Victim →
-                  </th>
-                  {playerStats.map((p) => (
-                    <th
-                      key={p.steam_id}
-                      style={{
-                        width: 56,
-                        minWidth: 56,
-                        textAlign: "center",
-                        fontSize: 9,
-                        color: "var(--muted-foreground)",
-                        fontWeight: 600,
-                        paddingBottom: 4,
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap"
-                      }}
-                      title={playerNames.get(p.steam_id) ?? p.nickname}
-                    >
-                      {playerNames.get(p.steam_id) ?? p.nickname}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {playerStats.map((thrower) => (
-                  <tr key={thrower.steam_id}>
-                    <td
-                      style={{
-                        fontSize: 10,
-                        fontWeight: 600,
-                        paddingRight: 8,
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                        minWidth: 80,
-                        maxWidth: 100
-                      }}
-                    >
-                      {playerNames.get(thrower.steam_id) ?? thrower.nickname}
-                    </td>
-                    {playerStats.map((victim) => {
-                      if (thrower.steam_id === victim.steam_id) {
-                        return (
-                          <td
-                            key={victim.steam_id}
-                            style={{
-                              width: 56,
-                              minWidth: 56,
-                              height: 36,
-                              background: "var(--muted)",
-                              borderRadius: 3
-                            }}
-                          />
-                        );
-                      }
-                      const pair = flashPairMap.get(
-                        `${thrower.steam_id}:${victim.steam_id}`
-                      );
-                      const dur = pair?.total_duration_seconds ?? 0;
-                      const alpha =
-                        dur > 0 ? Math.round(10 + 55 * (dur / flashMaxDur)) : 0;
-                      const isEnemy = thrower.team_id !== victim.team_id;
-                      const color = isEnemy
-                        ? TEAM_A_COLOR
-                        : "var(--analysis-bad)";
-                      return (
-                        <td
-                          key={victim.steam_id}
-                          style={{
-                            width: 56,
-                            minWidth: 56,
-                            height: 36,
-                            textAlign: "center",
-                            background:
-                              alpha > 0
-                                ? `color-mix(in oklab, ${color} ${alpha}%, transparent)`
-                                : "var(--muted)",
-                            borderRadius: 3,
-                            fontSize: 11,
-                            fontWeight: 700,
-                            color:
-                              dur > 0 ? "var(--foreground)" : "transparent",
-                            border: "1px solid var(--border)"
-                          }}
-                          title={
-                            pair
-                              ? `${pair.flash_count} flash${pair.flash_count !== 1 ? "es" : ""} · ${dur.toFixed(1)}s`
-                              : ""
-                          }
-                        >
-                          {dur > 0 ? dur.toFixed(1) : ""}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </AnalysisCard>
-      )}
-
-      {/* Entry kills */}
-      {entryKills.length > 0 && (
-        <AnalysisCard
-          title="Entry kills"
-          sub="Who drew first blood each round and what happened after"
-          right={
-            <Legend
-              items={[
-                { label: teamA?.name ?? "Team A", color: TEAM_A_COLOR },
-                { label: teamB?.name ?? "Team B", color: TEAM_B_COLOR }
-              ]}
-            />
-          }
-        >
-          <div className="flex flex-col gap-4">
-            <VersusStat
-              label="First blood won by side"
-              aVal={entryStats.tEntries}
-              bVal={entryStats.ctEntries}
-              aText={`T  ${entryStats.tEntries}`}
-              bText={`CT  ${entryStats.ctEntries}`}
-              mode="share"
-            />
-            {entryStats.flashAssisted > 0 && (
-              <div className="text-xs text-muted-foreground/70">
-                <span className="font-semibold text-foreground">
-                  {entryStats.flashAssisted}
-                </span>{" "}
-                of {entryKills.length} entry kills were flash-assisted
-              </div>
-            )}
-            <div className="flex flex-col gap-1.5">
-              <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground/50 pb-1">
-                First-blood leaderboard
-              </div>
-              {entryStats.leaderboard.map((row) => {
-                const p = playerStats.find((ps) => ps.steam_id === row.id);
-                const color =
-                  p?.team_id === teamAId ? TEAM_A_COLOR : TEAM_B_COLOR;
-                return (
-                  <div key={row.id} className="flex items-center gap-2 text-xs">
-                    <TeamDot color={color} />
-                    <span className="flex-1 truncate font-semibold">
-                      {playerNames.get(row.id) ?? row.id.slice(-4)}
-                    </span>
-                    <span className="tabular-nums text-muted-foreground">
-                      {row.entries} first blood{row.entries !== 1 ? "s" : ""}
-                    </span>
-                    {row.traded > 0 && (
-                      <span
-                        className="tabular-nums text-[10px]"
-                        style={{ color: "var(--analysis-bad)" }}
-                      >
-                        {row.traded}× traded
-                      </span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </AnalysisCard>
-      )}
     </div>
   );
 };

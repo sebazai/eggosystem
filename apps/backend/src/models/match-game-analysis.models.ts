@@ -12,6 +12,7 @@ import {
   type MatchGameInsights
 } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
+import { plantTimeSecondsOrNull } from "../utils/plant-time";
 
 const jsonBig = JSONBig({ storeAsString: true });
 
@@ -19,9 +20,10 @@ const TRADE_WINDOW_SECONDS = 5;
 
 type AfterplantRoundRow = Omit<
   MatchGameAfterplantRound,
-  "ct_t" | "kills_after_plant"
+  "ct_t" | "kills_after_plant" | "plant_time_in_round"
 > & {
   ct_t: string | null;
+  plant_time: number | null;
 };
 
 type KillLogRow = {
@@ -45,6 +47,7 @@ export const getMatchGameAfterplantAnalysis = async (
     SELECT
       mrs.round_number,
       mrs.plant_site,
+      mrs.plant_time,
       mrs.ct_t,
       mrs.round_end_reason_info,
       mrs.ct_team_id,
@@ -128,6 +131,12 @@ export const getMatchGameAfterplantAnalysis = async (
   return rows.map((row) => ({
     ...row,
     ct_t: row.ct_t ? jsonBig.parse(row.ct_t) : null,
+    plant_time_in_round:
+      row.plant_site != null
+        ? plantTimeSecondsOrNull(
+            row.plant_time != null ? Number(row.plant_time) : null
+          )
+        : null,
     kills_after_plant: computeKillEvents(
       killsByRound.get(row.round_number) ?? []
     )

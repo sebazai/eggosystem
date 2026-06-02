@@ -8,6 +8,12 @@ export interface SeasonPhaseInfo {
   seasonName: string | null;
 }
 
+function hasSeasonIdentity(
+  season: ActiveSignupOrSeasonForAppId | undefined
+): season is ActiveSignupOrSeasonForAppId {
+  return typeof season?.season_id === "number" && season.season_id > 0;
+}
+
 function extractSeasonNumber(
   season: ActiveSignupOrSeasonForAppId
 ): string | null {
@@ -21,7 +27,7 @@ export function getSeasonPhaseInfo(
   season: ActiveSignupOrSeasonForAppId | undefined,
   now = new Date()
 ): SeasonPhaseInfo {
-  if (!season) {
+  if (!hasSeasonIdentity(season)) {
     return { phase: "concluded", seasonNumber: null, seasonName: null };
   }
 

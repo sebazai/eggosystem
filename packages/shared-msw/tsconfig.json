@@ -1,6 +1,7 @@
 {
   "extends": "@eggosystem/tsconfig/base.json",
   "compilerOptions": {
+    "tsBuildInfoFile": "./.tsbuildinfo",
     "outDir": "./dist",
     "rootDir": "./src",
     "moduleResolution": "node16",

@@ -226,7 +226,7 @@ describe("Seasons Controllers", () => {
         mockNext
       );
 
-      expect(mockJson).toHaveBeenCalledWith(undefined);
+      expect(mockJson).toHaveBeenCalledWith(null);
     });
 
     it("should return season when found", async () => {

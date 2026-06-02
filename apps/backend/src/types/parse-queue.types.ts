@@ -211,6 +211,8 @@ interface DemoBombplant {
     T: string[] | null; // Array of steam_ids
     CT: string[] | null; // Array of steam_ids
   };
+  /** Seconds into the round when the bomb was planted; 0 or omitted when no plant. */
+  Time?: number;
 }
 interface DemoRoundInfo {
   Bombplant: DemoBombplant;
