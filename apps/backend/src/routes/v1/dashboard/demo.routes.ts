@@ -19,6 +19,7 @@ import {
 } from "../../../utils/errors";
 import { logger } from "../../../utils/app-logger";
 import { enqueueManualDashboardDemoParse } from "../../../services/manual-demo-parse.services";
+import { replayGrandFinalPlacements } from "../../../services/replay-grand-final-placements.services";
 import {
   resolveOrCreateMatchGameIdForDemoUrl,
   resolveOrCreateMatchGameIdForHubMatchDemo
@@ -106,6 +107,61 @@ const reparseRequestSchema = z.object({
   match_game_ids: z.array(z.number().int().positive()).min(1).max(50),
   priority: z.number().int().min(1).max(10).optional().default(5)
 });
+
+const replayGrandFinalPlacementsBodySchema = z
+  .object({
+    external_match_room_id: z.string().min(1).optional(),
+    match_id: z.coerce.number().int().positive().optional()
+  })
+  .superRefine((val, ctx) => {
+    const count =
+      (val.external_match_room_id ? 1 : 0) + (val.match_id != null ? 1 : 0);
+    if (count === 0) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Either external_match_room_id or match_id must be provided",
+        path: ["match_id"]
+      });
+    }
+    if (count > 1) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Provide only one of external_match_room_id or match_id",
+        path: ["external_match_room_id"]
+      });
+    }
+  });
+
+/**
+ * POST /v1/dashboard/demos/placements/replay-grand-final
+ * Staff-only: re-apply grand final 1st/2nd/3rd league placements without re-uploading a demo.
+ */
+router.post(
+  "/placements/replay-grand-final",
+  async (req: Request, res: Response, next: NextFunction) => {
+    const actorAccountId = req.auth?.account_id;
+    if (actorAccountId === undefined) {
+      return next(new UnauthorizedError("Not authenticated"));
+    }
+
+    const parsed = replayGrandFinalPlacementsBodySchema.safeParse(req.body);
+    if (!parsed.success) {
+      logger.warn("Replay grand-final placements body validation failed", {
+        issues: parsed.error.flatten()
+      });
+      return next(parsed.error);
+    }
+
+    logger.info("Replay grand-final placements request", {
+      actorAccountId,
+      hasMatchId: parsed.data.match_id != null,
+      hasExternalRoomId: parsed.data.external_match_room_id != null
+    });
+
+    const result = await replayGrandFinalPlacements(parsed.data);
+    res.status(200).json(result);
+  }
+);
 
 /**
  * POST /v1/dashboard/demos/manual/parse-queue

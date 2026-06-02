@@ -15,6 +15,7 @@ import { publishToParseQueue } from "../../../services/parse-queue.services";
 import { resolveOrCreateMatchGameIdForDemoUrl } from "../../../services/faceit-match.services";
 import { resolveOrCreateMatchGameIdForHubMatchDemo } from "../../../services/faceit-match.services";
 import { attachFailedParseJobSse } from "../../../services/failed-parse-sse.services";
+import { replayGrandFinalPlacements } from "../../../services/replay-grand-final-placements.services";
 
 jest.mock("../../../services/auth.services", () => ({
   getPermissionsForAccountId: jest.fn(),
@@ -63,6 +64,10 @@ jest.mock("../../../services/failed-parse-sse.services", () => ({
   })
 }));
 
+jest.mock("../../../services/replay-grand-final-placements.services", () => ({
+  replayGrandFinalPlacements: jest.fn()
+}));
+
 const mockGetPermissions = jest.mocked(getPermissionsForAccountId);
 const mockGetRoles = jest.mocked(getRolesForAccountId);
 const mockGetMatchIdByGameId = jest.mocked(getMatchIdByGameId);
@@ -76,6 +81,7 @@ const mockResolveOrCreateMatchGameIdForDemoUrl = jest.mocked(
 const mockResolveOrCreateMatchGameIdForHubMatchDemo = jest.mocked(
   resolveOrCreateMatchGameIdForHubMatchDemo
 );
+const mockReplayGrandFinalPlacements = jest.mocked(replayGrandFinalPlacements);
 
 const testAuthHeader = "x-test-auth";
 
@@ -556,6 +562,94 @@ describe("POST /api/v1/dashboard/demos/manual/parse-queue", () => {
 
     expect(res.status).toBe(403);
     expect(attachFailedParseJobSse).not.toHaveBeenCalled();
+    cleanup();
+  });
+});
+
+describe("POST /api/v1/dashboard/demos/placements/replay-grand-final", () => {
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("returns 400 when no identifier is provided", async () => {
+    const { app, cleanup } = createDemoDashboardTestApp();
+    mockGetPermissions.mockResolvedValue([]);
+    mockGetRoles.mockResolvedValue(["admin"]);
+
+    const res = await request(app)
+      .post("/api/v1/dashboard/demos/placements/replay-grand-final")
+      .send({});
+
+    expect(res.status).toBe(400);
+    expect(mockReplayGrandFinalPlacements).not.toHaveBeenCalled();
+    cleanup();
+  });
+
+  it("returns 400 when both identifiers are provided", async () => {
+    const { app, cleanup } = createDemoDashboardTestApp();
+    mockGetPermissions.mockResolvedValue([]);
+    mockGetRoles.mockResolvedValue(["admin"]);
+
+    const res = await request(app)
+      .post("/api/v1/dashboard/demos/placements/replay-grand-final")
+      .send({ match_id: 1, external_match_room_id: "room-1" });
+
+    expect(res.status).toBe(400);
+    expect(mockReplayGrandFinalPlacements).not.toHaveBeenCalled();
+    cleanup();
+  });
+
+  it("returns 200 and replays placements for helpdesk", async () => {
+    const { app, cleanup } = createDemoDashboardTestApp();
+    mockGetPermissions.mockResolvedValue([]);
+    mockGetRoles.mockResolvedValue(["helpdesk"]);
+    mockReplayGrandFinalPlacements.mockResolvedValue({
+      applied: true,
+      season_id: 17,
+      league_id: 3,
+      stage_id: 2,
+      external_match_room_id: "room-gf",
+      placements: [
+        { team_id: 1, placement: 1 },
+        { team_id: 2, placement: 2 }
+      ],
+      skipped_reason: null
+    });
+
+    const res = await request(app)
+      .post("/api/v1/dashboard/demos/placements/replay-grand-final")
+      .send({ match_id: 42 });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({
+      applied: true,
+      season_id: 17,
+      league_id: 3,
+      stage_id: 2,
+      external_match_room_id: "room-gf",
+      placements: [
+        { team_id: 1, placement: 1 },
+        { team_id: 2, placement: 2 }
+      ],
+      skipped_reason: null
+    });
+    expect(mockReplayGrandFinalPlacements).toHaveBeenCalledWith({
+      match_id: 42
+    });
+    cleanup();
+  });
+
+  it("returns 403 for player role", async () => {
+    const { app, cleanup } = createDemoDashboardTestApp();
+    mockGetPermissions.mockResolvedValue([]);
+    mockGetRoles.mockResolvedValue(["player"]);
+
+    const res = await request(app)
+      .post("/api/v1/dashboard/demos/placements/replay-grand-final")
+      .send({ external_match_room_id: "room-1" });
+
+    expect(res.status).toBe(403);
+    expect(mockReplayGrandFinalPlacements).not.toHaveBeenCalled();
     cleanup();
   });
 });
