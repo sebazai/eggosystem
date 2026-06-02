@@ -491,6 +491,7 @@ const getPlayerStatsForGame = async (
  */
 const getFantasyTeamPlayersForGame = async (
   steamIds: string[],
+  matchTimestamp: Date,
   connection?: PoolConnection
 ): Promise<FantasyTeamPlayerInfo[]> => {
   if (steamIds.length === 0) {
@@ -498,18 +499,28 @@ const getFantasyTeamPlayersForGame = async (
   }
 
   const placeholders = steamIds.map(() => "?").join(",");
+  // Only include players who were on the team when the match was played:
+  //   - added_at <= match start  (player existed on the team before the match)
+  //   - removed_at IS NULL OR removed_at >= match start  (not yet removed)
+  // This prevents awarding retroactive points when calculateFantasyPointsForGame
+  // is re-run for historical games after new teams have been created.
   const query = `
-    SELECT 
+    SELECT
       ftp.id as fantasy_team_player_id,
       ftp.fantasy_team_id,
       ftp.steam_id,
       ftp.role
     FROM FantasyTeamPlayers ftp
     WHERE ftp.steam_id IN (${placeholders})
-      AND ftp.is_active = TRUE
+      AND ftp.added_at <= ?
+      AND (ftp.removed_at IS NULL OR ftp.removed_at >= ?)
   `;
 
-  return runQuery<FantasyTeamPlayerInfo[]>(query, steamIds, connection);
+  return runQuery<FantasyTeamPlayerInfo[]>(
+    query,
+    [...steamIds, matchTimestamp, matchTimestamp],
+    connection
+  );
 };
 
 /**
@@ -605,6 +616,31 @@ export const calculateFantasyPointsForGame = async (
   try {
     await connection.beginTransaction();
 
+    // Only award fantasy points for regular-season matches (stage 1).
+    // Playoff matches (stage 2) are excluded: stopping at regular-season end
+    // prevents teams whose players advanced to playoffs from pulling away
+    // irreversibly from teams with eliminated players.
+    const [matchStageRow] = await runQuery<
+      Array<{ stage: number; start_timestamp: Date }>
+    >(
+      `SELECT m.stage, m.start_timestamp
+       FROM MatchGames mg
+       JOIN Matches m ON m.id = mg.match_id
+       WHERE mg.id = ?`,
+      [matchGameId],
+      connection
+    );
+
+    if (!matchStageRow || matchStageRow.stage !== 1) {
+      logger.info(
+        `Skipping fantasy points for match game ${matchGameId} (stage ${matchStageRow?.stage ?? "unknown"} is not regular season)`
+      );
+      await connection.commit();
+      return;
+    }
+
+    const matchTimestamp = matchStageRow.start_timestamp;
+
     // Get all player stats for this game
     const playerStats = await getPlayerStatsForGame(matchGameId, connection);
 
@@ -614,10 +650,13 @@ export const calculateFantasyPointsForGame = async (
       return;
     }
 
-    // Get all fantasy team players who have these players
+    // Get all fantasy team players who were on their team when this game was played.
+    // The timestamp filter prevents retroactive points being awarded if this function
+    // is re-run for historical games after new fantasy teams have been created.
     const steamIds = playerStats.map((ps) => ps.steam_id);
     const fantasyTeamPlayers = await getFantasyTeamPlayersForGame(
       steamIds,
+      matchTimestamp,
       connection
     );
 

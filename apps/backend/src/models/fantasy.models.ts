@@ -541,6 +541,36 @@ export const createFantasyTeam = async (
       })
     );
 
+    // Validate: every player must actually play in the chosen league this season.
+    // SeasonTeamPlayers → SeasonLeagueTeams gives us the real league per player.
+    for (const player of playersWithActualValues) {
+      const [leagueRow] = await runQuery<Array<{ league_id: number }>>(
+        `SELECT slt.league_id
+         FROM SeasonTeamPlayers stp
+         JOIN SeasonLeagueTeams slt
+           ON slt.team_id = stp.team_id
+           AND slt.season_id = stp.season_id
+         WHERE stp.steam_id = ?
+           AND stp.season_id = ?
+           AND stp.discarded_at IS NULL
+         LIMIT 1`,
+        [player.steam_id, data.season_id],
+        connection
+      );
+
+      if (!leagueRow) {
+        throw new BadRequestError(
+          `Player ${player.steam_id} is not registered in season ${data.season_id}`
+        );
+      }
+
+      if (leagueRow.league_id !== data.league_id) {
+        throw new BadRequestError(
+          `Player ${player.steam_id} plays in a different division and cannot be added to this fantasy team`
+        );
+      }
+    }
+
     // Calculate total cost using ACTUAL values
     const totalCost = playersWithActualValues.reduce(
       (sum, p) => sum + p.player_value,
@@ -1056,6 +1086,33 @@ export const substitutePlayer = async (
     if (hasPlayed) {
       throw new BadRequestError(
         "Cannot substitute a player who has already played matches this week. Players are locked after their first match."
+      );
+    }
+
+    // Validate: incoming player must be in the same league as this fantasy team
+    const [newPlayerLeagueRow] = await runQuery<Array<{ league_id: number }>>(
+      `SELECT slt.league_id
+       FROM SeasonTeamPlayers stp
+       JOIN SeasonLeagueTeams slt
+         ON slt.team_id = stp.team_id
+         AND slt.season_id = stp.season_id
+       WHERE stp.steam_id = ?
+         AND stp.season_id = ?
+         AND stp.discarded_at IS NULL
+       LIMIT 1`,
+      [addSteamId, team.season_id],
+      connection
+    );
+
+    if (!newPlayerLeagueRow) {
+      throw new BadRequestError(
+        `Player ${addSteamId} is not registered in this season`
+      );
+    }
+
+    if (newPlayerLeagueRow.league_id !== team.league_id) {
+      throw new BadRequestError(
+        `Player ${addSteamId} plays in a different division and cannot be added to this fantasy team`
       );
     }
 
