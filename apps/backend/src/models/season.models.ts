@@ -162,6 +162,87 @@ export const getOrganizerActiveSeasonForAppId = async (
 };
 
 /**
+ * Gets the currently running season for a given organizer, app, and game type,
+ * falling back to the most recently finished season when none is running.
+ *
+ * Unlike {@link getOrganizerActiveSeasonForAppId} (which matches a running *or*
+ * signup-open season and prefers the newest), this prefers the running season
+ * and never returns a not-yet-started signup-only season; when nothing is
+ * running it returns the most recent finished season.
+ *
+ * It backs the "what season's data do we display" surfaces (`/seasons/active`,
+ * the calendar, the kana-elo leaderboard, the filters cache guard) so they keep
+ * showing the last finished season between seasons instead of 404ing, and never
+ * jump to an upcoming season that has no matches yet.
+ *
+ * @param organizer_id - The organizer ID
+ * @param app_id - The app ID
+ * @param gametype - The game type (default: "comp")
+ * @returns The running or most recent finished season, or undefined if none exists
+ */
+export const getOrganizerActiveOrLatestSeasonForAppId = async (
+  organizer_id: number,
+  app_id: number,
+  gametype?: string
+) => {
+  const redisKey = `${organizer_id}-${app_id}-${(gametype ?? "comp").toLowerCase()}-active-or-latest-season`;
+  const cachedData = await redisClient.get(redisKey);
+  if (cachedData) {
+    return JSON.parse(cachedData);
+  }
+
+  const [season] = await runQuery<
+    Array<ActiveSignupOrSeasonForAppId | undefined>
+  >(
+    `SELECT s.id AS season_id, s.platform, s.signup_start_date, s.signup_end_date, s.start_date, s.end_date, s.full_name
+     FROM Seasons s
+     JOIN Games g ON s.game_id = g.id
+     JOIN GameTypes gt ON s.game_type_id = gt.id
+     JOIN Organizers o ON s.organizer_id = o.id
+     WHERE g.app_id = ? AND o.id = ? AND LOWER(gt.name) = LOWER(?)
+       AND (
+         (s.start_date <= NOW() AND (s.end_date IS NULL OR s.end_date >= NOW()))
+         OR
+         s.id = (
+           SELECT MAX(s2.id)
+           FROM Seasons s2
+           JOIN Games g2 ON s2.game_id = g2.id
+           JOIN GameTypes gt2 ON s2.game_type_id = gt2.id
+           JOIN Organizers o2 ON s2.organizer_id = o2.id
+           WHERE g2.app_id = ? AND o2.id = ? AND LOWER(gt2.name) = LOWER(?)
+             AND s2.end_date IS NOT NULL AND s2.end_date < NOW()
+         )
+       )
+     ORDER BY
+       CASE
+         WHEN s.start_date <= NOW() AND (s.end_date IS NULL OR s.end_date >= NOW()) THEN 0
+         ELSE 1
+       END,
+       s.id DESC
+     LIMIT 1;`,
+    [
+      app_id,
+      organizer_id,
+      gametype ?? "comp",
+      app_id,
+      organizer_id,
+      gametype ?? "comp"
+    ]
+  );
+
+  if (season) {
+    await redisClient.set(
+      redisKey,
+      JSON.stringify(season),
+      "EX",
+      expireInOneDay
+    );
+  }
+
+  return season;
+};
+
+/**
  * Internal function to create a season with active map pool.
  * Requires a connection and does not manage transactions.
  * @param seasonData - Season data including active_map_pool

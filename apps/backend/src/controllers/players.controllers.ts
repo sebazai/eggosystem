@@ -588,7 +588,15 @@ const parseHistoricalParams = (
   const validGames = [5, 10, 15, 20, 30, 40, 50];
   const finalGames = games && validGames.includes(games) ? games : defaultGames;
 
-  const season_id = query.season_id ? parseInt(query.season_id) : undefined;
+  const parsedSeasonId = query.season_id
+    ? parseInt(query.season_id, 10)
+    : undefined;
+  const season_id =
+    parsedSeasonId !== undefined &&
+    Number.isInteger(parsedSeasonId) &&
+    parsedSeasonId > 0
+      ? parsedSeasonId
+      : undefined;
 
   return { games: finalGames, season_id };
 };

@@ -1,5 +1,8 @@
 import { type Response } from "express";
-import { getOrganizerActiveSeasonForAppId } from "../models/season.models";
+import {
+  getOrganizerActiveSeasonForAppId,
+  getOrganizerActiveOrLatestSeasonForAppId
+} from "../models/season.models";
 import type { RequestWithParams } from "@eggosystem/types";
 import { SeasonPlatform } from "@eggosystem/types";
 import {
@@ -16,6 +19,11 @@ jest.mock("../utils/redisClient");
 const mockGetActiveSeason =
   getOrganizerActiveSeasonForAppId as jest.MockedFunction<
     typeof getOrganizerActiveSeasonForAppId
+  >;
+
+const mockGetActiveOrLatestSeason =
+  getOrganizerActiveOrLatestSeasonForAppId as jest.MockedFunction<
+    typeof getOrganizerActiveOrLatestSeasonForAppId
   >;
 
 // Type definitions for test requests
@@ -63,7 +71,7 @@ describe("Seasons Controllers", () => {
         signup_end_date: "2024-12-31T23:59:59Z",
         full_name: "Test Season"
       };
-      mockGetActiveSeason.mockResolvedValue(season);
+      mockGetActiveOrLatestSeason.mockResolvedValue(season);
 
       const mockNext = jest.fn();
       await getActiveSeasonForApp(
@@ -75,7 +83,7 @@ describe("Seasons Controllers", () => {
         mockNext
       );
 
-      expect(mockGetActiveSeason).toHaveBeenCalledWith(1, 730, undefined);
+      expect(mockGetActiveOrLatestSeason).toHaveBeenCalledWith(1, 730, "comp");
       expect(mockJson).toHaveBeenCalledWith(season);
       expect(mockNext).not.toHaveBeenCalled();
     });
@@ -89,7 +97,7 @@ describe("Seasons Controllers", () => {
         signup_end_date: "2024-12-31T23:59:59Z",
         full_name: "Wingman Season"
       };
-      mockGetActiveSeason.mockResolvedValue(season);
+      mockGetActiveOrLatestSeason.mockResolvedValue(season);
 
       const mockNext = jest.fn();
       await getActiveSeasonForApp(
@@ -101,14 +109,18 @@ describe("Seasons Controllers", () => {
         mockNext
       );
 
-      expect(mockGetActiveSeason).toHaveBeenCalledWith(1, 730, "wingman");
+      expect(mockGetActiveOrLatestSeason).toHaveBeenCalledWith(
+        1,
+        730,
+        "wingman"
+      );
       expect(mockJson).toHaveBeenCalledWith(season);
     });
 
     it("should return 404 when no active season is found", async () => {
       mockRequest.params = { app_id: "730", organizer_id: "1" };
       mockRequest.query = {};
-      mockGetActiveSeason.mockResolvedValue(undefined);
+      mockGetActiveOrLatestSeason.mockResolvedValue(undefined);
 
       const mockNext = jest.fn();
       await getActiveSeasonForApp(
@@ -120,7 +132,7 @@ describe("Seasons Controllers", () => {
         mockNext
       );
 
-      expect(mockGetActiveSeason).toHaveBeenCalledWith(1, 730, undefined);
+      expect(mockGetActiveOrLatestSeason).toHaveBeenCalledWith(1, 730, "comp");
       expect(mockNext).toHaveBeenCalledWith(
         expect.objectContaining({
           message: "No active season found for app 730 and organizer 1",

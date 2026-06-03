@@ -54,7 +54,10 @@ export const getPlayerHistoricalData = async (
   const { games, season_id } = params;
 
   const seasonClause = season_id ? `AND m.season_id = ?` : "";
-  const limitClause = !season_id && games ? `LIMIT ${games}` : "";
+  const limitClause =
+    !season_id && games !== undefined && Number.isInteger(games) && games > 0
+      ? `LIMIT ${games}`
+      : "";
   const binds: (string | number)[] = [steam_id];
   if (season_id) binds.push(season_id);
 

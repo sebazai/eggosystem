@@ -2,7 +2,8 @@ import {
   createSeason,
   updateSeason,
   getSeasonById,
-  getOrganizerActiveSeasonForAppId
+  getOrganizerActiveSeasonForAppId,
+  getOrganizerActiveOrLatestSeasonForAppId
 } from "./season.models";
 import { runQuery } from "../db/mysqlRunQuery";
 import { getConnection } from "../db/mysqlConnection";
@@ -399,5 +400,150 @@ describe("getOrganizerActiveSeasonForAppId", () => {
     await expect(getOrganizerActiveSeasonForAppId(1, 730)).rejects.toThrow(
       "DB connection lost"
     );
+  });
+});
+
+describe("getOrganizerActiveOrLatestSeasonForAppId", () => {
+  const runningSeason = {
+    season_id: 11,
+    platform: SeasonPlatform.FACEIT,
+    signup_start_date: null,
+    signup_end_date: null,
+    start_date: new Date("2025-01-01T00:00:00.000Z"),
+    end_date: new Date("2025-06-01T00:00:00.000Z"),
+    full_name: "Spring 2025"
+  };
+
+  const finishedSeason = {
+    season_id: 9,
+    platform: SeasonPlatform.FACEIT,
+    signup_start_date: null,
+    signup_end_date: null,
+    start_date: new Date("2024-01-01T00:00:00.000Z"),
+    end_date: new Date("2024-06-01T00:00:00.000Z"),
+    full_name: "Spring 2024"
+  };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockRedisClient.get.mockResolvedValue(null);
+    mockRedisClient.set.mockResolvedValue("OK");
+  });
+
+  it("returns the currently running season", async () => {
+    mockRunQuery.mockResolvedValue([runningSeason]);
+
+    const result = await getOrganizerActiveOrLatestSeasonForAppId(1, 730);
+
+    expect(result).toEqual(runningSeason);
+    expect(mockRunQuery).toHaveBeenCalledWith(
+      expect.stringContaining(
+        "s.start_date <= NOW() AND (s.end_date IS NULL OR s.end_date >= NOW())"
+      ),
+      [730, 1, "comp", 730, 1, "comp"]
+    );
+  });
+
+  it("falls back to the most recent finished season when none is running", async () => {
+    mockRunQuery.mockResolvedValue([finishedSeason]);
+
+    const result = await getOrganizerActiveOrLatestSeasonForAppId(1, 730);
+
+    expect(result).toEqual(finishedSeason);
+    // The fallback branch selects MAX(id) among ended seasons
+    expect(mockRunQuery).toHaveBeenCalledWith(
+      expect.stringContaining("SELECT MAX(s2.id)"),
+      expect.any(Array)
+    );
+  });
+
+  it("prefers a running season over the latest finished one (ORDER BY CASE)", async () => {
+    mockRunQuery.mockResolvedValue([runningSeason]);
+
+    const result = await getOrganizerActiveOrLatestSeasonForAppId(1, 730);
+
+    expect(result?.season_id).toBe(11);
+    const sql = mockRunQuery.mock.calls[0][0] as string;
+    expect(sql).toContain("CASE");
+    expect(sql).toMatch(/ORDER BY[\s\S]*s\.id DESC/);
+  });
+
+  it("returns undefined when no season exists at all", async () => {
+    mockRunQuery.mockResolvedValue([]);
+
+    const result = await getOrganizerActiveOrLatestSeasonForAppId(1, 730);
+
+    expect(result).toBeUndefined();
+  });
+
+  it("defaults the gametype to comp and binds it for both branches", async () => {
+    mockRunQuery.mockResolvedValue([runningSeason]);
+
+    await getOrganizerActiveOrLatestSeasonForAppId(1, 730);
+
+    expect(mockRunQuery).toHaveBeenCalledWith(
+      expect.stringContaining("LOWER(gt.name) = LOWER(?)"),
+      [730, 1, "comp", 730, 1, "comp"]
+    );
+  });
+
+  it("passes a provided gametype through (case handled by SQL LOWER)", async () => {
+    mockRunQuery.mockResolvedValue([runningSeason]);
+
+    await getOrganizerActiveOrLatestSeasonForAppId(1, 730, "Wingman");
+
+    expect(mockRunQuery).toHaveBeenCalledWith(expect.any(String), [
+      730,
+      1,
+      "Wingman",
+      730,
+      1,
+      "Wingman"
+    ]);
+  });
+
+  it("uses a distinct cache key and returns the cached value without a DB hit", async () => {
+    mockRedisClient.get.mockResolvedValue(JSON.stringify(runningSeason));
+
+    const result = await getOrganizerActiveOrLatestSeasonForAppId(
+      1,
+      730,
+      "comp"
+    );
+
+    expect(mockRedisClient.get).toHaveBeenCalledWith(
+      "1-730-comp-active-or-latest-season"
+    );
+    expect(result).toEqual(JSON.parse(JSON.stringify(runningSeason)));
+    expect(mockRunQuery).not.toHaveBeenCalled();
+  });
+
+  it("caches the season after a database hit", async () => {
+    mockRunQuery.mockResolvedValue([runningSeason]);
+
+    await getOrganizerActiveOrLatestSeasonForAppId(1, 730, "comp");
+
+    expect(mockRedisClient.set).toHaveBeenCalledWith(
+      "1-730-comp-active-or-latest-season",
+      JSON.stringify(runningSeason),
+      "EX",
+      86400
+    );
+  });
+
+  it("does not cache when no season is found", async () => {
+    mockRunQuery.mockResolvedValue([]);
+
+    await getOrganizerActiveOrLatestSeasonForAppId(1, 730);
+
+    expect(mockRedisClient.set).not.toHaveBeenCalled();
+  });
+
+  it("propagates database errors", async () => {
+    mockRunQuery.mockRejectedValue(new Error("DB connection lost"));
+
+    await expect(
+      getOrganizerActiveOrLatestSeasonForAppId(1, 730)
+    ).rejects.toThrow("DB connection lost");
   });
 });

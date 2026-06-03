@@ -1,5 +1,8 @@
 import { type Response, type NextFunction } from "express";
-import { getOrganizerActiveSeasonForAppId } from "../models/season.models";
+import {
+  getOrganizerActiveSeasonForAppId,
+  getOrganizerActiveOrLatestSeasonForAppId
+} from "../models/season.models";
 import {
   type RequestWithParamsAndQuery,
   type RequestWithParams
@@ -18,10 +21,11 @@ export const getActiveSeasonForApp = async (
 ) => {
   const app_id = Number(req.params.app_id);
   const organizer_id = Number(req.params.organizer_id);
-  const activeSeason = await getOrganizerActiveSeasonForAppId(
+  const gametype = req.query.gametype ?? defaultGameTypeForAppId(app_id);
+  const activeSeason = await getOrganizerActiveOrLatestSeasonForAppId(
     organizer_id,
     app_id,
-    req.query.gametype
+    gametype
   );
   if (!activeSeason) {
     return next(

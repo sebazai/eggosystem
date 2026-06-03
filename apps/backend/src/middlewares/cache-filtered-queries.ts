@@ -1,10 +1,9 @@
-import type { Response, NextFunction } from "express";
+import type { Request, Response, NextFunction } from "express";
 import { createHash } from "crypto";
 import { expireIn7Days, redisClient } from "../utils/redisClient";
-import { getOrganizerActiveSeasonForAppId } from "../models/season.models";
+import { getOrganizerActiveOrLatestSeasonForAppId } from "../models/season.models";
 import { logger } from "../utils/app-logger";
 import { normalizeParsedParams } from "../utils/normalize-parsed-params";
-import { type RequestWithQuery } from "@eggosystem/types";
 
 interface CacheResponseOptions {
   cachePrefix: string;
@@ -16,12 +15,7 @@ export function cacheResponseMiddleware({
   cachePrefix,
   ttlSeconds = expireIn7Days
 }: CacheResponseOptions) {
-  return async (
-    req: RequestWithQuery<{ organizer_id: string; app_id: string }>,
-    res: Response,
-    next: NextFunction
-  ) => {
-    const { organizer_id, app_id } = req.query;
+  return async (req: Request, res: Response, next: NextFunction) => {
     const searchParams = req.parsedParams;
 
     const allNull = Object.values(searchParams).every(
@@ -37,17 +31,11 @@ export function cacheResponseMiddleware({
       return;
     }
 
-    const organizerId = Number(organizer_id);
-    const appId = Number(app_id);
-
-    // If active season is present, do not cache
-    const activeSeason =
-      Number.isFinite(organizerId) &&
-      Number.isFinite(appId) &&
-      organizerId > 0 &&
-      appId > 0
-        ? await getOrganizerActiveSeasonForAppId(organizerId, appId)
-        : null;
+    // If the current season is present in the filters, do not cache (its data
+    // is still changing). TODO(#220): single organizer (1) / CS2 (730) today;
+    // when the filters API becomes multi-org, resolve organizer_id/app_id from
+    // the request instead of hardcoding.
+    const activeSeason = await getOrganizerActiveOrLatestSeasonForAppId(1, 730);
     if (activeSeason) {
       const filtersHasActiveSeason = searchParams.season_ids?.find(
         (id) => id === activeSeason.season_id
