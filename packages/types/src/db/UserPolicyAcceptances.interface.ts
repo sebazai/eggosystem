@@ -1,5 +1,12 @@
 import { Account } from "./Account.interface";
 
+/**
+ * Newsletter / marketing consent category.
+ * Shared between the backend newsletter controllers/models and the
+ * frontend newsletter admin UI.
+ */
+export type NewsletterConsentType = "newsletter" | "marketing" | "both";
+
 export interface UserPolicyAcceptance {
   id: number;
   account_id: Account["id"];

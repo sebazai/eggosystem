@@ -18,14 +18,16 @@ This document explains the system architecture, key design decisions, and patter
 │   ├── eslint/           # @eggosystem/eslint — shared ESLint configs
 │   └── tsconfig/         # @eggosystem/tsconfig — shared tsconfig presets
 └── apps/backend/
-    ├── migrations/       # Knex migrations (150+)
+    ├── migrations/       # Knex migrations
     └── seeds/            # Dev and E2E seed scripts
 ```
 
-Turbo orchestrates the build graph. The `dev`, `build`, `typecheck`, and `test`
-tasks all `dependsOn` both `@eggosystem/types#build` and
-`@eggosystem/shared-msw#build`, so those packages must compile before the
-backend or frontend can type-check, build, or run.
+Turbo orchestrates the build graph (see [`turbo.json`](turbo.json)). Tasks rely on
+topological dependencies (`^build`) so the shared `@eggosystem/*` packages compile
+before the backend or frontend build, type-check, or run. The `dev` and `test`
+tasks additionally `dependsOn` `@eggosystem/types#build` and
+`@eggosystem/shared-msw#build` directly, so those packages are guaranteed present
+before the apps start in watch mode or run their suites.
 
 ### Technology Stack
 
@@ -190,22 +192,24 @@ routes/v1/*.routes.ts  →  controllers/*.controllers.ts  →  services/*.servic
 
 ## Async Subsystems
 
-Each async subsystem is gated in `app.ts` on both environment and `NODE_ENV`.
-They are all skipped in `test` and `e2e` mode, and failures are non-fatal — the
-HTTP server still starts.
+Async subsystems are gated on environment / `NODE_ENV`, skipped in `test` and
+`e2e` mode, and their failures are non-fatal — the HTTP server still starts. The
+Discord bot and RabbitMQ consumers are wired in `app.ts`; the BullMQ email worker
+is started from `server.ts` (`startEmailWorker()`).
 
-- **Discord bot** — initialised when `DISCORD_BOT_TOKEN` and `DISCORD_GUILD_ID`
-  are set. Uses `initializeDiscordClient` and `setupDiscordEventHandlers` from
-  `services/discord.services.ts`. Reconnection is attempted on subsequent
-  requests if initial connect fails.
-- **RabbitMQ queue consumers** — started via
+- **Discord bot** (`app.ts`) — initialised when `DISCORD_BOT_TOKEN` and
+  `DISCORD_GUILD_ID` are set. Uses `initializeDiscordClient` and
+  `setupDiscordEventHandlers` from `services/discord.services.ts`. Reconnection is
+  attempted on subsequent requests if initial connect fails.
+- **RabbitMQ queue consumers** (`app.ts`) — started via
   `queueConsumerManager.startAllConsumers()` when `RABBITMQ_HOST`,
   `RABBITMQ_USER`, and `RABBITMQ_PASSWORD` are present. Automatic reconnection
   is built into the manager.
-- **BullMQ email queue (`welcome-emails`)** — Redis-backed, initialised by the
-  email services. Rate-limited (1 email per `EMAIL_SEND_DELAY_MS`), 3 retry
-  attempts with exponential backoff, worker concurrency 1. Enqueued on Sortter
-  finalisation; worker lifecycle follows the server process.
+- **BullMQ email queue (`welcome-emails`)** — Redis-backed; the worker is started
+  from `server.ts` via `startEmailWorker()`. Rate-limited (1 email per
+  `EMAIL_SEND_DELAY_MS`), 3 retry attempts with exponential backoff, worker
+  concurrency 1. Enqueued on Sortter finalisation; worker lifecycle follows the
+  server process.
 
 ## Frontend Architecture
 
@@ -390,7 +394,7 @@ The email queue system uses **BullMQ** (Redis-backed job queue) to send welcome 
 
 1. **Sortter Finalization**: Admin finalizes team placements
 2. **Enqueue Jobs**: `enqueueSeasonFinalizationWelcomeEmails` adds all jobs to queue
-3. **Rate-Limited Processing**: Worker processes one job every 500ms
+3. **Rate-Limited Processing**: Worker processes one job per `EMAIL_SEND_DELAY_MS` (worker-side limiter default 750 ms)
 4. **Email Sending**: Each job calls `sendSeasonWelcomeEmail` via nodemailer
 5. **Statistics Tracking**: Success/failure counts stored in Redis (`email-stats:season:{id}`)
 6. **Monitoring**: bull-monitor exposes metrics to Grafana via Alloy
@@ -399,7 +403,7 @@ The email queue system uses **BullMQ** (Redis-backed job queue) to send welcome 
 
 **Environment Variables**:
 
-- `EMAIL_SEND_DELAY_MS` - Delay between emails in milliseconds (default: 750)
+- `EMAIL_SEND_DELAY_MS` - Delay between emails in milliseconds (queue-side default 500 ms, worker-side limiter default 750 ms; the worker limiter governs actual send cadence)
 - `REDIS_HOST` - Redis host for BullMQ (default: eggo-redis)
 - `REDIS_PORT` - Redis port (default: 6379)
 

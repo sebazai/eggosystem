@@ -1,9 +1,10 @@
 "use client";
 
 import { clientApiFetch } from "@/lib/apiClient";
+import type { NewsletterConsentType } from "@eggosystem/types";
 import useSWR from "swr";
 
-export type NewsletterConsentType = "newsletter" | "marketing" | "both";
+export type { NewsletterConsentType };
 
 interface NewsletterRecipient {
   nickname: string;

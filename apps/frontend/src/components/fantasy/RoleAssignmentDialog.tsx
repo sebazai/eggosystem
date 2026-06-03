@@ -28,25 +28,9 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import type { PlayerRole } from "@eggosystem/types";
 
-export type PlayerRole =
-  | "main_awp"
-  | "leader"
-  | "support"
-  | "entry_fragger"
-  | "defender"
-  | "hs_machine"
-  | "multi_fragger"
-  | "attacker"
-  | "camper"
-  | "stathunter"
-  | "noob"
-  | "flash_master"
-  | "clutch_player"
-  | "first_blood"
-  | "t_specialist"
-  | "ct_specialist"
-  | "anchor";
+export type { PlayerRole };
 
 interface RoleInfo {
   id: PlayerRole;

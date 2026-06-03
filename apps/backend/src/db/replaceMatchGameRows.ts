@@ -13,6 +13,7 @@ const _MATCH_GAME_TABLES = [
   "RoundSwingEvents",
   "RoundUtilitySummary",
   "SetupEvents",
+  "UtilityThrowEvents",
   "WastedUtilityEvents"
 ] as const;
 

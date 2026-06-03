@@ -155,6 +155,8 @@ const ROLE_HIERARCHY = {
 | `/dashboard/email-verification`   | `admin`, `helpdesk` | -                   | Email verification tools                         |
 | `/dashboard/caster-applications`  | `admin`, `helpdesk` | -                   | Caster application review                        |
 | `/dashboard/playoff-seeds`        | `admin`, `helpdesk` | -                   | Playoff seeding                                  |
+| `/dashboard/sponsors`             | `admin`             | -                   | **Admin only** - marketing sponsor management    |
+| `/dashboard/newsletter`           | `admin`             | -                   | **Admin only** - newsletter management           |
 
 ### Special Access Controls
 
@@ -262,7 +264,7 @@ describe("WithRoleProtection", () => {
       </MockAuthProvider>
     );
 
-    expect(screen.getByText("No user. Please log in.")).toBeInTheDocument();
+    expect(screen.getByText("Authentication Required")).toBeInTheDocument();
   });
 
   it("should show 403 for unauthorized user", () => {
@@ -274,7 +276,9 @@ describe("WithRoleProtection", () => {
       </MockAuthProvider>
     );
 
-    expect(screen.getByText("403 Forbidden")).toBeInTheDocument();
+    // The component renders "403" and "Forbidden" as separate elements
+    expect(screen.getByText("403")).toBeInTheDocument();
+    expect(screen.getByText("Forbidden")).toBeInTheDocument();
   });
 
   it("should render content for authorized user", () => {
@@ -387,6 +391,6 @@ All security violations return RFC 7807 compliant error responses:
 ## 🔗 Related Documentation
 
 - [Frontend Development](README.frontend.md) - Component patterns and responsive design
-- [Testing strategy](.cursor/skills/testing-strategy/SKILL.md) — authentication testing patterns
+- [Testing](README.md#testing) — unit/integration (Jest) and E2E (Playwright) conventions
 - [Backend API Documentation](README.api.md) - API security patterns
 - [Database Schema](README.database.md) - Role and permission tables

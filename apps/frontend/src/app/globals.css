@@ -68,6 +68,16 @@ Vaaleanruskea: #d09158 / hsl(29, 56%, 58%) */
   --analysis-bad: oklch(0.66 0.16 18);
   --analysis-neutral: oklch(0.52 0.03 48);
 
+  /* Weapon usage donut — data-viz palette (not brand accents) */
+  --weapon-viz-1: hsl(199 89% 60%);
+  --weapon-viz-2: hsl(27 96% 61%);
+  --weapon-viz-3: hsl(258 90% 72%);
+  --weapon-viz-4: hsl(330 86% 70%);
+  --weapon-viz-5: hsl(152 76% 64%);
+  --weapon-viz-6: hsl(43 96% 56%);
+  --weapon-viz-7: hsl(0 91% 71%);
+  --weapon-viz-8: hsl(172 66% 50%);
+
   /* ---------- Tier colors (masters → default) ---------- */
   --tier-masters: 35 78% 56%;
   --tier-challengers: 262 68% 68%;

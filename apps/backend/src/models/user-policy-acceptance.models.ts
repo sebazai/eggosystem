@@ -1,8 +1,11 @@
 import type {
   Account,
   UserPolicyAcceptance,
-  UserPolicyAcceptancesPayload
+  UserPolicyAcceptancesPayload,
+  NewsletterConsentType
 } from "@eggosystem/types";
+
+export type { NewsletterConsentType };
 import semver from "semver";
 import { runQuery } from "../db/mysqlRunQuery";
 import * as crypto from "crypto";
@@ -314,8 +317,6 @@ export const getAccountByUnsubscribeToken = async (
  * @param accountId - The account ID to unsubscribe
  * @param connection - Optional database connection for transaction support
  */
-export type NewsletterConsentType = "newsletter" | "marketing" | "both";
-
 interface NewsletterEligiblePlayer {
   account_id: number;
   email: string;

@@ -6,8 +6,35 @@ import type {
   GamePlayerStats,
   MapRoundInfo,
   MatchGameOpeningDuel,
-  MatchGameTradeStats
+  MatchGameTradeStats,
+  WeaponStat,
+  HitGroupCount,
+  HitStats,
+  RoundKillEvent,
+  RoundDeathEvent,
+  RoundFlashEvent,
+  RoundUtilityEvent,
+  RoundWastedUtilityEvent,
+  RoundUtilityThrowEvent,
+  RoundUtilityDamageEvent,
+  PlayerRoundEvents,
+  PlayerGameUtilityStats
 } from "@eggosystem/types";
+
+export type {
+  WeaponStat,
+  HitGroupCount,
+  HitStats,
+  RoundKillEvent,
+  RoundDeathEvent,
+  RoundFlashEvent,
+  RoundUtilityEvent,
+  RoundWastedUtilityEvent,
+  RoundUtilityThrowEvent,
+  RoundUtilityDamageEvent,
+  PlayerRoundEvents,
+  PlayerGameUtilityStats
+};
 
 const SWR_OPTIONS = {
   revalidateOnFocus: false,
@@ -50,14 +77,6 @@ export function useMatchGameTradeStats(matchGameId: number) {
   return { data, error, isLoading };
 }
 
-export interface WeaponStat {
-  weapon: string;
-  kills: number;
-  headshot_kills: number;
-  total_damage: number;
-  hits: number;
-}
-
 interface WeaponStatsResponse {
   weapons: WeaponStat[];
 }
@@ -71,17 +90,6 @@ export function useMatchGameWeaponStats(matchGameId: number, steamId: string) {
   return { data: data?.weapons ?? [], error, isLoading };
 }
 
-export interface HitGroupCount {
-  hit_group: string;
-  hits: number;
-  damage: number;
-}
-
-export interface HitStats {
-  dealt: HitGroupCount[];
-  received: HitGroupCount[];
-}
-
 export function useMatchGameHitStats(matchGameId: number, steamId: string) {
   const { data, error, isLoading } = useSWR<HitStats>(
     `/api/v1/match-games/${matchGameId}/hit-stats?steam_id=${steamId}`,
@@ -91,46 +99,6 @@ export function useMatchGameHitStats(matchGameId: number, steamId: string) {
   return { data: data ?? null, error, isLoading };
 }
 
-export interface RoundKillEvent {
-  round_number: number;
-  time_in_round: number;
-  victim_nickname: string;
-  weapon: string;
-  is_headshot: boolean;
-}
-
-export interface RoundDeathEvent {
-  round_number: number;
-  time_in_round: number;
-  killer_nickname: string;
-  weapon: string;
-  is_headshot: boolean;
-}
-
-export interface RoundFlashEvent {
-  round_number: number;
-  time_in_round: number;
-  victim_nickname: string;
-  duration_seconds: number;
-  is_enemy_flash: boolean;
-}
-
-export interface RoundUtilityEvent {
-  round_number: number;
-  utility_damage: number;
-  smokes_thrown: number;
-  flashes_thrown: number;
-  enemies_flashed: number;
-  teammates_flashed: number;
-}
-
-export interface PlayerRoundEvents {
-  kills: RoundKillEvent[];
-  deaths: RoundDeathEvent[];
-  flashes: RoundFlashEvent[];
-  utility: RoundUtilityEvent[];
-}
-
 export function useMatchGameRoundEvents(matchGameId: number, steamId: string) {
   const { data, error, isLoading } = useSWR<PlayerRoundEvents>(
     `/api/v1/match-games/${matchGameId}/round-events?steam_id=${steamId}`,
@@ -138,19 +106,18 @@ export function useMatchGameRoundEvents(matchGameId: number, steamId: string) {
     SWR_OPTIONS
   );
   return {
-    data: data ?? { kills: [], deaths: [], flashes: [], utility: [] },
+    data: data ?? {
+      kills: [],
+      deaths: [],
+      flashes: [],
+      utility: [],
+      wasted: [],
+      utility_throws: [],
+      utility_damage_hits: []
+    },
     error,
     isLoading
   };
-}
-
-export interface PlayerGameUtilityStats {
-  flashes_thrown: number;
-  enemies_flashed: number;
-  teammates_flashed: number;
-  smokes_thrown: number;
-  utility_damage: number;
-  wasted_utility: number;
 }
 
 export function useMatchGameUtilityStats(matchGameId: number, steamId: string) {

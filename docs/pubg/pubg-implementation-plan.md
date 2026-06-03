@@ -65,6 +65,23 @@ These tables are game-agnostic and require **no structural change** (only data +
 1. **`SeasonActiveMapPool` / `Maps`** — `Maps` is a trivial `(id, name)` lookup. Add PUBG maps (Erangel, Miramar, Taego, Vikendi, Rondo, Deston, Sanhok) as rows. The map-pool/veto flow is CS2-oriented; PUBG uses a fixed/rotating map order set by the organizer, so we store the map per PUBG match rather than running a veto.
 2. **Sortter & `kana_elo`** — the balancing algorithm derives skill from CS2 demo parsing (`CSRankker`, `SteamPlayerKanaElo`, `SeasonPlayerRanks.kana_elo`). PUBG has no equivalent feed. **For v1, leagues/divisions are assigned manually** (or by prior-season placement); a PUBG ranking model is a later iteration. The registration tables don't require Sortter to function.
 
+### `SeasonTeamPlayers` is reusable — and cross-game play is already allowed
+
+`SeasonTeamPlayers` (the live competition roster) is reused for PUBG squads as-is. Its FKs are game-neutral (`season_id→Seasons`, `team_id→Teams`, `steam_id→SteamPlayers`) and `role`/`is_captain`/`is_co_captain`/`replaces_steam_id`/`ticket_number`/`discarded_at` all carry over.
+
+**A player can be on a CS2 roster and a PUBG roster simultaneously — verified, no change needed.** The `before_insert_primary_check` / `before_update_primary_check` triggers (migration `20260326101000_fix_primary_triggers_discarded_at`) are **scoped to a single season**:
+
+```sql
+WHERE season_id = NEW.season_id   -- only conflicts WITHIN one season
+  AND role = 'primary' AND steam_id = NEW.steam_id AND discarded_at IS NULL
+```
+
+A CS2 season and a PUBG season have different `season_id`s, so the primary-uniqueness check never fires across them. There is **no global `UNIQUE` on `steam_id`** (it is a non-unique `MUL` index). The global `captain` role flag in `AccountRoles` is harmless to hold for two games; scoped captain permissions live in `AccountPermissionScopes` keyed by season/team, so there is no cross-game leakage. Identity also stacks cleanly: one `SteamPlayers` row can carry both a CS2 `faceit_id` and a PUBG account via `PubgPlayerIdentities` (§6.2).
+
+**One column caveat:** `SeasonTeamPlayers.match_id` is an FK to the CS2 **`Matches`** table (used for per-match _substitute_ lineups, joined against `MatchTeams` in `match.models.ts`). PUBG must leave `match_id = NULL` (base roster rows already do) and **must not** invoke the CS2 lineup/substitute-validation code paths. "Who actually played a PUBG lobby" is derived from `PubgMatchPlayerStats` (the Krafton participants), not from this column. If per-match PUBG substitutions ever need first-class tracking, add a nullable `pubg_match_id` rather than overloading `match_id`.
+
+> Note: `Teams` has no `game_id`, so the schema does not force a team to be game-specific — the same `Teams` row _could_ register for both a CS2 and a PUBG season. Whether orgs field one shared team or distinct per-game squads is a registration/product choice, not a schema constraint.
+
 ---
 
 ## 3. The core architectural challenge: round-based vs battle-royale
@@ -359,7 +376,11 @@ CREATE TABLE PubgMatchPlayerStats (
   created_at          TIMESTAMP NOT NULL DEFAULT current_timestamp(),
   updated_at          TIMESTAMP NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (id),
-  UNIQUE KEY uq_match_player (pubg_match_id, pubg_name),
+  -- Dedup/idempotency key anchors on the STABLE account id, not the mutable name.
+  -- pubg_account_id can be NULL (unmapped guest); MariaDB treats NULLs as distinct in a
+  -- UNIQUE index, so guest rows never collide. The (match, name) pair stays unique within
+  -- a single lobby in practice, but name is unreliable across re-ingests — see §8 "Identity".
+  UNIQUE KEY uq_match_player (pubg_match_id, pubg_account_id),
   KEY idx_steam (steam_id),
   CONSTRAINT fk_pubgpstats_match FOREIGN KEY (pubg_match_id)
     REFERENCES PubgMatches(id) ON DELETE CASCADE,
@@ -401,6 +422,12 @@ Standings = `Σ total_points` per team within a (season, league, stage). Impleme
 ### 6.9 `MatchEvents` — the unified cross-game read view
 
 This is how we get "all matches in one place" **without** one physical table (per §5.1 decision). A read-only view projects the columns shared by CS2 `Matches` and `PubgMatches`, so calendar / casting / cross-game listing query **one** surface and drill into the right backing table by `game_id`.
+
+> ⚠️ **Confirm the real `Matches` column names before writing this migration.** The SQL
+> below assumes `m.stage`, `m.start_timestamp`, `m.end_timestamp`, and
+> `m.external_match_room_id`. Verify each against the live schema (`SHOW COLUMNS FROM Matches`)
+> — a wrong column name fails the `CREATE VIEW` migration. (`MatchTeams.match_side` and the
+> `Matches.status` enum vocabulary used in the `CASE` below are confirmed present.)
 
 ```sql
 CREATE OR REPLACE VIEW MatchEvents AS
@@ -506,7 +533,7 @@ Admins can also `POST /api/v1/pubg/matches/ingest { krafton_match_id, season_id,
 - **Match-to-stage assignment.** A Krafton lobby has no notion of "which Kanaliiga stage". We resolve it by: (a) manual admin assignment at ingest, or (b) inferring from the participating rosters' registered season/league + the `played_at` window. v1: require `season_id`/`stage_id` on the ingest job (explicit > clever).
 - **Roster ↔ team matching (the critical rule).** The sample payload confirms `roster.relationships.team.data` is **`null`** and `roster.stats.teamId` is only an **in-lobby slot number** — neither identifies a Kanaliiga team. The _only_ link is: each participant's `playerId` (`account.xxxx`) → `PubgPlayerIdentities.pubg_account_id` → `steam_id` → the team that player is rostered on in `SeasonTeamPlayers` for this season/league. The Kanaliiga team owning a roster = the one with the **most matched primary players** in that 4-player roster. Flag rosters where < N players resolve (guests/ringers) for admin review, and let admins override the mapping.
 - **Scoring is data-driven.** Never hard-code a points table; read `PubgScoringRules`. Recompute points idempotently so a ruleset correction can re-derive `PubgMatchRosters.*_points` without re-fetching from Krafton (raw payload is cached).
-- **Idempotency.** Re-ingesting the same `krafton_match_id` upserts, never duplicates (uniques on `(shard, krafton_match_id)` and `(pubg_match_id, team_id/pubg_name)`).
+- **Idempotency.** Re-ingesting the same `krafton_match_id` upserts, never duplicates (uniques on `(shard, krafton_match_id)`, `(pubg_match_id, team_id)`, and `(pubg_match_id, pubg_account_id)` — the participant's stable `playerId`, always present in the payload, rather than the mutable `pubg_name`).
 - **Identity verification.** Players link a PUBG name during signup; verify by checking the name resolves on the correct shard via the API. Store `verified_at`. Keep `pubg_name` as a per-match snapshot too, because Krafton names are mutable.
 - **GDPR / retention.** PUBG stats are gameplay data tied to a `steam_id`; they follow the same minimal-audit posture. Telemetry stays offloaded (URL only) like Allstar demos.
 

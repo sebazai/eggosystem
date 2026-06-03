@@ -1,6 +1,6 @@
 # Kanaliiga Eggosystem
 
-Corporate CS2 esports tournament management platform for Kanaliiga Hub. PNPM workspace monorepo with an Express 5 backend, a Next.js 16 App Router frontend, and shared TypeScript packages.
+Corporate CS2 esports tournament management platform for Kanaliiga Hub. PNPM workspace monorepo with an Express backend, a Next.js App Router frontend, and shared TypeScript packages.
 
 ## Highlights
 
@@ -16,8 +16,8 @@ Corporate CS2 esports tournament management platform for Kanaliiga Hub. PNPM wor
 ### Prerequisites
 
 - Docker and Docker Compose
-- Node.js 24 (the DevContainer uses `mcr.microsoft.com/devcontainers/javascript-node:24-bullseye`)
-- pnpm 11.0.0-rc.5 (pinned via `packageManager` in root `package.json`; enables [global virtual store](https://pnpm.io/11.x/git-worktrees) for git worktrees via `enableGlobalVirtualStore` in `pnpm-workspace.yaml`)
+- Node.js — version pinned in [`.nvmrc`](.nvmrc) (the DevContainer image is defined in [`.devcontainer/Dockerfile`](.devcontainer/Dockerfile))
+- pnpm — version pinned via the `packageManager` field in the root [`package.json`](package.json)
 - VS Code with Dev Containers extension (recommended). DevContainer still requires Docker on your host.
 
 ### Installation
@@ -41,11 +41,13 @@ Corporate CS2 esports tournament management platform for Kanaliiga Hub. PNPM wor
 
 4. **Apply for a Steam API key**: <https://steamcommunity.com/dev/apikey>.
 
-5. **Create `apps/backend/.env`**
+5. **Create `apps/backend/.env`** by copying the example and filling in the values you need (see [`apps/backend/.env.example`](apps/backend/.env.example) for all supported variables and their defaults):
 
-   ```env
-   STEAM_API_KEY=your_api_key
+   ```bash
+   cp apps/backend/.env.example apps/backend/.env
    ```
+
+   For a minimal local setup, only `STEAM_API_KEY` is required; most other variables have working defaults for the Docker/DevContainer environment.
 
 6. **One-shot setup** (install deps, Playwright, build, migrate, seed):
 
@@ -87,8 +89,7 @@ Backend runs on `localhost:3001`, frontend on `localhost:3000`, bull-monitor on 
 - [Database Schema](README.database.md) — tables, triggers, SQL functions ([visual diagram](https://csdb.kanaliiga.fi/))
 - [Dashboard Security](README.dashboard.md) — dashboard auth and authorization
 - [Frontend Development](README.frontend.md) — component patterns and data fetching
-- [Unit / integration testing](.cursor/skills/testing-strategy/SKILL.md) — Jest patterns and command hierarchy
-- [E2E / Playwright](.cursor/skills/e2e-playwright/SKILL.md) — run from repo root, prerequisites
+- [Testing](#testing) — Jest unit/integration tests and Playwright E2E (run from repo root)
 
 ### JWT Key Generation
 
@@ -146,14 +147,16 @@ pnpm --filter=backend test -- leaderboards
 # Install Playwright + system deps (chromium only)
 pnpm install:playwright
 
+# Build the backend and start a dedicated E2E backend
+# (NODE_ENV=e2e, loads .env.local.test) before running the tests
+pnpm --filter=backend build
+pnpm --filter=backend dev:e2e
+
 # Run E2E tests (builds, reseeds the E2E DB, then runs Playwright)
 pnpm test:e2e
 
 # Playwright UI
 pnpm test:e2e:ui
-
-# Run a dedicated E2E backend (NODE_ENV=e2e, loads .env.local.test)
-pnpm --filter=backend dev:e2e
 ```
 
 Always run `pnpm test:e2e` from the workspace root so the build and E2E reseed run first; `test:e2e:run` skips those steps. For macOS with DevContainer, install XQuartz and run `xhost localhost` for Playwright headed mode.
@@ -174,41 +177,41 @@ When creating new migrations, remember to [update the dev/test seed](docs/update
 
 ### Automated Backups
 
-The system automatically creates daily database backups at 04:00 using the databack/mysql-backup image.
+In production the `eggo-db-backup` service (defined in [`docker-compose.prod.yml`](docker-compose.prod.yml)) creates a daily database backup. It uses the same MariaDB image and runs `mariadb-dump --all-databases | gzip`, writing to the `./db-backup` volume.
 
 **Features:**
 
-- Daily automated backups at 04:00
-- Gzip compression for efficient storage
-- 7-day retention with automatic cleanup
-- Complete database dumps for easy restoration
+- Daily automated backup at 04:00 UTC
+- Gzip-compressed full dumps (`--all-databases`)
+- 7-day retention with automatic cleanup (`find -mmin +10080 -delete`)
 
-**Backup Format:** `db_backup_YYYY-MM-DDTHH:mm:ssZ.sql.gz`
+**Backup Format:** `db_backup_YYYY-MM-DDTHH:mm:ssZ.tgz` (gzip stream — `.tgz` is just the naming convention used by the service)
 
 **Manual Backup:**
 
 ```bash
-docker-compose exec eggo-db-backup /bin/bash -c 'mysql-backup dump --server $DB_SERVER --user $DB_USER --pass $DB_PASS --target $DB_DUMP_TARGET'
+docker compose -f docker-compose.prod.yml exec eggo-db-backup \
+  bash -c 'mariadb-dump -h eggo-prod-db -u root -p"$MARIADB_ROOT_PASSWORD" --all-databases | gzip > /db/db_backup_manual.tgz'
 ```
 
 **Restore from Backup:**
 
 ```bash
-cd ./db-backup
-zcat db_backup_YYYY-MM-DDTHH:mm:ssZ.sql.gz | docker-compose exec -T eggo-prod-db mysql -uroot -p${MARIADB_ROOT_PASSWORD}
+zcat ./db-backup/db_backup_<timestamp>.tgz \
+  | docker compose -f docker-compose.prod.yml exec -T eggo-prod-db mariadb -uroot -p"${MARIADB_ROOT_PASSWORD}"
 ```
 
-For more information, see [databack/mysql-backup](https://github.com/databacker/mysql-backup).
+The exact command lives in the service definition in [`docker-compose.prod.yml`](docker-compose.prod.yml) — treat that file as the source of truth.
 
 ## Architecture
 
 ### Technology Stack
 
-- **Frontend**: Next.js 15, React 19, TypeScript, Tailwind CSS
+- **Frontend**: Next.js, React, TypeScript, Tailwind CSS
 - **Backend**: Node.js, Express.js, TypeScript, Knex.js
 - **Database**: MariaDB with comprehensive triggers and functions
 - **Authentication**: JWT with RSA signing
-- **Testing**: Jest, Playwright, TDD workflow
+- **Testing**: Jest, Playwright
 - **Development**: DevContainer, Docker Compose, PNPM workspace
 
 ### Key Features
@@ -223,17 +226,16 @@ For more information, see [databack/mysql-backup](https://github.com/databacker/
 
 We welcome contributions! Please see our development guidelines:
 
-1. **Follow TDD**: Write tests first, then implementation
-2. **Type Safety**: Use TypeScript with proper type guards
-3. **Documentation**: Update relevant README files when making changes
-4. **Code Quality**: All code must pass type checking, linting, and tests
+1. **Type Safety**: Use TypeScript with proper type guards
+2. **Documentation**: Update relevant README files when making changes
+3. **Code Quality**: All code must pass type checking, linting, and tests
 
 ### Development Workflow
 
 1. Fork the repository
 2. Create a feature branch
-3. Write tests first (TDD approach)
-4. Implement the feature
+3. Implement the feature (TDD is encouraged but not required)
+4. Add or update tests as appropriate
 5. Update documentation
 6. Submit a pull request
 

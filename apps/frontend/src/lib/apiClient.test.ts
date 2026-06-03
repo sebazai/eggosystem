@@ -336,4 +336,25 @@ describe("clientApiFetch", () => {
     await expect(p1).rejects.toThrow("Network error");
     await expect(p2).rejects.toThrow("Network error");
   });
+
+  it("proceeds with queued fetches when refresh fails (public routes, no session)", async () => {
+    // Simulates AuthProvider checkAuth refresh failing while match stats hooks mount.
+    mockFetch.mockImplementation((url: string) => {
+      if ((url as string).includes("/auth/refresh")) {
+        return Promise.resolve(makeResponse(401, {}));
+      }
+      if ((url as string).includes("/api/v1/match-games/")) {
+        return Promise.resolve(makeResponse(200, { players: [] }));
+      }
+      return Promise.resolve(makeResponse(404, {}, false));
+    });
+
+    const refreshPromise = refreshAccessToken();
+    const statsPromise = clientApiFetch<{ players: unknown[] }>(
+      "/api/v1/match-games/1/playerstats"
+    );
+
+    await expect(refreshPromise).rejects.toThrow();
+    await expect(statsPromise).resolves.toEqual({ players: [] });
+  });
 });

@@ -363,6 +363,15 @@ export interface WastedUtilityEvent {
 }
 
 /** @public */
+export interface UtilityThrowEvent {
+  round_number: number;
+  time_in_round: number;
+  thrower: number; // Steam ID
+  thrower_team: "CT" | "T";
+  utility_type: string; // "smoke" | "he" | "molotov"
+}
+
+/** @public */
 export interface HitEvent {
   round_number: number;
   time_in_round: number; // Seconds since round start
@@ -416,5 +425,6 @@ export interface ParsedPayload {
   RoundSwingLog?: RoundSwingEvent[];
   SetupEventLog?: SetupEvent[];
   WastedUtilityLog?: WastedUtilityEvent[];
+  UtilityThrowLog?: UtilityThrowEvent[];
   RoundUtilitySummary?: RoundUtilitySummaryEntry[];
 }
