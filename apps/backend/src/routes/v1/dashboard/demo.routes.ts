@@ -19,6 +19,7 @@ import {
 } from "../../../utils/errors";
 import { logger } from "../../../utils/app-logger";
 import { enqueueManualDashboardDemoParse } from "../../../services/manual-demo-parse.services";
+import { replayGrandFinalPlacements } from "../../../services/replay-grand-final-placements.services";
 import {
   resolveOrCreateMatchGameIdForDemoUrl,
   resolveOrCreateMatchGameIdForHubMatchDemo
@@ -106,6 +107,80 @@ const reparseRequestSchema = z.object({
   match_game_ids: z.array(z.number().int().positive()).min(1).max(50),
   priority: z.number().int().min(1).max(10).optional().default(5)
 });
+
+const replayGrandFinalPlacementsBodySchema = z
+  .object({
+    external_match_room_id: z.string().min(1).optional(),
+    match_id: z.coerce.number().int().positive().optional(),
+    season_id: z.coerce.number().int().positive().optional(),
+    league_id: z.coerce.number().int().positive().optional()
+  })
+  .superRefine((val, ctx) => {
+    const hasMatchId = val.match_id != null;
+    const hasExternalRoomId = val.external_match_room_id != null;
+    const hasSeasonLeague = val.season_id != null && val.league_id != null;
+    const hasPartialSeasonLeague =
+      (val.season_id != null) !== (val.league_id != null);
+
+    if (hasPartialSeasonLeague) {
+      ctx.addIssue({
+        code: "custom",
+        message: "season_id and league_id must be provided together",
+        path: ["season_id"]
+      });
+    }
+
+    const modeCount =
+      (hasMatchId ? 1 : 0) +
+      (hasExternalRoomId ? 1 : 0) +
+      (hasSeasonLeague ? 1 : 0);
+
+    if (modeCount === 0) {
+      ctx.addIssue({
+        code: "custom",
+        message:
+          "Provide match_id, external_match_room_id, or season_id and league_id",
+        path: ["match_id"]
+      });
+    }
+    if (modeCount > 1) {
+      ctx.addIssue({
+        code: "custom",
+        message:
+          "Provide only one of match_id, external_match_room_id, or season_id and league_id",
+        path: ["external_match_room_id"]
+      });
+    }
+  });
+
+router.post(
+  "/placements/replay-grand-final",
+  async (req: Request, res: Response, next: NextFunction) => {
+    const actorAccountId = req.auth?.account_id;
+    if (actorAccountId === undefined) {
+      return next(new UnauthorizedError("Not authenticated"));
+    }
+
+    const parsed = replayGrandFinalPlacementsBodySchema.safeParse(req.body);
+    if (!parsed.success) {
+      logger.warn("Replay grand-final placements body validation failed", {
+        issues: parsed.error.flatten()
+      });
+      return next(parsed.error);
+    }
+
+    logger.info("Replay grand-final placements request", {
+      actorAccountId,
+      hasMatchId: parsed.data.match_id != null,
+      hasExternalRoomId: parsed.data.external_match_room_id != null,
+      hasSeasonLeague:
+        parsed.data.season_id != null && parsed.data.league_id != null
+    });
+
+    const result = await replayGrandFinalPlacements(parsed.data);
+    res.status(200).json(result);
+  }
+);
 
 /**
  * POST /v1/dashboard/demos/manual/parse-queue
@@ -198,7 +273,8 @@ router.post(
     res.status(200).json({
       status: "enqueued",
       match_game_id: result.match_game_id,
-      mark_finished: result.mark_finished
+      mark_finished: result.mark_finished,
+      placements: result.placements
     });
   }
 );

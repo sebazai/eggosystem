@@ -24,6 +24,12 @@ import faceitRouter from "../routes/v1/faceit.routes";
 import { expressErrorHandler } from "../middlewares/express-error-handler";
 import { runQuery } from "../db/mysqlRunQuery";
 import * as faceitMatchModule from "./faceit-match.services";
+import {
+  assignGrandFinalPlacementsForFinishedMatch,
+  assignGrandFinalPlacementsIfEligible
+} from "./placements.services";
+import { replayGrandFinalPlacements } from "./replay-grand-final-placements.services";
+import { logger } from "../utils/app-logger";
 import { type ChampionshipDetailsFinished } from "@eggosystem/types";
 
 // Synthetic IDs — high enough not to collide with production data
@@ -75,10 +81,11 @@ async function cleanup(): Promise<void> {
   await runQuery(`DELETE FROM SeasonLeagues WHERE season_id = ?`, [S_ID]);
   await runQuery(`DELETE FROM Seasons WHERE id = ?`, [S_ID]);
   await runQuery(`DELETE FROM Leagues WHERE id = ?`, [L_ID]);
-  await runQuery(`DELETE FROM Teams WHERE id IN (?, ?, ?)`, [
+  await runQuery(`DELETE FROM Teams WHERE id IN (?, ?, ?, ?)`, [
     TEAM_A.id,
     TEAM_B.id,
-    TEAM_C.id
+    TEAM_C.id,
+    9904 // stale podium team inserted by the clear-stale-placements test
   ]);
 }
 
@@ -86,8 +93,8 @@ async function seed(
   options: { includeLbFinal: boolean } = { includeLbFinal: true }
 ): Promise<void> {
   await runQuery(
-    `INSERT INTO Seasons (id, game_id, organizer_id, name, full_name, start_date, platform, is_round_robin_bo2_as_2xbo1)
-     VALUES (?, 1, 1, 'Test Playoffs 9901', 'Test Playoffs 9901', '2026-01-01', 'faceit', 0)`,
+    `INSERT INTO Seasons (id, game_id, organizer_id, name, full_name, start_date, platform, is_round_robin_bo2_as_2xbo1, grand_final_round_one_only)
+     VALUES (?, 1, 1, 'Test Playoffs 9901', 'Test Playoffs 9901', '2026-01-01', 'faceit', 0, 1)`,
     [S_ID]
   );
   await runQuery(
@@ -305,5 +312,204 @@ describe("placements.services — grand final placement assignment", () => {
     expect(placements[TEAM_C.id]).toBe(1);
     expect(placements[TEAM_B.id]).toBe(2);
     expect(placements[TEAM_A.id]).toBeNull(); // no LB final — 3rd place not set
+  });
+
+  it("assignGrandFinalPlacementsForFinishedMatch sets 1/2/3 for a finished GF match row", async () => {
+    const gfRows = await runQuery<Array<{ id: number }>>(
+      `SELECT id FROM Matches WHERE season_id = ? AND \`group\` = 3 AND round = 1`,
+      [S_ID]
+    );
+    const gfMatch = gfRows[0];
+    expect(gfMatch).toBeDefined();
+
+    const result = await assignGrandFinalPlacementsForFinishedMatch({
+      id: gfMatch.id,
+      group: 3,
+      round: 1,
+      external_match_room_id: GF_ROOM_ID,
+      season_id: S_ID,
+      league_id: L_ID,
+      stage: STAGE_ID
+    });
+
+    expect(result.applied).toBe(true);
+    expect(result.updated).toEqual(
+      expect.arrayContaining([
+        {
+          team_id: TEAM_C.id,
+          placement: 1,
+          team_name: TEAM_C.name
+        },
+        {
+          team_id: TEAM_B.id,
+          placement: 2,
+          team_name: TEAM_B.name
+        },
+        {
+          team_id: TEAM_A.id,
+          placement: 3,
+          team_name: TEAM_A.name
+        }
+      ])
+    );
+
+    const placements = await getPlacements();
+    expect(placements[TEAM_C.id]).toBe(1);
+    expect(placements[TEAM_B.id]).toBe(2);
+    expect(placements[TEAM_A.id]).toBe(3);
+  });
+
+  it("returns faceit_fetch_failed and logs a warning when FACEIT API throws", async () => {
+    const warnSpy = jest.spyOn(logger, "warn").mockImplementation(() => logger);
+    (faceitMatchModule.getFaceITMatchDetails as jest.Mock).mockRejectedValue(
+      new Error("network timeout")
+    );
+
+    const result = await assignGrandFinalPlacementsForFinishedMatch({
+      id: 0,
+      group: 3,
+      round: 1,
+      external_match_room_id: GF_ROOM_ID,
+      season_id: S_ID,
+      league_id: L_ID,
+      stage: STAGE_ID
+    });
+
+    expect(result).toEqual({
+      applied: false,
+      skipped_reason: "faceit_fetch_failed",
+      season_id: S_ID,
+      league_id: L_ID,
+      updated: []
+    });
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining(GF_ROOM_ID),
+      expect.any(Error)
+    );
+    warnSpy.mockRestore();
+
+    const placements = await getPlacements();
+    expect(placements[TEAM_C.id]).toBeNull();
+    expect(placements[TEAM_B.id]).toBeNull();
+    expect(placements[TEAM_A.id]).toBeNull();
+  });
+
+  it("clears stale podium placements before rewriting 1/2/3", async () => {
+    const staleWinnerTeamId = 9904;
+    await runQuery(
+      `INSERT INTO Teams (id, name, team_logo) VALUES (?, 'Stale Podium Team 9904', 'nologo.png')`,
+      [staleWinnerTeamId]
+    );
+    await runQuery(
+      `INSERT INTO SeasonLeagueTeams (season_id, league_id, team_id, external_team_id, placement)
+       VALUES (?, ?, ?, 'test-faction-stale-9904', 1)`,
+      [S_ID, L_ID, staleWinnerTeamId]
+    );
+    await runQuery(
+      `UPDATE SeasonLeagueTeams SET placement = 2 WHERE season_id = ? AND league_id = ? AND team_id = ?`,
+      [S_ID, L_ID, TEAM_C.id]
+    );
+    await runQuery(
+      `UPDATE SeasonLeagueTeams SET placement = 3 WHERE season_id = ? AND league_id = ? AND team_id = ?`,
+      [S_ID, L_ID, TEAM_B.id]
+    );
+
+    const result = await assignGrandFinalPlacementsForFinishedMatch({
+      id: 0,
+      group: 3,
+      round: 1,
+      external_match_room_id: GF_ROOM_ID,
+      season_id: S_ID,
+      league_id: L_ID,
+      stage: STAGE_ID
+    });
+
+    expect(result.applied).toBe(true);
+
+    const placements = await getPlacements();
+    expect(placements[staleWinnerTeamId]).toBeNull();
+    expect(placements[TEAM_C.id]).toBe(1);
+    expect(placements[TEAM_B.id]).toBe(2);
+    expect(placements[TEAM_A.id]).toBe(3);
+
+    const podiumCounts = await runQuery<
+      Array<{ placement: number; count: number }>
+    >(
+      `SELECT placement, COUNT(*) AS count FROM SeasonLeagueTeams
+       WHERE season_id = ? AND league_id = ? AND placement IN (1, 2, 3)
+       GROUP BY placement`,
+      [S_ID, L_ID]
+    );
+    for (const row of podiumCounts) {
+      expect(row.count).toBe(1);
+    }
+
+    await runQuery(`DELETE FROM SeasonLeagueTeams WHERE team_id = ?`, [
+      staleWinnerTeamId
+    ]);
+    await runQuery(`DELETE FROM Teams WHERE id = ?`, [staleWinnerTeamId]);
+  });
+
+  it("replayGrandFinalPlacements clears stale placements for season and league", async () => {
+    await runQuery(
+      `UPDATE SeasonLeagueTeams SET placement = 1 WHERE season_id = ? AND league_id = ? AND team_id = ?`,
+      [S_ID, L_ID, TEAM_A.id]
+    );
+
+    const result = await replayGrandFinalPlacements({
+      season_id: S_ID,
+      league_id: L_ID
+    });
+
+    expect(result.applied).toBe(true);
+    expect(result.placements).toEqual(
+      expect.arrayContaining([
+        {
+          team_id: TEAM_C.id,
+          placement: 1,
+          team_name: TEAM_C.name
+        },
+        {
+          team_id: TEAM_B.id,
+          placement: 2,
+          team_name: TEAM_B.name
+        },
+        {
+          team_id: TEAM_A.id,
+          placement: 3,
+          team_name: TEAM_A.name
+        }
+      ])
+    );
+
+    const placements = await getPlacements();
+    expect(placements[TEAM_C.id]).toBe(1);
+    expect(placements[TEAM_B.id]).toBe(2);
+    expect(placements[TEAM_A.id]).toBe(3);
+
+    const duplicateFirst = await runQuery<Array<{ count: number }>>(
+      `SELECT COUNT(*) AS count FROM SeasonLeagueTeams
+       WHERE season_id = ? AND league_id = ? AND placement = 1`,
+      [S_ID, L_ID]
+    );
+    expect(duplicateFirst[0]?.count).toBe(1);
+  });
+
+  it("assignGrandFinalPlacementsIfEligible skips non-grand-final match details", async () => {
+    const details = { ...makeMatchDetails(), group: 1, round: 4 };
+    const result = await assignGrandFinalPlacementsIfEligible({
+      matchDetails: details,
+      seasonId: S_ID,
+      leagueId: L_ID,
+      stageId: STAGE_ID
+    });
+
+    expect(result).toEqual({
+      applied: false,
+      skipped_reason: "not_grand_final",
+      season_id: S_ID,
+      league_id: L_ID,
+      updated: []
+    });
   });
 });

@@ -105,7 +105,7 @@ export function SeasonHighlightsPanel() {
   );
 
   const isLoading = isLoadingSeasons || isLoadingResults;
-  const featuredDivisions = (data?.divisions ?? []).slice(0, 2);
+  const divisions = data?.divisions ?? [];
   const seasonLabel = latestSeason?.season_name
     ? convertSeasonToS(latestSeason.season_name)
     : "Latest Season";
@@ -136,15 +136,15 @@ export function SeasonHighlightsPanel() {
       </div>
 
       <p className="text-sm text-muted-foreground">
-        {seasonLabel} has concluded. Here are the top finishers from the latest
-        divisions.
+        {seasonLabel} has concluded. Here are the top finishers from every
+        division.
       </p>
 
       {isLoading ? (
         <SeasonHighlightsSkeleton />
-      ) : featuredDivisions.length > 0 ? (
-        <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted hover:scrollbar-thumb-muted-foreground">
-          {featuredDivisions.map((division) => (
+      ) : divisions.length > 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[min(70vh,720px)] overflow-y-auto pr-2 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted hover:scrollbar-thumb-muted-foreground">
+          {divisions.map((division) => (
             <DivisionHighlights key={division.league_id} division={division} />
           ))}
         </div>
