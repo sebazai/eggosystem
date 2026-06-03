@@ -235,7 +235,11 @@ async function fetchGrandFinalMatchDetails(
       return null;
     }
     return details;
-  } catch {
+  } catch (err) {
+    logger.warn(
+      `[placements] fetchGrandFinalMatchDetails failed for room=${externalMatchRoomId}`,
+      err
+    );
     return null;
   }
 }

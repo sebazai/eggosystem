@@ -29,6 +29,7 @@ import {
   assignGrandFinalPlacementsIfEligible
 } from "./placements.services";
 import { replayGrandFinalPlacements } from "./replay-grand-final-placements.services";
+import { logger } from "../utils/app-logger";
 import { type ChampionshipDetailsFinished } from "@eggosystem/types";
 
 // Synthetic IDs — high enough not to collide with production data
@@ -355,6 +356,41 @@ describe("placements.services — grand final placement assignment", () => {
     expect(placements[TEAM_C.id]).toBe(1);
     expect(placements[TEAM_B.id]).toBe(2);
     expect(placements[TEAM_A.id]).toBe(3);
+  });
+
+  it("returns faceit_fetch_failed and logs a warning when FACEIT API throws", async () => {
+    const warnSpy = jest.spyOn(logger, "warn").mockImplementation(() => logger);
+    (faceitMatchModule.getFaceITMatchDetails as jest.Mock).mockRejectedValue(
+      new Error("network timeout")
+    );
+
+    const result = await assignGrandFinalPlacementsForFinishedMatch({
+      id: 0,
+      group: 3,
+      round: 1,
+      external_match_room_id: GF_ROOM_ID,
+      season_id: S_ID,
+      league_id: L_ID,
+      stage: STAGE_ID
+    });
+
+    expect(result).toEqual({
+      applied: false,
+      skipped_reason: "faceit_fetch_failed",
+      season_id: S_ID,
+      league_id: L_ID,
+      updated: []
+    });
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining(GF_ROOM_ID),
+      expect.any(Error)
+    );
+    warnSpy.mockRestore();
+
+    const placements = await getPlacements();
+    expect(placements[TEAM_C.id]).toBeNull();
+    expect(placements[TEAM_B.id]).toBeNull();
+    expect(placements[TEAM_A.id]).toBeNull();
   });
 
   it("clears stale podium placements before rewriting 1/2/3", async () => {
