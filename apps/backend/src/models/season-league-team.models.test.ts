@@ -1,5 +1,7 @@
+import { type PoolConnection } from "mysql2/promise";
 import { runQuery } from "../db/mysqlRunQuery";
 import {
+  clearPodiumPlacementsForSeasonLeague,
   getTeamIdsByExternalIds,
   getPlayoffSeedsBySeasonAndLeague,
   getPlayoffSeedMapBySeasonAndLeague,
@@ -83,6 +85,35 @@ describe("season-league-team.models (playoff)", () => {
       expect(mockRunQuery).toHaveBeenCalledWith(
         expect.stringContaining("playoff_seed IS NOT NULL"),
         [14, 1]
+      );
+    });
+  });
+
+  describe("clearPodiumPlacementsForSeasonLeague", () => {
+    it("nulls placement 1, 2, and 3 for the season+league", async () => {
+      mockRunQuery.mockResolvedValue([]);
+
+      await clearPodiumPlacementsForSeasonLeague(14, 1);
+
+      expect(mockRunQuery).toHaveBeenCalledWith(
+        expect.stringMatching(
+          /UPDATE SeasonLeagueTeams SET placement = NULL[\s\S]*placement IN \(1, 2, 3\)/
+        ),
+        [14, 1],
+        undefined
+      );
+    });
+
+    it("forwards the connection to runQuery for transactional use", async () => {
+      mockRunQuery.mockResolvedValue([]);
+      const fakeConn = {} as PoolConnection;
+
+      await clearPodiumPlacementsForSeasonLeague(14, 1, fakeConn);
+
+      expect(mockRunQuery).toHaveBeenCalledWith(
+        expect.any(String),
+        [14, 1],
+        fakeConn
       );
     });
   });

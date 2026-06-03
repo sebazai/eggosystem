@@ -17,6 +17,13 @@ jest.mock("../../../services/manual-demo-parse.services", () => ({
       match_ids: [],
       end_timestamp: null,
       skipped_reason: "not_requested"
+    },
+    placements: {
+      applied: false,
+      skipped_reason: "not_requested",
+      season_id: null,
+      league_id: null,
+      updated: []
     }
   }))
 }));

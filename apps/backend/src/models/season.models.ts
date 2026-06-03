@@ -83,6 +83,20 @@ export const getSeasonDetailsById = async (id: number) => {
  * @param connection Optional database connection for transactions
  * @returns Object with platform and app_id, or undefined if season not found
  */
+export const getSeasonGrandFinalRoundOneOnly = async (
+  seasonId: number,
+  connection?: PoolConnection
+): Promise<boolean> => {
+  const [row] = await runQuery<
+    Array<{ grand_final_round_one_only: boolean | null }>
+  >(
+    `SELECT grand_final_round_one_only FROM Seasons WHERE id = ?`,
+    [seasonId],
+    connection
+  );
+  return Boolean(row?.grand_final_round_one_only);
+};
+
 export const getSeasonPlatformAndAppId = async (
   seasonId: number,
   connection?: PoolConnection
