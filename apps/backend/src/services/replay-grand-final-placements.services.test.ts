@@ -48,9 +48,9 @@ const appliedResult = {
   season_id: 10,
   league_id: 20,
   updated: [
-    { team_id: 1, placement: 1 },
-    { team_id: 2, placement: 2 },
-    { team_id: 3, placement: 3 }
+    { team_id: 1, placement: 1, team_name: "Team 1" },
+    { team_id: 2, placement: 2, team_name: "Team 2" },
+    { team_id: 3, placement: 3, team_name: "Team 3" }
   ]
 };
 

@@ -333,9 +333,21 @@ describe("placements.services — grand final placement assignment", () => {
     expect(result.applied).toBe(true);
     expect(result.updated).toEqual(
       expect.arrayContaining([
-        { team_id: TEAM_C.id, placement: 1 },
-        { team_id: TEAM_B.id, placement: 2 },
-        { team_id: TEAM_A.id, placement: 3 }
+        {
+          team_id: TEAM_C.id,
+          placement: 1,
+          team_name: TEAM_C.name
+        },
+        {
+          team_id: TEAM_B.id,
+          placement: 2,
+          team_name: TEAM_B.name
+        },
+        {
+          team_id: TEAM_A.id,
+          placement: 3,
+          team_name: TEAM_A.name
+        }
       ])
     );
 
@@ -415,9 +427,21 @@ describe("placements.services — grand final placement assignment", () => {
     expect(result.applied).toBe(true);
     expect(result.placements).toEqual(
       expect.arrayContaining([
-        { team_id: TEAM_C.id, placement: 1 },
-        { team_id: TEAM_B.id, placement: 2 },
-        { team_id: TEAM_A.id, placement: 3 }
+        {
+          team_id: TEAM_C.id,
+          placement: 1,
+          team_name: TEAM_C.name
+        },
+        {
+          team_id: TEAM_B.id,
+          placement: 2,
+          team_name: TEAM_B.name
+        },
+        {
+          team_id: TEAM_A.id,
+          placement: 3,
+          team_name: TEAM_A.name
+        }
       ])
     );
 

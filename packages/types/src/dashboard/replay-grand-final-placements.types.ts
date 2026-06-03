@@ -11,6 +11,10 @@ export interface ReplayGrandFinalPlacementsResponse {
   league_id: number | null;
   stage_id: number | null;
   external_match_room_id: string | null;
-  placements: Array<{ team_id: number; placement: number }>;
+  placements: Array<{
+    team_id: number;
+    placement: number;
+    team_name: string;
+  }>;
   skipped_reason: string | null;
 }

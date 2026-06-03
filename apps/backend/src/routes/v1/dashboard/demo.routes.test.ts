@@ -90,7 +90,11 @@ const placementsNotRequested = {
   skipped_reason: "not_requested",
   season_id: null,
   league_id: null,
-  updated: [] as Array<{ team_id: number; placement: number }>
+  updated: [] as Array<{
+    team_id: number;
+    placement: number;
+    team_name: string;
+  }>
 };
 
 const attachTestAuth: RequestHandler = (req, _res, next) => {
@@ -624,9 +628,9 @@ describe("POST /api/v1/dashboard/demos/placements/replay-grand-final", () => {
       stage_id: 2,
       external_match_room_id: "room-gf",
       placements: [
-        { team_id: 1, placement: 1 },
-        { team_id: 2, placement: 2 },
-        { team_id: 3, placement: 3 }
+        { team_id: 1, placement: 1, team_name: "Team 1" },
+        { team_id: 2, placement: 2, team_name: "Team 2" },
+        { team_id: 3, placement: 3, team_name: "Team 3" }
       ],
       skipped_reason: null
     });
@@ -654,8 +658,8 @@ describe("POST /api/v1/dashboard/demos/placements/replay-grand-final", () => {
       stage_id: 2,
       external_match_room_id: "room-gf",
       placements: [
-        { team_id: 1, placement: 1 },
-        { team_id: 2, placement: 2 }
+        { team_id: 1, placement: 1, team_name: "Team 1" },
+        { team_id: 2, placement: 2, team_name: "Team 2" }
       ],
       skipped_reason: null
     });
@@ -672,8 +676,8 @@ describe("POST /api/v1/dashboard/demos/placements/replay-grand-final", () => {
       stage_id: 2,
       external_match_room_id: "room-gf",
       placements: [
-        { team_id: 1, placement: 1 },
-        { team_id: 2, placement: 2 }
+        { team_id: 1, placement: 1, team_name: "Team 1" },
+        { team_id: 2, placement: 2, team_name: "Team 2" }
       ],
       skipped_reason: null
     });

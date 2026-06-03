@@ -1,4 +1,7 @@
-import type { Match } from "@eggosystem/types";
+import type {
+  Match,
+  ReplayGrandFinalPlacementsResponse
+} from "@eggosystem/types";
 import {
   getGrandFinalMatchBySeasonAndLeague,
   getMatch,
@@ -10,15 +13,8 @@ import {
   type AssignGrandFinalPlacementsResult
 } from "./placements.services";
 
-export interface ReplayGrandFinalPlacementsResult {
-  applied: boolean;
-  season_id: number | null;
-  league_id: number | null;
-  stage_id: number | null;
-  external_match_room_id: string | null;
-  placements: Array<{ team_id: number; placement: number }>;
-  skipped_reason: string | null;
-}
+export type ReplayGrandFinalPlacementsResult =
+  ReplayGrandFinalPlacementsResponse;
 
 type MatchRowForReplay = Pick<
   Match,

@@ -16,16 +16,22 @@ interface LeagueOption {
   tier: number;
 }
 
-function formatPlacementSummary(
-  placements: ReplayGrandFinalPlacementsResponse["placements"]
-) {
-  if (placements.length === 0) {
-    return "";
-  }
+function PlacementToastList({
+  placements
+}: {
+  placements: ReplayGrandFinalPlacementsResponse["placements"];
+}) {
+  const sorted = [...placements].sort((a, b) => a.placement - b.placement);
 
-  return placements
-    .map((entry) => `team ${entry.team_id} → ${entry.placement}.`)
-    .join(" ");
+  return (
+    <ol className="mt-1 list-decimal list-inside space-y-0.5 text-sm">
+      {sorted.map((entry) => (
+        <li key={`${entry.placement}-${entry.team_id}`}>
+          {entry.team_name} (team ID {entry.team_id})
+        </li>
+      ))}
+    </ol>
+  );
 }
 
 export function GrandFinalPlacementsReplaySection() {
@@ -85,12 +91,12 @@ export function GrandFinalPlacementsReplaySection() {
       );
 
       if (response.applied) {
-        const summary = formatPlacementSummary(response.placements);
-        toast.success(
-          summary
-            ? `Placements updated for league ${effectiveLeagueId}. ${summary}`
-            : `Placements updated for league ${effectiveLeagueId}.`
-        );
+        toast.success(`Placements updated for league ${effectiveLeagueId}.`, {
+          description:
+            response.placements.length > 0 ? (
+              <PlacementToastList placements={response.placements} />
+            ) : undefined
+        });
         return;
       }
 
