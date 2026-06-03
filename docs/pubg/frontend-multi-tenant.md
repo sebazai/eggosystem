@@ -63,6 +63,14 @@ Tenancy has two independent dimensions, handled differently:
 
 ### 4.1 Public URL shape
 
+> **Chosen day-one deployment (see `multi-tenant-architecture.md` §3, "Decided deployment
+> model").** Production runs on the **single host `hub.kanaliiga.fi`** using the **"Hub / path
+> form"** column below — `hub.kanaliiga.fi/{organizer}/{game}/{resource}` — for _all_ tenants,
+> not just dev/previews. The "Branded (prod)" subdomain/vanity column is the **preserved
+> upgrade path**, deferred. Resolve the tenant from the `[organizer]` **path segment**
+> (host-agnostic) so adding branded hosts later is additive, and reserve hub-route slugs so an
+> organizer slug can't shadow `/players`, `/seasons`, `/organizers`, etc.
+
 ```
 {organizer-host}/{game}/{resource}
 ```
@@ -301,6 +309,13 @@ rest.
 > Phases F1–F5 deliver **multi-game under Kanaliiga** (the immediate PUBG need) with **zero
 > organizer work**. F6 adds the second organizer when it's real — the architecture doc's
 > backend/auth changes pair with this phase.
+
+> **Under the single-host model (`multi-tenant-architecture.md` §3, "Decided deployment
+> model"):** F6 does **not** introduce host-based tenancy day-one. The `[organizer]` segment is
+> served directly on `hub.kanaliiga.fi`, so F6 reduces to "add the `[organizer]` path layer +
+> reserved-slug list"; the middleware host→organizer rewrite is deferred to the first
+> subdomain/vanity upgrade (and slots in behind the same `[organizer]` resolution when it
+> lands).
 
 ---
 
