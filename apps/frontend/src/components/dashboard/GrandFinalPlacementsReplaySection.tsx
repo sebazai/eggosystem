@@ -39,6 +39,7 @@ export function GrandFinalPlacementsReplaySection() {
   const seasonId = selectedSeasonId ? Number(selectedSeasonId) : null;
   const [selectedLeagueId, setSelectedLeagueId] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isConfirming, setIsConfirming] = useState(false);
 
   const {
     data: leagues = [],
@@ -53,6 +54,7 @@ export function GrandFinalPlacementsReplaySection() {
 
   useEffect(() => {
     setSelectedLeagueId("");
+    setIsConfirming(false);
   }, [seasonId]);
 
   const leagueId = selectedLeagueId ? Number(selectedLeagueId) : null;
@@ -77,6 +79,12 @@ export function GrandFinalPlacementsReplaySection() {
       return;
     }
 
+    if (!isConfirming) {
+      setIsConfirming(true);
+      return;
+    }
+
+    setIsConfirming(false);
     setIsLoading(true);
     try {
       const response = await clientApiFetch<ReplayGrandFinalPlacementsResponse>(
@@ -115,6 +123,10 @@ export function GrandFinalPlacementsReplaySection() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleCancelConfirm = () => {
+    setIsConfirming(false);
   };
 
   const leagueOptions = leagues.map((league) => ({
@@ -158,13 +170,39 @@ export function GrandFinalPlacementsReplaySection() {
         />
       </div>
 
-      <Button
-        onClick={handleReplay}
-        disabled={!canReplay || isLoading}
-        className="w-full"
-      >
-        {isLoading ? "Replaying..." : "Replay Grand Final Placements"}
-      </Button>
+      {isConfirming ? (
+        <div className="flex flex-col gap-2">
+          <p className="text-sm text-destructive">
+            This will overwrite existing 1st, 2nd, and 3rd place placements for
+            the selected league.
+          </p>
+          <div className="flex gap-2">
+            <Button
+              onClick={handleReplay}
+              disabled={isLoading}
+              className="flex-1"
+            >
+              {isLoading ? "Replaying..." : "Confirm Replay"}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleCancelConfirm}
+              disabled={isLoading}
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <Button
+          onClick={handleReplay}
+          disabled={!canReplay || isLoading}
+          className="w-full"
+        >
+          Replay Grand Final Placements
+        </Button>
+      )}
     </div>
   );
 }

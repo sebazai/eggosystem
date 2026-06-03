@@ -10,6 +10,7 @@ import {
 import { NotFoundError, BadRequestError } from "../utils/errors";
 import {
   assignGrandFinalPlacementsForFinishedMatch,
+  isGrandFinalRoundOne,
   type AssignGrandFinalPlacementsResult
 } from "./placements.services";
 
@@ -26,11 +27,6 @@ type MatchRowForReplay = Pick<
   | "league_id"
   | "stage"
 >;
-
-const isGrandFinalRoundOne = (
-  group: number | undefined,
-  round: number | undefined
-): boolean => group === 3 && round === 1;
 
 function toReplayResponse(
   match: MatchRowForReplay | null,

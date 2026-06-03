@@ -18,6 +18,7 @@ jest.mock("../models/match.models", () => ({
 }));
 
 jest.mock("./placements.services", () => ({
+  ...jest.requireActual("./placements.services"),
   assignGrandFinalPlacementsForFinishedMatch: jest.fn()
 }));
 

@@ -68,6 +68,9 @@ function manualParsePlacementsNotRequested(): ManualDemoParsePlacementsResult {
   };
 }
 
+// ManualDemoParsePlacementsResult is a separate public API type even though its
+// fields currently mirror AssignGrandFinalPlacementsResult. The internal result
+// type is free to evolve without affecting the wire contract.
 function toManualParsePlacementsResult(
   result: AssignGrandFinalPlacementsResult
 ): ManualDemoParsePlacementsResult {
@@ -288,6 +291,9 @@ export const enqueueManualDashboardDemoParse = async (input: {
     });
     await conn.commit();
 
+    // conn is committed but not yet released. assignPlacementsAfterManualMarkFinished
+    // uses it only for the loadMatchesForPlacementsByIds SELECT; the actual placement
+    // writes open their own pool connections and run outside this transaction.
     const placements = finishResult.applied
       ? await assignPlacementsAfterManualMarkFinished(finishResult, conn)
       : placementsFromMarkFinishedSkipped(finishResult);

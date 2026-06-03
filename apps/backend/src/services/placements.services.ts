@@ -12,6 +12,7 @@ import {
   getLowerBracketFinalMatch,
   getMatchTeamIdsByMatchId
 } from "../models/match.models";
+import { getConnection } from "../db/mysqlConnection";
 import { getFaceITMatchDetails } from "./faceit-match.services";
 import { logger } from "../utils/app-logger";
 
@@ -29,7 +30,7 @@ export interface AssignGrandFinalPlacementsResult {
   updated: GrandFinalPlacementUpdate[];
 }
 
-const isGrandFinalRoundOne = (
+export const isGrandFinalRoundOne = (
   group: number | undefined,
   round: number | undefined
 ): boolean => group === 3 && round === 1;
@@ -42,6 +43,8 @@ async function resolvePlacementTeamName(
   if (fromMatch != null && fromMatch.length > 0) {
     return fromMatch;
   }
+  // namesByTeamId only covers the two GF factions, so 3rd-place always falls
+  // through here and requires a DB lookup.
   const [team] = await getTeamById(teamId);
   return team?.name ?? `Team #${teamId}`;
 }
@@ -69,6 +72,7 @@ const setLeaguePlacements = async (
   updated: GrandFinalPlacementUpdate[];
   skipped_reason: string | null;
 }> => {
+  // --- Phase 1: reads (outside transaction to minimise lock time) ---
   const { faction1, faction2 } = matchDetails.teams;
   const winnerFaction = matchDetails.results.winner;
 
@@ -92,13 +96,63 @@ const setLeaguePlacements = async (
     [team2.team_id, matchDetails.teams.faction2.name]
   ]);
 
-  await clearPodiumPlacementsForSeasonLeague(seasonId, leagueId);
+  const lbFinal = await getLowerBracketFinalMatch(seasonId, leagueId, stageId);
+  let thirdPlaceTeamId: number | undefined;
 
-  await Promise.all([
-    updateSeasonLeagueTeamPlacement(seasonId, leagueId, winnerTeam.team_id, 1),
-    updateSeasonLeagueTeamPlacement(seasonId, leagueId, loserTeam.team_id, 2)
-  ]);
+  if (!lbFinal) {
+    logger.warn(
+      `[placements] No LB final found for season=${seasonId} league=${leagueId} stage=${stageId}, skipping 3rd place`
+    );
+  } else {
+    const grandFinalTeamIds = new Set([winnerTeam.team_id, loserTeam.team_id]);
+    const lbTeamIds = await getMatchTeamIdsByMatchId(lbFinal.id);
+    thirdPlaceTeamId = lbTeamIds.find((id) => !grandFinalTeamIds.has(id));
+    if (thirdPlaceTeamId == null) {
+      logger.warn(
+        `[placements] Could not identify 3rd-place team for season=${seasonId} league=${leagueId}`
+      );
+    }
+  }
 
+  // --- Phase 2: writes (clear + 1st/2nd/3rd in a single transaction) ---
+  const conn = await getConnection();
+  try {
+    await conn.beginTransaction();
+    await clearPodiumPlacementsForSeasonLeague(seasonId, leagueId, conn);
+    await Promise.all([
+      updateSeasonLeagueTeamPlacement(
+        seasonId,
+        leagueId,
+        winnerTeam.team_id,
+        1,
+        conn
+      ),
+      updateSeasonLeagueTeamPlacement(
+        seasonId,
+        leagueId,
+        loserTeam.team_id,
+        2,
+        conn
+      )
+    ]);
+    if (thirdPlaceTeamId != null) {
+      await updateSeasonLeagueTeamPlacement(
+        seasonId,
+        leagueId,
+        thirdPlaceTeamId,
+        3,
+        conn
+      );
+    }
+    await conn.commit();
+  } catch (err) {
+    await conn.rollback();
+    throw err;
+  } finally {
+    conn.release();
+  }
+
+  // --- Phase 3: build result (reads only, outside transaction) ---
   const updated: GrandFinalPlacementUpdate[] = [
     {
       team_id: winnerTeam.team_id,
@@ -118,36 +172,13 @@ const setLeaguePlacements = async (
     }
   ];
 
-  const lbFinal = await getLowerBracketFinalMatch(seasonId, leagueId, stageId);
-  if (!lbFinal) {
-    logger.warn(
-      `[placements] No LB final found for season=${seasonId} league=${leagueId} stage=${stageId}, skipping 3rd place`
-    );
-    return { updated, skipped_reason: null };
+  if (thirdPlaceTeamId != null) {
+    updated.push({
+      team_id: thirdPlaceTeamId,
+      placement: 3,
+      team_name: await resolvePlacementTeamName(thirdPlaceTeamId, namesByTeamId)
+    });
   }
-
-  const grandFinalTeamIds = new Set([winnerTeam.team_id, loserTeam.team_id]);
-  const lbTeamIds = await getMatchTeamIdsByMatchId(lbFinal.id);
-  const thirdPlaceTeamId = lbTeamIds.find((id) => !grandFinalTeamIds.has(id));
-
-  if (thirdPlaceTeamId == null) {
-    logger.warn(
-      `[placements] Could not identify 3rd-place team for season=${seasonId} league=${leagueId}`
-    );
-    return { updated, skipped_reason: null };
-  }
-
-  await updateSeasonLeagueTeamPlacement(
-    seasonId,
-    leagueId,
-    thirdPlaceTeamId,
-    3
-  );
-  updated.push({
-    team_id: thirdPlaceTeamId,
-    placement: 3,
-    team_name: await resolvePlacementTeamName(thirdPlaceTeamId, namesByTeamId)
-  });
 
   return { updated, skipped_reason: null };
 };
