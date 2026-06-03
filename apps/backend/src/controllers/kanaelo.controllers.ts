@@ -8,8 +8,11 @@ import type { RequestWithParams } from "@eggosystem/types";
 import { BadRequestError, NotFoundError } from "../utils/errors";
 import { calculateKanaElo } from "../services/csrankker.services";
 import { upsertPlayerKanaElo } from "../models/steam-player-kana-elo.models";
+import {
+  getLatestSeasonForPlayer,
+  updateSeasonPlayerRankKanaElo
+} from "../models/season-player-ranks.models";
 import { logger } from "../utils/app-logger";
-import { getLatestSeasonForPlayer } from "../models/season-player-ranks.models";
 
 /**
  * Controller to populate the kanaelo queue for all players in a season
@@ -45,7 +48,7 @@ export const populateKanaeloQueueController = async (
 
 /**
  * Controller to calculate kana_elo for all players using CSRankker API
- * Updates only SteamPlayerKanaElo table (not SeasonPlayerRanks)
+ * Updates SteamPlayerKanaElo (live value) and the player's latest SeasonPlayerRanks row
  * Processes players in batches of 100 using Promise.all
  */
 export const calculateKanaEloForAllPlayersController = async (
@@ -99,8 +102,15 @@ export const calculateKanaEloForAllPlayersController = async (
               };
             }
 
-            // Update SteamPlayerKanaElo table
+            // Update live elo and sync latest season snapshot when present
             await upsertPlayerKanaElo(steamId, result.result.stabilizedKanaelo);
+            if (seasonId != null) {
+              await updateSeasonPlayerRankKanaElo(
+                steamId,
+                seasonId,
+                result.result.stabilizedKanaelo
+              );
+            }
 
             return {
               success: true,

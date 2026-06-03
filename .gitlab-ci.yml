@@ -1,4 +1,4 @@
-image: node:25-slim
+image: node:26-slim
 
 variables:
   # Docker configuration
@@ -19,7 +19,7 @@ variables:
   MIGRATIONS_TAG: $CI_COMMIT_SHA
   DOCKER_IMAGE_TAG: 29.4.1-alpine3.23
   DOCKER_DIND_IMAGE_TAG: 29.4.1-dind-alpine3.23
-  MARIADB_TAG: 12.2.2
+  MARIADB_TAG: 12.3.2
 
 # Define on-demand environment variables
 .overwrite-variables: &overwrite-variables
@@ -51,9 +51,12 @@ variables:
   before_script:
     - npm install -g corepack --force
     - corepack enable
-    - corepack prepare pnpm@10.27.0 --activate
+    - corepack prepare pnpm@11.5.0 --activate
     - pnpm config set store-dir $PNPM_STORE_PATH
     - pnpm config set registry http://172.17.0.1:4873
+    - pnpm config set network-concurrency 64
+    - pnpm config set fetch-retries 0
+    - pnpm config set verify-store-integrity false
     - pnpm install --frozen-lockfile
 
 # Sadly gitlab changes do not support with anchors or references to make these DRY
@@ -176,9 +179,12 @@ install:
   before_script:
     - npm install -g corepack --force
     - corepack enable
-    - corepack prepare pnpm@10.27.0 --activate
+    - corepack prepare pnpm@11.5.0 --activate
     - pnpm config set store-dir $PNPM_STORE_PATH
     - pnpm config set registry http://172.17.0.1:4873 #172.17.0.1 aridivereci!
+    - pnpm config set network-concurrency 64
+    - pnpm config set fetch-retries 0
+    - pnpm config set verify-store-integrity false
   script:
     - pnpm install --frozen-lockfile
 
@@ -300,8 +306,11 @@ test:backend:
   before_script:
     - npm install -g corepack --force
     - corepack enable
-    - corepack prepare pnpm@10.27.0 --activate
+    - corepack prepare pnpm@11.5.0 --activate
     - pnpm config set registry http://172.17.0.1:4873
+    - pnpm config set network-concurrency 64
+    - pnpm config set fetch-retries 0
+    - pnpm config set verify-store-integrity false
     - pnpm install --frozen-lockfile
     - npx turbo run build --filter='@eggosystem/shared-msw'
     - export $(grep -v '^#' .env.development | xargs)
@@ -353,12 +362,15 @@ test:frontend:
   before_script:
     - npm install -g corepack --force
     - corepack enable
-    - corepack prepare pnpm@10.27.0 --activate
+    - corepack prepare pnpm@11.5.0 --activate
     - pnpm config set registry http://172.17.0.1:4873
+    - pnpm config set network-concurrency 64
+    - pnpm config set fetch-retries 0
+    - pnpm config set verify-store-integrity false
     - pnpm install --frozen-lockfile
     - pnpm --filter=@eggosystem/types build
   script:
-    - pnpm --filter=frontend test --runInBand
+    - pnpm --filter=frontend test --runInBand --coverage
   coverage: '/Statements\s+:\s+([\d.]+)%/'
   artifacts:
     expire_in: 7 days
@@ -414,7 +426,7 @@ build:backend:
       - apps/backend/dist/
 
 test-e2e:frontend:
-  image: mcr.microsoft.com/playwright:v1.59.1-jammy
+  image: mcr.microsoft.com/playwright:v1.60.0-jammy
   stage: test-e2e
   dependencies:
     - build:backend
@@ -442,11 +454,14 @@ test-e2e:frontend:
       openssl rsa -pubout -in apps/backend/private_refresh_token.pem -out apps/backend/public_refresh_token.pem
     - npm install -g corepack --force
     - corepack enable
-    - corepack prepare pnpm@10.27.0 --activate
+    - corepack prepare pnpm@11.5.0 --activate
     - export $(grep -v '^#' .env.development | xargs)
     # Ensure PRIVACY_POLICY_VERSION is set for E2E tests
     - export PRIVACY_POLICY_VERSION=1
     - pnpm config set registry http://172.17.0.1:4873
+    - pnpm config set network-concurrency 64
+    - pnpm config set fetch-retries 0
+    - pnpm config set verify-store-integrity false
     - pnpm install --frozen-lockfile
     - NODE_ENV=e2e pnpm --filter=backend start &
     # - pnpm --filter=backend start &

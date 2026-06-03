@@ -214,6 +214,12 @@ const data: { navMain: Array<MenuItem> } = {
       url: createDashboardNextUrl("caster-applications"),
       requiredRoles: ["admin", "helpdesk"],
       items: [] satisfies Array<SubMenuItem>
+    },
+    {
+      title: "Newsletter",
+      url: createDashboardNextUrl("newsletter"),
+      requiredRoles: ["admin"],
+      items: [] satisfies Array<SubMenuItem>
     }
   ]
 };

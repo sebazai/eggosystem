@@ -1,8 +1,11 @@
 import type {
   Account,
   UserPolicyAcceptance,
-  UserPolicyAcceptancesPayload
+  UserPolicyAcceptancesPayload,
+  NewsletterConsentType
 } from "@eggosystem/types";
+
+export type { NewsletterConsentType };
 import semver from "semver";
 import { runQuery } from "../db/mysqlRunQuery";
 import * as crypto from "crypto";
@@ -314,6 +317,73 @@ export const getAccountByUnsubscribeToken = async (
  * @param accountId - The account ID to unsubscribe
  * @param connection - Optional database connection for transaction support
  */
+interface NewsletterEligiblePlayer {
+  account_id: number;
+  email: string;
+  nickname: string;
+  steam_id: string;
+}
+
+/**
+ * Return all active SeasonTeamPlayers in a season whose latest-semver policy
+ * record satisfies the requested consent type.
+ */
+export const getSeasonNewsletterEligiblePlayers = async (
+  seasonId: number,
+  consentType: NewsletterConsentType
+): Promise<NewsletterEligiblePlayer[]> => {
+  const rows = await runQuery<
+    Array<{
+      account_id: number;
+      email: string;
+      nickname: string;
+      steam_id: string;
+    }>
+  >(
+    `SELECT DISTINCT
+       a.id AS account_id,
+       a.work_email AS email,
+       sp.nickname,
+       sp.steam_id
+     FROM SeasonTeamPlayers stp
+     INNER JOIN SteamPlayers sp ON sp.steam_id = stp.steam_id
+     INNER JOIN Accounts a ON a.id = sp.account_id
+     WHERE stp.season_id = ?
+       AND stp.discarded_at IS NULL
+       AND a.work_email IS NOT NULL
+       AND a.work_email_verified = 1`,
+    [seasonId]
+  );
+
+  if (!rows || rows.length === 0) return [];
+
+  const accountIds = rows.map((r) => r.account_id);
+  const placeholders = accountIds.map(() => "?").join(",");
+  const policies = await runQuery<UserPolicyAcceptance[] | undefined>(
+    `SELECT * FROM UserPolicyAcceptances WHERE account_id IN (${placeholders})`,
+    accountIds
+  );
+
+  const policiesByAccount = new Map<number, UserPolicyAcceptance[]>();
+  for (const p of policies ?? []) {
+    const existing = policiesByAccount.get(p.account_id) ?? [];
+    existing.push(p);
+    policiesByAccount.set(p.account_id, existing);
+  }
+
+  return rows.filter((row) => {
+    const accountPolicies = policiesByAccount.get(row.account_id) ?? [];
+    const latest = getLatestPolicyBySemver(accountPolicies);
+    if (!latest) return false;
+    if (consentType === "newsletter")
+      return !!latest.accepted_tournament_newsletter;
+    if (consentType === "marketing") return !!latest.accepted_marketing;
+    return (
+      !!latest.accepted_tournament_newsletter || !!latest.accepted_marketing
+    );
+  });
+};
+
 export const unsubscribeFromNewsletter = async (
   accountId: Account["id"],
   connection?: PoolConnection

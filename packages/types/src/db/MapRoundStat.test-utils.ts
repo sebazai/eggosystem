@@ -34,6 +34,7 @@ export const createMockMapRoundStat = (
     ct_t: null,
     first_kill: null,
     plant_site: null,
+    plant_time: null,
     winner: null,
     round_type: null,
     ct_avg_bank: null,

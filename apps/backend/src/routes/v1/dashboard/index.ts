@@ -17,6 +17,7 @@ import emailVerificationRouter from "./email-verification.routes";
 import casterApplicationsRouter from "./caster-applications.routes";
 import playoffSeedsRouter from "./playoff-seeds.routes";
 import marketingSponsorsRouter from "./marketing-sponsors.routes";
+import newsletterRouter from "./newsletter.routes";
 
 const router = Router();
 
@@ -131,6 +132,13 @@ router.use(
     fallbackRoles: ["admin"]
   }),
   marketingSponsorsRouter
+);
+router.use(
+  "/newsletter",
+  checkPermissions({
+    fallbackRoles: ["admin"]
+  }),
+  newsletterRouter
 );
 router.get(
   "/",

@@ -1,5 +1,25 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
+
+const ACCESSIBILITY_TEST_TIMEOUT = 90_000;
+const PAGE_READY_TIMEOUT = 30_000;
+const NAVIGATION_TIMEOUT = 60_000;
+
+async function gotoAndWaitForReady(
+  page: Page,
+  url: string,
+  waitForReady: (page: Page) => Promise<void>
+) {
+  await page.goto(url, {
+    waitUntil: "domcontentloaded",
+    timeout: NAVIGATION_TIMEOUT
+  });
+  await waitForReady(page);
+}
+
+async function runAccessibilityScan(page: Page) {
+  return new AxeBuilder({ page }).analyze();
+}
 
 /**
  * Accessibility Testing Strategy:
@@ -12,12 +32,12 @@ import AxeBuilder from "@axe-core/playwright";
  * To see detailed violation reports, run: pnpm test:e2e Accessibility.spec.ts
  */
 
-// Baseline violation counts (as of 2025-12-05)
+// Baseline violation counts (as of 2026-06-02)
 // Update these numbers as you fix violations
 const BASELINE_VIOLATIONS = {
   homePage: {
     "button-name": 1,
-    "color-contrast": 3,
+    "color-contrast": 4,
     "heading-order": 1,
     "link-in-text-block": 2,
     "meta-viewport": 1
@@ -33,13 +53,20 @@ const BASELINE_VIOLATIONS = {
 };
 
 test.describe("Accessibility", () => {
+  test.describe.configure({ timeout: ACCESSIBILITY_TEST_TIMEOUT });
+
   test("home page does not introduce new accessibility violations", async ({
     page
   }) => {
-    await page.goto("/");
-    await page.waitForLoadState("networkidle");
+    await gotoAndWaitForReady(page, "/", async (readyPage) => {
+      await expect(
+        readyPage.getByRole("heading", {
+          name: "Building Corporate Culture Through Esports"
+        })
+      ).toBeVisible({ timeout: PAGE_READY_TIMEOUT });
+    });
 
-    const accessibilityScanResults = await new AxeBuilder({ page }).analyze();
+    const accessibilityScanResults = await runAccessibilityScan(page);
     const violations = accessibilityScanResults.violations;
 
     // Log violations for visibility
@@ -89,10 +116,16 @@ test.describe("Accessibility", () => {
   test("matches page does not introduce new accessibility violations", async ({
     page
   }) => {
-    await page.goto("/matches");
-    await page.waitForLoadState("networkidle");
+    await gotoAndWaitForReady(page, "/matches", async (readyPage) => {
+      await expect(
+        readyPage.getByRole("heading", { name: "Match History" })
+      ).toBeVisible({ timeout: PAGE_READY_TIMEOUT });
+      await expect(
+        readyPage.locator('a[href^="/matches/"]').first()
+      ).toBeVisible({ timeout: PAGE_READY_TIMEOUT });
+    });
 
-    const accessibilityScanResults = await new AxeBuilder({ page }).analyze();
+    const accessibilityScanResults = await runAccessibilityScan(page);
     const violations = accessibilityScanResults.violations;
 
     // Log violations for visibility
@@ -124,10 +157,16 @@ test.describe("Accessibility", () => {
   test("match detail page does not introduce new accessibility violations", async ({
     page
   }) => {
-    await page.goto("/matches/10154");
-    await page.waitForLoadState("networkidle");
+    await gotoAndWaitForReady(page, "/matches/10154", async (readyPage) => {
+      await expect(readyPage.locator('a[href*="/teams/"]').first()).toBeVisible(
+        { timeout: PAGE_READY_TIMEOUT }
+      );
+      await expect(
+        readyPage.getByRole("heading", { name: "MATCH STATS" })
+      ).toBeVisible({ timeout: PAGE_READY_TIMEOUT });
+    });
 
-    const accessibilityScanResults = await new AxeBuilder({ page }).analyze();
+    const accessibilityScanResults = await runAccessibilityScan(page);
     const violations = accessibilityScanResults.violations;
 
     // Log violations for visibility

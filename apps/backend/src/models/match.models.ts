@@ -26,13 +26,15 @@ import {
   type UnfinishedMatch,
   type UnfinishedMatchQuery,
   type CalendarMatchTeamsBySide,
-  type MatchTeamSide
+  type MatchTeamSide,
+  type MatchMvp
 } from "@eggosystem/types";
 import {
   fetchPlayerStatsForMatchOrGame,
   matchTopStats
 } from "../shared/fetch-stat";
 import { getConnection } from "../db/mysqlConnection";
+import { BadRequestError } from "../utils/errors";
 import { logger } from "../utils/app-logger";
 import {
   adjustMatchDateTime,
@@ -42,6 +44,7 @@ import {
 import { type PoolConnection } from "mysql2/promise";
 import { getSeasonLeagueExternalIdByExternalIdWithSeasonSettings } from "./season-league-external-id.models";
 import { getSeasonLeagueTeamByExternalId } from "./season-league-team.models";
+import { redisClient } from "../utils/redisClient";
 
 function normalizeMatchTeamSide(value: unknown): MatchTeamSide {
   if (value === "home" || value === "away") return value;
@@ -275,6 +278,136 @@ export const getMatchTopPlayers = async (
   ) satisfies MatchOrGameTopPlayerAwards;
 };
 
+export const MATCH_MVP_BATCH_LIMIT = 50;
+
+const MVP_CACHE_KEY = (id: number) => `mvp:match:${id}`;
+
+type MatchMvpWithStatus = MatchMvp & { match_status: string };
+
+export const getMatchMvps = async (
+  match_ids: number[]
+): Promise<MatchMvp[]> => {
+  if (match_ids.length === 0) {
+    return [];
+  }
+
+  const uniqueIds = [...new Set(match_ids)];
+  if (uniqueIds.length > MATCH_MVP_BATCH_LIMIT) {
+    throw new BadRequestError(
+      `match_ids accepts at most ${MATCH_MVP_BATCH_LIMIT} unique IDs per request`
+    );
+  }
+
+  const cacheKeys = uniqueIds.map(MVP_CACHE_KEY);
+  const cached = await redisClient.mget(cacheKeys);
+
+  const resultMap = new Map<number, MatchMvp>();
+  const missIds: number[] = [];
+
+  uniqueIds.forEach((id, i) => {
+    const hit = cached[i];
+    if (hit) {
+      resultMap.set(id, JSON.parse(hit) as MatchMvp);
+    } else {
+      missIds.push(id);
+    }
+  });
+
+  if (missIds.length > 0) {
+    const placeholders = missIds.map(() => "?").join(", ");
+
+    const query = `
+      WITH player_scores AS (
+        SELECT
+          m.id AS match_id,
+          m.status AS match_status,
+          p.steam_id,
+          p.nickname,
+          p.avatar,
+          stp.team_id,
+          CASE
+            WHEN m.best_of = 1 THEN MAX(ps.kana_rating)
+            ELSE ROUND(AVG(ps.kana_rating), 2)
+          END AS mvp_score
+        FROM PlayerStats ps
+        JOIN SteamPlayers p ON p.steam_id = ps.steam_id
+        JOIN MatchGames mg ON mg.id = ps.match_game_id
+        JOIN Matches m ON m.id = mg.match_id
+        JOIN MatchTeams mt ON mt.match_id = m.id
+        JOIN SeasonTeamPlayers stp ON stp.steam_id = p.steam_id
+          AND stp.season_id = m.season_id
+          AND stp.team_id = mt.team_id
+          AND stp.discarded_at IS NULL
+          AND (stp.match_id = m.id OR stp.match_id IS NULL)
+        LEFT JOIN SeasonTeamPlayers stp2 ON stp.match_id IS NULL
+          AND stp2.steam_id = p.steam_id
+          AND stp2.season_id = m.season_id
+          AND stp2.team_id = mt.team_id
+          AND stp2.discarded_at IS NULL
+          AND stp2.match_id = m.id
+        WHERE m.id IN (${placeholders})
+          AND (stp2.steam_id IS NULL OR stp.match_id IS NOT NULL)
+        GROUP BY m.id, m.status, m.best_of, p.steam_id, p.nickname, p.avatar, stp.team_id
+      ),
+      ranked AS (
+        SELECT
+          match_id,
+          match_status,
+          steam_id,
+          nickname,
+          avatar,
+          team_id,
+          mvp_score,
+          ROW_NUMBER() OVER (
+            PARTITION BY match_id
+            ORDER BY mvp_score DESC, nickname ASC, steam_id ASC
+          ) AS rn
+        FROM player_scores
+      )
+      SELECT
+        match_id,
+        match_status,
+        steam_id,
+        nickname,
+        avatar,
+        team_id,
+        mvp_score AS kana_rating
+      FROM ranked
+      WHERE rn = 1
+    `;
+
+    const fresh = await runQuery<MatchMvpWithStatus[]>(query, missIds);
+
+    const pipeline = redisClient.pipeline();
+    let hasCacheable = false;
+
+    for (const row of fresh) {
+      const { match_status, ...mvp } = row;
+      resultMap.set(mvp.match_id, mvp);
+      if (match_status === MatchStatus.FINISHED) {
+        pipeline.set(MVP_CACHE_KEY(mvp.match_id), JSON.stringify(mvp));
+        hasCacheable = true;
+      }
+    }
+
+    if (hasCacheable) {
+      await pipeline.exec();
+    }
+  }
+
+  return uniqueIds.flatMap((id) => {
+    const mvp = resultMap.get(id);
+    return mvp ? [mvp] : [];
+  });
+};
+
+export const getMatchMvp = async (
+  match_id: number
+): Promise<MatchMvp | null> => {
+  const [mvp] = await getMatchMvps([match_id]);
+  return mvp ?? null;
+};
+
 export const getMatchesByFilters = async ({
   season_ids,
   league_ids,
@@ -282,42 +415,121 @@ export const getMatchesByFilters = async ({
   stages,
   map_ids
 }: ParsedParams) => {
-  // Base query
   const { query, queryParams } = generateQueryWithFilters([
     { column: "m.season_id", value: season_ids },
     { column: "m.league_id", value: league_ids },
     { column: [{ column: "t1.id" }, { column: "t2.id" }], value: team_ids },
-    { column: "m.stage", value: stages },
-    { column: "mmp.map_id", value: map_ids }
+    { column: "m.stage", value: stages }
   ]);
 
-  const mapFilterPresent = map_ids && map_ids.length > 0;
+  // Map filter uses EXISTS so all maps are aggregated into maps_json regardless
+  let mapFilterClause = "";
+  const mapFilterParams: number[] = [];
+  if (map_ids && map_ids.length > 0) {
+    const placeholders = map_ids.map(() => "?").join(", ");
+    mapFilterClause = `AND EXISTS (
+      SELECT 1 FROM MatchGames mg_f
+      WHERE mg_f.match_id = m.id AND mg_f.map_id IN (${placeholders})
+    )`;
+    mapFilterParams.push(...map_ids);
+  }
+
+  const hasFilters = query !== "1=1" || mapFilterParams.length > 0;
 
   const baseQuery = `
-      SELECT 
+      SELECT
           m.id AS match_id,
+          m.\`group\` AS match_group,
+          m.round AS match_round,
+          m.best_of,
+          m.season_id,
           DATE(m.start_timestamp) AS match_date,
+          m.start_timestamp,
+          m.end_timestamp,
           l.name AS league_name,
           m.stage,
-          ${!mapFilterPresent ? "GROUP_CONCAT(DISTINCT map.name SEPARATOR ',') AS map_name," : "map.name AS map_name,"}
-          t1.name AS team1_name,
-          t1.team_logo AS team1_logo,
-          t2.name AS team2_name,
-          t2.team_logo AS team2_logo,
-          MAX(mt1.match_side) AS team1_side,
-          MAX(mt2.match_side) AS team2_side,
+          JSON_ARRAYAGG(JSON_OBJECT(
+              'name', map.name,
+              'home_score', CASE
+                  WHEN mt1.match_side = 'home' THEN tms1.score
+                  WHEN mt2.match_side = 'home' THEN tms2.score
+                  WHEN mt1.match_side = 'away' THEN tms2.score
+                  WHEN mt2.match_side = 'away' THEN tms1.score
+                  ELSE tms1.score
+              END,
+              'away_score', CASE
+                  WHEN mt1.match_side = 'home' THEN tms2.score
+                  WHEN mt2.match_side = 'home' THEN tms1.score
+                  WHEN mt1.match_side = 'away' THEN tms1.score
+                  WHEN mt2.match_side = 'away' THEN tms2.score
+                  ELSE tms2.score
+              END
+          ) ORDER BY mmp.map_order ASC) AS maps_json,
           CASE
-            WHEN m.best_of = 1 THEN ${!mapFilterPresent ? "MAX(mmp.id)" : "mmp.id"}
-            ELSE NULL
-          END AS match_game_id,
-          CASE 
-              ${!mapFilterPresent ? "WHEN m.best_of != 1 THEN SUM(CASE WHEN tms1.score > tms2.score THEN 1 ELSE 0 END)" : "WHEN 1=1 THEN tms1.score"}
-              ELSE tms1.score
-          END AS team1_score,
-          CASE 
-              ${!mapFilterPresent ? "WHEN m.best_of != 1 THEN SUM(CASE WHEN tms1.score < tms2.score THEN 1 ELSE 0 END)" : "WHEN 1=1 THEN tms2.score"}
-              ELSE tms2.score
-          END AS team2_score
+              WHEN MAX(mt1.match_side) = 'home' THEN MAX(t1.name)
+              WHEN MAX(mt2.match_side) = 'home' THEN MAX(t2.name)
+              WHEN MAX(mt1.match_side) = 'away' THEN MAX(t2.name)
+              WHEN MAX(mt2.match_side) = 'away' THEN MAX(t1.name)
+              ELSE MAX(t1.name)
+          END AS home_team_name,
+          CASE
+              WHEN MAX(mt1.match_side) = 'home' THEN MAX(t1.team_logo)
+              WHEN MAX(mt2.match_side) = 'home' THEN MAX(t2.team_logo)
+              WHEN MAX(mt1.match_side) = 'away' THEN MAX(t2.team_logo)
+              WHEN MAX(mt2.match_side) = 'away' THEN MAX(t1.team_logo)
+              ELSE MAX(t1.team_logo)
+          END AS home_team_logo,
+          CASE
+              WHEN MAX(mt1.match_side) = 'home' THEN MAX(t2.name)
+              WHEN MAX(mt2.match_side) = 'home' THEN MAX(t1.name)
+              WHEN MAX(mt1.match_side) = 'away' THEN MAX(t1.name)
+              WHEN MAX(mt2.match_side) = 'away' THEN MAX(t2.name)
+              ELSE MAX(t2.name)
+          END AS away_team_name,
+          CASE
+              WHEN MAX(mt1.match_side) = 'home' THEN MAX(t2.team_logo)
+              WHEN MAX(mt2.match_side) = 'home' THEN MAX(t1.team_logo)
+              WHEN MAX(mt1.match_side) = 'away' THEN MAX(t1.team_logo)
+              WHEN MAX(mt2.match_side) = 'away' THEN MAX(t2.team_logo)
+              ELSE MAX(t2.team_logo)
+          END AS away_team_logo,
+          CASE WHEN m.best_of = 1 THEN MAX(mmp.id) ELSE NULL END AS match_game_id,
+          CASE
+              WHEN m.best_of != 1 THEN
+                  CASE
+                      WHEN MAX(mt1.match_side) = 'home' THEN SUM(CASE WHEN tms1.score > tms2.score THEN 1 ELSE 0 END)
+                      WHEN MAX(mt2.match_side) = 'home' THEN SUM(CASE WHEN tms2.score > tms1.score THEN 1 ELSE 0 END)
+                      WHEN MAX(mt1.match_side) = 'away' THEN SUM(CASE WHEN tms2.score > tms1.score THEN 1 ELSE 0 END)
+                      WHEN MAX(mt2.match_side) = 'away' THEN SUM(CASE WHEN tms1.score > tms2.score THEN 1 ELSE 0 END)
+                      ELSE SUM(CASE WHEN tms1.score > tms2.score THEN 1 ELSE 0 END)
+                  END
+              ELSE
+                  CASE
+                      WHEN MAX(mt1.match_side) = 'home' THEN MAX(tms1.score)
+                      WHEN MAX(mt2.match_side) = 'home' THEN MAX(tms2.score)
+                      WHEN MAX(mt1.match_side) = 'away' THEN MAX(tms2.score)
+                      WHEN MAX(mt2.match_side) = 'away' THEN MAX(tms1.score)
+                      ELSE MAX(tms1.score)
+                  END
+          END AS home_score,
+          CASE
+              WHEN m.best_of != 1 THEN
+                  CASE
+                      WHEN MAX(mt1.match_side) = 'home' THEN SUM(CASE WHEN tms1.score < tms2.score THEN 1 ELSE 0 END)
+                      WHEN MAX(mt2.match_side) = 'home' THEN SUM(CASE WHEN tms2.score < tms1.score THEN 1 ELSE 0 END)
+                      WHEN MAX(mt1.match_side) = 'away' THEN SUM(CASE WHEN tms2.score < tms1.score THEN 1 ELSE 0 END)
+                      WHEN MAX(mt2.match_side) = 'away' THEN SUM(CASE WHEN tms1.score < tms2.score THEN 1 ELSE 0 END)
+                      ELSE SUM(CASE WHEN tms1.score < tms2.score THEN 1 ELSE 0 END)
+                  END
+              ELSE
+                  CASE
+                      WHEN MAX(mt1.match_side) = 'home' THEN MAX(tms2.score)
+                      WHEN MAX(mt2.match_side) = 'home' THEN MAX(tms1.score)
+                      WHEN MAX(mt1.match_side) = 'away' THEN MAX(tms1.score)
+                      WHEN MAX(mt2.match_side) = 'away' THEN MAX(tms2.score)
+                      ELSE MAX(tms2.score)
+                  END
+          END AS away_score
       FROM Matches m
       JOIN MatchGames mmp ON m.id = mmp.match_id
       JOIN Maps map ON map.id = mmp.map_id
@@ -336,12 +548,65 @@ export const getMatchesByFilters = async ({
           FROM MatchTeams
           GROUP BY match_id, team_id
       ) mt2 ON m.id = mt2.match_id AND mt2.team_id = t2.id
-      WHERE ${query} AND m.status = 'FINISHED'
-      GROUP BY 
-          ${!mapFilterPresent ? "m.id, DATE(m.start_timestamp), l.name, m.stage, t1.name, t1.team_logo, t2.name, t2.team_logo" : "mmp.id, l.name, m.stage, t1.name, t1.team_logo, t2.name, t2.team_logo"}
-      ORDER BY 
-          m.start_timestamp DESC ${query === "1=1" ? "LIMIT 500" : "LIMIT 100"}`;
-  return runQuery<MatchesByFilters[]>(baseQuery, queryParams);
+      WHERE ${query} AND m.status = 'FINISHED' ${mapFilterClause}
+      GROUP BY
+          m.id, m.\`group\`, m.round, m.best_of, m.season_id,
+          m.start_timestamp, m.end_timestamp,
+          DATE(m.start_timestamp), l.name, m.stage,
+          t1.name, t1.team_logo, t2.name, t2.team_logo
+      ORDER BY
+          m.start_timestamp DESC ${hasFilters ? "LIMIT 100" : "LIMIT 500"}`;
+
+  type RawRow = {
+    match_id: MatchesByFilters["match_id"];
+    match_game_id: MatchesByFilters["match_game_id"];
+    match_group: MatchesByFilters["match_group"];
+    match_round: MatchesByFilters["match_round"];
+    best_of: MatchesByFilters["best_of"];
+    season_id: MatchesByFilters["season_id"];
+    match_date: MatchesByFilters["match_date"];
+    start_timestamp: MatchesByFilters["start_timestamp"];
+    end_timestamp: MatchesByFilters["end_timestamp"];
+    stage: MatchesByFilters["stage"];
+    league_name: MatchesByFilters["league_name"];
+    maps_json: string;
+    home_team_name: MatchesByFilters["home_team"]["name"];
+    home_team_logo: MatchesByFilters["home_team"]["logo"];
+    home_score: MatchesByFilters["home_team"]["score"];
+    away_team_name: MatchesByFilters["away_team"]["name"];
+    away_team_logo: MatchesByFilters["away_team"]["logo"];
+    away_score: MatchesByFilters["away_team"]["score"];
+  };
+  const rows = await runQuery<RawRow[]>(baseQuery, [
+    ...queryParams,
+    ...mapFilterParams
+  ]);
+  return rows.map((row) => ({
+    match_id: row.match_id,
+    match_game_id: row.match_game_id,
+    match_group: row.match_group,
+    match_round: row.match_round,
+    best_of: row.best_of,
+    season_id: row.season_id,
+    match_date: row.match_date,
+    start_timestamp: row.start_timestamp,
+    end_timestamp: row.end_timestamp,
+    stage: row.stage,
+    league_name: row.league_name,
+    home_team: {
+      name: row.home_team_name,
+      logo: row.home_team_logo,
+      score: row.home_score
+    },
+    away_team: {
+      name: row.away_team_name,
+      logo: row.away_team_logo,
+      score: row.away_score
+    },
+    maps_json: (typeof row.maps_json === "string"
+      ? JSON.parse(row.maps_json)
+      : row.maps_json) as MatchesByFilters["maps_json"]
+  }));
 };
 
 export const getMatchGames = async (match_id: number) => {
@@ -572,29 +837,41 @@ export const getHubMatchesByExternalMatchRoomId = async (
 };
 
 /**
- * Returns a map of external_match_room_id -> our Match.id for playoff matches.
- * Used to link FaceIT bracket matches to our match room pages (first match id when 2xBO1).
+ * Returns a map keyed by "{min_team_id}-{max_team_id}" -> our Match.id for playoff matches.
+ * Used when the bracket API's match IDs differ from the external_match_room_id stored in our DB
+ * (e.g. the FaceIT web bracket API uses internal IDs that do not match the open API format).
+ * Takes the lowest match id for each team pair (handles 2xBO1 by linking to the first match).
  */
-export const getPlayoffMatchIdsByExternalRoomIds = async (
+export const getPlayoffMatchIdsByTeamPairs = async (
   seasonId: number,
-  leagueId: number,
-  externalRoomIds: string[]
+  leagueId: number
 ): Promise<Map<string, number>> => {
-  if (externalRoomIds.length === 0) return new Map();
-  const placeholders = externalRoomIds.map(() => "?").join(", ");
   const query = `
-    SELECT id, external_match_room_id
-    FROM Matches
-    WHERE season_id = ? AND league_id = ? AND stage = 2 AND external_match_room_id IN (${placeholders})
-    ORDER BY external_match_room_id, id ASC
+    SELECT mt1.match_id,
+           LEAST(mt1.team_id, mt2.team_id)    AS min_team_id,
+           GREATEST(mt1.team_id, mt2.team_id) AS max_team_id,
+           m.\`group\`                          AS grp
+    FROM MatchTeams mt1
+    JOIN MatchTeams mt2
+      ON mt1.match_id = mt2.match_id AND mt1.team_id < mt2.team_id
+    JOIN Matches m
+      ON m.id = mt1.match_id
+    WHERE m.season_id = ? AND m.league_id = ? AND m.stage = 2
+    ORDER BY mt1.match_id ASC
   `;
   const rows = await runQuery<
-    Array<{ id: Match["id"]; external_match_room_id: string }>
-  >(query, [seasonId, leagueId, ...externalRoomIds]);
+    Array<{
+      match_id: Match["id"];
+      min_team_id: number;
+      max_team_id: number;
+      grp: number;
+    }>
+  >(query, [seasonId, leagueId]);
   const map = new Map<string, number>();
   for (const row of rows) {
-    if (!map.has(row.external_match_room_id)) {
-      map.set(row.external_match_room_id, row.id);
+    const key = `${row.grp}-${row.min_team_id}-${row.max_team_id}`;
+    if (!map.has(key)) {
+      map.set(key, row.match_id);
     }
   }
   return map;
@@ -1304,7 +1581,9 @@ export const getUnfinishedMatchesBySeason = async (
     JOIN MatchTeams mt2 ON mt2.match_id = m.id AND mt2.team_id > mt1.team_id
     JOIN Teams t2 ON t2.id = mt2.team_id
     WHERE m.season_id = ?
-      AND m.status NOT IN ('FINISHED', 'ABORTED', 'CANCELLED', 'FORFEIT')
+      AND NOT EXISTS (
+        SELECT 1 FROM MatchTeamMapVetoes v WHERE v.match_id = m.id
+      )
     ORDER BY m.start_timestamp ASC
   `;
 
@@ -1334,4 +1613,49 @@ export const ensureMatchIdAndTeamIdMatches = async (
       `Match with id ${matchId} does not match team with id ${teamId}`
     );
   }
+};
+
+export const getMatchTeamIdsByMatchId = async (
+  matchId: number,
+  connection?: PoolConnection
+): Promise<number[]> => {
+  const rows = await runQuery<Array<{ team_id: number }>>(
+    `SELECT team_id FROM MatchTeams WHERE match_id = ?`,
+    [matchId],
+    connection
+  );
+  return rows.map((r) => r.team_id);
+};
+
+export const getGrandFinalMatchBySeasonAndLeague = async (
+  seasonId: number,
+  leagueId: number,
+  connection?: PoolConnection
+): Promise<Match[]> => {
+  return runQuery<Match[]>(
+    `SELECT m.* FROM Matches m
+     JOIN Seasons s ON m.season_id = s.id
+     WHERE m.season_id = ? AND m.league_id = ? AND m.\`group\` = 3
+       AND m.round = CASE WHEN s.grand_final_round_one_only = 1 THEN 1 ELSE 2 END
+     ORDER BY m.id ASC
+     LIMIT 1`,
+    [seasonId, leagueId],
+    connection
+  );
+};
+
+export const getLowerBracketFinalMatch = async (
+  seasonId: number,
+  leagueId: number,
+  stageId: number,
+  connection?: PoolConnection
+): Promise<{ id: number } | null> => {
+  const rows = await runQuery<Array<{ id: number }>>(
+    `SELECT id FROM Matches
+     WHERE season_id = ? AND league_id = ? AND stage = ? AND \`group\` = 2
+     ORDER BY round DESC LIMIT 1`,
+    [seasonId, leagueId, stageId],
+    connection
+  );
+  return rows[0] ?? null;
 };

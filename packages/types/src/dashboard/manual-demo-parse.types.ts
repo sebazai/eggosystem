@@ -16,6 +16,13 @@ export interface ManualDemoParseRequest {
    * @default false
    */
   mark_finished?: boolean;
+  /**
+   * When true and mark_finished is also true, matches that are currently
+   * FORFEIT are also updated to FINISHED. Normally FORFEIT matches are
+   * excluded. Has no effect when mark_finished is false.
+   * @default false
+   */
+  force_finish_forfeit?: boolean;
 }
 
 /**
@@ -39,6 +46,18 @@ export interface ManualDemoParseMarkFinishedResult {
 }
 
 /**
+ * Outcome of grand-final league placement assignment (1st/2nd/3rd).
+ * Present on every manual parse-queue response for helpdesk audit.
+ */
+export interface ManualDemoParsePlacementsResult {
+  applied: boolean;
+  skipped_reason: string | null;
+  season_id: number | null;
+  league_id: number | null;
+  updated: Array<{ team_id: number; placement: number; team_name: string }>;
+}
+
+/**
  * Response body for POST /api/v1/dashboard/demos/manual/parse-queue
  *
  * `mark_finished` is always present so helpdesk staff can audit whether
@@ -50,4 +69,6 @@ export interface ManualDemoParseResponse {
   match_game_id: number;
   /** Always present — reflects the outcome of the mark-finished step. */
   mark_finished: ManualDemoParseMarkFinishedResult;
+  /** Always present — reflects grand-final placement side effect when eligible. */
+  placements: ManualDemoParsePlacementsResult;
 }

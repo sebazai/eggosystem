@@ -38,6 +38,9 @@ import {
   isSteamProfilePublic,
   resolveSteamIdVanityURL
 } from "../services/steam.services";
+import { getPlayerFlashStatsCrossGame } from "../models/flash-events.models";
+import { getPlayerUtilityStatsCrossGame } from "../models/round-utility-summary.models";
+import { getPlayerRoundImpact } from "../models/match-game-analysis.models";
 import {
   getPlayerSkillDiagram,
   getMultiplePlayersSkillDiagrams
@@ -628,4 +631,40 @@ export const getPlayerHistoricalAverageController = async (
   } catch (error) {
     next(error);
   }
+};
+
+export const getPlayerFlashStatsCrossGameController = async (
+  req: RequestWithParams<{ steam_id: string }>,
+  res: Response
+) => {
+  const { steam_id } = req.params;
+  const seasonId = req.query.tournamentId
+    ? parseInt(req.query.tournamentId as string, 10)
+    : undefined;
+  const data = await getPlayerFlashStatsCrossGame(steam_id, { seasonId });
+  res.json(data);
+};
+
+export const getPlayerUtilityStatsCrossGameController = async (
+  req: RequestWithParams<{ steam_id: string }>,
+  res: Response
+) => {
+  const { steam_id } = req.params;
+  const seasonId = req.query.tournamentId
+    ? parseInt(req.query.tournamentId as string, 10)
+    : undefined;
+  const data = await getPlayerUtilityStatsCrossGame(steam_id, { seasonId });
+  res.json(data);
+};
+
+export const getPlayerRoundImpactController = async (
+  req: RequestWithParams<{ steam_id: string }>,
+  res: Response
+) => {
+  const { steam_id } = req.params;
+  const seasonId = req.query.tournamentId
+    ? parseInt(req.query.tournamentId as string, 10)
+    : undefined;
+  const data = await getPlayerRoundImpact(steam_id, { seasonId });
+  res.json(data);
 };

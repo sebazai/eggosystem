@@ -14,6 +14,10 @@ import {
 } from "node:fs";
 import { createRequire } from "node:module";
 import { join } from "node:path";
+import {
+  assertContainerNodeVersion,
+  containerNodePathEnv
+} from "./lib/container-node-path.mjs";
 
 /** Resolvable subpath of a root devDependency (see packages/eslint `exports`) */
 const WORKSPACE_PROOF = "@eggosystem/eslint/base";
@@ -78,7 +82,12 @@ function main() {
 
   if (needInstall) {
     cleanShallowNodeModules(root);
-    execSync("pnpm install", { cwd: root, stdio: "inherit" });
+    assertContainerNodeVersion(execFileSync);
+    execSync("pnpm install", {
+      cwd: root,
+      stdio: "inherit",
+      env: containerNodePathEnv()
+    });
   }
 
   if (!workspacePackageResolvesUnderRoot(root)) {

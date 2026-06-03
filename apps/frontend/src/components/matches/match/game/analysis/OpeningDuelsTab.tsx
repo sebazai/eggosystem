@@ -1,740 +1,722 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { cn } from "@/lib/utils";
-import { NextImageFallback } from "@/components/layout/NextImageFallback";
-import { createTeamLogoUrl } from "@/lib/utils";
+import { orderMatchParticipantsBySideHomeLeft } from "@/lib/order-match-teams-home-left-away";
+import { useGameRoundInfo } from "@/hooks/data/useGameRoundInfo";
+import {
+  AnalysisCard,
+  VersusStat,
+  SegmentBar,
+  Legend,
+  TEAM_A_COLOR,
+  TEAM_B_COLOR,
+  BAD_COLOR,
+  GOOD_COLOR,
+  NEUTRAL_COLOR
+} from "./AnalysisVizComponents";
 import type {
   MatchGameOpeningDuel,
   MatchInfo,
   MatchPlayerStats,
   OpeningDuelTradeStatus
 } from "@eggosystem/types";
-import { orderMatchParticipantsBySideHomeLeft } from "@/lib/order-match-teams-home-left-away";
-
-/* ─────────────────────────────────────────── */
-/*  Types & constants                          */
-/* ─────────────────────────────────────────── */
 
 interface OpeningDuelsTabProps {
+  matchGameId: number;
   duels: MatchGameOpeningDuel[];
   playerStats: MatchPlayerStats[];
   teams: MatchInfo["teams"];
 }
 
-const TRADE_CONFIG: Record<
-  OpeningDuelTradeStatus,
-  { label: string; color: string; ring: string }
-> = {
-  isolated: {
-    label: "Isolated",
-    color: "text-red-300/80",
-    ring: "border-red-300/30 bg-red-300/10"
-  },
-  attempted: {
-    label: "Attempted",
-    color: "text-yellow-200/80",
-    ring: "border-yellow-200/30 bg-yellow-200/10"
-  },
-  converted: {
-    label: "Converted",
-    color: "text-green-400/80",
-    ring: "border-green-400/30 bg-green-400/10"
-  }
+const TRADE_COLORS: Record<OpeningDuelTradeStatus, string> = {
+  isolated: NEUTRAL_COLOR,
+  attempted: BAD_COLOR,
+  converted: GOOD_COLOR
 };
 
-const winPct = (won: number, total: number) =>
-  total > 0 ? Math.round((won / total) * 100) : 0;
-
-const winColor = (pct: number) =>
-  pct >= 60
-    ? "text-green-400/80"
-    : pct >= 40
-      ? "text-yellow-200/80"
-      : "text-red-300/80";
-
-const barColor = (pct: number) =>
-  pct >= 60
-    ? "bg-green-300/50"
-    : pct >= 40
-      ? "bg-yellow-200/45"
-      : "bg-red-300/50";
-
-/* ─────────────────────────────────────────── */
-/*  Mini win bar                               */
-/* ─────────────────────────────────────────── */
-const WinBar = ({
-  pct,
-  label,
-  won,
-  total
-}: {
-  pct: number;
-  label: string;
-  won: number;
-  total: number;
-}) => (
-  <div className="space-y-1">
-    <div className="flex justify-between text-xs">
-      <span className="text-muted-foreground">{label}</span>
-      <span className={cn("font-bold", winColor(pct))}>
-        {pct}%{" "}
-        <span className="text-muted-foreground font-normal">
-          ({won}/{total})
-        </span>
-      </span>
-    </div>
-    <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-      <div
-        className={cn("h-full rounded-full", barColor(pct))}
-        style={{ width: `${pct}%` }}
-      />
-    </div>
-  </div>
-);
-
-/* ─────────────────────────────────────────── */
-/*  Half divider                               */
-/* ─────────────────────────────────────────── */
-const HalfDivider = ({ label }: { label: string }) => (
-  <div className="flex items-center gap-3 my-1">
-    <div className="flex-1 h-px bg-border" />
-    <span className="text-xs font-bold text-muted-foreground border border-border rounded-full px-4 py-1 whitespace-nowrap bg-muted/40">
-      {label}
-    </span>
-    <div className="flex-1 h-px bg-border" />
-  </div>
-);
-
-/* ─────────────────────────────────────────── */
-/*  Trade badge                                */
-/* ─────────────────────────────────────────── */
-const TradeBadge = ({ status }: { status: OpeningDuelTradeStatus }) => {
-  const cfg = TRADE_CONFIG[status];
-  return (
-    <span
-      className={cn(
-        "inline-block text-[11px] font-bold px-2 py-0.5 rounded-full border",
-        cfg.color,
-        cfg.ring
-      )}
-    >
-      {cfg.label}
-    </span>
-  );
+const TRADE_LABELS: Record<OpeningDuelTradeStatus, string> = {
+  isolated: "Isolated",
+  attempted: "Trade failed",
+  converted: "Traded back"
 };
 
-/* ─────────────────────────────────────────── */
-/*  Trade donut                                */
-/* ─────────────────────────────────────────── */
-const TradeDonut = ({
-  isolated,
-  attempted,
-  converted,
-  size = 28
-}: {
-  isolated: number;
-  attempted: number;
-  converted: number;
-  size?: number;
-}) => {
-  const total = isolated + attempted + converted || 1;
-  const r = size / 2 - 3;
-  const circ = 2 * Math.PI * r;
-  const pIso = isolated / total;
-  const pAtt = attempted / total;
-  const pCon = converted / total;
-  const dIso = circ * pIso;
-  const dAtt = circ * pAtt;
-  const dCon = circ * pCon;
-  const cx = size / 2;
-  const cy = size / 2;
-  const segments = [
-    { dash: dIso, offset: 0, color: "#fca5a5" },
-    { dash: dAtt, offset: -dIso, color: "#fde68a" },
-    { dash: dCon, offset: -(dIso + dAtt), color: "#86efac" }
-  ];
-  return (
-    <svg
-      width={size}
-      height={size}
-      style={{ transform: "rotate(-90deg)", flexShrink: 0 }}
-    >
-      <circle
-        cx={cx}
-        cy={cy}
-        r={r}
-        fill="none"
-        stroke="rgba(255,255,255,0.06)"
-        strokeWidth={5}
-      />
-      {segments.map((seg, i) =>
-        seg.dash > 0 ? (
-          <circle
-            key={i}
-            cx={cx}
-            cy={cy}
-            r={r}
-            fill="none"
-            stroke={seg.color}
-            strokeWidth={5}
-            strokeDasharray={`${seg.dash} ${circ}`}
-            strokeDashoffset={seg.offset}
-          />
-        ) : null
-      )}
-    </svg>
-  );
-};
-
-/* ─────────────────────────────────────────── */
-/*  Player stats calculation                   */
-/* ─────────────────────────────────────────── */
-type PlayerDuelStat = {
-  steamId: string;
-  name: string;
-  fk: number;
-  fd: number;
-  fkWon: number;
-  tradeIsolated: number;
-  tradeAttempted: number;
-  tradeConverted: number;
-};
-
-function buildPlayerDuelStats(
-  duels: MatchGameOpeningDuel[],
-  steamIds: string[],
-  nameMap: Map<string, string>
-): PlayerDuelStat[] {
-  const map = new Map<string, PlayerDuelStat>(
-    steamIds.map((id) => [
-      id,
-      {
-        steamId: id,
-        name: nameMap.get(id) ?? id,
-        fk: 0,
-        fd: 0,
-        fkWon: 0,
-        tradeIsolated: 0,
-        tradeAttempted: 0,
-        tradeConverted: 0
-      }
-    ])
-  );
-
-  for (const d of duels) {
-    if (map.has(d.killer_steam_id)) {
-      const s = map.get(d.killer_steam_id)!;
-      s.fk++;
-      if (d.round_won_by === d.killer_team) s.fkWon++;
-    }
-    if (map.has(d.victim_steam_id)) {
-      const s = map.get(d.victim_steam_id)!;
-      s.fd++;
-      if (d.trade === "isolated") s.tradeIsolated++;
-      if (d.trade === "attempted") s.tradeAttempted++;
-      if (d.trade === "converted") s.tradeConverted++;
-    }
-  }
-
-  return Array.from(map.values()).sort((a, b) => b.fk + b.fd - (a.fk + a.fd));
-}
-
-/* ─────────────────────────────────────────── */
-/*  Player duel row                            */
-/* ─────────────────────────────────────────── */
-const PlayerDuelRow = ({
-  s,
-  teamColor
-}: {
-  s: PlayerDuelStat;
-  teamColor: string;
-}) => {
-  const fkPct = s.fk > 0 ? Math.round((s.fkWon / s.fk) * 100) : 0;
-  const fdTotal = s.tradeIsolated + s.tradeAttempted + s.tradeConverted;
-
-  return (
-    <div className="px-3 py-2 rounded-lg bg-muted/30 border border-border/40 space-y-1.5">
-      {/* Name + FK/FD */}
-      <div className="flex items-center justify-between">
-        <span className={cn("text-sm font-bold", teamColor)}>{s.name}</span>
-        <div className="flex items-center gap-2 text-xs">
-          <span className="font-bold text-green-400/80">{s.fk} FK</span>
-          <span className="text-muted-foreground">/</span>
-          <span className="font-bold text-red-300/80">{s.fd} FD</span>
-        </div>
-      </div>
-
-      {/* FK ratio bar */}
-      {s.fk + s.fd > 0 && (
-        <div className="space-y-0.5">
-          <div className="flex h-1.5 rounded-full overflow-hidden">
-            <div
-              className="bg-green-300/50"
-              style={{ width: `${(s.fk / (s.fk + s.fd)) * 100}%` }}
-            />
-            <div className="flex-1 bg-red-300/50" />
-          </div>
-          <p className={cn("text-xs font-bold", winColor(fkPct))}>
-            {fkPct}% round win after FK
-          </p>
-        </div>
-      )}
-
-      {/* Trade donut + legend */}
-      {fdTotal > 0 && (
-        <div className="flex items-center gap-2">
-          <TradeDonut
-            isolated={s.tradeIsolated}
-            attempted={s.tradeAttempted}
-            converted={s.tradeConverted}
-          />
-          <div className="text-[11px] leading-[1.7]">
-            <div>
-              <span className="font-bold text-red-300/80">
-                {s.tradeIsolated}
-              </span>
-              <span className="text-muted-foreground"> isolated · </span>
-              <span className="font-bold text-yellow-200/80">
-                {s.tradeAttempted}
-              </span>
-              <span className="text-muted-foreground"> attempted · </span>
-              <span className="font-bold text-green-400/80">
-                {s.tradeConverted}
-              </span>
-              <span className="text-muted-foreground"> converted</span>
-            </div>
-            {s.tradeIsolated > 1 && (
-              <div className="inline-block mt-0.5 text-[10px] font-semibold text-red-300/80 border border-red-300/20 bg-red-300/5 rounded px-1.5 py-0.5">
-                bad positioning — {s.tradeIsolated} isolated
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
-/* ─────────────────────────────────────────── */
-/*  Round duel card                            */
-/* ─────────────────────────────────────────── */
-const DuelCard = ({
-  duel,
-  nameMap
-}: {
-  duel: MatchGameOpeningDuel;
-  nameMap: Map<string, string>;
-}) => {
-  const tWon = duel.round_won_by === "T";
-  const killerName = nameMap.get(duel.killer_steam_id) ?? duel.killer_steam_id;
-  const victimName = nameMap.get(duel.victim_steam_id) ?? duel.victim_steam_id;
-  const tradeCfg = TRADE_CONFIG[duel.trade];
-
-  return (
-    <div
-      className={cn(
-        "rounded-lg border bg-card overflow-hidden mb-2",
-        tWon
-          ? "border-l-[3px] border-l-amber-300/50"
-          : "border-l-[3px] border-l-sky-300/50"
-      )}
-    >
-      {/* Header */}
-      <div className="flex items-center gap-2 px-3 py-1.5 bg-muted/40 border-b border-border/50 text-xs">
-        <span className="font-mono font-bold">R{duel.round_number}</span>
-        <span className="text-muted-foreground">
-          @{Math.round(duel.time_in_round)}s
-        </span>
-        <span className="bg-muted rounded px-1.5 py-0.5">{duel.weapon}</span>
-        {duel.is_headshot && (
-          <span className="text-orange-400/80 font-bold">HS</span>
-        )}
-        <div className="flex-1" />
-        <span
-          className={cn(
-            "text-[11px] font-bold rounded-full px-2.5 py-0.5 border",
-            tWon
-              ? "text-amber-300/80 border-amber-300/30 bg-amber-300/10"
-              : "text-sky-300/80 border-sky-300/30 bg-sky-300/10"
-          )}
-        >
-          {tWon ? "T won" : "CT won"}
-        </span>
-      </div>
-
-      {/* Duel row */}
-      <div className="flex items-center gap-2 px-3 py-2 text-sm">
-        <span
-          className={cn(
-            "text-[10px] font-bold rounded px-1.5 py-0.5",
-            duel.killer_team === "T"
-              ? "text-amber-300/80 bg-amber-300/10"
-              : "text-sky-300/80 bg-sky-300/10"
-          )}
-        >
-          {duel.killer_team}
-        </span>
-        <span
-          className={cn(
-            "font-bold",
-            duel.killer_team === "T" ? "text-amber-300/80" : "text-sky-300/80"
-          )}
-        >
-          {killerName}
-        </span>
-        <span className="text-muted-foreground text-xs">opened</span>
-        <span className="text-muted-foreground">→</span>
-        <span
-          className={cn(
-            "text-[10px] font-bold rounded px-1.5 py-0.5",
-            duel.victim_team === "T"
-              ? "text-amber-300/80 bg-amber-300/10"
-              : "text-sky-300/80 bg-sky-300/10"
-          )}
-        >
-          {duel.victim_team}
-        </span>
-        <span
-          className={cn(
-            "font-bold",
-            duel.victim_team === "T" ? "text-amber-300/80" : "text-sky-300/80"
-          )}
-        >
-          {victimName}
-        </span>
-        <div className="flex-1" />
-        <TradeBadge status={duel.trade} />
-      </div>
-
-      {/* Trade explanation */}
-      <div className="px-3 pb-2">
-        <p className={cn("text-[10px]", tradeCfg.color)}>
-          {duel.trade === "isolated" &&
-            `${victimName} died alone — no teammate within trade range`}
-          {duel.trade === "attempted" &&
-            `Trade was attempted but ${killerName} survived`}
-          {duel.trade === "converted" &&
-            `${killerName} was killed in return — 1-for-1 exchange`}
-        </p>
-      </div>
-    </div>
-  );
-};
-
-/* ─────────────────────────────────────────── */
-/*  Main tab                                   */
-/* ─────────────────────────────────────────── */
-export const OpeningDuelsTab = ({
+/* ─── Opener strip ───────────────────────────────────────────────── */
+function OpenerStrip({
   duels,
-  playerStats,
-  teams
-}: OpeningDuelsTabProps) => {
-  const [section, setSection] = useState<"players" | "rounds">("players");
-
-  // Determine half boundary: rounds up to switchover are half 1
-  const sortedRounds = useMemo(
+  playerNames,
+  regulationRounds
+}: {
+  duels: MatchGameOpeningDuel[];
+  playerNames: Map<string, string>;
+  regulationRounds: number;
+}) {
+  const [hovered, setHovered] = useState<number | null>(null);
+  const sorted = useMemo(
     () => [...duels].sort((a, b) => a.round_number - b.round_number),
     [duels]
   );
 
-  const { teamA, teamB } = useMemo(() => {
+  if (!sorted.length) return null;
+  const halftime = regulationRounds / 2;
+  const hasOvertime =
+    sorted.length > 0 &&
+    sorted[sorted.length - 1]!.round_number > regulationRounds;
+
+  const cellMinW = 32;
+  const numSeps = hasOvertime ? 2 : 1;
+  const minContentW = sorted.length * (cellMinW + 2) + numSeps * 4;
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex gap-2 items-start">
+        {/* Static row labels */}
+        <div className="flex flex-col gap-2 shrink-0 text-[9px] text-muted-foreground/50 uppercase tracking-wide">
+          <span className="h-[32px] flex items-center">First kill</span>
+          <span className="h-[32px] flex items-center">Round won</span>
+          <span className="h-[9px]" />
+        </div>
+
+        {/* Scrollable bar + number rows */}
+        <div
+          className="-mr-4 pr-4 sm:mr-0 sm:pr-0 overflow-x-auto flex-1 min-w-0"
+          style={{ WebkitOverflowScrolling: "touch" }}
+        >
+          <div
+            style={{
+              minWidth: minContentW,
+              display: "flex",
+              flexDirection: "column",
+              gap: 4
+            }}
+          >
+            {/* FK row */}
+            <div className="flex items-center gap-0.5 w-full">
+              {sorted.map((d, idx) => {
+                const isHalf = idx === halftime;
+                const isOT = hasOvertime && idx === regulationRounds;
+                const dimmed = hovered !== null && hovered !== d.round_number;
+                const killerTeamColor =
+                  d.killer_team === "CT" ? TEAM_A_COLOR : TEAM_B_COLOR;
+                return (
+                  <React.Fragment key={d.round_number}>
+                    {(isHalf || isOT) && (
+                      <div
+                        style={{
+                          width: 2,
+                          height: 32,
+                          background: "var(--border)",
+                          borderRadius: 9999,
+                          flexShrink: 0
+                        }}
+                      />
+                    )}
+                    <div
+                      onMouseEnter={() => setHovered(d.round_number)}
+                      onMouseLeave={() => setHovered(null)}
+                      style={{
+                        flex: 1,
+                        minWidth: cellMinW,
+                        height: 32,
+                        background: killerTeamColor,
+                        borderRadius: 3,
+                        opacity: dimmed ? 0.2 : 1,
+                        cursor: "default",
+                        transition: "opacity 0.1s"
+                      }}
+                    />
+                  </React.Fragment>
+                );
+              })}
+            </div>
+
+            {/* Round won row */}
+            <div className="flex items-center gap-0.5 w-full">
+              {sorted.map((d, idx) => {
+                const isHalf = idx === halftime;
+                const isOT = hasOvertime && idx === regulationRounds;
+                const dimmed = hovered !== null && hovered !== d.round_number;
+                const winColor =
+                  d.round_won_by === "CT" ? TEAM_A_COLOR : TEAM_B_COLOR;
+                return (
+                  <React.Fragment key={d.round_number}>
+                    {(isHalf || isOT) && (
+                      <div
+                        style={{
+                          width: 2,
+                          height: 32,
+                          background: "var(--border)",
+                          borderRadius: 9999,
+                          flexShrink: 0
+                        }}
+                      />
+                    )}
+                    <div
+                      onMouseEnter={() => setHovered(d.round_number)}
+                      onMouseLeave={() => setHovered(null)}
+                      style={{
+                        flex: 1,
+                        minWidth: cellMinW,
+                        height: 32,
+                        background: winColor,
+                        borderRadius: 3,
+                        opacity: dimmed ? 0.2 : 1,
+                        transition: "opacity 0.1s"
+                      }}
+                    />
+                  </React.Fragment>
+                );
+              })}
+            </div>
+
+            {/* Round number labels */}
+            <div className="flex items-center gap-0.5 w-full">
+              {sorted.map((d, idx) => {
+                const isHalf = idx === halftime;
+                const isOT = hasOvertime && idx === regulationRounds;
+                return (
+                  <React.Fragment key={d.round_number}>
+                    {(isHalf || isOT) && (
+                      <div style={{ width: 2, flexShrink: 0 }} />
+                    )}
+                    <div
+                      style={{
+                        flex: 1,
+                        minWidth: cellMinW,
+                        textAlign: "center",
+                        fontSize: 9,
+                        color: isOT
+                          ? "var(--kanaliiga-orange)"
+                          : "var(--muted-foreground)",
+                        opacity: hovered === d.round_number ? 1 : 0.4
+                      }}
+                    >
+                      {d.round_number}
+                    </div>
+                  </React.Fragment>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Hover readout */}
+      <div className="text-[11px] text-muted-foreground/80 min-h-[18px]">
+        {hovered !== null &&
+          (() => {
+            const d = sorted.find((x) => x.round_number === hovered);
+            if (!d) return null;
+            const fkName = playerNames.get(d.killer_steam_id);
+            const victimName = playerNames.get(d.victim_steam_id);
+            return (
+              <span>
+                <span className="font-semibold text-foreground">
+                  R{d.round_number}
+                </span>
+                {" · "}
+                {fkName && (
+                  <>
+                    <span className="font-medium">{fkName}</span> → {victimName}
+                  </>
+                )}
+                {" · "}
+                {d.weapon}
+                {d.is_headshot ? " HS" : ""}
+                {" · "}
+                <span
+                  style={{
+                    color: d.round_won_by === "CT" ? TEAM_A_COLOR : TEAM_B_COLOR
+                  }}
+                >
+                  {d.round_won_by} won
+                </span>
+              </span>
+            );
+          })()}
+      </div>
+    </div>
+  );
+}
+
+/* ─── Entry player row ───────────────────────────────────────────── */
+function EntryPlayerRow({
+  name,
+  fk,
+  fd,
+  fkWins,
+  trades,
+  color
+}: {
+  name: string;
+  fk: number;
+  fd: number;
+  fkWins: number;
+  trades: Record<OpeningDuelTradeStatus, number>;
+  color: string;
+}) {
+  const [hoveredSegment, setHoveredSegment] =
+    useState<OpeningDuelTradeStatus | null>(null);
+  const winPct = fk === 0 ? 0 : Math.round((fkWins / fk) * 100);
+  const totalTrades = Object.values(trades).reduce((s, n) => s + n, 0);
+
+  return (
+    <div className="flex flex-col gap-1 py-2 border-b border-border/20 last:border-0">
+      <div className="flex items-center gap-1.5">
+        <span
+          style={{
+            width: 3,
+            height: 14,
+            background: color,
+            borderRadius: 9999,
+            display: "inline-block",
+            flexShrink: 0
+          }}
+        />
+        <span className="text-sm font-semibold truncate">{name}</span>
+      </div>
+      <div className="flex items-center gap-3 text-xs pl-[11px]">
+        <span className="tabular-nums">
+          <span className="font-bold" style={{ color }}>
+            {fk}
+          </span>
+          <span className="text-muted-foreground/60 mx-0.5">FK</span>
+        </span>
+        <span className="tabular-nums">
+          <span className="font-bold text-muted-foreground">{fd}</span>
+          <span className="text-muted-foreground/60 mx-0.5">FD</span>
+        </span>
+        <span className="tabular-nums text-muted-foreground">
+          {winPct}% win after FK
+        </span>
+      </div>
+      {totalTrades > 0 && (
+        <div className="flex items-center gap-2 pl-[11px]">
+          <span className="text-[10px] text-muted-foreground/50 shrink-0">
+            FD trade:
+          </span>
+          <div className="relative flex-1" style={{ minWidth: 60 }}>
+            <div
+              className="flex h-2 rounded-full overflow-hidden"
+              style={{ background: "var(--muted)" }}
+            >
+              {(
+                [
+                  "isolated",
+                  "attempted",
+                  "converted"
+                ] as OpeningDuelTradeStatus[]
+              ).map((k) => {
+                const v = trades[k];
+                if (!v) return null;
+                const isHovered = hoveredSegment === k;
+                return (
+                  <div
+                    key={k}
+                    onMouseEnter={() => setHoveredSegment(k)}
+                    onMouseLeave={() => setHoveredSegment(null)}
+                    style={{
+                      flex: v,
+                      background: TRADE_COLORS[k],
+                      cursor: "default",
+                      outline: isHovered
+                        ? `1.5px solid var(--foreground)`
+                        : "none",
+                      outlineOffset: -1,
+                      transition: "outline 0s"
+                    }}
+                  />
+                );
+              })}
+            </div>
+            {hoveredSegment && (
+              <div
+                className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 whitespace-nowrap rounded px-1.5 py-0.5 text-[10px] font-medium pointer-events-none z-10"
+                style={{
+                  background: "var(--popover)",
+                  border: "1px solid var(--border)",
+                  color: TRADE_COLORS[hoveredSegment]
+                }}
+              >
+                {trades[hoveredSegment]}× {TRADE_LABELS[hoveredSegment]}
+              </div>
+            )}
+          </div>
+          <span className="text-[10px] text-muted-foreground/50 shrink-0 tabular-nums">
+            {totalTrades}
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── Main component ─────────────────────────────────────────────── */
+export const OpeningDuelsTab = ({
+  matchGameId,
+  duels,
+  playerStats,
+  teams
+}: OpeningDuelsTabProps) => {
+  const { roundInfo } = useGameRoundInfo(matchGameId);
+  const regulationRounds = useMemo(
+    () => roundInfo?.[0]?.regulation_rounds ?? duels.length * 2,
+    [roundInfo, duels.length]
+  );
+
+  const [teamA, teamB] = useMemo(() => {
     const list = orderMatchParticipantsBySideHomeLeft(Object.values(teams));
-    return { teamA: list[0]!, teamB: list[1]! };
+    return [list[0], list[1]] as const;
   }, [teams]);
 
-  // Build steam_id → nickname map
-  const nameMap = useMemo(() => {
+  const teamAId = teamA?.id ?? 0;
+  const teamBId = teamB?.id ?? 0;
+
+  const playerNames = useMemo(() => {
     const m = new Map<string, string>();
-    for (const ps of playerStats) {
-      m.set(String(ps.steam_id), ps.nickname);
-    }
+    playerStats.forEach((p) => m.set(p.steam_id, p.nickname));
     return m;
   }, [playerStats]);
 
-  // Team steam ID sets
-  const teamASteamIds = useMemo(
-    () =>
-      playerStats
-        .filter((ps) => ps.team_id === teamA.id)
-        .map((ps) => String(ps.steam_id)),
-    [playerStats, teamA]
-  );
-  const teamBSteamIds = useMemo(
-    () =>
-      playerStats
-        .filter((ps) => ps.team_id === teamB.id)
-        .map((ps) => String(ps.steam_id)),
-    [playerStats, teamB]
-  );
+  // Team KPIs
+  const kpis = useMemo(() => {
+    const initKpi = () => ({
+      openers: 0,
+      winAfterFK: 0,
+      totalFK: 0,
+      recovery: 0,
+      totalFD: 0
+    });
+    const a = initKpi();
+    const b = initKpi();
 
-  const teamAStats = useMemo(
-    () => buildPlayerDuelStats(duels, teamASteamIds, nameMap),
-    [duels, teamASteamIds, nameMap]
-  );
-  const teamBStats = useMemo(
-    () => buildPlayerDuelStats(duels, teamBSteamIds, nameMap),
-    [duels, teamBSteamIds, nameMap]
-  );
+    // Map steamId → teamId
+    const steamToTeam = new Map<string, number>();
+    playerStats.forEach((p) => steamToTeam.set(p.steam_id, p.team_id));
 
-  // CS2: first half is always rounds 1–12, second half 13–24, OT from 25
-  const halfBoundary = 12;
+    for (const d of duels) {
+      const killerTeamId = steamToTeam.get(d.killer_steam_id) ?? 0;
+      const victimTeamId = steamToTeam.get(d.victim_steam_id) ?? 0;
 
-  const half1 = sortedRounds.filter((d) => d.round_number <= halfBoundary);
-  const half2 = sortedRounds.filter((d) => d.round_number > halfBoundary);
+      // FK for killer's team
+      if (killerTeamId === teamAId) {
+        a.openers++;
+        a.totalFK++;
+        const killerWon = d.round_won_by === d.killer_team;
+        if (killerWon) a.winAfterFK++;
+      } else if (killerTeamId === teamBId) {
+        b.openers++;
+        b.totalFK++;
+        const killerWon = d.round_won_by === d.killer_team;
+        if (killerWon) b.winAfterFK++;
+      }
 
-  // Figure out which side team A was on in half 1 (from first duel)
-  const teamAHalf1Side = useMemo(() => {
-    const firstDuel = half1.find(
-      (d) =>
-        teamASteamIds.includes(d.killer_steam_id) ||
-        teamASteamIds.includes(d.victim_steam_id)
+      // Recovery for victim's team
+      if (victimTeamId === teamAId) {
+        a.totalFD++;
+        const victimWon = d.round_won_by !== d.killer_team;
+        if (victimWon) a.recovery++;
+      } else if (victimTeamId === teamBId) {
+        b.totalFD++;
+        const victimWon = d.round_won_by !== d.killer_team;
+        if (victimWon) b.recovery++;
+      }
+    }
+
+    return {
+      a: {
+        openers: a.openers,
+        winAfterFKPct:
+          a.totalFK === 0 ? 0 : Math.round((a.winAfterFK / a.totalFK) * 100),
+        recoveryPct:
+          a.totalFD === 0 ? 0 : Math.round((a.recovery / a.totalFD) * 100)
+      },
+      b: {
+        openers: b.openers,
+        winAfterFKPct:
+          b.totalFK === 0 ? 0 : Math.round((b.winAfterFK / b.totalFK) * 100),
+        recoveryPct:
+          b.totalFD === 0 ? 0 : Math.round((b.recovery / b.totalFD) * 100)
+      }
+    };
+  }, [duels, playerStats, teamAId, teamBId]);
+
+  // Trade outcomes
+  const tradeOutcomes = useMemo(() => {
+    const counts: Record<OpeningDuelTradeStatus, number> = {
+      isolated: 0,
+      attempted: 0,
+      converted: 0
+    };
+    duels.forEach((d) => counts[d.trade]++);
+    return counts;
+  }, [duels]);
+
+  // Per-player entry stats
+  const playerEntry = useMemo(() => {
+    const map = new Map<
+      string,
+      {
+        fk: number;
+        fd: number;
+        fkWins: number;
+        trades: Record<OpeningDuelTradeStatus, number>;
+      }
+    >();
+
+    const steamToTeam = new Map<string, number>();
+    playerStats.forEach((p) => steamToTeam.set(p.steam_id, p.team_id));
+
+    for (const d of duels) {
+      if (!map.has(d.killer_steam_id)) {
+        map.set(d.killer_steam_id, {
+          fk: 0,
+          fd: 0,
+          fkWins: 0,
+          trades: { isolated: 0, attempted: 0, converted: 0 }
+        });
+      }
+      if (!map.has(d.victim_steam_id)) {
+        map.set(d.victim_steam_id, {
+          fk: 0,
+          fd: 0,
+          fkWins: 0,
+          trades: { isolated: 0, attempted: 0, converted: 0 }
+        });
+      }
+
+      const killer = map.get(d.killer_steam_id)!;
+      killer.fk++;
+      if (d.round_won_by === d.killer_team) killer.fkWins++;
+
+      const victim = map.get(d.victim_steam_id)!;
+      victim.fd++;
+      victim.trades[d.trade]++;
+    }
+
+    return map;
+  }, [duels, playerStats]);
+
+  const teamAPlayers = playerStats
+    .filter((p) => p.team_id === teamAId)
+    .sort(
+      (a, b) =>
+        (playerEntry.get(b.steam_id)?.fk ?? 0) -
+        (playerEntry.get(a.steam_id)?.fk ?? 0)
     );
-    if (!firstDuel) return "CT";
-    if (teamASteamIds.includes(firstDuel.killer_steam_id))
-      return firstDuel.killer_team;
-    return firstDuel.victim_team;
-  }, [half1, teamASteamIds]);
 
-  const teamBHalf1Side: "CT" | "T" = teamAHalf1Side === "CT" ? "T" : "CT";
+  const teamBPlayers = playerStats
+    .filter((p) => p.team_id === teamBId)
+    .sort(
+      (a, b) =>
+        (playerEntry.get(b.steam_id)?.fk ?? 0) -
+        (playerEntry.get(a.steam_id)?.fk ?? 0)
+    );
 
-  // Summary stats
-  const totalRounds = duels.length;
-
-  const teamAFkDuels = duels.filter((d) =>
-    teamASteamIds.includes(d.killer_steam_id)
-  );
-  const teamBFkDuels = duels.filter((d) =>
-    teamBSteamIds.includes(d.killer_steam_id)
-  );
-
-  const teamAFkWon = teamAFkDuels.filter(
-    (d) => d.round_won_by === d.killer_team
-  ).length;
-  const teamBFkWon = teamBFkDuels.filter(
-    (d) => d.round_won_by === d.killer_team
-  ).length;
-
-  const teamAFkPct = winPct(teamAFkWon, teamAFkDuels.length);
-  const teamBFkPct = winPct(teamBFkWon, teamBFkDuels.length);
-
-  const teamARecovery = duels.filter((d) =>
-    teamASteamIds.includes(d.victim_steam_id)
-  );
-  const teamBRecovery = duels.filter((d) =>
-    teamBSteamIds.includes(d.victim_steam_id)
-  );
-
-  const teamARecoveredWon = teamARecovery.filter(
-    (d) => d.round_won_by !== d.killer_team
-  ).length;
-  const teamBRecoveredWon = teamBRecovery.filter(
-    (d) => d.round_won_by !== d.killer_team
-  ).length;
-
-  const teamARecPct = winPct(teamARecoveredWon, teamARecovery.length);
-  const teamBRecPct = winPct(teamBRecoveredWon, teamBRecovery.length);
-
-  const isolatedCount = duels.filter((d) => d.trade === "isolated").length;
-  const attemptedCount = duels.filter((d) => d.trade === "attempted").length;
-  const convertedCount = duels.filter((d) => d.trade === "converted").length;
+  const totalTrades = Object.values(tradeOutcomes).reduce((s, n) => s + n, 0);
 
   return (
-    <div className="space-y-5">
-      {/* ── Summary stat cards ── */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {[
-          {
-            label: `${teamA.name} win after FK`,
-            value: `${teamAFkPct}%`,
-            sub: `${teamAFkWon}/${teamAFkDuels.length} rounds`,
-            color: winColor(teamAFkPct)
-          },
-          {
-            label: `${teamB.name} win after FK`,
-            value: `${teamBFkPct}%`,
-            sub: `${teamBFkWon}/${teamBFkDuels.length} rounds`,
-            color: winColor(teamBFkPct)
-          },
-          {
-            label: `${teamA.name} recovery rate`,
-            value: `${teamARecPct}%`,
-            sub: `won ${teamARecoveredWon}/${teamARecovery.length} after losing duel`,
-            color: winColor(teamARecPct)
-          },
-          {
-            label: `${teamB.name} recovery rate`,
-            value: `${teamBRecPct}%`,
-            sub: `won ${teamBRecoveredWon}/${teamBRecovery.length} after losing duel`,
-            color: winColor(teamBRecPct)
-          }
-        ].map(({ label, value, sub, color }) => (
-          <div key={label} className="rounded-lg border bg-card p-3 space-y-1">
-            <p className="text-xs text-muted-foreground">{label}</p>
-            <p className={cn("text-2xl font-bold", color)}>{value}</p>
-            <p className="text-[11px] text-muted-foreground">{sub}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* ── Distribution + Trade overview ── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="rounded-lg border bg-card p-4 space-y-3">
-          <p className="text-sm font-semibold">Opening kill share</p>
-          <WinBar
-            pct={winPct(teamAFkDuels.length, totalRounds)}
-            label={`${teamA.name} got the opener`}
-            won={teamAFkDuels.length}
-            total={totalRounds}
+    <div className="flex flex-col gap-3.5">
+      {/* First-blood battle */}
+      <AnalysisCard
+        title="First-blood battle"
+        sub="Who wins the opening duel — and whether it converts"
+        right={
+          <Legend
+            items={[
+              { label: teamA?.name ?? "Team A", color: TEAM_A_COLOR },
+              { label: teamB?.name ?? "Team B", color: TEAM_B_COLOR }
+            ]}
           />
-          <WinBar
-            pct={winPct(teamBFkDuels.length, totalRounds)}
-            label={`${teamB.name} got the opener`}
-            won={teamBFkDuels.length}
-            total={totalRounds}
+        }
+      >
+        <div className="flex flex-col gap-4">
+          <VersusStat
+            label="First kills won"
+            aVal={kpis.a.openers}
+            bVal={kpis.b.openers}
+            mode="share"
+          />
+          <VersusStat
+            label="Round win after first kill"
+            aVal={kpis.a.winAfterFKPct}
+            bVal={kpis.b.winAfterFKPct}
+            mode="pct"
+            aText={`${kpis.a.winAfterFKPct}%`}
+            bText={`${kpis.b.winAfterFKPct}%`}
+          />
+          <VersusStat
+            label="Recovery — won round after losing the opener"
+            aVal={kpis.a.recoveryPct}
+            bVal={kpis.b.recoveryPct}
+            mode="pct"
+            aText={`${kpis.a.recoveryPct}%`}
+            bText={`${kpis.b.recoveryPct}%`}
           />
         </div>
+      </AnalysisCard>
 
-        <div className="rounded-lg border bg-card p-4 space-y-3">
-          <p className="text-sm font-semibold">Trade outcomes</p>
-          <div className="flex items-center gap-4">
-            <TradeDonut
-              isolated={isolatedCount}
-              attempted={attemptedCount}
-              converted={convertedCount}
-              size={56}
-            />
-            <div className="text-xs space-y-1 flex-1">
-              <div>
-                <span className="font-bold text-red-300/80">
-                  {isolatedCount}
-                </span>
-                <span className="text-muted-foreground">
-                  {" "}
-                  isolated ({winPct(isolatedCount, totalRounds)}%)
-                </span>
-              </div>
-              <div>
-                <span className="font-bold text-yellow-200/80">
-                  {attemptedCount}
-                </span>
-                <span className="text-muted-foreground">
-                  {" "}
-                  attempted, failed ({winPct(attemptedCount, totalRounds)}%)
-                </span>
-              </div>
-              <div>
-                <span className="font-bold text-green-400/80">
-                  {convertedCount}
-                </span>
-                <span className="text-muted-foreground">
-                  {" "}
-                  converted ({winPct(convertedCount, totalRounds)}%)
-                </span>
-              </div>
-            </div>
-          </div>
-          <p className="text-[10px] text-muted-foreground border-t border-border/50 pt-2">
-            Isolated = no kill-back within ~5s · Attempted = trade tried but
-            failed · Converted = 1-for-1
-          </p>
-        </div>
-      </div>
-
-      {/* ── Section tabs ── */}
-      <div className="flex gap-2 flex-wrap">
-        {(
-          [
-            { key: "players", label: "Player duels" },
-            { key: "rounds", label: "Round-by-round" }
-          ] as const
-        ).map(({ key, label }) => (
-          <button
-            key={key}
-            onClick={() => setSection(key)}
-            className={cn(
-              "px-4 py-1.5 rounded-full text-xs font-semibold border transition-colors",
-              section === key
-                ? "bg-accent text-accent-foreground border-accent"
-                : "bg-transparent text-muted-foreground border-border hover:border-foreground/30"
-            )}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-
-      {/* ── Player duels ── */}
-      {section === "players" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {[
-            { team: teamA, stats: teamAStats, color: "text-sky-300/80" },
-            { team: teamB, stats: teamBStats, color: "text-amber-300/80" }
-          ].map(({ team, stats, color }) => (
-            <div key={team.id}>
-              <div className="flex items-center gap-2 mb-3">
-                <NextImageFallback
-                  src={createTeamLogoUrl(team.logo)}
-                  alt={team.name}
-                  width={20}
-                  height={20}
-                  className="rounded-sm"
-                />
-                <span className={cn("text-sm font-bold", color)}>
-                  {team.name}
-                </span>
-              </div>
-              <div className="text-[10px] text-muted-foreground flex gap-3 mb-2">
-                <span>
-                  <span className="text-green-400/80 font-bold">■</span> FK win%
-                </span>
-                <span>
-                  <span className="text-red-300/80 font-bold">■</span> isolated
-                </span>
-                <span>
-                  <span className="text-yellow-200/80 font-bold">■</span>{" "}
-                  attempted
-                </span>
-                <span>
-                  <span className="text-green-400/80 font-bold">■</span>{" "}
-                  converted
-                </span>
-              </div>
-              <div className="space-y-1.5">
-                {stats.map((s) => (
-                  <PlayerDuelRow key={s.steamId} s={s} teamColor={color} />
-                ))}
-              </div>
-            </div>
+      {/* What happened to the opener */}
+      <AnalysisCard
+        title="What happened to the opening kill"
+        sub={`${totalTrades} opening duels total`}
+        right={
+          <Legend
+            items={[
+              { label: TRADE_LABELS.isolated, color: TRADE_COLORS.isolated },
+              { label: TRADE_LABELS.attempted, color: TRADE_COLORS.attempted },
+              { label: TRADE_LABELS.converted, color: TRADE_COLORS.converted }
+            ]}
+          />
+        }
+      >
+        <SegmentBar
+          height={16}
+          segments={[
+            {
+              label: TRADE_LABELS.isolated,
+              value: tradeOutcomes.isolated,
+              color: TRADE_COLORS.isolated
+            },
+            {
+              label: TRADE_LABELS.attempted,
+              value: tradeOutcomes.attempted,
+              color: TRADE_COLORS.attempted
+            },
+            {
+              label: TRADE_LABELS.converted,
+              value: tradeOutcomes.converted,
+              color: TRADE_COLORS.converted
+            }
+          ]}
+        />
+        <div className="flex gap-4 mt-3 text-xs text-muted-foreground">
+          {(
+            ["isolated", "attempted", "converted"] as OpeningDuelTradeStatus[]
+          ).map((k) => (
+            <span key={k} className="tabular-nums">
+              <span className="font-bold text-foreground">
+                {tradeOutcomes[k]}
+              </span>{" "}
+              {TRADE_LABELS[k]}
+            </span>
           ))}
         </div>
-      )}
+      </AnalysisCard>
 
-      {/* ── Round-by-round ── */}
-      {section === "rounds" && (
-        <div className="space-y-2">
-          {half1.length > 0 && (
-            <>
-              <HalfDivider
-                label={`Half 1 — ${teamA.name} ${teamAHalf1Side} · ${teamB.name} ${teamBHalf1Side}`}
+      {/* Round-by-round opener strip */}
+      <AnalysisCard
+        title="Round-by-round: did first blood convert?"
+        sub="Top = who drew first blood · bottom = who won the round"
+        right={
+          <Legend
+            items={[
+              { label: teamA?.name ?? "Team A", color: TEAM_A_COLOR },
+              { label: teamB?.name ?? "Team B", color: TEAM_B_COLOR }
+            ]}
+          />
+        }
+      >
+        <OpenerStrip
+          duels={duels}
+          playerNames={playerNames}
+          regulationRounds={regulationRounds}
+        />
+      </AnalysisCard>
+
+      {/* Player entry table */}
+      <AnalysisCard
+        title="Entry duels by player"
+        sub="Sorted by first kills — bar shows what happened when they died first"
+        right={
+          <Legend
+            items={[
+              { label: TRADE_LABELS.isolated, color: TRADE_COLORS.isolated },
+              { label: TRADE_LABELS.attempted, color: TRADE_COLORS.attempted },
+              { label: TRADE_LABELS.converted, color: TRADE_COLORS.converted }
+            ]}
+          />
+        }
+      >
+        <div className="flex flex-col sm:flex-row gap-6">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1.5 mb-2">
+              <span
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: 9999,
+                  background: TEAM_A_COLOR,
+                  display: "inline-block"
+                }}
               />
-              {half1.map((d) => (
-                <DuelCard key={d.round_number} duel={d} nameMap={nameMap} />
-              ))}
-            </>
-          )}
-          {half2.length > 0 && (
-            <>
-              <HalfDivider
-                label={`Half 2 — ${teamA.name} ${teamAHalf1Side === "CT" ? "T" : "CT"} · ${teamB.name} ${teamBHalf1Side === "CT" ? "T" : "CT"}`}
+              <span
+                className="text-xs font-semibold font-headings"
+                style={{ color: TEAM_A_COLOR }}
+              >
+                {teamA?.name ?? "Team A"}
+              </span>
+            </div>
+            {teamAPlayers.map((p) => {
+              const e = playerEntry.get(p.steam_id) ?? {
+                fk: 0,
+                fd: 0,
+                fkWins: 0,
+                trades: { isolated: 0, attempted: 0, converted: 0 }
+              };
+              return (
+                <EntryPlayerRow
+                  key={p.steam_id}
+                  name={p.nickname}
+                  fk={e.fk}
+                  fd={e.fd}
+                  fkWins={e.fkWins}
+                  trades={e.trades}
+                  color={TEAM_A_COLOR}
+                />
+              );
+            })}
+          </div>
+          <div className="w-px bg-border/40 hidden sm:block" />
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1.5 mb-2">
+              <span
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: 9999,
+                  background: TEAM_B_COLOR,
+                  display: "inline-block"
+                }}
               />
-              {half2.map((d) => (
-                <DuelCard key={d.round_number} duel={d} nameMap={nameMap} />
-              ))}
-            </>
-          )}
+              <span
+                className="text-xs font-semibold font-headings"
+                style={{ color: TEAM_B_COLOR }}
+              >
+                {teamB?.name ?? "Team B"}
+              </span>
+            </div>
+            {teamBPlayers.map((p) => {
+              const e = playerEntry.get(p.steam_id) ?? {
+                fk: 0,
+                fd: 0,
+                fkWins: 0,
+                trades: { isolated: 0, attempted: 0, converted: 0 }
+              };
+              return (
+                <EntryPlayerRow
+                  key={p.steam_id}
+                  name={p.nickname}
+                  fk={e.fk}
+                  fd={e.fd}
+                  fkWins={e.fkWins}
+                  trades={e.trades}
+                  color={TEAM_B_COLOR}
+                />
+              );
+            })}
+          </div>
         </div>
-      )}
+      </AnalysisCard>
     </div>
   );
 };

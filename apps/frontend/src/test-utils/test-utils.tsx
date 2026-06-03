@@ -36,6 +36,12 @@ const setMockAuthState = (state: Partial<typeof mockAuthState>) => {
 };
 
 /**
+ * Returns the current mock auth state
+ * Used by jest.requireActual in test files to access the live mockAuthState
+ */
+export const getMockAuthState = () => mockAuthState;
+
+/**
  * Resets the mock auth state to defaults
  * Call this in beforeEach to ensure clean state
  */
@@ -47,12 +53,6 @@ export const resetMockAuthState = () => {
     logout: jest.fn()
   };
 };
-
-/**
- * Gets the current mock auth state
- * This is used internally by the mocked useAuth hook
- */
-export const getMockAuthState = () => mockAuthState;
 
 // Mock fetch API globally
 if (!global.fetch) {

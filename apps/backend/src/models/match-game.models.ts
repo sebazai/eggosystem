@@ -4,8 +4,20 @@ import {
   type GamePlayerStats,
   type MatchOrGameTopPlayerAwards,
   type GameClip,
-  type MatchGame
+  type MatchGame,
+  type WeaponStat,
+  type HitGroupCount,
+  type HitStats,
+  type RoundKillEvent,
+  type RoundDeathEvent,
+  type RoundFlashEvent,
+  type RoundWastedUtilityEvent,
+  type RoundUtilityThrowEvent,
+  type RoundUtilityDamageEvent,
+  type PlayerRoundEvents,
+  type PlayerGameUtilityStats
 } from "@eggosystem/types";
+
 import { runQuery } from "../db/mysqlRunQuery";
 import {
   fetchPlayerStatsForMatchOrGame,
@@ -16,12 +28,20 @@ import { type PoolConnection } from "mysql2/promise";
 import { type ParsedPayload } from "../types/parse-queue.types";
 import { generateQueryWithFilters } from "../utils/queryFilter";
 import { upsertTeamGameScore } from "./team-game-score.models";
-import { upsertPlayerStatsForGame } from "./player-stats.models";
-import { upsertPlayerTradesForGame } from "./player-trades.models";
-import { upsertMapRoundStats } from "./map-round-stat.models";
-import { upsertPlayerKillLogsForGame } from "./player-kill-logs.models";
-import { upsertPlayerClutchesForGame } from "./player-clutches.models";
-import { upsertPlayerRoundImpactsForGame } from "./player-round-impacts.models";
+import { savePlayerStatsForGame } from "./player-stats.models";
+import { savePlayerTradesForGame } from "./player-trades.models";
+import { saveMapRoundStatsForGame } from "./map-round-stat.models";
+import { savePlayerKillLogsForGame } from "./player-kill-logs.models";
+import { savePlayerClutchesForGame } from "./player-clutches.models";
+import { savePlayerRoundImpactsForGame } from "./player-round-impacts.models";
+import { saveFlashEventsForGame } from "./flash-events.models";
+import { saveRoundSwingEventsForGame } from "./round-swing-events.models";
+import { saveSetupEventsForGame } from "./setup-events.models";
+import { saveWastedUtilityEventsForGame } from "./wasted-utility-events.models";
+import { saveUtilityThrowEventsForGame } from "./utility-throw-events.models";
+import { saveRoundUtilitySummaryForGame } from "./round-utility-summary.models";
+import { UTILITY_DAMAGE_WEAPON_SQL } from "../utils/utility-weapons";
+import { savePlayerHitLogsForGame } from "./player-hit-logs.models";
 
 export const getGameTeamRoundBreakdown = async (match_game_id: number) => {
   const query = `
@@ -84,7 +104,8 @@ export const getGameRoundInfo = async (match_game_id: number) => {
 
 export const getGamePlayerStats = async (
   match_game_id: number,
-  stat?: "CT" | "T"
+  stat?: "CT" | "T",
+  steam_id?: string
 ) => {
   // Base fields that are always included
   const baseFields = `
@@ -139,9 +160,18 @@ export const getGamePlayerStats = async (
       ps.hs_percent,
       ps.kana_rating,
       ps.first_kills,
-      ps.first_deaths
+      ps.first_deaths,
+      ps.shots,
+      ps.shots_hit,
+      ps.total_strafing_shots,
+      ps.good_strafing_shots,
+      ps.ttd,
+      ps.ttf as time_to_kill,
+      ps.crosshair_placement
     `;
   }
+
+  const steamIdFilter = steam_id ? "AND ps.steam_id = ?" : "";
 
   const query = `SELECT
         ${baseFields},
@@ -153,11 +183,15 @@ export const getGamePlayerStats = async (
       INNER JOIN SeasonTeamPlayers stp ON stp.season_id = m.season_id AND stp.steam_id = p.steam_id
       INNER JOIN MatchTeams mt ON mt.match_id = m.id AND mt.team_id = stp.team_id
       WHERE ps.match_game_id = ?
+      ${steamIdFilter}
       GROUP BY p.steam_id
       ORDER BY stp.team_id, kills DESC, deaths ASC
       `;
 
-  return runQuery<GamePlayerStats[]>(query, [match_game_id]);
+  const params: (number | string)[] = [match_game_id];
+  if (steam_id) params.push(steam_id);
+
+  return runQuery<GamePlayerStats[]>(query, params);
 };
 
 export const getGameTopPlayers = async (match_game_id: number) => {
@@ -239,6 +273,30 @@ export const getMatchIdByGameId = async (
     [matchGameId],
     connection
   );
+};
+
+export const isChampionshipMatchGame = async (
+  matchGameId: number,
+  connection?: PoolConnection
+): Promise<boolean> => {
+  const query = `
+    SELECT EXISTS (
+      SELECT 1
+      FROM MatchGames mg
+      JOIN Matches m ON mg.match_id = m.id
+      WHERE mg.id = ?
+        AND EXISTS (
+          SELECT 1 FROM SeasonLeagueExternalIds slei
+          WHERE slei.season_id = m.season_id AND slei.league_id = m.league_id
+        )
+    ) AS is_championship
+  `;
+  const [row] = await runQuery<Array<{ is_championship: 0 | 1 }>>(
+    query,
+    [matchGameId],
+    connection
+  );
+  return row?.is_championship === 1;
 };
 
 type MatchGameTeamScoresMeta = {
@@ -333,7 +391,14 @@ export const saveParsedDemoDataForGame = async (
     Trades,
     Clutches,
     RoundImpacts,
-    KillLog
+    KillLog,
+    HitLog,
+    FlashLog,
+    RoundSwingLog,
+    SetupEventLog,
+    WastedUtilityLog,
+    UtilityThrowLog,
+    RoundUtilitySummary
   } = parsed_payload;
 
   const connection = await getConnection();
@@ -376,73 +441,98 @@ export const saveParsedDemoDataForGame = async (
       );
     }
 
-    const teamScoreWrites = skipTeamGameScoreUpsert
-      ? []
-      : [
-          upsertTeamGameScore({
-            match_id: match.match_id,
-            team_id: terroristTeam.team_id,
-            match_game_id: matchGameId,
-            starting_side: "T",
-            score: Score.Team1Score,
-            halftime_score: Score.Team1HTScore,
-            overtime_score: Score.Team1OTScore,
-            connection
-          }),
-          upsertTeamGameScore({
-            match_id: match.match_id,
-            team_id: counterTerroristTeam.team_id,
-            match_game_id: matchGameId,
-            starting_side: "CT",
-            score: Score.Team2Score,
-            halftime_score: Score.Team2HTScore,
-            overtime_score: Score.Team2OTScore,
-            connection
-          })
-        ];
+    // All analytics writes share one transaction: any failure rolls back every
+    // delete+insert pair — no table is left empty while others commit.
+    if (!skipTeamGameScoreUpsert) {
+      await upsertTeamGameScore({
+        match_id: match.match_id,
+        team_id: terroristTeam.team_id,
+        match_game_id: matchGameId,
+        starting_side: "T",
+        score: Score.Team1Score,
+        halftime_score: Score.Team1HTScore,
+        overtime_score: Score.Team1OTScore,
+        connection
+      });
+      await upsertTeamGameScore({
+        match_id: match.match_id,
+        team_id: counterTerroristTeam.team_id,
+        match_game_id: matchGameId,
+        starting_side: "CT",
+        score: Score.Team2Score,
+        halftime_score: Score.Team2HTScore,
+        overtime_score: Score.Team2OTScore,
+        connection
+      });
+    }
 
-    await Promise.all([
-      ...teamScoreWrites,
-      ...Object.values(Players).map((player) =>
-        upsertPlayerStatsForGame({
-          matchGameId: matchGameId,
-          playerStats: player,
-          connection
-        })
-      ),
-      upsertPlayerTradesForGame({
-        matchGameId,
-        playerTrades: Trades,
-        connection
-      }),
-      upsertPlayerClutchesForGame({
-        matchGameId,
-        clutches: Clutches,
-        connection
-      }),
-      upsertPlayerRoundImpactsForGame({
-        matchGameId,
-        roundImpacts: RoundImpacts,
-        connection
-      }),
-      upsertMapRoundStats({
-        matchGameId,
-        tTeamIdTeam1: terroristTeam.team_id,
-        ctTeamIdTeam2: counterTerroristTeam.team_id,
-        mapRoundStats: RoundInfo.Rounds,
-        connection
-      }),
-      // Save kill logs if present (new field from parser)
-      ...(KillLog && KillLog.length > 0
-        ? [
-            upsertPlayerKillLogsForGame({
-              matchGameId,
-              killLogs: KillLog,
-              connection
-            })
-          ]
-        : [])
-    ]);
+    await savePlayerStatsForGame({
+      matchGameId,
+      players: Object.values(Players),
+      connection
+    });
+    await savePlayerTradesForGame({
+      matchGameId,
+      playerTrades: Trades,
+      connection
+    });
+    await savePlayerClutchesForGame({
+      matchGameId,
+      clutches: Clutches,
+      connection
+    });
+    await savePlayerRoundImpactsForGame({
+      matchGameId,
+      roundImpacts: RoundImpacts,
+      connection
+    });
+    await saveMapRoundStatsForGame({
+      matchGameId,
+      tTeamIdTeam1: terroristTeam.team_id,
+      ctTeamIdTeam2: counterTerroristTeam.team_id,
+      mapRoundStats: RoundInfo.Rounds,
+      connection
+    });
+    await savePlayerKillLogsForGame({
+      matchGameId,
+      killLogs: KillLog ?? [],
+      connection
+    });
+    await savePlayerHitLogsForGame({
+      matchGameId,
+      events: HitLog ?? [],
+      connection
+    });
+    await saveFlashEventsForGame({
+      matchGameId,
+      events: FlashLog ?? [],
+      connection
+    });
+    await saveRoundSwingEventsForGame({
+      matchGameId,
+      events: RoundSwingLog ?? [],
+      connection
+    });
+    await saveSetupEventsForGame({
+      matchGameId,
+      events: SetupEventLog ?? [],
+      connection
+    });
+    await saveWastedUtilityEventsForGame({
+      matchGameId,
+      events: WastedUtilityLog ?? [],
+      connection
+    });
+    await saveUtilityThrowEventsForGame({
+      matchGameId,
+      events: UtilityThrowLog ?? [],
+      connection
+    });
+    await saveRoundUtilitySummaryForGame({
+      matchGameId,
+      entries: RoundUtilitySummary ?? [],
+      connection
+    });
 
     await connection.commit();
   } catch (error) {
@@ -451,4 +541,366 @@ export const saveParsedDemoDataForGame = async (
   } finally {
     connection.release();
   }
+};
+
+// ── Weapon stats ────────────────────────────────────────────────────────────
+
+interface WeaponKillRow {
+  weapon: string;
+  kills: number;
+  headshot_kills: number;
+}
+
+interface WeaponDamageRow {
+  weapon: string;
+  total_damage: number;
+  hits: number;
+}
+
+export const getWeaponStats = async (
+  match_game_id: number,
+  steam_id: string
+): Promise<WeaponStat[]> => {
+  const [kills, damage] = await Promise.all([
+    runQuery<WeaponKillRow[]>(
+      `SELECT weapon,
+              COUNT(*) AS kills,
+              SUM(is_headshot) AS headshot_kills
+       FROM PlayerKillLogs
+       WHERE match_game_id = ? AND killer = ?
+       GROUP BY weapon
+       ORDER BY kills DESC`,
+      [match_game_id, steam_id]
+    ),
+    runQuery<WeaponDamageRow[]>(
+      `SELECT weapon,
+              SUM(health_damage) AS total_damage,
+              COUNT(*) AS hits
+       FROM PlayerHitLogs
+       WHERE match_game_id = ? AND attacker_steam_id = ?
+         AND attacker_steam_id != victim_steam_id
+       GROUP BY weapon`,
+      [match_game_id, steam_id]
+    )
+  ]);
+
+  const damageMap = new Map(damage.map((d) => [d.weapon, d]));
+  return kills.map((k) => {
+    const d = damageMap.get(k.weapon);
+    return {
+      weapon: k.weapon,
+      kills: Number(k.kills),
+      headshot_kills: Number(k.headshot_kills),
+      total_damage: d ? Number(d.total_damage) : 0,
+      hits: d ? Number(d.hits) : 0
+    };
+  });
+};
+
+// ── Hit-location stats ───────────────────────────────────────────────────────
+
+export const getHitStats = async (
+  match_game_id: number,
+  steam_id: string
+): Promise<HitStats> => {
+  const [dealt, received] = await Promise.all([
+    runQuery<HitGroupCount[]>(
+      `SELECT hit_group,
+              COUNT(*) AS hits,
+              SUM(health_damage) AS damage
+       FROM PlayerHitLogs
+       WHERE match_game_id = ? AND attacker_steam_id = ?
+         AND attacker_steam_id != victim_steam_id
+       GROUP BY hit_group`,
+      [match_game_id, steam_id]
+    ),
+    runQuery<HitGroupCount[]>(
+      `SELECT hit_group,
+              COUNT(*) AS hits,
+              SUM(health_damage) AS damage
+       FROM PlayerHitLogs
+       WHERE match_game_id = ? AND victim_steam_id = ?
+         AND attacker_steam_id != victim_steam_id
+       GROUP BY hit_group`,
+      [match_game_id, steam_id]
+    )
+  ]);
+
+  return {
+    dealt: dealt.map((r) => ({
+      ...r,
+      hits: Number(r.hits),
+      damage: Number(r.damage)
+    })),
+    received: received.map((r) => ({
+      ...r,
+      hits: Number(r.hits),
+      damage: Number(r.damage)
+    }))
+  };
+};
+
+// ── Per-round events ─────────────────────────────────────────────────────────
+
+interface RoundFlashCount {
+  round_number: number;
+  enemies_flashed: number;
+  teammates_flashed: number;
+}
+
+export const getPlayerRoundEvents = async (
+  match_game_id: number,
+  steam_id: string
+): Promise<PlayerRoundEvents> => {
+  const [
+    kills,
+    deaths,
+    flashes,
+    utilityBase,
+    flashCounts,
+    wastedUtility,
+    utilityThrows,
+    utilityDamageHits,
+    setupUtilityDamage
+  ] = await Promise.all([
+    runQuery<RoundKillEvent[]>(
+      `SELECT pkl.round_number,
+              pkl.time_in_round,
+              p.nickname AS victim_nickname,
+              pkl.weapon,
+              pkl.is_headshot
+       FROM PlayerKillLogs pkl
+       JOIN SteamPlayers p ON p.steam_id = pkl.victim
+       WHERE pkl.match_game_id = ? AND pkl.killer = ?
+       ORDER BY pkl.round_number, pkl.time_in_round`,
+      [match_game_id, steam_id]
+    ),
+    runQuery<RoundDeathEvent[]>(
+      `SELECT pkl.round_number,
+              pkl.time_in_round,
+              p.nickname AS killer_nickname,
+              pkl.weapon,
+              pkl.is_headshot
+       FROM PlayerKillLogs pkl
+       JOIN SteamPlayers p ON p.steam_id = pkl.killer
+       WHERE pkl.match_game_id = ? AND pkl.victim = ?
+       ORDER BY pkl.round_number, pkl.time_in_round`,
+      [match_game_id, steam_id]
+    ),
+    runQuery<RoundFlashEvent[]>(
+      `SELECT fe.round_number,
+              fe.time_in_round,
+              p.nickname AS victim_nickname,
+              fe.duration_seconds,
+              fe.is_enemy_flash
+       FROM FlashEvents fe
+       JOIN SteamPlayers p ON p.steam_id = fe.victim_steam_id
+       WHERE fe.match_game_id = ? AND fe.thrower_steam_id = ?
+       ORDER BY fe.round_number, fe.time_in_round`,
+      [match_game_id, steam_id]
+    ),
+    runQuery<
+      {
+        round_number: number;
+        utility_damage: number;
+        smokes_thrown: number;
+        flashes_thrown: number;
+      }[]
+    >(
+      `SELECT round_number,
+              utility_damage,
+              smokes_thrown,
+              flashes_thrown
+       FROM RoundUtilitySummary
+       WHERE match_game_id = ? AND steam_id = ?
+       ORDER BY round_number`,
+      [match_game_id, steam_id]
+    ),
+    runQuery<RoundFlashCount[]>(
+      `SELECT round_number,
+              SUM(is_enemy_flash)   AS enemies_flashed,
+              SUM(is_teammate_flash) AS teammates_flashed
+       FROM FlashEvents
+       WHERE match_game_id = ? AND thrower_steam_id = ?
+       GROUP BY round_number
+       ORDER BY round_number`,
+      [match_game_id, steam_id]
+    ),
+    runQuery<RoundWastedUtilityEvent[]>(
+      `SELECT round_number,
+              time_in_round,
+              utility_type
+       FROM WastedUtilityEvents
+       WHERE match_game_id = ? AND thrower_steam_id = ?
+       ORDER BY round_number, time_in_round`,
+      [match_game_id, steam_id]
+    ),
+    runQuery<RoundUtilityThrowEvent[]>(
+      `SELECT round_number,
+              time_in_round,
+              utility_type
+       FROM UtilityThrowEvents
+       WHERE match_game_id = ? AND thrower_steam_id = ?
+       ORDER BY round_number, time_in_round`,
+      [match_game_id, steam_id]
+    ),
+    runQuery<RoundUtilityDamageEvent[]>(
+      `SELECT phl.round_number,
+              phl.time_in_round,
+              p.nickname AS victim_nickname,
+              phl.weapon,
+              phl.health_damage,
+              (phl.attacker_team <> phl.victim_team) AS is_enemy_hit
+       FROM PlayerHitLogs phl
+       JOIN SteamPlayers p ON p.steam_id = phl.victim_steam_id
+       WHERE phl.match_game_id = ?
+         AND phl.attacker_steam_id = ?
+         AND phl.attacker_steam_id <> phl.victim_steam_id
+         AND ${UTILITY_DAMAGE_WEAPON_SQL}
+       ORDER BY phl.round_number, phl.time_in_round`,
+      [match_game_id, steam_id]
+    ),
+    runQuery<
+      {
+        round_number: number;
+        time_in_round: number;
+        victim_nickname: string;
+        health_damage: number;
+      }[]
+    >(
+      `SELECT se.round_number,
+              se.time_in_round,
+              p.nickname AS victim_nickname,
+              se.damage_dealt AS health_damage
+       FROM SetupEvents se
+       JOIN SteamPlayers p ON p.steam_id = se.victim_steam_id
+       WHERE se.match_game_id = ?
+         AND se.setup_player_steam_id = ?
+         AND se.setup_type = 'utility_damage'
+         AND se.damage_dealt IS NOT NULL
+         AND se.damage_dealt > 0
+       ORDER BY se.round_number, se.time_in_round`,
+      [match_game_id, steam_id]
+    )
+  ]);
+
+  const flashCountByRound = new Map(
+    flashCounts.map((r) => [Number(r.round_number), r])
+  );
+
+  const mergedUtilityDamageHits: RoundUtilityDamageEvent[] = [
+    ...utilityDamageHits.map((r) => ({
+      round_number: Number(r.round_number),
+      time_in_round: Number(r.time_in_round),
+      victim_nickname: r.victim_nickname,
+      weapon: r.weapon,
+      health_damage: Number(r.health_damage),
+      is_enemy_hit: Boolean(r.is_enemy_hit)
+    })),
+    ...setupUtilityDamage.map((r) => ({
+      round_number: Number(r.round_number),
+      time_in_round: Number(r.time_in_round),
+      victim_nickname: r.victim_nickname,
+      weapon: "utility_setup",
+      health_damage: Number(r.health_damage),
+      is_enemy_hit: true
+    }))
+  ].sort(
+    (a, b) =>
+      a.round_number - b.round_number || a.time_in_round - b.time_in_round
+  );
+
+  return {
+    kills: kills.map((r) => ({
+      ...r,
+      time_in_round: Number(r.time_in_round),
+      is_headshot: Boolean(r.is_headshot)
+    })),
+    deaths: deaths.map((r) => ({
+      ...r,
+      time_in_round: Number(r.time_in_round),
+      is_headshot: Boolean(r.is_headshot)
+    })),
+    flashes: flashes.map((r) => ({
+      ...r,
+      time_in_round: Number(r.time_in_round),
+      duration_seconds: Number(r.duration_seconds),
+      is_enemy_flash: Boolean(r.is_enemy_flash)
+    })),
+    utility: utilityBase.map((r) => {
+      const fc = flashCountByRound.get(Number(r.round_number));
+      return {
+        round_number: Number(r.round_number),
+        utility_damage: Number(r.utility_damage),
+        smokes_thrown: Number(r.smokes_thrown),
+        flashes_thrown: Number(r.flashes_thrown),
+        enemies_flashed: fc ? Number(fc.enemies_flashed) : 0,
+        teammates_flashed: fc ? Number(fc.teammates_flashed) : 0
+      };
+    }),
+    wasted: wastedUtility.map((r) => ({
+      round_number: Number(r.round_number),
+      time_in_round: Number(r.time_in_round),
+      utility_type: r.utility_type
+    })),
+    utility_throws: utilityThrows.map((r) => ({
+      round_number: Number(r.round_number),
+      time_in_round: Number(r.time_in_round),
+      utility_type: r.utility_type
+    })),
+    utility_damage_hits: mergedUtilityDamageHits
+  };
+};
+
+// ── Aggregate utility stats for a single player in a single game ──────────────
+
+export const getPlayerGameUtilityStats = async (
+  match_game_id: number,
+  steam_id: string
+): Promise<PlayerGameUtilityStats> => {
+  const [summary, wasted, flashCounts] = await Promise.all([
+    runQuery<
+      {
+        flashes_thrown: number;
+        smokes_thrown: number;
+        utility_damage: number;
+      }[]
+    >(
+      `SELECT
+        SUM(flashes_thrown) AS flashes_thrown,
+        SUM(smokes_thrown)  AS smokes_thrown,
+        SUM(utility_damage) AS utility_damage
+       FROM RoundUtilitySummary
+       WHERE match_game_id = ? AND steam_id = ?`,
+      [match_game_id, steam_id]
+    ),
+    runQuery<{ wasted: number }[]>(
+      `SELECT COUNT(*) AS wasted
+       FROM WastedUtilityEvents
+       WHERE match_game_id = ? AND thrower_steam_id = ?`,
+      [match_game_id, steam_id]
+    ),
+    runQuery<{ enemies_flashed: number; teammates_flashed: number }[]>(
+      `SELECT
+        SUM(is_enemy_flash)    AS enemies_flashed,
+        SUM(is_teammate_flash) AS teammates_flashed
+       FROM FlashEvents
+       WHERE match_game_id = ? AND thrower_steam_id = ?`,
+      [match_game_id, steam_id]
+    )
+  ]);
+
+  const s = summary[0] ?? {
+    flashes_thrown: 0,
+    smokes_thrown: 0,
+    utility_damage: 0
+  };
+  return {
+    flashes_thrown: Number(s.flashes_thrown ?? 0),
+    enemies_flashed: Number(flashCounts[0]?.enemies_flashed ?? 0),
+    teammates_flashed: Number(flashCounts[0]?.teammates_flashed ?? 0),
+    smokes_thrown: Number(s.smokes_thrown ?? 0),
+    utility_damage: Number(s.utility_damage ?? 0),
+    wasted_utility: Number(wasted[0]?.wasted ?? 0)
+  };
 };

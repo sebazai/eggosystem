@@ -5,13 +5,15 @@ import useSWR, { type SWRResponse } from "swr";
 import type { MatchWithStreamUrls } from "@eggosystem/types";
 
 export const useSeasonCalendarMatches = (
-  seasonId: string,
+  seasonId: string | null | undefined,
   selectedLeagueId: string | number
 ): SWRResponse<MatchWithStreamUrls[], Error> => {
   const { data, isLoading, isValidating, error, mutate } = useSWR<
     MatchWithStreamUrls[]
   >(
-    `/api/v1/calendar/seasons/${seasonId}/leagues/${selectedLeagueId}/matches`,
+    seasonId
+      ? `/api/v1/calendar/seasons/${seasonId}/leagues/${selectedLeagueId}/matches`
+      : null,
     expressFetcher
   );
 

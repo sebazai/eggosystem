@@ -1,33 +1,97 @@
-import Link from "next/link";
-import { ContentContainer } from "../layout/ContentContainer";
-import { createTeamLogoUrl, type FilterParamsQuery } from "@/lib/utils";
-import { dualTeamRowToHomeLeftDisplay } from "@/lib/order-match-teams-home-left-away";
-import { useRecentMatches } from "@/hooks/data/filtered/useRecentMatches";
-import { NextImageFallback } from "../layout/NextImageFallback";
-import { MatchListSkeleton } from "@/components/loading";
+"use client";
+
+import { useSearchParams } from "next/navigation";
+import useSWR from "swr";
+import { expressFetcher, type FilterParamsQuery } from "@/lib/utils";
+import { DateGroup } from "./DateGroup";
+import { MatchCard } from "./MatchCard";
+import { MatchMvpProvider } from "@/context/MatchMvpContext";
+import type { MatchesByFilters, Season, League } from "@eggosystem/types";
+
+function abbrevSeasonName(fullName: string): string {
+  return fullName.replace(/Season\s+/i, "S");
+}
+
+type SortKey = "newest" | "oldest" | "tier";
+
+function sortMatches(
+  matches: MatchesByFilters[],
+  sort: SortKey,
+  leagueSortMap: Record<string, number>
+): MatchesByFilters[] {
+  if (sort === "oldest") {
+    return [...matches].sort(
+      (a, b) =>
+        new Date(a.start_timestamp).getTime() -
+        new Date(b.start_timestamp).getTime()
+    );
+  }
+  if (sort === "tier") {
+    return [...matches].sort((a, b) => {
+      const ra = leagueSortMap[a.league_name.toLowerCase()] ?? 999;
+      const rb = leagueSortMap[b.league_name.toLowerCase()] ?? 999;
+      if (ra !== rb) return ra - rb;
+      return (
+        new Date(b.start_timestamp).getTime() -
+        new Date(a.start_timestamp).getTime()
+      );
+    });
+  }
+  // "newest" — API returns DESC by default; ensure stable client-side order
+  return [...matches].sort(
+    (a, b) =>
+      new Date(b.start_timestamp).getTime() -
+      new Date(a.start_timestamp).getTime()
+  );
+}
 
 interface FilteredMatchesListProps {
   filterQueryParams: FilterParamsQuery;
+  matches: MatchesByFilters[];
 }
 
 export const FilteredMatchesList = ({
-  filterQueryParams
+  filterQueryParams,
+  matches
 }: FilteredMatchesListProps) => {
-  const { matches, isError, isLoading, isValidating } =
-    useRecentMatches(filterQueryParams);
+  const searchParams = useSearchParams();
+  const sort = (searchParams.get("sort") as SortKey | null) ?? "newest";
 
-  if (isLoading || isValidating) {
-    return <MatchListSkeleton />;
-  }
+  const { data: seasons } = useSWR<Season[]>(
+    "/api/v1/seasons",
+    expressFetcher,
+    { revalidateOnFocus: false, keepPreviousData: true }
+  );
 
-  if (isError) {
-    return <ContentContainer>Error loading Matches</ContentContainer>;
-  }
+  const { data: leagues } = useSWR<League[]>(
+    "/api/v1/leagues",
+    expressFetcher,
+    { revalidateOnFocus: false, keepPreviousData: true }
+  );
 
-  if (!matches) {
-    return <ContentContainer>No matches found</ContentContainer>;
-  }
-  const groupedMatches = matches.reduce(
+  const seasonLabelMap = (seasons ?? []).reduce<Record<number, string>>(
+    (acc, s) => {
+      acc[s.id] = abbrevSeasonName(s.full_name);
+      return acc;
+    },
+    {}
+  );
+
+  // name → sort_priority from DB (1 = top tier). Used for "tier" sort order.
+  const leagueSortMap = (leagues ?? []).reduce<Record<string, number>>(
+    (acc, l) => {
+      acc[l.name.toLowerCase()] = l.sort_priority;
+      return acc;
+    },
+    {}
+  );
+
+  const showSeason =
+    !filterQueryParams.seasons || filterQueryParams.seasons.length !== 1;
+
+  const sorted = sortMatches(matches, sort, leagueSortMap);
+
+  const groupedMatches = sorted.reduce(
     (acc, match) => {
       const matchDate = match.match_date;
       if (!acc[matchDate]) {
@@ -36,77 +100,39 @@ export const FilteredMatchesList = ({
       acc[matchDate]?.push(match);
       return acc;
     },
-    {} as Record<string, typeof matches>
+    {} as Record<string, typeof sorted>
   );
-  return (
-    <div>
-      {Object.entries(groupedMatches).map(([date, matchesForDate]) => (
-        <div key={date}>
-          <h2 className="text-left text-sm sm:text-lg mb-2">{date}</h2>
-          {matchesForDate.map((match, index) => {
-            const { left, right } = dualTeamRowToHomeLeftDisplay({
-              team1_side: match.team1_side,
-              team2_side: match.team2_side,
-              team1_name: match.team1_name,
-              team2_name: match.team2_name,
-              team1_logo: match.team1_logo,
-              team2_logo: match.team2_logo,
-              team1_score: match.team1_score,
-              team2_score: match.team2_score
-            });
-            return (
-              <div key={index} className="mb-2 sm:mb-4">
-                <Link
-                  className="no-underline"
-                  href="/matches/[id]"
-                  as={
-                    match.match_game_id
-                      ? `/matches/${match.match_id}/games/${match.match_game_id}`
-                      : `/matches/${match.match_id}`
-                  }
-                >
-                  <div className="bg-card grid grid-cols-[1fr_auto_1fr] min-h-10 md:min-h-12 items-center gap-2 px-0 transition-transform transform hover:scale-105 hover:ring-2 hover:ring-ring mb-1 rounded-lg shadow-md dark:shadow-muted">
-                    <div className="flex items-center justify-end">
-                      <div className="text-right xs:break-normal break-words text-sm sm:text-base mr-1">
-                        {left.name}
-                      </div>
-                      <NextImageFallback
-                        src={createTeamLogoUrl(left.logo ?? "")}
-                        alt={left.name}
-                        width={30}
-                        height={30}
-                        className="w-8 h-8 sm:w-10 sm:h-10 ml-1 object-contain hidden xxs:block"
-                      />
-                    </div>
-                    <div className="relative h-full min-w-16 md:min-w-20 flex items-center justify-center bg-kanaliiga-light-brown/30 rounded-xs">
-                      <div className="z-10 w-7 font-black text-md sm:text-lg text-center">
-                        {left.score}
-                      </div>
-                      <span className="mx-1 md:mx-2">&mdash;</span>
-                      <div className="z-10 w-7 font-black text-md sm:text-lg text-center">
-                        {right.score}
-                      </div>
-                    </div>
 
-                    <div className="flex items-center justify-start ml-1">
-                      <NextImageFallback
-                        src={createTeamLogoUrl(right.logo ?? "")}
-                        alt={right.name}
-                        width={30}
-                        height={30}
-                        className="w-6 h-6 sm:w-8 sm:h-8 mr-1 object-contain hidden xxs:block"
-                      />
-                      <div className="text-left xs:break-normal break-words text-sm sm:text-base ml-1">
-                        {right.name}
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              </div>
-            );
-          })}
-        </div>
-      ))}
-    </div>
+  // Preserve sort order for date-group keys
+  const orderedDates = Array.from(new Set(sorted.map((m) => m.match_date)));
+
+  return (
+    <MatchMvpProvider>
+      <div className="min-w-0 w-full">
+        {orderedDates.map((date) => {
+          const matchesForDate = groupedMatches[date] ?? [];
+          return (
+            <DateGroup key={date} date={date} count={matchesForDate.length}>
+              {matchesForDate.map((match) => {
+                const href = match.match_game_id
+                  ? `/matches/${match.match_id}/games/${match.match_game_id}`
+                  : `/matches/${match.match_id}`;
+                const seasonLabel =
+                  seasonLabelMap[match.season_id] ?? `S${match.season_id}`;
+                return (
+                  <MatchCard
+                    key={match.match_id}
+                    match={match}
+                    href={href}
+                    showSeason={showSeason}
+                    seasonLabel={seasonLabel}
+                  />
+                );
+              })}
+            </DateGroup>
+          );
+        })}
+      </div>
+    </MatchMvpProvider>
   );
 };

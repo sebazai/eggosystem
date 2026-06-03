@@ -195,7 +195,6 @@ All loading components are located in `@/components/loading/`:
 - **`PageSkeleton`** - For full pages that need to preserve structure (title, filters, etc.)
 - **`TableSkeleton`** - For table loading states with configurable rows/columns
 - **`CardSkeleton`** - Generic card skeleton for any card-based loading
-- **`ListSkeleton`** - For generic list loading (matches, items, etc.)
 - **`MatchListSkeleton`** - Specialized skeleton for match lists
 - **`StatsGridSkeleton`** - For stats grid layouts (leaderboards, top teams)
 - **`TeamCardSkeleton`** - For team card grids
@@ -259,7 +258,6 @@ if (loading) {
 - **`PageSkeleton`**: Use when loading filters or initial page data - preserves title and layout
 - **`TableSkeleton`**: Use for table components - matches table structure
 - **`CardSkeleton`**: Use for card-based content - matches card layout
-- **`ListSkeleton`**: Use for generic lists - matches list item structure
 - **`MatchListSkeleton`**: Use specifically for match lists - matches match card layout
 - **`StatsGridSkeleton`**: Use for leaderboards and top teams grids
 - **`TeamCardSkeleton`**: Use for team card grids
@@ -412,4 +410,4 @@ apps/frontend/src/
 ## 🔗 Related Documentation
 
 - [Database Schema](README.database.md)
-- [Testing strategy](.cursor/skills/testing-strategy/SKILL.md)
+- [Testing](README.md#testing) — Jest unit tests and Playwright E2E (from repo root)

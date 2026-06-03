@@ -4,11 +4,11 @@ This document explains the Kanaliiga database architecture and design decisions.
 
 ## Getting Started
 
-**Schema File**: The complete database schema is in `apps/backend/dbdump/kanaliiga.sql`
+**Schema Source**: The Knex migrations in [`apps/backend/migrations/`](apps/backend/migrations/) are authoritative — they define every table, trigger, function, and constraint.
+
+**Schema Snapshot**: `apps/backend/dbdump/kanaliiga.sql` is a generated snapshot for reference and visualisation. It may lag the latest migrations, so always check the migration files for anything recent.
 
 **Visual Diagram**: [https://csdb.kanaliiga.fi/](https://csdb.kanaliiga.fi/) - Interactive entity-relationship diagram showing all tables, relationships, and constraints
-
-**For Practical Queries**: See the [Database Operations Guide](docs/database-operations.md) for common queries, troubleshooting, and migration patterns
 
 ## Key Design Decisions
 
@@ -60,7 +60,7 @@ The database enforces data quality at multiple levels:
 - **Stats Ranges**: Player statistics must be reasonable (kills/deaths/assists ≥ 0, ADR between 0-500)
 - **Points Math**: Fantasy points must add up correctly
 
-These checks catch data quality issues even if application validation is bypassed. See the [Database Operations Guide](docs/database-operations.md) for troubleshooting constraint violations.
+These checks catch data quality issues even if application validation is bypassed. The `CHECK` constraints (e.g. non-negative stats, ADR 0–500, non-negative budgets) are defined in the migrations under [`apps/backend/migrations/`](apps/backend/migrations/).
 
 ## Database Functions and Triggers
 
@@ -122,8 +122,10 @@ The system is season-centric with support for multiple external tournament platf
 - **`SeasonTeamRegistrationPlayers`** - Initial team registrations
 - **`SeasonTeamPlayers`** - Active rosters during competition
 - **`SeasonPlayerApprovals`** - Employment verification for players without work emails
-- **`SeasonPlayerRanks`** - Player rankings from multiple platforms
-- **`SteamPlayerKanaElo`** - Global ELO system (not season-specific)
+- **`SeasonPlayerRanks`** - Player rankings from multiple platforms (includes per-season `kana_elo` snapshot at registration/Sortter time)
+- **`SteamPlayerKanaElo`** - Live global kana_elo from CSRankker bulk recalculation
+
+**Kana elo dual-table contract:** `SteamPlayerKanaElo` holds the current live rating (written by bulk CSRankker recalc). `SeasonPlayerRanks.kana_elo` is the per-season snapshot used by Sortter and historical views. API reads prefer `SteamPlayerKanaElo` and fall back to the latest non-null `SeasonPlayerRanks.kana_elo`. Bulk recalc updates both tables for the player's latest season row when one exists.
 
 Uses a dual-roster system: registration → sorting → competition.
 
@@ -209,13 +211,12 @@ Constraint violations are returned to the frontend in RFC 7807 Problem Details f
 
 ## Working with the Database
 
-**Schema Source**: `apps/backend/dbdump/kanaliiga.sql` is the source of truth
+**Schema Source**: Knex migrations in [`apps/backend/migrations/`](apps/backend/migrations/) are authoritative. `apps/backend/dbdump/kanaliiga.sql` is a generated snapshot — regenerate it after schema changes so it does not drift.
 
 **Migrations**: Use Knex.js for all schema changes. Test against the full schema including triggers.
 
 **Related Documentation**:
 
-- [Database Operations Guide](docs/database-operations.md) - Common queries and troubleshooting
-- [Migration Files](apps/backend/migrations/) - Historical schema changes
+- [Migration Files](apps/backend/migrations/) - Authoritative schema, triggers, and constraints
 - [Type Definitions](packages/types/src/db/) - TypeScript interfaces
 - [Visual ERD](https://csdb.kanaliiga.fi/) - Interactive diagram

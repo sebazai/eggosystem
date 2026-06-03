@@ -2,6 +2,7 @@ import { envConfig } from "@/configs/env";
 
 let isRefreshing = false;
 let refreshSubscribers: (() => void)[] = [];
+let refreshFailureCallbacks: ((err: unknown) => void)[] = [];
 let onAuthFailure: (() => void) | null = null;
 let hasHadValidSession = false; // Track if we've had a valid session
 
@@ -23,6 +24,18 @@ export const clearSessionState = () => {
 const onTokenRefreshed = () => {
   refreshSubscribers.forEach((callback) => callback());
   refreshSubscribers = [];
+  refreshFailureCallbacks = [];
+};
+
+const onRefreshFailed = (err: unknown) => {
+  refreshFailureCallbacks.forEach((callback) => callback(err));
+  refreshFailureCallbacks = [];
+  // Queued clientApiFetch calls are waiting for refresh to finish before hitting
+  // the network. Many routes are public — run them anyway when refresh fails
+  // (e.g. visitor with no session) instead of leaving promises pending forever.
+  const subscribers = refreshSubscribers;
+  refreshSubscribers = [];
+  subscribers.forEach((callback) => callback());
 };
 
 const addRefreshSubscriber = (callback: () => void) => {
@@ -37,19 +50,10 @@ const addRefreshSubscriber = (callback: () => void) => {
  */
 export const refreshAccessToken = async (): Promise<void> => {
   if (isRefreshing) {
-    // If already refreshing, wait for it to complete
-    return new Promise((resolve, _reject) => {
-      addRefreshSubscriber(() => {
-        resolve();
-      });
-      // If refresh fails, the error will be handled by the ongoing refresh
-      // Check periodically if refresh completed (success or failure)
-      const checkInterval = setInterval(() => {
-        if (!isRefreshing) {
-          clearInterval(checkInterval);
-          resolve();
-        }
-      }, 100);
+    // Queue behind the in-flight refresh; resolve or reject when it settles
+    return new Promise((resolve, reject) => {
+      addRefreshSubscriber(resolve);
+      refreshFailureCallbacks.push(reject);
     });
   }
 
@@ -84,7 +88,7 @@ export const refreshAccessToken = async (): Promise<void> => {
     }
     throw new Error("Token refresh failed");
   } catch (error) {
-    refreshSubscribers = [];
+    onRefreshFailed(error);
     throw error;
   } finally {
     isRefreshing = false;

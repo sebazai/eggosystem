@@ -304,16 +304,9 @@ rtk git worktree add <worktree_path> -b <branch> origin/<base>
 # If multiple deps: cd <worktree_path> && merge sibling dep branches — do NOT omit or gate will fail:
 # rtk git merge origin/feat-<iid>-T1-... && rtk git merge origin/feat-<iid>-T2-... ...
 
-# One-off: copy `.env`/`.pem` from primary checkout (.gitignored) into this worktree. Derives source as
-# parent of /.worktrees/<task>/ unless WORKTREE_SECRET_SOURCE is set — see scripts/bootstrap-worktree-env.mjs
+# Secrets + node_modules + build (uses devcontainer Node on PATH — see scripts/bootstrap-worktree-deps.sh)
 cd <worktree_path>
-node scripts/bootstrap-worktree-env.mjs
-
-# Bootstrap node_modules from scratch so optional native deps (e.g. @oxc-parser/binding-*) resolve.
-# Omitting this can leave incomplete installs where tools like knip fail inside the worktree only.
-rm -rf node_modules
-rtk pnpm install --frozen-lockfile
-rtk pnpm build
+rtk bash scripts/bootstrap-worktree-deps.sh
 ```
 
 Pass **`base`** to `implementer_bot` as `Base:` so **`create_merge_request.target_branch`** matches **stacked** vs **development** workflows (see `/workspace/.cursor/agents/implementer_bot.md`).

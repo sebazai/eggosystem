@@ -16,3 +16,10 @@ export interface MatchGameKillMatrix {
   kills: KillMatrixEntry[];
   flash_assists: FlashMatrixEntry[];
 }
+
+/** Optional filters applied when computing a game's kill matrix */
+export interface KillMatrixFilters {
+  excludeExitKills?: boolean;
+  postPlantOnly?: boolean;
+  excludeEcoKills?: boolean;
+}

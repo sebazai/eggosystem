@@ -1,36 +1,49 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer
-} from "recharts";
 import { NextImageFallback } from "@/components/layout/NextImageFallback";
-import { createTeamLogoUrl, cn } from "@/lib/utils";
+import { cn, createTeamLogoUrl } from "@/lib/utils";
+import { orderMatchParticipantsBySideHomeLeft } from "@/lib/order-match-teams-home-left-away";
 import {
-  RoundEndReasonInfo,
+  AnalysisCard,
+  KpiNum,
+  Legend,
+  GOOD_COLOR,
+  BAD_COLOR,
+  TEAM_A_COLOR,
+  TEAM_B_COLOR
+} from "./AnalysisVizComponents";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger
+} from "@/components/ui/tooltip";
+import {
+  buildAfterplantSituations,
+  buildRetakeSituations,
+  computeTeamAfterplantSummary,
+  formatRoundTimeSeconds,
+  getAfterplantRoundOutcome,
+  getAfterplantTimelineRange,
+  getTimelineAxisLabels,
+  T_WIN_REASONS,
+  timeToTimelinePct,
+  winPct,
+  type SiteWinRecord,
+  type TeamAfterplantSummary
+} from "./afterplant-round-helpers";
+
+const TIMELINE_GRID_CLASS =
+  "grid grid-cols-[auto_1fr] gap-x-1.5 sm:gap-x-2 gap-y-1 min-w-0";
+const TIMELINE_SIDE_LABEL_CLASS =
+  "text-[10px] font-bold w-6 sm:w-8 shrink-0 tabular-nums";
+import {
   type AfterplantKillEvent,
   type MatchGameAfterplantRound,
   type MatchInfo,
   type MatchPlayerStats
 } from "@eggosystem/types";
-import { orderMatchParticipantsBySideHomeLeft } from "@/lib/order-match-teams-home-left-away";
-
-const ROUND_END_LABEL: Record<RoundEndReasonInfo, string> = {
-  [RoundEndReasonInfo.BombDefused]: "Defused",
-  [RoundEndReasonInfo.TargetBombed]: "Bombed",
-  [RoundEndReasonInfo.TargetSaved]: "Time",
-  [RoundEndReasonInfo.T_Win]: "Elim",
-  [RoundEndReasonInfo.CT_WIN]: "Elim"
-};
-
-/* ─────────────────────────────────────────── */
-/*  Types & constants                          */
-/* ─────────────────────────────────────────── */
 
 interface AfterplantTabProps {
   afterplantRounds: MatchGameAfterplantRound[];
@@ -38,33 +51,31 @@ interface AfterplantTabProps {
   teams: MatchInfo["teams"];
 }
 
-const T_WIN_REASONS: RoundEndReasonInfo[] = [
-  RoundEndReasonInfo.TargetBombed,
-  RoundEndReasonInfo.T_Win
-];
+function winRateColor(pct: number): string {
+  if (pct >= 60) return GOOD_COLOR;
+  if (pct >= 40) return "var(--foreground)";
+  return BAD_COLOR;
+}
 
-const winPct = (won: number, total: number) =>
-  total > 0 ? Math.round((won / total) * 100) : 0;
+function teamToggleStyle(
+  teamColor: string,
+  isActive: boolean
+): React.CSSProperties {
+  if (isActive) {
+    return {
+      background: `color-mix(in oklab, ${teamColor} 18%, transparent)`,
+      borderColor: `color-mix(in oklab, ${teamColor} 35%, var(--border))`,
+      color: teamColor
+    };
+  }
+  return {
+    background: `color-mix(in oklab, ${teamColor} 6%, transparent)`,
+    borderColor: `color-mix(in oklab, ${teamColor} 22%, var(--border))`,
+    color: `color-mix(in oklab, ${teamColor} 55%, var(--muted-foreground))`
+  };
+}
 
-const winColor = (pct: number) =>
-  pct >= 60
-    ? "text-green-400/80"
-    : pct >= 40
-      ? "text-yellow-200/80"
-      : "text-red-300/80";
-
-const barColor = (pct: number) =>
-  pct >= 60
-    ? "bg-green-300/50"
-    : pct >= 40
-      ? "bg-yellow-200/45"
-      : "bg-red-300/50";
-
-/* ─────────────────────────────────────────── */
-/*  Mini win progress bar                      */
-/* ─────────────────────────────────────────── */
-
-const WinBar = ({
+function WinBar({
   pct,
   label,
   won,
@@ -74,71 +85,78 @@ const WinBar = ({
   label: string;
   won: number;
   total: number;
-}) => (
-  <div className="space-y-1">
-    <div className="flex justify-between text-xs">
-      <span className="text-muted-foreground">{label}</span>
-      <span className={cn("font-bold", winColor(pct))}>
-        {pct}%{" "}
-        <span className="text-muted-foreground font-normal">
-          ({won}/{total})
+}) {
+  const color = winRateColor(pct);
+  return (
+    <div className="space-y-1">
+      <div className="flex justify-between text-xs gap-2">
+        <span className="text-muted-foreground">{label}</span>
+        <span className="font-bold tabular-nums" style={{ color }}>
+          {pct}%{" "}
+          <span className="text-muted-foreground font-normal">
+            ({won}/{total})
+          </span>
         </span>
-      </span>
+      </div>
+      <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+        <div
+          className="h-full rounded-full"
+          style={{
+            width: `${pct}%`,
+            background: color,
+            opacity: 0.75
+          }}
+        />
+      </div>
     </div>
-    <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-      <div
-        className={cn("h-full rounded-full", barColor(pct))}
-        style={{ width: `${pct}%` }}
-      />
-    </div>
-  </div>
-);
+  );
+}
 
-/* ─────────────────────────────────────────── */
-/*  Summary cards (one per team)               */
-/* ─────────────────────────────────────────── */
+function SiteWinBars({
+  siteA,
+  siteB,
+  wonLabel
+}: {
+  siteA: SiteWinRecord;
+  siteB: SiteWinRecord;
+  wonLabel: (won: number, total: number) => string;
+}) {
+  return (
+    <>
+      {siteA.total > 0 && (
+        <WinBar
+          pct={winPct(siteA.won, siteA.total)}
+          label="Site A"
+          won={siteA.won}
+          total={siteA.total}
+        />
+      )}
+      {siteB.total > 0 && (
+        <WinBar
+          pct={winPct(siteB.won, siteB.total)}
+          label="Site B"
+          won={siteB.won}
+          total={siteB.total}
+        />
+      )}
+      {siteA.total === 0 && siteB.total === 0 && (
+        <p className="text-xs text-muted-foreground">{wonLabel(0, 0)}</p>
+      )}
+    </>
+  );
+}
 
-const TeamSummaryCard = ({
+function TeamSummaryCard({
   teamName,
   teamLogo,
-  attackRounds,
-  defendRounds
+  summary
 }: {
   teamName: string;
   teamLogo: string | null;
-  attackRounds: MatchGameAfterplantRound[];
-  defendRounds: MatchGameAfterplantRound[];
-}) => {
-  const atkWon = attackRounds.filter((r) =>
-    T_WIN_REASONS.includes(r.round_end_reason_info)
-  ).length;
-  const atkPct = winPct(atkWon, attackRounds.length);
-
-  const atkSiteA = attackRounds.filter((r) => r.plant_site === "A");
-  const atkSiteB = attackRounds.filter((r) => r.plant_site === "B");
-  const atkWonA = atkSiteA.filter((r) =>
-    T_WIN_REASONS.includes(r.round_end_reason_info)
-  ).length;
-  const atkWonB = atkSiteB.filter((r) =>
-    T_WIN_REASONS.includes(r.round_end_reason_info)
-  ).length;
-
-  const defWon = defendRounds.filter(
-    (r) => !T_WIN_REASONS.includes(r.round_end_reason_info)
-  ).length;
-  const defPct = winPct(defWon, defendRounds.length);
-
-  const defSiteA = defendRounds.filter((r) => r.plant_site === "A");
-  const defSiteB = defendRounds.filter((r) => r.plant_site === "B");
-  const defWonA = defSiteA.filter(
-    (r) => !T_WIN_REASONS.includes(r.round_end_reason_info)
-  ).length;
-  const defWonB = defSiteB.filter(
-    (r) => !T_WIN_REASONS.includes(r.round_end_reason_info)
-  ).length;
-
+  summary: TeamAfterplantSummary;
+}) {
   return (
-    <div className="bg-card rounded-xl border border-border overflow-hidden">
+    <div className="rounded-xl border border-border/60 bg-card overflow-hidden">
       <div className="flex items-center gap-3 px-4 py-3 bg-muted/30 border-b border-border/50">
         {teamLogo && (
           <NextImageFallback
@@ -153,72 +171,44 @@ const TeamSummaryCard = ({
         <span className="font-bold text-sm">{teamName}</span>
       </div>
       <div className="p-4 space-y-4">
-        {/* Afterplants */}
         <div className="space-y-2">
-          <p className="text-xs font-bold text-amber-300/80 uppercase tracking-wide">
+          <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">
             Afterplants (T-side)
           </p>
           <WinBar
-            pct={atkPct}
+            pct={winPct(summary.attackWon, summary.attackTotal)}
             label="Overall"
-            won={atkWon}
-            total={attackRounds.length}
+            won={summary.attackWon}
+            total={summary.attackTotal}
           />
-          {atkSiteA.length > 0 && (
-            <WinBar
-              pct={winPct(atkWonA, atkSiteA.length)}
-              label="Site A"
-              won={atkWonA}
-              total={atkSiteA.length}
-            />
-          )}
-          {atkSiteB.length > 0 && (
-            <WinBar
-              pct={winPct(atkWonB, atkSiteB.length)}
-              label="Site B"
-              won={atkWonB}
-              total={atkSiteB.length}
-            />
-          )}
+          <SiteWinBars
+            siteA={summary.attackSiteA}
+            siteB={summary.attackSiteB}
+            wonLabel={() => "No plant rounds"}
+          />
         </div>
-        {/* Retakes */}
         <div className="space-y-2 pt-3 border-t border-border/50">
-          <p className="text-xs font-bold text-sky-300/80 uppercase tracking-wide">
+          <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">
             Retakes (CT-side)
           </p>
           <WinBar
-            pct={defPct}
+            pct={winPct(summary.defendWon, summary.defendTotal)}
             label="Overall"
-            won={defWon}
-            total={defendRounds.length}
+            won={summary.defendWon}
+            total={summary.defendTotal}
           />
-          {defSiteA.length > 0 && (
-            <WinBar
-              pct={winPct(defWonA, defSiteA.length)}
-              label="Site A"
-              won={defWonA}
-              total={defSiteA.length}
-            />
-          )}
-          {defSiteB.length > 0 && (
-            <WinBar
-              pct={winPct(defWonB, defSiteB.length)}
-              label="Site B"
-              won={defWonB}
-              total={defSiteB.length}
-            />
-          )}
+          <SiteWinBars
+            siteA={summary.defendSiteA}
+            siteB={summary.defendSiteB}
+            wonLabel={() => "No defend rounds"}
+          />
         </div>
       </div>
     </div>
   );
-};
+}
 
-/* ─────────────────────────────────────────── */
-/*  Situation row                              */
-/* ─────────────────────────────────────────── */
-
-const SituationRow = ({
+function SituationRow({
   situation,
   won,
   total
@@ -226,34 +216,34 @@ const SituationRow = ({
   situation: string;
   won: number;
   total: number;
-}) => {
+}) {
   const pct = winPct(won, total);
+  const color = winRateColor(pct);
   return (
     <div className="flex items-center gap-3">
-      <span className="font-mono font-bold text-sm w-10 shrink-0">
+      <span className="font-mono font-bold text-sm w-10 shrink-0 tabular-nums">
         {situation}
       </span>
       <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
         <div
-          className={cn("h-full rounded-full", barColor(pct))}
-          style={{ width: `${pct}%` }}
+          className="h-full rounded-full"
+          style={{ width: `${pct}%`, background: color, opacity: 0.75 }}
         />
       </div>
-      <span className={cn("font-bold text-xs w-9 text-right", winColor(pct))}>
+      <span
+        className="font-bold text-xs w-9 text-right tabular-nums"
+        style={{ color }}
+      >
         {pct}%
       </span>
-      <span className="text-xs text-muted-foreground w-8 text-right">
+      <span className="text-xs text-muted-foreground w-8 text-right tabular-nums">
         {won}/{total}
       </span>
     </div>
   );
-};
+}
 
-/* ─────────────────────────────────────────── */
-/*  Situation breakdown panel                  */
-/* ─────────────────────────────────────────── */
-
-const SituationPanel = ({
+function SituationPanel({
   teamName,
   attackRounds,
   defendRounds
@@ -261,41 +251,20 @@ const SituationPanel = ({
   teamName: string;
   attackRounds: MatchGameAfterplantRound[];
   defendRounds: MatchGameAfterplantRound[];
-}) => {
-  // Afterplants: group by "tCount v ctCount"
-  const afterplantSits = useMemo(() => {
-    const map = new Map<string, { won: number; total: number }>();
-    attackRounds.forEach((r) => {
-      const k = `${r.t_alive_at_plant}v${r.ct_alive_at_plant}`;
-      const cur = map.get(k) ?? { won: 0, total: 0 };
-      cur.total++;
-      if (T_WIN_REASONS.includes(r.round_end_reason_info)) cur.won++;
-      map.set(k, cur);
-    });
-    return Array.from(map.entries())
-      .map(([k, v]) => ({ key: k, ...v }))
-      .sort((a, b) => b.total - a.total);
-  }, [attackRounds]);
-
-  // Retakes: group by "ctCount v tCount" (CT perspective), win = CT won
-  const retakeSits = useMemo(() => {
-    const map = new Map<string, { won: number; total: number }>();
-    defendRounds.forEach((r) => {
-      const k = `${r.ct_alive_at_plant}v${r.t_alive_at_plant}`;
-      const cur = map.get(k) ?? { won: 0, total: 0 };
-      cur.total++;
-      if (!T_WIN_REASONS.includes(r.round_end_reason_info)) cur.won++;
-      map.set(k, cur);
-    });
-    return Array.from(map.entries())
-      .map(([k, v]) => ({ key: k, ...v }))
-      .sort((a, b) => b.total - a.total);
-  }, [defendRounds]);
+}) {
+  const afterplantSits = useMemo(
+    () => buildAfterplantSituations(attackRounds),
+    [attackRounds]
+  );
+  const retakeSits = useMemo(
+    () => buildRetakeSituations(defendRounds),
+    [defendRounds]
+  );
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
       <div className="space-y-3">
-        <p className="text-xs font-bold text-amber-300/80 uppercase tracking-wide">
+        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">
           {teamName} afterplants
         </p>
         <p className="text-xs text-muted-foreground -mt-1">
@@ -316,11 +285,11 @@ const SituationPanel = ({
         </div>
       </div>
       <div className="space-y-3">
-        <p className="text-xs font-bold text-sky-300/80 uppercase tracking-wide">
+        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">
           {teamName} retakes
         </p>
         <p className="text-xs text-muted-foreground -mt-1">
-          our players v enemy players (CT view) — retake win %
+          Our players v enemy players (CT view) — retake win %
         </p>
         <div className="space-y-2">
           {retakeSits.map((s) => (
@@ -338,591 +307,875 @@ const SituationPanel = ({
       </div>
     </div>
   );
-};
+}
 
-/* ─────────────────────────────────────────── */
-/*  Death swimlane (dynamic time range)        */
-/* ─────────────────────────────────────────── */
+/* ─── Site badge ─────────────────────────────────────────────────── */
+function SiteBadge({ site }: { site: "A" | "B" }) {
+  return (
+    <span
+      className="inline-flex items-center justify-center font-headings font-bold text-xs"
+      style={{
+        width: 24,
+        height: 24,
+        borderRadius: 6,
+        background: "var(--muted)",
+        color: "var(--foreground)",
+        flexShrink: 0
+      }}
+    >
+      {site}
+    </span>
+  );
+}
 
-const TIMELINE_PAD = 3; // seconds of padding before first / after last kill
+/* ─── Outcome chip ───────────────────────────────────────────────── */
+function OutcomeChip({
+  winnerTeamName,
+  outcomeLabel,
+  color
+}: {
+  winnerTeamName: string;
+  outcomeLabel: string;
+  color: string;
+}) {
+  return (
+    <span
+      className="inline-flex flex-wrap items-center justify-end gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 max-w-[min(100%,220px)]"
+      style={{
+        background: `color-mix(in oklab, ${color} 18%, transparent)`,
+        color,
+        border: `1px solid color-mix(in oklab, ${color} 30%, transparent)`
+      }}
+    >
+      <span className="truncate">{winnerTeamName}</span>
+      <span className="font-normal opacity-80">· {outcomeLabel}</span>
+    </span>
+  );
+}
 
-const DotLane = ({
-  kills,
-  side,
-  steamIdToName,
+/* ─── Post-plant timeline ────────────────────────────────────────── */
+function TimelineMarkerTooltip({
+  label,
+  children
+}: {
+  label: string;
+  children: React.ReactElement;
+}) {
+  return (
+    <Tooltip delayDuration={0}>
+      <TooltipTrigger asChild>{children}</TooltipTrigger>
+      <TooltipContent side="top" sideOffset={6} className="z-[100]">
+        {label}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
+function PlantMarker({
+  plantTime,
+  site,
+  laneColor,
   timeMin,
   timeMax
 }: {
-  kills: AfterplantKillEvent[];
-  side: "CT" | "T";
-  steamIdToName: Map<string, string>;
+  plantTime: number;
+  site: "A" | "B";
+  laneColor: string;
   timeMin: number;
   timeMax: number;
-}) => {
-  const sidekills = kills.filter((k) => k.victim_team === side);
-  const color = side === "T" ? "#fcd34d" : "#7dd3fc";
-  const range = Math.max(timeMax - timeMin, 1);
+}) {
+  return (
+    <TimelineMarkerTooltip
+      label={`Bomb planted on ${site} @${formatRoundTimeSeconds(plantTime)}`}
+    >
+      <div
+        className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 z-20 flex items-center justify-center w-4 h-4 rounded text-[9px] font-bold cursor-default"
+        style={{
+          left: `${timeToTimelinePct(plantTime, timeMin, timeMax)}%`,
+          background: `color-mix(in oklab, ${laneColor} 22%, var(--card))`,
+          color: laneColor,
+          border: `1.5px solid ${laneColor}`
+        }}
+      >
+        {site}
+      </div>
+    </TimelineMarkerTooltip>
+  );
+}
 
-  const toPct = (t: number) =>
-    Math.min(Math.max(((t - timeMin) / range) * 100, 0), 100);
+function DotLane({
+  kills,
+  side,
+  laneColor,
+  playerNames,
+  timeMin,
+  timeMax,
+  plantTime,
+  plantSite
+}: {
+  kills: AfterplantKillEvent[];
+  side: "CT" | "T";
+  laneColor: string;
+  playerNames: Map<string, string>;
+  timeMin: number;
+  timeMax: number;
+  plantTime?: number | null;
+  plantSite?: "A" | "B";
+}) {
+  const sideKills = kills.filter((k) => k.victim_team === side);
 
   return (
-    <div className="relative h-5 flex-1">
-      <div className="absolute inset-y-1/2 left-0 right-0 h-px bg-border" />
-      {sidekills.map((k, i) => {
+    <div className="relative h-5 flex-1 min-w-0">
+      <div className="absolute inset-y-1/2 left-0 right-0 h-px bg-border/60" />
+      {side === "T" && plantTime != null && plantSite && (
+        <PlantMarker
+          plantTime={plantTime}
+          site={plantSite}
+          laneColor={laneColor}
+          timeMin={timeMin}
+          timeMax={timeMax}
+        />
+      )}
+      {sideKills.map((k, i) => {
         const victim =
-          steamIdToName.get(k.victim_steam_id) ?? k.victim_steam_id;
+          playerNames.get(k.victim_steam_id) ?? k.victim_steam_id.slice(-4);
         const killer =
-          steamIdToName.get(k.killer_steam_id) ?? k.killer_steam_id;
+          playerNames.get(k.killer_steam_id) ?? k.killer_steam_id.slice(-4);
+        const label = `${killer} killed ${victim} @${formatRoundTimeSeconds(k.time_in_round)}${k.is_traded ? " (trade)" : ""}`;
         return (
-          <div
-            key={i}
-            title={`${killer} killed ${victim} @${Math.round(k.time_in_round)}s${k.is_traded ? " ↺ trade kill" : ""}`}
-            className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-3.5 h-3.5 rounded-full cursor-default z-10"
-            style={{
-              left: `${toPct(k.time_in_round)}%`,
-              background: k.is_traded ? "transparent" : color,
-              border: `2px solid ${color}`
-            }}
-          />
+          <TimelineMarkerTooltip key={i} label={label}>
+            <div
+              className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-3 h-3 rounded-full cursor-default z-10"
+              style={{
+                left: `${timeToTimelinePct(k.time_in_round, timeMin, timeMax)}%`,
+                background: k.is_traded ? "transparent" : laneColor,
+                border: `2px solid ${laneColor}`
+              }}
+            />
+          </TimelineMarkerTooltip>
         );
       })}
     </div>
   );
-};
+}
 
-/* ─────────────────────────────────────────── */
-/*  Single round card with swimlanes           */
-/* ─────────────────────────────────────────── */
-
-const RoundCard = ({
+function AfterplantTimeline({
   round,
-  steamIdToName
+  playerNames,
+  tColor,
+  ctColor
 }: {
   round: MatchGameAfterplantRound;
-  steamIdToName: Map<string, string>;
-}) => {
-  const tWon = T_WIN_REASONS.includes(round.round_end_reason_info);
+  playerNames: Map<string, string>;
+  tColor: string;
+  ctColor: string;
+}) {
+  const { timeMin, timeMax } = getAfterplantTimelineRange(
+    round.kills_after_plant,
+    round.plant_time_in_round
+  );
+  const axisLabels = getTimelineAxisLabels(timeMin, timeMax);
+  const hasTimeline =
+    round.kills_after_plant.length > 0 || round.plant_time_in_round != null;
 
+  if (!hasTimeline) return null;
+
+  return (
+    <TooltipProvider delayDuration={0} skipDelayDuration={0}>
+      <div className={cn(TIMELINE_GRID_CLASS, "pt-1")}>
+        <span className={TIMELINE_SIDE_LABEL_CLASS} style={{ color: ctColor }}>
+          CT
+        </span>
+        <DotLane
+          kills={round.kills_after_plant}
+          side="CT"
+          laneColor={ctColor}
+          playerNames={playerNames}
+          timeMin={timeMin}
+          timeMax={timeMax}
+        />
+        <span className={TIMELINE_SIDE_LABEL_CLASS} style={{ color: tColor }}>
+          T
+        </span>
+        <DotLane
+          kills={round.kills_after_plant}
+          side="T"
+          laneColor={tColor}
+          playerNames={playerNames}
+          timeMin={timeMin}
+          timeMax={timeMax}
+          plantTime={round.plant_time_in_round}
+          plantSite={round.plant_site}
+        />
+        <span className="w-6 sm:w-8 shrink-0" aria-hidden />
+        <div className="relative h-4 min-w-0">
+          {axisLabels.map((s) => (
+            <span
+              key={s}
+              className="absolute text-[9px] text-muted-foreground/60 tabular-nums -translate-x-1/2 whitespace-nowrap"
+              style={{
+                left: `${timeToTimelinePct(s, timeMin, timeMax)}%`
+              }}
+            >
+              {formatRoundTimeSeconds(s)}
+            </span>
+          ))}
+        </div>
+      </div>
+    </TooltipProvider>
+  );
+}
+
+function AlivePlayerList({ names }: { names: string[] }) {
+  if (names.length === 0) {
+    return <span className="text-xs text-muted-foreground/40">—</span>;
+  }
+  return (
+    <ul className="flex flex-wrap gap-x-2 gap-y-1 list-none m-0 p-0">
+      {names.map((name, index) => (
+        <li
+          key={`${name}-${index}`}
+          className="text-xs text-foreground/70 leading-snug"
+        >
+          {name}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function AliveTeamBlock({
+  side,
+  teamName,
+  players,
+  color
+}: {
+  side: "T" | "CT";
+  teamName: string;
+  players: string[];
+  color: string;
+}) {
+  return (
+    <div
+      className="flex flex-col gap-1.5 min-w-0 pl-2.5 py-2 border-l-2 rounded-r-md"
+      style={{
+        borderColor: `color-mix(in oklab, ${color} 35%, transparent)`
+      }}
+    >
+      <div className="flex items-center gap-2 min-w-0">
+        <span
+          className="text-[11px] font-bold shrink-0 tabular-nums"
+          style={{ color }}
+        >
+          {side}
+        </span>
+        <span
+          className="text-xs font-semibold min-w-0 break-words"
+          style={{ color }}
+        >
+          {teamName}
+        </span>
+      </div>
+      <AlivePlayerList names={players} />
+    </div>
+  );
+}
+
+function AliveAfterPlant({
+  round,
+  playerNames,
+  tColor,
+  ctColor
+}: {
+  round: MatchGameAfterplantRound;
+  playerNames: Map<string, string>;
+  tColor: string;
+  ctColor: string;
+}) {
   const tPlayers = (round.ct_t?.T ?? []).map(
-    (id) => steamIdToName.get(String(id)) ?? String(id)
+    (id) => playerNames.get(String(id)) ?? String(id).slice(-4)
   );
   const ctPlayers = (round.ct_t?.CT ?? []).map(
-    (id) => steamIdToName.get(String(id)) ?? String(id)
+    (id) => playerNames.get(String(id)) ?? String(id).slice(-4)
   );
 
+  return (
+    <div className="flex flex-col gap-2 min-w-0">
+      <AliveTeamBlock
+        side="T"
+        teamName={round.t_team_name}
+        players={tPlayers}
+        color={tColor}
+      />
+      <AliveTeamBlock
+        side="CT"
+        teamName={round.ct_team_name}
+        players={ctPlayers}
+        color={ctColor}
+      />
+    </div>
+  );
+}
+
+function DiedAfterPlant({
+  round,
+  playerNames,
+  tColor,
+  ctColor
+}: {
+  round: MatchGameAfterplantRound;
+  playerNames: Map<string, string>;
+  tColor: string;
+  ctColor: string;
+}) {
   const deathsFor = (side: "T" | "CT") =>
     round.kills_after_plant.filter((k) => k.victim_team === side);
 
-  // Dynamic timeline range: crop tightly around actual kill times
-  const killTimes = round.kills_after_plant.map((k) => k.time_in_round);
-  const timeMin =
-    killTimes.length > 0
-      ? Math.max(0, Math.min(...killTimes) - TIMELINE_PAD)
-      : 0;
-  const timeMax =
-    killTimes.length > 0 ? Math.max(...killTimes) + TIMELINE_PAD : 30;
+  return (
+    <div className="space-y-1">
+      {(["T", "CT"] as const).map((side) => {
+        const deaths = deathsFor(side);
+        const color = side === "T" ? tColor : ctColor;
+        return (
+          <div
+            key={side}
+            className="flex flex-col gap-1 sm:flex-row sm:items-start sm:gap-2 text-xs min-w-0"
+          >
+            <span className="font-bold shrink-0 tabular-nums" style={{ color }}>
+              {side}
+            </span>
+            {deaths.length === 0 ? (
+              <span className="text-muted-foreground/40">—</span>
+            ) : (
+              <div className="flex flex-wrap gap-x-3 gap-y-1 min-w-0">
+                {deaths.map((k, i) => {
+                  const victim =
+                    playerNames.get(k.victim_steam_id) ??
+                    k.victim_steam_id.slice(-4);
+                  const killer =
+                    playerNames.get(k.killer_steam_id) ??
+                    k.killer_steam_id.slice(-4);
+                  return (
+                    <span key={i} className="text-foreground/60">
+                      <span className="text-foreground/80 font-medium">
+                        {victim}
+                      </span>
+                      <span className="text-muted-foreground/50">
+                        {" "}
+                        by {killer} @{formatRoundTimeSeconds(k.time_in_round)}
+                      </span>
+                      {k.is_traded && (
+                        <span className="text-emerald-500/80 ml-0.5">↺</span>
+                      )}
+                    </span>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
-  // Generate 3–4 evenly-spaced axis labels within the cropped range
-  const axisLabels = (() => {
-    const range = timeMax - timeMin;
-    const step = range <= 10 ? 2 : range <= 20 ? 5 : range <= 40 ? 10 : 15;
-    const start = Math.ceil(timeMin / step) * step;
-    const labels: number[] = [];
-    for (let t = start; t <= timeMax; t += step) labels.push(t);
-    return labels;
-  })();
+/* ─── Plant row (expandable) ─────────────────────────────────────── */
+function PlantRow({
+  round,
+  tName,
+  playerNames,
+  isOpen,
+  onToggle,
+  tColor,
+  ctColor
+}: {
+  round: MatchGameAfterplantRound;
+  tName: string;
+  playerNames: Map<string, string>;
+  isOpen: boolean;
+  onToggle: () => void;
+  tColor: string;
+  ctColor: string;
+}) {
+  const outcome = getAfterplantRoundOutcome(round, tColor, ctColor);
+  const killerCount = round.kills_after_plant?.length ?? 0;
 
   return (
-    <div
-      className={cn(
-        "bg-card rounded-xl border border-border overflow-hidden",
-        tWon
-          ? "border-l-2 border-l-amber-300/50"
-          : "border-l-2 border-l-sky-300/50"
-      )}
-    >
-      {/* Header */}
-      <div className="flex items-center gap-2.5 px-4 py-2.5 bg-muted/30 border-b border-border/50">
-        <span className="font-mono font-bold text-sm w-9 shrink-0">
-          R{round.round_number}
-        </span>
-        <span className="font-bold text-sm">
-          {round.t_alive_at_plant}v{round.ct_alive_at_plant}
-        </span>
-        <span className="text-xs text-muted-foreground bg-muted rounded px-2 py-0.5">
-          Site {round.plant_site}
-        </span>
-        <div className="flex-1" />
-        <span
+    <div className="border-b border-border/20 last:border-0">
+      <button className="w-full text-left" onClick={onToggle}>
+        <div
           className={cn(
-            "text-xs font-bold px-2.5 py-0.5 rounded-full border flex items-center gap-1.5",
-            tWon
-              ? "text-amber-300/80 bg-amber-300/10 border-amber-300/30"
-              : "text-sky-300/80 bg-sky-300/10 border-sky-300/30"
+            "grid items-center gap-2.5 px-0 py-2.5 hover:bg-muted/20 transition-colors rounded",
+            isOpen && "bg-muted/20"
           )}
+          style={{ gridTemplateColumns: "28px 28px 1fr auto" }}
         >
-          {tWon ? "T won" : "CT won"}
-          <span className="font-normal opacity-70">
-            · {ROUND_END_LABEL[round.round_end_reason_info]}
+          <span className="text-xs font-bold text-muted-foreground tabular-nums">
+            R{round.round_number}
           </span>
-        </span>
-      </div>
-
-      {/* Alive after plant */}
-      <div className="px-4 pt-2.5 pb-2">
-        <p className="text-[10px] uppercase tracking-wide font-semibold text-muted-foreground/50 mb-1.5">
-          Alive after plant
-        </p>
-        <div className="space-y-1">
-          <div className="flex items-start gap-2 pl-2 border-l-2 border-amber-300/30">
-            <span className="text-[11px] font-bold text-amber-300/80 w-5 shrink-0 mt-0.5">
-              T
+          <SiteBadge site={round.plant_site} />
+          <div className="flex flex-wrap items-center gap-1.5 text-xs min-w-0">
+            <span style={{ color: tColor }} className="font-semibold">
+              {tName}
             </span>
-            <span className="text-xs font-semibold text-amber-300/70 w-28 shrink-0 truncate">
-              {round.t_team_name}
+            <span className="text-muted-foreground/50">planted</span>
+            <span className="text-muted-foreground/60">
+              {round.t_alive_at_plant}v{round.ct_alive_at_plant}
             </span>
-            <span className="text-xs text-foreground/70 leading-relaxed">
-              {tPlayers.join("  ·  ") || "—"}
-            </span>
-          </div>
-          <div className="flex items-start gap-2 pl-2 border-l-2 border-sky-300/30">
-            <span className="text-[11px] font-bold text-sky-300/80 w-5 shrink-0 mt-0.5">
-              CT
-            </span>
-            <span className="text-xs font-semibold text-sky-300/70 w-28 shrink-0 truncate">
-              {round.ct_team_name}
-            </span>
-            <span className="text-xs text-foreground/70 leading-relaxed">
-              {ctPlayers.join("  ·  ") || "—"}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Swimlanes */}
-      {round.kills_after_plant.length > 0 && (
-        <div className="px-4 pt-2.5 pb-1 space-y-1">
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] font-bold text-sky-300/70 w-5 shrink-0">
-              CT
-            </span>
-            <DotLane
-              kills={round.kills_after_plant}
-              side="CT"
-              steamIdToName={steamIdToName}
-              timeMin={timeMin}
-              timeMax={timeMax}
-            />
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] font-bold text-amber-300/70 w-5 shrink-0">
-              T
-            </span>
-            <DotLane
-              kills={round.kills_after_plant}
-              side="T"
-              steamIdToName={steamIdToName}
-              timeMin={timeMin}
-              timeMax={timeMax}
-            />
-          </div>
-          {/* Dynamic time axis — only shows ticks within the cropped range */}
-          <div className="relative pl-7 h-3">
-            {axisLabels.map((s) => (
-              <span
-                key={s}
-                className="absolute text-[9px] text-muted-foreground/60 -translate-x-1/2"
-                style={{
-                  left: `calc(1.75rem + ${((s - timeMin) / (timeMax - timeMin)) * 100}% * (100% - 1.75rem) / 100%)`
-                }}
-              >
-                {s}s
+            {killerCount > 0 && (
+              <span className="text-muted-foreground/50">
+                · {killerCount} kill{killerCount !== 1 ? "s" : ""} post-plant
               </span>
-            ))}
+            )}
           </div>
+          <OutcomeChip
+            winnerTeamName={outcome.winnerTeamName}
+            outcomeLabel={outcome.outcomeLabel}
+            color={outcome.winnerColor}
+          />
+        </div>
+      </button>
+
+      {isOpen && (
+        <div className="pb-4 pl-4 sm:pl-10 pr-1 flex flex-col gap-3 border-t border-border/20 mt-0.5 pt-3 min-w-0">
+          <div className="min-w-0">
+            <div className="text-[10px] text-muted-foreground/50 uppercase tracking-wide mb-1.5">
+              Alive after plant
+            </div>
+            <AliveAfterPlant
+              round={round}
+              playerNames={playerNames}
+              tColor={tColor}
+              ctColor={ctColor}
+            />
+          </div>
+
+          <div className="min-w-0">
+            <div className="text-[10px] text-muted-foreground/50 uppercase tracking-wide mb-1.5 leading-snug">
+              <span>Timeline</span>
+              {round.plant_time_in_round != null && (
+                <span className="normal-case tracking-normal text-muted-foreground/40 block sm:inline sm:ml-1.5">
+                  {round.plant_site} plant @
+                  {formatRoundTimeSeconds(round.plant_time_in_round)}
+                </span>
+              )}
+            </div>
+            <AfterplantTimeline
+              round={round}
+              playerNames={playerNames}
+              tColor={tColor}
+              ctColor={ctColor}
+            />
+            {round.kills_after_plant.length === 0 &&
+              round.plant_time_in_round == null && (
+                <p className="text-xs text-muted-foreground/50">
+                  No post-plant timeline data
+                </p>
+              )}
+          </div>
+
+          {round.kills_after_plant.length > 0 && (
+            <div>
+              <div className="text-[10px] text-muted-foreground/50 uppercase tracking-wide mb-1.5">
+                Died
+              </div>
+              <DiedAfterPlant
+                round={round}
+                playerNames={playerNames}
+                tColor={tColor}
+                ctColor={ctColor}
+              />
+            </div>
+          )}
         </div>
       )}
+    </div>
+  );
+}
 
-      {/* Died */}
-      <div className="px-4 pt-2 pb-3 border-t border-border/40 mt-1">
-        <p className="text-[10px] uppercase tracking-wide font-semibold text-muted-foreground/50 mb-1.5">
-          Died
-        </p>
-        <div className="space-y-1">
-          {(["T", "CT"] as const).map((side) => {
-            const deaths = deathsFor(side);
-            const color =
-              side === "T" ? "text-amber-300/70" : "text-sky-300/70";
-            return (
-              <div key={side} className="flex items-start gap-2 text-xs">
-                <span className={cn("font-bold w-5 shrink-0", color)}>
-                  {side}
-                </span>
-                {deaths.length === 0 ? (
-                  <span className="text-muted-foreground/40">—</span>
-                ) : (
-                  <div className="flex flex-wrap gap-x-3 gap-y-0.5">
-                    {deaths.map((k, i) => {
-                      const victim =
-                        steamIdToName.get(k.victim_steam_id) ??
-                        k.victim_steam_id;
-                      const killer =
-                        steamIdToName.get(k.killer_steam_id) ??
-                        k.killer_steam_id;
-                      return (
-                        <span key={i} className="text-foreground/60">
-                          <span className="text-foreground/80 font-medium">
-                            {victim}
-                          </span>
-                          <span className="text-muted-foreground/50">
-                            {" "}
-                            by {killer} @{Math.round(k.time_in_round)}s
-                          </span>
-                          {k.is_traded && (
-                            <span className="text-emerald-400/70"> ↺</span>
-                          )}
-                        </span>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
+/* ─── Site gauge ─────────────────────────────────────────────────── */
+function SiteGauge({
+  site,
+  held,
+  plants
+}: {
+  site: "A" | "B";
+  held: number;
+  plants: number;
+}) {
+  if (plants === 0) return null;
+  const heldPct = (held / plants) * 100;
+  const retakenPct = 100 - heldPct;
+  const retaken = plants - held;
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center gap-2">
+        <SiteBadge site={site} />
+        <span className="text-sm font-bold tabular-nums">{plants}</span>
+        <span className="text-xs text-muted-foreground/60">
+          plant{plants !== 1 ? "s" : ""}
+        </span>
+      </div>
+      <div
+        className="flex h-3 rounded-full overflow-hidden w-full"
+        style={{ background: "var(--muted)" }}
+      >
+        <div style={{ flex: heldPct, background: BAD_COLOR, opacity: 0.8 }} />
+        <div
+          style={{ flex: retakenPct, background: GOOD_COLOR, opacity: 0.8 }}
+        />
+      </div>
+      <div className="flex justify-between text-[11px]">
+        <span style={{ color: BAD_COLOR }} className="tabular-nums">
+          held {held} ({Math.round(heldPct)}%)
+        </span>
+        <span style={{ color: GOOD_COLOR }} className="tabular-nums">
+          retaken {retaken} ({Math.round(retakenPct)}%)
+        </span>
       </div>
     </div>
   );
-};
+}
 
-/* ─────────────────────────────────────────── */
-/*  Half divider                               */
-/* ─────────────────────────────────────────── */
-
-const HalfDivider = ({ label }: { label: string }) => (
-  <div className="flex items-center gap-3 my-1">
-    <div className="flex-1 h-px bg-border" />
-    <span className="text-xs font-semibold text-muted-foreground bg-muted px-3 py-1 rounded-full border border-border whitespace-nowrap">
-      {label}
-    </span>
-    <div className="flex-1 h-px bg-border" />
-  </div>
-);
-
-/* ─────────────────────────────────────────── */
-/*  Player involvement bar charts              */
-/* ─────────────────────────────────────────── */
-
-const CHART_GREEN = "rgba(134, 239, 172, 0.5)";
-const CHART_RED = "rgba(252, 165, 165, 0.5)";
-
-const PlayerBarChart = ({
-  title,
-  data
+/* ─── Retake card ────────────────────────────────────────────────── */
+function RetakeCard({
+  round,
+  ctName,
+  playerNames,
+  ctColor
 }: {
-  title: string;
-  data: { name: string; won: number; lost: number }[];
-}) => (
-  <div className="space-y-2">
-    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-      {title}
-    </p>
-    <ResponsiveContainer width="100%" height={data.length * 28 + 24}>
-      <BarChart
-        layout="vertical"
-        data={data}
-        margin={{ top: 0, right: 8, left: 4, bottom: 0 }}
-        barSize={10}
-      >
-        <XAxis type="number" hide />
-        <YAxis
-          type="category"
-          dataKey="name"
-          width={80}
-          tick={{ fontSize: 11, fill: "currentColor" }}
-        />
-        <Tooltip
-          formatter={(value, name) => [value ?? 0, name ?? ""]}
-          contentStyle={{
-            background: "#111827",
-            border: "1px solid rgba(255,255,255,0.12)",
-            borderRadius: 6,
-            fontSize: 11,
-            color: "#f9fafb"
+  round: MatchGameAfterplantRound;
+  ctName: string;
+  playerNames: Map<string, string>;
+  ctColor: string;
+}) {
+  const ctAlive = round.ct_alive_at_plant;
+  const tAlive = round.t_alive_at_plant;
+  const isClutch = ctAlive < tAlive;
+  const borderColor = ctColor;
+
+  return (
+    <div
+      className="flex flex-col gap-2 p-3 rounded-xl"
+      style={{
+        border: `1px solid color-mix(in oklab, ${borderColor} ${isClutch ? 45 : 22}%, var(--border))`,
+        background: `color-mix(in oklab, ${borderColor} 4%, transparent)`
+      }}
+    >
+      <div className="flex items-center gap-2 flex-wrap">
+        <SiteBadge site={round.plant_site} />
+        <span className="text-xs text-muted-foreground/60">
+          R{round.round_number}
+        </span>
+        <span
+          className="ml-auto text-[10px] font-semibold px-2 py-0.5 rounded-full"
+          style={{
+            background: `color-mix(in oklab, ${GOOD_COLOR} 18%, transparent)`,
+            color: GOOD_COLOR,
+            border: `1px solid color-mix(in oklab, ${GOOD_COLOR} 30%, transparent)`
           }}
-          cursor={{ fill: "rgba(255,255,255,0.04)" }}
-        />
-        <Bar dataKey="won" name="Won" stackId="a" fill={CHART_GREEN} />
-        <Bar dataKey="lost" name="Lost" stackId="a" fill={CHART_RED} />
-      </BarChart>
-    </ResponsiveContainer>
-  </div>
-);
+        >
+          DEFUSED
+        </span>
+      </div>
+      <div
+        className="text-2xl font-bold tabular-nums"
+        style={{ color: ctColor }}
+      >
+        {ctAlive}v{tAlive}
+      </div>
+      <div className="text-[11px] text-muted-foreground/70">
+        {ctName} retook {round.plant_site}-site
+        {isClutch && (
+          <span style={{ color: ctColor }} className="ml-1 font-semibold">
+            under disadvantage
+          </span>
+        )}
+      </div>
+      {/* Top retake kill */}
+      {round.kills_after_plant && round.kills_after_plant.length > 0 && (
+        <div className="text-[11px] text-muted-foreground/60">
+          {round.kills_after_plant
+            .filter((k) => k.victim_team === "T")
+            .slice(0, 2)
+            .map((k, i) => (
+              <span key={i}>
+                {i > 0 && " · "}
+                <span className="font-semibold text-foreground">
+                  {playerNames.get(k.killer_steam_id) ??
+                    k.killer_steam_id.slice(-4)}
+                </span>
+              </span>
+            ))}{" "}
+          {round.kills_after_plant.filter((k) => k.victim_team === "T")
+            .length === 1
+            ? "closed it out"
+            : "combined on the retake"}
+        </div>
+      )}
+    </div>
+  );
+}
 
-/* ─────────────────────────────────────────── */
-/*  Root export                                */
-/* ─────────────────────────────────────────── */
-
+/* ─── Main component ─────────────────────────────────────────────── */
 export const AfterplantTab = ({
   afterplantRounds,
   playerStats,
   teams
 }: AfterplantTabProps) => {
-  const [activeSection, setActiveSection] = useState<"rounds" | "players">(
-    "rounds"
-  );
+  const [openRound, setOpenRound] = useState<number | null>(null);
   const [situationTeam, setSituationTeam] = useState<0 | 1>(0);
-
-  const steamIdToName = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const p of playerStats) map.set(String(p.steam_id), p.nickname);
-    return map;
-  }, [playerStats]);
 
   const teamList = useMemo(
     () => orderMatchParticipantsBySideHomeLeft(Object.values(teams)),
     [teams]
   );
+  const teamA = teamList[0];
+  const teamB = teamList[1];
+
+  const playerNames = useMemo(() => {
+    const m = new Map<string, string>();
+    playerStats.forEach((p) => m.set(p.steam_id, p.nickname));
+    return m;
+  }, [playerStats]);
 
   const sorted = useMemo(
     () => [...afterplantRounds].sort((a, b) => a.round_number - b.round_number),
     [afterplantRounds]
   );
 
-  // Split by attacking team: rounds where each team is T (already sorted by round_number)
   const teamARounds = useMemo(
-    () => sorted.filter((r) => r.t_team_id === teamList[0]?.id),
-    [sorted, teamList]
+    () => sorted.filter((r) => r.t_team_id === teamA?.id),
+    [sorted, teamA?.id]
   );
   const teamBRounds = useMemo(
-    () => sorted.filter((r) => r.t_team_id === teamList[1]?.id),
-    [sorted, teamList]
+    () => sorted.filter((r) => r.t_team_id === teamB?.id),
+    [sorted, teamB?.id]
   );
 
-  // Determine which team attacked first (lowest round number = first half)
-  const teamAFirstRound = teamARounds[0]?.round_number ?? Infinity;
-  const teamBFirstRound = teamBRounds[0]?.round_number ?? Infinity;
-  // firstHalf[0] = team that attacked first, firstHalf[1] = team that attacked second
-  const halfOrder =
-    teamAFirstRound <= teamBFirstRound
-      ? ([teamARounds, teamBRounds] as const)
-      : ([teamBRounds, teamARounds] as const);
-  const halfOrderTeams =
-    teamAFirstRound <= teamBFirstRound
-      ? ([teamList[0], teamList[1]] as const)
-      : ([teamList[1], teamList[0]] as const);
+  const teamSummaries = useMemo(
+    () =>
+      teamList.map((team, i) => {
+        const attackRounds = i === 0 ? teamARounds : teamBRounds;
+        const defendRounds = i === 0 ? teamBRounds : teamARounds;
+        const firstAttack = attackRounds[0];
+        return {
+          team,
+          teamLogo: firstAttack?.t_team_logo ?? null,
+          summary: computeTeamAfterplantSummary(attackRounds, defendRounds),
+          attackRounds,
+          defendRounds
+        };
+      }),
+    [teamList, teamARounds, teamBRounds]
+  );
 
-  // Player involvement data builders
-  const buildInvolvementData = (
-    rounds: MatchGameAfterplantRound[],
-    side: "T" | "CT"
-  ) => {
-    const map = new Map<string, { name: string; won: number; lost: number }>();
-    rounds.forEach((r) => {
-      const players = side === "T" ? (r.ct_t?.T ?? []) : (r.ct_t?.CT ?? []);
-      const won =
-        side === "T"
-          ? T_WIN_REASONS.includes(r.round_end_reason_info)
-          : !T_WIN_REASONS.includes(r.round_end_reason_info);
-      players.forEach((id) => {
-        const name = steamIdToName.get(String(id)) ?? String(id);
-        const cur = map.get(name) ?? { name, won: 0, lost: 0 };
-        if (won) {
-          cur.won++;
-        } else {
-          cur.lost++;
-        }
-        map.set(name, cur);
-      });
-    });
-    return Array.from(map.values()).sort(
-      (a, b) => b.won + b.lost - (a.won + a.lost)
-    );
-  };
+  const activeTeamSummary = teamSummaries[situationTeam];
+
+  // Overview stats
+  const overview = useMemo(() => {
+    const plants = afterplantRounds.length;
+    const held = afterplantRounds.filter((r) =>
+      T_WIN_REASONS.includes(r.round_end_reason_info)
+    ).length;
+    const retaken = plants - held;
+    return { plants, held, retaken };
+  }, [afterplantRounds]);
+
+  // By site
+  const bySite = useMemo(() => {
+    const init = () => ({ plants: 0, held: 0 });
+    const a = init();
+    const b = init();
+    for (const r of afterplantRounds) {
+      const target = r.plant_site === "A" ? a : b;
+      target.plants++;
+      if (T_WIN_REASONS.includes(r.round_end_reason_info)) target.held++;
+    }
+    return { A: a, B: b };
+  }, [afterplantRounds]);
+
+  // Retake rounds
+  const retakes = useMemo(
+    () =>
+      afterplantRounds.filter(
+        (r) => !T_WIN_REASONS.includes(r.round_end_reason_info)
+      ),
+    [afterplantRounds]
+  );
 
   if (!sorted.length) {
     return (
-      <div className="py-12 text-center text-muted-foreground">
-        No plant data found for this game.
+      <div className="rounded-lg border bg-card p-8 text-center">
+        <p className="text-sm text-muted-foreground">
+          No plant data found for this game.
+        </p>
       </div>
     );
   }
 
-  const activeTeam = teamList[situationTeam];
-  const activeAttackRounds = situationTeam === 0 ? teamARounds : teamBRounds;
-  const activeDefendRounds = situationTeam === 0 ? teamBRounds : teamARounds;
-
   return (
-    <div className="space-y-6">
-      {/* ── Summary cards ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {teamList.map((team, i) => {
-          const atk = i === 0 ? teamARounds : teamBRounds;
-          const def = i === 0 ? teamBRounds : teamARounds;
-          const firstAtk = atk[0];
-          const logo = firstAtk?.t_team_logo ?? null;
-          return (
-            <TeamSummaryCard
-              key={team.id}
-              teamName={team.name}
-              teamLogo={logo}
-              attackRounds={atk}
-              defendRounds={def}
-            />
-          );
-        })}
-      </div>
-
-      {/* ── Situation breakdown ── */}
-      <div className="bg-card rounded-xl border border-border p-4 space-y-4">
-        <div className="flex items-center gap-3 flex-wrap">
-          <h3 className="font-semibold text-sm">Situation breakdown</h3>
-          <div className="flex gap-2 ml-auto">
-            {teamList.map((team, i) => (
-              <button
-                key={team.id}
-                onClick={() => setSituationTeam(i as 0 | 1)}
-                className={cn(
-                  "px-3 py-1 rounded-full text-xs font-semibold border transition-colors",
-                  situationTeam === i
-                    ? "bg-accent text-accent-foreground border-accent"
-                    : "bg-transparent text-muted-foreground border-border hover:border-foreground/30"
-                )}
-              >
-                {team.name}
-              </button>
-            ))}
-          </div>
-        </div>
-        {activeTeam && (
-          <SituationPanel
-            teamName={activeTeam.name}
-            attackRounds={activeAttackRounds}
-            defendRounds={activeDefendRounds}
+    <div className="flex flex-col gap-3.5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+        {teamSummaries.map(({ team, teamLogo, summary }) => (
+          <TeamSummaryCard
+            key={team.id}
+            teamName={team.name}
+            teamLogo={teamLogo}
+            summary={summary}
           />
-        )}
-      </div>
-
-      {/* ── Section tabs ── */}
-      <div className="flex gap-2 flex-wrap">
-        {(
-          [
-            { key: "rounds", label: "Round-by-round" },
-            { key: "players", label: "Player involvement" }
-          ] as const
-        ).map(({ key, label }) => (
-          <button
-            key={key}
-            onClick={() => setActiveSection(key)}
-            className={cn(
-              "px-4 py-1.5 rounded-full text-xs font-semibold border transition-colors",
-              activeSection === key
-                ? "bg-accent text-accent-foreground border-accent"
-                : "bg-transparent text-muted-foreground border-border hover:border-foreground/30"
-            )}
-          >
-            {label}
-          </button>
         ))}
       </div>
 
-      {/* ── Round-by-round ── */}
-      {activeSection === "rounds" && (
-        <div className="space-y-3">
-          {/* Legend */}
-          <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1.5">
-              <span
-                className="inline-block w-3 h-3 rounded-full"
-                style={{ background: "#7dd3fc", border: "2px solid #7dd3fc" }}
+      {(bySite.A.plants > 0 || bySite.B.plants > 0) && (
+        <AnalysisCard
+          title="Bombsite control"
+          sub="Where the bomb was planted and how often it survived to detonation"
+          right={
+            <Legend
+              items={[
+                { label: "held", color: BAD_COLOR },
+                { label: "retaken", color: GOOD_COLOR }
+              ]}
+            />
+          }
+        >
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            {bySite.A.plants > 0 && (
+              <SiteGauge
+                site="A"
+                held={bySite.A.held}
+                plants={bySite.A.plants}
               />
-              CT death
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span
-                className="inline-block w-3 h-3 rounded-full"
-                style={{ background: "#fcd34d", border: "2px solid #fcd34d" }}
+            )}
+            {bySite.B.plants > 0 && (
+              <SiteGauge
+                site="B"
+                held={bySite.B.held}
+                plants={bySite.B.plants}
               />
-              T death
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span
-                className="inline-block w-3 h-3 rounded-full"
-                style={{
-                  background: "transparent",
-                  border: "2px solid #9ca3af"
-                }}
-              />
-              hollow = trade kill (victim had just killed a teammate)
-            </span>
+            )}
           </div>
-
-          {halfOrder[0].length > 0 && (
-            <>
-              <HalfDivider
-                label={`${halfOrderTeams[0]?.name ?? "Team A"} T · ${halfOrderTeams[1]?.name ?? "Team B"} CT`}
-              />
-              <div className="space-y-3">
-                {halfOrder[0].map((r) => (
-                  <RoundCard
-                    key={r.round_number}
-                    round={r}
-                    steamIdToName={steamIdToName}
-                  />
-                ))}
-              </div>
-            </>
-          )}
-
-          {halfOrder[1].length > 0 && (
-            <>
-              <HalfDivider
-                label={`${halfOrderTeams[1]?.name ?? "Team B"} T · ${halfOrderTeams[0]?.name ?? "Team A"} CT`}
-              />
-              <div className="space-y-3">
-                {halfOrder[1].map((r) => (
-                  <RoundCard
-                    key={r.round_number}
-                    round={r}
-                    steamIdToName={steamIdToName}
-                  />
-                ))}
-              </div>
-            </>
-          )}
-        </div>
+        </AnalysisCard>
       )}
 
-      {/* ── Player involvement ── */}
-      {activeSection === "players" && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-          {/* Team A */}
-          <div className="space-y-6">
-            <h3 className="font-semibold text-sm">{teamList[0]?.name}</h3>
-            <PlayerBarChart
-              title="Attacking (T-side)"
-              data={buildInvolvementData(teamARounds, "T")}
-            />
-            <PlayerBarChart
-              title="Defending (CT-side)"
-              data={buildInvolvementData(teamBRounds, "CT")}
-            />
+      <AnalysisCard
+        title="Situation breakdown"
+        sub="Win rate by alive count at plant — afterplants on T-side, retakes on CT-side"
+        right={
+          teamList.length > 1 ? (
+            <div className="flex flex-wrap gap-1.5">
+              {teamList.map((team, i) => {
+                const teamColor = i === 0 ? TEAM_A_COLOR : TEAM_B_COLOR;
+                const isActive = situationTeam === i;
+                return (
+                  <button
+                    key={team.id}
+                    type="button"
+                    onClick={() => setSituationTeam(i as 0 | 1)}
+                    className="px-4 py-2.5 sm:px-3 sm:py-1 rounded-full text-xs font-semibold border transition-colors"
+                    style={teamToggleStyle(teamColor, isActive)}
+                  >
+                    {team.name}
+                  </button>
+                );
+              })}
+            </div>
+          ) : undefined
+        }
+      >
+        {activeTeamSummary && (
+          <SituationPanel
+            teamName={activeTeamSummary.team.name}
+            attackRounds={activeTeamSummary.attackRounds}
+            defendRounds={activeTeamSummary.defendRounds}
+          />
+        )}
+
+        {retakes.length > 0 && (
+          <div className="mt-6 pt-6 border-t border-border/30">
+            <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-1">
+              The retakes
+            </p>
+            <p className="text-xs text-muted-foreground mb-3">
+              {retakes.length} plant{retakes.length !== 1 ? "s" : ""} taken back
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {retakes.map((r) => {
+                const tIsA = r.t_team_id === (teamA?.id ?? 0);
+                const ctColor = tIsA ? TEAM_B_COLOR : TEAM_A_COLOR;
+                return (
+                  <RetakeCard
+                    key={r.round_number}
+                    round={r}
+                    ctName={r.ct_team_name}
+                    playerNames={playerNames}
+                    ctColor={ctColor}
+                  />
+                );
+              })}
+            </div>
           </div>
-          {/* Team B */}
-          <div className="space-y-6">
-            <h3 className="font-semibold text-sm">{teamList[1]?.name}</h3>
-            <PlayerBarChart
-              title="Attacking (T-side)"
-              data={buildInvolvementData(teamBRounds, "T")}
-            />
-            <PlayerBarChart
-              title="Defending (CT-side)"
-              data={buildInvolvementData(teamARounds, "CT")}
-            />
-          </div>
+        )}
+      </AnalysisCard>
+
+      {/* After the plant */}
+      <AnalysisCard
+        title="After the plant"
+        sub="Every round the bomb went down — did the plant hold, or did the retake land?"
+      >
+        {/* KPI strip */}
+        <div className="grid grid-cols-3 gap-3 mb-5">
+          <KpiNum
+            value={overview.plants}
+            label="Bomb plants"
+            sub={`of ${afterplantRounds.length > 0 ? Math.max(overview.plants, afterplantRounds.length) : "—"} rounds`}
+          />
+          <KpiNum
+            value={overview.held}
+            unit={`/${overview.plants}`}
+            label="Held by planter"
+            sub={`${overview.plants > 0 ? Math.round((overview.held / overview.plants) * 100) : 0}% kept the plant`}
+            color={BAD_COLOR}
+          />
+          <KpiNum
+            value={overview.retaken}
+            unit={`/${overview.plants}`}
+            label="Retaken"
+            sub={`${overview.plants > 0 ? Math.round((overview.retaken / overview.plants) * 100) : 0}% defused`}
+            color={GOOD_COLOR}
+          />
         </div>
-      )}
+
+        {/* Plant ledger */}
+        <div className="border-t border-border/30">
+          {afterplantRounds.map((r) => {
+            // For each round, determine which team was T (planting)
+            // We need to figure out team A vs B from ct_team_id / t_team_id
+            const tIsA = r.t_team_id === (teamA?.id ?? 0);
+            const tColor = tIsA ? TEAM_A_COLOR : TEAM_B_COLOR;
+            const ctColor = tIsA ? TEAM_B_COLOR : TEAM_A_COLOR;
+
+            return (
+              <PlantRow
+                key={r.round_number}
+                round={r}
+                tName={r.t_team_name}
+                playerNames={playerNames}
+                isOpen={openRound === r.round_number}
+                onToggle={() =>
+                  setOpenRound(
+                    openRound === r.round_number ? null : r.round_number
+                  )
+                }
+                tColor={tColor}
+                ctColor={ctColor}
+              />
+            );
+          })}
+        </div>
+      </AnalysisCard>
     </div>
   );
 };

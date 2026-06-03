@@ -5,15 +5,29 @@ import {
   getGamePlayerStats,
   getGameTeamRoundBreakdown,
   getGameTopPlayers,
-  getGameClip
+  getGameClip,
+  getWeaponStats,
+  getHitStats,
+  getPlayerRoundEvents,
+  getPlayerGameUtilityStats
 } from "../models/match-game.models";
 import {
   getMatchGameAfterplantAnalysis,
   getMatchGameOpeningDuels,
   getMatchGameKillMatrix,
   getMatchGameTradeStats,
-  getMatchGameInsights
+  getMatchGameInsights,
+  getRoundSwingEvents,
+  getEntryKills,
+  type KillMatrixFilters
 } from "../models/match-game-analysis.models";
+import {
+  getFlashMatrix,
+  getPlayerFlashStats
+} from "../models/flash-events.models";
+import { getSetupPairs } from "../models/setup-events.models";
+import { getWastedUtilityByPlayer } from "../models/wasted-utility-events.models";
+import { getRoundUtilitySummary } from "../models/round-utility-summary.models";
 import { BadRequestError, NotFoundError } from "../utils/errors";
 import { getTeamStats } from "../models/match.models";
 
@@ -58,8 +72,9 @@ export const getGamePlayerStatsController = async (
 ) => {
   const match_game_id = parseInt(req.params.match_game_id, 10);
   const stat = req.query.stat as "CT" | "T" | undefined;
+  const steam_id = req.query.steam_id as string | undefined;
 
-  const playerstats = await getGamePlayerStats(match_game_id, stat);
+  const playerstats = await getGamePlayerStats(match_game_id, stat, steam_id);
 
   res.json(playerstats);
 };
@@ -93,7 +108,12 @@ export const getMatchGameKillMatrixController = async (
   res: Response
 ) => {
   const match_game_id = parseInt(req.params.match_game_id, 10);
-  const data = await getMatchGameKillMatrix(match_game_id);
+  const filters: KillMatrixFilters = {
+    excludeExitKills: req.query.excludeExitKills === "true",
+    postPlantOnly: req.query.postPlantOnly === "true",
+    excludeEcoKills: req.query.excludeEcoKills === "true"
+  };
+  const data = await getMatchGameKillMatrix(match_game_id, filters);
   res.json(data);
 };
 
@@ -121,6 +141,122 @@ export const getMatchGameInsightsController = async (
 ) => {
   const match_game_id = parseInt(req.params.match_game_id, 10);
   const data = await getMatchGameInsights(match_game_id);
+  res.json(data);
+};
+
+export const getRoundSwingsController = async (
+  req: RequestWithParams<{ match_game_id: string }>,
+  res: Response
+) => {
+  const match_game_id = parseInt(req.params.match_game_id, 10);
+  const roundNumber = req.query.roundNumber
+    ? parseInt(req.query.roundNumber as string, 10)
+    : undefined;
+  const limit = req.query.limit
+    ? parseInt(req.query.limit as string, 10)
+    : undefined;
+
+  const data = await getRoundSwingEvents(match_game_id, { roundNumber, limit });
+  res.json({ round_swings: data });
+};
+
+export const getFlashMatrixController = async (
+  req: RequestWithParams<{ match_game_id: string }>,
+  res: Response
+) => {
+  const match_game_id = parseInt(req.params.match_game_id, 10);
+  const [matrix, playerStats] = await Promise.all([
+    getFlashMatrix(match_game_id, { enemyOnly: false }),
+    getPlayerFlashStats(match_game_id)
+  ]);
+  res.json({ flash_matrix: matrix, player_stats: playerStats });
+};
+
+export const getEntryKillsController = async (
+  req: RequestWithParams<{ match_game_id: string }>,
+  res: Response
+) => {
+  const match_game_id = parseInt(req.params.match_game_id, 10);
+  const data = await getEntryKills(match_game_id);
+  res.json({ entry_kills: data });
+};
+
+export const getSetupPairsController = async (
+  req: RequestWithParams<{ match_game_id: string }>,
+  res: Response
+) => {
+  const match_game_id = parseInt(req.params.match_game_id, 10);
+  const data = await getSetupPairs(match_game_id);
+  res.json({ setup_pairs: data });
+};
+
+export const getWastedUtilityController = async (
+  req: RequestWithParams<{ match_game_id: string }>,
+  res: Response
+) => {
+  const match_game_id = parseInt(req.params.match_game_id, 10);
+  const data = await getWastedUtilityByPlayer(match_game_id);
+  res.json({ wasted_utility: data });
+};
+
+export const getRoundUtilitySummaryController = async (
+  req: RequestWithParams<{ match_game_id: string }>,
+  res: Response
+) => {
+  const match_game_id = parseInt(req.params.match_game_id, 10);
+  const data = await getRoundUtilitySummary(match_game_id);
+  res.json({ round_utility_summary: data });
+};
+
+export const getWeaponStatsController = async (
+  req: RequestWithParams<{ match_game_id: string }>,
+  res: Response,
+  next: NextFunction
+) => {
+  const match_game_id = parseInt(req.params.match_game_id, 10);
+  const steam_id = req.query.steam_id as string | undefined;
+  if (!steam_id)
+    return next(new BadRequestError("steam_id query param required"));
+  const data = await getWeaponStats(match_game_id, steam_id);
+  res.json({ weapons: data });
+};
+
+export const getHitStatsController = async (
+  req: RequestWithParams<{ match_game_id: string }>,
+  res: Response,
+  next: NextFunction
+) => {
+  const match_game_id = parseInt(req.params.match_game_id, 10);
+  const steam_id = req.query.steam_id as string | undefined;
+  if (!steam_id)
+    return next(new BadRequestError("steam_id query param required"));
+  const data = await getHitStats(match_game_id, steam_id);
+  res.json(data);
+};
+
+export const getPlayerRoundEventsController = async (
+  req: RequestWithParams<{ match_game_id: string }>,
+  res: Response,
+  next: NextFunction
+) => {
+  const match_game_id = parseInt(req.params.match_game_id, 10);
+  const steam_id = req.query.steam_id as string | undefined;
+  if (!steam_id)
+    return next(new BadRequestError("steam_id query param required"));
+  const data = await getPlayerRoundEvents(match_game_id, steam_id);
+  res.json(data);
+};
+
+export const getPlayerUtilityStatsController = async (
+  req: RequestWithParams<{ match_game_id: string }>,
+  res: Response,
+  next: NextFunction
+) => {
+  const match_game_id = parseInt(req.params.match_game_id, 10);
+  const steam_id = req.query.steam_id as string | undefined;
+  if (!steam_id)
+    return next(new BadRequestError("steam_id query param required"));
+  const data = await getPlayerGameUtilityStats(match_game_id, steam_id);
   res.json(data);
 };
 

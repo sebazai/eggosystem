@@ -45,7 +45,7 @@ export default async function AllOrganizations(props: {
       </h1>
       <div
         id="sticky-header"
-        className="sticky z-30 top-[var(--nav-height)] transition-[top] duration-300 ease-in-out sm:landscape:none xs:landscape:top-6 md:landscape:top-[var(--nav-height)]"
+        className="sticky z-30 top-[var(--nav-height)] sm:landscape:none xs:landscape:top-6 md:landscape:top-[var(--nav-height)]"
       >
         <SearchBar placeholder="Search by organization name or company code..." />
       </div>

@@ -12,8 +12,13 @@ export const useActiveSignupOrActiveSeasonForApp = (appId: number) => {
       revalidateOnFocus: false
     });
 
+  const signupOrActiveSeason =
+    data && typeof data.season_id === "number" && data.season_id > 0
+      ? data
+      : undefined;
+
   return {
-    signupOrActiveSeason: data,
+    signupOrActiveSeason,
     isLoading,
     isError: error,
     isValidating

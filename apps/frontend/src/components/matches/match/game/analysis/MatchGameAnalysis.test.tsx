@@ -46,9 +46,14 @@ jest.mock("./TradeTab", () => ({
   TradeTab: () => <div data-testid="trade-tab">TradeTab</div>
 }));
 
-// Mock loading component
-jest.mock("@/components/loading", () => ({
-  TableSkeleton: () => <div data-testid="table-skeleton">Loading...</div>
+// Mock skeleton components
+jest.mock("./AnalysisSkeleton", () => ({
+  AnalysisInsightsSkeleton: () => (
+    <div data-testid="analysis-skeleton">Loading...</div>
+  ),
+  AnalysisGenericSkeleton: () => (
+    <div data-testid="analysis-skeleton">Loading...</div>
+  )
 }));
 
 const mockMatchInfo: MatchInfo = {
@@ -180,7 +185,7 @@ describe("MatchGameAnalysis", () => {
       );
 
       expect(
-        screen.getByRole("tab", { name: /insights/i })
+        screen.getByRole("tab", { name: /overview/i })
       ).toBeInTheDocument();
       expect(
         screen.getByRole("tab", { name: /afterplants/i })
@@ -189,7 +194,7 @@ describe("MatchGameAnalysis", () => {
         screen.getByRole("tab", { name: /opening duels/i })
       ).toBeInTheDocument();
       expect(
-        screen.getByRole("tab", { name: /kill.*flash matrix/i })
+        screen.getByRole("tab", { name: /kill matrix/i })
       ).toBeInTheDocument();
       expect(screen.getByRole("tab", { name: /trades/i })).toBeInTheDocument();
     });
@@ -202,7 +207,7 @@ describe("MatchGameAnalysis", () => {
         <MatchGameAnalysis matchGameId={10340} matchInfo={mockMatchInfo} />
       );
 
-      const insightsTab = screen.getByRole("tab", { name: /insights/i });
+      const insightsTab = screen.getByRole("tab", { name: /overview/i });
       expect(insightsTab).toHaveAttribute("data-state", "active");
     });
 
@@ -214,7 +219,7 @@ describe("MatchGameAnalysis", () => {
         <MatchGameAnalysis matchGameId={10340} matchInfo={mockMatchInfo} />
       );
 
-      const insightsTab = screen.getByRole("tab", { name: /insights/i });
+      const insightsTab = screen.getByRole("tab", { name: /overview/i });
       expect(insightsTab).toHaveAttribute("data-state", "active");
     });
 
@@ -239,7 +244,7 @@ describe("MatchGameAnalysis", () => {
       );
 
       const killMatrixTab = screen.getByRole("tab", {
-        name: /kill.*flash matrix/i
+        name: /kill matrix/i
       });
       expect(killMatrixTab).toHaveAttribute("data-state", "active");
     });
@@ -283,7 +288,7 @@ describe("MatchGameAnalysis", () => {
         <MatchGameAnalysis matchGameId={10340} matchInfo={mockMatchInfo} />
       );
 
-      expect(screen.getByTestId("table-skeleton")).toBeInTheDocument();
+      expect(screen.getByTestId("analysis-skeleton")).toBeInTheDocument();
       expect(screen.queryByTestId("insights-tab")).not.toBeInTheDocument();
     });
 
@@ -300,7 +305,7 @@ describe("MatchGameAnalysis", () => {
       // Navigate to afterplant tab
       await user.click(screen.getByRole("tab", { name: /afterplants/i }));
 
-      expect(screen.getByTestId("table-skeleton")).toBeInTheDocument();
+      expect(screen.getByTestId("analysis-skeleton")).toBeInTheDocument();
       expect(screen.queryByTestId("afterplant-tab")).not.toBeInTheDocument();
     });
 
@@ -317,7 +322,7 @@ describe("MatchGameAnalysis", () => {
         <MatchGameAnalysis matchGameId={10340} matchInfo={mockMatchInfo} />
       );
 
-      expect(screen.getByTestId("table-skeleton")).toBeInTheDocument();
+      expect(screen.getByTestId("analysis-skeleton")).toBeInTheDocument();
       expect(screen.queryByTestId("trade-tab")).not.toBeInTheDocument();
     });
   });
@@ -331,7 +336,7 @@ describe("MatchGameAnalysis", () => {
       );
 
       expect(screen.getByTestId("insights-tab")).toBeInTheDocument();
-      expect(screen.queryByTestId("table-skeleton")).not.toBeInTheDocument();
+      expect(screen.queryByTestId("analysis-skeleton")).not.toBeInTheDocument();
     });
 
     it("renders AfterplantTab when data is loaded and tab is active", () => {
@@ -423,7 +428,6 @@ describe("MatchGameAnalysis", () => {
 
       expect(useMatchGameAfterplantAnalysis).toHaveBeenCalledWith(10340);
       expect(useMatchGameOpeningDuels).toHaveBeenCalledWith(10340);
-      expect(useMatchGameKillMatrix).toHaveBeenCalledWith(10340);
       expect(useMatchGameTradeStats).toHaveBeenCalledWith(10340);
       expect(useMatchGameInsights).toHaveBeenCalledWith(10340);
       expect(useGamePlayerStats).toHaveBeenCalledWith(10340);

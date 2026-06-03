@@ -13,6 +13,31 @@
 export type PlayerTier = "bronze" | "silver" | "gold";
 
 /**
+ * Fantasy player role.
+ * Shared across backend role assignment / points calculation and the
+ * frontend role-assignment UI.
+ */
+export type PlayerRole =
+  | "main_awp"
+  | "leader"
+  | "support"
+  | "entry_fragger"
+  | "defender"
+  | "hs_machine"
+  | "multi_fragger"
+  | "attacker"
+  | "camper"
+  | "stathunter"
+  | "noob"
+  | "eco_friendly"
+  | "flash_master"
+  | "clutch_player"
+  | "first_blood"
+  | "t_specialist"
+  | "ct_specialist"
+  | "anchor";
+
+/**
  * Value boundaries for tier calculation
  * Adjusted for wider range and Silver as most common tier
  */

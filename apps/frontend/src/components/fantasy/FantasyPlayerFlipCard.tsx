@@ -282,6 +282,7 @@ function FantasyPlayerFlipCard({
                     src={player.photo}
                     alt={`${player.name} player photo`}
                     fill
+                    sizes="(max-width: 640px) 50vw, 220px"
                     className="object-cover"
                   />
                 ) : (

@@ -166,40 +166,47 @@ export const createDashboardNextUrl = (url: string) => {
   return `/dashboard/${url}`;
 };
 
-export const createOrgLogoUrl = (identifier: string) => {
-  if (!identifier) return "";
+export const LOCAL_NO_LOGO_PATH = "/team-images/nologo.png";
 
-  // If it's already a full URL, return as is (backward compatibility)
+const PLACEHOLDER_IMAGE_IDENTIFIERS = new Set(["nologo.png"]);
+
+function isPlaceholderImageIdentifier(identifier: string): boolean {
+  const normalized = identifier.trim();
+  return (
+    normalized.length === 0 || PLACEHOLDER_IMAGE_IDENTIFIERS.has(normalized)
+  );
+}
+
+function resolveImageServiceUrl(identifier: string): string {
   if (identifier.startsWith("http://") || identifier.startsWith("https://")) {
     return identifier;
   }
 
-  // Always use image service phash endpoint
   return `${envConfig.IMAGE_SERVICE_URL}/images/by-hash/phash/${identifier}`;
+}
+
+export const createOrgLogoUrl = (identifier: string) => {
+  if (isPlaceholderImageIdentifier(identifier)) {
+    return LOCAL_NO_LOGO_PATH;
+  }
+
+  return resolveImageServiceUrl(identifier);
 };
 
 export const createTeamLogoUrl = (identifier: string) => {
-  if (!identifier) return "";
-
-  // If it's already a full URL, return as is (backward compatibility)
-  if (identifier.startsWith("http://") || identifier.startsWith("https://")) {
-    return identifier;
+  if (isPlaceholderImageIdentifier(identifier)) {
+    return LOCAL_NO_LOGO_PATH;
   }
 
-  // Always use image service phash endpoint
-  return `${envConfig.IMAGE_SERVICE_URL}/images/by-hash/phash/${identifier}`;
+  return resolveImageServiceUrl(identifier);
 };
 
 export const createAvatarUrl = (identifier: string) => {
-  if (!identifier) return "";
-
-  // If it's already a full URL, return as is (backward compatibility)
-  if (identifier.startsWith("http://") || identifier.startsWith("https://")) {
-    return identifier;
+  if (isPlaceholderImageIdentifier(identifier)) {
+    return "";
   }
 
-  // Always use image service phash endpoint
-  return `${envConfig.IMAGE_SERVICE_URL}/images/by-hash/phash/${identifier}`;
+  return resolveImageServiceUrl(identifier);
 };
 
 export function filterParamsToSearchParams(

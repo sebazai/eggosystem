@@ -7,10 +7,10 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "clean": "rm -rf cache dist"
+    "clean": "rm -rf cache dist .tsbuildinfo"
   },
   "dependencies": {
-    "msw": "2.12.14",
+    "msw": "2.14.6",
     "@eggosystem/types": "workspace:*"
   },
   "devDependencies": {

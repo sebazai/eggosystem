@@ -15,7 +15,10 @@ import {
   getPlayerHistoricalAverageByRankController,
   getPlayerHistoricalAverageByLevelController,
   getPlayerHistoricalAverageController,
-  resolveSteamIdController
+  resolveSteamIdController,
+  getPlayerFlashStatsCrossGameController,
+  getPlayerUtilityStatsCrossGameController,
+  getPlayerRoundImpactController
 } from "../../controllers/players.controllers";
 import { getPlayerTrophiesController } from "../../controllers/trophies.controllers";
 import { validateNumericParams } from "../../middlewares/validate-numeric-params";
@@ -107,6 +110,24 @@ router.get(
   "/historical/avg",
   corsMiddleware,
   getPlayerHistoricalAverageController
+);
+
+router.get(
+  "/:steam_id/flash-stats",
+  corsMiddleware,
+  getPlayerFlashStatsCrossGameController
+);
+
+router.get(
+  "/:steam_id/utility-stats",
+  corsMiddleware,
+  getPlayerUtilityStatsCrossGameController
+);
+
+router.get(
+  "/:steam_id/round-impact",
+  corsMiddleware,
+  getPlayerRoundImpactController
 );
 
 export default router;

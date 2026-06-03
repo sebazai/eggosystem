@@ -1,4 +1,5 @@
 import { KanaEloCalculateButton } from "@/components/dashboard/KanaEloCalculateButton";
+import { GrandFinalPlacementsReplaySection } from "@/components/dashboard/GrandFinalPlacementsReplaySection";
 import { FaceitSyncSection } from "./FaceitSyncSection";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatCard } from "@/components/kanaliiga";
@@ -36,7 +37,14 @@ export default async function Page() {
             <KanaEloCalculateButton />
           </CardContent>
         </Card>
-        <Card className="shadow-sm aspect-video" />
+        <Card className="shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-base">Grand Final Placements</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <GrandFinalPlacementsReplaySection />
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

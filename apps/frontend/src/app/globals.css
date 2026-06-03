@@ -61,11 +61,28 @@ Vaaleanruskea: #d09158 / hsl(29, 56%, 58%) */
   --max-page: 1920px;
   --page-px: 1rem;
 
-  /* ---------- Tier colors ---------- */
-  --tier-premier: 35 93% 49%;
-  --tier-elite: 262 83% 58%;
-  --tier-challenge: 199 89% 48%;
-  --tier-open: 160 60% 45%;
+  /* ── Analysis page data-viz tokens ── */
+  --analysis-team-a: oklch(0.70 0.12 248);
+  --analysis-team-b: oklch(0.71 0.14 354);
+  --analysis-good: oklch(0.74 0.13 155);
+  --analysis-bad: oklch(0.66 0.16 18);
+  --analysis-neutral: oklch(0.52 0.03 48);
+
+  /* Weapon usage donut — data-viz palette (not brand accents) */
+  --weapon-viz-1: hsl(199 89% 60%);
+  --weapon-viz-2: hsl(27 96% 61%);
+  --weapon-viz-3: hsl(258 90% 72%);
+  --weapon-viz-4: hsl(330 86% 70%);
+  --weapon-viz-5: hsl(152 76% 64%);
+  --weapon-viz-6: hsl(43 96% 56%);
+  --weapon-viz-7: hsl(0 91% 71%);
+  --weapon-viz-8: hsl(172 66% 50%);
+
+  /* ---------- Tier colors (masters → default) ---------- */
+  --tier-masters: 35 78% 56%;
+  --tier-challengers: 262 68% 68%;
+  --tier-prospects: 199 74% 58%;
+  --tier-default: 215 12% 55%;
 
   /* ---------- Status / stream ---------- */
   --status-live: 0 84% 60%;
@@ -159,10 +176,10 @@ Vaaleanruskea: #d09158 / hsl(29, 56%, 58%) */
   --color-kanaliiga-light-brown: var(--kanaliiga-light-brown);
   --color-kanaliiga-dark-gray: var(--kanaliiga-dark-gray);
   --color-kanaliiga-white: var(--kanaliiga-white);
-  --color-tier-premier: hsl(var(--tier-premier));
-  --color-tier-elite: hsl(var(--tier-elite));
-  --color-tier-challenge: hsl(var(--tier-challenge));
-  --color-tier-open: hsl(var(--tier-open));
+  --color-tier-masters: hsl(var(--tier-masters));
+  --color-tier-challengers: hsl(var(--tier-challengers));
+  --color-tier-prospects: hsl(var(--tier-prospects));
+  --color-tier-default: hsl(var(--tier-default));
   --color-status-live: hsl(var(--status-live));
   --color-status-upcoming: hsl(var(--status-upcoming));
   --color-status-finished: hsl(var(--status-finished));
@@ -287,21 +304,6 @@ Vaaleanruskea: #d09158 / hsl(29, 56%, 58%) */
 
   .font-poppins {
     font-family: var(--font-poppins);
-  }
-
-  .logo {
-    max-height: 175px;
-    transition: all 0.5s ease-in-out;
-  }
-
-  .logo-small {
-    width: 80px !important;
-    height: 91px !important;
-  }
-
-  .logo-large {
-    width: 153px !important;
-    height: 175px !important;
   }
 
   p {

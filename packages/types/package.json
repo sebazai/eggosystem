@@ -8,22 +8,23 @@
     "build": "tsc -p tsconfig.build.json",
     "dev": "tsc --watch -p tsconfig.build.json",
     "test": "NODE_ENV=test jest --config jest.config.mjs --",
-    "clean": "rm -rf cache dist"
+    "clean": "rm -rf cache dist .tsbuildinfo && rm -f ../tsconfig/.tsbuildinfo"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "keywords": [],
   "author": "",
   "dependencies": {
-    "zod": "4.3.6"
+    "zod": "4.4.3"
   },
   "devDependencies": {
     "@eggosystem/eslint": "workspace:*",
     "@eggosystem/tsconfig": "workspace:*",
+    "@swc/core": "1.15.40",
+    "@swc/jest": "0.2.39",
     "@types/express": "5.0.6",
     "@types/jest": "30.0.0",
-    "jest": "30.3.0",
-    "ts-jest": "29.4.6",
+    "jest": "30.4.2",
     "typescript": "6.0.3"
   },
   "exports": {

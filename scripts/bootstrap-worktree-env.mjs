@@ -13,6 +13,8 @@
  *   - apps/backend/*.pem → same relative paths under the worktree
  *
  * Safe to run from the primary checkout (no-op). Missing sources are skipped with a log line.
+ *
+ * For secrets + pnpm install + build in a worktree, use scripts/bootstrap-worktree-deps.sh.
  */
 import { execFileSync } from "node:child_process";
 import {

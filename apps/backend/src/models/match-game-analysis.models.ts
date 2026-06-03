@@ -5,6 +5,7 @@ import {
   type MatchGameOpeningDuel,
   type OpeningDuelTradeStatus,
   type MatchGameKillMatrix,
+  type KillMatrixFilters,
   type MatchGameTradeStats,
   type PlayerTradeStats,
   type TradeMatrixEntry,
@@ -12,6 +13,7 @@ import {
   type MatchGameInsights
 } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
+import { plantTimeSecondsOrNull } from "../utils/plant-time";
 
 const jsonBig = JSONBig({ storeAsString: true });
 
@@ -19,9 +21,10 @@ const TRADE_WINDOW_SECONDS = 5;
 
 type AfterplantRoundRow = Omit<
   MatchGameAfterplantRound,
-  "ct_t" | "kills_after_plant"
+  "ct_t" | "kills_after_plant" | "plant_time_in_round"
 > & {
   ct_t: string | null;
+  plant_time: number | null;
 };
 
 type KillLogRow = {
@@ -45,6 +48,7 @@ export const getMatchGameAfterplantAnalysis = async (
     SELECT
       mrs.round_number,
       mrs.plant_site,
+      mrs.plant_time,
       mrs.ct_t,
       mrs.round_end_reason_info,
       mrs.ct_team_id,
@@ -73,7 +77,7 @@ export const getMatchGameAfterplantAnalysis = async (
       pklog.time_in_round
     FROM PlayerKillLogs pklog
     WHERE pklog.match_game_id = ?
-      AND pklog.bomb_planted = 1
+      AND COALESCE(pklog.is_post_plant, pklog.bomb_planted) = 1
     ORDER BY pklog.round_number ASC, pklog.time_in_round ASC
   `;
 
@@ -128,6 +132,12 @@ export const getMatchGameAfterplantAnalysis = async (
   return rows.map((row) => ({
     ...row,
     ct_t: row.ct_t ? jsonBig.parse(row.ct_t) : null,
+    plant_time_in_round:
+      row.plant_site != null
+        ? plantTimeSecondsOrNull(
+            row.plant_time != null ? Number(row.plant_time) : null
+          )
+        : null,
     kills_after_plant: computeKillEvents(
       killsByRound.get(row.round_number) ?? []
     )
@@ -283,9 +293,27 @@ type FlashAssistRow = {
   count: number;
 };
 
+export type { KillMatrixFilters };
+
 export const getMatchGameKillMatrix = async (
-  match_game_id: number
+  match_game_id: number,
+  filters: KillMatrixFilters = {}
 ): Promise<MatchGameKillMatrix> => {
+  const filterClauses: string[] = ["killer_team != victim_team"];
+  if (filters.excludeExitKills) {
+    filterClauses.push("(is_exit_kill = 0 OR is_exit_kill IS NULL)");
+  }
+  if (filters.postPlantOnly) {
+    filterClauses.push("is_post_plant = 1");
+  }
+  if (filters.excludeEcoKills) {
+    filterClauses.push(
+      "(ct_buy_type != 'Eco' OR ct_buy_type IS NULL) AND (t_buy_type != 'Eco' OR t_buy_type IS NULL)"
+    );
+  }
+
+  const whereClause = filterClauses.map((c) => `(${c})`).join(" AND ");
+
   const killsQuery = `
     SELECT
       killer,
@@ -293,7 +321,7 @@ export const getMatchGameKillMatrix = async (
       COUNT(*) AS count
     FROM PlayerKillLogs
     WHERE match_game_id = ?
-      AND killer_team != victim_team
+      AND ${whereClause}
     GROUP BY killer, victim
   `;
 
@@ -306,7 +334,7 @@ export const getMatchGameKillMatrix = async (
     WHERE match_game_id = ?
       AND is_flash_assist = 1
       AND assister IS NOT NULL
-      AND killer_team != victim_team
+      AND ${whereClause}
     GROUP BY assister, victim
   `;
 
@@ -2373,4 +2401,233 @@ export const getMatchGameInsights = async (
   });
 
   return { teams };
+};
+
+// ── Round Swing Events ────────────────────────────────────────────────────────
+
+interface SwingContributorParsed {
+  steam_id: string;
+  contribution: number;
+}
+
+export interface RoundSwingRow {
+  round_number: number;
+  time_in_round: number;
+  event_type: string;
+  pre_win_prob: number;
+  post_win_prob: number;
+  delta: number;
+  primary_player_steam_id: string;
+  contributors: SwingContributorParsed[];
+  // Kill detail fields — populated when event_type = 'kill'
+  victim_steam_id: string | null;
+  weapon: string | null;
+  is_headshot: boolean | null;
+  is_post_plant: boolean | null;
+  cts_alive_after: number | null;
+  ts_alive_after: number | null;
+}
+
+interface GetRoundSwingEventsOptions {
+  roundNumber?: number;
+  limit?: number;
+}
+
+export const getRoundSwingEvents = async (
+  matchGameId: number,
+  { roundNumber, limit = 10 }: GetRoundSwingEventsOptions = {}
+): Promise<RoundSwingRow[]> => {
+  const conditions: string[] = ["rse.match_game_id = ?"];
+  const params: (number | string)[] = [matchGameId];
+
+  if (roundNumber !== undefined) {
+    conditions.push("rse.round_number = ?");
+    params.push(roundNumber);
+  }
+
+  const where = conditions.join(" AND ");
+  // Select top N by |delta|, then sort chronologically for display
+  const outerOrder =
+    roundNumber !== undefined
+      ? "time_in_round ASC"
+      : "round_number ASC, time_in_round ASC";
+
+  const query = `
+    SELECT * FROM (
+      SELECT
+        rse.round_number,
+        rse.time_in_round,
+        rse.event_type,
+        rse.pre_win_prob,
+        rse.post_win_prob,
+        rse.delta,
+        rse.primary_player_steam_id,
+        rse.contributors,
+        pkl.victim            AS victim_steam_id,
+        pkl.weapon,
+        pkl.is_headshot,
+        pkl.is_post_plant,
+        pkl.cts_alive_after,
+        pkl.ts_alive_after
+      FROM RoundSwingEvents rse
+      LEFT JOIN PlayerKillLogs pkl ON (
+        pkl.match_game_id = rse.match_game_id
+        AND pkl.round_number = rse.round_number
+        AND pkl.killer = rse.primary_player_steam_id
+        AND ABS(pkl.time_in_round - rse.time_in_round) < 0.5
+      )
+      WHERE ${where}
+      ORDER BY ABS(rse.delta) DESC
+      LIMIT ?
+    ) AS top_swings
+    ORDER BY ${outerOrder}
+  `;
+  params.push(limit);
+
+  const rows = await runQuery<
+    Array<
+      Omit<RoundSwingRow, "contributors" | "is_headshot" | "is_post_plant"> & {
+        contributors: string;
+        is_headshot: number | null;
+        is_post_plant: number | null;
+      }
+    >
+  >(query, params);
+
+  return rows.map((r) => ({
+    ...r,
+    contributors: r.contributors
+      ? (jsonBig.parse(r.contributors) as SwingContributorParsed[])
+      : [],
+    is_headshot: r.is_headshot !== null ? r.is_headshot === 1 : null,
+    is_post_plant: r.is_post_plant !== null ? r.is_post_plant === 1 : null
+  }));
+};
+
+/* ─────────────────────────────────────────────────────────
+ *  Entry Kills
+ * ─────────────────────────────────────────────────────────*/
+
+export interface EntryKill {
+  round_number: number;
+  time_in_round: number;
+  killer_steam_id: string;
+  victim_steam_id: string;
+  killer_team: string;
+  victim_team: string;
+  setup_flash_thrower: string | null;
+  victim_blind_seconds: number | null;
+  was_victim_traded: boolean | null;
+}
+
+export const getEntryKills = async (
+  match_game_id: number
+): Promise<EntryKill[]> => {
+  const rows = await runQuery<
+    {
+      round_number: number;
+      time_in_round: number;
+      killer: string | number;
+      victim: string | number;
+      killer_team: string;
+      victim_team: string;
+      setup_flash_thrower: string | number | null;
+      victim_blind_seconds: number | null;
+      was_victim_traded: number | null;
+    }[]
+  >(
+    `SELECT
+      round_number,
+      time_in_round,
+      killer,
+      victim,
+      killer_team,
+      victim_team,
+      setup_flash_thrower,
+      victim_blind_seconds,
+      was_victim_traded
+    FROM PlayerKillLogs
+    WHERE match_game_id = ?
+      AND is_first_death = 1
+    ORDER BY round_number ASC, time_in_round ASC`,
+    [match_game_id]
+  );
+
+  return rows.map((r) => ({
+    round_number: r.round_number,
+    time_in_round: r.time_in_round,
+    killer_steam_id: String(r.killer),
+    victim_steam_id: String(r.victim),
+    killer_team: r.killer_team,
+    victim_team: r.victim_team,
+    setup_flash_thrower: r.setup_flash_thrower
+      ? String(r.setup_flash_thrower)
+      : null,
+    victim_blind_seconds: r.victim_blind_seconds,
+    was_victim_traded:
+      r.was_victim_traded !== null ? r.was_victim_traded === 1 : null
+  }));
+};
+
+/* ─────────────────────────────────────────────────────────
+ *  Query: Cross-game player round impact
+ * ─────────────────────────────────────────────────────────*/
+
+export interface CrossGamePlayerRoundImpact {
+  steam_id: string;
+  games_played: number;
+  total_events: number;
+  total_impact_score: number;
+  avg_impact_per_event: number;
+  biggest_single_swing: number;
+}
+
+export const getPlayerRoundImpact = async (
+  steam_id: string,
+  options: { seasonId?: number } = {}
+): Promise<CrossGamePlayerRoundImpact> => {
+  const params: (string | number)[] = [steam_id];
+  const seasonFilter = options.seasonId ? "AND m.season_id = ?" : "";
+  if (options.seasonId) params.push(options.seasonId);
+
+  const rows = await runQuery<
+    {
+      games_played: number;
+      total_events: number;
+      total_impact_score: number;
+      avg_impact_per_event: number;
+      biggest_single_swing: number;
+    }[]
+  >(
+    `SELECT
+      COUNT(DISTINCT rse.match_game_id) AS games_played,
+      COUNT(*)                          AS total_events,
+      SUM(ABS(rse.delta))               AS total_impact_score,
+      AVG(ABS(rse.delta))               AS avg_impact_per_event,
+      MAX(ABS(rse.delta))               AS biggest_single_swing
+    FROM RoundSwingEvents rse
+    JOIN MatchGames mg ON mg.id = rse.match_game_id
+    JOIN Matches m     ON m.id  = mg.match_id
+    WHERE rse.primary_player_steam_id = ? ${seasonFilter}`,
+    params
+  );
+
+  const r = rows[0] ?? {
+    games_played: 0,
+    total_events: 0,
+    total_impact_score: 0,
+    avg_impact_per_event: 0,
+    biggest_single_swing: 0
+  };
+
+  return {
+    steam_id,
+    games_played: Number(r.games_played),
+    total_events: Number(r.total_events),
+    total_impact_score: Number(Number(r.total_impact_score ?? 0).toFixed(4)),
+    avg_impact_per_event: Number(
+      Number(r.avg_impact_per_event ?? 0).toFixed(4)
+    ),
+    biggest_single_swing: Number(Number(r.biggest_single_swing ?? 0).toFixed(4))
+  };
 };

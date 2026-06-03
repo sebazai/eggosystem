@@ -1,4 +1,4 @@
-FROM node:25-slim@sha256:e49fd70491eb042270f974167c874d6245287263ffc16422fcf93b3c150409d8 AS builder
+FROM node:26-slim@sha256:aa27a5fbf5acb298116a38133794f080406c6f8dfe52e2e2836bb55dc7cae8f0 AS builder
 RUN apt-get update && apt-get install -y default-mysql-client
 
 WORKDIR /usr/src/app
@@ -13,7 +13,7 @@ RUN npm install ts-node knex mysql2 typescript
 
 RUN npx tsc --project tsconfig.json
 
-FROM node:25-slim@sha256:e49fd70491eb042270f974167c874d6245287263ffc16422fcf93b3c150409d8 AS production
+FROM node:26-slim@sha256:aa27a5fbf5acb298116a38133794f080406c6f8dfe52e2e2836bb55dc7cae8f0 AS production
 RUN apt-get update && apt-get install -y default-mysql-client
 
 ENV NODE_ENV=production

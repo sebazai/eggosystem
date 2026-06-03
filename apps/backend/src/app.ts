@@ -37,7 +37,7 @@ if (!process.env.FRONTEND_URL) {
 }
 
 if (process.env.NODE_ENV === "production") {
-  initializeProfiling();
+  void initializeProfiling();
 }
 
 import express from "express";

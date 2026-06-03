@@ -1,11 +1,10 @@
 "use client";
 
-import { ChevronRight, ExternalLink, Menu } from "lucide-react";
+import { ChevronRight, Menu } from "lucide-react";
 import Image from "next/image";
 import { Logo } from "@/components/kanaliiga";
 import {
   useEffect,
-  useReducer,
   useRef,
   useState,
   type JSX,
@@ -40,30 +39,48 @@ import {
 } from "@/components/ui/sheet";
 import UserMenuDropdown from "./UserMenuDropdown";
 import { MobileUserMenu } from "./mobile/MobileUserMenu";
-import { cn, convertSeasonToS, createNextUrl } from "@/lib/utils";
-import {
-  ReadonlyURLSearchParams,
-  usePathname,
-  useSearchParams
-} from "next/navigation";
+import { cn, createNextUrl } from "@/lib/utils";
+import { ReadonlyURLSearchParams, useSearchParams } from "next/navigation";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useScrolled } from "@/hooks/useScrolled";
 import { useActiveSignupOrActiveSeasonForApp } from "@/hooks/data/useActiveSignupOrActiveSeasonForApp";
-import type { ActiveSignupOrSeasonForAppId } from "@eggosystem/types";
 import { Separator } from "../ui/separator";
 import { MobileLogOut } from "../profile/MobileLogOut";
 import { useAuth } from "@/context/AuthContext";
+import {
+  getDefaultMenuItems,
+  type MenuItem,
+  type MenuItemLink,
+  type RegisterCta
+} from "./navigation-menu-items";
 
-interface MenuItemLink {
-  title: string;
-  url: string;
-  hasFilters: boolean;
-  isExternal?: boolean;
-  icon?: JSX.Element;
-  items?: MenuItemLink[];
-}
+const desktopLogoWidth = 120;
+const desktopLogoHeight = 138;
 
-type MenuItem = MenuItemLink;
+const desktopNavTriggerClassName =
+  "h-9 min-w-[6.5rem] px-4 text-sm font-headings lg:h-10 lg:min-w-[7.5rem] lg:px-5 lg:text-base [&_svg]:size-3.5 lg:[&_svg]:size-4";
+
+const desktopSubmenuRowClassName =
+  "flex min-h-10 w-full flex-row items-center justify-start gap-2 rounded-sm px-3 text-sm";
+
+const desktopSubmenuInteractiveClassName =
+  "hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground";
+
+const desktopSubmenuContentClassName =
+  "group-data-[viewport=false]/navigation-menu:!overflow-visible !w-auto min-w-[12rem] items-start p-2 text-left";
+
+const desktopSubmenuListClassName =
+  "flex w-full min-w-[12rem] list-none flex-col items-stretch justify-start gap-1";
+
+const desktopSubmenuTriggerClassName = cn(
+  desktopSubmenuRowClassName,
+  desktopSubmenuInteractiveClassName,
+  "!inline-flex !h-10 !max-w-none !justify-between !bg-transparent !font-normal !text-kanaliiga-orange !shadow-none focus-visible:!ring-0 data-[state=open]:!bg-accent/50"
+);
+
+const desktopSubmenuLinkClassName = cn(
+  desktopSubmenuRowClassName,
+  desktopSubmenuInteractiveClassName
+);
 
 interface NavbarProps {
   logo?: {
@@ -72,214 +89,45 @@ interface NavbarProps {
     alt: string;
   };
   menu?: MenuItem[];
+  registerCta?: RegisterCta | null;
   mobileExtraLinks?: {
     name: string;
     url: string;
   }[];
   options?: {
     removeBottomPadding?: boolean;
-    fullWidth?: boolean;
   };
 }
 
-const getSeasonMenuItems = (
-  signupOrActiveSeason?: ActiveSignupOrSeasonForAppId
-) => {
-  if (!signupOrActiveSeason || !signupOrActiveSeason.full_name) {
-    return [];
-  }
-
-  const now = new Date();
-  const signupStartDate = signupOrActiveSeason.signup_start_date
-    ? new Date(signupOrActiveSeason.signup_start_date)
-    : null;
-  const signupEndDate = signupOrActiveSeason.signup_end_date
-    ? new Date(signupOrActiveSeason.signup_end_date)
-    : null;
-  const startDate = new Date(signupOrActiveSeason.start_date);
-
-  // Check if season is in signup period but hasn't started yet
-  const isInSignupPeriod =
-    signupStartDate &&
-    signupEndDate &&
-    now >= signupStartDate &&
-    now <= signupEndDate &&
-    now < startDate;
-
-  // If in signup period (not started), show only Register button
-  if (isInSignupPeriod) {
-    return [
-      {
-        title: `Register ${convertSeasonToS(signupOrActiveSeason.full_name)}`,
-        url: `/seasons/${signupOrActiveSeason.season_id}/signup`,
-        hasFilters: false
-      }
-    ];
-  }
-
-  // Season has started, show full menu
-  return [
-    {
-      title: `${convertSeasonToS(signupOrActiveSeason.full_name)}`,
-      url: "#",
-      hasFilters: false,
-      items: [
-        ...(signupOrActiveSeason.signup_end_date &&
-        new Date(signupOrActiveSeason.signup_end_date) >= new Date()
-          ? [
-              {
-                title: "Register",
-                url: `/seasons/${signupOrActiveSeason.season_id}/signup`,
-                hasFilters: false
-              }
-            ]
-          : []),
-        {
-          title: "Standings",
-          url: `/seasons/${signupOrActiveSeason.season_id}/standings`,
-          hasFilters: false
-        },
-        {
-          title: "Calendar",
-          url: `/seasons/${signupOrActiveSeason.season_id}/calendar`,
-          hasFilters: false
-        },
-        {
-          title: "Playoff Bracket",
-          url: `/seasons/${signupOrActiveSeason.season_id}/leagues/1/playoff`,
-          hasFilters: false
-        },
-        {
-          title: "Captains",
-          url: `/seasons/${signupOrActiveSeason.season_id}/captains`,
-          hasFilters: false
-        },
-        {
-          title: "Schedule",
-          url: "https://kanaliiga.fi/pelit/counter-strike-2",
-          hasFilters: false,
-          isExternal: true,
-          icon: <ExternalLink className="h-4 w-4" />
-        },
-        {
-          title: "Faceit Links",
-          url: `/seasons/${signupOrActiveSeason.season_id}/faceit-links`,
-          hasFilters: false
-        },
-        {
-          title: "Fantasy League",
-          url: `/seasons/${signupOrActiveSeason.season_id}/fantasy`,
-          hasFilters: false,
-          items: [
-            {
-              title: "Draft",
-              url: `/seasons/${signupOrActiveSeason.season_id}/fantasy`,
-              hasFilters: false
-            },
-            {
-              title: "Leaderboard",
-              url: `/seasons/${signupOrActiveSeason.season_id}/fantasy/leaderboard`,
-              hasFilters: false
-            },
-            {
-              title: "Price History",
-              url: `/seasons/${signupOrActiveSeason.season_id}/fantasy/price-history`,
-              hasFilters: false
-            },
-            {
-              title: "Top Players",
-              url: `/seasons/${signupOrActiveSeason.season_id}/fantasy/top-players`,
-              hasFilters: false
-            }
-          ]
-        }
-      ]
-    }
-  ];
-};
-
-const getDefaultMenuItems = (
-  signupOrActiveSeason?: ActiveSignupOrSeasonForAppId
-) => {
-  const seasonMenuItems = getSeasonMenuItems(signupOrActiveSeason);
-  const defaultProps: NavbarProps = {
-    logo: {
-      url: "/",
-      src: createNextUrl("/images/kanaliiga/kanaliiga-logo-1800px.png"),
-      alt: "Kanaliiga logo"
-    },
-    menu: [
-      {
-        title: "Organizations",
-        url: "/organizations",
-        hasFilters: false
-      },
-      {
-        title: "Teams",
-        url: "#",
-        hasFilters: false,
-        items: [
-          { title: "Browse Teams", url: "/teams", hasFilters: true },
-          { title: "Top Teams", url: "/topteams", hasFilters: true }
-        ]
-      },
-      {
-        title: "Players",
-        url: "/players",
-        hasFilters: true
-      },
-      {
-        title: "Matches",
-        url: "/matches",
-        hasFilters: true
-      },
-      {
-        title: "Leaderboards",
-        url: "#",
-        hasFilters: false,
-        items: [
-          {
-            title: "Player Leaderboards",
-            url: "/leaderboards",
-            hasFilters: true
-          },
-          { title: "Hall of Fame", url: "/hall-of-fame", hasFilters: false },
-          { title: "Season Results", url: "/season-results", hasFilters: false }
-        ]
-      },
-      {
-        title: "Kanahautomo",
-        url: "/kanahautomo",
-        hasFilters: false
-      },
-      ...seasonMenuItems
-    ],
-    mobileExtraLinks: [{ name: "kanaliiga.fi", url: "https://kanaliiga.fi" }]
-  };
-  return defaultProps;
-};
-
 export const Navigation = (props: NavbarProps) => {
-  const pathname = usePathname();
   const { user, logout } = useAuth();
   const { signupOrActiveSeason } = useActiveSignupOrActiveSeasonForApp(730);
   const { options, ...otherProps } = props;
 
-  // Memoize navigationProps to avoid recalculating on every render
-  // getSeasonMenuItems returns [] when signupOrActiveSeason is undefined (during SSR/initial load)
-  // This keeps the menu structure stable until data loads
   const navigationProps = useMemo(() => {
-    return Object.keys(otherProps).length === 0
-      ? getDefaultMenuItems(signupOrActiveSeason)
-      : props;
+    if (Object.keys(otherProps).length === 0) {
+      const { menu, registerCta } = getDefaultMenuItems(signupOrActiveSeason);
+
+      return {
+        logo: {
+          url: "/",
+          src: createNextUrl("/images/kanaliiga/kanaliiga-logo-1800px.png"),
+          alt: "Kanaliiga logo"
+        },
+        menu,
+        registerCta,
+        mobileExtraLinks: [
+          { name: "kanaliiga.fi", url: "https://kanaliiga.fi" }
+        ]
+      };
+    }
+
+    return props;
   }, [signupOrActiveSeason, otherProps, props]);
 
-  const { logo, menu, mobileExtraLinks } = navigationProps;
+  const { logo, menu, mobileExtraLinks, registerCta } = navigationProps;
 
-  const navRef = useRef<HTMLDivElement>(null); // Ref for the navbar
-  const logoRef = useRef<HTMLImageElement>(null); // Ref for the logo
-
-  const { isScrolled } = useScrolled();
+  const navRef = useRef<HTMLDivElement>(null);
 
   const { isMobile } = useIsMobile();
   const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -292,42 +140,20 @@ export const Navigation = (props: NavbarProps) => {
     }
   };
 
-  const [hasScrolled, markAsScrolled] = useReducer(() => true, false);
-
   useEffect(() => {
-    if (isScrolled && !hasScrolled) {
-      markAsScrolled();
-    }
-  }, [isScrolled, hasScrolled]);
-
-  const hasScrolledValue = isScrolled || hasScrolled;
-
-  useEffect(() => {
-    const logoEl = logoRef.current;
-    if (!logoEl) return;
-
-    const updateNavHeightAndCheckMobile = () => {
+    const updateNavHeight = () => {
       if (navRef.current) {
-        const newHeight = navRef.current.offsetHeight;
         document.documentElement.style.setProperty(
           "--nav-height",
-          `${newHeight}px`
+          `${navRef.current.offsetHeight}px`
         );
       }
     };
 
-    updateNavHeightAndCheckMobile();
+    updateNavHeight();
+    window.addEventListener("resize", updateNavHeight);
 
-    logoEl.addEventListener("transitionend", updateNavHeightAndCheckMobile);
-    logoEl.addEventListener("resize", updateNavHeightAndCheckMobile);
-
-    return () => {
-      logoEl.removeEventListener(
-        "transitionend",
-        updateNavHeightAndCheckMobile
-      );
-      logoEl.removeEventListener("resize", updateNavHeightAndCheckMobile);
-    };
+    return () => window.removeEventListener("resize", updateNavHeight);
   }, []);
 
   return (
@@ -335,38 +161,31 @@ export const Navigation = (props: NavbarProps) => {
       ref={navRef}
       id="navigation"
       className={cn(
-        `pointer-events-none w-full mx-auto sm:landscape:px-4 md:landscape:px-8 px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 z-50 ${isScrolled ? "scrolled" : ""}`,
+        `pointer-events-none w-full mx-auto sm:landscape:px-4 md:landscape:px-8 px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 z-50`,
         // Always use backdrop blur for consistent appearance
         "backdrop-blur-xs landscape:backdrop-blur-none md:landscape:backdrop-blur-xs",
         // Always use sticky positioning to prevent jumping
         "sticky top-0",
         options?.removeBottomPadding ? "mb-3" : "mb-3 sm:mb-10",
-        options?.fullWidth ? "max-w-[1920px]" : "max-w-screen-2xl"
+        "max-w-[1920px]"
       )}
     >
       <div
         className={cn(
-          "mx-auto max-w-screen-2xl ",
-          options?.removeBottomPadding ? "pt-4 lg:pt-8" : "py-4 lg:py-8",
-          options?.fullWidth ? "max-w-[1920px]" : "max-w-screen-2xl"
+          "mx-auto max-w-[1920px]",
+          options?.removeBottomPadding ? "pt-4 lg:pt-8" : "py-4 lg:py-8"
         )}
       >
         {/* Desktop Navigation - Sticky by Default */}
-        <div className="hidden w-full items-center justify-center gap-6 lg:flex pointer-events-auto">
+        <div className="hidden w-full items-center justify-start lg:flex lg:pl-6 pointer-events-auto">
           {logo && (
             <Link href={logo.url}>
               <Image
-                ref={logoRef}
-                className={cn(
-                  "logo transition-all duration-500",
-                  hasScrolledValue || pathname === "/"
-                    ? "logo-small"
-                    : "logo-large"
-                )}
+                className="h-[138px] w-[120px]"
                 src={logo.src}
                 alt={logo.alt}
-                width={153}
-                height={175}
+                width={desktopLogoWidth}
+                height={desktopLogoHeight}
                 priority
               />
             </Link>
@@ -375,12 +194,24 @@ export const Navigation = (props: NavbarProps) => {
             key={menu?.length || 0}
             delayDuration={0}
             viewport={false}
+            className="max-w-none flex-1 justify-start lg:ml-16"
           >
-            <NavigationMenuList>
+            <NavigationMenuList className="justify-start gap-3 lg:gap-8">
               {menu?.map((m) => renderMenuItem(m, params))}
             </NavigationMenuList>
           </NavigationMenu>
-          <div className="ml-auto space-x-4">
+          <div className="ml-auto flex items-center gap-4">
+            {registerCta && (
+              <Button
+                asChild
+                size="lg"
+                className="h-9 bg-kanaliiga-orange px-4 text-sm text-white hover:bg-kanaliiga-orange/90 lg:h-10 lg:px-5 lg:text-base"
+              >
+                <Link href={createNextUrl(registerCta.url)}>
+                  {registerCta.title}
+                </Link>
+              </Button>
+            )}
             <UserMenuDropdown />
           </div>
         </div>
@@ -423,6 +254,19 @@ export const Navigation = (props: NavbarProps) => {
                   id="mobile-menu"
                   className="my-6 mx-2 flex flex-col flex-1"
                 >
+                  {registerCta && (
+                    <Button
+                      asChild
+                      className="mb-4 bg-kanaliiga-orange text-white hover:bg-kanaliiga-orange/90"
+                    >
+                      <Link
+                        href={createNextUrl(registerCta.url)}
+                        onClick={() => setIsSheetOpen(false)}
+                      >
+                        {registerCta.title}
+                      </Link>
+                    </Button>
+                  )}
                   <div className="pb-4">
                     <Accordion
                       type="single"
@@ -480,9 +324,9 @@ const renderMenuContent = (
     <NavigationMenuSub
       orientation="vertical"
       defaultValue={firstValue}
-      className="w-full"
+      className="w-full items-start"
     >
-      <NavigationMenuList className="grid w-[200px] list-none flex-col items-start justify-start gap-4">
+      <NavigationMenuList className={desktopSubmenuListClassName}>
         {items.map((component, index) => {
           const value = component.url || `${keyPrefix}-${index}`;
           if (component.items) {
@@ -490,20 +334,20 @@ const renderMenuContent = (
               <NavigationMenuItem
                 key={value}
                 value={value}
-                className="relative z-[100]"
+                className="relative z-[100] w-full"
               >
                 <NavigationMenuTrigger
                   hideChevron
-                  className="pl-2 text-kanaliiga-orange"
+                  className={desktopSubmenuTriggerClassName}
                 >
                   {component.title}
                   <ChevronRight
-                    className="ml-1 size-3 shrink-0 opacity-70"
+                    className="size-3 shrink-0 opacity-70"
                     aria-hidden
                   />
                 </NavigationMenuTrigger>
-                <NavigationMenuContent className="!left-full !top-0 z-[100] min-w-[200px] w-auto shadow-lg">
-                  <ul className="grid gap-1">
+                <NavigationMenuContent className="!left-full !top-0 z-[100] min-w-[12rem] w-auto items-start text-left shadow-lg">
+                  <ul className="flex w-full min-w-[12rem] flex-col items-stretch justify-start gap-1 p-1">
                     {component.items.map((sub, subIndex) => (
                       <ListItem
                         key={`${keyPrefix}-${sub.url}-${subIndex}`}
@@ -520,14 +364,16 @@ const renderMenuContent = (
             );
           }
           return (
-            <NavigationMenuItem key={value} value={value}>
-              <NavigationMenuLink asChild>
+            <NavigationMenuItem key={value} value={value} className="w-full">
+              <NavigationMenuLink
+                asChild
+                className={desktopSubmenuLinkClassName}
+              >
                 <Link
                   href={{
                     pathname: component.url,
                     query: component.hasFilters ? params.toString() : undefined
                   }}
-                  className="flex flex-row items-center gap-2"
                   target={component.isExternal ? "_blank" : undefined}
                   rel={component.isExternal ? "noopener noreferrer" : undefined}
                 >
@@ -548,11 +394,11 @@ const renderMenuItem = (item: MenuItem, params: ReadonlyURLSearchParams) => {
       <NavigationMenuItem key={item.title}>
         <NavigationMenuTrigger
           onPointerMove={(event) => event.preventDefault()}
-          className="text-kanaliiga-orange"
+          className={cn(desktopNavTriggerClassName, "text-kanaliiga-orange")}
         >
           {item.title}
         </NavigationMenuTrigger>
-        <NavigationMenuContent className="group-data-[viewport=false]/navigation-menu:!overflow-visible">
+        <NavigationMenuContent className={desktopSubmenuContentClassName}>
           {renderMenuContent(item.items, params, item.title)}
         </NavigationMenuContent>
       </NavigationMenuItem>
@@ -561,7 +407,10 @@ const renderMenuItem = (item: MenuItem, params: ReadonlyURLSearchParams) => {
 
   return (
     <NavigationMenuItem key={item.title}>
-      <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
+      <NavigationMenuLink
+        asChild
+        className={cn(navigationMenuTriggerStyle(), desktopNavTriggerClassName)}
+      >
         <Link
           href={{
             pathname: item.url,
@@ -677,14 +526,13 @@ const ListItem = ({
   isExternal?: boolean;
 }) => {
   return (
-    <li>
-      <NavigationMenuLink asChild>
+    <li className="w-full">
+      <NavigationMenuLink asChild className={desktopSubmenuLinkClassName}>
         <Link
           href={{
             pathname: href,
             query: params ? params.toString() : undefined
           }}
-          className="flex flex-row items-center gap-2"
           target={isExternal ? "_blank" : undefined}
           rel={isExternal ? "noopener noreferrer" : undefined}
         >

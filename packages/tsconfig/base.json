@@ -19,8 +19,7 @@
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
-    "incremental": true,
-    "tsBuildInfoFile": ".tsbuildinfo"
+    "incremental": true
   },
   "include": ["**/*.ts", "**/*.tsx"],
   "exclude": ["node_modules", "src/tests"]

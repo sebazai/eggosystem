@@ -22,6 +22,10 @@ jest.mock("ioredis", () => {
     }),
     keys: jest.fn().mockResolvedValue([]),
     mget: jest.fn().mockResolvedValue([]),
+    pipeline: jest.fn().mockImplementation(() => ({
+      set: jest.fn().mockReturnThis(),
+      exec: jest.fn().mockResolvedValue([])
+    })),
     flushall: jest.fn().mockImplementation(() => {
       mockRedisStorage.clear();
       return Promise.resolve("OK");

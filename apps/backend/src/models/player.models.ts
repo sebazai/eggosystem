@@ -1287,7 +1287,11 @@ export const getPlayerMapStatsWithFilters = async (
         first_death_traded_ct: playerStats?.first_death_traded_ct || 0,
         first_deaths_tradeable: tradeableTotal,
         first_deaths_tradeable_t: tradeableT,
-        first_deaths_tradeable_ct: tradeableCT
+        first_deaths_tradeable_ct: tradeableCT,
+        enemies_flashed_ct: playerStats?.enemies_flashed_ct ?? 0,
+        enemies_flashed_t: playerStats?.enemies_flashed_t ?? 0,
+        mates_flashed_ct: playerStats?.mates_flashed_ct ?? 0,
+        mates_flashed_t: playerStats?.mates_flashed_t ?? 0
       };
 
       return mapStats;
