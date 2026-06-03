@@ -1,16 +1,17 @@
 import { renderHook, waitFor } from "@testing-library/react";
 import useSWR from "swr";
-import { usePlayerActiveSeasons } from "./usePlayerHistoricalData";
+import { usePlayerSeasonsContext } from "./usePlayerHistoricalData";
+import { DEFAULT_PLAYER_SEASON_CONTEXT } from "@/lib/player-season-context";
 
 jest.mock("swr");
 const mockUseSWR = useSWR as jest.MockedFunction<typeof useSWR>;
 
-describe("usePlayerActiveSeasons", () => {
+describe("usePlayerSeasonsContext", () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it("should fetch active seasons when steamId is provided", async () => {
+  it("should fetch season context when steamId and context are provided", async () => {
     const mockData = {
       current_season: {
         season_id: 123,
@@ -30,7 +31,10 @@ describe("usePlayerActiveSeasons", () => {
     });
 
     const { result } = renderHook(() =>
-      usePlayerActiveSeasons("76561198012345678")
+      usePlayerSeasonsContext(
+        "76561198012345678",
+        DEFAULT_PLAYER_SEASON_CONTEXT
+      )
     );
 
     await waitFor(() => {
@@ -40,7 +44,7 @@ describe("usePlayerActiveSeasons", () => {
     });
 
     expect(mockUseSWR).toHaveBeenCalledWith(
-      "/api/v1/players/76561198012345678/seasons/active",
+      "/api/v1/players/76561198012345678/seasons/context?organizer_id=1&app_id=730&gametype=comp",
       expect.any(Function),
       expect.objectContaining({
         revalidateOnFocus: false,
@@ -58,7 +62,9 @@ describe("usePlayerActiveSeasons", () => {
       mutate: jest.fn()
     });
 
-    renderHook(() => usePlayerActiveSeasons(""));
+    renderHook(() =>
+      usePlayerSeasonsContext("", DEFAULT_PLAYER_SEASON_CONTEXT)
+    );
 
     expect(mockUseSWR).toHaveBeenCalledWith(
       null,
@@ -67,6 +73,24 @@ describe("usePlayerActiveSeasons", () => {
         revalidateOnFocus: false,
         dedupingInterval: 5 * 60 * 1000
       })
+    );
+  });
+
+  it("should not fetch when context is null", () => {
+    mockUseSWR.mockReturnValue({
+      data: undefined,
+      error: undefined,
+      isLoading: false,
+      isValidating: false,
+      mutate: jest.fn()
+    });
+
+    renderHook(() => usePlayerSeasonsContext("76561198012345678", null));
+
+    expect(mockUseSWR).toHaveBeenCalledWith(
+      null,
+      expect.any(Function),
+      expect.any(Object)
     );
   });
 });

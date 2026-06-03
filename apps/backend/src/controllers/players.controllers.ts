@@ -20,7 +20,7 @@ import {
   getPlayerHistoricalAverageByRank,
   getPlayerHistoricalAverageByLevel,
   getPlayerHistoricalAverage,
-  getPlayerActiveSeasons
+  getPlayerSeasonsContext
 } from "../models/player-historical.models";
 
 import {
@@ -543,7 +543,45 @@ export const setPlayerKanaEloController = async (
   }
 };
 
-export const getPlayerSeasonsController = async (
+function parsePlayerSeasonContextQuery(
+  query: Request["query"]
+):
+  | { organizer_id: number; app_id: number; gametype: string }
+  | BadRequestError {
+  const organizerRaw = query.organizer_id;
+  const appRaw = query.app_id;
+  const gametypeRaw = query.gametype;
+
+  if (
+    organizerRaw === undefined ||
+    appRaw === undefined ||
+    gametypeRaw === undefined
+  ) {
+    return new BadRequestError(
+      "organizer_id, app_id, and gametype query parameters are required"
+    );
+  }
+
+  const organizer_id = parseInt(String(organizerRaw), 10);
+  const app_id = parseInt(String(appRaw), 10);
+  const gametype = String(gametypeRaw).trim();
+
+  if (
+    !Number.isInteger(organizer_id) ||
+    organizer_id <= 0 ||
+    !Number.isInteger(app_id) ||
+    app_id <= 0 ||
+    gametype.length === 0
+  ) {
+    return new BadRequestError(
+      "organizer_id and app_id must be positive integers; gametype must be non-empty"
+    );
+  }
+
+  return { organizer_id, app_id, gametype };
+}
+
+export const getPlayerSeasonsContextController = async (
   req: Request,
   res: Response,
   next: NextFunction
@@ -551,14 +589,13 @@ export const getPlayerSeasonsController = async (
   try {
     const { steam_id } = req.params;
     if (!steam_id) return next(new BadRequestError("Steam ID is required"));
-    const parsedAppId = req.query.app_id
-      ? parseInt(req.query.app_id.toString(), 10)
-      : undefined;
-    const app_id =
-      parsedAppId && Number.isInteger(parsedAppId) && parsedAppId > 0
-        ? parsedAppId
-        : 730;
-    const seasons = await getPlayerActiveSeasons(steam_id, app_id);
+
+    const context = parsePlayerSeasonContextQuery(req.query);
+    if (context instanceof BadRequestError) {
+      return next(context);
+    }
+
+    const seasons = await getPlayerSeasonsContext(steam_id, context);
     res.json(seasons);
   } catch (error) {
     next(error);

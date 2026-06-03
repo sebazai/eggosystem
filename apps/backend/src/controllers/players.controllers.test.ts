@@ -1,7 +1,7 @@
 import { type Request, type Response, type NextFunction } from "express";
 import {
   getPlayerOldKanaEloController,
-  getPlayerSeasonsController,
+  getPlayerSeasonsContextController,
   setPlayerKanaEloController,
   resolveSteamIdController
 } from "../controllers/players.controllers";
@@ -703,11 +703,17 @@ describe("resolveSteamIdController", () => {
   });
 });
 
-describe("getPlayerSeasonsController", () => {
+describe("getPlayerSeasonsContextController", () => {
   let req: Partial<Request>;
   let res: Partial<Response>;
   let mockJson: jest.Mock;
   let mockStatus: jest.Mock;
+
+  const defaultQuery = {
+    organizer_id: "1",
+    app_id: "730",
+    gametype: "comp"
+  };
 
   beforeEach(() => {
     mockJson = jest.fn();
@@ -715,7 +721,7 @@ describe("getPlayerSeasonsController", () => {
 
     req = {
       params: { steam_id: "76561198012345678" },
-      query: {}
+      query: { ...defaultQuery }
     };
     res = {
       status: mockStatus,
@@ -725,8 +731,7 @@ describe("getPlayerSeasonsController", () => {
     jest.clearAllMocks();
   });
 
-  it("should return player's active seasons when data exists", async () => {
-    // Arrange
+  it("should return player's season context when data exists", async () => {
     const expectedSeasons = {
       current_season: {
         season_id: 123,
@@ -742,101 +747,126 @@ describe("getPlayerSeasonsController", () => {
       }
     };
 
-    mockedPlayerHistoricalModels.getPlayerActiveSeasons.mockResolvedValue(
+    mockedPlayerHistoricalModels.getPlayerSeasonsContext.mockResolvedValue(
       expectedSeasons
     );
 
-    // Act
     const mockNext = jest.fn();
-    await getPlayerSeasonsController(req as Request, res as Response, mockNext);
+    await getPlayerSeasonsContextController(
+      req as Request,
+      res as Response,
+      mockNext
+    );
 
-    // Assert
     expect(
-      mockedPlayerHistoricalModels.getPlayerActiveSeasons
-    ).toHaveBeenCalledWith("76561198012345678", 730);
+      mockedPlayerHistoricalModels.getPlayerSeasonsContext
+    ).toHaveBeenCalledWith("76561198012345678", {
+      organizer_id: 1,
+      app_id: 730,
+      gametype: "comp"
+    });
     expect(mockJson).toHaveBeenCalledWith(expectedSeasons);
     expect(mockNext).not.toHaveBeenCalled();
   });
 
   it("should return null for both seasons when player has no match history", async () => {
-    // Arrange
     const expectedSeasons = {
       current_season: null,
       last_season: null
     };
 
-    mockedPlayerHistoricalModels.getPlayerActiveSeasons.mockResolvedValue(
+    mockedPlayerHistoricalModels.getPlayerSeasonsContext.mockResolvedValue(
       expectedSeasons
     );
 
-    // Act
     const mockNext = jest.fn();
-    await getPlayerSeasonsController(req as Request, res as Response, mockNext);
+    await getPlayerSeasonsContextController(
+      req as Request,
+      res as Response,
+      mockNext
+    );
 
-    // Assert
-    expect(
-      mockedPlayerHistoricalModels.getPlayerActiveSeasons
-    ).toHaveBeenCalledWith("76561198012345678", 730);
     expect(mockJson).toHaveBeenCalledWith(expectedSeasons);
   });
 
-  it("should pass the app_id query param through to getPlayerActiveSeasons", async () => {
-    // Arrange
-    const expectedSeasons = {
-      current_season: null,
-      last_season: null
+  it("should pass organizer_id, app_id, and gametype through to the model", async () => {
+    req.query = {
+      organizer_id: "2",
+      app_id: "578080",
+      gametype: "duo"
     };
 
-    req.query = { app_id: "578080" };
+    mockedPlayerHistoricalModels.getPlayerSeasonsContext.mockResolvedValue({
+      current_season: null,
+      last_season: null
+    });
 
-    mockedPlayerHistoricalModels.getPlayerActiveSeasons.mockResolvedValue(
-      expectedSeasons
+    const mockNext = jest.fn();
+    await getPlayerSeasonsContextController(
+      req as Request,
+      res as Response,
+      mockNext
     );
 
-    // Act
-    const mockNext = jest.fn();
-    await getPlayerSeasonsController(req as Request, res as Response, mockNext);
-
-    // Assert
     expect(
-      mockedPlayerHistoricalModels.getPlayerActiveSeasons
-    ).toHaveBeenCalledWith("76561198012345678", 578080);
-    expect(mockJson).toHaveBeenCalledWith(expectedSeasons);
-    expect(mockNext).not.toHaveBeenCalled();
+      mockedPlayerHistoricalModels.getPlayerSeasonsContext
+    ).toHaveBeenCalledWith("76561198012345678", {
+      organizer_id: 2,
+      app_id: 578080,
+      gametype: "duo"
+    });
+  });
+
+  it("should return 400 when context query params are missing", async () => {
+    req.query = {};
+
+    const mockNext = jest.fn();
+    await getPlayerSeasonsContextController(
+      req as Request,
+      res as Response,
+      mockNext
+    );
+
+    expect(mockNext).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: expect.stringContaining("organizer_id, app_id, and gametype"),
+        status: 400
+      })
+    );
+    expect(mockJson).not.toHaveBeenCalled();
   });
 
   it("should return 400 when steam_id parameter is missing", async () => {
-    // Arrange
     req.params = {};
 
     const mockNext = jest.fn();
+    await getPlayerSeasonsContextController(
+      req as Request,
+      res as Response,
+      mockNext
+    );
 
-    // Act
-    await getPlayerSeasonsController(req as Request, res as Response, mockNext);
-
-    // Assert
     expect(mockNext).toHaveBeenCalledWith(
       expect.objectContaining({
         message: "Steam ID is required",
         status: 400
       })
     );
-    expect(mockStatus).not.toHaveBeenCalled();
     expect(mockJson).not.toHaveBeenCalled();
   });
 
   it("should handle database errors gracefully", async () => {
-    // Arrange
-    mockedPlayerHistoricalModels.getPlayerActiveSeasons.mockRejectedValue(
+    mockedPlayerHistoricalModels.getPlayerSeasonsContext.mockRejectedValue(
       new Error("Database error")
     );
 
     const mockNext = jest.fn();
+    await getPlayerSeasonsContextController(
+      req as Request,
+      res as Response,
+      mockNext
+    );
 
-    // Act
-    await getPlayerSeasonsController(req as Request, res as Response, mockNext);
-
-    // Assert - Error is passed through as-is
     expect(mockNext).toHaveBeenCalledWith(new Error("Database error"));
   });
 });

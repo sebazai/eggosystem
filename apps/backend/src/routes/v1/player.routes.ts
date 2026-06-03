@@ -10,7 +10,7 @@ import {
   getPlayerOldKanaEloController,
   getPlayerStatsForLatestSeasonController,
   setPlayerKanaEloController,
-  getPlayerSeasonsController,
+  getPlayerSeasonsContextController,
   getPlayerHistoricalDataController,
   getPlayerHistoricalAverageByRankController,
   getPlayerHistoricalAverageByLevelController,
@@ -77,11 +77,11 @@ router.post(
   setPlayerKanaEloController
 );
 
-// Player seasons
+// Player season context for historical period dropdown (requires organizer scope)
 router.get(
-  "/:steam_id/seasons/active",
+  "/:steam_id/seasons/context",
   corsMiddleware,
-  getPlayerSeasonsController
+  getPlayerSeasonsContextController
 );
 
 // Historical data route

@@ -1,4 +1,7 @@
-import { getPlayerHistoricalData } from "./player-historical.models";
+import {
+  getPlayerHistoricalData,
+  getPlayerSeasonsContext
+} from "./player-historical.models";
 import { runQuery } from "../db/mysqlRunQuery";
 
 jest.mock("../db/mysqlRunQuery");
@@ -45,5 +48,30 @@ describe("getPlayerHistoricalData", () => {
     expect(sql).not.toContain("LIMIT");
     expect(sql).not.toContain("AND m.season_id");
     expect(binds).toEqual(["steam-1"]);
+  });
+});
+
+describe("getPlayerSeasonsContext", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockRunQuery.mockResolvedValue([]);
+  });
+
+  it("scopes current and last season by organizer, app_id, and gametype", async () => {
+    await getPlayerSeasonsContext("steam-1", {
+      organizer_id: 1,
+      app_id: 730,
+      gametype: "comp"
+    });
+
+    expect(mockRunQuery).toHaveBeenCalledTimes(2);
+
+    for (const [sql, binds] of mockRunQuery.mock.calls) {
+      expect(sql).toContain("JOIN GameTypes gt");
+      expect(sql).toContain("JOIN Organizers o");
+      expect(sql).toContain("AND o.id = ?");
+      expect(sql).toContain("AND LOWER(gt.name) = LOWER(?)");
+      expect(binds).toEqual(["steam-1", 730, 1, "comp"]);
+    }
   });
 });

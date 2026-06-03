@@ -6,11 +6,19 @@ import type {
   PlayerHistoricalData,
   PlayerHistoricalAverage,
   PlayerActiveSeasons,
+  PlayerSeasonContextQuery,
   HistoricalDataParams
 } from "@eggosystem/types";
+import { buildPlayerSeasonsContextSearchParams } from "@/lib/player-season-context";
 
-export function usePlayerActiveSeasons(steamId: string) {
-  const url = steamId ? `/api/v1/players/${steamId}/seasons/active` : null;
+export function usePlayerSeasonsContext(
+  steamId: string,
+  context: PlayerSeasonContextQuery | null
+) {
+  const url =
+    steamId && context
+      ? `/api/v1/players/${steamId}/seasons/context?${buildPlayerSeasonsContextSearchParams(context)}`
+      : null;
   const { data, error, isLoading } = useSWR<PlayerActiveSeasons>(
     url,
     clientApiFetch,
@@ -128,7 +136,7 @@ export function usePlayerHistoricalAverage(params?: HistoricalDataParams) {
 /**
  * Converts a UI period string to HistoricalDataParams.
  * Season-relative periods ("this_season", "last_season") are handled by
- * the caller using usePlayerActiveSeasons — pass season_id directly instead.
+ * the caller using usePlayerSeasonsContext — pass season_id directly instead.
  */
 export function parsePeriodToParams(period: string): HistoricalDataParams {
   if (period.startsWith("last_")) {

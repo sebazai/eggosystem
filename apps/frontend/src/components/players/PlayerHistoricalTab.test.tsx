@@ -2,15 +2,15 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { PlayerHistoricalTab } from "./PlayerHistoricalTab";
 
-const mockUsePlayerActiveSeasons = jest.fn();
+const mockUsePlayerSeasonsContext = jest.fn();
 const mockUsePlayerHistoricalData = jest.fn();
 const mockUsePlayerHistoricalAverage = jest.fn();
 const mockUsePlayerHistoricalAverageByRank = jest.fn();
 const mockUsePlayerHistoricalAverageByLevel = jest.fn();
 
 jest.mock("@/hooks/data/usePlayerHistoricalData", () => ({
-  usePlayerActiveSeasons: (...args: unknown[]) =>
-    mockUsePlayerActiveSeasons(...args),
+  usePlayerSeasonsContext: (...args: unknown[]) =>
+    mockUsePlayerSeasonsContext(...args),
   usePlayerHistoricalData: (...args: unknown[]) =>
     mockUsePlayerHistoricalData(...args),
   usePlayerHistoricalAverage: (...args: unknown[]) =>
@@ -113,7 +113,7 @@ describe("PlayerHistoricalTab", () => {
   beforeEach(() => {
     jest.clearAllMocks();
 
-    mockUsePlayerActiveSeasons.mockReturnValue({
+    mockUsePlayerSeasonsContext.mockReturnValue({
       data: {
         current_season: {
           season_id: 42,

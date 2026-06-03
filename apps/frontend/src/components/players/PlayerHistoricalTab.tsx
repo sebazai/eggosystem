@@ -12,7 +12,8 @@ import {
   TrendingUp,
   Trophy
 } from "lucide-react";
-import { useFilters } from "@/context/FilterContext";
+import { DEFAULT_PLAYER_SEASON_CONTEXT } from "@/lib/player-season-context";
+import type { PlayerSeasonContextQuery } from "@eggosystem/types";
 import {
   Select,
   SelectContent,
@@ -36,7 +37,7 @@ import {
   ReferenceLine
 } from "recharts";
 import {
-  usePlayerActiveSeasons,
+  usePlayerSeasonsContext,
   usePlayerHistoricalData,
   usePlayerHistoricalAverageByRank,
   usePlayerHistoricalAverageByLevel,
@@ -46,6 +47,7 @@ import {
 
 interface PlayerHistoricalTabProps {
   steamId: string;
+  seasonContext?: PlayerSeasonContextQuery;
 }
 
 // Period options — season labels are overridden dynamically in the component
@@ -416,8 +418,10 @@ const ComparisonPanel = ({
   );
 };
 
-export const PlayerHistoricalTab = ({ steamId }: PlayerHistoricalTabProps) => {
-  const { filterParams: _filterParams } = useFilters();
+export const PlayerHistoricalTab = ({
+  steamId,
+  seasonContext = DEFAULT_PLAYER_SEASON_CONTEXT
+}: PlayerHistoricalTabProps) => {
   const [period, setPeriod] = useState<string>("last_15");
   const [compareOption, setCompareOption] = useState<string>("faceit_5");
   const router = useRouter();
@@ -425,7 +429,7 @@ export const PlayerHistoricalTab = ({ steamId }: PlayerHistoricalTabProps) => {
   const compareOptionGroups = getCompareOptionGroups();
 
   const { data: playerSeasons, isLoading: isLoadingSeasons } =
-    usePlayerActiveSeasons(steamId);
+    usePlayerSeasonsContext(steamId, seasonContext);
 
   const periodOptions = useMemo(
     () =>

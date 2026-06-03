@@ -4,22 +4,38 @@ import {
   type PlayerHistoricalAverage,
   type PlayerActiveSeasons,
   type PlayerActiveSeason,
+  type PlayerSeasonContextQuery,
   type HistoricalDataParams
 } from "@eggosystem/types";
 
-export const getPlayerActiveSeasons = async (
+/**
+ * Seasons this player has match stats in, scoped to organizer + game + gametype.
+ * Returns at most one calendar-current and one most-recent finished season.
+ */
+export const getPlayerSeasonsContext = async (
   steam_id: string,
-  app_id: number = 730
+  context: PlayerSeasonContextQuery
 ): Promise<PlayerActiveSeasons> => {
+  const { organizer_id, app_id, gametype } = context;
   const baseJoins = `
     FROM Seasons s
     JOIN Games g ON s.game_id = g.id
+    JOIN GameTypes gt ON s.game_type_id = gt.id
+    JOIN Organizers o ON s.organizer_id = o.id
     JOIN Matches m ON m.season_id = s.id
     JOIN MatchGames mg ON mg.match_id = m.id
     JOIN PlayerStats ps ON ps.match_game_id = mg.id
     WHERE ps.steam_id = ?
       AND g.app_id = ?
+      AND o.id = ?
+      AND LOWER(gt.name) = LOWER(?)
   `;
+  const scopeBinds: [string, number, number, string] = [
+    steam_id,
+    app_id,
+    organizer_id,
+    gametype
+  ];
 
   const [currentRow] = await runQuery<Array<PlayerActiveSeason | undefined>>(
     `SELECT s.id AS season_id, s.full_name, s.start_date, s.end_date
@@ -28,7 +44,7 @@ export const getPlayerActiveSeasons = async (
        AND (s.end_date IS NULL OR s.end_date >= NOW())
      ORDER BY s.id DESC
      LIMIT 1`,
-    [steam_id, app_id]
+    scopeBinds
   );
 
   const [lastRow] = await runQuery<Array<PlayerActiveSeason | undefined>>(
@@ -38,7 +54,7 @@ export const getPlayerActiveSeasons = async (
        AND s.end_date < NOW()
      ORDER BY s.id DESC
      LIMIT 1`,
-    [steam_id, app_id]
+    scopeBinds
   );
 
   return {
