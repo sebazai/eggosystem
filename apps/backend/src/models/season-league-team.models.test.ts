@@ -1,5 +1,6 @@
 import { runQuery } from "../db/mysqlRunQuery";
 import {
+  clearPodiumPlacementsForSeasonLeague,
   getTeamIdsByExternalIds,
   getPlayoffSeedsBySeasonAndLeague,
   getPlayoffSeedMapBySeasonAndLeague,
@@ -83,6 +84,22 @@ describe("season-league-team.models (playoff)", () => {
       expect(mockRunQuery).toHaveBeenCalledWith(
         expect.stringContaining("playoff_seed IS NOT NULL"),
         [14, 1]
+      );
+    });
+  });
+
+  describe("clearPodiumPlacementsForSeasonLeague", () => {
+    it("nulls placement 1, 2, and 3 for the season+league", async () => {
+      mockRunQuery.mockResolvedValue([]);
+
+      await clearPodiumPlacementsForSeasonLeague(14, 1);
+
+      expect(mockRunQuery).toHaveBeenCalledWith(
+        expect.stringMatching(
+          /UPDATE SeasonLeagueTeams SET placement = NULL[\s\S]*placement IN \(1, 2, 3\)/
+        ),
+        [14, 1],
+        undefined
       );
     });
   });

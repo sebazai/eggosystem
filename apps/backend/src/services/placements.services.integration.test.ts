@@ -28,6 +28,7 @@ import {
   assignGrandFinalPlacementsForFinishedMatch,
   assignGrandFinalPlacementsIfEligible
 } from "./placements.services";
+import { replayGrandFinalPlacements } from "./replay-grand-final-placements.services";
 import { type ChampionshipDetailsFinished } from "@eggosystem/types";
 
 // Synthetic IDs — high enough not to collide with production data
@@ -342,6 +343,95 @@ describe("placements.services — grand final placement assignment", () => {
     expect(placements[TEAM_C.id]).toBe(1);
     expect(placements[TEAM_B.id]).toBe(2);
     expect(placements[TEAM_A.id]).toBe(3);
+  });
+
+  it("clears stale podium placements before rewriting 1/2/3", async () => {
+    const staleWinnerTeamId = 9904;
+    await runQuery(
+      `INSERT INTO Teams (id, name, team_logo) VALUES (?, 'Stale Podium Team 9904', 'nologo.png')`,
+      [staleWinnerTeamId]
+    );
+    await runQuery(
+      `INSERT INTO SeasonLeagueTeams (season_id, league_id, team_id, external_team_id, placement)
+       VALUES (?, ?, ?, 'test-faction-stale-9904', 1)`,
+      [S_ID, L_ID, staleWinnerTeamId]
+    );
+    await runQuery(
+      `UPDATE SeasonLeagueTeams SET placement = 2 WHERE season_id = ? AND league_id = ? AND team_id = ?`,
+      [S_ID, L_ID, TEAM_C.id]
+    );
+    await runQuery(
+      `UPDATE SeasonLeagueTeams SET placement = 3 WHERE season_id = ? AND league_id = ? AND team_id = ?`,
+      [S_ID, L_ID, TEAM_B.id]
+    );
+
+    const result = await assignGrandFinalPlacementsForFinishedMatch({
+      id: 0,
+      group: 3,
+      round: 1,
+      external_match_room_id: GF_ROOM_ID,
+      season_id: S_ID,
+      league_id: L_ID,
+      stage: STAGE_ID
+    });
+
+    expect(result.applied).toBe(true);
+
+    const placements = await getPlacements();
+    expect(placements[staleWinnerTeamId]).toBeNull();
+    expect(placements[TEAM_C.id]).toBe(1);
+    expect(placements[TEAM_B.id]).toBe(2);
+    expect(placements[TEAM_A.id]).toBe(3);
+
+    const podiumCounts = await runQuery<
+      Array<{ placement: number; count: number }>
+    >(
+      `SELECT placement, COUNT(*) AS count FROM SeasonLeagueTeams
+       WHERE season_id = ? AND league_id = ? AND placement IN (1, 2, 3)
+       GROUP BY placement`,
+      [S_ID, L_ID]
+    );
+    for (const row of podiumCounts) {
+      expect(row.count).toBe(1);
+    }
+
+    await runQuery(`DELETE FROM SeasonLeagueTeams WHERE team_id = ?`, [
+      staleWinnerTeamId
+    ]);
+    await runQuery(`DELETE FROM Teams WHERE id = ?`, [staleWinnerTeamId]);
+  });
+
+  it("replayGrandFinalPlacements clears stale placements for season and league", async () => {
+    await runQuery(
+      `UPDATE SeasonLeagueTeams SET placement = 1 WHERE season_id = ? AND league_id = ? AND team_id = ?`,
+      [S_ID, L_ID, TEAM_A.id]
+    );
+
+    const result = await replayGrandFinalPlacements({
+      season_id: S_ID,
+      league_id: L_ID
+    });
+
+    expect(result.applied).toBe(true);
+    expect(result.placements).toEqual(
+      expect.arrayContaining([
+        { team_id: TEAM_C.id, placement: 1 },
+        { team_id: TEAM_B.id, placement: 2 },
+        { team_id: TEAM_A.id, placement: 3 }
+      ])
+    );
+
+    const placements = await getPlacements();
+    expect(placements[TEAM_C.id]).toBe(1);
+    expect(placements[TEAM_B.id]).toBe(2);
+    expect(placements[TEAM_A.id]).toBe(3);
+
+    const duplicateFirst = await runQuery<Array<{ count: number }>>(
+      `SELECT COUNT(*) AS count FROM SeasonLeagueTeams
+       WHERE season_id = ? AND league_id = ? AND placement = 1`,
+      [S_ID, L_ID]
+    );
+    expect(duplicateFirst[0]?.count).toBe(1);
   });
 
   it("assignGrandFinalPlacementsIfEligible skips non-grand-final match details", async () => {

@@ -3,6 +3,7 @@ import {
   type Match
 } from "@eggosystem/types";
 import {
+  clearPodiumPlacementsForSeasonLeague,
   getSeasonLeagueTeamByExternalId,
   updateSeasonLeagueTeamPlacement
 } from "../models/season-league-team.models";
@@ -67,6 +68,8 @@ const setLeaguePlacements = async (
 
   const winnerTeam = winnerFaction === "faction1" ? team1 : team2;
   const loserTeam = winnerFaction === "faction1" ? team2 : team1;
+
+  await clearPodiumPlacementsForSeasonLeague(seasonId, leagueId);
 
   await Promise.all([
     updateSeasonLeagueTeamPlacement(seasonId, leagueId, winnerTeam.team_id, 1),
