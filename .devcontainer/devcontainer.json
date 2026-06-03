@@ -5,6 +5,10 @@
   "workspaceFolder": "/workspace",
   "shutdownAction": "stopCompose",
   "remoteUser": "node",
+  "containerEnv": {
+    "WATCHPACK_POLLING": "true",
+    "NEXT_DEV_POLLING": "true"
+  },
   "customizations": {
     // Configure properties specific to VS Code.
     "vscode": {
