@@ -1,7 +1,7 @@
 import type {
   SeasonDetails,
   Season,
-  ActiveSeasonSignupForAppId,
+  ActiveSignupOrSeasonForAppId,
   SeasonFormRaw,
   SeasonPlatform
 } from "@eggosystem/types";
@@ -13,7 +13,6 @@ import {
   setActiveMapPoolForSeason,
   getActiveMapPoolBySeasonId
 } from "./season-active-map-pool.models";
-import { getGameTypeIdByName } from "./game.models";
 
 export const getSeasons = async () => {
   const seasons = await runQuery<Season[]>("SELECT * FROM Seasons");
@@ -125,23 +124,21 @@ export const getOrganizerActiveSeasonForAppId = async (
   app_id: number,
   gametype?: string
 ) => {
-  const resolvedGametype = gametype ?? "comp";
-  const redisKey = `${organizer_id}-${app_id}-${resolvedGametype}-active-season`;
+  const redisKey = `${organizer_id}-${app_id}-${(gametype ?? "comp").toLowerCase()}-active-season`;
   const cachedData = await redisClient.get(redisKey);
   if (cachedData) {
     return JSON.parse(cachedData);
   }
 
-  const game_type_id = await getGameTypeIdByName(gametype);
   const [activeSeason] = await runQuery<
-    Array<ActiveSeasonSignupForAppId | undefined>
+    Array<ActiveSignupOrSeasonForAppId | undefined>
   >(
-    `SELECT s.id AS season_id, s.platform, s.signup_end_date, s.full_name
+    `SELECT s.id AS season_id, s.platform, s.signup_start_date, s.signup_end_date, s.start_date, s.end_date, s.full_name
      FROM Seasons s
      JOIN Games g ON s.game_id = g.id
      JOIN GameTypes gt ON s.game_type_id = gt.id
      JOIN Organizers o ON s.organizer_id = o.id
-     WHERE g.app_id = ? AND o.id = ? AND gt.id = ?
+     WHERE g.app_id = ? AND o.id = ? AND LOWER(gt.name) = LOWER(?)
        AND (
          (s.start_date <= NOW() AND (s.end_date IS NULL OR s.end_date >= NOW()))
          OR
@@ -149,7 +146,7 @@ export const getOrganizerActiveSeasonForAppId = async (
        )
      ORDER BY s.id DESC
      LIMIT 1;`,
-    [app_id, organizer_id, game_type_id]
+    [app_id, organizer_id, gametype ?? "comp"]
   );
 
   if (activeSeason) {

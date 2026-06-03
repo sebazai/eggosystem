@@ -551,7 +551,14 @@ export const getPlayerSeasonsController = async (
   try {
     const { steam_id } = req.params;
     if (!steam_id) return next(new BadRequestError("Steam ID is required"));
-    const seasons = await getPlayerActiveSeasons(steam_id);
+    const parsedAppId = req.query.app_id
+      ? parseInt(req.query.app_id.toString(), 10)
+      : undefined;
+    const app_id =
+      parsedAppId && Number.isInteger(parsedAppId) && parsedAppId > 0
+        ? parsedAppId
+        : 730;
+    const seasons = await getPlayerActiveSeasons(steam_id, app_id);
     res.json(seasons);
   } catch (error) {
     next(error);

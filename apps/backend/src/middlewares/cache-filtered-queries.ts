@@ -42,7 +42,10 @@ export function cacheResponseMiddleware({
 
     // If active season is present, do not cache
     const activeSeason =
-      organizer_id && app_id
+      Number.isFinite(organizerId) &&
+      Number.isFinite(appId) &&
+      organizerId > 0 &&
+      appId > 0
         ? await getOrganizerActiveSeasonForAppId(organizerId, appId)
         : null;
     if (activeSeason) {

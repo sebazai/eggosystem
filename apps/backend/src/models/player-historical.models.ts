@@ -8,14 +8,17 @@ import {
 } from "@eggosystem/types";
 
 export const getPlayerActiveSeasons = async (
-  steam_id: string
+  steam_id: string,
+  app_id: number = 730
 ): Promise<PlayerActiveSeasons> => {
   const baseJoins = `
     FROM Seasons s
+    JOIN Games g ON s.game_id = g.id
     JOIN Matches m ON m.season_id = s.id
     JOIN MatchGames mg ON mg.match_id = m.id
     JOIN PlayerStats ps ON ps.match_game_id = mg.id
     WHERE ps.steam_id = ?
+      AND g.app_id = ?
   `;
 
   const [currentRow] = await runQuery<Array<PlayerActiveSeason | undefined>>(
@@ -25,7 +28,7 @@ export const getPlayerActiveSeasons = async (
        AND (s.end_date IS NULL OR s.end_date >= NOW())
      ORDER BY s.id DESC
      LIMIT 1`,
-    [steam_id]
+    [steam_id, app_id]
   );
 
   const [lastRow] = await runQuery<Array<PlayerActiveSeason | undefined>>(
@@ -35,7 +38,7 @@ export const getPlayerActiveSeasons = async (
        AND s.end_date < NOW()
      ORDER BY s.id DESC
      LIMIT 1`,
-    [steam_id]
+    [steam_id, app_id]
   );
 
   return {

@@ -6,16 +6,12 @@ import {
 } from "./season.models";
 import { runQuery } from "../db/mysqlRunQuery";
 import { getConnection } from "../db/mysqlConnection";
-import { getGameTypeIdByName } from "./game.models";
 import { redisClient } from "../utils/redisClient";
 import { SeasonPlatform, createMockSeasonFormRaw } from "@eggosystem/types";
 import type { PoolConnection } from "mysql2/promise";
 
 jest.mock("../db/mysqlRunQuery");
 jest.mock("../db/mysqlConnection");
-jest.mock("./game.models", () => ({
-  getGameTypeIdByName: jest.fn().mockResolvedValue(1)
-}));
 jest.mock("./season-active-map-pool.models", () => ({
   setActiveMapPoolForSeason: jest.fn().mockResolvedValue(undefined),
   getActiveMapPoolBySeasonId: jest.fn().mockResolvedValue([1, 2, 3])
@@ -233,23 +229,21 @@ describe("Season Models", () => {
   });
 });
 
-const mockGetGameTypeIdByName = getGameTypeIdByName as jest.MockedFunction<
-  typeof getGameTypeIdByName
->;
-
 describe("getOrganizerActiveSeasonForAppId", () => {
   const mockRunQuery = runQuery as jest.MockedFunction<typeof runQuery>;
 
   const activeSeason = {
     season_id: 10,
     platform: SeasonPlatform.FACEIT,
+    signup_start_date: null,
     signup_end_date: null,
+    start_date: new Date("2025-01-01T00:00:00.000Z"),
+    end_date: null,
     full_name: "Spring 2025"
   };
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockGetGameTypeIdByName.mockResolvedValue(1);
     mockRedisClient.get.mockResolvedValue(null);
     mockRedisClient.set.mockResolvedValue("OK");
   });
@@ -264,7 +258,7 @@ describe("getOrganizerActiveSeasonForAppId", () => {
       expect.stringContaining(
         "s.start_date <= NOW() AND (s.end_date IS NULL OR s.end_date >= NOW())"
       ),
-      [730, 1, 1]
+      [730, 1, "comp"]
     );
   });
 
@@ -278,7 +272,7 @@ describe("getOrganizerActiveSeasonForAppId", () => {
       expect.stringContaining(
         "s.start_date > NOW() AND s.signup_start_date <= NOW() AND (s.signup_end_date IS NULL OR s.signup_end_date >= NOW())"
       ),
-      [730, 1, 1]
+      [730, 1, "comp"]
     );
   });
 
@@ -330,7 +324,10 @@ describe("getOrganizerActiveSeasonForAppId", () => {
 
     await getOrganizerActiveSeasonForAppId(1, 730);
 
-    expect(mockGetGameTypeIdByName).toHaveBeenCalledWith(undefined);
+    expect(mockRunQuery).toHaveBeenCalledWith(
+      expect.stringContaining("LOWER(gt.name) = LOWER(?)"),
+      [730, 1, "comp"]
+    );
   });
 
   it("should resolve undefined gametype to comp for cache key and lookup", async () => {
@@ -341,7 +338,10 @@ describe("getOrganizerActiveSeasonForAppId", () => {
     expect(mockRedisClient.get).toHaveBeenCalledWith(
       "1-730-comp-active-season"
     );
-    expect(mockGetGameTypeIdByName).toHaveBeenCalledWith(undefined);
+    expect(mockRunQuery).toHaveBeenCalledWith(
+      expect.stringContaining("LOWER(gt.name) = LOWER(?)"),
+      [730, 1, "comp"]
+    );
   });
 
   it("should return cached season without hitting the database", async () => {
@@ -349,7 +349,8 @@ describe("getOrganizerActiveSeasonForAppId", () => {
 
     const result = await getOrganizerActiveSeasonForAppId(1, 730, "comp");
 
-    expect(result).toEqual(activeSeason);
+    // Cached data is JSON-deserialized, so Date fields come back as ISO strings.
+    expect(result).toEqual(JSON.parse(JSON.stringify(activeSeason)));
     expect(mockRunQuery).not.toHaveBeenCalled();
   });
 
@@ -366,14 +367,30 @@ describe("getOrganizerActiveSeasonForAppId", () => {
     );
   });
 
-  it("should pass the resolved game_type_id to the query", async () => {
-    mockGetGameTypeIdByName.mockResolvedValue(99);
+  it("should pass the lowercased gametype name to the query", async () => {
     mockRunQuery.mockResolvedValue([activeSeason]);
 
-    await getOrganizerActiveSeasonForAppId(1, 730, "5v5");
+    await getOrganizerActiveSeasonForAppId(1, 730, "wingman");
 
-    expect(mockGetGameTypeIdByName).toHaveBeenCalledWith("5v5");
-    expect(mockRunQuery).toHaveBeenCalledWith(expect.any(String), [730, 1, 99]);
+    expect(mockRunQuery).toHaveBeenCalledWith(
+      expect.stringContaining("LOWER(gt.name) = LOWER(?)"),
+      [730, 1, "wingman"]
+    );
+  });
+
+  it("should include the restored projection columns in the SELECT", async () => {
+    mockRunQuery.mockResolvedValue([activeSeason]);
+
+    await getOrganizerActiveSeasonForAppId(1, 730);
+
+    expect(mockRunQuery).toHaveBeenCalledWith(
+      expect.stringContaining("s.start_date"),
+      expect.any(Array)
+    );
+    expect(mockRunQuery).toHaveBeenCalledWith(
+      expect.stringContaining("s.end_date"),
+      expect.any(Array)
+    );
   });
 
   it("should propagate database errors", async () => {

@@ -714,7 +714,8 @@ describe("getPlayerSeasonsController", () => {
     mockStatus = jest.fn().mockReturnValue({ json: mockJson });
 
     req = {
-      params: { steam_id: "76561198012345678" }
+      params: { steam_id: "76561198012345678" },
+      query: {}
     };
     res = {
       status: mockStatus,
@@ -752,7 +753,7 @@ describe("getPlayerSeasonsController", () => {
     // Assert
     expect(
       mockedPlayerHistoricalModels.getPlayerActiveSeasons
-    ).toHaveBeenCalledWith("76561198012345678");
+    ).toHaveBeenCalledWith("76561198012345678", 730);
     expect(mockJson).toHaveBeenCalledWith(expectedSeasons);
     expect(mockNext).not.toHaveBeenCalled();
   });
@@ -775,8 +776,33 @@ describe("getPlayerSeasonsController", () => {
     // Assert
     expect(
       mockedPlayerHistoricalModels.getPlayerActiveSeasons
-    ).toHaveBeenCalledWith("76561198012345678");
+    ).toHaveBeenCalledWith("76561198012345678", 730);
     expect(mockJson).toHaveBeenCalledWith(expectedSeasons);
+  });
+
+  it("should pass the app_id query param through to getPlayerActiveSeasons", async () => {
+    // Arrange
+    const expectedSeasons = {
+      current_season: null,
+      last_season: null
+    };
+
+    req.query = { app_id: "578080" };
+
+    mockedPlayerHistoricalModels.getPlayerActiveSeasons.mockResolvedValue(
+      expectedSeasons
+    );
+
+    // Act
+    const mockNext = jest.fn();
+    await getPlayerSeasonsController(req as Request, res as Response, mockNext);
+
+    // Assert
+    expect(
+      mockedPlayerHistoricalModels.getPlayerActiveSeasons
+    ).toHaveBeenCalledWith("76561198012345678", 578080);
+    expect(mockJson).toHaveBeenCalledWith(expectedSeasons);
+    expect(mockNext).not.toHaveBeenCalled();
   });
 
   it("should return 400 when steam_id parameter is missing", async () => {

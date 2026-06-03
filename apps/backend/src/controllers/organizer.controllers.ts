@@ -6,25 +6,22 @@ import {
 } from "@eggosystem/types";
 import { getOrganizerByIdOrFail } from "../models/organizer.models";
 import _ from "lodash";
-import { expireInOneDay, redisClient } from "../utils/redisClient";
 import { BadRequestError, NotFoundError } from "../utils/errors";
 
 export const getActiveSeasonForApp = async (
-  req: RequestWithParams<{ app_id: string; organizer_id: string }>,
+  req: RequestWithParamsAndQuery<
+    { app_id: string; organizer_id: string },
+    { gametype?: string }
+  >,
   res: Response,
   next: NextFunction
 ) => {
   const app_id = Number(req.params.app_id);
   const organizer_id = Number(req.params.organizer_id);
-  const redisKey = `${organizer_id}-${app_id}-active-season`;
-  const dataInRedis = await redisClient.get(redisKey);
-  if (dataInRedis) {
-    res.json({ season_id: Number(dataInRedis) });
-    return;
-  }
   const activeSeason = await getOrganizerActiveSeasonForAppId(
     organizer_id,
-    app_id
+    app_id,
+    req.query.gametype
   );
   if (!activeSeason) {
     return next(
@@ -33,7 +30,6 @@ export const getActiveSeasonForApp = async (
       )
     );
   }
-  await redisClient.set(redisKey, activeSeason.season_id, "EX", expireInOneDay);
   res.json(activeSeason);
 };
 
@@ -67,7 +63,7 @@ export const getActiveSignupOrActiveSeasonForAppController = async (
     app_id,
     gametype
   );
-  res.json(ActiveSignupOrActiveSeason);
+  res.json(ActiveSignupOrActiveSeason ?? null);
 };
 
 const defaultGameTypeForAppId = (app_id: number): string | undefined => {
@@ -104,6 +100,7 @@ export const redirectToActiveSignup = async (
   }
 
   const gametype = req.query.gametype ?? defaultGameTypeForAppId(app_id);
+  const resolvedGametype = gametype ?? "comp";
 
   // Get active signup season
   const activeSignupSeason = await getOrganizerActiveSeasonForAppId(
@@ -115,7 +112,7 @@ export const redirectToActiveSignup = async (
   if (!activeSignupSeason) {
     return next(
       new NotFoundError(
-        `No active signup season found for app ${app_id}, organizer ${organizer_id}, and game type '${gametype ?? "comp"}'`
+        `No active signup season found for app ${app_id}, organizer ${organizer_id}, and game type '${resolvedGametype}'`
       )
     );
   }

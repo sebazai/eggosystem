@@ -51,19 +51,3 @@ export const getGameTypesByGameId = async (
     [gameId]
   );
 };
-
-/**
- * Gets the game type ID by name. If the game type is not found, returns 1 (comp).
- * @param name - The name of the game type
- * @returns The game type ID
- */
-export const getGameTypeIdByName = async (name?: string): Promise<number> => {
-  if (!name) {
-    return 1;
-  }
-  const [gameType] = await runQuery<Array<{ id: number } | undefined>>(
-    "SELECT id FROM GameTypes WHERE LOWER(name) = LOWER(?) LIMIT 1",
-    [name]
-  );
-  return gameType?.id ?? 1;
-};
