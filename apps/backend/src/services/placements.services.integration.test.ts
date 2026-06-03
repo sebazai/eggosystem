@@ -92,8 +92,8 @@ async function seed(
   options: { includeLbFinal: boolean } = { includeLbFinal: true }
 ): Promise<void> {
   await runQuery(
-    `INSERT INTO Seasons (id, game_id, organizer_id, name, full_name, start_date, platform, is_round_robin_bo2_as_2xbo1)
-     VALUES (?, 1, 1, 'Test Playoffs 9901', 'Test Playoffs 9901', '2026-01-01', 'faceit', 0)`,
+    `INSERT INTO Seasons (id, game_id, organizer_id, name, full_name, start_date, platform, is_round_robin_bo2_as_2xbo1, grand_final_round_one_only)
+     VALUES (?, 1, 1, 'Test Playoffs 9901', 'Test Playoffs 9901', '2026-01-01', 'faceit', 0, 1)`,
     [S_ID]
   );
   await runQuery(

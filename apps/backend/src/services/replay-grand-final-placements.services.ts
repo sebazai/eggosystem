@@ -10,7 +10,6 @@ import {
 import { NotFoundError, BadRequestError } from "../utils/errors";
 import {
   assignGrandFinalPlacementsForFinishedMatch,
-  isGrandFinalRoundOne,
   type AssignGrandFinalPlacementsResult
 } from "./placements.services";
 
@@ -55,21 +54,21 @@ async function replayFromMatchRows(
   requestedExternalRoomId: string | null
 ): Promise<ReplayGrandFinalPlacementsResult> {
   let lastNonGrandFinal: AssignGrandFinalPlacementsResult | null = null;
-  let lastMatch: MatchRowForReplay | null = null;
+  let lastNonGrandFinalMatch: MatchRowForReplay | null = null;
 
   for (const match of matches) {
-    lastMatch = match;
     const result = await assignGrandFinalPlacementsForFinishedMatch(match);
     if (result.applied) {
       return toReplayResponse(match, result);
     }
     if (result.skipped_reason !== "not_grand_final") {
       lastNonGrandFinal = result;
+      lastNonGrandFinalMatch = match;
     }
   }
 
-  if (lastNonGrandFinal != null && lastMatch != null) {
-    return toReplayResponse(lastMatch, lastNonGrandFinal);
+  if (lastNonGrandFinal != null && lastNonGrandFinalMatch != null) {
+    return toReplayResponse(lastNonGrandFinalMatch, lastNonGrandFinal);
   }
 
   const first = matches[0];
@@ -113,12 +112,13 @@ export async function replayGrandFinalPlacements(input: {
     if (!match) {
       throw new NotFoundError("Match not found");
     }
-    if (!isGrandFinalRoundOne(match.group, match.round)) {
+    const result = await replayFromMatchRow(match);
+    if (!result.applied && result.skipped_reason === "not_grand_final") {
       throw new BadRequestError(
-        "match_id must reference a grand final match (group=3, round=1)"
+        "match_id must reference a grand final match (group=3, round determined by season setting)"
       );
     }
-    return replayFromMatchRow(match);
+    return result;
   }
 
   if (!external_match_room_id) {

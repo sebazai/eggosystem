@@ -108,7 +108,7 @@ type MatchRowForPlacements = Pick<
 
 async function loadMatchesForPlacementsByIds(
   matchIds: number[],
-  conn: PoolConnection
+  conn?: PoolConnection
 ): Promise<MatchRowForPlacements[]> {
   const uniqueSorted = [...new Set(matchIds)].sort((a, b) => a - b);
   if (uniqueSorted.length === 0) return [];
@@ -123,17 +123,13 @@ async function loadMatchesForPlacementsByIds(
 }
 
 async function assignPlacementsAfterManualMarkFinished(
-  markFinished: ManualDemoParseMarkFinishedResult,
-  conn: PoolConnection
+  markFinished: ManualDemoParseMarkFinishedResult
 ): Promise<ManualDemoParsePlacementsResult> {
   if (!markFinished.applied || markFinished.match_ids.length === 0) {
     return placementsFromMarkFinishedSkipped(markFinished);
   }
 
-  const matches = await loadMatchesForPlacementsByIds(
-    markFinished.match_ids,
-    conn
-  );
+  const matches = await loadMatchesForPlacementsByIds(markFinished.match_ids);
 
   let lastNonGrandFinal: AssignGrandFinalPlacementsResult | null = null;
   for (const match of matches) {
@@ -269,6 +265,7 @@ export const enqueueManualDashboardDemoParse = async (input: {
       : [matchRow.match_id];
   const targetIdsSorted = [...new Set(targetIdsRaw)].sort((a, b) => a - b);
 
+  let finishResult: ManualDemoParseMarkFinishedResult | null = null;
   const conn = await getConnection();
   try {
     await conn.beginTransaction();
@@ -285,30 +282,37 @@ export const enqueueManualDashboardDemoParse = async (input: {
       };
     }
 
-    const finishResult = await finishMatchWithComputedEndTime(rows, {
+    finishResult = await finishMatchWithComputedEndTime(rows, {
       connection: conn,
       forceFinishForfeit
     });
     await conn.commit();
-
-    // conn is committed but not yet released. assignPlacementsAfterManualMarkFinished
-    // uses it only for the loadMatchesForPlacementsByIds SELECT; the actual placement
-    // writes open their own pool connections and run outside this transaction.
-    const placements = finishResult.applied
-      ? await assignPlacementsAfterManualMarkFinished(finishResult, conn)
-      : placementsFromMarkFinishedSkipped(finishResult);
-
-    return {
-      match_game_id: matchGameId,
-      mark_finished: finishResult,
-      placements
-    };
   } catch (err) {
     await conn.rollback();
     throw err;
   } finally {
     conn.release();
   }
+
+  // conn is released. Placements run in their own connections outside the
+  // mark-finished transaction. Failures are non-fatal — the demo is already enqueued.
+  const placements = finishResult.applied
+    ? await assignPlacementsAfterManualMarkFinished(finishResult).catch(
+        (err) => {
+          logger.error(
+            "[manual-parse] grand-final placement assignment failed",
+            err
+          );
+          return placementsFromMarkFinishedSkipped(finishResult!);
+        }
+      )
+    : placementsFromMarkFinishedSkipped(finishResult);
+
+  return {
+    match_game_id: matchGameId,
+    mark_finished: finishResult,
+    placements
+  };
 };
 
 /**

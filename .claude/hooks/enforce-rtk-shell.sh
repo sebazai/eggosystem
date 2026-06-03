@@ -84,6 +84,18 @@ fi
 # Hide $(git rev-parse ...) so nested `git` does not trip bare-git detection.
 scan=$(printf '%s' "$cmd" | sed 's/\$(git[[:space:]]\+rev-parse[^)]*)/__/g')
 
+# --- Block `rtk [pnpm] tsc` — RTK's tsc wrapper ignores --noEmit and runs ---
+# from the repo root, picking up the empty root tsconfig.json (no outDir),
+# which emits JS files next to the source .ts files.
+if printf '%s' "$scan" | grep -Eq 'rtk[[:space:]]+(pnpm[[:space:]]+)?tsc([[:space:]]|$)'; then
+  msg='`rtk [pnpm] tsc` strips --noEmit and runs from the repo root, emitting JS files next to sources. Use `cd $(git rev-parse --show-toplevel)/apps/backend && rtk pnpm typecheck` or `pnpm typecheck` at repo root instead.'
+  jq -n \
+    --arg um "$msg" \
+    --arg am "$msg" \
+    '{"permission":"deny","user_message":$um,"agent_message":$am,"continue":true}'
+  exit 0
+fi
+
 # --- Block tsc without --noEmit (emits compiled JS/d.ts output files) ---------
 # Matches `tsc` as a command word after any prefix (rtk, pnpm, npx, bare, etc.)
 if printf '%s' "$scan" | grep -Eq '(^|[[:space:];|&])tsc([[:space:]]|$)'; then

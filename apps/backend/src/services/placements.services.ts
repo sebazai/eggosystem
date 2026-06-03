@@ -13,6 +13,7 @@ import {
   getMatchTeamIdsByMatchId
 } from "../models/match.models";
 import { getConnection } from "../db/mysqlConnection";
+import { getSeasonGrandFinalRoundOneOnly } from "../models/season.models";
 import { getFaceITMatchDetails } from "./faceit-match.services";
 import { logger } from "../utils/app-logger";
 
@@ -30,10 +31,11 @@ export interface AssignGrandFinalPlacementsResult {
   updated: GrandFinalPlacementUpdate[];
 }
 
-export const isGrandFinalRoundOne = (
+const isGrandFinalMatch = (
   group: number | undefined,
-  round: number | undefined
-): boolean => group === 3 && round === 1;
+  round: number | undefined,
+  grandFinalRoundOneOnly: boolean
+): boolean => group === 3 && round === (grandFinalRoundOneOnly ? 1 : 2);
 
 async function resolvePlacementTeamName(
   teamId: number,
@@ -191,7 +193,19 @@ export async function assignGrandFinalPlacementsIfEligible(input: {
 }): Promise<AssignGrandFinalPlacementsResult> {
   const { matchDetails, seasonId, leagueId, stageId } = input;
 
-  if (!isGrandFinalRoundOne(matchDetails.group, matchDetails.round)) {
+  if (matchDetails.group !== 3) {
+    return placementsSkipped("not_grand_final", seasonId, leagueId);
+  }
+
+  const grandFinalRoundOneOnly =
+    await getSeasonGrandFinalRoundOneOnly(seasonId);
+  if (
+    !isGrandFinalMatch(
+      matchDetails.group,
+      matchDetails.round,
+      grandFinalRoundOneOnly
+    )
+  ) {
     return placementsSkipped("not_grand_final", seasonId, leagueId);
   }
 
@@ -219,9 +233,13 @@ export async function assignGrandFinalPlacementsIfEligible(input: {
   };
 }
 
+type FetchDetailsResult =
+  | { details: ChampionshipDetailsFinished; reason: null }
+  | { details: null; reason: string };
+
 async function fetchGrandFinalMatchDetails(
   externalMatchRoomId: string
-): Promise<ChampionshipDetailsFinished | null> {
+): Promise<FetchDetailsResult> {
   try {
     const details =
       await getFaceITMatchDetails<ChampionshipDetailsFinished>(
@@ -232,15 +250,15 @@ async function fetchGrandFinalMatchDetails(
       details?.teams?.faction2?.faction_id == null ||
       details?.results?.winner == null
     ) {
-      return null;
+      return { details: null, reason: "faceit_match_incomplete" };
     }
-    return details;
+    return { details, reason: null };
   } catch (err) {
     logger.warn(
       `[placements] fetchGrandFinalMatchDetails failed for room=${externalMatchRoomId}`,
       err
     );
-    return null;
+    return { details: null, reason: "faceit_fetch_failed" };
   }
 }
 
@@ -258,7 +276,18 @@ type FinishedMatchForPlacements = Pick<
 export async function assignGrandFinalPlacementsForFinishedMatch(
   match: FinishedMatchForPlacements
 ): Promise<AssignGrandFinalPlacementsResult> {
-  if (!isGrandFinalRoundOne(match.group, match.round)) {
+  if (match.group !== 3) {
+    return placementsSkipped(
+      "not_grand_final",
+      match.season_id,
+      match.league_id
+    );
+  }
+
+  const grandFinalRoundOneOnly = await getSeasonGrandFinalRoundOneOnly(
+    match.season_id
+  );
+  if (!isGrandFinalMatch(match.group, match.round, grandFinalRoundOneOnly)) {
     return placementsSkipped(
       "not_grand_final",
       match.season_id,
@@ -274,12 +303,11 @@ export async function assignGrandFinalPlacementsForFinishedMatch(
     );
   }
 
-  const matchDetails = await fetchGrandFinalMatchDetails(
-    match.external_match_room_id
-  );
+  const { details: matchDetails, reason: fetchFailureReason } =
+    await fetchGrandFinalMatchDetails(match.external_match_room_id);
   if (matchDetails == null) {
     return placementsSkipped(
-      "faceit_fetch_failed",
+      fetchFailureReason,
       match.season_id,
       match.league_id
     );

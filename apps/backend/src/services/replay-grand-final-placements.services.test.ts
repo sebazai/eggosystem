@@ -118,11 +118,18 @@ describe("replayGrandFinalPlacements", () => {
 
   it("throws BadRequest when match_id is not grand final", async () => {
     mockGetMatch.mockResolvedValue([{ ...gfMatch, group: 2, round: 1 }]);
+    mockAssign.mockResolvedValue({
+      applied: false,
+      skipped_reason: "not_grand_final",
+      season_id: 10,
+      league_id: 20,
+      updated: []
+    });
 
     await expect(
       replayGrandFinalPlacements({ match_id: 100 })
     ).rejects.toBeInstanceOf(BadRequestError);
-    expect(mockAssign).not.toHaveBeenCalled();
+    expect(mockAssign).toHaveBeenCalledTimes(1);
   });
 
   it("throws NotFound when match_id does not exist", async () => {
