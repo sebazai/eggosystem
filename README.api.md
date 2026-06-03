@@ -129,6 +129,7 @@ All v1 routers are mounted from `apps/backend/src/routes/index.ts`. High-level g
 | `/teams`                                                             | `team.routes.ts`                            | public / JWT per endpoint                                                                            |
 | `/seasons`                                                           | `season.routes.ts`                          | public / JWT + `checkJWTPermissions` per endpoint                                                    |
 | `/leagues`                                                           | `league.routes.ts`                          | public                                                                                               |
+| `/tournaments`                                                       | `tournament.routes.ts`                      | public                                                                                               |
 | `/now`                                                               | `now.routes.ts`                             | public (returns `{ now: <epoch_ms> }`)                                                               |
 | `/allstar`                                                           | `allstar.routes.ts`                         | public / JWT per endpoint                                                                            |
 | `/stages`                                                            | `stage.routes.ts`                           | public                                                                                               |
@@ -162,6 +163,7 @@ Each subroute is additionally gated by `checkPermissions({ fallbackRoles: [...] 
 | `/dashboard/caster-applications`  | `admin`, `helpdesk`                       |
 | `/dashboard/playoff-seeds`        | `admin`, `helpdesk`                       |
 | `/dashboard/sponsors`             | `admin` only                              |
+| `/dashboard/newsletter`           | `admin` only                              |
 | `GET /dashboard`                  | static `read:dashboard`; fallback `admin` |
 
 ### Public marketing sponsors (`GET /api/v1/sponsors`)
@@ -306,7 +308,7 @@ Controllers should `return next(new BadRequestError(...))` etc. (from `utils/err
 ## Testing
 
 - Unit tests (Jest + Supertest) live next to code; create apps with `createExpressTestApp(router, mountPath)` from `src/test-utils` and always run the returned `cleanup()` in `afterEach`.
-- E2E tests (Playwright) must be run from the repo root: `pnpm test:e2e`. See [.cursor/skills/e2e-playwright/SKILL.md](.cursor/skills/e2e-playwright/SKILL.md).
+- E2E tests (Playwright) must be run from the repo root: `pnpm test:e2e`. See the [Testing section in the root README](README.md#testing).
 
 ## Performance
 
@@ -320,5 +322,4 @@ Controllers should `return next(new BadRequestError(...))` etc. (from `utils/err
 - [Database](README.database.md) — Knex, migrations, triggers, identity model
 - [Dashboard](README.dashboard.md) — admin/helpdesk UI and its security model
 - [Frontend](README.frontend.md) — Next.js App Router + SWR integration
-- [Testing strategy](.cursor/skills/testing-strategy/SKILL.md) — unit + integration conventions
-- [E2E / Playwright](.cursor/skills/e2e-playwright/SKILL.md) — E2E from repo root
+- [Testing](README.md#testing) — unit/integration (Jest) and E2E (Playwright, from repo root)
