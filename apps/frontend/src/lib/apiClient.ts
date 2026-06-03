@@ -29,8 +29,13 @@ const onTokenRefreshed = () => {
 
 const onRefreshFailed = (err: unknown) => {
   refreshFailureCallbacks.forEach((callback) => callback(err));
-  refreshSubscribers = [];
   refreshFailureCallbacks = [];
+  // Queued clientApiFetch calls are waiting for refresh to finish before hitting
+  // the network. Many routes are public — run them anyway when refresh fails
+  // (e.g. visitor with no session) instead of leaving promises pending forever.
+  const subscribers = refreshSubscribers;
+  refreshSubscribers = [];
+  subscribers.forEach((callback) => callback());
 };
 
 const addRefreshSubscriber = (callback: () => void) => {

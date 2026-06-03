@@ -16,4 +16,11 @@ export interface GamePlayerStats {
   kana_rating: PlayerStats["kana_rating"];
   first_kills: PlayerStats["first_kills"];
   first_deaths: PlayerStats["first_deaths"];
+  shots: PlayerStats["shots"];
+  shots_hit: PlayerStats["shots_hit"];
+  total_strafing_shots: PlayerStats["total_strafing_shots"];
+  good_strafing_shots: PlayerStats["good_strafing_shots"];
+  ttd: PlayerStats["ttd"];
+  time_to_kill: PlayerStats["ttf"];
+  crosshair_placement: PlayerStats["crosshair_placement"];
 }

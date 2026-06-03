@@ -124,11 +124,35 @@ export interface RoundUtilityEvent {
   teammates_flashed: number;
 }
 
+export interface RoundWastedUtilityEvent {
+  round_number: number;
+  time_in_round: number;
+  utility_type: string;
+}
+
+export interface RoundUtilityThrowEvent {
+  round_number: number;
+  time_in_round: number;
+  utility_type: string;
+}
+
+export interface RoundUtilityDamageEvent {
+  round_number: number;
+  time_in_round: number;
+  victim_nickname: string;
+  weapon: string;
+  health_damage: number;
+  is_enemy_hit: boolean;
+}
+
 export interface PlayerRoundEvents {
   kills: RoundKillEvent[];
   deaths: RoundDeathEvent[];
   flashes: RoundFlashEvent[];
   utility: RoundUtilityEvent[];
+  wasted: RoundWastedUtilityEvent[];
+  utility_throws: RoundUtilityThrowEvent[];
+  utility_damage_hits: RoundUtilityDamageEvent[];
 }
 
 export function useMatchGameRoundEvents(matchGameId: number, steamId: string) {
@@ -138,7 +162,15 @@ export function useMatchGameRoundEvents(matchGameId: number, steamId: string) {
     SWR_OPTIONS
   );
   return {
-    data: data ?? { kills: [], deaths: [], flashes: [], utility: [] },
+    data: data ?? {
+      kills: [],
+      deaths: [],
+      flashes: [],
+      utility: [],
+      wasted: [],
+      utility_throws: [],
+      utility_damage_hits: []
+    },
     error,
     isLoading
   };

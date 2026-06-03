@@ -8003,6 +8003,22 @@ const demoData = {
         utility_type: "Molotov"
       }
     ],
+    UtilityThrowLog: [
+      {
+        round_number: 1,
+        time_in_round: 46.34,
+        thrower: 1001,
+        thrower_team: "CT",
+        utility_type: "he"
+      },
+      {
+        round_number: 1,
+        time_in_round: 52.1,
+        thrower: 1001,
+        thrower_team: "CT",
+        utility_type: "smoke"
+      }
+    ],
     RoundUtilitySummary: [
       {
         round_number: 1,
