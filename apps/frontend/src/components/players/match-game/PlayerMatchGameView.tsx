@@ -158,10 +158,6 @@ function resolveKanaRatingTier(r: number) {
   return tier;
 }
 
-function ratingColor(r: number) {
-  return resolveKanaRatingTier(r).color;
-}
-
 function accuracyPct(
   shotsHit: number | null | undefined,
   shots: number | null | undefined
@@ -295,37 +291,6 @@ function StatChip({
           {note}
         </span>
       )}
-    </div>
-  );
-}
-
-/* ─────────────────────────────────────────── HBar ── */
-
-function HBar({
-  label,
-  value,
-  max,
-  color = "var(--kanaliiga-orange)",
-  note
-}: {
-  label: string;
-  value: number;
-  max: number;
-  color?: string;
-  note?: string;
-}) {
-  return (
-    <div className="mb-3">
-      <div className="flex justify-between text-sm mb-1">
-        <span className="text-muted-foreground">{label}</span>
-        <div className="flex gap-2">
-          {note && (
-            <span className="text-muted-foreground/60 text-xs">{note}</span>
-          )}
-          <span className="font-semibold tabular-nums">{value}</span>
-        </div>
-      </div>
-      <MiniBar value={value} max={max} color={color} height={8} />
     </div>
   );
 }

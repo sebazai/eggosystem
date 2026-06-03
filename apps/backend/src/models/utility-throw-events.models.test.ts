@@ -17,7 +17,7 @@ function createUtilityThrowEvent(
   return {
     round_number: 1,
     time_in_round: 46.34,
-    thrower: 76561197960716950,
+    thrower: 1001,
     thrower_team: "CT",
     utility_type: "he",
     ...overrides
