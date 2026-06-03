@@ -13,6 +13,7 @@ import {
 } from "./manual-demo-parse.services";
 import { publishToParseQueue } from "./parse-queue.services";
 import { sendDemoForAllStarPOTGClip } from "./allstar.services";
+import { assignGrandFinalPlacementsForFinishedMatch } from "./placements.services";
 
 jest.mock("../db/mysqlRunQuery");
 jest.mock("../db/mysqlConnection");
@@ -26,6 +27,9 @@ jest.mock("../models/match-game.models", () => ({
 }));
 jest.mock("./allstar.services", () => ({
   sendDemoForAllStarPOTGClip: jest.fn()
+}));
+jest.mock("./placements.services", () => ({
+  assignGrandFinalPlacementsForFinishedMatch: jest.fn()
 }));
 
 const mockRunQuery = runQuery as jest.MockedFunction<typeof runQuery>;
@@ -46,10 +50,29 @@ const mockSendDemoForAllStarPOTGClip =
   sendDemoForAllStarPOTGClip as jest.MockedFunction<
     typeof sendDemoForAllStarPOTGClip
   >;
+const mockAssignGrandFinalPlacementsForFinishedMatch =
+  assignGrandFinalPlacementsForFinishedMatch as jest.MockedFunction<
+    typeof assignGrandFinalPlacementsForFinishedMatch
+  >;
+
+const placementsNotRequested = {
+  applied: false,
+  skipped_reason: "not_requested",
+  season_id: null,
+  league_id: null,
+  updated: []
+};
 
 describe("enqueueManualDashboardDemoParse", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockAssignGrandFinalPlacementsForFinishedMatch.mockResolvedValue({
+      applied: false,
+      skipped_reason: "not_grand_final",
+      season_id: 1,
+      league_id: 1,
+      updated: []
+    });
   });
 
   it("does not touch DB mark path when mark_finished is false", async () => {
@@ -76,12 +99,16 @@ describe("enqueueManualDashboardDemoParse", () => {
         match_ids: [],
         end_timestamp: null,
         skipped_reason: "not_requested"
-      }
+      },
+      placements: placementsNotRequested
     });
 
     expect(mockPublishToParseQueue).toHaveBeenCalledTimes(1);
     expect(mockGetConnection).not.toHaveBeenCalled();
     expect(mockSendDemoForAllStarPOTGClip).not.toHaveBeenCalled();
+    expect(
+      mockAssignGrandFinalPlacementsForFinishedMatch
+    ).not.toHaveBeenCalled();
   });
 
   it("calls sendDemoForAllStarPOTGClip for championship matches", async () => {
@@ -179,7 +206,30 @@ describe("enqueueManualDashboardDemoParse", () => {
           status: "ONGOING" satisfies Match["status"]
         }
       ])
-      .mockResolvedValueOnce({ affectedRows: 1 });
+      .mockResolvedValueOnce({ affectedRows: 1 })
+      .mockResolvedValueOnce([
+        {
+          id: 12,
+          group: 3,
+          round: 1,
+          external_match_room_id: "gf-room-1",
+          season_id: 99,
+          league_id: 88,
+          stage: 2
+        }
+      ]);
+
+    mockAssignGrandFinalPlacementsForFinishedMatch.mockResolvedValue({
+      applied: true,
+      skipped_reason: null,
+      season_id: 99,
+      league_id: 88,
+      updated: [
+        { team_id: 1, placement: 1, team_name: "Team 1" },
+        { team_id: 2, placement: 2, team_name: "Team 2" },
+        { team_id: 3, placement: 3, team_name: "Team 3" }
+      ]
+    });
 
     const outcome = await enqueueManualDashboardDemoParse({
       matchGameId: 5,
@@ -195,11 +245,210 @@ describe("enqueueManualDashboardDemoParse", () => {
     expect(outcome.match_game_id).toBe(5);
     expect(outcome.mark_finished.applied).toBe(true);
     expect(outcome.mark_finished.match_ids).toEqual([12]);
+    expect(outcome.placements.applied).toBe(true);
+    expect(outcome.placements.updated).toHaveLength(3);
 
     expect(mockConn.beginTransaction).toHaveBeenCalledTimes(1);
     expect(mockConn.commit).toHaveBeenCalledTimes(1);
     expect(mockConn.release).toHaveBeenCalledTimes(1);
-    expect(mockRunQuery).toHaveBeenCalledTimes(2);
+    expect(mockRunQuery).toHaveBeenCalledTimes(3);
+    expect(mockAssignGrandFinalPlacementsForFinishedMatch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: 12,
+        group: 3,
+        round: 1,
+        external_match_room_id: "gf-room-1"
+      })
+    );
+  });
+
+  it("returns not_grand_final placements for non-grand-final mark_finished", async () => {
+    mockGetMatchIdByGameId.mockResolvedValue([
+      { match_id: 12, team_game_scores_staff_lock: 0 }
+    ]);
+    mockPublishToParseQueue.mockResolvedValue(undefined);
+    mockIsChampionshipMatchGame.mockResolvedValue(false);
+
+    const mockConn = {
+      beginTransaction: jest.fn(),
+      commit: jest.fn(),
+      rollback: jest.fn(),
+      release: jest.fn()
+    };
+    mockGetConnection.mockResolvedValue(
+      mockConn as unknown as Awaited<ReturnType<typeof getConnection>>
+    );
+
+    mockRunQuery
+      .mockResolvedValueOnce([
+        {
+          id: 12,
+          start_timestamp: "2025-06-01T10:00:00.000Z",
+          best_of: 2,
+          status: "ONGOING" satisfies Match["status"]
+        }
+      ])
+      .mockResolvedValueOnce({ affectedRows: 1 })
+      .mockResolvedValueOnce([
+        {
+          id: 12,
+          group: 1,
+          round: 4,
+          external_match_room_id: "ub-room-1",
+          season_id: 99,
+          league_id: 88,
+          stage: 2
+        }
+      ]);
+
+    mockAssignGrandFinalPlacementsForFinishedMatch.mockResolvedValue({
+      applied: false,
+      skipped_reason: "not_grand_final",
+      season_id: 99,
+      league_id: 88,
+      updated: []
+    });
+
+    const outcome = await enqueueManualDashboardDemoParse({
+      matchGameId: 5,
+      downloadUrl: "https://cdn.example/demo.dem.zst",
+      priority: 4,
+      actorAccountId: 1,
+      source: "manual",
+      reparse: false,
+      mark_finished: true,
+      finishMatchIds: [12]
+    });
+
+    expect(outcome.placements).toEqual({
+      applied: false,
+      skipped_reason: "not_grand_final",
+      season_id: 99,
+      league_id: 88,
+      updated: []
+    });
+    expect(
+      mockAssignGrandFinalPlacementsForFinishedMatch
+    ).toHaveBeenCalledTimes(1);
+  });
+
+  it("returns skipped placements when mark_finished is not applied (all already finished)", async () => {
+    mockGetMatchIdByGameId.mockResolvedValue([
+      { match_id: 12, team_game_scores_staff_lock: 0 }
+    ]);
+    mockPublishToParseQueue.mockResolvedValue(undefined);
+    mockIsChampionshipMatchGame.mockResolvedValue(false);
+
+    const mockConn = {
+      beginTransaction: jest.fn(),
+      commit: jest.fn(),
+      rollback: jest.fn(),
+      release: jest.fn()
+    };
+    mockGetConnection.mockResolvedValue(
+      mockConn as unknown as Awaited<ReturnType<typeof getConnection>>
+    );
+
+    // Only one runQuery call: loadMatchesForComputedFinishByIds.
+    // finishMatchWithComputedEndTime returns early (eligible=[]) so no UPDATE fires.
+    mockRunQuery.mockResolvedValueOnce([
+      {
+        id: 12,
+        start_timestamp: "2025-06-01T10:00:00.000Z",
+        best_of: 2,
+        status: "FINISHED" satisfies Match["status"]
+      }
+    ]);
+
+    const outcome = await enqueueManualDashboardDemoParse({
+      matchGameId: 5,
+      downloadUrl: "https://cdn.example/demo.dem.zst",
+      priority: 4,
+      actorAccountId: 1,
+      source: "manual",
+      reparse: false,
+      mark_finished: true,
+      finishMatchIds: [12]
+    });
+
+    expect(outcome.mark_finished.applied).toBe(false);
+    expect(outcome.placements).toEqual({
+      applied: false,
+      skipped_reason: expect.any(String),
+      season_id: null,
+      league_id: null,
+      updated: []
+    });
+    expect(
+      mockAssignGrandFinalPlacementsForFinishedMatch
+    ).not.toHaveBeenCalled();
+  });
+
+  it("surfaces non-not_grand_final skipped reason via lastNonGrandFinal path", async () => {
+    mockGetMatchIdByGameId.mockResolvedValue([
+      { match_id: 12, team_game_scores_staff_lock: 0 }
+    ]);
+    mockPublishToParseQueue.mockResolvedValue(undefined);
+    mockIsChampionshipMatchGame.mockResolvedValue(false);
+
+    const mockConn = {
+      beginTransaction: jest.fn(),
+      commit: jest.fn(),
+      rollback: jest.fn(),
+      release: jest.fn()
+    };
+    mockGetConnection.mockResolvedValue(
+      mockConn as unknown as Awaited<ReturnType<typeof getConnection>>
+    );
+
+    mockRunQuery
+      .mockResolvedValueOnce([
+        {
+          id: 12,
+          start_timestamp: "2025-06-01T10:00:00.000Z",
+          best_of: 1,
+          status: "ONGOING" satisfies Match["status"]
+        }
+      ])
+      .mockResolvedValueOnce({ affectedRows: 1 })
+      .mockResolvedValueOnce([
+        {
+          id: 12,
+          group: 3,
+          round: 1,
+          external_match_room_id: "gf-room-1",
+          season_id: 99,
+          league_id: 88,
+          stage: 2
+        }
+      ]);
+
+    mockAssignGrandFinalPlacementsForFinishedMatch.mockResolvedValue({
+      applied: false,
+      skipped_reason: "faceit_fetch_failed",
+      season_id: 99,
+      league_id: 88,
+      updated: []
+    });
+
+    const outcome = await enqueueManualDashboardDemoParse({
+      matchGameId: 5,
+      downloadUrl: "https://cdn.example/demo.dem.zst",
+      priority: 4,
+      actorAccountId: 1,
+      source: "manual",
+      reparse: false,
+      mark_finished: true,
+      finishMatchIds: [12]
+    });
+
+    expect(outcome.placements).toEqual({
+      applied: false,
+      skipped_reason: "faceit_fetch_failed",
+      season_id: 99,
+      league_id: 88,
+      updated: []
+    });
   });
 });
 

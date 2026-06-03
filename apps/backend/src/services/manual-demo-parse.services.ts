@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import type {
   ManualDemoParseMarkFinishedResult,
+  ManualDemoParsePlacementsResult,
   Match
 } from "@eggosystem/types";
 import { MatchStatus } from "@eggosystem/types";
@@ -20,6 +21,10 @@ import {
   createDemoProcessingRequest,
   publishToParseQueue
 } from "./parse-queue.services";
+import {
+  assignGrandFinalPlacementsForFinishedMatch,
+  type AssignGrandFinalPlacementsResult
+} from "./placements.services";
 
 type ManualDemoParseSource = "manual" | "faceit";
 
@@ -50,6 +55,104 @@ function manualParseMarkFinishedNotRequested(): ManualDemoParseMarkFinishedResul
     match_ids: [],
     end_timestamp: null,
     skipped_reason: MARK_FINISHED_NOT_REQUESTED_SKIP
+  };
+}
+
+function manualParsePlacementsNotRequested(): ManualDemoParsePlacementsResult {
+  return {
+    applied: false,
+    skipped_reason: MARK_FINISHED_NOT_REQUESTED_SKIP,
+    season_id: null,
+    league_id: null,
+    updated: []
+  };
+}
+
+// ManualDemoParsePlacementsResult is a separate public API type even though its
+// fields currently mirror AssignGrandFinalPlacementsResult. The internal result
+// type is free to evolve without affecting the wire contract.
+function toManualParsePlacementsResult(
+  result: AssignGrandFinalPlacementsResult
+): ManualDemoParsePlacementsResult {
+  return {
+    applied: result.applied,
+    skipped_reason: result.skipped_reason,
+    season_id: result.season_id,
+    league_id: result.league_id,
+    updated: result.updated
+  };
+}
+
+function placementsFromMarkFinishedSkipped(
+  markFinished: ManualDemoParseMarkFinishedResult
+): ManualDemoParsePlacementsResult {
+  return {
+    applied: false,
+    skipped_reason: markFinished.skipped_reason ?? "mark_finished_not_applied",
+    season_id: null,
+    league_id: null,
+    updated: []
+  };
+}
+
+type MatchRowForPlacements = Pick<
+  Match,
+  | "id"
+  | "group"
+  | "round"
+  | "external_match_room_id"
+  | "season_id"
+  | "league_id"
+  | "stage"
+>;
+
+async function loadMatchesForPlacementsByIds(
+  matchIds: number[],
+  conn?: PoolConnection
+): Promise<MatchRowForPlacements[]> {
+  const uniqueSorted = [...new Set(matchIds)].sort((a, b) => a - b);
+  if (uniqueSorted.length === 0) return [];
+
+  const placeholders = uniqueSorted.map(() => "?").join(", ");
+  return runQuery<MatchRowForPlacements[]>(
+    `SELECT id, \`group\`, round, external_match_room_id, season_id, league_id, stage
+     FROM Matches WHERE id IN (${placeholders})`,
+    uniqueSorted,
+    conn
+  );
+}
+
+async function assignPlacementsAfterManualMarkFinished(
+  markFinished: ManualDemoParseMarkFinishedResult
+): Promise<ManualDemoParsePlacementsResult> {
+  if (!markFinished.applied || markFinished.match_ids.length === 0) {
+    return placementsFromMarkFinishedSkipped(markFinished);
+  }
+
+  const matches = await loadMatchesForPlacementsByIds(markFinished.match_ids);
+
+  let lastNonGrandFinal: AssignGrandFinalPlacementsResult | null = null;
+  for (const match of matches) {
+    const result = await assignGrandFinalPlacementsForFinishedMatch(match);
+    if (result.applied) {
+      return toManualParsePlacementsResult(result);
+    }
+    if (result.skipped_reason !== "not_grand_final") {
+      lastNonGrandFinal = result;
+    }
+  }
+
+  if (lastNonGrandFinal != null) {
+    return toManualParsePlacementsResult(lastNonGrandFinal);
+  }
+
+  const firstMatch = matches[0];
+  return {
+    applied: false,
+    skipped_reason: "not_grand_final",
+    season_id: firstMatch?.season_id ?? null,
+    league_id: firstMatch?.league_id ?? null,
+    updated: []
   };
 }
 
@@ -103,6 +206,7 @@ export const enqueueManualDashboardDemoParse = async (input: {
 }): Promise<{
   match_game_id: number;
   mark_finished: ManualDemoParseMarkFinishedResult;
+  placements: ManualDemoParsePlacementsResult;
 }> => {
   const {
     matchGameId,
@@ -150,7 +254,8 @@ export const enqueueManualDashboardDemoParse = async (input: {
   if (!markFinished) {
     return {
       match_game_id: matchGameId,
-      mark_finished: manualParseMarkFinishedNotRequested()
+      mark_finished: manualParseMarkFinishedNotRequested(),
+      placements: manualParsePlacementsNotRequested()
     };
   }
 
@@ -160,35 +265,54 @@ export const enqueueManualDashboardDemoParse = async (input: {
       : [matchRow.match_id];
   const targetIdsSorted = [...new Set(targetIdsRaw)].sort((a, b) => a - b);
 
+  let finishResult: ManualDemoParseMarkFinishedResult | null = null;
   const conn = await getConnection();
   try {
     await conn.beginTransaction();
     const rows = await loadMatchesForComputedFinishByIds(targetIdsSorted, conn);
     if (rows.length !== targetIdsSorted.length) {
       await conn.rollback();
+      const markFinishedResult = validationResult(
+        `Could not load all Matches rows for ids: ${targetIdsSorted.join(", ")}.`
+      );
       return {
         match_game_id: matchGameId,
-        mark_finished: validationResult(
-          `Could not load all Matches rows for ids: ${targetIdsSorted.join(", ")}.`
-        )
+        mark_finished: markFinishedResult,
+        placements: placementsFromMarkFinishedSkipped(markFinishedResult)
       };
     }
 
-    const finishResult = await finishMatchWithComputedEndTime(rows, {
+    finishResult = await finishMatchWithComputedEndTime(rows, {
       connection: conn,
       forceFinishForfeit
     });
     await conn.commit();
-    return {
-      match_game_id: matchGameId,
-      mark_finished: finishResult
-    };
   } catch (err) {
     await conn.rollback();
     throw err;
   } finally {
     conn.release();
   }
+
+  // conn is released. Placements run in their own connections outside the
+  // mark-finished transaction. Failures are non-fatal — the demo is already enqueued.
+  const placements = finishResult.applied
+    ? await assignPlacementsAfterManualMarkFinished(finishResult).catch(
+        (err) => {
+          logger.error(
+            "[manual-parse] grand-final placement assignment failed",
+            err
+          );
+          return placementsFromMarkFinishedSkipped(finishResult!);
+        }
+      )
+    : placementsFromMarkFinishedSkipped(finishResult);
+
+  return {
+    match_game_id: matchGameId,
+    mark_finished: finishResult,
+    placements
+  };
 };
 
 /**

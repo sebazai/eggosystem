@@ -26,8 +26,9 @@
       "env": {}
     },
     "shadcn/ui": {
-      "command": "pnpm",
-      "args": ["-C", "/workspace/apps/frontend", "exec", "shadcn", "mcp"],
+      "type": "stdio",
+      "command": "bash",
+      "args": ["/workspace/scripts/run-shadcn-mcp.sh"],
       "env": {}
     },
     "GitLab": {
