@@ -3,13 +3,18 @@ import {
   replayGrandFinalPlacements,
   type ReplayGrandFinalPlacementsResult
 } from "./replay-grand-final-placements.services";
-import { getMatch, getMatchesByExternalId } from "../models/match.models";
+import {
+  getMatch,
+  getMatchesByExternalId,
+  getGrandFinalMatchBySeasonAndLeague
+} from "../models/match.models";
 import { assignGrandFinalPlacementsForFinishedMatch } from "./placements.services";
 import { NotFoundError, BadRequestError } from "../utils/errors";
 
 jest.mock("../models/match.models", () => ({
   getMatch: jest.fn(),
-  getMatchesByExternalId: jest.fn()
+  getMatchesByExternalId: jest.fn(),
+  getGrandFinalMatchBySeasonAndLeague: jest.fn()
 }));
 
 jest.mock("./placements.services", () => ({
@@ -18,6 +23,9 @@ jest.mock("./placements.services", () => ({
 
 const mockGetMatch = jest.mocked(getMatch);
 const mockGetMatchesByExternalId = jest.mocked(getMatchesByExternalId);
+const mockGetGrandFinalMatchBySeasonAndLeague = jest.mocked(
+  getGrandFinalMatchBySeasonAndLeague
+);
 const mockAssign = jest.mocked(assignGrandFinalPlacementsForFinishedMatch);
 
 const gfMatch: Match = {
@@ -40,9 +48,9 @@ const appliedResult = {
   season_id: 10,
   league_id: 20,
   updated: [
-    { team_id: 1, placement: 1 },
-    { team_id: 2, placement: 2 },
-    { team_id: 3, placement: 3 }
+    { team_id: 1, placement: 1, team_name: "Team 1" },
+    { team_id: 2, placement: 2, team_name: "Team 2" },
+    { team_id: 3, placement: 3, team_name: "Team 3" }
   ]
 };
 
@@ -56,6 +64,37 @@ function expectReplayShape(
 describe("replayGrandFinalPlacements", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+  });
+
+  it("replays placements by season_id and league_id", async () => {
+    mockGetGrandFinalMatchBySeasonAndLeague.mockResolvedValue([gfMatch]);
+    mockAssign.mockResolvedValue(appliedResult);
+
+    const result = await replayGrandFinalPlacements({
+      season_id: 10,
+      league_id: 20
+    });
+
+    expectReplayShape(result, {
+      applied: true,
+      season_id: 10,
+      league_id: 20,
+      placements: appliedResult.updated
+    });
+    expect(mockGetGrandFinalMatchBySeasonAndLeague).toHaveBeenCalledWith(
+      10,
+      20
+    );
+    expect(mockAssign).toHaveBeenCalledWith(gfMatch);
+  });
+
+  it("throws NotFound when season and league have no grand final", async () => {
+    mockGetGrandFinalMatchBySeasonAndLeague.mockResolvedValue([]);
+
+    await expect(
+      replayGrandFinalPlacements({ season_id: 10, league_id: 20 })
+    ).rejects.toBeInstanceOf(NotFoundError);
+    expect(mockAssign).not.toHaveBeenCalled();
   });
 
   it("replays placements by match_id for a grand final row", async () => {

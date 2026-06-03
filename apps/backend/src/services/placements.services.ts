@@ -3,9 +3,11 @@ import {
   type Match
 } from "@eggosystem/types";
 import {
+  clearPodiumPlacementsForSeasonLeague,
   getSeasonLeagueTeamByExternalId,
   updateSeasonLeagueTeamPlacement
 } from "../models/season-league-team.models";
+import { getTeamById } from "../models/team.models";
 import {
   getLowerBracketFinalMatch,
   getMatchTeamIdsByMatchId
@@ -13,18 +15,36 @@ import {
 import { getFaceITMatchDetails } from "./faceit-match.services";
 import { logger } from "../utils/app-logger";
 
+interface GrandFinalPlacementUpdate {
+  team_id: number;
+  placement: number;
+  team_name: string;
+}
+
 export interface AssignGrandFinalPlacementsResult {
   applied: boolean;
   skipped_reason: string | null;
   season_id: number | null;
   league_id: number | null;
-  updated: Array<{ team_id: number; placement: number }>;
+  updated: GrandFinalPlacementUpdate[];
 }
 
 const isGrandFinalRoundOne = (
   group: number | undefined,
   round: number | undefined
 ): boolean => group === 3 && round === 1;
+
+async function resolvePlacementTeamName(
+  teamId: number,
+  namesByTeamId: Map<number, string>
+): Promise<string> {
+  const fromMatch = namesByTeamId.get(teamId);
+  if (fromMatch != null && fromMatch.length > 0) {
+    return fromMatch;
+  }
+  const [team] = await getTeamById(teamId);
+  return team?.name ?? `Team #${teamId}`;
+}
 
 function placementsSkipped(
   skippedReason: string,
@@ -46,7 +66,7 @@ const setLeaguePlacements = async (
   leagueId: number,
   stageId: number
 ): Promise<{
-  updated: Array<{ team_id: number; placement: number }>;
+  updated: GrandFinalPlacementUpdate[];
   skipped_reason: string | null;
 }> => {
   const { faction1, faction2 } = matchDetails.teams;
@@ -67,15 +87,35 @@ const setLeaguePlacements = async (
 
   const winnerTeam = winnerFaction === "faction1" ? team1 : team2;
   const loserTeam = winnerFaction === "faction1" ? team2 : team1;
+  const namesByTeamId = new Map<number, string>([
+    [team1.team_id, matchDetails.teams.faction1.name],
+    [team2.team_id, matchDetails.teams.faction2.name]
+  ]);
+
+  await clearPodiumPlacementsForSeasonLeague(seasonId, leagueId);
 
   await Promise.all([
     updateSeasonLeagueTeamPlacement(seasonId, leagueId, winnerTeam.team_id, 1),
     updateSeasonLeagueTeamPlacement(seasonId, leagueId, loserTeam.team_id, 2)
   ]);
 
-  const updated: Array<{ team_id: number; placement: number }> = [
-    { team_id: winnerTeam.team_id, placement: 1 },
-    { team_id: loserTeam.team_id, placement: 2 }
+  const updated: GrandFinalPlacementUpdate[] = [
+    {
+      team_id: winnerTeam.team_id,
+      placement: 1,
+      team_name: await resolvePlacementTeamName(
+        winnerTeam.team_id,
+        namesByTeamId
+      )
+    },
+    {
+      team_id: loserTeam.team_id,
+      placement: 2,
+      team_name: await resolvePlacementTeamName(
+        loserTeam.team_id,
+        namesByTeamId
+      )
+    }
   ];
 
   const lbFinal = await getLowerBracketFinalMatch(seasonId, leagueId, stageId);
@@ -103,7 +143,11 @@ const setLeaguePlacements = async (
     thirdPlaceTeamId,
     3
   );
-  updated.push({ team_id: thirdPlaceTeamId, placement: 3 });
+  updated.push({
+    team_id: thirdPlaceTeamId,
+    placement: 3,
+    team_name: await resolvePlacementTeamName(thirdPlaceTeamId, namesByTeamId)
+  });
 
   return { updated, skipped_reason: null };
 };

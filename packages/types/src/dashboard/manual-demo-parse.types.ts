@@ -54,7 +54,7 @@ export interface ManualDemoParsePlacementsResult {
   skipped_reason: string | null;
   season_id: number | null;
   league_id: number | null;
-  updated: Array<{ team_id: number; placement: number }>;
+  updated: Array<{ team_id: number; placement: number; team_name: string }>;
 }
 
 /**

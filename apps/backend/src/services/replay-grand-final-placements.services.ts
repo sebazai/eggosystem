@@ -1,20 +1,20 @@
-import type { Match } from "@eggosystem/types";
-import { getMatch, getMatchesByExternalId } from "../models/match.models";
+import type {
+  Match,
+  ReplayGrandFinalPlacementsResponse
+} from "@eggosystem/types";
+import {
+  getGrandFinalMatchBySeasonAndLeague,
+  getMatch,
+  getMatchesByExternalId
+} from "../models/match.models";
 import { NotFoundError, BadRequestError } from "../utils/errors";
 import {
   assignGrandFinalPlacementsForFinishedMatch,
   type AssignGrandFinalPlacementsResult
 } from "./placements.services";
 
-export interface ReplayGrandFinalPlacementsResult {
-  applied: boolean;
-  season_id: number | null;
-  league_id: number | null;
-  stage_id: number | null;
-  external_match_room_id: string | null;
-  placements: Array<{ team_id: number; placement: number }>;
-  skipped_reason: string | null;
-}
+export type ReplayGrandFinalPlacementsResult =
+  ReplayGrandFinalPlacementsResponse;
 
 type MatchRowForReplay = Pick<
   Match,
@@ -92,8 +92,24 @@ async function replayFromMatchRows(
 export async function replayGrandFinalPlacements(input: {
   external_match_room_id?: string;
   match_id?: number;
+  season_id?: number;
+  league_id?: number;
 }): Promise<ReplayGrandFinalPlacementsResult> {
-  const { external_match_room_id, match_id } = input;
+  const { external_match_room_id, match_id, season_id, league_id } = input;
+
+  if (season_id != null && league_id != null) {
+    const rows = await getGrandFinalMatchBySeasonAndLeague(
+      season_id,
+      league_id
+    );
+    const match = rows[0];
+    if (!match) {
+      throw new NotFoundError(
+        "No grand final match found for season and league"
+      );
+    }
+    return replayFromMatchRow(match);
+  }
 
   if (match_id != null) {
     const rows = await getMatch(match_id);

@@ -120,6 +120,23 @@ export const updatePlayoffSeeds = async (
   }
 };
 
+/**
+ * Clears existing 1st/2nd/3rd placements for a season+league before grand-final
+ * assignment is rewritten (replay, webhook, manual upload).
+ */
+export const clearPodiumPlacementsForSeasonLeague = async (
+  seasonId: number,
+  leagueId: number,
+  connection?: PoolConnection
+): Promise<void> => {
+  await runQuery(
+    `UPDATE SeasonLeagueTeams SET placement = NULL
+     WHERE season_id = ? AND league_id = ? AND placement IN (1, 2, 3)`,
+    [seasonId, leagueId],
+    connection
+  );
+};
+
 export const updateSeasonLeagueTeamPlacement = async (
   seasonId: number,
   leagueId: number,

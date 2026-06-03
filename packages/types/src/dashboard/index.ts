@@ -7,6 +7,7 @@ export * from "./RoleManagement.interface";
 export * from "./Redis.interface";
 export * from "./failed-parse.types";
 export * from "./manual-demo-parse.types";
+export * from "./replay-grand-final-placements.types";
 export * from "./DashboardSeasonTeam.interface";
 export * from "./DashboardSeasonTeam.test-utils";
 export * from "./EmailVerification.interface";
