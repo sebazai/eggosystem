@@ -1,11 +1,17 @@
 import { runQuery } from "../db/mysqlRunQuery";
 import { getConnection } from "../db/mysqlConnection";
 import type { PoolConnection } from "mysql2/promise";
-import type { PlayerTier, FantasyPlayerStats } from "@eggosystem/types";
+import type {
+  PlayerTier,
+  FantasyPlayerStats,
+  PlayerRole
+} from "@eggosystem/types";
 import {
   calculateInitialPlayerValue,
   calculatePlayerTier
 } from "@eggosystem/types";
+
+export type { PlayerRole };
 import {
   getCurrentWeekNumberForSeason,
   getSeasonStartDate
@@ -13,26 +19,6 @@ import {
 import { redisClient } from "../utils/redisClient";
 import { logger } from "../utils/app-logger";
 import { BadRequestError } from "../utils/errors";
-
-export type PlayerRole =
-  | "main_awp"
-  | "leader"
-  | "support"
-  | "entry_fragger"
-  | "defender"
-  | "hs_machine"
-  | "multi_fragger"
-  | "attacker"
-  | "camper"
-  | "stathunter"
-  | "noob"
-  | "eco_friendly"
-  | "flash_master"
-  | "clutch_player"
-  | "first_blood"
-  | "t_specialist"
-  | "ct_specialist"
-  | "anchor";
 
 export interface FantasyTeamPlayer {
   steam_id: string;

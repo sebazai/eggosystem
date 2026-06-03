@@ -21,6 +21,7 @@ export * from "./MatchTeamLineup.interface";
 export * from "./MatchGameAfterplantRound.interface";
 export * from "./MatchGameOpeningDuel.interface";
 export * from "./MatchGameKillMatrix.interface";
+export * from "./MatchGamePlayerStats.interface";
 export * from "./MatchGameTradeStats.interface";
 export * from "./MatchGameInsights.interface";
 export * from "./UnfinishedMatch.interface";

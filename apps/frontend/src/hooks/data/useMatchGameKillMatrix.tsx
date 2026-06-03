@@ -1,12 +1,8 @@
 import { expressFetcher } from "@/lib/utils";
-import type { MatchGameKillMatrix } from "@eggosystem/types";
+import type { MatchGameKillMatrix, KillMatrixFilters } from "@eggosystem/types";
 import useSWR from "swr";
 
-export interface KillMatrixFilters {
-  excludeExitKills?: boolean;
-  postPlantOnly?: boolean;
-  excludeEcoKills?: boolean;
-}
+export type { KillMatrixFilters };
 
 export const useMatchGameKillMatrix = (
   matchGameId: number,

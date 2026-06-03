@@ -26,14 +26,16 @@ organizer = a DB row + theme + DNS. Neither is a rewrite.
 
 The data layer is already game-parameterized; the **presentation layer is hardwired**:
 
-| Location                                      | Today                                      | Implication                                   |
-| --------------------------------------------- | ------------------------------------------ | --------------------------------------------- |
-| `app/(main)/(content-container)/layout.tsx`   | `<FilterProvider appId="730">`             | CS2 hardcoded into the shell                  |
-| `lib/season-utils.ts`                         | `const CS2_GAME_ID = 1`                    | game identity is a literal                    |
-| `components/dashboard/seasons/SeasonForm.tsx` | `organizer_id: 1` default                  | organizer is implicit                         |
-| Routes                                        | flat: `/seasons`, `/matches`, `/players`   | implicitly Kanaliiga + CS2                    |
-| `app/(embed)/calendar`                        | **takes `organizer_id` + `app_id` params** | tenancy seam already exists at the data layer |
-| Type `ActiveSignupOrSeasonForAppId`           | seasons fetched by `app_id`                | backend is already game-scoped                |
+| Location                                        | Today                                      | Implication                                   |
+| ----------------------------------------------- | ------------------------------------------ | --------------------------------------------- |
+| `app/(main)/(content-container)/layout.tsx`     | `<FilterProvider appId="730">`             | CS2 hardcoded into the shell                  |
+| `…/teams/[teamId]/TeamTabLayoutClient.tsx`      | `<FilterProvider appId="730">`             | CS2 hardcoded on team pages too               |
+| `…/players/[steamId]/PlayerTabLayoutClient.tsx` | `<FilterProvider appId="730">`             | CS2 hardcoded on player pages too             |
+| `lib/season-utils.ts`                           | `const CS2_GAME_ID = 1`                    | game identity is a literal                    |
+| `components/dashboard/seasons/SeasonForm.tsx`   | `organizer_id: 1` default                  | organizer is implicit                         |
+| Routes                                          | flat: `/seasons`, `/matches`, `/players`   | implicitly Kanaliiga + CS2                    |
+| `app/(embed)/calendar`                          | **takes `organizer_id` + `app_id` params** | tenancy seam already exists at the data layer |
+| Type `ActiveSignupOrSeasonForAppId`             | seasons fetched by `app_id`                | backend is already game-scoped                |
 
 So this is **promoting two values that already flow through the system — organizer and
 game — from hardcoded constants to first-class, data-driven context.** Not new plumbing.
@@ -186,6 +188,15 @@ export type GameSlug = keyof typeof GAME_CONFIG;
 > `GameTypes`), so the source of truth for _which games exist_ stays in `OrganizerGames`;
 > the registry only holds _frontend behavior_ per known game.
 
+> ⚠️ **`OrganizerGames` is wider than the registry today.** Org 1 is already linked to
+> **four** games — CS2 (`id=1`), PUBG (`id=2`), Rocket League (`id=3`), and Dota 2
+> (`id=4`) — but `GAME_CONFIG`/`GAME_VIEWS` only define `cs2` and `pubg`. So
+> `OrganizerGames` is **not** sufficient on its own to drive the UI: the switcher (§8.1)
+> and `[game]/layout.tsx` (§4.2) must render/route only the **intersection** of
+> `OrganizerGames` and registry-known slugs, and `[game]/layout.tsx` must **404 a game
+> that exists in the DB but has no registry entry** (not just one the org doesn't run).
+> Otherwise RL and Dota 2 leak into the switcher and crash on selection.
+
 ---
 
 ## 7. Game view registry
@@ -278,14 +289,14 @@ no embed change beyond passing the right params.
 Each phase is independently shippable; early phases are invisible refactors that de-risk the
 rest.
 
-| Phase                                       | Deliverable                                                                                                                                                                                                        | Visible change?          |
-| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------ |
-| **F1. De-hardcode into context**            | `OrganizerProvider` + `GameProvider`; `FilterProvider` reads `appId` from game context; remove `CS2_GAME_ID = 1`, `appId="730"`, `organizer_id: 1` literals. CS2 becomes "the default game," not the implicit one. | No                       |
-| **F2. Capability config + view registry**   | Add `GAME_CONFIG` and `GAME_VIEWS`; refactor existing CS2 views to live behind the registry.                                                                                                                       | No                       |
-| **F3. Game switcher from `OrganizerGames`** | Dynamic switcher; still single organizer.                                                                                                                                                                          | Minor (switcher appears) |
-| **F4. `/[game]` path scope**                | Introduce the game segment; **301 redirect** flat routes (`/seasons/123` → `/cs2/seasons/123`).                                                                                                                    | URLs change (redirected) |
-| **F5. PUBG view modules + dashboard tools** | `PubgMatchDetail`, `PubgStandings`, `PubgSignupExtras`; game-conditional dashboard.                                                                                                                                | Yes (PUBG goes live)     |
-| **F6. `/[organizer]` host tenancy**         | Middleware host→organizer rewrite, `OrganizerProvider` from `Organizers` row, hub directory. Needed only when a real second organizer appears.                                                                     | Yes (multi-org)          |
+| Phase                                       | Deliverable                                                                                                                                                                                                                                                                                                        | Visible change?          |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------ |
+| **F1. De-hardcode into context**            | `OrganizerProvider` + `GameProvider`; `FilterProvider` reads `appId` from game context; remove `CS2_GAME_ID = 1`, `organizer_id: 1`, and **all three** `appId="730"` literals (shell `layout.tsx`, `TeamTabLayoutClient`, `PlayerTabLayoutClient` — see §2). CS2 becomes "the default game," not the implicit one. | No                       |
+| **F2. Capability config + view registry**   | Add `GAME_CONFIG` and `GAME_VIEWS`; refactor existing CS2 views to live behind the registry.                                                                                                                                                                                                                       | No                       |
+| **F3. Game switcher from `OrganizerGames`** | Dynamic switcher; still single organizer.                                                                                                                                                                                                                                                                          | Minor (switcher appears) |
+| **F4. `/[game]` path scope**                | Introduce the game segment; **301 redirect** flat routes (`/seasons/123` → `/cs2/seasons/123`).                                                                                                                                                                                                                    | URLs change (redirected) |
+| **F5. PUBG view modules + dashboard tools** | `PubgMatchDetail`, `PubgStandings`, `PubgSignupExtras`; game-conditional dashboard.                                                                                                                                                                                                                                | Yes (PUBG goes live)     |
+| **F6. `/[organizer]` host tenancy**         | Middleware host→organizer rewrite, `OrganizerProvider` from `Organizers` row, hub directory. Needed only when a real second organizer appears.                                                                                                                                                                     | Yes (multi-org)          |
 
 > Phases F1–F5 deliver **multi-game under Kanaliiga** (the immediate PUBG need) with **zero
 > organizer work**. F6 adds the second organizer when it's real — the architecture doc's

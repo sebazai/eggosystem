@@ -5,6 +5,7 @@ import {
   type MatchGameOpeningDuel,
   type OpeningDuelTradeStatus,
   type MatchGameKillMatrix,
+  type KillMatrixFilters,
   type MatchGameTradeStats,
   type PlayerTradeStats,
   type TradeMatrixEntry,
@@ -292,11 +293,7 @@ type FlashAssistRow = {
   count: number;
 };
 
-export interface KillMatrixFilters {
-  excludeExitKills?: boolean;
-  postPlantOnly?: boolean;
-  excludeEcoKills?: boolean;
-}
+export type { KillMatrixFilters };
 
 export const getMatchGameKillMatrix = async (
   match_game_id: number,
