@@ -1,6 +1,6 @@
 # Kanaliiga Eggosystem
 
-Corporate CS2 esports tournament management platform for Kanaliiga Hub. PNPM workspace monorepo with an Express 5 backend, a Next.js 16 App Router frontend, and shared TypeScript packages.
+Corporate CS2 esports tournament management platform for Kanaliiga Hub. PNPM workspace monorepo with an Express backend, a Next.js App Router frontend, and shared TypeScript packages.
 
 ## Highlights
 
@@ -41,11 +41,13 @@ Corporate CS2 esports tournament management platform for Kanaliiga Hub. PNPM wor
 
 4. **Apply for a Steam API key**: <https://steamcommunity.com/dev/apikey>.
 
-5. **Create `apps/backend/.env`**
+5. **Create `apps/backend/.env`** by copying the example and filling in the values you need (see [`apps/backend/.env.example`](apps/backend/.env.example) for all supported variables and their defaults):
 
-   ```env
-   STEAM_API_KEY=your_api_key
+   ```bash
+   cp apps/backend/.env.example apps/backend/.env
    ```
+
+   For a minimal local setup, only `STEAM_API_KEY` is required; most other variables have working defaults for the Docker/DevContainer environment.
 
 6. **One-shot setup** (install deps, Playwright, build, migrate, seed):
 
@@ -146,14 +148,16 @@ pnpm --filter=backend test -- leaderboards
 # Install Playwright + system deps (chromium only)
 pnpm install:playwright
 
+# Build the backend and start a dedicated E2E backend
+# (NODE_ENV=e2e, loads .env.local.test) before running the tests
+pnpm --filter=backend build
+pnpm --filter=backend dev:e2e
+
 # Run E2E tests (builds, reseeds the E2E DB, then runs Playwright)
 pnpm test:e2e
 
 # Playwright UI
 pnpm test:e2e:ui
-
-# Run a dedicated E2E backend (NODE_ENV=e2e, loads .env.local.test)
-pnpm --filter=backend dev:e2e
 ```
 
 Always run `pnpm test:e2e` from the workspace root so the build and E2E reseed run first; `test:e2e:run` skips those steps. For macOS with DevContainer, install XQuartz and run `xhost localhost` for Playwright headed mode.
@@ -204,11 +208,11 @@ For more information, see [databack/mysql-backup](https://github.com/databacker/
 
 ### Technology Stack
 
-- **Frontend**: Next.js 15, React 19, TypeScript, Tailwind CSS
+- **Frontend**: Next.js, React, TypeScript, Tailwind CSS
 - **Backend**: Node.js, Express.js, TypeScript, Knex.js
 - **Database**: MariaDB with comprehensive triggers and functions
 - **Authentication**: JWT with RSA signing
-- **Testing**: Jest, Playwright, TDD workflow
+- **Testing**: Jest, Playwright
 - **Development**: DevContainer, Docker Compose, PNPM workspace
 
 ### Key Features
@@ -223,17 +227,16 @@ For more information, see [databack/mysql-backup](https://github.com/databacker/
 
 We welcome contributions! Please see our development guidelines:
 
-1. **Follow TDD**: Write tests first, then implementation
-2. **Type Safety**: Use TypeScript with proper type guards
-3. **Documentation**: Update relevant README files when making changes
-4. **Code Quality**: All code must pass type checking, linting, and tests
+1. **Type Safety**: Use TypeScript with proper type guards
+2. **Documentation**: Update relevant README files when making changes
+3. **Code Quality**: All code must pass type checking, linting, and tests
 
 ### Development Workflow
 
 1. Fork the repository
 2. Create a feature branch
-3. Write tests first (TDD approach)
-4. Implement the feature
+3. Implement the feature (TDD is encouraged but not required)
+4. Add or update tests as appropriate
 5. Update documentation
 6. Submit a pull request
 

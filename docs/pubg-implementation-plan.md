@@ -65,6 +65,23 @@ These tables are game-agnostic and require **no structural change** (only data +
 1. **`SeasonActiveMapPool` / `Maps`** — `Maps` is a trivial `(id, name)` lookup. Add PUBG maps (Erangel, Miramar, Taego, Vikendi, Rondo, Deston, Sanhok) as rows. The map-pool/veto flow is CS2-oriented; PUBG uses a fixed/rotating map order set by the organizer, so we store the map per PUBG match rather than running a veto.
 2. **Sortter & `kana_elo`** — the balancing algorithm derives skill from CS2 demo parsing (`CSRankker`, `SteamPlayerKanaElo`, `SeasonPlayerRanks.kana_elo`). PUBG has no equivalent feed. **For v1, leagues/divisions are assigned manually** (or by prior-season placement); a PUBG ranking model is a later iteration. The registration tables don't require Sortter to function.
 
+### `SeasonTeamPlayers` is reusable — and cross-game play is already allowed
+
+`SeasonTeamPlayers` (the live competition roster) is reused for PUBG squads as-is. Its FKs are game-neutral (`season_id→Seasons`, `team_id→Teams`, `steam_id→SteamPlayers`) and `role`/`is_captain`/`is_co_captain`/`replaces_steam_id`/`ticket_number`/`discarded_at` all carry over.
+
+**A player can be on a CS2 roster and a PUBG roster simultaneously — verified, no change needed.** The `before_insert_primary_check` / `before_update_primary_check` triggers (migration `20260326101000_fix_primary_triggers_discarded_at`) are **scoped to a single season**:
+
+```sql
+WHERE season_id = NEW.season_id   -- only conflicts WITHIN one season
+  AND role = 'primary' AND steam_id = NEW.steam_id AND discarded_at IS NULL
+```
+
+A CS2 season and a PUBG season have different `season_id`s, so the primary-uniqueness check never fires across them. There is **no global `UNIQUE` on `steam_id`** (it is a non-unique `MUL` index). The global `captain` role flag in `AccountRoles` is harmless to hold for two games; scoped captain permissions live in `AccountPermissionScopes` keyed by season/team, so there is no cross-game leakage. Identity also stacks cleanly: one `SteamPlayers` row can carry both a CS2 `faceit_id` and a PUBG account via `PubgPlayerIdentities` (§6.2).
+
+**One column caveat:** `SeasonTeamPlayers.match_id` is an FK to the CS2 **`Matches`** table (used for per-match _substitute_ lineups, joined against `MatchTeams` in `match.models.ts`). PUBG must leave `match_id = NULL` (base roster rows already do) and **must not** invoke the CS2 lineup/substitute-validation code paths. "Who actually played a PUBG lobby" is derived from `PubgMatchPlayerStats` (the Krafton participants), not from this column. If per-match PUBG substitutions ever need first-class tracking, add a nullable `pubg_match_id` rather than overloading `match_id`.
+
+> Note: `Teams` has no `game_id`, so the schema does not force a team to be game-specific — the same `Teams` row _could_ register for both a CS2 and a PUBG season. Whether orgs field one shared team or distinct per-game squads is a registration/product choice, not a schema constraint.
+
 ---
 
 ## 3. The core architectural challenge: round-based vs battle-royale
