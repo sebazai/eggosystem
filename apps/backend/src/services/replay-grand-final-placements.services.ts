@@ -29,14 +29,16 @@ type MatchRowForReplay = Pick<
 
 function toReplayResponse(
   match: MatchRowForReplay | null,
-  result: AssignGrandFinalPlacementsResult
+  result: AssignGrandFinalPlacementsResult,
+  fallbackRoomId?: string | null
 ): ReplayGrandFinalPlacementsResult {
   return {
     applied: result.applied,
     season_id: result.season_id,
     league_id: result.league_id,
     stage_id: match?.stage ?? null,
-    external_match_room_id: match?.external_match_room_id ?? null,
+    external_match_room_id:
+      match?.external_match_room_id ?? fallbackRoomId ?? null,
     placements: result.updated,
     skipped_reason: result.skipped_reason
   };
@@ -59,7 +61,7 @@ async function replayFromMatchRows(
   for (const match of matches) {
     const result = await assignGrandFinalPlacementsForFinishedMatch(match);
     if (result.applied) {
-      return toReplayResponse(match, result);
+      return toReplayResponse(match, result, requestedExternalRoomId);
     }
     if (result.skipped_reason !== "not_grand_final") {
       lastNonGrandFinal = result;
@@ -68,7 +70,11 @@ async function replayFromMatchRows(
   }
 
   if (lastNonGrandFinal != null && lastNonGrandFinalMatch != null) {
-    return toReplayResponse(lastNonGrandFinalMatch, lastNonGrandFinal);
+    return toReplayResponse(
+      lastNonGrandFinalMatch,
+      lastNonGrandFinal,
+      requestedExternalRoomId
+    );
   }
 
   const first = matches[0];

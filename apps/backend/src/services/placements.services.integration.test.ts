@@ -81,10 +81,11 @@ async function cleanup(): Promise<void> {
   await runQuery(`DELETE FROM SeasonLeagues WHERE season_id = ?`, [S_ID]);
   await runQuery(`DELETE FROM Seasons WHERE id = ?`, [S_ID]);
   await runQuery(`DELETE FROM Leagues WHERE id = ?`, [L_ID]);
-  await runQuery(`DELETE FROM Teams WHERE id IN (?, ?, ?)`, [
+  await runQuery(`DELETE FROM Teams WHERE id IN (?, ?, ?, ?)`, [
     TEAM_A.id,
     TEAM_B.id,
-    TEAM_C.id
+    TEAM_C.id,
+    9904 // stale podium team inserted by the clear-stale-placements test
   ]);
 }
 

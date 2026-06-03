@@ -194,4 +194,19 @@ describe("replayGrandFinalPlacements", () => {
       replayGrandFinalPlacements({ external_match_room_id: "missing" })
     ).rejects.toBeInstanceOf(NotFoundError);
   });
+
+  it("echoes requested external_match_room_id in response when match row has null", async () => {
+    const matchWithNullRoom: Match = {
+      ...gfMatch,
+      external_match_room_id: null
+    };
+    mockGetMatchesByExternalId.mockResolvedValue([matchWithNullRoom]);
+    mockAssign.mockResolvedValue(appliedResult);
+
+    const result = await replayGrandFinalPlacements({
+      external_match_room_id: "room-from-request"
+    });
+
+    expect(result.external_match_room_id).toBe("room-from-request");
+  });
 });

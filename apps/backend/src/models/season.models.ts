@@ -88,13 +88,13 @@ export const getSeasonGrandFinalRoundOneOnly = async (
   connection?: PoolConnection
 ): Promise<boolean> => {
   const [row] = await runQuery<
-    Array<{ grand_final_round_one_only: number | null }>
+    Array<{ grand_final_round_one_only: boolean | null }>
   >(
     `SELECT grand_final_round_one_only FROM Seasons WHERE id = ?`,
     [seasonId],
     connection
   );
-  return row?.grand_final_round_one_only === 1;
+  return Boolean(row?.grand_final_round_one_only);
 };
 
 export const getSeasonPlatformAndAppId = async (

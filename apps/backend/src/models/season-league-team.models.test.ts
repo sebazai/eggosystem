@@ -1,3 +1,4 @@
+import { type PoolConnection } from "mysql2/promise";
 import { runQuery } from "../db/mysqlRunQuery";
 import {
   clearPodiumPlacementsForSeasonLeague,
@@ -100,6 +101,19 @@ describe("season-league-team.models (playoff)", () => {
         ),
         [14, 1],
         undefined
+      );
+    });
+
+    it("forwards the connection to runQuery for transactional use", async () => {
+      mockRunQuery.mockResolvedValue([]);
+      const fakeConn = {} as PoolConnection;
+
+      await clearPodiumPlacementsForSeasonLeague(14, 1, fakeConn);
+
+      expect(mockRunQuery).toHaveBeenCalledWith(
+        expect.any(String),
+        [14, 1],
+        fakeConn
       );
     });
   });

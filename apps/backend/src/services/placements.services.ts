@@ -206,6 +206,11 @@ export async function assignGrandFinalPlacementsIfEligible(input: {
       grandFinalRoundOneOnly
     )
   ) {
+    const expectedRound = grandFinalRoundOneOnly ? 1 : 2;
+    logger.warn(
+      `[placements] group=3 match skipped: round=${matchDetails.round} but expected round=${expectedRound} ` +
+        `(grand_final_round_one_only=${grandFinalRoundOneOnly}) for season=${seasonId} league=${leagueId}`
+    );
     return placementsSkipped("not_grand_final", seasonId, leagueId);
   }
 
@@ -288,6 +293,11 @@ export async function assignGrandFinalPlacementsForFinishedMatch(
     match.season_id
   );
   if (!isGrandFinalMatch(match.group, match.round, grandFinalRoundOneOnly)) {
+    const expectedRound = grandFinalRoundOneOnly ? 1 : 2;
+    logger.warn(
+      `[placements] group=3 match skipped: round=${match.round} but expected round=${expectedRound} ` +
+        `(grand_final_round_one_only=${grandFinalRoundOneOnly}) for season=${match.season_id} league=${match.league_id}`
+    );
     return placementsSkipped(
       "not_grand_final",
       match.season_id,

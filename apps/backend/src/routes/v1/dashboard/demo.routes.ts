@@ -153,10 +153,6 @@ const replayGrandFinalPlacementsBodySchema = z
     }
   });
 
-/**
- * POST /v1/dashboard/demos/placements/replay-grand-final
- * Staff-only: re-apply grand final 1st/2nd/3rd league placements without re-uploading a demo.
- */
 router.post(
   "/placements/replay-grand-final",
   async (req: Request, res: Response, next: NextFunction) => {
