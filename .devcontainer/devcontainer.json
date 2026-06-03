@@ -9,6 +9,9 @@
     "WATCHPACK_POLLING": "true",
     "NEXT_DEV_POLLING": "true"
   },
+  "remoteEnv": {
+    "PATH": "/usr/local/bin:/usr/local/share/npm-global/bin:/home/node/.local/bin:${containerEnv:PATH}"
+  },
   "customizations": {
     // Configure properties specific to VS Code.
     "vscode": {
