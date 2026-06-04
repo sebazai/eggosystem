@@ -29,9 +29,9 @@ export interface PlayerHistoricalAverage {
  * Query parameters for filtering historical data
  */
 export interface HistoricalDataParams {
-  /** Number of last games to include (default: 15) */
+  /** Number of last games to include */
   games?: number;
 
-  /** Season period filter */
-  period?: "this_season" | "last_season";
+  /** Filter to a specific season */
+  season_id?: number;
 }

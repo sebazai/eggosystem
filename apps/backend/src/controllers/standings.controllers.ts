@@ -6,7 +6,7 @@ import {
 } from "../services/standings.services";
 import { BadRequestError, NotFoundError } from "../utils/errors";
 import { logger } from "../utils/app-logger";
-import { getActiveSeasonForAppId } from "../models/season.models";
+import { type RequestWithParams } from "@eggosystem/types";
 
 interface StandingsParams {
   faceit_league_id: string;
@@ -32,19 +32,12 @@ export const getStandingsController = async (
 };
 
 export const getFaceitLeaguesController = async (
-  req: Request,
+  req: RequestWithParams<{ season_id: string }>,
   res: Response
 ): Promise<void> => {
-  const activeSeason = await getActiveSeasonForAppId(1, 730);
-  if (!activeSeason) {
-    res.json({
-      standingsLeagues: []
-    });
-    return;
-  }
-
-  const standingsLeagues = await getStandingsLeagues(activeSeason.season_id);
-
+  const standingsLeagues = await getStandingsLeagues(
+    Number(req.params.season_id)
+  );
   res.json({
     standingsLeagues
   });

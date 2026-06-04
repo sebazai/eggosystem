@@ -5,7 +5,7 @@ import { expressFetcher } from "@/lib/utils";
 import type { StandingsLeagues } from "@eggosystem/types";
 
 export const useStandingLeagues = (seasonId: string) => {
-  const apiUrl = `/api/v1/standings/leagues?season_id=${seasonId}`;
+  const apiUrl = `/api/v1/standings/season/${seasonId}/leagues`;
 
   const { data, error, isValidating, isLoading } = useSWR<{
     standingsLeagues: StandingsLeagues[];

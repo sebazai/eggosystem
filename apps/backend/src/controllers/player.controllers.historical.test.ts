@@ -1,6 +1,7 @@
 import { type Request, type Response, type NextFunction } from "express";
 import * as playerHistoricalModels from "../models/player-historical.models";
 import { getPlayerHistoricalDataController } from "./players.controllers";
+import { BadRequestError } from "../utils/errors";
 
 // Mock the player historical models
 jest.mock("../models/player-historical.models");
@@ -130,8 +131,8 @@ describe("getPlayerHistoricalDataController", () => {
     expect(mockResponse.json).toHaveBeenCalledWith([]);
   });
 
-  it("should handle query parameters correctly", async () => {
-    mockRequest.query = { games: "10", period: "this_season" };
+  it("should filter by season_id when provided", async () => {
+    mockRequest.query = { games: "10", season_id: "5" };
     (mockPlayerModels.getPlayerHistoricalData as jest.Mock).mockResolvedValue(
       mockHistoricalData
     );
@@ -145,7 +146,21 @@ describe("getPlayerHistoricalDataController", () => {
     expect(mockResponse.json).toHaveBeenCalledWith(mockHistoricalData);
     expect(mockPlayerModels.getPlayerHistoricalData).toHaveBeenCalledWith(
       steam_id,
-      { games: 10, period: "this_season" } // parsed params
+      { games: 10, season_id: 5 }
     );
+  });
+
+  it("should reject legacy period query param with 400", async () => {
+    mockRequest.query = { period: "this_season" } as Record<string, string>;
+
+    await getPlayerHistoricalDataController(
+      mockRequest as Request,
+      mockResponse as Response,
+      mockNext
+    );
+
+    expect(mockNext).toHaveBeenCalledWith(expect.any(BadRequestError));
+    expect(mockPlayerModels.getPlayerHistoricalData).not.toHaveBeenCalled();
+    expect(mockResponse.json).not.toHaveBeenCalled();
   });
 });

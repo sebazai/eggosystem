@@ -85,6 +85,48 @@ extracted into a silo later without an architecture change.
 
 ## 3. URL & host scheme
 
+### Decided deployment model (day one): single host, path-based
+
+> **Decision (2026-06): launch on a single origin — `hub.kanaliiga.fi` — with tenancy and
+> game carried in the path: `hub.kanaliiga.fi/{organizer}/{game}/{resource}`. All SSO happens
+> on this one host.** The subdomain + vanity-domain scheme in the rest of §3 (and §6.2, §9) is
+> the **preserved upgrade path, deferred — not day-one work.**
+
+**Why it's the easiest route _and_ already true:**
+
+- **It's the deployed topology.** `FRONTEND_URL` and `BACKEND_URL` are the same origin in every
+  environment (`docker-compose.prod.yml` → `https://${HUB_PUBLIC_URL}`; Next served at `/`,
+  Express at `/api/*`). Path-prefix routing under one host is already exercised by the
+  on-demand env (`BASE_PATH=/${ENV_ID}`, `next.config.ts` `basePath`, backend `getPath()`).
+- **SSO is free.** One origin → the host-only, `sameSite:strict` cookie (`auth.services.ts`)
+  rides every request, and the Steam realm/returnURL (`configs/passport.ts`) is a single
+  `BACKEND_URL`. One login authenticates every `{organizer}/{game}` path with **zero new auth
+  code**. The `domain=.{apex}` cookie change and the vanity one-time-code handoff (§6.2) are
+  **not needed** until a real host upgrade exists.
+
+**What we still do now, so the upgrade to subdomains/vanity stays cheap (door stays open):**
+
+- **Resolve the tenant from the `[organizer]` path segment — host-agnostic.** Never assume the
+  host _is_ the tenant. A branded host added later then feeds the _same_ `[organizer]`
+  resolution (additive, not a rewrite).
+- **Authorization stays organizer-scoped server-side** (§7) — unchanged by the host choice;
+  this is the real work either way.
+- **Reserved-slug list.** On one host the root namespace is shared between hub routes
+  (the existing top-level segments under `src/app/(main)/(content-container)/` — `/players`,
+  `/teams`, `/seasons`, `/matches`, `/organizers`, `/profile`, … — plus `/api` and the
+  `(admin)`/`(embed)`/`(health)` groups) and tenant slugs (`/[organizer]`). Enforce a denylist
+  at organizer creation so a slug can never shadow a hub route. (Subdomains sidestep this;
+  paths don't.)
+
+_Accepted trade-off:_ tenant URLs read `hub.kanaliiga.fi/pappaliiga/…` — a Kanaliiga-branded
+host for every org. **Explicitly accepted for now**; a neutral apex domain + per-brand hosts
+are the documented upgrade below, not a launch blocker.
+
+---
+
+The scheme below is the **upgrade target** (organizer-by-host), preserved for when a brand
+graduates off the shared host.
+
 Public shape (full rationale in `frontend-multi-tenant.md` §4): **organizer by host, game by
 path.**
 
@@ -170,6 +212,14 @@ This must be enforced, not assumed:
 **Decision:** keep the existing **RS256 JWT** mechanism unchanged in format; **centralize
 where it's issued**, and scope the cookie per host strategy. Authentication is **global**;
 authorization is **per-tenant** (§7).
+
+> **Under the day-one single-host model (§3), most of §6 is already satisfied.** Issuance is
+> _already_ central (one origin), the host-only cookie already gives SSO across every
+> `{organizer}/{game}` path, and the Steam realm is already a single `BACKEND_URL`. So the
+> `domain=.{apex}` cookie change (§6.2 subdomain case) and the vanity one-time-code handoff
+> (§6.2 vanity case, §9) are **deferred until the first subdomain/vanity host exists** — build
+> them with that upgrade, not now. The RS256 verify-anywhere property (§6.1) is what keeps that
+> later addition cheap.
 
 ### 6.1 What exists today (grounded in `services/auth.services.ts`)
 
@@ -314,6 +364,12 @@ Pairs with the frontend phasing (`frontend-multi-tenant.md` §11). Backend/platf
 > A1–A2 are safe to do **before** a second organizer exists (Kanaliiga is org 1 throughout),
 > which means the SSO foundation is in place by the time PUBG-under-Kanaliiga ships. A3–A4
 > land with the first real second organizer. A5 lands with the first vanity upgrade.
+
+> **Under the day-one single-host model (§3):** A2 reduces to "centralize login on the one
+> origin" (no `COOKIE_DOMAIN` — there is only one host); A4 reduces to reading the
+> `[organizer]` **path** segment (no host→organizer middleware); **A5 is dropped** until a
+> vanity host is requested. The load-bearing day-one work is **A1** (organizer config) +
+> **A3** (organizer-scoped authz) + the **reserved-slug rule** (§3).
 
 ---
 
