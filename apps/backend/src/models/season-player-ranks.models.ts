@@ -156,25 +156,16 @@ export const updateSeasonPlayerRankKanaElo = async (
 };
 
 export const getPlayerKanaElo = async (steam_id: string) => {
-  const liveResult = await runQuery<Array<{ kana_elo: number }>>(
-    `SELECT kana_elo FROM SteamPlayerKanaElo WHERE steam_id = ? LIMIT 1`,
-    [steam_id]
-  );
-
-  if (liveResult.length > 0 && liveResult[0].kana_elo != null) {
-    return liveResult[0];
-  }
-
-  const snapshotResult = await runQuery<Array<{ kana_elo: number }>>(
-    `SELECT kana_elo 
-      FROM SeasonPlayerRanks 
+  const result = await runQuery<Array<{ kana_elo: number }>>(
+    `SELECT kana_elo
+      FROM SeasonPlayerRanks
       WHERE steam_id = ? AND kana_elo IS NOT NULL
-      ORDER BY season_id DESC 
+      ORDER BY season_id DESC
       LIMIT 1`,
     [steam_id]
   );
 
-  return snapshotResult.length > 0 ? snapshotResult[0] : null;
+  return result.length > 0 ? result[0] : null;
 };
 
 export const getTopXPlayersKanaElo = async (x: number) => {

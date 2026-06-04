@@ -32,7 +32,7 @@ export default async function Page() {
           <CardContent>
             <p className="mb-4 text-sm text-muted-foreground">
               Calculate kana_elo for all players using CSRankker API and update
-              SteamPlayerKanaElo table
+              SeasonPlayerRanks
             </p>
             <KanaEloCalculateButton />
           </CardContent>
