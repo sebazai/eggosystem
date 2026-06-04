@@ -3,6 +3,8 @@
 > **Status:** Design proposal (not yet implemented). Companion to
 > [`multi-tenant-architecture.md`](multi-tenant-architecture.md) (platform/backend/auth)
 > and [`pubg-implementation-plan.md`](pubg-implementation-plan.md) (the first second-game).
+> **Sequencing across all three docs (the CS-refactor-first → PUBG-branch strategy):
+> [`../execution-order.md`](../execution-order.md).**
 >
 > **Naming placeholders** (the umbrella brand is not decided): `{platform-name}` = the
 > umbrella product, `{apex-domain}` = its apex domain (e.g. the thing tenants are

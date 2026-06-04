@@ -3,6 +3,8 @@
 > **Status:** Design proposal (not yet implemented). Companion to
 > [`frontend-multi-tenant.md`](frontend-multi-tenant.md) (IA, routing, providers) and
 > [`pubg-implementation-plan.md`](pubg-implementation-plan.md) (the first second-game).
+> **Sequencing across all three docs (the CS-refactor-first → PUBG-branch strategy):
+> [`execution-order.md`](execution-order.md).**
 >
 > **Naming placeholders** (umbrella brand not decided): `{platform-name}` = the umbrella
 > product, `{apex-domain}` = its apex domain, `{org}` = an organizer slug. Concrete tenant

@@ -4,6 +4,9 @@
 > as a new competitive platform under organizer **id 1 (Kanaliiga)**, ingesting match data
 > and statistics via the **Krafton/PUBG API** (`api.pubg.com`). Frontend is out of scope
 > here except where it constrains the API contract.
+>
+> **Where this sits in the build order (CS-refactor-first → PUBG-branch strategy):
+> [`../execution-order.md`](../execution-order.md).**
 
 ---
 
@@ -126,7 +129,16 @@ Structural differences that make overloading the CS2 tables a mistake:
 
 ## 4. Krafton / PUBG API constraints (these drive the design)
 
-The PUBG API (`https://api.pubg.com`, Bearer API key from `developer.pubg.com`) differs from FaceIT in ways that materially shape ingestion:
+> **Configuration status (2026-06):** the API key is now provisioned. `PUBG_API_KEY` is
+> declared in `apps/backend/.env` + `.env.example`; its value is stored as a GitLab CI/CD
+> variable and injected into the deployed backend through the `environment:` block of every
+> deploy compose file (`docker-compose.{prod,stage,dev,ondemand}.yml`), which the `deploy-*`
+> jobs in `.gitlab-ci.yml` render with `envsubst` — the same path `FACEIT_API_KEY` uses, so
+> no `.gitlab-ci.yml` edit is required. Official API reference: **https://documentation.pubg.com/**.
+
+The PUBG API (`https://api.pubg.com`, Bearer API key from `developer.pubg.com`; full reference
+at [documentation.pubg.com](https://documentation.pubg.com/)) differs from FaceIT in ways that
+materially shape ingestion:
 
 1. **Poll-only, no webhooks.** Nothing pushes us match completion. We must discover and pull matches. → ingestion is a **scheduled/queued poller**, not a webhook controller like `faceit-webhook.controllers.ts`.
 2. **Aggressive rate limit (~10 requests/minute** on a standard key; the `/matches` and telemetry CDN reads are exempt/cheaper). → mandatory **throttling + Redis caching + a BullMQ queue**, reusing the project's existing Redis/BullMQ infra.
@@ -148,7 +160,7 @@ The PUBG API (`https://api.pubg.com`, Bearer API key from `developer.pubg.com`) 
 
 Match payload shape we ingest (JSON:API): `data.attributes` (`mapName`, `gameMode`, `duration`, `createdAt`, `isCustomMatch`, `matchType`), `included[type=roster]` (`attributes.stats.rank`, `won`, relationships→participants), `included[type=participant]` (`attributes.stats.*` per player), `included[type=asset]` (telemetry URL).
 
-### Validated against a real payload (`docs/pubg_matchdata-example.json`)
+### Validated against a real payload (`docs/pubg/pubg_matchdata-example.json`)
 
 A real Kanaliiga custom match confirms the model and pins down details that change the schema:
 
@@ -477,7 +489,7 @@ Layering stays `routes → controllers → services → models → db` (per `REA
 apps/backend/src/
   services/
     pubg-api.services.ts          # fetch wrappers: getPubgPlayers, getPubgMatch,
-                                   #   getTelemetry — Bearer key from env, Redis cache,
+                                   #   getTelemetry — Bearer key from PUBG_API_KEY env, Redis cache,
                                    #   token-bucket throttle (10 rpm). Mirror faceit-match.services.ts.
     pubg-ingestion.services.ts    # discover match IDs (player poll / manual / tournament),
                                    #   dedupe via PubgMatchIngestion, enqueue jobs.
@@ -541,16 +553,16 @@ Admins can also `POST /api/v1/pubg/matches/ingest { krafton_match_id, season_id,
 
 ## 9. Phased rollout
 
-| Phase                       | Deliverable                                                                                                           | Notes                                                 |
-| --------------------------- | --------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
-| **0. Spike**                | Krafton API key, confirm rate limit, pull one real custom match, eyeball the JSON shape                               | De-risks §4 assumptions before schema is frozen       |
-| **1. Foundation**           | Migrations 6.1–6.7, types + `createMockX` factories, `platform='krafton'`                                             | No behaviour change; CS2 untouched                    |
-| **2. Identity & signup**    | `PubgPlayerIdentities`, link/verify endpoint, PUBG season + Squad registration end-to-end (reuses existing flow)      | Proves the reusable spine                             |
-| **3. Ingestion**            | `pubg-api.services` + poller + manual-ingest endpoint + `PubgMatchIngestion`; persist `PubgMatches`/rosters/stats     | The core engineering work                             |
-| **4. Scoring & standings**  | `PubgScoringRules` admin config + standings aggregation + public read endpoints                                       | Data-driven points                                    |
-| **4b. Unified read view**   | `MatchEvents` view (§6.9) + point `calendar`/`match-streams` at it so PUBG appears in the cross-game calendar/casting | Delivers "all matches in one place" at the read layer |
-| **5. Telemetry (optional)** | Parse telemetry CDN for advanced stats (knock timelines, heat positioning)                                            | Allstar-style, on demand                              |
-| **6. PUBG ranking (later)** | A PUBG analogue to Sortter/kana_elo for auto-division balancing                                                       | Out of v1                                             |
+| Phase                       | Deliverable                                                                                                                                                                                                                   | Notes                                                 |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| **0. Spike**                | ✅ Mostly done — `PUBG_API_KEY` provisioned (env + GitLab CI/CD + deploy compose); a real custom match is captured in `docs/pubg/pubg_matchdata-example.json`. **Remaining:** confirm the live ~10 rpm limit against the key. | De-risks §4 assumptions before schema is frozen       |
+| **1. Foundation**           | Migrations 6.1–6.7, types + `createMockX` factories, `platform='krafton'`                                                                                                                                                     | No behaviour change; CS2 untouched                    |
+| **2. Identity & signup**    | `PubgPlayerIdentities`, link/verify endpoint, PUBG season + Squad registration end-to-end (reuses existing flow)                                                                                                              | Proves the reusable spine                             |
+| **3. Ingestion**            | `pubg-api.services` + poller + manual-ingest endpoint + `PubgMatchIngestion`; persist `PubgMatches`/rosters/stats                                                                                                             | The core engineering work                             |
+| **4. Scoring & standings**  | `PubgScoringRules` admin config + standings aggregation + public read endpoints                                                                                                                                               | Data-driven points                                    |
+| **4b. Unified read view**   | `MatchEvents` view (§6.9) + point `calendar`/`match-streams` at it so PUBG appears in the cross-game calendar/casting                                                                                                         | Delivers "all matches in one place" at the read layer |
+| **5. Telemetry (optional)** | Parse telemetry CDN for advanced stats (knock timelines, heat positioning)                                                                                                                                                    | Allstar-style, on demand                              |
+| **6. PUBG ranking (later)** | A PUBG analogue to Sortter/kana_elo for auto-division balancing                                                                                                                                                               | Out of v1                                             |
 
 Each phase is independently shippable and gated behind `season.platform='krafton'`, so CS2 is never at risk.
 
