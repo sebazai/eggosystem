@@ -53,7 +53,7 @@ export const TabOrganization = ({
     isValidating: isValidatingOrgs
   } = useOrganizations();
   const [openFilter, setOpenFilter] = useState<string | null>(null);
-  if (loadingOrgs || isValidatingOrgs) {
+  if (loadingOrgs) {
     return <Spinner />;
   }
   if (isErrorOrg || !organizations) {

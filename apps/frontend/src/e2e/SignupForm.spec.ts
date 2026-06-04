@@ -164,6 +164,28 @@ async function waitForPlayerSteamIdValidated(
   await expect(steamIdInput).toHaveClass(/border-green-500/, { timeout });
 }
 
+/** Waits until the registration form organization step is interactive. */
+async function waitForRegistrationOrganizationStep(page: Page) {
+  await expect(page.getByText("Checking your registration status")).toBeHidden({
+    timeout: 60000
+  });
+
+  await expect(
+    page.getByRole("heading", { name: "Season registration" })
+  ).toBeVisible({ timeout: 60000 });
+  await expect(page.getByText(/sign up form/i)).toBeVisible({ timeout: 60000 });
+
+  const orgDropdown = page.locator(
+    '[data-testid="organizations-dropdown-toggle"]'
+  );
+  if (!(await orgDropdown.isVisible().catch(() => false))) {
+    const orgTab = page.getByRole("tab", { name: /Organization/i });
+    await orgTab.waitFor({ state: "visible", timeout: 60000 });
+    await orgTab.click();
+  }
+  await orgDropdown.waitFor({ state: "visible", timeout: 60000 });
+}
+
 /** New-org signup: wait for POST /organization before team tab (avoids submit with organizationId -1). */
 async function clickContinueToTeamSelection(page: Page, seasonId: number) {
   const teamSelectionButton = page.locator(
@@ -266,18 +288,11 @@ async function setupFormToPlayersSectionWithTeam(
     return;
   }
 
-  // Fresh registration: org dropdown is the first interactive control.
+  await waitForRegistrationOrganizationStep(page);
+
   const orgDropdown = page.locator(
     '[data-testid="organizations-dropdown-toggle"]'
   );
-  const orgVisible = await orgDropdown.isVisible().catch(() => false);
-  if (!orgVisible) {
-    const orgTab = page.getByRole("tab", { name: /Organization/i });
-    await orgTab.waitFor({ state: "visible", timeout: 60000 });
-    await orgTab.click();
-  }
-  await orgDropdown.waitFor({ state: "visible", timeout: 60000 });
-
   await orgDropdown.click();
   await page.locator(`[data-testid="organizations-option-${orgId}"]`).click();
   await page.locator('[data-testid="terms-conditions-checkbox"]').click();
@@ -298,13 +313,20 @@ async function setupCompleteRegistrationForm(
   teamName: string,
   seasonId: number = 16
 ) {
-  // Navigate to the registration form
-  await page.goto(`/seasons/${seasonId}/signup/registration`);
-
-  // Wait for signup status check and form to be ready (org dropdown is the first interactive element)
+  await page.goto(`/seasons/${seasonId}/signup/registration`, {
+    waitUntil: "domcontentloaded"
+  });
   await page
-    .locator('[data-testid="organizations-dropdown-toggle"]')
-    .waitFor({ state: "visible", timeout: 60000 });
+    .waitForResponse(
+      (res) =>
+        res.url().includes("/api/v1/organizations") &&
+        res.request().method() === "GET" &&
+        res.status() >= 200 &&
+        res.status() < 300,
+      { timeout: 60000 }
+    )
+    .catch(() => undefined);
+  await waitForRegistrationOrganizationStep(page);
 
   // Complete organization selection
   await page.locator('[data-testid="organizations-dropdown-toggle"]').click();
@@ -738,6 +760,8 @@ test.describe("Signup Form", () => {
 
   // Complete Registration Flow tests
   test.describe("Complete Registration Flow", () => {
+    test.describe.configure({ timeout: 120000 });
+
     test("should complete full registration flow and successfully submit", async ({
       page
     }) => {

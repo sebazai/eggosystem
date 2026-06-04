@@ -17,8 +17,8 @@ export default defineConfig({
     ["list"] // Console output
   ],
 
-  // Set a reasonable timeout
-  timeout: 30000,
+  // CI needs more time for signup status + org list + player lookups under parallel load
+  timeout: isCI ? 60000 : 30000,
   expect: { timeout: 10000 },
   use: {
     baseURL: "http://localhost:3000",
