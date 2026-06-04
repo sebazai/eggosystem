@@ -1,3 +1,4 @@
+import { createMockResultSetHeader } from "../../__utils__/result-set-header";
 import { type Response, type NextFunction } from "express";
 import {
   createSeasonController,
@@ -58,7 +59,9 @@ describe("Dashboard Season Controllers", () => {
         body: validSeasonData
       } as RequestWithBody<SeasonFormValues>;
 
-      mockCreateSeason.mockResolvedValue({ insertId: 123 });
+      mockCreateSeason.mockResolvedValue(
+        createMockResultSetHeader({ insertId: 123 })
+      );
 
       await createSeasonController(mockRequest, mockResponse, mockNext);
 
@@ -132,7 +135,9 @@ describe("Dashboard Season Controllers", () => {
         })
       );
 
-      mockUpdateSeason.mockResolvedValue({ affectedRows: 1 });
+      mockUpdateSeason.mockResolvedValue(
+        createMockResultSetHeader({ affectedRows: 1 })
+      );
 
       await updateSeasonController(mockRequest, mockResponse, mockNext);
 
@@ -246,7 +251,9 @@ describe("Dashboard Season Controllers", () => {
         }
       } as RequestWithBody<SeasonFormValues>;
 
-      mockCreateSeason.mockResolvedValue({ insertId: 123 });
+      mockCreateSeason.mockResolvedValue(
+        createMockResultSetHeader({ insertId: 123 })
+      );
 
       await createSeasonController(mockRequest, mockResponse, mockNext);
 
@@ -276,7 +283,9 @@ describe("Dashboard Season Controllers", () => {
         }
       } as RequestWithBody<SeasonFormValues>;
 
-      mockCreateSeason.mockResolvedValue({ insertId: 123 });
+      mockCreateSeason.mockResolvedValue(
+        createMockResultSetHeader({ insertId: 123 })
+      );
 
       await createSeasonController(mockRequest, mockResponse, mockNext);
 
@@ -299,7 +308,9 @@ describe("Dashboard Season Controllers", () => {
         }
       } as RequestWithBody<SeasonFormValues>;
 
-      mockCreateSeason.mockResolvedValue({ insertId: 123 });
+      mockCreateSeason.mockResolvedValue(
+        createMockResultSetHeader({ insertId: 123 })
+      );
 
       await createSeasonController(mockRequest, mockResponse, mockNext);
 
@@ -331,7 +342,9 @@ describe("Dashboard Season Controllers", () => {
         })
       );
 
-      mockUpdateSeason.mockResolvedValue({ affectedRows: 1 });
+      mockUpdateSeason.mockResolvedValue(
+        createMockResultSetHeader({ affectedRows: 1 })
+      );
 
       await updateSeasonController(mockRequest, mockResponse, mockNext);
 
@@ -352,7 +365,9 @@ describe("Dashboard Season Controllers", () => {
         }
       } as RequestWithBody<SeasonFormValues>;
 
-      mockCreateSeason.mockResolvedValue({ insertId: 123 });
+      mockCreateSeason.mockResolvedValue(
+        createMockResultSetHeader({ insertId: 123 })
+      );
 
       await createSeasonController(mockRequest, mockResponse, mockNext);
 
@@ -372,7 +387,9 @@ describe("Dashboard Season Controllers", () => {
         }
       } as RequestWithBody<SeasonFormValues>;
 
-      mockCreateSeason.mockResolvedValue({ insertId: 123 });
+      mockCreateSeason.mockResolvedValue(
+        createMockResultSetHeader({ insertId: 123 })
+      );
 
       await createSeasonController(mockRequest, mockResponse, mockNext);
 
@@ -435,7 +452,9 @@ describe("Dashboard Season Controllers", () => {
         })
       );
 
-      mockUpdateSeason.mockResolvedValue({ affectedRows: 1 });
+      mockUpdateSeason.mockResolvedValue(
+        createMockResultSetHeader({ affectedRows: 1 })
+      );
 
       await updateSeasonController(mockRequest, mockResponse, mockNext);
 

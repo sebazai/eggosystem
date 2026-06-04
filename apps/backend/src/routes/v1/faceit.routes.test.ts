@@ -1,3 +1,4 @@
+import { createMockResultSetHeader } from "../../__utils__/result-set-header";
 // Mock API key - set before importing app since middleware is created at require time
 const TEST_WEBHOOK_API_KEY = "test-faceit-webhook-key";
 process.env.FACEIT_WEBHOOK_API_KEY = TEST_WEBHOOK_API_KEY;
@@ -1066,7 +1067,9 @@ describe("FaceIT Routes - Webhook", () => {
       beforeEach(() => {
         jest.clearAllMocks();
         mockGetOrganizerByFaceitIdAndGameAppId.mockResolvedValue(mockOrganizer);
-        mockSaveWebhookData.mockResolvedValue({ insertId: 1 });
+        mockSaveWebhookData.mockResolvedValue(
+          createMockResultSetHeader({ insertId: 1 })
+        );
 
         // Championship details fetch is not needed for assertions
         jest
@@ -1091,7 +1094,9 @@ describe("FaceIT Routes - Webhook", () => {
         );
 
         // Mock DB insert
-        mockInsertSeasonLeagueExternalId.mockResolvedValue({ insertId: 1 });
+        mockInsertSeasonLeagueExternalId.mockResolvedValue(
+          createMockResultSetHeader({ insertId: 1 })
+        );
       });
 
       afterEach(() => {
@@ -1164,7 +1169,9 @@ describe("FaceIT Routes - Webhook", () => {
         mockGetOrganizerByFaceitIdAndGameAppId.mockResolvedValue(mockOrganizer);
 
         // Save webhook succeeds
-        mockSaveWebhookData.mockResolvedValue({ insertId: 1 });
+        mockSaveWebhookData.mockResolvedValue(
+          createMockResultSetHeader({ insertId: 1 })
+        );
 
         // Championship details fetch is not needed for assertions; return empty object
         jest
@@ -1304,7 +1311,9 @@ describe("FaceIT Routes - Webhook", () => {
         );
 
         // DB insert mock
-        mockInsertSeasonLeagueExternalId.mockResolvedValueOnce({ insertId: 1 });
+        mockInsertSeasonLeagueExternalId.mockResolvedValueOnce(
+          createMockResultSetHeader({ insertId: 1 })
+        );
 
         // Avoid network for championship details fetch
         jest
@@ -1343,7 +1352,9 @@ describe("FaceIT Routes - Webhook", () => {
       beforeEach(() => {
         jest.clearAllMocks();
         mockGetOrganizerByFaceitIdAndGameAppId.mockResolvedValue(mockOrganizer);
-        mockSaveWebhookData.mockResolvedValue({ insertId: 1 });
+        mockSaveWebhookData.mockResolvedValue(
+          createMockResultSetHeader({ insertId: 1 })
+        );
         mockAddMatchToDatabase.mockResolvedValue({
           matchIds: [1],
           is_round_robin_bo2_as_2xbo1: false
@@ -1467,7 +1478,9 @@ describe("FaceIT Routes - Webhook", () => {
         mockGetOrganizerByFaceitIdAndGameAppId.mockResolvedValueOnce(
           mockOrganizer
         );
-        mockSaveWebhookData.mockResolvedValueOnce({ insertId: 1 });
+        mockSaveWebhookData.mockResolvedValueOnce(
+          createMockResultSetHeader({ insertId: 1 })
+        );
         mockAddMatchToDatabase.mockResolvedValueOnce({
           matchIds: [1],
           is_round_robin_bo2_as_2xbo1: false
@@ -1506,7 +1519,9 @@ describe("FaceIT Routes - Webhook", () => {
         mockGetOrganizerByFaceitIdAndGameAppId.mockResolvedValueOnce(
           mockOrganizer
         );
-        mockSaveWebhookData.mockResolvedValueOnce({ insertId: 1 });
+        mockSaveWebhookData.mockResolvedValueOnce(
+          createMockResultSetHeader({ insertId: 1 })
+        );
         mockAddMatchToDatabase.mockResolvedValueOnce({
           matchIds: [1],
           is_round_robin_bo2_as_2xbo1: false
@@ -1532,7 +1547,9 @@ describe("FaceIT Routes - Webhook", () => {
 
         // Setup default mocks for success cases
         mockGetOrganizerByFaceitIdAndGameAppId.mockResolvedValue(mockOrganizer);
-        mockSaveWebhookData.mockResolvedValue({ insertId: 1 });
+        mockSaveWebhookData.mockResolvedValue(
+          createMockResultSetHeader({ insertId: 1 })
+        );
         mockAddMatchToDatabase.mockResolvedValue({
           matchIds: [1],
           is_round_robin_bo2_as_2xbo1: false
@@ -1657,7 +1674,9 @@ describe("FaceIT Routes - Webhook", () => {
       });
 
       it("should handle database errors when adding match to database", async () => {
-        mockSaveWebhookData.mockResolvedValueOnce({ insertId: 1 });
+        mockSaveWebhookData.mockResolvedValueOnce(
+          createMockResultSetHeader({ insertId: 1 })
+        );
         mockAddMatchToDatabase.mockRejectedValueOnce(
           new Error("Database error")
         );
@@ -1678,7 +1697,9 @@ describe("FaceIT Routes - Webhook", () => {
 
         // Setup default mocks for success cases
         mockGetOrganizerByFaceitIdAndGameAppId.mockResolvedValue(mockOrganizer);
-        mockSaveWebhookData.mockResolvedValue({ insertId: 1 });
+        mockSaveWebhookData.mockResolvedValue(
+          createMockResultSetHeader({ insertId: 1 })
+        );
         mockAddMatchToDatabase.mockResolvedValue({
           matchIds: [1],
           is_round_robin_bo2_as_2xbo1: false
@@ -1713,7 +1734,9 @@ describe("FaceIT Routes - Webhook", () => {
 
         // Setup default mocks for success cases
         mockGetOrganizerByFaceitIdAndGameAppId.mockResolvedValue(mockOrganizer);
-        mockSaveWebhookData.mockResolvedValue({ insertId: 1 });
+        mockSaveWebhookData.mockResolvedValue(
+          createMockResultSetHeader({ insertId: 1 })
+        );
         mockAddMatchToDatabase.mockResolvedValue({
           matchIds: [1],
           is_round_robin_bo2_as_2xbo1: false
@@ -1914,7 +1937,9 @@ describe("FaceIT Routes - Webhook", () => {
       beforeEach(() => {
         jest.clearAllMocks();
         mockGetOrganizerByFaceitIdAndGameAppId.mockResolvedValue(mockOrganizer);
-        mockSaveWebhookData.mockResolvedValue({ insertId: 1 });
+        mockSaveWebhookData.mockResolvedValue(
+          createMockResultSetHeader({ insertId: 1 })
+        );
         mockAddMatchTeamMapVetoes.mockResolvedValue(undefined);
         mockGetMatchesByExternalId.mockResolvedValue([
           { id: 1, status: "ONGOING" } as Match,
@@ -1948,7 +1973,9 @@ describe("FaceIT Routes - Webhook", () => {
       beforeEach(() => {
         jest.clearAllMocks();
         mockGetOrganizerByFaceitIdAndGameAppId.mockResolvedValue(mockOrganizer);
-        mockSaveWebhookData.mockResolvedValue({ insertId: 1 });
+        mockSaveWebhookData.mockResolvedValue(
+          createMockResultSetHeader({ insertId: 1 })
+        );
         mockAddMatchTeamMapVetoes.mockResolvedValue(undefined);
         mockGetMatchesByExternalId.mockResolvedValue([
           { id: 1, status: "ONGOING" } as Match,
@@ -2004,7 +2031,9 @@ describe("FaceIT Routes - Webhook", () => {
       beforeEach(() => {
         jest.clearAllMocks();
         mockGetOrganizerByFaceitIdAndGameAppId.mockResolvedValue(mockOrganizer);
-        mockSaveWebhookData.mockResolvedValue({ insertId: 1 });
+        mockSaveWebhookData.mockResolvedValue(
+          createMockResultSetHeader({ insertId: 1 })
+        );
         mockAddMatchTeamMapVetoes.mockResolvedValue(undefined);
         mockCountSuccessfulFaceitReadyWebhooks.mockResolvedValue(1);
         mockGetSeasonLeagueExternalIdByExternalIdWithSeasonSettings.mockResolvedValue(
@@ -2095,7 +2124,9 @@ describe("FaceIT Routes - Webhook", () => {
       beforeEach(() => {
         jest.clearAllMocks();
         mockGetOrganizerByFaceitIdAndGameAppId.mockResolvedValue(mockOrganizer);
-        mockSaveWebhookData.mockResolvedValue({ insertId: 1 });
+        mockSaveWebhookData.mockResolvedValue(
+          createMockResultSetHeader({ insertId: 1 })
+        );
         mockValidatePlayersInTeams.mockResolvedValue(undefined);
         const seasonLeagueExternalId = createMockSeasonLeagueExternalId({
           external_id: "ec39d65c-4069-4c0c-b2e1-5f957e7787f1",
@@ -2175,7 +2206,9 @@ describe("FaceIT Routes - Webhook", () => {
       beforeEach(() => {
         jest.clearAllMocks();
         mockGetOrganizerByFaceitIdAndGameAppId.mockResolvedValue(mockOrganizer);
-        mockSaveWebhookData.mockResolvedValue({ insertId: 1 });
+        mockSaveWebhookData.mockResolvedValue(
+          createMockResultSetHeader({ insertId: 1 })
+        );
         mockValidatePlayersInTeams.mockResolvedValue(undefined);
         mockGetSeasonLeagueExternalIdByExternalIdWithSeasonSettings.mockResolvedValue(
           {
@@ -2436,7 +2469,9 @@ describe("FaceIT Routes - Webhook", () => {
       beforeEach(() => {
         jest.clearAllMocks();
         mockGetOrganizerByFaceitIdAndGameAppId.mockResolvedValue(mockOrganizer);
-        mockSaveWebhookData.mockResolvedValue({ insertId: 1 });
+        mockSaveWebhookData.mockResolvedValue(
+          createMockResultSetHeader({ insertId: 1 })
+        );
         mockValidatePlayersInTeams.mockResolvedValue(undefined);
         mockAddFaceitMatchGameToDatabase = jest
           .spyOn(faceitMatchServices, "addFaceitMatchGameToDatabase")
@@ -2484,7 +2519,9 @@ describe("FaceIT Routes - Webhook", () => {
       beforeEach(() => {
         jest.clearAllMocks();
         mockGetOrganizerByFaceitIdAndGameAppId.mockResolvedValue(mockOrganizer);
-        mockSaveWebhookData.mockResolvedValue({ insertId: 1 });
+        mockSaveWebhookData.mockResolvedValue(
+          createMockResultSetHeader({ insertId: 1 })
+        );
         mockUpdateMatchStatus.mockResolvedValue(undefined);
         mockUpdateMatchFinished.mockResolvedValue(undefined);
         mockGetMatchesByExternalId.mockResolvedValue([{ id: 1 } as Match]);
@@ -2755,7 +2792,9 @@ describe("FaceIT Routes - Webhook", () => {
       beforeEach(() => {
         jest.clearAllMocks();
         mockGetOrganizerByFaceitIdAndGameAppId.mockResolvedValue(mockOrganizer);
-        mockSaveWebhookData.mockResolvedValue({ insertId: 1 });
+        mockSaveWebhookData.mockResolvedValue(
+          createMockResultSetHeader({ insertId: 1 })
+        );
         mockUpdateMatchStatus.mockResolvedValue(undefined);
         mockUpdateMatchEndTime.mockResolvedValue(undefined);
         mockUpdateMatchFinished.mockResolvedValue(undefined);
@@ -3078,7 +3117,9 @@ describe("FaceIT Routes - Webhook", () => {
       beforeEach(() => {
         jest.clearAllMocks();
         mockGetOrganizerByFaceitIdAndGameAppId.mockResolvedValue(mockOrganizer);
-        mockSaveWebhookData.mockResolvedValue({ insertId: 1 });
+        mockSaveWebhookData.mockResolvedValue(
+          createMockResultSetHeader({ insertId: 1 })
+        );
         mockUpdateMatchStatusByMatchId.mockResolvedValue(undefined);
         mockUpdateMatchStartAndEndTimestamp.mockResolvedValue(undefined);
         mockUpdateMatchEndTimestamp.mockResolvedValue(undefined);
@@ -3293,7 +3334,9 @@ describe("FaceIT Routes - Webhook", () => {
       beforeEach(() => {
         jest.clearAllMocks();
         mockGetOrganizerByFaceitIdAndGameAppId.mockResolvedValue(mockOrganizer);
-        mockSaveWebhookData.mockResolvedValue({ insertId: 1 });
+        mockSaveWebhookData.mockResolvedValue(
+          createMockResultSetHeader({ insertId: 1 })
+        );
         mockUpdateMatchStatus.mockResolvedValue(undefined);
       });
 
@@ -3332,7 +3375,9 @@ describe("FaceIT Routes - Webhook", () => {
     beforeEach(() => {
       jest.clearAllMocks();
       mockGetOrganizerByFaceitIdAndGameAppId.mockResolvedValue(mockOrganizer);
-      mockSaveWebhookData.mockResolvedValue({ insertId: 1 });
+      mockSaveWebhookData.mockResolvedValue(
+        createMockResultSetHeader({ insertId: 1 })
+      );
       mockAddMatchToDatabase.mockResolvedValue({
         matchIds: [1],
         is_round_robin_bo2_as_2xbo1: false

@@ -7,6 +7,7 @@ import * as mysqlRunQuery from "../db/mysqlRunQuery";
 import type { JwtPayload } from "jsonwebtoken";
 import { createMockOrganization } from "@eggosystem/types";
 import { ZodError } from "zod";
+import { createMockResultSetHeader } from "../__utils__/result-set-header";
 
 // Mock the models
 jest.mock("../models/kanahautomo.models");
@@ -126,9 +127,9 @@ describe("Kanahautomo Controller Transactional Logic", () => {
       }
     };
     mockOrganizationModels.getOrganizationById.mockResolvedValue([mockOrg]);
-    mockKanahautomoModels.registerPlayerForKanahautomo.mockResolvedValue({
-      insertId: 123
-    });
+    mockKanahautomoModels.registerPlayerForKanahautomo.mockResolvedValue(
+      createMockResultSetHeader({ insertId: 123 })
+    );
     mockKanahautomoModels.insertKanahautomoGameTypes.mockResolvedValue();
 
     const mockNext = jest.fn();
@@ -266,12 +267,12 @@ describe("Kanahautomo Controller Transactional Logic", () => {
       }
     };
 
-    mockOrganizationModels.insertOrganization.mockResolvedValue({
-      insertId: 42
-    });
-    mockKanahautomoModels.registerPlayerForKanahautomo.mockResolvedValue({
-      insertId: 123
-    });
+    mockOrganizationModels.insertOrganization.mockResolvedValue(
+      createMockResultSetHeader({ insertId: 42 })
+    );
+    mockKanahautomoModels.registerPlayerForKanahautomo.mockResolvedValue(
+      createMockResultSetHeader({ insertId: 123 })
+    );
     mockKanahautomoModels.insertKanahautomoGameTypes.mockResolvedValue();
 
     const mockNext = jest.fn();
@@ -314,9 +315,9 @@ describe("Kanahautomo Controller Transactional Logic", () => {
       }
     };
     mockOrganizationModels.getOrganizationById.mockResolvedValue([mockOrg]);
-    mockKanahautomoModels.registerPlayerForKanahautomo.mockResolvedValue({
-      insertId: 123
-    });
+    mockKanahautomoModels.registerPlayerForKanahautomo.mockResolvedValue(
+      createMockResultSetHeader({ insertId: 123 })
+    );
     mockKanahautomoModels.insertKanahautomoGameTypes.mockRejectedValue(
       new Error("Game types insertion failed")
     );

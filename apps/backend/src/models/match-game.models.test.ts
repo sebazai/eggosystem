@@ -1,3 +1,4 @@
+import { createMockResultSetHeader } from "../__utils__/result-set-header";
 import { validWebhookMatchDemoReady } from "../utils/test-data";
 import { validMatchDetailsMatchDemoReady } from "@eggosystem/shared-msw";
 
@@ -104,7 +105,9 @@ describe("addMatchGamesForMatch", () => {
       ]);
 
       // Mock the addMatchGameForMatch function (which calls runQuery)
-      mockRunQuery.mockResolvedValue([{ insertId: 123 }]);
+      mockRunQuery.mockResolvedValue(
+        createMockResultSetHeader({ insertId: 123 })
+      );
 
       // Mock getDemoDownloadUrl to return a valid download URL
       mockGetDemoDownloadUrl.mockResolvedValue(

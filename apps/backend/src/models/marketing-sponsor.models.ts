@@ -1,4 +1,5 @@
 import { runQuery } from "../db/mysqlRunQuery";
+import { type ResultSetHeader } from "mysql2/promise";
 import { getConnection } from "../db/mysqlConnection";
 import { InternalServerError } from "../utils/errors";
 import type {
@@ -297,7 +298,7 @@ export async function updateMarketingSponsor(
   }
 
   params.push(id);
-  const res = await runQuery<{ affectedRows: number }>(
+  const res = await runQuery<ResultSetHeader>(
     `UPDATE MarketingSponsors SET ${fields.join(", ")} WHERE id = ?`,
     params
   );
@@ -305,7 +306,7 @@ export async function updateMarketingSponsor(
 }
 
 export async function deleteMarketingSponsor(id: number): Promise<boolean> {
-  const res = await runQuery<{ affectedRows: number }>(
+  const res = await runQuery<ResultSetHeader>(
     "DELETE FROM MarketingSponsors WHERE id = ?",
     [id]
   );

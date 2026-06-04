@@ -2,7 +2,7 @@ import type {
   CasterApplication,
   CasterApplicationResponse
 } from "@eggosystem/types";
-import type { PoolConnection } from "mysql2/promise";
+import type { PoolConnection, ResultSetHeader } from "mysql2/promise";
 import { runQuery } from "../db/mysqlRunQuery";
 import { getConnection } from "../db/mysqlConnection";
 import { setRoleForAccount } from "./account-roles.models";
@@ -60,7 +60,7 @@ export const createCasterApplication = async (
       return updated;
     }
 
-    const insertResult = await runQuery<{ insertId: number }>(
+    const insertResult = await runQuery<ResultSetHeader>(
       `INSERT INTO CasterApplications (organizer_id, account_id, caster_url, approved_terms_and_conditions)
        VALUES (?, ?, ?, ?)`,
       [organizerId, accountId, casterUrl, approvedTerms],

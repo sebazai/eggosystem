@@ -1,5 +1,5 @@
 import { runQuery } from "../db/mysqlRunQuery";
-import { type PoolConnection } from "mysql2/promise";
+import { type PoolConnection, type ResultSetHeader } from "mysql2/promise";
 import { logger } from "../utils/app-logger";
 
 export const updateUserDiscordId = async (
@@ -191,7 +191,7 @@ export const unlinkDiscordAccount = async (
   }
 
   // Delete only real OAuth links (exclude fake links)
-  const result = await runQuery<{ affectedRows: number }>(
+  const result = await runQuery<ResultSetHeader>(
     `DELETE FROM LinkedAccounts 
      WHERE provider = 'discord' 
      AND account_id = ? 

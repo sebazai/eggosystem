@@ -1,4 +1,5 @@
 import { runQuery } from "../db/mysqlRunQuery";
+import { type ResultSetHeader } from "mysql2/promise";
 import { upsertTeamGameScore } from "./team-game-score.models";
 
 describe("upsertTeamGameScore Integration Tests", () => {
@@ -75,7 +76,7 @@ describe("upsertTeamGameScore Integration Tests", () => {
 
     it("should UPDATE and return existing insertId when record already exists", async () => {
       // Arrange - Insert a record first
-      const initialInsert = await runQuery<{ insertId: number }>(
+      const initialInsert = await runQuery<ResultSetHeader>(
         "INSERT INTO TeamGameScores (match_id, team_id, match_game_id, starting_side, score, halftime_score, overtime_score) VALUES (?, ?, ?, ?, ?, ?, ?)",
         [
           testMatchId,

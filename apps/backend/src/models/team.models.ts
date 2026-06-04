@@ -14,7 +14,7 @@ import {
   type DashboardSeasonTeam
 } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
-import { type PoolConnection } from "mysql2/promise";
+import { type PoolConnection, type ResultSetHeader } from "mysql2/promise";
 import { buildInsertQueryParts } from "../db/utils";
 import { generateQueryWithFilters } from "../utils/queryFilter";
 import { BadRequestError } from "../utils/errors";
@@ -394,7 +394,7 @@ export const insertTeam = async (
   connection?: PoolConnection
 ) => {
   const { columns, placeholders, values } = buildInsertQueryParts(team);
-  return runQuery<{ insertId: number }>(
+  return runQuery<ResultSetHeader>(
     `INSERT INTO Teams (${columns.join(", ")}) VALUES (${placeholders})`,
     values,
     connection

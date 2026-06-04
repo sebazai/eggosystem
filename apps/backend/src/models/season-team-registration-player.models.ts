@@ -1,5 +1,5 @@
 import { type InsertSeasonTeamRegistrationPlayer } from "@eggosystem/types";
-import type { PoolConnection } from "mysql2/promise";
+import type { PoolConnection, ResultSetHeader } from "mysql2/promise";
 import { runQuery } from "../db/mysqlRunQuery";
 import { buildInsertQueryParts } from "../db/utils";
 
@@ -10,7 +10,7 @@ export const insertSeasonTeamRegistrationPlayer = async (
   connection?: PoolConnection
 ) => {
   const { columns, placeholders, values } = buildInsertQueryParts(data);
-  return runQuery<{ insertId: number }>(
+  return runQuery<ResultSetHeader>(
     `INSERT INTO SeasonTeamRegistrationPlayers (season_id, team_id, ${columns.join(", ")}) VALUES (?, ?, ${placeholders})`,
     [seasonId, teamId, ...values],
     connection
@@ -24,7 +24,7 @@ export const upsertSeasonTeamRegistrationPlayer = async (
   connection?: PoolConnection
 ) => {
   const { columns, placeholders, values } = buildInsertQueryParts(data);
-  return runQuery<{ insertId: number }>(
+  return runQuery<ResultSetHeader>(
     `INSERT INTO SeasonTeamRegistrationPlayers (season_id, team_id, ${columns.join(", ")}) VALUES (?, ?, ${placeholders})
      ON DUPLICATE KEY UPDATE 
        is_captain = VALUES(is_captain),

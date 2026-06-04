@@ -6,7 +6,7 @@ import type {
   SeasonPlatform
 } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
-import { type PoolConnection } from "mysql2/promise";
+import { type PoolConnection, type ResultSetHeader } from "mysql2/promise";
 import { getConnection } from "../db/mysqlConnection";
 import { expireInOneDay, redisClient } from "../utils/redisClient";
 import {
@@ -252,7 +252,7 @@ export const getOrganizerActiveOrLatestSeasonForAppId = async (
 const createSeasonWithMapPool = async (
   seasonData: SeasonFormRaw,
   connection: PoolConnection
-): Promise<{ insertId: number }> => {
+): Promise<ResultSetHeader> => {
   // Validate active_map_pool
   if (!seasonData.active_map_pool || seasonData.active_map_pool.length === 0) {
     throw new Error("Active map pool must contain at least one map");
@@ -284,7 +284,7 @@ const createSeasonWithMapPool = async (
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
-  const result = await runQuery<{ insertId: number }>(
+  const result = await runQuery<ResultSetHeader>(
     query,
     [
       seasonData.game_id,
@@ -330,7 +330,7 @@ const createSeasonWithMapPool = async (
  */
 export const createSeason = async (
   seasonData: SeasonFormRaw
-): Promise<{ insertId: number }> => {
+): Promise<ResultSetHeader> => {
   const connection = await getConnection();
 
   try {
@@ -358,7 +358,7 @@ const updateSeasonWithMapPool = async (
   seasonId: number,
   seasonData: SeasonFormRaw,
   connection: PoolConnection
-): Promise<{ affectedRows: number }> => {
+): Promise<ResultSetHeader> => {
   // Validate active_map_pool
   if (!seasonData.active_map_pool || seasonData.active_map_pool.length === 0) {
     throw new Error("Active map pool must contain at least one map");
@@ -390,7 +390,7 @@ const updateSeasonWithMapPool = async (
     WHERE id = ?
   `;
 
-  const result = await runQuery<{ affectedRows: number }>(
+  const result = await runQuery<ResultSetHeader>(
     query,
     [
       seasonData.game_id,
@@ -439,7 +439,7 @@ const updateSeasonWithMapPool = async (
 export const updateSeason = async (
   seasonId: number,
   seasonData: SeasonFormRaw
-): Promise<{ affectedRows: number }> => {
+): Promise<ResultSetHeader> => {
   const connection = await getConnection();
 
   try {

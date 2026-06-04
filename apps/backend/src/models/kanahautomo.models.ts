@@ -3,7 +3,7 @@ import {
   type KanahautomoOrganizationStatusWithGameTypes
 } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
-import { type PoolConnection } from "mysql2/promise";
+import { type PoolConnection, type ResultSetHeader } from "mysql2/promise";
 
 export const registerPlayerForKanahautomo = async (
   steamId: string,
@@ -11,7 +11,7 @@ export const registerPlayerForKanahautomo = async (
   acceptedTerms: boolean = false,
   connection?: PoolConnection
 ) => {
-  return await runQuery<{ insertId: number }>(
+  return await runQuery<ResultSetHeader>(
     "INSERT INTO KanahautomoRegistrations (steam_id, organization_id, accepted_terms) VALUES (?, ?, ?)",
     [steamId, organizationId, acceptedTerms],
     connection

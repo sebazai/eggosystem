@@ -6,7 +6,7 @@ import type {
 } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
 import { cleanWWWUrl } from "../utils/urlSanitize";
-import type { PoolConnection } from "mysql2/promise";
+import type { PoolConnection, ResultSetHeader } from "mysql2/promise";
 import { buildInsertQueryParts } from "../db/utils";
 
 export const getOrganizations = async (
@@ -48,7 +48,7 @@ export const insertOrganization = async (
     ...organization,
     website: cleanWWWUrl(organization.website)
   });
-  return runQuery<{ insertId: number }>(
+  return runQuery<ResultSetHeader>(
     `INSERT INTO Organizations (${columns.join(", ")}) VALUES (${placeholders})`,
     values,
     connection

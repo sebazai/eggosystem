@@ -1,6 +1,6 @@
 import { runQuery } from "../db/mysqlRunQuery";
 import { getConnection } from "../db/mysqlConnection";
-import type { PoolConnection } from "mysql2/promise";
+import type { PoolConnection, ResultSetHeader } from "mysql2/promise";
 import type {
   PlayerTier,
   FantasyPlayerStats,
@@ -584,7 +584,7 @@ export const createFantasyTeam = async (
     }
 
     // Insert fantasy team
-    const teamResult = await runQuery<{ insertId: number }>(
+    const teamResult = await runQuery<ResultSetHeader>(
       `INSERT INTO FantasyTeams (steam_id, season_id, league_id, team_name, budget_remaining)
        VALUES (?, ?, ?, ?, ?)`,
       [
