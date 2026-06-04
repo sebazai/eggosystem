@@ -104,6 +104,7 @@ const TestWrapper = ({
   seasonSteamAppId = 730,
   seasonId = "16",
   faceitRankRequired = true,
+  premierRankRequired = true,
   hoursPlayedRequired = false
 }: {
   players: SignupFormValues["players"];
@@ -111,6 +112,7 @@ const TestWrapper = ({
   seasonSteamAppId?: number;
   seasonId?: string;
   faceitRankRequired?: boolean;
+  premierRankRequired?: boolean;
   hoursPlayedRequired?: boolean;
 }) => {
   const methods = useForm<SignupFormValues>({
@@ -145,6 +147,7 @@ const TestWrapper = ({
           seasonDetails={createMockSeasonDetails({
             platform,
             faceit_rank_required: faceitRankRequired,
+            premier_rank_required: premierRankRequired,
             hours_played_required: hoursPlayedRequired
           })}
         />
@@ -645,5 +648,36 @@ describe("External Rank Error", () => {
     });
 
     expect(screen.getByTestId("hours-error-0")).toBeInTheDocument();
+  });
+
+  it("should not render rank badges when premier and FaceIT requirements are disabled", () => {
+    const players = [
+      {
+        accountId: 15014,
+        steamId: AabeSteamId,
+        nickname: "TestPlayer",
+        discord: "",
+        captain: false,
+        coCaptain: false,
+        hasValidData: true,
+        hasValidWorkEmail: true,
+        isEmailVerified: true,
+        hours: 1200,
+        rank: 15000,
+        externalRank: 8
+      }
+    ];
+
+    render(
+      <TestWrapper
+        players={players}
+        platform={SeasonPlatform.FACEIT}
+        faceitRankRequired={false}
+        premierRankRequired={false}
+      />
+    );
+
+    expect(screen.queryByTestId(/^faceit-level-/)).not.toBeInTheDocument();
+    expect(screen.queryByTestId("cs2-premier-rank")).not.toBeInTheDocument();
   });
 });

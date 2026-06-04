@@ -1,9 +1,36 @@
 import {
+  isFaceitRankEnforcedForSignup,
   pickSignupRankRequirements,
-  playerMeetsSeasonRankAndHoursRequirements
+  playerMeetsSeasonRankAndHoursRequirements,
+  shouldFetchSignupPlayerExternalRank,
+  shouldFetchSignupPlayerHours,
+  shouldFetchSignupPlayerPremierRank
 } from "./requirements";
 import { SeasonPlatform } from "../enums";
 import { SeasonDetails } from "../seasons";
+
+describe("signup fetch helpers", () => {
+  it("does not fetch optional stats when all requirements are off", () => {
+    const season = {
+      faceit_rank_required: false,
+      premier_rank_required: false,
+      hours_played_required: false,
+      platform: SeasonPlatform.FACEIT
+    } as SeasonDetails;
+    expect(shouldFetchSignupPlayerHours(season)).toBe(false);
+    expect(shouldFetchSignupPlayerPremierRank(season)).toBe(false);
+    expect(shouldFetchSignupPlayerExternalRank(season)).toBe(false);
+  });
+
+  it("does not enforce FaceIT rank on Kanaliiga even when faceit_rank_required is true", () => {
+    const season = {
+      faceit_rank_required: true,
+      platform: SeasonPlatform.Kanaliiga
+    } as SeasonDetails;
+    expect(isFaceitRankEnforcedForSignup(season)).toBe(false);
+    expect(shouldFetchSignupPlayerExternalRank(season)).toBe(false);
+  });
+});
 
 describe("pickSignupRankRequirements", () => {
   it("returns default requirements when season is null", () => {

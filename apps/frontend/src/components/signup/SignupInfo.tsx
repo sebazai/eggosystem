@@ -1,7 +1,12 @@
 import { CardContent, Card } from "@/components/ui/card";
+import type { SeasonDetails } from "@eggosystem/types";
 import Link from "next/link";
 
-export const SignupInfo = () => {
+interface SignupInfoProps {
+  seasonDetails: SeasonDetails;
+}
+
+export const SignupInfo = ({ seasonDetails }: SignupInfoProps) => {
   return (
     <Card>
       <CardContent className="p-6 space-y-6">
@@ -33,22 +38,24 @@ export const SignupInfo = () => {
               Has logged in to <strong>Kanahub</strong>, filled out their
               personal information, and verified their work email.
             </li>
-            <li>
-              Has their{" "}
-              <strong>
-                Steam profile{" "}
-                <Link
-                  href={
-                    "https://help.steampowered.com/en/faqs/view/588C-C67D-0251-C276"
-                  }
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  set to public
-                </Link>
-              </strong>
-              .
-            </li>
+            {seasonDetails.hours_played_required && (
+              <li>
+                Has their{" "}
+                <strong>
+                  Steam profile{" "}
+                  <Link
+                    href={
+                      "https://help.steampowered.com/en/faqs/view/588C-C67D-0251-C276"
+                    }
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    set to public
+                  </Link>
+                </strong>
+                .
+              </li>
+            )}
             <li>
               Captain and co-captain are required to link their Discord account
               in their profiles.

@@ -9,6 +9,7 @@ import { convertTimeToLocalTimeWithoutSeconds } from "@/lib/date-utils";
 import { createNextUrl } from "@/lib/utils";
 import Link from "next/link";
 import { CardSkeleton } from "@/components/loading";
+import { getSignupWelcomeCopy } from "./signupWelcomeContent";
 
 interface SignupWelcomeProps {
   seasonId: string;
@@ -75,6 +76,10 @@ export const SignupWelcome = ({ seasonId }: SignupWelcomeProps) => {
     seasonDetails.early_bird_price_discount_end_date
   );
 
+  const welcomeCopy = getSignupWelcomeCopy(seasonDetails.app_id);
+  const rulebookUrl =
+    seasonDetails.rulebook_url ?? welcomeCopy.defaultRulebookUrl;
+
   return (
     <div>
       <div className="text-lg pb-4 font-semibold">
@@ -106,13 +111,7 @@ export const SignupWelcome = ({ seasonId }: SignupWelcomeProps) => {
         )}
       </div>
       <div className="pb-4">
-        <p>
-          Hi and welcome to Kanaliiga, Finland&apos;s corporate CS2 tournament!
-          Please read the instructions carefully and reserve yourself some time
-          for filling the registration as accurately as possible. As a captain,
-          you will be responsible for your team. Together we will make this
-          tournament a great experience for everyone.
-        </p>
+        <p>{welcomeCopy.introParagraph}</p>
         <p>
           At this point, we would like to kindly remind you, that We, Kanaliiga
           Organizers, do this purely voluntarily, without monthly paychecks
@@ -123,9 +122,7 @@ export const SignupWelcome = ({ seasonId }: SignupWelcomeProps) => {
       <div>
         <div className="text-center text-xl pb-6">Participation Fee</div>
         <p>
-          We cover organizing costs in CS2 tournaments by collecting
-          participation fees from teams. The fee is per a participating team.
-          Please pay your team&apos;s participation fee by purchasing it from{" "}
+          {welcomeCopy.participationFeeIntro}{" "}
           <Link
             target="_blank"
             className="break-words inline-block max-w-full"
@@ -189,13 +186,7 @@ export const SignupWelcome = ({ seasonId }: SignupWelcomeProps) => {
         <div className="text-center text-xl pb-6">📏 Rules</div>
         <p>
           Please familiarize yourself with our rules and instructions in the{" "}
-          <Link
-            target="_blank"
-            href={
-              seasonDetails.rulebook_url ||
-              "https://wiki.kanaliiga.fi/CS2/rulebook"
-            }
-          >
+          <Link target="_blank" href={rulebookUrl}>
             Wiki
           </Link>{" "}
           and in the{" "}

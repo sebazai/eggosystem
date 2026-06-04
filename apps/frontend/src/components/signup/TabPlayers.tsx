@@ -42,8 +42,12 @@ import type {
   SignupFormValues,
   SignupPlayerType
 } from "@eggosystem/types";
-import { playerSchema, SeasonPlatform } from "@eggosystem/types";
-import { playerMeetsSeasonRankAndHoursRequirements } from "@eggosystem/types";
+import {
+  isFaceitRankEnforcedForSignup,
+  playerMeetsSeasonRankAndHoursRequirements,
+  playerSchema,
+  SeasonPlatform
+} from "@eggosystem/types";
 import { AlertTriangle, Search, TriangleAlert } from "lucide-react";
 import { ApiError, clientApiFetch } from "@/lib/apiClient";
 import { SignupPlayerNotification } from "./SignupPlayerNotification";
@@ -56,6 +60,8 @@ import { ConfirmationModal } from "../ui/ConfirmationModal";
 import { RosterImportModal } from "./RosterImportModal";
 
 type CheckedState = boolean | "indeterminate";
+
+const SKIPPED_SIGNUP_PLAYER_FETCH = "skipped" as const;
 interface TabPlayersProps {
   control: Control<SignupFormValues>;
   resetField: UseFormResetField<SignupFormValues>;
@@ -175,6 +181,11 @@ export const TabPlayers = ({
     []
   );
 
+  const fetchSignupPlayerHours = seasonDetails.hours_played_required;
+  const fetchSignupPlayerPremierRank = seasonDetails.premier_rank_required;
+  const fetchSignupPlayerExternalRank =
+    isFaceitRankEnforcedForSignup(seasonDetails);
+
   const handlePlayer = useCallback(
     async (steam_id: string | number, index: number) => {
       const steamId = String(steam_id);
@@ -187,75 +198,94 @@ export const TabPlayers = ({
       try {
         setLoadingStates((prev) => ({ ...prev, [index]: true }));
 
-        const promises = await Promise.allSettled([
-          clientApiFetch<{
-            hours: number;
-          }>(
-            `/api/v1/players/${steam_id}/app/${seasonSteamAppId}/hours?season_id=${seasonId}`
-          ),
-          clientApiFetch<CS2LeetifyAvgRank>(
-            `/api/v1/players/${steam_id}/app/${seasonSteamAppId}/rank?season_id=${seasonId}`
-          ),
-          clientApiFetch<unknown>(
-            `/api/v1/players/${steam_id}/platform/${platform}/rank?season_id=${seasonId}`
-          ),
-          clientApiFetch<PlayerDetailsBySteamId>(
-            `/api/v1/players/${steam_id}/details`
-          )
-        ]);
+        const skippedFetch = Promise.resolve(SKIPPED_SIGNUP_PLAYER_FETCH);
+        const [hoursData, rankData, externalRankData, playerData] =
+          await Promise.allSettled([
+            fetchSignupPlayerHours
+              ? clientApiFetch<{ hours: number }>(
+                  `/api/v1/players/${steam_id}/app/${seasonSteamAppId}/hours?season_id=${seasonId}`
+                )
+              : skippedFetch,
+            fetchSignupPlayerPremierRank
+              ? clientApiFetch<CS2LeetifyAvgRank>(
+                  `/api/v1/players/${steam_id}/app/${seasonSteamAppId}/rank?season_id=${seasonId}`
+                )
+              : skippedFetch,
+            fetchSignupPlayerExternalRank
+              ? clientApiFetch<unknown>(
+                  `/api/v1/players/${steam_id}/platform/${platform}/rank?season_id=${seasonId}`
+                )
+              : skippedFetch,
+            clientApiFetch<PlayerDetailsBySteamId>(
+              `/api/v1/players/${steam_id}/details`
+            )
+          ]);
 
-        const [hoursData, rankData, externalRankData, playerData] = promises;
-
-        if (hoursData.status === "fulfilled") {
-          setValue(
-            `players.${index}.hours`,
-            hoursData.value.hours > 0 ? hoursData.value.hours : -1
-          );
-        } else {
-          setValue(`players.${index}.hours`, -1);
-          errorReasonsMessage.push(
-            hoursData.reason instanceof ApiError
-              ? hoursData.reason.message
-              : "Unknown error fetching hours data"
-          );
-        }
-
-        if (rankData.status === "fulfilled") {
-          setValue(
-            `players.${index}.rank`,
-            rankData.value.average_rank > 0 ? rankData.value.average_rank : -1
-          );
-        } else {
-          setValue(`players.${index}.rank`, -1);
-          errorReasonsMessage.push(
-            rankData.reason instanceof ApiError
-              ? rankData.reason.message
-              : "Unknown error fetching rank data"
-          );
-        }
-
-        if (externalRankData.status === "fulfilled") {
-          switch (platform) {
-            case SeasonPlatform.FACEIT:
-              setValue(
-                `players.${index}.externalRank`,
-                (externalRankData.value as FaceITCSRank).faceit_level
-              );
-              break;
-            case SeasonPlatform.Kanaliiga:
-              setValue(
-                `players.${index}.externalRank`,
-                (externalRankData.value as { kana_elo: number }).kana_elo
-              );
-              break;
+        if (fetchSignupPlayerHours) {
+          if (
+            hoursData.status === "fulfilled" &&
+            hoursData.value !== SKIPPED_SIGNUP_PLAYER_FETCH
+          ) {
+            setValue(
+              `players.${index}.hours`,
+              hoursData.value.hours > 0 ? hoursData.value.hours : -1
+            );
+          } else if (hoursData.status === "rejected") {
+            setValue(`players.${index}.hours`, -1);
+            errorReasonsMessage.push(
+              hoursData.reason instanceof ApiError
+                ? hoursData.reason.message
+                : "Unknown error fetching hours data"
+            );
           }
-        } else {
-          setValue(`players.${index}.externalRank`, -1);
-          errorReasonsMessage.push(
-            externalRankData.reason instanceof ApiError
-              ? externalRankData.reason.message
-              : "Unknown error fetching external rank data"
-          );
+        }
+
+        if (fetchSignupPlayerPremierRank) {
+          if (
+            rankData.status === "fulfilled" &&
+            rankData.value !== SKIPPED_SIGNUP_PLAYER_FETCH
+          ) {
+            setValue(
+              `players.${index}.rank`,
+              rankData.value.average_rank > 0 ? rankData.value.average_rank : -1
+            );
+          } else if (rankData.status === "rejected") {
+            setValue(`players.${index}.rank`, -1);
+            errorReasonsMessage.push(
+              rankData.reason instanceof ApiError
+                ? rankData.reason.message
+                : "Unknown error fetching rank data"
+            );
+          }
+        }
+
+        if (fetchSignupPlayerExternalRank) {
+          if (
+            externalRankData.status === "fulfilled" &&
+            externalRankData.value !== SKIPPED_SIGNUP_PLAYER_FETCH
+          ) {
+            switch (platform) {
+              case SeasonPlatform.FACEIT:
+                setValue(
+                  `players.${index}.externalRank`,
+                  (externalRankData.value as FaceITCSRank).faceit_level
+                );
+                break;
+              case SeasonPlatform.Kanaliiga:
+                setValue(
+                  `players.${index}.externalRank`,
+                  (externalRankData.value as { kana_elo: number }).kana_elo
+                );
+                break;
+            }
+          } else if (externalRankData.status === "rejected") {
+            setValue(`players.${index}.externalRank`, -1);
+            errorReasonsMessage.push(
+              externalRankData.reason instanceof ApiError
+                ? externalRankData.reason.message
+                : "Unknown error fetching external rank data"
+            );
+          }
         }
 
         if (playerData.status === "fulfilled") {
@@ -339,6 +369,9 @@ export const TabPlayers = ({
       }
     },
     [
+      fetchSignupPlayerExternalRank,
+      fetchSignupPlayerHours,
+      fetchSignupPlayerPremierRank,
       platform,
       seasonId,
       seasonSteamAppId,
@@ -911,13 +944,17 @@ export const TabPlayers = ({
                   />
 
                   <div className="flex flex-row w-full items-center justify-around gap-2">
-                    {player.externalRank && (
-                      <FaceITLevelIcon level={player.externalRank} />
-                    )}
+                    {fetchSignupPlayerExternalRank &&
+                      player.externalRank != null &&
+                      player.externalRank > 0 && (
+                        <FaceITLevelIcon level={player.externalRank} />
+                      )}
 
-                    {player.rank && (
-                      <CS2PremierRankBadge rankScore={player.rank} />
-                    )}
+                    {fetchSignupPlayerPremierRank &&
+                      player.rank != null &&
+                      player.rank > 0 && (
+                        <CS2PremierRankBadge rankScore={player.rank} />
+                      )}
 
                     {player.captain && (
                       <Image
@@ -1161,8 +1198,7 @@ export const TabPlayers = ({
                     )}
 
                   {player.externalRank === -1 &&
-                    seasonDetails.faceit_rank_required &&
-                    platform !== SeasonPlatform.Kanaliiga && (
+                    fetchSignupPlayerExternalRank && (
                       <SignupPlayerNotification
                         data-testid={`external-rank-error-${index}`}
                       >

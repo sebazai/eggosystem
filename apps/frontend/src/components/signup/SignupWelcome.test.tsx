@@ -79,6 +79,31 @@ describe("SignupWelcome", () => {
       expect(registerButtons).toHaveLength(0);
     });
 
+    it("should show PUBG-specific welcome copy for PUBG seasons", () => {
+      mockUseAuth.mockReturnValue({
+        user: null,
+        loading: false,
+        logout: jest.fn(),
+        checkAuth: jest.fn()
+      });
+
+      mockUseSeasonDetails.mockReturnValue({
+        seasonDetails: { ...mockSeasonDetails, app_id: 578080 },
+        isLoading: false,
+        isError: null,
+        isValidating: false
+      });
+
+      renderWithSWR(<SignupWelcome seasonId="1" />);
+
+      expect(
+        screen.getByText(/Finland's corporate PUBG tournament/i)
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByText(/Finland's corporate CS2 tournament/i)
+      ).not.toBeInTheDocument();
+    });
+
     it("should show register button when user is logged in", () => {
       const mockUser = {
         account_id: 123,

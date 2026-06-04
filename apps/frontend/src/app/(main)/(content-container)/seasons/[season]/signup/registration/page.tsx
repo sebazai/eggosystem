@@ -14,14 +14,20 @@ export const metadata: Metadata = {
   title: "Season registration"
 };
 
-const SignupContainer = ({ children }: { children: React.ReactNode }) => {
+const SignupContainer = ({
+  children,
+  seasonDetails
+}: {
+  children: React.ReactNode;
+  seasonDetails: SeasonDetails;
+}) => {
   return (
     <div>
       <div className="flex flex-col-reverse lg:flex-row gap-y-4 md:gap-x-4">
         <div className="sm:min-w-xl space-y-6">{children}</div>
 
         <div className="sm:max-w-3xl space-y-6">
-          <SignupInfo />
+          <SignupInfo seasonDetails={seasonDetails} />
         </div>
       </div>
     </div>
@@ -42,7 +48,7 @@ export default async function SignupPage({ params }: SignupPageProps) {
   const data: SeasonDetails = await result.json();
 
   return (
-    <SignupContainer>
+    <SignupContainer seasonDetails={data}>
       <SignupFormWithDraft seasonId={season} platform={data.platform} />
     </SignupContainer>
   );

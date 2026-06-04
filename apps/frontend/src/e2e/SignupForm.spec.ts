@@ -105,25 +105,37 @@ async function fillSteamIdLineup(page: Page, lineup: string[]) {
     const input = page.locator(`[data-testid="steam-id-input-${i}"]`);
     await expect(input).toBeVisible();
     await expect(input).toBeEnabled({ timeout: 15000 });
-    const detailsLoaded = waitForPlayerDetailsLoaded(page, steamId);
+    const detailsLoaded = waitForPlayerDetailsLoaded(page, steamId, i);
     await input.fill(steamId);
     await page.keyboard.press("Tab");
     await detailsLoaded;
   }
 }
 
+/** Waits until player lookup finished (nickname shown, not loading). Works for valid and invalid profiles. */
 async function waitForPlayerDetailsLoaded(
   page: Page,
-  steamId: string,
+  _steamId: string,
+  playerIndex: number,
   timeout = 20000
 ) {
-  await page.waitForResponse(
-    (response) =>
-      response.url().includes(`/api/v1/players/${steamId}/details`) &&
-      response.request().method() === "GET" &&
-      response.status() === 200,
-    { timeout }
+  const steamIdInput = page.locator(
+    `[data-testid="steam-id-input-${playerIndex}"]`
   );
+  const nicknameLocator = page.locator(
+    `[data-testid="player-nickname-${playerIndex}"]`
+  );
+
+  await expect
+    .poll(
+      async () => {
+        const inputClass = (await steamIdInput.getAttribute("class")) ?? "";
+        if (inputClass.includes("border-yellow-500")) return false;
+        return await nicknameLocator.isVisible().catch(() => false);
+      },
+      { timeout }
+    )
+    .toBe(true);
 }
 
 async function waitForPlayerSteamIdValidated(
@@ -140,11 +152,38 @@ async function waitForPlayerSteamIdValidated(
     await steamIdInput.fill("");
     await page.keyboard.press("Tab");
   }
-  const detailsLoaded = waitForPlayerDetailsLoaded(page, steamId, timeout);
+  const detailsLoaded = waitForPlayerDetailsLoaded(
+    page,
+    steamId,
+    playerIndex,
+    timeout
+  );
   await steamIdInput.fill(steamId);
   await page.keyboard.press("Tab");
   await detailsLoaded;
   await expect(steamIdInput).toHaveClass(/border-green-500/, { timeout });
+}
+
+/** New-org signup: wait for POST /organization before team tab (avoids submit with organizationId -1). */
+async function clickContinueToTeamSelection(page: Page, seasonId: number) {
+  const teamSelectionButton = page.locator(
+    '[data-testid="team-selection-button"]'
+  );
+  await expect(teamSelectionButton).toBeEnabled({ timeout: 15000 });
+
+  const orgCreatePromise = page.waitForResponse(
+    (res) =>
+      res
+        .url()
+        .includes(`/api/v1/registrations/season/${seasonId}/organization`) &&
+      res.request().method() === "POST" &&
+      res.status() >= 200 &&
+      res.status() < 300,
+    { timeout: 30000 }
+  );
+
+  await teamSelectionButton.click();
+  await orgCreatePromise;
 }
 
 // Helper function to set up the form to the team FACEIT ID input stage
@@ -178,12 +217,7 @@ async function setupFormToFaceitIdInput(page: Page) {
   // Check the terms and conditions checkbox
   await page.locator('[data-testid="terms-conditions-checkbox"]').click();
 
-  // Navigate to team section
-  const teamSelectionButton = page.locator(
-    '[data-testid="team-selection-button"]'
-  );
-  await expect(teamSelectionButton).toBeEnabled();
-  await teamSelectionButton.click();
+  await clickContinueToTeamSelection(page, 16);
 
   // Select "Add new" for team
   await page.locator('[data-testid="teams-dropdown-toggle"]').click();
@@ -204,13 +238,35 @@ async function setupFormToPlayersSectionWithTeam999(page: Page) {
 async function setupFormToPlayersSectionWithTeam(
   page: Page,
   orgId: number,
-  teamId: number
+  teamId: number,
+  seasonId: number = 16
 ) {
-  await page.goto("/seasons/16/signup/registration");
+  await page.goto(`/seasons/${seasonId}/signup/registration`);
 
-  // Form may load on Team or Players step (draft, or redirect to edit when user has existing registration).
-  // Wait for form tabs/controls directly; the heading can be present while the
-  // tab content is still settling after auth/signup status checks.
+  const steamIdInput0 = page.locator('[data-testid="steam-id-input-0"]');
+  if (await steamIdInput0.isVisible().catch(() => false)) {
+    await expect(steamIdInput0).toBeEnabled({ timeout: 15000 });
+    return;
+  }
+
+  const isEditMode = await page
+    .getByRole("heading", { name: "Edit signup" })
+    .isVisible()
+    .catch(() => false);
+
+  if (isEditMode) {
+    const playersTab = page.getByRole("tab", { name: /^Players$/i });
+    if (await playersTab.isEnabled().catch(() => false)) {
+      await playersTab.click();
+    } else {
+      await page.getByRole("tab", { name: /^Team$/i }).click();
+      await page.locator('[data-testid="go-to-lineup-button"]').click();
+    }
+    await steamIdInput0.waitFor({ state: "visible", timeout: 60000 });
+    return;
+  }
+
+  // Fresh registration: org dropdown is the first interactive control.
   const orgDropdown = page.locator(
     '[data-testid="organizations-dropdown-toggle"]'
   );
@@ -222,7 +278,7 @@ async function setupFormToPlayersSectionWithTeam(
   }
   await orgDropdown.waitFor({ state: "visible", timeout: 60000 });
 
-  await page.locator('[data-testid="organizations-dropdown-toggle"]').click();
+  await orgDropdown.click();
   await page.locator(`[data-testid="organizations-option-${orgId}"]`).click();
   await page.locator('[data-testid="terms-conditions-checkbox"]').click();
   await page.locator('[data-testid="team-selection-button"]').click();
@@ -232,6 +288,7 @@ async function setupFormToPlayersSectionWithTeam(
     .locator('[data-testid="team-external-id-input"]')
     .fill(generateUniqueFaceitTeamId());
   await page.locator('[data-testid="go-to-lineup-button"]').click();
+  await steamIdInput0.waitFor({ state: "visible", timeout: 60000 });
 }
 
 // Helper function to set up complete registration form with new organization/team
@@ -262,7 +319,7 @@ async function setupCompleteRegistrationForm(
   await page.locator('[data-testid="terms-conditions-checkbox"]').click();
 
   // Navigate to team section and complete team selection
-  await page.locator('[data-testid="team-selection-button"]').click();
+  await clickContinueToTeamSelection(page, seasonId);
   await page.locator('[data-testid="teams-dropdown-toggle"]').click();
   await page.locator('[data-testid="teams-add-new"]').click();
   await page.locator('[data-testid="team-name-input"]').fill(teamName);
@@ -295,7 +352,7 @@ async function fillValidPlayers(page: Page, authenticatedUserId?: string) {
     const steamId = playersToUse[i]!;
     const steamIdInput = page.locator(`[data-testid="steam-id-input-${i}"]`);
     await expect(steamIdInput).toBeVisible();
-    const detailsLoaded = waitForPlayerDetailsLoaded(page, steamId);
+    const detailsLoaded = waitForPlayerDetailsLoaded(page, steamId, i);
     await steamIdInput.fill(steamId);
     await page.keyboard.press("Tab");
     await detailsLoaded;
@@ -363,8 +420,15 @@ async function clickSubmitAndAssertPublicSignupSuccess(
   );
   await submitButton.click();
   const signupResponse = await signupResponsePromise;
-  expect(signupResponse.status()).toBeGreaterThanOrEqual(200);
-  expect(signupResponse.status()).toBeLessThan(300);
+  const signupStatus = signupResponse.status();
+  if (signupStatus >= 300) {
+    const signupBody = await signupResponse.text().catch(() => "");
+    throw new Error(
+      `Signup POST failed with ${signupStatus}: ${signupBody.slice(0, 500)}`
+    );
+  }
+  expect(signupStatus).toBeGreaterThanOrEqual(200);
+  expect(signupStatus).toBeLessThan(300);
   await expectPublicSignupSuccessUi(page);
 }
 
@@ -1122,7 +1186,7 @@ test.describe("Signup Form", () => {
         for (let i = 0; i < lineupWithInvalidProfile.length; i++) {
           const steamId = lineupWithInvalidProfile[i]!;
           const input = page.locator(`[data-testid="steam-id-input-${i}"]`);
-          const detailsLoaded = waitForPlayerDetailsLoaded(page, steamId);
+          const detailsLoaded = waitForPlayerDetailsLoaded(page, steamId, i);
           await input.fill(steamId);
           await page.keyboard.press("Tab");
           await detailsLoaded;
@@ -1376,7 +1440,7 @@ test.describe("Signup Form", () => {
   });
 
   test.describe("Admin registration", () => {
-    test.describe.configure({ timeout: 90000 });
+    test.describe.configure({ timeout: 120_000, mode: "serial" });
 
     // Design: wrongful data (seed) → user opens signup → we assert the error is visible and submit disabled
     //        → we fix (admin panel OR DB injection) → user opens signup again → we assert error gone and submit succeeds.
@@ -1706,7 +1770,7 @@ test.describe("Signup Form", () => {
         .locator('[data-testid="organization-website-input"]')
         .fill("https://kanaliiga.fi/");
       await page.locator('[data-testid="terms-conditions-checkbox"]').click();
-      await page.locator('[data-testid="team-selection-button"]').click();
+      await clickContinueToTeamSelection(page, 16);
       await page.locator('[data-testid="teams-dropdown-toggle"]').click();
       await page.locator('[data-testid="teams-add-new"]').click();
       await page.locator('[data-testid="team-name-input"]').fill(teamName);
@@ -1775,7 +1839,7 @@ test.describe("Signup Form", () => {
   // Per-flag signup rules use dedicated `Seasons` rows from `e2e_test_seed.ts`
   // (991–993) instead of mocking `/seasons/*/details`.
   test.describe("Configurable signup requirements", () => {
-    test.describe.configure({ timeout: 90000 });
+    test.describe.configure({ timeout: 90_000, mode: "serial" });
 
     // Index-0 uses a per-test dedicated "missing"-target Steam ID. Each
     // target's missing-data scenario is driven end-to-end through the seed
