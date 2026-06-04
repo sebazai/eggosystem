@@ -461,25 +461,23 @@ export const handleSeasonTeamRegistration = async (
   connection?: PoolConnection
 ) => {
   const playerSteamIds = playerInsertData.map((player) => player.steam_id);
-  await Promise.all([
-    validatePlayersFromDBForSignup(
-      seasonId,
-      teamId,
-      organizationId,
-      playerSteamIds,
-      connection
-    ),
-    insertSeasonTeamRegistration(seasonId, teamId, teamData, connection),
-    addPlayersForTeamInSeason(
-      seasonId,
-      appId,
-      seasonPlatform,
-      teamId,
-      playerInsertData,
-      connection
-    )
-    // Captain permissions are now handled automatically by database triggers
-  ]);
+  await validatePlayersFromDBForSignup(
+    seasonId,
+    teamId,
+    organizationId,
+    playerSteamIds,
+    connection
+  );
+  await insertSeasonTeamRegistration(seasonId, teamId, teamData, connection);
+  await addPlayersForTeamInSeason(
+    seasonId,
+    appId,
+    seasonPlatform,
+    teamId,
+    playerInsertData,
+    connection
+  );
+  // Captain permissions are now handled automatically by database triggers
 
   // Send welcome email to captain after successful registration
   const captainPlayer = playerInsertData.find((player) => player.is_captain);

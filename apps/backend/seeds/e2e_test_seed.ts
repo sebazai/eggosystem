@@ -612,9 +612,11 @@ export async function seed(knex: Knex): Promise<void> {
     );
   }
 
-  // S3: ApprovalOnlySubmit (15023) needs is_valid_full_name true — seed uses nickname as full_name; "ApprovalOnlySubmit" has no space
+  // S3: ApprovalOnlySubmit (15023) needs is_valid_full_name true and no work email (INSERT uses ?? fallback otherwise)
   await knex("Accounts").where({ id: 15023 }).update({
-    full_name: "Approval OnlySubmit"
+    full_name: "Approval OnlySubmit",
+    work_email: null,
+    work_email_verified: 0
   });
 
   // S2: DraftReturnUser (15022) needs is_valid_full_name true for draft-return test (form prefilled from draft)
