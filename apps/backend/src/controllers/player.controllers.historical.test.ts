@@ -1,6 +1,7 @@
 import { type Request, type Response, type NextFunction } from "express";
 import * as playerHistoricalModels from "../models/player-historical.models";
 import { getPlayerHistoricalDataController } from "./players.controllers";
+import { BadRequestError } from "../utils/errors";
 
 // Mock the player historical models
 jest.mock("../models/player-historical.models");
@@ -149,11 +150,8 @@ describe("getPlayerHistoricalDataController", () => {
     );
   });
 
-  it("should ignore unrecognised query params (e.g. legacy period)", async () => {
+  it("should reject legacy period query param with 400", async () => {
     mockRequest.query = { period: "this_season" } as Record<string, string>;
-    (mockPlayerModels.getPlayerHistoricalData as jest.Mock).mockResolvedValue(
-      []
-    );
 
     await getPlayerHistoricalDataController(
       mockRequest as Request,
@@ -161,10 +159,8 @@ describe("getPlayerHistoricalDataController", () => {
       mockNext
     );
 
-    expect(mockNext).not.toHaveBeenCalled();
-    expect(mockPlayerModels.getPlayerHistoricalData).toHaveBeenCalledWith(
-      steam_id,
-      { games: undefined, season_id: undefined }
-    );
+    expect(mockNext).toHaveBeenCalledWith(expect.any(BadRequestError));
+    expect(mockPlayerModels.getPlayerHistoricalData).not.toHaveBeenCalled();
+    expect(mockResponse.json).not.toHaveBeenCalled();
   });
 });
