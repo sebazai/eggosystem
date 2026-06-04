@@ -2,7 +2,7 @@ services:
   devcontainer:
     build: .
     container_name: devcontainer
-    mem_limit: 6g
+    mem_limit: 10g
     volumes:
       - ..:/workspace
     env_file: "../.env.development"
