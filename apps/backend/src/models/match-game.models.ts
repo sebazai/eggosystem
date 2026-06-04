@@ -24,7 +24,7 @@ import {
   matchTopStats
 } from "../shared/fetch-stat";
 import { getConnection } from "../db/mysqlConnection";
-import { type PoolConnection } from "mysql2/promise";
+import { type PoolConnection, type ResultSetHeader } from "mysql2/promise";
 import { type ParsedPayload } from "../types/parse-queue.types";
 import { generateQueryWithFilters } from "../utils/queryFilter";
 import { upsertTeamGameScore } from "./team-game-score.models";
@@ -346,7 +346,7 @@ export const upsertMatchGameForMatch = async ({
       regulation_rounds = VALUES(regulation_rounds)
   `;
 
-  return await runQuery<{ insertId: number }>(
+  return await runQuery<ResultSetHeader>(
     query,
     [match_id, map_id, map_order, demo_file, regulation_rounds ?? 24],
     connection
@@ -787,6 +787,13 @@ export const getPlayerRoundEvents = async (
   const flashCountByRound = new Map(
     flashCounts.map((r) => [Number(r.round_number), r])
   );
+  const utilityBaseByRound = new Map(
+    utilityBase.map((r) => [Number(r.round_number), r])
+  );
+  const allUtilityRoundNumbers = new Set([
+    ...utilityBase.map((r) => Number(r.round_number)),
+    ...flashCounts.map((r) => Number(r.round_number))
+  ]);
 
   const mergedUtilityDamageHits: RoundUtilityDamageEvent[] = [
     ...utilityDamageHits.map((r) => ({
@@ -827,17 +834,20 @@ export const getPlayerRoundEvents = async (
       duration_seconds: Number(r.duration_seconds),
       is_enemy_flash: Boolean(r.is_enemy_flash)
     })),
-    utility: utilityBase.map((r) => {
-      const fc = flashCountByRound.get(Number(r.round_number));
-      return {
-        round_number: Number(r.round_number),
-        utility_damage: Number(r.utility_damage),
-        smokes_thrown: Number(r.smokes_thrown),
-        flashes_thrown: Number(r.flashes_thrown),
-        enemies_flashed: fc ? Number(fc.enemies_flashed) : 0,
-        teammates_flashed: fc ? Number(fc.teammates_flashed) : 0
-      };
-    }),
+    utility: [...allUtilityRoundNumbers]
+      .sort((a, b) => a - b)
+      .map((roundNum) => {
+        const r = utilityBaseByRound.get(roundNum);
+        const fc = flashCountByRound.get(roundNum);
+        return {
+          round_number: roundNum,
+          utility_damage: r ? Number(r.utility_damage) : 0,
+          smokes_thrown: r ? Number(r.smokes_thrown) : 0,
+          flashes_thrown: r ? Number(r.flashes_thrown) : 0,
+          enemies_flashed: fc ? Number(fc.enemies_flashed) : 0,
+          teammates_flashed: fc ? Number(fc.teammates_flashed) : 0
+        };
+      }),
     wasted: wastedUtility.map((r) => ({
       round_number: Number(r.round_number),
       time_in_round: Number(r.time_in_round),
@@ -858,6 +868,9 @@ export const getPlayerGameUtilityStats = async (
   match_game_id: number,
   steam_id: string
 ): Promise<PlayerGameUtilityStats> => {
+  // These three reads are non-transactional. A concurrent saveParsedDemoDataForGame
+  // (delete+reinsert) could interleave with them under READ COMMITTED, producing a
+  // mixed-parse response. Accepted as low-risk given parse frequency.
   const [summary, wasted, flashCounts] = await Promise.all([
     runQuery<
       {
