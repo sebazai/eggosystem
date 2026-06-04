@@ -177,6 +177,44 @@ function isPlaceholderImageIdentifier(identifier: string): boolean {
   );
 }
 
+export function isLocalNoLogoPath(url: string): boolean {
+  return (
+    url === LOCAL_NO_LOGO_PATH || url === createNextUrl(LOCAL_NO_LOGO_PATH)
+  );
+}
+
+function createAbsoluteNextUrl(path: string): string {
+  return new URL(createNextUrl(path), envConfig.BASE_URL).href;
+}
+
+export function resolveAbsoluteImageUrl(url: string): string {
+  if (url.startsWith("http://") || url.startsWith("https://")) {
+    return url;
+  }
+
+  return createAbsoluteNextUrl(url);
+}
+
+export async function resolveOpenGraphLogoUrl(
+  identifier: string,
+  createLogoUrl: (identifier: string) => string = createTeamLogoUrl
+): Promise<string | null> {
+  const logoUrl = createLogoUrl(identifier);
+
+  if (isLocalNoLogoPath(logoUrl)) {
+    return null;
+  }
+
+  const absoluteUrl = resolveAbsoluteImageUrl(logoUrl);
+
+  try {
+    const response = await fetch(absoluteUrl, { method: "HEAD" });
+    return response.ok ? absoluteUrl : null;
+  } catch {
+    return null;
+  }
+}
+
 function resolveImageServiceUrl(identifier: string): string {
   if (identifier.startsWith("http://") || identifier.startsWith("https://")) {
     return identifier;

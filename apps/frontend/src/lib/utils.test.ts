@@ -4,7 +4,9 @@ import {
   createTeamLogoUrl,
   createAvatarUrl,
   createOrgLogoUrl,
-  LOCAL_NO_LOGO_PATH
+  LOCAL_NO_LOGO_PATH,
+  isLocalNoLogoPath,
+  resolveAbsoluteImageUrl
 } from "./utils";
 
 describe("Steam ID Utils", () => {
@@ -190,6 +192,24 @@ describe("image URL helpers", () => {
   it("createTeamLogoUrl still resolves phash identifiers", () => {
     expect(createTeamLogoUrl("8f85f92562586f19")).toBe(
       "https://img.kanaliiga.fi/images/by-hash/phash/8f85f92562586f19"
+    );
+  });
+
+  it("isLocalNoLogoPath detects placeholder paths", () => {
+    expect(isLocalNoLogoPath(LOCAL_NO_LOGO_PATH)).toBe(true);
+    expect(
+      isLocalNoLogoPath("https://img.kanaliiga.fi/images/by-hash/phash/abc")
+    ).toBe(false);
+  });
+
+  it("resolveAbsoluteImageUrl keeps absolute URLs unchanged", () => {
+    const remoteUrl = "https://img.kanaliiga.fi/images/by-hash/phash/abc";
+    expect(resolveAbsoluteImageUrl(remoteUrl)).toBe(remoteUrl);
+  });
+
+  it("resolveAbsoluteImageUrl converts app-relative paths", () => {
+    expect(resolveAbsoluteImageUrl(LOCAL_NO_LOGO_PATH)).toBe(
+      "http://localhost:3000/team-images/nologo.png"
     );
   });
 });

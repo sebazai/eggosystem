@@ -1,8 +1,11 @@
 import { ImageResponse } from "next/og";
 import { getMatchInfo } from "./utils";
-import { createNextUrl, createTeamLogoUrl } from "@/lib/utils";
+import {
+  createTeamLogoUrl,
+  isLocalNoLogoPath,
+  resolveAbsoluteImageUrl
+} from "@/lib/utils";
 import { orderMatchParticipantsBySideHomeLeft } from "@/lib/order-match-teams-home-left-away";
-import { envConfig } from "@/configs/env";
 import type { MatchInfo } from "@eggosystem/types";
 
 const KANALIIGA_OG_IMAGE_PATH = "/images/kanaliiga/opengraph-image.png";
@@ -15,8 +18,17 @@ export const OG_IMAGE_SIZE = {
 };
 
 function getKanaliigaLogoUrl(): string {
-  const path = createNextUrl(KANALIIGA_OG_IMAGE_PATH);
-  return new URL(path, envConfig.BASE_URL).href;
+  return resolveAbsoluteImageUrl(KANALIIGA_OG_IMAGE_PATH);
+}
+
+function resolveTeamLogoForOgImage(identifier: string): string {
+  const logoUrl = createTeamLogoUrl(identifier);
+
+  if (isLocalNoLogoPath(logoUrl)) {
+    return "";
+  }
+
+  return resolveAbsoluteImageUrl(logoUrl);
 }
 
 function VsLabel() {
@@ -117,8 +129,8 @@ export async function createMatchOgImageResponse(
   }
 
   const logoSize = 300;
-  const team1LogoUrl = team1.logo ? createTeamLogoUrl(team1.logo) : "";
-  const team2LogoUrl = team2.logo ? createTeamLogoUrl(team2.logo) : "";
+  const team1LogoUrl = team1.logo ? resolveTeamLogoForOgImage(team1.logo) : "";
+  const team2LogoUrl = team2.logo ? resolveTeamLogoForOgImage(team2.logo) : "";
   const kanaliigaLogoUrl = getKanaliigaLogoUrl();
 
   return new ImageResponse(
