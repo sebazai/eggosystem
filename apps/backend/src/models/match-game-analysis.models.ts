@@ -14,6 +14,7 @@ import {
 } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
 import { plantTimeSecondsOrNull } from "../utils/plant-time";
+import { keepMinByKey } from "../utils/keep-last-by-key";
 
 const jsonBig = JSONBig({ storeAsString: true });
 
@@ -240,16 +241,11 @@ export const getMatchGameOpeningDuels = async (
 
   // is_first_kill can be set on multiple rows per round (e.g. first kill per team).
   // Keep only the earliest kill per round number.
-  const dedupedMap = new Map<number, OpeningKillRow>();
-  for (const row of openingRows) {
-    const existing = dedupedMap.get(row.round_number);
-    if (!existing || row.time_in_round < existing.time_in_round) {
-      dedupedMap.set(row.round_number, row);
-    }
-  }
-  const dedupedRows = Array.from(dedupedMap.values()).sort(
-    (a, b) => a.round_number - b.round_number
-  );
+  const dedupedRows = keepMinByKey(
+    openingRows,
+    (row) => String(row.round_number),
+    (row) => row.time_in_round
+  ).sort((a, b) => a.round_number - b.round_number);
 
   // Group all kills by round for trade computation
   const killsByRound = new Map<number, AllKillRow[]>();

@@ -8,6 +8,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import { runQuery } from "../../db/mysqlRunQuery";
+import { type ResultSetHeader } from "mysql2/promise";
 import { getConnection } from "../../db/mysqlConnection";
 
 function getFixturesDir(): string {
@@ -182,7 +183,7 @@ export async function runFaceitWebhookIntegrationSeed(): Promise<void> {
     if (gameRow?.id != null) {
       gameId = gameRow.id;
     } else {
-      const ins = await runQuery<{ insertId: number }>(
+      const ins = await runQuery<ResultSetHeader>(
         "INSERT INTO Games (name, abbreviation, app_id) VALUES (?, ?, ?)",
         ["CS2", "CS2", CS2_APP_ID],
         trx
@@ -212,7 +213,7 @@ export async function runFaceitWebhookIntegrationSeed(): Promise<void> {
         trx
       );
     } else {
-      const ins = await runQuery<{ insertId: number }>(
+      const ins = await runQuery<ResultSetHeader>(
         `INSERT INTO Seasons (game_id, organizer_id, name, full_name, start_date, platform, is_round_robin_bo2_as_2xbo1)
          VALUES (?, ?, ?, ?, ?, 'faceit', 1)`,
         [
@@ -246,7 +247,7 @@ export async function runFaceitWebhookIntegrationSeed(): Promise<void> {
       if (existing?.id != null) {
         lid = existing.id;
       } else {
-        const ins = await runQuery<{ insertId: number }>(
+        const ins = await runQuery<ResultSetHeader>(
           "INSERT INTO Leagues (name, sort_priority) VALUES (?, ?)",
           [leagueName, 99],
           trx
@@ -264,13 +265,13 @@ export async function runFaceitWebhookIntegrationSeed(): Promise<void> {
     );
     const stageId =
       stageRow?.id ??
-      ((
-        (await runQuery<{ insertId: number }>(
+      (
+        await runQuery<ResultSetHeader>(
           "INSERT INTO Stages (name) VALUES (?)",
           ["FACEIT Integration Stage"],
           trx
-        )) as { insertId: number }
-      ).insertId as number);
+        )
+      ).insertId;
 
     // 7. SeasonLeagues (PK season_id, league_id) — one row per entity-league.
     for (const lid of leagueIdByEntity.values()) {
@@ -360,13 +361,13 @@ export async function runFaceitWebhookIntegrationSeed(): Promise<void> {
     );
     const forfeitLeagueId =
       forfeitLeagueRow?.id ??
-      ((
-        (await runQuery<{ insertId: number }>(
+      (
+        await runQuery<ResultSetHeader>(
           "INSERT INTO Leagues (name, sort_priority) VALUES (?, ?)",
           [forfeitLeagueName, 97],
           trx
-        )) as { insertId: number }
-      ).insertId as number);
+        )
+      ).insertId;
 
     await runQuery(
       `INSERT IGNORE INTO SeasonLeagues (season_id, league_id, tier) VALUES (?, ?, ?)`,
@@ -413,7 +414,7 @@ export async function runFaceitWebhookIntegrationSeed(): Promise<void> {
     if (normalSeasonRow?.id != null) {
       normalSeasonId = normalSeasonRow.id;
     } else {
-      const ins = await runQuery<{ insertId: number }>(
+      const ins = await runQuery<ResultSetHeader>(
         `INSERT INTO Seasons (game_id, organizer_id, name, full_name, start_date, platform, is_round_robin_bo2_as_2xbo1)
          VALUES (?, ?, ?, ?, ?, 'faceit', 0)`,
         [
@@ -435,13 +436,13 @@ export async function runFaceitWebhookIntegrationSeed(): Promise<void> {
     );
     const normalLeagueId =
       normalLeagueRow?.id ??
-      ((
-        (await runQuery<{ insertId: number }>(
+      (
+        await runQuery<ResultSetHeader>(
           "INSERT INTO Leagues (name, sort_priority) VALUES (?, ?)",
           ["FACEIT Integration Normal League", 98],
           trx
-        )) as { insertId: number }
-      ).insertId as number);
+        )
+      ).insertId;
 
     await runQuery(
       `INSERT IGNORE INTO SeasonLeagues (season_id, league_id, tier) VALUES (?, ?, ?)`,

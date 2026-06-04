@@ -5,7 +5,7 @@ import type {
   Match
 } from "@eggosystem/types";
 import { MatchStatus } from "@eggosystem/types";
-import type { PoolConnection } from "mysql2/promise";
+import type { PoolConnection, ResultSetHeader } from "mysql2/promise";
 import moment from "moment-timezone";
 import { getConnection } from "../db/mysqlConnection";
 import { runQuery } from "../db/mysqlRunQuery";
@@ -447,7 +447,7 @@ export async function finishMatchWithComputedEndTime(
       const updateSql = forceFinishForfeit
         ? `UPDATE Matches SET status = ?, end_timestamp = ? WHERE id = ? AND status != 'FINISHED'`
         : `UPDATE Matches SET status = ?, end_timestamp = ? WHERE id = ? AND status NOT IN ('FINISHED', 'FORFEIT')`;
-      const updateResult = await runQuery<{ affectedRows: number }>(
+      const updateResult = await runQuery<ResultSetHeader>(
         updateSql,
         [MatchStatus.FINISHED, formatDateForDatabase(endIso), row.id],
         conn

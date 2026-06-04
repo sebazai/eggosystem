@@ -22,6 +22,7 @@ import type { PoolConnection } from "mysql2/promise";
 import _ from "lodash";
 import { validSignupData } from "@eggosystem/shared-msw";
 import { type BadRequestError } from "../utils/errors";
+import { createMockResultSetHeader } from "../__utils__/result-set-header";
 
 describe("addSignupForSeason - database transaction testing", () => {
   let req: RequestWithParamsAndBody<{ season_id: string }, SignupFormValues>;
@@ -96,7 +97,9 @@ describe("addSignupForSeason - database transaction testing", () => {
   it("should handle existing organization and existing team successfully", async () => {
     const signSpy = jest
       .spyOn(registrationModels, "insertSeasonTeamRegistration")
-      .mockImplementation(() => Promise.resolve({ insertId: 2 }));
+      .mockImplementation(() =>
+        Promise.resolve(createMockResultSetHeader({ insertId: 2 }))
+      );
     const playersAddSpy = jest
       .spyOn(seasonTeamRegistrationServices, "addPlayersForTeamInSeason")
       .mockImplementation(() => Promise.resolve());
@@ -140,17 +143,13 @@ describe("addSignupForSeason - database transaction testing", () => {
   it("insertSeasonTeamRegistration & insertSeasonTeamRegistrationPlayer in addPlayersForTeamInSeason and it's subfunctions should be called with correct parameters", async () => {
     const insertSeasonTeamReg = jest
       .spyOn(seasonTeamRegistrationModels, "insertSeasonTeamRegistration")
-      .mockResolvedValue({
-        insertId: 1
-      });
+      .mockResolvedValue(createMockResultSetHeader({ insertId: 1 }));
     const insertSeasonTeamRegistrationPlayer = jest
       .spyOn(
         seasonTeamRegistrationPlayerModels,
         "insertSeasonTeamRegistrationPlayer"
       )
-      .mockResolvedValue({
-        insertId: 1
-      });
+      .mockResolvedValue(createMockResultSetHeader({ insertId: 1 }));
 
     // Captain permissions are now handled automatically by database triggers
 
@@ -207,7 +206,9 @@ describe("addSignupForSeason - database transaction testing", () => {
     };
     const signSpy = jest
       .spyOn(registrationModels, "insertSeasonTeamRegistration")
-      .mockImplementation(() => Promise.resolve({ insertId: 2 }));
+      .mockImplementation(() =>
+        Promise.resolve(createMockResultSetHeader({ insertId: 2 }))
+      );
     const playersAddSpy = jest
       .spyOn(seasonTeamRegistrationServices, "addPlayersForTeamInSeason")
       .mockImplementation(() => Promise.resolve());
@@ -217,15 +218,13 @@ describe("addSignupForSeason - database transaction testing", () => {
 
     // Captain permissions are now handled automatically by database triggers
 
-    jest.spyOn(teamModels, "insertTeam").mockResolvedValue({
-      insertId: 666
-    });
+    jest
+      .spyOn(teamModels, "insertTeam")
+      .mockResolvedValue(createMockResultSetHeader({ insertId: 666 }));
     // Organization is already created, so insertOrganization should not be called
     const orgInsertSpy = jest
       .spyOn(organizationModels, "insertOrganization")
-      .mockResolvedValue({
-        insertId: 999
-      });
+      .mockResolvedValue(createMockResultSetHeader({ insertId: 999 }));
 
     await addSignupForSeasonController(req, res);
     expect(mockConnection.beginTransaction).toHaveBeenCalled();
@@ -272,7 +271,9 @@ describe("addSignupForSeason - database transaction testing", () => {
     };
     const signSpy = jest
       .spyOn(registrationModels, "insertSeasonTeamRegistration")
-      .mockImplementation(() => Promise.resolve({ insertId: 2 }));
+      .mockImplementation(() =>
+        Promise.resolve(createMockResultSetHeader({ insertId: 2 }))
+      );
     const playersAddSpy = jest
       .spyOn(seasonTeamRegistrationServices, "addPlayersForTeamInSeason")
       .mockImplementation(() => Promise.resolve());
@@ -281,9 +282,9 @@ describe("addSignupForSeason - database transaction testing", () => {
       .mockImplementation(() => Promise.resolve(true));
     // Captain permissions are now handled automatically by database triggers
 
-    jest.spyOn(teamModels, "insertTeam").mockResolvedValue({
-      insertId: 1337
-    } as unknown as { insertId: number });
+    jest
+      .spyOn(teamModels, "insertTeam")
+      .mockResolvedValue(createMockResultSetHeader({ insertId: 1337 }));
 
     await addSignupForSeasonController(req, res);
     expect(mockConnection.beginTransaction).toHaveBeenCalled();

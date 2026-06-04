@@ -1,6 +1,7 @@
 import { type InsertSeason } from "@eggosystem/types";
 import { buildInsertQueryParts } from "../db/utils";
 import { runQuery } from "../db/mysqlRunQuery";
+import { type ResultSetHeader } from "mysql2/promise";
 import { validSignupData } from "@eggosystem/shared-msw";
 
 export const insertTestSeason = (data: InsertSeason) => {
@@ -23,7 +24,7 @@ const insertAccountWithSteamId = async (
     full_name: fullName,
     work_email: workEmail
   });
-  const account = await runQuery<{ insertId: number }>(
+  const account = await runQuery<ResultSetHeader>(
     `INSERT INTO Accounts (${accountInsertQuery.columns.join(", ")}, work_email_verified) VALUES (${accountInsertQuery.placeholders}, ?)`,
     [...accountInsertQuery.values, true]
   );
@@ -32,18 +33,18 @@ const insertAccountWithSteamId = async (
     nickname,
     account_id: accountId
   });
-  await runQuery<{ insertId: number }>(
+  await runQuery<ResultSetHeader>(
     `INSERT INTO SteamPlayers (${steamPlayerInsert.columns.join(", ")}) VALUES (${steamPlayerInsert.placeholders})`,
     steamPlayerInsert.values
   );
-  await runQuery<{ insertId: number }>(
+  await runQuery<ResultSetHeader>(
     "INSERT INTO LinkedAccounts (account_id, provider_id, provider) VALUES (?, ?, ?)",
     [account.insertId, steamId, "steam"]
   );
 };
 
 const insertAccountPrivacyPolicyAccepted = async (accountId: number) => {
-  await runQuery<{ insertId: number }>(
+  await runQuery<ResultSetHeader>(
     "INSERT INTO UserPolicyAcceptances (account_id, accepted_privacy_policy) VALUES (?, ?)",
     [accountId, true]
   );
@@ -249,13 +250,13 @@ export const clearTestUserAndRanks = async (
 };
 
 export const insertRogueTeam = (teamName?: string) => {
-  return runQuery<{ insertId: number }>("INSERT INTO Teams (name) VALUES (?)", [
+  return runQuery<ResultSetHeader>("INSERT INTO Teams (name) VALUES (?)", [
     teamName ?? "Testing team"
   ]);
 };
 
 export const clearRogueTeam = (teamName?: string) => {
-  return runQuery<{ insertId: number }>("DELETE FROM Teams WHERE name = ?", [
+  return runQuery<ResultSetHeader>("DELETE FROM Teams WHERE name = ?", [
     teamName ?? "Testing team"
   ]);
 };
@@ -271,7 +272,7 @@ export const insertTestKanahautomoRegistration = async (
   organizationId: number,
   acceptedTerms: boolean = false
 ) => {
-  return runQuery<{ insertId: number }>(
+  return runQuery<ResultSetHeader>(
     "INSERT INTO KanahautomoRegistrations (steam_id, organization_id, accepted_terms) VALUES (?, ?, ?)",
     [steamId, organizationId, acceptedTerms]
   );
@@ -289,7 +290,7 @@ export const insertTestOrganization = async (
     organizationCode ||
     `TEST-ORG-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   // Use phash for nologo.png (c163141e6bd36e65) instead of filename
-  return runQuery<{ insertId: number }>(
+  return runQuery<ResultSetHeader>(
     "INSERT INTO Organizations (name, country, organization_code, logo, website) VALUES (?, ?, ?, ?, ?)",
     [name, "Finland", code, "c163141e6bd36e65", "http://test.org"]
   );

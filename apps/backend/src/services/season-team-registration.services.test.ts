@@ -1,4 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { createMockResultSetHeader } from "../__utils__/result-set-header";
+import type { ResultSetHeader } from "mysql2/promise";
 import {
   type Account,
   type InsertSeasonTeamRegistration,
@@ -448,7 +450,7 @@ describe("Season team registration services", () => {
         .mockResolvedValue();
       const registrationInsert = jest
         .spyOn(registrationModels, "insertSeasonTeamRegistration")
-        .mockResolvedValue({ insertId: 1 });
+        .mockResolvedValue(createMockResultSetHeader({ insertId: 1 }));
       const addPlayers = jest
         .spyOn(registrationServices, "addPlayersForTeamInSeason")
         .mockResolvedValue();
@@ -514,7 +516,7 @@ describe("Season team registration services", () => {
         .mockResolvedValue();
       jest
         .spyOn(registrationModels, "insertSeasonTeamRegistration")
-        .mockResolvedValue({ insertId: 1 });
+        .mockResolvedValue(createMockResultSetHeader({ insertId: 1 }));
       jest
         .spyOn(registrationServices, "addPlayersForTeamInSeason")
         .mockResolvedValue();
@@ -977,7 +979,7 @@ describe("Season team registration services", () => {
     });
     it("Should pass when rank is has been added manually by organizer into database, but hours come from steam and faceit rank from faceit", async () => {
       const formData = _.cloneDeep(validSignupData);
-      const idToRemove = await runQuery<{ insertId: number }>(
+      const idToRemove = await runQuery<ResultSetHeader>(
         "INSERT INTO SeasonPlayerRanks (steam_id, season_id, cs2_rank) VALUES (?, ?, ?)",
         [formData.players[4].steamId, seasonDetails.id, 10001]
       );
@@ -1028,11 +1030,11 @@ describe("Season team registration services", () => {
         now.getTime() - 2 * 30 * 24 * 60 * 60 * 1000
       );
       const formattedDate2 = twoMonthsAgo.toISOString().split("T")[0];
-      await runQuery<{ insertId: number }>(
+      await runQuery<ResultSetHeader>(
         "INSERT INTO SeasonPlayerRanks (steam_id, season_id, cs2_rank, rank_updated_at) VALUES (?, ?, ?, ?)",
         [formData.players[5].steamId, 14, 5000, formattedDate]
       );
-      await runQuery<{ insertId: number }>(
+      await runQuery<ResultSetHeader>(
         "INSERT INTO SeasonPlayerRanks (steam_id, season_id, cs2_rank, rank_updated_at) VALUES (?, ?, ?, ?)",
         [formData.players[5].steamId, 11, 10000, formattedDate2]
       );

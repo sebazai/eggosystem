@@ -4,6 +4,7 @@ import { verifyEmailController } from "./account.controllers";
 import { redisClient } from "../utils/redisClient";
 import { runQuery } from "../db/mysqlRunQuery";
 import { expressErrorHandler } from "../middlewares/express-error-handler";
+import { createMockResultSetHeader } from "../__utils__/result-set-header";
 
 // Mock dependencies
 jest.mock("../utils/redisClient");
@@ -69,7 +70,7 @@ describe("POST /verify-email", () => {
       // SELECT by token then UPDATE by id
       mockRunQuery
         .mockResolvedValueOnce([{ id: 101, work_email_verified: false }])
-        .mockResolvedValueOnce({ affectedRows: 1 });
+        .mockResolvedValueOnce(createMockResultSetHeader({ affectedRows: 1 }));
 
       const response = await request(app).post("/verify-email").send({ token });
 
@@ -199,7 +200,7 @@ describe("POST /verify-email", () => {
       mockRedisClient.get.mockResolvedValue(null);
       mockRunQuery
         .mockResolvedValueOnce([{ id: 202, work_email_verified: false }])
-        .mockResolvedValueOnce({ affectedRows: 1 });
+        .mockResolvedValueOnce(createMockResultSetHeader({ affectedRows: 1 }));
 
       const response = await request(app).post("/verify-email").send({ token });
 
@@ -283,7 +284,7 @@ describe("POST /verify-email", () => {
       mockRedisClient.get.mockResolvedValue(null);
       mockRunQuery
         .mockResolvedValueOnce([{ id: 303, work_email_verified: false }])
-        .mockResolvedValueOnce({ affectedRows: 0 });
+        .mockResolvedValueOnce(createMockResultSetHeader({ affectedRows: 0 }));
 
       const response = await request(app).post("/verify-email").send({ token });
 
@@ -384,7 +385,7 @@ describe("POST /verify-email", () => {
       mockRedisClient.get.mockResolvedValue(null);
       mockRunQuery
         .mockResolvedValueOnce([{ id: 404, work_email_verified: false }])
-        .mockResolvedValueOnce({ affectedRows: 1 });
+        .mockResolvedValueOnce(createMockResultSetHeader({ affectedRows: 1 }));
 
       await request(app).post("/verify-email").send({ token });
 

@@ -20,6 +20,7 @@ import {
 } from "../../services/sortter-placements.services";
 import { enqueueSeasonFinalizationWelcomeEmails } from "../../services/email.services";
 import { runQuery } from "../../db/mysqlRunQuery";
+import { type ResultSetHeader } from "mysql2/promise";
 import {
   BadRequestError,
   NotFoundError,
@@ -509,7 +510,7 @@ export const finalizeTeamPlacementsController = async (
         WHERE strp.season_id = ? AND str.approved = 1
       `;
 
-    const playersCopyResult = await runQuery<{ affectedRows?: number }>(
+    const playersCopyResult = await runQuery<ResultSetHeader>(
       copyPlayersQuery,
       [seasonId],
       connection

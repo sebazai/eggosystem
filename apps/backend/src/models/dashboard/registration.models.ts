@@ -13,6 +13,7 @@ import { BadRequestError } from "../../utils/errors";
 import { insertPlayerRankForSeason } from "../season-player-ranks.models";
 import { faceitEloToLevel } from "../../utils/faceit-utils";
 import { runQuery } from "../../db/mysqlRunQuery";
+import { type ResultSetHeader } from "mysql2/promise";
 
 export const addManuallyApprovedPartialSignupForSeason = async (
   formData: PostTeamManualPlayerApprovalSchemaType,
@@ -166,7 +167,7 @@ export const bulkApproveTeamRegistrations = async (
       WHERE season_id = ? AND team_id IN (${teamIds.map(() => "?").join(",")})
     `;
 
-    const result = await runQuery<{ affectedRows: number }>(
+    const result = await runQuery<ResultSetHeader>(
       updateQuery,
       [approvedByAccountId, seasonId, ...teamIds],
       connection
@@ -223,7 +224,7 @@ export const manualValidityCheck = async (
       WHERE season_id = ? AND team_id IN (${teamIds.map(() => "?").join(",")})
     `;
 
-    const result = await runQuery<{ affectedRows: number }>(
+    const result = await runQuery<ResultSetHeader>(
       updateQuery,
       [checkedByAccountId, seasonId, ...teamIds],
       connection

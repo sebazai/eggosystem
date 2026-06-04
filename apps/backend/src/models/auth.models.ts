@@ -1,5 +1,6 @@
 import type { AuthSteamUser } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
+import { type ResultSetHeader } from "mysql2/promise";
 import { getConnection } from "../db/mysqlConnection";
 
 /**
@@ -57,12 +58,12 @@ export const createAccountForSteam = async ({
   const connection = await getConnection();
   try {
     await connection.beginTransaction();
-    const account = await runQuery<{ insertId: number }>(
+    const account = await runQuery<ResultSetHeader>(
       "INSERT INTO Accounts (full_name) VALUES (?)",
       [steamRealname ?? steamDisplayName],
       connection
     );
-    await runQuery<{ insertId: number }>(
+    await runQuery<ResultSetHeader>(
       `INSERT INTO SteamPlayers (steam_id, nickname, account_id) 
        VALUES (?, ?, ?)
        ON DUPLICATE KEY UPDATE 
@@ -71,7 +72,7 @@ export const createAccountForSteam = async ({
       [steamId, steamDisplayName, account.insertId],
       connection
     );
-    await runQuery<{ insertId: number }>(
+    await runQuery<ResultSetHeader>(
       "INSERT INTO LinkedAccounts (account_id, provider_id, provider, provider_username) VALUES (?, ?, ?, ?)",
       [account.insertId, steamId, "steam", steamDisplayName],
       connection

@@ -2,6 +2,7 @@
 import { manualValidityCheck } from "../../models/dashboard/registration.models";
 import { runQuery } from "../../db/mysqlRunQuery";
 import { getConnection } from "../../db/mysqlConnection";
+import { createMockResultSetHeader } from "../../__utils__/result-set-header";
 
 // Mock dependencies
 jest.mock("../../db/mysqlRunQuery");
@@ -37,7 +38,9 @@ describe("manual validity override", () => {
       const teamIds = [123, 456, 789];
       const checkedByAccountId = 42;
 
-      mockRunQuery.mockResolvedValue({ affectedRows: 3 });
+      mockRunQuery.mockResolvedValue(
+        createMockResultSetHeader({ affectedRows: 3 })
+      );
 
       const result = await manualValidityCheck(
         seasonId,
@@ -67,7 +70,9 @@ describe("manual validity override", () => {
       const checkedByAccountId = 42;
 
       // Only 2 teams were updated (one doesn't exist)
-      mockRunQuery.mockResolvedValue({ affectedRows: 2 });
+      mockRunQuery.mockResolvedValue(
+        createMockResultSetHeader({ affectedRows: 2 })
+      );
 
       const result = await manualValidityCheck(
         seasonId,
@@ -86,7 +91,9 @@ describe("manual validity override", () => {
       const teamIds = [999, 888]; // Non-existent teams
       const checkedByAccountId = 42;
 
-      mockRunQuery.mockResolvedValue({ affectedRows: 0 });
+      mockRunQuery.mockResolvedValue(
+        createMockResultSetHeader({ affectedRows: 0 })
+      );
 
       const result = await manualValidityCheck(
         seasonId,
@@ -136,7 +143,9 @@ describe("manual validity override", () => {
       const teamIds: number[] = [];
       const checkedByAccountId = 42;
 
-      mockRunQuery.mockResolvedValue({ affectedRows: 0 });
+      mockRunQuery.mockResolvedValue(
+        createMockResultSetHeader({ affectedRows: 0 })
+      );
 
       const result = await manualValidityCheck(
         seasonId,
@@ -180,7 +189,9 @@ describe("manual validity override", () => {
       const teamIds = Array.from({ length: 100 }, (_, i) => i + 1); // 100 teams
       const checkedByAccountId = 42;
 
-      mockRunQuery.mockResolvedValue({ affectedRows: 100 });
+      mockRunQuery.mockResolvedValue(
+        createMockResultSetHeader({ affectedRows: 100 })
+      );
 
       const result = await manualValidityCheck(
         seasonId,
@@ -208,7 +219,9 @@ describe("manual validity override", () => {
       const teamIds = [123, 456];
       const checkedByAccountId = 42;
 
-      mockRunQuery.mockResolvedValue({ affectedRows: 2 });
+      mockRunQuery.mockResolvedValue(
+        createMockResultSetHeader({ affectedRows: 2 })
+      );
 
       await manualValidityCheck(seasonId, teamIds, checkedByAccountId);
 
@@ -234,7 +247,9 @@ describe("manual validity override", () => {
       const teamIds = [123];
       const checkedByAccountId = 42;
 
-      mockRunQuery.mockResolvedValue({ affectedRows: 1 });
+      mockRunQuery.mockResolvedValue(
+        createMockResultSetHeader({ affectedRows: 1 })
+      );
 
       await manualValidityCheck(seasonId, teamIds, checkedByAccountId);
 
@@ -250,7 +265,9 @@ describe("manual validity override", () => {
       const teamIds = [123, 456, 789];
       const checkedByAccountId = 42;
 
-      mockRunQuery.mockResolvedValue({ affectedRows: 3 });
+      mockRunQuery.mockResolvedValue(
+        createMockResultSetHeader({ affectedRows: 3 })
+      );
 
       await manualValidityCheck(seasonId, teamIds, checkedByAccountId);
 
@@ -268,7 +285,9 @@ describe("manual validity override", () => {
       const teamIds = [123, 456];
       const checkedByAccountId = 42;
 
-      mockRunQuery.mockResolvedValue({ affectedRows: 0 });
+      mockRunQuery.mockResolvedValue(
+        createMockResultSetHeader({ affectedRows: 0 })
+      );
 
       const result = await manualValidityCheck(
         seasonId,
@@ -287,7 +306,9 @@ describe("manual validity override", () => {
       const teamIds = [-1, 0, 999999]; // Invalid team IDs
       const checkedByAccountId = 42;
 
-      mockRunQuery.mockResolvedValue({ affectedRows: 0 });
+      mockRunQuery.mockResolvedValue(
+        createMockResultSetHeader({ affectedRows: 0 })
+      );
 
       const result = await manualValidityCheck(
         seasonId,
@@ -306,7 +327,9 @@ describe("manual validity override", () => {
       const teamIds = [123, 456];
       const checkedByAccountId = -1; // Invalid account ID
 
-      mockRunQuery.mockResolvedValue({ affectedRows: 2 });
+      mockRunQuery.mockResolvedValue(
+        createMockResultSetHeader({ affectedRows: 2 })
+      );
 
       const result = await manualValidityCheck(
         seasonId,
@@ -353,7 +376,9 @@ describe("manual validity override", () => {
       const teamIds = [123, 456];
       const checkedByAccountId = 42;
 
-      mockRunQuery.mockResolvedValue({ affectedRows: 2 });
+      mockRunQuery.mockResolvedValue(
+        createMockResultSetHeader({ affectedRows: 2 })
+      );
 
       await manualValidityCheck(seasonId, teamIds, checkedByAccountId);
 
@@ -403,7 +428,9 @@ describe("manual validity override", () => {
       const teamIds = [123, 456];
       const checkedByAccountId = 42;
 
-      mockRunQuery.mockResolvedValue({ affectedRows: 2 });
+      mockRunQuery.mockResolvedValue(
+        createMockResultSetHeader({ affectedRows: 2 })
+      );
       mockConnection.commit.mockRejectedValue(new Error("Commit failed"));
 
       await expect(
@@ -421,7 +448,9 @@ describe("manual validity override", () => {
       const teamIds = Array.from({ length: 1000 }, (_, i) => i + 1); // 1000 teams
       const checkedByAccountId = 42;
 
-      mockRunQuery.mockResolvedValue({ affectedRows: 1000 });
+      mockRunQuery.mockResolvedValue(
+        createMockResultSetHeader({ affectedRows: 1000 })
+      );
 
       const startTime = Date.now();
       const result = await manualValidityCheck(
@@ -445,7 +474,9 @@ describe("manual validity override", () => {
       const teamIds = Array.from({ length: 5000 }, (_, i) => i + 1); // 5000 teams
       const checkedByAccountId = 42;
 
-      mockRunQuery.mockResolvedValue({ affectedRows: 5000 });
+      mockRunQuery.mockResolvedValue(
+        createMockResultSetHeader({ affectedRows: 5000 })
+      );
 
       const result = await manualValidityCheck(
         seasonId,

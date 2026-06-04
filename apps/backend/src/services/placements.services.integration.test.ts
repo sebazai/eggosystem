@@ -23,6 +23,7 @@ import express from "express";
 import faceitRouter from "../routes/v1/faceit.routes";
 import { expressErrorHandler } from "../middlewares/express-error-handler";
 import { runQuery } from "../db/mysqlRunQuery";
+import { type ResultSetHeader } from "mysql2/promise";
 import * as faceitMatchModule from "./faceit-match.services";
 import {
   assignGrandFinalPlacementsForFinishedMatch,
@@ -127,7 +128,7 @@ async function seed(
 
   if (options.includeLbFinal) {
     // LB final: team A (future 3rd) vs team B (future 2nd, advances to GF)
-    const lbf = await runQuery<{ insertId: number }>(
+    const lbf = await runQuery<ResultSetHeader>(
       `INSERT INTO Matches (league_id, season_id, stage, best_of, start_timestamp, end_timestamp, external_match_room_id, status, round, \`group\`)
        VALUES (?, ?, ?, 3, '2026-04-01 18:00:00', '2026-04-01 20:00:00', ?, 'FINISHED', 4, 2)`,
       [L_ID, S_ID, STAGE_ID, LBF_ROOM_ID]
@@ -140,7 +141,7 @@ async function seed(
   }
 
   // Grand final: team C (faction1, winner) vs team B (faction2, loser)
-  const gf = await runQuery<{ insertId: number }>(
+  const gf = await runQuery<ResultSetHeader>(
     `INSERT INTO Matches (league_id, season_id, stage, best_of, start_timestamp, end_timestamp, external_match_room_id, status, round, \`group\`)
      VALUES (?, ?, ?, 3, '2026-04-08 18:00:00', NULL, ?, 'SCHEDULED', 1, 3)`,
     [L_ID, S_ID, STAGE_ID, GF_ROOM_ID]

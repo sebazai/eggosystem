@@ -1,4 +1,4 @@
-import type { PoolConnection } from "mysql2/promise";
+import type { PoolConnection, ResultSetHeader } from "mysql2/promise";
 import { runQuery } from "../db/mysqlRunQuery";
 import { buildInsertQueryParts } from "../db/utils";
 import type {
@@ -29,7 +29,7 @@ export const insertSeasonTeamRegistration = async (
   connection?: PoolConnection
 ) => {
   const { columns, placeholders, values } = buildInsertQueryParts(data);
-  return runQuery<{ insertId: number }>(
+  return runQuery<ResultSetHeader>(
     `INSERT INTO SeasonTeamRegistrations (season_id, team_id, ${columns.join(", ")}) VALUES (?, ?, ${placeholders})`,
     [seasonId, teamId, ...values],
     connection

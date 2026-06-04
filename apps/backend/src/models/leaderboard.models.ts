@@ -161,7 +161,8 @@ export interface UtilityDisciplineLeaderboardEntry {
   total_wasted_utility: number;
   avg_wasted_per_game: number;
   avg_utility_damage_per_round: number;
-  avg_enemies_flashed_per_round: number;
+  /** null when the player has no FlashEvents rows (pre-FlashEvents data) */
+  avg_enemies_flashed_per_round: number | null;
 }
 
 export const getUtilityDisciplineLeaderboard = async (
@@ -185,7 +186,7 @@ export const getUtilityDisciplineLeaderboard = async (
       rounds_played: number;
       total_wasted_utility: number;
       total_utility_damage: number;
-      total_enemies_flashed: number;
+      total_enemies_flashed: number | null;
     }[]
   >(
     `SELECT
@@ -194,7 +195,7 @@ export const getUtilityDisciplineLeaderboard = async (
       COUNT(*)                            AS rounds_played,
       SUM(rus.utility_damage)             AS total_utility_damage,
       COALESCE(wasted.total_wasted, 0)    AS total_wasted_utility,
-      COALESCE(flashes.total_enemy, 0)    AS total_enemies_flashed
+      flashes.total_enemy                 AS total_enemies_flashed
     FROM RoundUtilitySummary rus
     JOIN MatchGames mg ON mg.id = rus.match_game_id
     JOIN Matches m     ON m.id  = mg.match_id
@@ -239,9 +240,9 @@ export const getUtilityDisciplineLeaderboard = async (
           ? Number((Number(r.total_utility_damage) / roundsPlayed).toFixed(2))
           : 0,
       avg_enemies_flashed_per_round:
-        roundsPlayed > 0
+        r.total_enemies_flashed != null && roundsPlayed > 0
           ? Number((Number(r.total_enemies_flashed) / roundsPlayed).toFixed(2))
-          : 0
+          : null
     };
   });
 };

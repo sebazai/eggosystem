@@ -1,4 +1,4 @@
-import { type PoolConnection } from "mysql2/promise";
+import { type PoolConnection, type ResultSetHeader } from "mysql2/promise";
 import { runQuery } from "../db/mysqlRunQuery";
 import {
   getHubMatchesByExternalMatchRoomId,
@@ -125,7 +125,7 @@ const addMatchTeamMapVeto = async (
 
       const query = `INSERT INTO MatchTeamMapVetoes (match_id, team_id, map_id, action, veto_order) VALUES (?, ?, ?, ?, ?)
                       ON DUPLICATE KEY UPDATE action = VALUES(action)`;
-      return runQuery<{ insertId: number }>(
+      return runQuery<ResultSetHeader>(
         query,
         [matchId, teamId, mapId, action, vetoOrder],
         connection
@@ -218,7 +218,7 @@ export const deleteMatchTeamMapVetoesByMatchId = async (
   matchId: number,
   connection?: PoolConnection
 ): Promise<number> => {
-  const result = await runQuery<{ affectedRows: number }>(
+  const result = await runQuery<ResultSetHeader>(
     `DELETE FROM MatchTeamMapVetoes WHERE match_id = ?`,
     [matchId],
     connection

@@ -41,7 +41,7 @@ import {
   formatDateForDatabase,
   getFaceitMatchDateTime
 } from "../utils/date-utils";
-import { type PoolConnection } from "mysql2/promise";
+import { type PoolConnection, type ResultSetHeader } from "mysql2/promise";
 import { getSeasonLeagueExternalIdByExternalIdWithSeasonSettings } from "./season-league-external-id.models";
 import { getSeasonLeagueTeamByExternalId } from "./season-league-team.models";
 import { redisClient } from "../utils/redisClient";
@@ -1050,7 +1050,7 @@ export const addMatchToDatabase = async (
     `;
 
     if (is_round_robin_bo2_as_2xbo1 && matchDetails.best_of === 2) {
-      const firstMatch = await runQuery<{ insertId: number }>(
+      const firstMatch = await runQuery<ResultSetHeader>(
         matchQuery,
         params,
         connection
@@ -1075,7 +1075,7 @@ export const addMatchToDatabase = async (
         seasonLeagueExternalRoom.manual_group ?? matchDetails.group
       ];
 
-      const secondMatch = await runQuery<{ insertId: number }>(
+      const secondMatch = await runQuery<ResultSetHeader>(
         matchQuery,
         secondMatchParams,
         connection
@@ -1124,7 +1124,7 @@ export const addMatchToDatabase = async (
         is_round_robin_bo2_as_2xbo1
       };
     } else {
-      const match = await runQuery<{ insertId: number }>(
+      const match = await runQuery<ResultSetHeader>(
         matchQuery,
         params,
         connection

@@ -1,4 +1,5 @@
 import { runQuery } from "../db/mysqlRunQuery";
+import { type ResultSetHeader } from "mysql2/promise";
 import { getConnection } from "../db/mysqlConnection";
 import type { Account, Reservation } from "@eggosystem/types";
 import * as crypto from "crypto";
@@ -25,7 +26,7 @@ export const updateStreamReservation = async (
   accountId: number,
   streamUrl: string
 ): Promise<Reservation> => {
-  const updateResult = await runQuery<{ affectedRows: number }>(
+  const updateResult = await runQuery<ResultSetHeader>(
     `UPDATE Reservations SET stream_url = ? WHERE match_id = ? AND account_id = ?`,
     [streamUrl, matchId, accountId]
   );
@@ -59,7 +60,7 @@ export const createStreamReservation = async (
   for (let attempt = 0; attempt < 5; attempt += 1) {
     const removalToken = createRemovalToken();
     try {
-      const insertResult = await runQuery<{ insertId: number }>(
+      const insertResult = await runQuery<ResultSetHeader>(
         `INSERT INTO Reservations (match_id, account_id, stream_url, hash) VALUES (?, ?, ?, ?)`,
         [data.match_id, data.account_id, data.stream_url, removalToken]
       );
@@ -90,7 +91,7 @@ export const deleteStreamReservation = async (
   matchId: number,
   accountId: number
 ): Promise<boolean> => {
-  const result = await runQuery<{ affectedRows: number }>(
+  const result = await runQuery<ResultSetHeader>(
     `DELETE FROM Reservations WHERE match_id = ? AND account_id = ?`,
     [matchId, accountId]
   );
@@ -132,7 +133,7 @@ export const removeReservationByRemovalTokenWithSeasonId = async (
       connection
     );
     const season_id = matchRow?.season_id ?? null;
-    const deleteResult = await runQuery<{ affectedRows: number }>(
+    const deleteResult = await runQuery<ResultSetHeader>(
       `DELETE FROM Reservations WHERE hash = ?`,
       [token],
       connection

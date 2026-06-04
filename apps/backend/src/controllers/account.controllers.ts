@@ -25,6 +25,7 @@ import {
 } from "../models/user-policy-acceptance.models";
 import { redisClient } from "../utils/redisClient";
 import { runQuery } from "../db/mysqlRunQuery";
+import { type ResultSetHeader } from "mysql2/promise";
 import { handleEmailVerification } from "../services/account.services";
 import { getSevenDaysLaterInMillis } from "../utils/date-utils";
 import { logger } from "../utils/app-logger";
@@ -190,7 +191,7 @@ export const verifyEmailController = async (
     }
 
     // Verify that the token's email matches the current work_email
-    const updateResult = await runQuery<{ affectedRows: number }>(
+    const updateResult = await runQuery<ResultSetHeader>(
       `UPDATE Accounts
         SET work_email_verified = true,
         work_email_token_expires_at = NULL
@@ -219,7 +220,7 @@ export const verifyEmailController = async (
       return;
     }
 
-    const updateResult = await runQuery<{ affectedRows: number }>(
+    const updateResult = await runQuery<ResultSetHeader>(
       `UPDATE Accounts
         SET work_email_verified = true,
         work_email_token_expires_at = NULL

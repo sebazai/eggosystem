@@ -1,9 +1,8 @@
 import { type TeamGameScore } from "@eggosystem/types";
-import { type PoolConnection } from "mysql2/promise";
+import { type PoolConnection, type ResultSetHeader } from "mysql2/promise";
 import { getConnection } from "../db/mysqlConnection";
 import { runQuery } from "../db/mysqlRunQuery";
 import { BadRequestError, InternalServerError } from "../utils/errors";
-import type { ResultSetHeader } from "mysql2";
 
 export const upsertTeamGameScore = async ({
   match_id,
@@ -41,10 +40,7 @@ export const upsertTeamGameScore = async ({
     overtime_score
   ];
 
-  return runQuery<{
-    insertId: number;
-    affectedRows?: number;
-  }>(query, queryParams, connection);
+  return runQuery<ResultSetHeader>(query, queryParams, connection);
 };
 
 type TeamGameScoreRegulation = {

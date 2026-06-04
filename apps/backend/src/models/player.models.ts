@@ -19,7 +19,7 @@ import {
   type PlayerMapStats,
   type AllPlayerStats
 } from "@eggosystem/types";
-import { type PoolConnection } from "mysql2/promise";
+import { type PoolConnection, type ResultSetHeader } from "mysql2/promise";
 
 export const getPlayerBySteamId = async (steam_id: string) => {
   return runQuery<
@@ -159,7 +159,7 @@ export const preparePlayerForSignup = async (
       const fakeFullName = `Fake Name ${steamId.slice(-4)}`;
       const fakeWorkEmail = `fake_${steamId.slice(-8)}@example.com`;
 
-      const accountResult = await runQuery<{ insertId: number }>(
+      const accountResult = await runQuery<ResultSetHeader>(
         "INSERT INTO Accounts (full_name, work_email, work_email_verified, is_work_email_personal_email) VALUES (?, ?, ?, ?)",
         [fakeFullName, fakeWorkEmail, true, false],
         connection
@@ -1321,7 +1321,7 @@ export const setPlayerKanaElo = async (
       WHERE season_id = ? AND steam_id = ?
     `;
 
-    const result = await runQuery<{ affectedRows: number }>(
+    const result = await runQuery<ResultSetHeader>(
       query,
       [calculus, kana_elo, offered_elo, season_id, steam_id],
       connection
@@ -1336,7 +1336,7 @@ export const setPlayerKanaElo = async (
       WHERE season_id = ? AND steam_id = ?
     `;
 
-    const result = await runQuery<{ affectedRows: number }>(
+    const result = await runQuery<ResultSetHeader>(
       query,
       [calculus, kana_elo, season_id, steam_id],
       connection

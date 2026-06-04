@@ -1,4 +1,5 @@
 import { runQuery } from "../db/mysqlRunQuery";
+import { type ResultSetHeader } from "mysql2/promise";
 import type { CasterUrl } from "@eggosystem/types";
 
 export const getCasterDefaultUrl = async (
@@ -52,7 +53,7 @@ export const deleteCasterUrlById = async (
   accountId: number,
   id: number
 ): Promise<boolean> => {
-  const result = await runQuery<{ affectedRows: number }>(
+  const result = await runQuery<ResultSetHeader>(
     `DELETE FROM AccountCasterUrls WHERE account_id = ? AND id = ?`,
     [accountId, id]
   );

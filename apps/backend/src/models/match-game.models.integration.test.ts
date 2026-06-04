@@ -10,6 +10,7 @@ import {
 } from "../__mocks__/demo-parsed-json/mock-parsed-demo";
 import { getConnection } from "../db/mysqlConnection";
 import { runQuery } from "../db/mysqlRunQuery";
+import { type ResultSetHeader } from "mysql2/promise";
 
 const SEED_SEASON_ID = 900099;
 const SEED_LEAGUE_ID = 900098;
@@ -902,7 +903,7 @@ describe("saveParsedDemoDataForGame Integration Tests", () => {
 
     it("should UPDATE and return existing insertId when demofile already exists", async () => {
       // Arrange - Insert a record first
-      const initialInsert = await runQuery<{ insertId: number }>(
+      const initialInsert = await runQuery<ResultSetHeader>(
         "INSERT INTO MatchGames (match_id, map_id, map_order, demofile, regulation_rounds) VALUES (?, ?, ?, ?, ?)",
         [
           testMatchId,

@@ -29,8 +29,7 @@ export const savePlayerKillLogsForGame = async ({
 
       const uniqueKills = keepLastByKey(
         killLogs,
-        (kill) =>
-          `${kill.round_number}:${kill.killer}:${kill.victim}:${kill.time_in_round}`
+        (kill) => `${kill.round_number}:${kill.victim}`
       );
 
       const values = uniqueKills.map((kill) => [

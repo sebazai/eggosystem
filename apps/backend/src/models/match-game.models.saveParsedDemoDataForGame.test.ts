@@ -1,3 +1,4 @@
+import { createMockResultSetHeader } from "../__utils__/result-set-header";
 import { saveParsedDemoDataForGame } from "./match-game.models";
 import {
   MOCK_PARSED_DEMO_DATA,
@@ -107,7 +108,9 @@ describe("saveParsedDemoDataForGame", () => {
     mockGetConnection.mockResolvedValue(mockConnection as PoolConnection);
 
     // Setup default mocks for the upsert functions
-    mockUpsertTeamGameScore.mockResolvedValue({ insertId: 1 });
+    mockUpsertTeamGameScore.mockResolvedValue(
+      createMockResultSetHeader({ insertId: 1 })
+    );
     mockSavePlayerStatsForGame.mockResolvedValue(undefined);
     mockSavePlayerTradesForGame.mockResolvedValue(undefined);
     mockSavePlayerClutchesForGame.mockResolvedValue(undefined);

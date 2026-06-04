@@ -1,6 +1,6 @@
 import { type Nullable, type SeasonLeagueExternalId } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
-import { type PoolConnection } from "mysql2/promise";
+import { type PoolConnection, type ResultSetHeader } from "mysql2/promise";
 
 /** Stage id for playoff (double elimination) in Stages table. */
 const STAGE_ID_PLAYOFF = 2;
@@ -52,9 +52,7 @@ export const insertSeasonLeagueExternalId = async (
     INSERT INTO SeasonLeagueExternalIds 
       (external_id, external_league_name, season_id, league_id, stage_id, type, manual_group) 
     VALUES (?, ?, ?, ?, ?, ?, ?)`;
-  const seasonLeagueExternaMatchRoomResult = await runQuery<{
-    insertId: number;
-  }>(
+  const seasonLeagueExternaMatchRoomResult = await runQuery<ResultSetHeader>(
     query,
     [externalId, externalName, seasonId, leagueId, stage, type, manualGroup],
     connection

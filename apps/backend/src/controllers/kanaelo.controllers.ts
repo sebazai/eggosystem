@@ -8,7 +8,7 @@ import type { RequestWithParams } from "@eggosystem/types";
 import { BadRequestError, NotFoundError } from "../utils/errors";
 import { calculateKanaElo } from "../services/csrankker.services";
 import {
-  getLatestSeasonForPlayer,
+  getLatestSeasonForPlayers,
   updateSeasonPlayerRankKanaElo
 } from "../models/season-player-ranks.models";
 import { logger } from "../utils/app-logger";
@@ -71,6 +71,9 @@ export const calculateKanaEloForAllPlayersController = async (
 
     logger.info(`[KanaElo] Starting bulk calculation for ${players.length}`);
 
+    // Pre-fetch all latest seasons in one query to avoid N+1 per-player lookups
+    const seasonMap = await getLatestSeasonForPlayers(players);
+
     // Process players in batches
     for (let i = 0; i < players.length; i += BATCH_SIZE) {
       const batch = players.slice(i, i + BATCH_SIZE);
@@ -85,7 +88,7 @@ export const calculateKanaEloForAllPlayersController = async (
       const batchResults = await Promise.all(
         batch.map(async (steamId) => {
           try {
-            const seasonId = await getLatestSeasonForPlayer(steamId);
+            const seasonId = seasonMap.get(steamId) ?? null;
 
             // Call CSRankker API
             const result = await calculateKanaElo(
