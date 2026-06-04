@@ -10,12 +10,16 @@ describe("getSignupWelcomeCopy", () => {
     expect(copy.introParagraph).toMatch(/CS2 tournament/);
     expect(copy.participationFeeIntro).toMatch(/CS2 tournaments/);
     expect(copy.defaultRulebookUrl).toContain("/CS2/");
+    expect(copy.registrationInfoUrl).toContain("/CS2/Registration");
   });
 
   it("returns PUBG copy for PUBG app id", () => {
     const copy = getSignupWelcomeCopy(PUBG_STEAM_APP_ID);
     expect(copy.introParagraph).toMatch(/PUBG tournament/);
     expect(copy.participationFeeIntro).not.toMatch(/CS2/);
+    expect(copy.registrationInfoUrl).toBe(
+      "https://wiki.kanaliiga.fi/PUBG/Registration"
+    );
   });
 
   it("returns generic copy for unknown app ids", () => {

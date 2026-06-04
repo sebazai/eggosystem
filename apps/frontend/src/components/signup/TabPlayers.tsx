@@ -58,6 +58,7 @@ import { TooltipIcon } from "../ui/icons";
 import Link from "next/link";
 import { ConfirmationModal } from "../ui/ConfirmationModal";
 import { RosterImportModal } from "./RosterImportModal";
+import { getSignupWelcomeCopy } from "./signupWelcomeContent";
 
 type CheckedState = boolean | "indeterminate";
 
@@ -97,6 +98,8 @@ export const TabPlayers = ({
   submitInitiated,
   seasonDetails
 }: TabPlayersProps) => {
+  const registrationInfoUrl =
+    getSignupWelcomeCopy(seasonSteamAppId).registrationInfoUrl;
   const [promiseErrors, setPromiseErrors] = useState<Record<string, string[]>>(
     {}
   );
@@ -1138,10 +1141,7 @@ export const TabPlayers = ({
                             Player does not have a valid work email or has not
                             been approved by organizer, open a ticket in
                             Discord. See{" "}
-                            <Link
-                              target="_blank"
-                              href="https://wiki.kanaliiga.fi/CS2/Registration#work-email"
-                            >
+                            <Link target="_blank" href={registrationInfoUrl}>
                               registration info
                             </Link>
                           </span>

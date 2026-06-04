@@ -6,6 +6,7 @@ export interface SignupWelcomeGameCopy {
   introParagraph: string;
   participationFeeIntro: string;
   defaultRulebookUrl: string;
+  registrationInfoUrl: string;
 }
 
 const CS2_COPY: SignupWelcomeGameCopy = {
@@ -13,7 +14,8 @@ const CS2_COPY: SignupWelcomeGameCopy = {
     "Hi and welcome to Kanaliiga, Finland's corporate CS2 tournament! Please read the instructions carefully and reserve yourself some time for filling the registration as accurately as possible. As a captain, you will be responsible for your team. Together we will make this tournament a great experience for everyone.",
   participationFeeIntro:
     "We cover organizing costs in CS2 tournaments by collecting participation fees from teams. The fee is per a participating team. Please pay your team's participation fee by purchasing it from",
-  defaultRulebookUrl: "https://wiki.kanaliiga.fi/CS2/rulebook"
+  defaultRulebookUrl: "https://wiki.kanaliiga.fi/CS2/rulebook",
+  registrationInfoUrl: "https://wiki.kanaliiga.fi/CS2/Registration#work-email"
 };
 
 const PUBG_COPY: SignupWelcomeGameCopy = {
@@ -21,7 +23,8 @@ const PUBG_COPY: SignupWelcomeGameCopy = {
     "Hi and welcome to Kanaliiga, Finland's corporate PUBG tournament! Please read the instructions carefully and reserve yourself some time for filling the registration as accurately as possible. As a captain, you will be responsible for your squad. Together we will make this tournament a great experience for everyone.",
   participationFeeIntro:
     "We cover organizing costs in corporate esports tournaments by collecting participation fees from teams. The fee is per a participating team. Please pay your team's participation fee by purchasing it from",
-  defaultRulebookUrl: "https://wiki.kanaliiga.fi/"
+  defaultRulebookUrl: "https://wiki.kanaliiga.fi/",
+  registrationInfoUrl: "https://wiki.kanaliiga.fi/PUBG/Registration"
 };
 
 const DEFAULT_COPY: SignupWelcomeGameCopy = {
@@ -29,7 +32,8 @@ const DEFAULT_COPY: SignupWelcomeGameCopy = {
     "Hi and welcome to Kanaliiga! Please read the instructions carefully and reserve yourself some time for filling the registration as accurately as possible. As a captain, you will be responsible for your team. Together we will make this tournament a great experience for everyone.",
   participationFeeIntro:
     "We cover organizing costs in corporate esports tournaments by collecting participation fees from teams. The fee is per a participating team. Please pay your team's participation fee by purchasing it from",
-  defaultRulebookUrl: "https://wiki.kanaliiga.fi/"
+  defaultRulebookUrl: "https://wiki.kanaliiga.fi/",
+  registrationInfoUrl: "https://wiki.kanaliiga.fi/"
 };
 
 export function getSignupWelcomeCopy(appId: number): SignupWelcomeGameCopy {
