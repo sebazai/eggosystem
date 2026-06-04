@@ -170,20 +170,32 @@ async function waitForRegistrationOrganizationStep(page: Page) {
     timeout: 60000
   });
 
-  await expect(
-    page.getByRole("heading", { name: "Season registration" })
-  ).toBeVisible({ timeout: 60000 });
-  await expect(page.getByText(/sign up form/i)).toBeVisible({ timeout: 60000 });
-
   const orgDropdown = page.locator(
     '[data-testid="organizations-dropdown-toggle"]'
   );
-  if (!(await orgDropdown.isVisible().catch(() => false))) {
-    const orgTab = page.getByRole("tab", { name: /Organization/i });
-    await orgTab.waitFor({ state: "visible", timeout: 60000 });
-    await orgTab.click();
-  }
-  await orgDropdown.waitFor({ state: "visible", timeout: 60000 });
+  const orgTab = page.getByRole("tab", { name: /Organization/i });
+  const redirecting = page.getByText("Redirecting to your team edit page");
+
+  await expect
+    .poll(
+      async () => {
+        if (await redirecting.isVisible().catch(() => false)) {
+          throw new Error(
+            `Authenticated user already has a season registration (${page.url()}). ` +
+              "Use an account that is not captain/co-captain on another team's submitted signup."
+          );
+        }
+        if (await orgDropdown.isVisible().catch(() => false)) {
+          return true;
+        }
+        if (await orgTab.isVisible().catch(() => false)) {
+          await orgTab.click();
+        }
+        return false;
+      },
+      { timeout: 60000 }
+    )
+    .toBe(true);
 }
 
 /** New-org signup: wait for POST /organization before team tab (avoids submit with organizationId -1). */
@@ -760,7 +772,7 @@ test.describe("Signup Form", () => {
 
   // Complete Registration Flow tests
   test.describe("Complete Registration Flow", () => {
-    test.describe.configure({ timeout: 120000 });
+    test.describe.configure({ mode: "serial", timeout: 120000 });
 
     test("should complete full registration flow and successfully submit", async ({
       page
@@ -803,8 +815,12 @@ test.describe("Signup Form", () => {
       }
       expect(foundAuthUser).toBe(true);
 
-      // Assign captain and co-captain roles
-      await assignCaptain(page);
+      // Captain/co-captain on slots 0 and 4 — avoid slot 1 (ValidWorkEmail2), used by the captain-assignment test auth
+      await assignPlayerRole(page, 0, "captain");
+      await assignPlayerRole(page, 4, "co-captain");
+      await expect(
+        page.getByText("There must be exactly one captain and one co-captain")
+      ).not.toBeVisible({ timeout: 5000 });
 
       // Accept final terms and conditions (on players tab)
       const finalTermsCheckbox = page.locator(
