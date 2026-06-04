@@ -79,7 +79,7 @@ WHERE season_id = NEW.season_id   -- only conflicts WITHIN one season
   AND role = 'primary' AND steam_id = NEW.steam_id AND discarded_at IS NULL
 ```
 
-A CS2 season and a PUBG season have different `season_id`s, so the primary-uniqueness check never fires across them. There is **no global `UNIQUE` on `steam_id`** (it is a non-unique `MUL` index). The global `captain` role flag in `AccountRoles` is harmless to hold for two games; scoped captain permissions live in `AccountPermissionScopes` keyed by season/team, so there is no cross-game leakage. Identity also stacks cleanly: one `SteamPlayers` row can carry both a CS2 `faceit_id` and a PUBG account via `PubgPlayerIdentities` (§6.2).
+A CS2 season and a PUBG season have different `season_id`s, so the primary-uniqueness check never fires across them. `steam_id` **is the PRIMARY KEY of `SteamPlayers` (globally unique)** — so cross-game play is safe not because a player can hold multiple `SteamPlayers` rows, but because the _per-season_ uniqueness that matters lives in `SeasonTeamPlayers` and is scoped by `season_id` (verified against the live schema, 2026-06-04). The global `captain` role flag in `AccountRoles` is harmless to hold for two games; scoped captain permissions live in `AccountPermissionScopes` keyed by season/team, so there is no cross-game leakage. Identity also stacks cleanly: one `SteamPlayers` row can carry both a CS2 `faceit_id` and a PUBG account via `PubgPlayerIdentities` (§6.2).
 
 **One column caveat:** `SeasonTeamPlayers.match_id` is an FK to the CS2 **`Matches`** table (used for per-match _substitute_ lineups, joined against `MatchTeams` in `match.models.ts`). PUBG must leave `match_id = NULL` (base roster rows already do) and **must not** invoke the CS2 lineup/substitute-validation code paths. "Who actually played a PUBG lobby" is derived from `PubgMatchPlayerStats` (the Krafton participants), not from this column. If per-match PUBG substitutions ever need first-class tracking, add a nullable `pubg_match_id` rather than overloading `match_id`.
 
@@ -276,12 +276,17 @@ CREATE TABLE PubgScoringRules (
   id                INT UNSIGNED NOT NULL AUTO_INCREMENT,
   season_id         INT UNSIGNED NOT NULL,
   stage_id          INT UNSIGNED NULL,             -- null = season default
+  -- COALESCE key so the UNIQUE below actually enforces "one default per season".
+  -- A plain UNIQUE(season_id, stage_id) does NOT: MariaDB treats NULLs as distinct,
+  -- so multiple (season_id, NULL) rows would slip through. The generated column
+  -- folds NULL→0; stage_id itself stays a nullable FK to Stages (no id=0 sentinel row).
+  stage_key         INT UNSIGNED AS (COALESCE(stage_id, 0)) STORED,
   kill_points       DECIMAL(5,2) NOT NULL DEFAULT 1.00,
   placement_points  JSON NOT NULL,                 -- {"1":10,"2":6,"3":5,...}
   created_at        TIMESTAMP NOT NULL DEFAULT current_timestamp(),
   updated_at        TIMESTAMP NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (id),
-  UNIQUE KEY uq_season_stage (season_id, stage_id),
+  UNIQUE KEY uq_season_stage (season_id, stage_key),
   CONSTRAINT fk_pubgrules_season FOREIGN KEY (season_id)
     REFERENCES Seasons(id) ON DELETE CASCADE,
   CONSTRAINT fk_pubgrules_stage  FOREIGN KEY (stage_id)
@@ -362,7 +367,7 @@ CREATE TABLE PubgMatchPlayerStats (
   pubg_match_id       INT UNSIGNED NOT NULL,
   pubg_roster_id      INT UNSIGNED NOT NULL,        -- FK PubgMatchRosters.id
   steam_id            BIGINT NULL,                  -- resolved via PubgPlayerIdentities (nullable: guests/unmapped)
-  pubg_account_id     VARCHAR(255) NULL,
+  pubg_account_id     VARCHAR(255) NOT NULL,        -- participant playerId ("account.xxxx") — ALWAYS in the payload
   pubg_name           VARCHAR(255) NOT NULL,        -- snapshot of name at match time
   kills               SMALLINT UNSIGNED NOT NULL DEFAULT 0,
   assists             SMALLINT UNSIGNED NOT NULL DEFAULT 0,
@@ -384,14 +389,16 @@ CREATE TABLE PubgMatchPlayerStats (
   boosts              SMALLINT UNSIGNED NOT NULL DEFAULT 0,
   weapons_acquired    SMALLINT UNSIGNED NOT NULL DEFAULT 0,
   win_place           SMALLINT UNSIGNED NULL,        -- team placement, denormalised
-  death_type          VARCHAR(32) NULL,              -- alive/byplayer/suicide/logout
+  death_type          VARCHAR(32) NULL,              -- observed: alive/byplayer/byzone/logout
   created_at          TIMESTAMP NOT NULL DEFAULT current_timestamp(),
   updated_at          TIMESTAMP NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (id),
   -- Dedup/idempotency key anchors on the STABLE account id, not the mutable name.
-  -- pubg_account_id can be NULL (unmapped guest); MariaDB treats NULLs as distinct in a
-  -- UNIQUE index, so guest rows never collide. The (match, name) pair stays unique within
-  -- a single lobby in practice, but name is unreliable across re-ingests — see §8 "Identity".
+  -- pubg_account_id is the participant's `playerId`, which is ALWAYS present in the match
+  -- payload (§4, §8) — hence NOT NULL. That makes this UNIQUE a real idempotency guard:
+  -- re-ingesting the same match upserts rather than duplicating. (The unmapped case is
+  -- steam_id IS NULL — a participant we couldn't map to a Kanaliiga player — NOT a null
+  -- account id; name is unreliable across re-ingests, so it is not part of the key.)
   UNIQUE KEY uq_match_player (pubg_match_id, pubg_account_id),
   KEY idx_steam (steam_id),
   CONSTRAINT fk_pubgpstats_match FOREIGN KEY (pubg_match_id)
@@ -435,11 +442,24 @@ Standings = `Σ total_points` per team within a (season, league, stage). Impleme
 
 This is how we get "all matches in one place" **without** one physical table (per §5.1 decision). A read-only view projects the columns shared by CS2 `Matches` and `PubgMatches`, so calendar / casting / cross-game listing query **one** surface and drill into the right backing table by `game_id`.
 
-> ⚠️ **Confirm the real `Matches` column names before writing this migration.** The SQL
-> below assumes `m.stage`, `m.start_timestamp`, `m.end_timestamp`, and
-> `m.external_match_room_id`. Verify each against the live schema (`SHOW COLUMNS FROM Matches`)
-> — a wrong column name fails the `CREATE VIEW` migration. (`MatchTeams.match_side` and the
-> `Matches.status` enum vocabulary used in the `CASE` below are confirmed present.)
+> ✅ **Column names verified against the live schema (2026-06-04).** `Matches` has
+> `stage`, `start_timestamp`, `end_timestamp`, `external_match_room_id`, `season_id`,
+> `league_id`, and `status` — the view below creates as written. `Matches.status` is an
+> enum that includes `SCHEDULED`/`FINISHED`/`CANCELLED`, so the normalised `CASE` vocabulary
+> is compatible.
+>
+> ⚠️ **Two read-layer limitations to carry into the calendar/casting work:**
+>
+> 1. **No upcoming PUBG fixtures.** `PubgMatches` rows only exist _after_ discovery
+>    (`krafton_match_id NOT NULL`, ingestion is poll-only), so a PUBG match can never be
+>    `SCHEDULED` in the forward-looking sense CS2 matches are. The cross-game calendar shows
+>    **past** PUBG matches only — "all matches in one place" means _results_, not _fixtures_,
+>    for PUBG. If pre-match PUBG fixtures are ever needed, that requires a nullable
+>    `krafton_match_id` + a real scheduled status, bound to the Krafton id on ingest.
+> 2. **Status collapse.** `DISCOVERED`/`INGESTING`/`FAILED` all fold to `SCHEDULED` in the
+>    `ELSE` branch — a failed ingest reads as "scheduled" to consumers. Acceptable for a
+>    listing surface; branch on `source='pubg'` + the backing `PubgMatches.status` if a
+>    consumer needs the real ingestion state.
 
 ```sql
 CREATE OR REPLACE VIEW MatchEvents AS
@@ -448,6 +468,7 @@ CREATE OR REPLACE VIEW MatchEvents AS
     'cs2'                      AS source,
     m.id                       AS event_id,
     s.game_id                  AS game_id,
+    s.organizer_id             AS organizer_id,   -- needed for tenant-scoped reads (multi-org)
     m.season_id, m.league_id, m.stage AS stage_id,
     m.status                   AS status,
     m.start_timestamp          AS start_timestamp,
@@ -461,6 +482,7 @@ CREATE OR REPLACE VIEW MatchEvents AS
     'pubg'                     AS source,
     pm.id                      AS event_id,
     s.game_id                  AS game_id,
+    s.organizer_id             AS organizer_id,   -- needed for tenant-scoped reads (multi-org)
     pm.season_id, pm.league_id, pm.stage_id,
     -- normalise PUBG lifecycle onto the shared status vocabulary
     CASE pm.status
@@ -553,16 +575,16 @@ Admins can also `POST /api/v1/pubg/matches/ingest { krafton_match_id, season_id,
 
 ## 9. Phased rollout
 
-| Phase                       | Deliverable                                                                                                                                                                                                                   | Notes                                                 |
-| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
-| **0. Spike**                | ✅ Mostly done — `PUBG_API_KEY` provisioned (env + GitLab CI/CD + deploy compose); a real custom match is captured in `docs/pubg/pubg_matchdata-example.json`. **Remaining:** confirm the live ~10 rpm limit against the key. | De-risks §4 assumptions before schema is frozen       |
-| **1. Foundation**           | Migrations 6.1–6.7, types + `createMockX` factories, `platform='krafton'`                                                                                                                                                     | No behaviour change; CS2 untouched                    |
-| **2. Identity & signup**    | `PubgPlayerIdentities`, link/verify endpoint, PUBG season + Squad registration end-to-end (reuses existing flow)                                                                                                              | Proves the reusable spine                             |
-| **3. Ingestion**            | `pubg-api.services` + poller + manual-ingest endpoint + `PubgMatchIngestion`; persist `PubgMatches`/rosters/stats                                                                                                             | The core engineering work                             |
-| **4. Scoring & standings**  | `PubgScoringRules` admin config + standings aggregation + public read endpoints                                                                                                                                               | Data-driven points                                    |
-| **4b. Unified read view**   | `MatchEvents` view (§6.9) + point `calendar`/`match-streams` at it so PUBG appears in the cross-game calendar/casting                                                                                                         | Delivers "all matches in one place" at the read layer |
-| **5. Telemetry (optional)** | Parse telemetry CDN for advanced stats (knock timelines, heat positioning)                                                                                                                                                    | Allstar-style, on demand                              |
-| **6. PUBG ranking (later)** | A PUBG analogue to Sortter/kana_elo for auto-division balancing                                                                                                                                                               | Out of v1                                             |
+| Phase                       | Deliverable                                                                                                                                                                                                                   | Notes                                                                       |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| **0. Spike**                | ✅ Mostly done — `PUBG_API_KEY` provisioned (env + GitLab CI/CD + deploy compose); a real custom match is captured in `docs/pubg/pubg_matchdata-example.json`. **Remaining:** confirm the live ~10 rpm limit against the key. | De-risks §4 assumptions before schema is frozen                             |
+| **1. Foundation**           | Migrations 6.1–6.7, types + `createMockX` factories, `platform='krafton'`                                                                                                                                                     | No behaviour change; CS2 untouched                                          |
+| **2. Identity & signup**    | `PubgPlayerIdentities`, link/verify endpoint, PUBG season + Squad registration end-to-end (reuses existing flow)                                                                                                              | Proves the reusable spine                                                   |
+| **3. Ingestion**            | `pubg-api.services` + poller + manual-ingest endpoint + `PubgMatchIngestion`; persist `PubgMatches`/rosters/stats                                                                                                             | The core engineering work                                                   |
+| **4. Scoring & standings**  | `PubgScoringRules` admin config + standings aggregation + public read endpoints                                                                                                                                               | Data-driven points                                                          |
+| **4b. Unified read view**   | `MatchEvents` view (§6.9) + point `calendar`/`match-streams` at it so PUBG appears in the cross-game calendar/casting                                                                                                         | "All matches in one place" = PUBG **results**, not upcoming fixtures (§6.9) |
+| **5. Telemetry (optional)** | Parse telemetry CDN for advanced stats (knock timelines, heat positioning)                                                                                                                                                    | Allstar-style, on demand                                                    |
+| **6. PUBG ranking (later)** | A PUBG analogue to Sortter/kana_elo for auto-division balancing                                                                                                                                                               | Out of v1                                                                   |
 
 Each phase is independently shippable and gated behind `season.platform='krafton'`, so CS2 is never at risk.
 

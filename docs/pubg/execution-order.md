@@ -166,15 +166,18 @@ middleware — that's the deferred upgrade.
 
 ## 7. Doc-accuracy notes surfaced during verification (2026-06-04)
 
-Carried here so they're not lost; fix in the owning doc when convenient:
+Carried here so they're not lost:
 
-- **`pubg-implementation-plan.md` §2:** `SteamPlayers.steam_id` is the **PRIMARY KEY (globally
-  unique)**, not a "non-unique MUL index." The _conclusion_ (a player can be on a CS2 and a PUBG
-  roster simultaneously) still holds — per-season uniqueness lives in `SeasonTeamPlayers` — but
-  the stated evidence is wrong.
-- **DB triggers:** both this plan and `multi-tenant-architecture.md` §5 lean on trigger-level
-  enforcement as a guarantee, but the database the tooling connected to has **zero triggers**
-  (the `20260326101000_fix_primary_triggers_discarded_at` migration is recorded as run; its
-  source defines them season-scoped). Composite FKs _are_ intact. Likely a dev dump/restore that
-  dropped triggers — **confirm production still has them**; if not, that's an integrity gap
-  independent of PUBG.
+- ✅ **`pubg-implementation-plan.md` §2 — FIXED (2026-06-04).** `SteamPlayers.steam_id` is the
+  **PRIMARY KEY (globally unique)**, not a "non-unique MUL index." The _conclusion_ (a player can
+  be on a CS2 and a PUBG roster simultaneously) always held — per-season uniqueness lives in
+  `SeasonTeamPlayers` — and §2 now states the correct evidence.
+- ⚠️ **DB triggers — STILL OPEN (needs prod confirmation).** Both this plan and
+  `multi-tenant-architecture.md` §5 lean on trigger-level enforcement as a guarantee, but the
+  database the tooling connected to has **zero triggers** — re-confirmed 2026-06-04 against
+  `information_schema.TRIGGERS` (empty for `kanaliiga`). The
+  `20260326101000_fix_primary_triggers_discarded_at` migration is recorded as run and its source
+  defines them season-scoped; composite FKs _are_ intact. Likely a dev dump/restore that dropped
+  triggers — **someone must confirm production still has them**; if not, that's an integrity gap
+  independent of PUBG, and the plan's "preserve the SQL-enforced CS2 guarantees" rationale is
+  weaker than stated against any environment missing them.
