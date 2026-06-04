@@ -5,13 +5,28 @@ import { clientApiFetch } from "@/lib/apiClient";
 import type {
   PlayerHistoricalData,
   PlayerHistoricalAverage,
+  PlayerActiveSeasons,
+  PlayerSeasonContextQuery,
   HistoricalDataParams
 } from "@eggosystem/types";
+import { buildPlayerSeasonsContextSearchParams } from "@/lib/player-season-context";
 
-/**
-/**
- * Hook to fetch individual player's historical data
- */
+export function usePlayerSeasonsContext(
+  steamId: string,
+  context: PlayerSeasonContextQuery | null
+) {
+  const url =
+    steamId && context
+      ? `/api/v1/players/${steamId}/seasons/context?${buildPlayerSeasonsContextSearchParams(context)}`
+      : null;
+  const { data, error, isLoading } = useSWR<PlayerActiveSeasons>(
+    url,
+    clientApiFetch,
+    { revalidateOnFocus: false, dedupingInterval: 5 * 60 * 1000 }
+  );
+  return { data, error, isLoading };
+}
+
 export function usePlayerHistoricalData(
   steamId: string,
   params?: HistoricalDataParams
@@ -24,11 +39,10 @@ export function usePlayerHistoricalData(
 } {
   const buildQueryString = (params?: HistoricalDataParams) => {
     if (!params) return "";
-
     const searchParams = new URLSearchParams();
     if (params.games) searchParams.append("games", params.games.toString());
-    if (params.period) searchParams.append("period", params.period);
-
+    if (params.season_id)
+      searchParams.append("season_id", params.season_id.toString());
     return searchParams.toString() ? `?${searchParams.toString()}` : "";
   };
 
@@ -41,32 +55,20 @@ export function usePlayerHistoricalData(
     PlayerHistoricalData[]
   >(url, clientApiFetch, {
     revalidateOnFocus: false,
-    dedupingInterval: 5 * 60 * 1000 // 5 minutes cache
+    dedupingInterval: 5 * 60 * 1000
   });
 
-  return {
-    data: data || [],
-    error,
-    isLoading,
-    isValidating,
-    mutate
-  };
+  return { data: data || [], error, isLoading, isValidating, mutate };
 }
 
-/**
- * Hook to fetch historical averages by CS2 rank
- */
 export function usePlayerHistoricalAverageByRank(
   rank: number | null,
   params?: HistoricalDataParams
 ) {
   const buildQueryString = (params?: HistoricalDataParams) => {
     if (!params) return "";
-
     const searchParams = new URLSearchParams();
     if (params.games) searchParams.append("games", params.games.toString());
-    if (params.period) searchParams.append("period", params.period);
-
     return searchParams.toString() ? `?${searchParams.toString()}` : "";
   };
 
@@ -79,31 +81,20 @@ export function usePlayerHistoricalAverageByRank(
   const { data, error, isLoading, isValidating } =
     useSWR<PlayerHistoricalAverage>(url, clientApiFetch, {
       revalidateOnFocus: false,
-      dedupingInterval: 10 * 60 * 1000 // 10 minutes cache for averages
+      dedupingInterval: 10 * 60 * 1000
     });
 
-  return {
-    data,
-    error,
-    isLoading,
-    isValidating
-  };
+  return { data, error, isLoading, isValidating };
 }
 
-/**
- * Hook to fetch historical averages by Faceit level
- */
 export function usePlayerHistoricalAverageByLevel(
   level: number | null,
   params?: HistoricalDataParams
 ) {
   const buildQueryString = (params?: HistoricalDataParams) => {
     if (!params) return "";
-
     const searchParams = new URLSearchParams();
     if (params.games) searchParams.append("games", params.games.toString());
-    if (params.period) searchParams.append("period", params.period);
-
     return searchParams.toString() ? `?${searchParams.toString()}` : "";
   };
 
@@ -116,28 +107,17 @@ export function usePlayerHistoricalAverageByLevel(
   const { data, error, isLoading, isValidating } =
     useSWR<PlayerHistoricalAverage>(url, clientApiFetch, {
       revalidateOnFocus: false,
-      dedupingInterval: 10 * 60 * 1000 // 10 minutes cache for averages
+      dedupingInterval: 10 * 60 * 1000
     });
 
-  return {
-    data,
-    error,
-    isLoading,
-    isValidating
-  };
+  return { data, error, isLoading, isValidating };
 }
 
-/**
- * Hook to fetch overall historical averages
- */
 export function usePlayerHistoricalAverage(params?: HistoricalDataParams) {
   const buildQueryString = (params?: HistoricalDataParams) => {
     if (!params) return "";
-
     const searchParams = new URLSearchParams();
     if (params.games) searchParams.append("games", params.games.toString());
-    if (params.period) searchParams.append("period", params.period);
-
     return searchParams.toString() ? `?${searchParams.toString()}` : "";
   };
 
@@ -147,33 +127,21 @@ export function usePlayerHistoricalAverage(params?: HistoricalDataParams) {
   const { data, error, isLoading, isValidating } =
     useSWR<PlayerHistoricalAverage>(url, clientApiFetch, {
       revalidateOnFocus: false,
-      dedupingInterval: 10 * 60 * 1000 // 10 minutes cache for averages
+      dedupingInterval: 10 * 60 * 1000
     });
 
-  return {
-    data,
-    error,
-    isLoading,
-    isValidating
-  };
+  return { data, error, isLoading, isValidating };
 }
 
 /**
- * Helper function to parse period options to API parameters
+ * Converts a UI period string to HistoricalDataParams.
+ * Season-relative periods ("this_season", "last_season") are handled by
+ * the caller using usePlayerSeasonsContext — pass season_id directly instead.
  */
 export function parsePeriodToParams(period: string): HistoricalDataParams {
-  if (period === "this_season" || period === "last_season") {
-    return { period };
-  }
-
-  // Extract number of games from period like "last_15", "last_30", etc.
   if (period.startsWith("last_")) {
     const games = parseInt(period.replace("last_", ""));
-    if (!isNaN(games)) {
-      return { games };
-    }
+    if (!isNaN(games)) return { games };
   }
-
-  // Default to no filtering for "all_seasons" or unknown periods
   return {};
 }

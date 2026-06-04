@@ -14,7 +14,6 @@ import {
   saveStaffManualTeamGameScores,
   validateCs2TeamGameScorePair
 } from "../../models/team-game-score.models";
-import { getActiveOrPassedSeasonId } from "../../services/season.services";
 import { logger } from "../../utils/app-logger";
 import { redisClient } from "../../utils/redisClient";
 import {
@@ -22,6 +21,7 @@ import {
   NotFoundError,
   UnauthorizedError
 } from "../../utils/errors";
+import { getSeasonById } from "../../models/season.models";
 
 const matchIdParamSchema = z.object({
   match_id: z.coerce.number().int().positive()
@@ -65,10 +65,14 @@ const putTeamGameScoresBodySchema = z
 
 export const getUnfinishedMatchesController = async (
   req: RequestWithParams<{ season_id: string }>,
-  res: Response
+  res: Response,
+  next: NextFunction
 ) => {
-  const seasonId = await getActiveOrPassedSeasonId(req.params.season_id);
-  const matches = await getUnfinishedMatchesBySeason(seasonId);
+  const season = await getSeasonById(Number(req.params.season_id));
+  if (!season) {
+    return next(new NotFoundError("Season not found"));
+  }
+  const matches = await getUnfinishedMatchesBySeason(season.id);
   res.json({ matches });
 };
 

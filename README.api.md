@@ -220,24 +220,22 @@ POST / api / v1 / dashboard / registration / bulk - approve;
 
 Why:
 
-1. **Multi-organizer support** — explicit identifiers disambiguate across organizers
-2. **Testability** — explicit params make fixtures easy
-3. **Clarity** — clients know exactly which resource they touch
-4. **REST compliance** — resources identified by unique IDs
-5. **No hidden dependencies** — no reliance on DB state or time
+1. **Multi-Organizer Support**: Explicit identifiers allow the system to work with multiple organizers without ambiguity
+2. **Testability**: Explicit parameters make endpoints easier to test with specific scenarios
+3. **Clarity**: API consumers know exactly which resource they're operating on
+4. **REST Compliance**: Follows REST principles where resources are identified by unique identifiers
+5. **No Implicit Dependencies**: Avoids hidden dependencies on database state or time-based conditions
 
-Given a `season_id` you can fetch `app_id`, `game_id`, `organizer_id`, `platform`, etc. via `getSeasonById(seasonId)`.
+### Resource Inference Pattern
 
-### Deprecated Patterns
+When you have a resource identifier (e.g., `season_id`), you can infer related data:
 
-Do not use in new code:
-
-- `getActiveSignupOrActiveSeasonForAppId()`
-- `getActiveOrLatestSeasonForAppId()`
-- `getActiveSeasonForAppId()`
-- `getActiveSignupSeasonForAppId()`
-
-Migrate to explicit `season_id` as a URL param or body field.
+```typescript
+// ✅ Good: Use season_id to fetch related data
+const seasonId = Number(req.params.season_id);
+const season = await getSeasonById(seasonId);
+// Now you have: app_id, game_id, organizer_id, platform, etc.
+```
 
 ## Middleware Reference
 

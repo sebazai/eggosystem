@@ -31,9 +31,9 @@ import { getPlayoffBracketController } from "../../controllers/playoff.controlle
 const router = Router();
 
 router.get("/", getSeasonsController);
-router.get("/:id", validateNumericParams(), getSeasonByIdController);
+router.get("/:season_id", validateNumericParams(), getSeasonByIdController);
 router.get(
-  "/:id/details",
+  "/:season_id/details",
   validateNumericParams(),
   getSeasonDetailsByIdController
 );
@@ -49,6 +49,7 @@ router.get(
 );
 router.get(
   "/:season_id/faceit-links",
+  validateNumericParams(),
   authenticateJWT,
   getFaceitLinksForSeasonController
 );
