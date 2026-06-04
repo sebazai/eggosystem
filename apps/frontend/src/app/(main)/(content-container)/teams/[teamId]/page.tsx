@@ -5,7 +5,7 @@ import { envConfig } from "@/configs/env";
 import type { Team } from "@eggosystem/types";
 import { TeamMainContent } from "@/components/teams/TeamMainContent";
 import { createPageMetadata } from "@/lib/metadata";
-import { createTeamLogoUrl } from "@/lib/utils";
+import { resolveOpenGraphLogoUrl } from "@/lib/utils";
 import TeamTabLayoutClient from "./TeamTabLayoutClient";
 
 interface TeamDetailsPageProps {
@@ -28,15 +28,11 @@ export async function generateMetadata(
   }
   const data: Team = await result.json();
   const previousImages = (await parent).openGraph?.images || [];
-  const teamLogoUrl = createTeamLogoUrl(data.team_logo);
-  const logoResponse = await fetch(teamLogoUrl, {
-    method: "HEAD"
-  });
-  const logoExists = logoResponse.ok;
+  const teamLogoUrl = await resolveOpenGraphLogoUrl(data.team_logo);
   return createPageMetadata({
     title: `Team details for ${data.name}`,
     openGraph: {
-      images: logoExists ? [teamLogoUrl] : previousImages
+      images: teamLogoUrl ? [teamLogoUrl] : previousImages
     }
   });
 }

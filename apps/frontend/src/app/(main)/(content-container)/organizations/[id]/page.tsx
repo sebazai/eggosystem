@@ -1,7 +1,7 @@
 import { envConfig } from "@/configs/env";
 import type { Organizations } from "@eggosystem/types";
 import OrganizationHeader from "@/components/organizations/OrganizationHeader";
-import { createOrgLogoUrl } from "@/lib/utils";
+import { createOrgLogoUrl, resolveOpenGraphLogoUrl } from "@/lib/utils";
 import OrganizationTrophies from "@/components/organizations/OrganizationTrophies";
 import OrganizationTeams from "@/components/organizations/OrganizationTeams";
 import type { Metadata, ResolvedMetadata } from "next";
@@ -24,17 +24,16 @@ export async function generateMetadata(
   const organization: Organizations = await org.json();
 
   const previousImages = (await parent).openGraph?.images || [];
-  const orgLogoUrl = createOrgLogoUrl(organization.logo);
-  const logoResponse = await fetch(orgLogoUrl, {
-    method: "HEAD"
-  });
-  const logoExists = logoResponse.ok;
+  const orgLogoUrl = await resolveOpenGraphLogoUrl(
+    organization.logo,
+    createOrgLogoUrl
+  );
 
   if (org.ok) {
     return createPageMetadata({
       title: organization.name,
       openGraph: {
-        images: logoExists ? [orgLogoUrl] : previousImages
+        images: orgLogoUrl ? [orgLogoUrl] : previousImages
       }
     });
   }
