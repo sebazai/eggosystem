@@ -150,15 +150,20 @@ export const savePlayerStatsForGame = async ({
       const rows = players.map((player) =>
         createDemoPlayerToPlayerStatQueryMapper(matchGameId, player)
       );
-      const keys = Object.keys(rows[0]);
-      const insertIntoKeysString = keys.join(", ");
+      const insertIntoKeysString = Object.keys(rows[0]).join(", ");
+      const allValues: unknown[] = [];
       const rowPlaceholders = rows
-        .map(() => `(${keys.map(() => "?").join(", ")})`)
+        .map((row) => {
+          allValues.push(...Object.values(row));
+          return `(${Object.keys(row)
+            .map(() => "?")
+            .join(", ")})`;
+        })
         .join(", ");
 
       await runQuery(
         `INSERT INTO PlayerStats (${insertIntoKeysString}) VALUES ${rowPlaceholders}`,
-        rows.flatMap((row) => Object.values(row)),
+        allValues as Parameters<typeof runQuery>[1],
         connection
       );
     }

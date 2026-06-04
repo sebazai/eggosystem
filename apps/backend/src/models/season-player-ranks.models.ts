@@ -5,7 +5,8 @@ import {
   type SteamPlayer
 } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
-import { type PoolConnection } from "mysql2/promise";
+import { type PoolConnection, type ResultSetHeader } from "mysql2/promise";
+import { logger } from "../utils/app-logger";
 import { getOrganizerActiveOrLatestSeasonForAppId } from "./season.models";
 
 export const getPlayerHoursForSeason = async (
@@ -148,11 +149,16 @@ export const updateSeasonPlayerRankKanaElo = async (
   kana_elo: number,
   connection?: PoolConnection
 ) => {
-  await runQuery(
+  const result = await runQuery<ResultSetHeader>(
     `UPDATE SeasonPlayerRanks SET kana_elo = ? WHERE steam_id = ? AND season_id = ?`,
     [kana_elo, steam_id, season_id],
     connection
   );
+  if (result.affectedRows === 0) {
+    logger.warn(
+      `[KanaElo] updateSeasonPlayerRankKanaElo: no row for steam_id=${steam_id}, season_id=${season_id} — kana_elo not persisted`
+    );
+  }
 };
 
 export const getPlayerKanaElo = async (steam_id: string) => {
@@ -204,11 +210,35 @@ export const getLatestSeasonForPlayer = async (
   const [result] = await runQuery<
     Array<{ latest_season_id: number | null } | undefined>
   >(
-    `SELECT MAX(season_id) as latest_season_id 
-     FROM SeasonPlayerRanks 
+    `SELECT MAX(season_id) as latest_season_id
+     FROM SeasonPlayerRanks
      WHERE steam_id = ?`,
     [steam_id]
   );
 
   return result?.latest_season_id ?? null;
+};
+
+/**
+ * Bulk-fetch the latest season_id for a list of players in a single query.
+ * @returns Map from steam_id to latest season_id (absent means no row exists)
+ */
+export const getLatestSeasonForPlayers = async (
+  steam_ids: string[]
+): Promise<Map<string, number>> => {
+  if (steam_ids.length === 0) return new Map();
+
+  const rows = await runQuery<
+    Array<{ steam_id: string; latest_season_id: number }>
+  >(
+    `SELECT steam_id, MAX(season_id) AS latest_season_id
+     FROM SeasonPlayerRanks
+     WHERE steam_id IN (?)
+     GROUP BY steam_id`,
+    [steam_ids]
+  );
+
+  return new Map(
+    rows.map((r) => [String(r.steam_id), Number(r.latest_season_id)])
+  );
 };

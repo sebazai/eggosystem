@@ -1,5 +1,6 @@
 import { createMockResultSetHeader } from "../__utils__/result-set-header";
 import { saveParsedDemoDataForGame } from "./match-game.models";
+import { createMockResultSetHeader } from "../__utils__/result-set-header";
 import {
   MOCK_PARSED_DEMO_DATA,
   MOCK_MATCH_GAME_ID

@@ -2,6 +2,7 @@ import { type PoolConnection } from "mysql2/promise";
 import { runQuery } from "../db/mysqlRunQuery";
 import { replaceMatchGameRows } from "../db/replaceMatchGameRows";
 import { type RoundUtilitySummaryEntry } from "../types/parse-queue.types";
+import { keepLastByKey } from "../utils/keep-last-by-key";
 
 interface SaveRoundUtilitySummaryParams {
   matchGameId: number;
@@ -27,7 +28,12 @@ export const saveRoundUtilitySummaryForGame = async ({
     async () => {
       if (!entries || entries.length === 0) return;
 
-      const values = entries.map((e) => [
+      const dedupedEntries = keepLastByKey(
+        entries,
+        (e) => `${e.round_number}:${e.steam_id}`
+      );
+
+      const values = dedupedEntries.map((e) => [
         matchGameId,
         e.round_number,
         String(e.steam_id),
