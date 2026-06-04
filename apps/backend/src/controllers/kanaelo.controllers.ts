@@ -7,7 +7,6 @@ import { bulkPublishKanaeloCalculationRequests } from "../services/rabbitmq.serv
 import type { RequestWithParams } from "@eggosystem/types";
 import { BadRequestError, NotFoundError } from "../utils/errors";
 import { calculateKanaElo } from "../services/csrankker.services";
-import { upsertPlayerKanaElo } from "../models/steam-player-kana-elo.models";
 import {
   getLatestSeasonForPlayer,
   updateSeasonPlayerRankKanaElo
@@ -48,7 +47,7 @@ export const populateKanaeloQueueController = async (
 
 /**
  * Controller to calculate kana_elo for all players using CSRankker API
- * Updates SteamPlayerKanaElo (live value) and the player's latest SeasonPlayerRanks row
+ * Updates the player's latest SeasonPlayerRanks row
  * Processes players in batches of 100 using Promise.all
  */
 export const calculateKanaEloForAllPlayersController = async (
@@ -102,8 +101,6 @@ export const calculateKanaEloForAllPlayersController = async (
               };
             }
 
-            // Update live elo and sync latest season snapshot when present
-            await upsertPlayerKanaElo(steamId, result.result.stabilizedKanaelo);
             if (seasonId != null) {
               await updateSeasonPlayerRankKanaElo(
                 steamId,
