@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import { createHash } from "crypto";
 import { expireIn7Days, redisClient } from "../utils/redisClient";
-import { getActiveSeasonForAppId } from "../models/season.models";
+import { getOrganizerActiveOrLatestSeasonForAppId } from "../models/season.models";
 import { logger } from "../utils/app-logger";
 import { normalizeParsedParams } from "../utils/normalize-parsed-params";
 
@@ -31,8 +31,11 @@ export function cacheResponseMiddleware({
       return;
     }
 
-    // If active season is present, do not cache
-    const activeSeason = await getActiveSeasonForAppId(1, 730);
+    // If the current season is present in the filters, do not cache (its data
+    // is still changing). TODO(#220): single organizer (1) / CS2 (730) today;
+    // when the filters API becomes multi-org, resolve organizer_id/app_id from
+    // the request instead of hardcoding.
+    const activeSeason = await getOrganizerActiveOrLatestSeasonForAppId(1, 730);
     if (activeSeason) {
       const filtersHasActiveSeason = searchParams.season_ids?.find(
         (id) => id === activeSeason.season_id

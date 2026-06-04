@@ -5,6 +5,7 @@ import {
   getPlayerHistoricalAverageByLevelController,
   getPlayerHistoricalAverageController
 } from "./players.controllers";
+import { BadRequestError } from "../utils/errors";
 
 // Mock the player historical models
 jest.mock("../models/player-historical.models");
@@ -81,11 +82,8 @@ describe("Historical Average Controllers", () => {
       ).toHaveBeenCalledWith(15000, { games: 30 });
     });
 
-    it("should handle period parameter", async () => {
-      mockRequest.query = { period: "this_season" };
-      (
-        mockPlayerModels.getPlayerHistoricalAverageByRank as jest.Mock
-      ).mockResolvedValue(mockAverageData);
+    it("should reject legacy period query param with 400", async () => {
+      mockRequest.query = { period: "this_season" } as Record<string, string>;
 
       await getPlayerHistoricalAverageByRankController(
         mockRequest as Request,
@@ -93,9 +91,10 @@ describe("Historical Average Controllers", () => {
         mockNext
       );
 
+      expect(mockNext).toHaveBeenCalledWith(expect.any(BadRequestError));
       expect(
         mockPlayerModels.getPlayerHistoricalAverageByRank
-      ).toHaveBeenCalledWith(15000, { games: 15, period: "this_season" });
+      ).not.toHaveBeenCalled();
     });
 
     it("should handle database errors", async () => {
@@ -173,11 +172,11 @@ describe("Historical Average Controllers", () => {
       ).toHaveBeenCalledWith(5, { games: 15 });
     });
 
-    it("should handle custom parameters", async () => {
-      mockRequest.query = { games: "20", period: "last_season" };
-      (
-        mockPlayerModels.getPlayerHistoricalAverageByLevel as jest.Mock
-      ).mockResolvedValue(mockAverageData);
+    it("should reject legacy period even when games is provided", async () => {
+      mockRequest.query = { games: "20", period: "last_season" } as Record<
+        string,
+        string
+      >;
 
       await getPlayerHistoricalAverageByLevelController(
         mockRequest as Request,
@@ -185,9 +184,10 @@ describe("Historical Average Controllers", () => {
         mockNext
       );
 
+      expect(mockNext).toHaveBeenCalledWith(expect.any(BadRequestError));
       expect(
         mockPlayerModels.getPlayerHistoricalAverageByLevel
-      ).toHaveBeenCalledWith(5, { games: 20, period: "last_season" });
+      ).not.toHaveBeenCalled();
     });
 
     it("should handle database errors", async () => {
@@ -230,11 +230,11 @@ describe("Historical Average Controllers", () => {
       });
     });
 
-    it("should handle custom parameters", async () => {
-      mockRequest.query = { games: "50", period: "this_season" };
-      (
-        mockPlayerModels.getPlayerHistoricalAverage as jest.Mock
-      ).mockResolvedValue(mockAverageData);
+    it("should reject legacy period on average endpoint", async () => {
+      mockRequest.query = { games: "50", period: "this_season" } as Record<
+        string,
+        string
+      >;
 
       await getPlayerHistoricalAverageController(
         mockRequest as Request,
@@ -242,10 +242,10 @@ describe("Historical Average Controllers", () => {
         mockNext
       );
 
-      expect(mockPlayerModels.getPlayerHistoricalAverage).toHaveBeenCalledWith({
-        games: 50,
-        period: "this_season"
-      });
+      expect(mockNext).toHaveBeenCalledWith(expect.any(BadRequestError));
+      expect(
+        mockPlayerModels.getPlayerHistoricalAverage
+      ).not.toHaveBeenCalled();
     });
 
     it("should handle invalid games parameter by using default", async () => {

@@ -7,8 +7,8 @@ import {
 import _ from "lodash";
 import { NotFoundError } from "../utils/errors";
 import { getFaceitLinksForSeason } from "../models/faceit.models";
-import { getActiveOrPassedSeasonId } from "../services/season.services";
 import { getTeamCaptainsBySeasonId } from "../models/team.models";
+import type { RequestWithParams } from "@eggosystem/types";
 
 export const getSeasonsController = async (_req: Request, res: Response) => {
   const allSeasons = await getSeasons();
@@ -16,12 +16,12 @@ export const getSeasonsController = async (_req: Request, res: Response) => {
 };
 
 export const getSeasonByIdController = async (
-  req: Request,
+  req: RequestWithParams<{ season_id: string }>,
   res: Response,
   next: NextFunction
 ) => {
-  const { id } = req.params;
-  const season = await getSeasonById(Number(id));
+  const { season_id } = req.params;
+  const season = await getSeasonById(Number(season_id));
   if (!season) {
     return next(new NotFoundError("Season not found"));
   }
@@ -29,12 +29,12 @@ export const getSeasonByIdController = async (
 };
 
 export const getSeasonDetailsByIdController = async (
-  req: Request,
+  req: RequestWithParams<{ season_id: string }>,
   res: Response,
   next: NextFunction
 ) => {
-  const { id } = req.params;
-  const season = await getSeasonDetailsById(Number(id));
+  const { season_id } = req.params;
+  const season = await getSeasonDetailsById(Number(season_id));
   if (!season) {
     return next(new NotFoundError("Season not found"));
   }
@@ -42,20 +42,21 @@ export const getSeasonDetailsByIdController = async (
 };
 
 export const getFaceitLinksForSeasonController = async (
-  req: Request,
-  res: Response,
-  _next: NextFunction
+  req: RequestWithParams<{ season_id: string }>,
+  res: Response
 ) => {
-  const seasonId = await getActiveOrPassedSeasonId(req.params.season_id);
-  const faceitLinks = await getFaceitLinksForSeason(seasonId);
+  const faceitLinks = await getFaceitLinksForSeason(
+    Number(req.params.season_id)
+  );
   res.json(faceitLinks);
 };
 
 export const getTeamCaptainsBySeasonIdController = async (
-  req: Request,
+  req: RequestWithParams<{ season_id: string }>,
   res: Response
 ) => {
-  const seasonId = await getActiveOrPassedSeasonId(req.params.season_id);
-  const captains = await getTeamCaptainsBySeasonId(seasonId);
+  const captains = await getTeamCaptainsBySeasonId(
+    Number(req.params.season_id)
+  );
   res.json(captains);
 };

@@ -1,7 +1,6 @@
 import type {
   SeasonDetails,
   Season,
-  ActiveSeasonSignupForAppId,
   ActiveSignupOrSeasonForAppId,
   SeasonFormRaw,
   SeasonPlatform
@@ -9,6 +8,7 @@ import type {
 import { runQuery } from "../db/mysqlRunQuery";
 import { type PoolConnection } from "mysql2/promise";
 import { getConnection } from "../db/mysqlConnection";
+import { expireInOneDay, redisClient } from "../utils/redisClient";
 import {
   setActiveMapPoolForSeason,
   getActiveMapPoolBySeasonId
@@ -112,152 +112,134 @@ export const getSeasonPlatformAndAppId = async (
 };
 
 /**
- * @deprecated This function should not be used in new code. Instead, always pass season_id as a parameter
- * from which app_id, game, organizer, etc. can be inferred if needed. This function relies on finding
- * an "active" or "latest" season which creates implicit dependencies and makes the code less explicit.
- *
- * For REST API endpoints, season_id should be explicitly required from the frontend (via URL params or request body).
- * The season_id can then be used to fetch season details including app_id, game, organizer, etc.
- * This approach is essential for multi-organizer support and follows REST API best practices.
+ * Gets the active or active signup season for a given organizer, app, and game type.
  *
  * @param organizer_id - The organizer ID
  * @param app_id - The app ID
- * @returns Active or latest season for the given app and organizer, or undefined if none found
+ * @param gametype - The game type (default: "comp")
+ * @returns The active or signup-open season for the given app and organizer, or undefined if none found
  */
-export const getActiveOrLatestSeasonForAppId = async (
+export const getOrganizerActiveSeasonForAppId = async (
   organizer_id: number,
-  app_id: number
+  app_id: number,
+  gametype?: string
 ) => {
+  const redisKey = `${organizer_id}-${app_id}-${(gametype ?? "comp").toLowerCase()}-active-season`;
+  const cachedData = await redisClient.get(redisKey);
+  if (cachedData) {
+    return JSON.parse(cachedData);
+  }
+
   const [activeSeason] = await runQuery<
-    Array<{ season_id: number } | undefined>
-  >(
-    `SELECT s.id AS season_id
-     FROM Seasons s
-     JOIN Games g ON s.game_id = g.id
-     JOIN Organizers o ON s.organizer_id = o.id
-     WHERE g.app_id = ? AND o.id = ?
-     AND (
-         (s.start_date <= NOW() AND (s.end_date IS NULL OR s.end_date >= NOW()))
-         OR s.id = (
-            SELECT MAX(s2.id)
-            FROM Seasons s2 
-            JOIN Games g2 ON s2.game_id = g2.id 
-            WHERE g2.app_id = ?
-            AND s2.end_date IS NOT NULL
-            AND s2.end_date < NOW()
-         )
-     )
-     ORDER BY s.id DESC
-     LIMIT 1;`,
-    [app_id, organizer_id, app_id]
-  );
-  return activeSeason;
-};
-
-/**
- * @deprecated This function should not be used in new code. Instead, always pass season_id as a parameter
- * from which app_id, game, organizer, etc. can be inferred if needed. This function relies on finding
- * an "active" season which creates implicit dependencies and makes the code less explicit.
- *
- * For REST API endpoints, season_id should be explicitly required from the frontend (via URL params or request body).
- * The season_id can then be used to fetch season details including app_id, game, organizer, etc.
- * This approach is essential for multi-organizer support and follows REST API best practices.
- *
- * @param organizer_id - The organizer ID
- * @param app_id - The app ID
- * @returns Active season for the given app and organizer, or undefined if none found
- */
-export const getActiveSeasonForAppId = async (
-  organizer_id: number,
-  app_id: number
-) => {
-  const [activeSeason] = await runQuery<
-    Array<{ season_id: number } | undefined>
-  >(
-    `SELECT s.id AS season_id
-     FROM Seasons s
-     JOIN Games g ON s.game_id = g.id
-     JOIN Organizers o ON s.organizer_id = o.id
-     WHERE g.app_id = ? AND o.id = ?
-     AND s.start_date <= NOW() AND (s.end_date IS NULL OR s.end_date >= NOW())
-     ORDER BY s.id DESC
-     LIMIT 1;`,
-    [app_id, organizer_id]
-  );
-  return activeSeason;
-};
-
-/**
- * @deprecated This function should not be used in new code. Instead, always pass season_id as a parameter
- * from which app_id, game, organizer, etc. can be inferred if needed. This function relies on finding
- * an "active signup" season which creates implicit dependencies and makes the code less explicit.
- *
- * For REST API endpoints, season_id should be explicitly required from the frontend (via URL params or request body).
- * The season_id can then be used to fetch season details including app_id, game, organizer, etc.
- * This approach is essential for multi-organizer support and follows REST API best practices.
- *
- * @param organizer_id - The organizer ID
- * @param app_id - The app ID
- * @returns Active signup season for the given app and organizer, or undefined if none found
- */
-export const getActiveSignupSeasonForAppId = async (
-  organizer_id: number,
-  app_id: number
-) => {
-  const [activeSignupSeason] = await runQuery<
-    Array<ActiveSeasonSignupForAppId | undefined>
-  >(
-    `SELECT s.id AS season_id, s.platform, s.signup_end_date, s.full_name
-     FROM Seasons s
-     JOIN Games g ON s.game_id = g.id
-     JOIN Organizers o ON s.organizer_id = o.id
-     WHERE g.app_id = ? AND o.id = ? AND s.start_date >= NOW() AND s.signup_start_date <= NOW() AND (s.signup_end_date IS NULL OR s.signup_end_date >= NOW())
-     ORDER BY s.id DESC
-     LIMIT 1;`,
-    [app_id, organizer_id]
-  );
-  return activeSignupSeason;
-};
-
-/**
- * @deprecated This function should not be used in new code. Instead, always pass season_id as a parameter
- * from which app_id, game, organizer, etc. can be inferred if needed. This function relies on finding
- * an "active" season which creates implicit dependencies and makes the code less explicit and harder to test.
- *
- * For dashboard endpoints, season_id should be explicitly required from the frontend (via URL params or request body).
- * The season_id can then be used to fetch season details including app_id, game, organizer, etc.
- *
- * @param organizer_id - The organizer ID
- * @param app_id - The app ID
- * @returns Active signup or active season for the given app and organizer, or undefined if none found
- */
-export const getActiveSignupOrActiveSeasonForAppId = async (
-  organizer_id: number,
-  app_id: number
-) => {
-  const [activeSignupOrActiveSeason] = await runQuery<
     Array<ActiveSignupOrSeasonForAppId | undefined>
   >(
     `SELECT s.id AS season_id, s.platform, s.signup_start_date, s.signup_end_date, s.start_date, s.end_date, s.full_name
      FROM Seasons s
      JOIN Games g ON s.game_id = g.id
+     JOIN GameTypes gt ON s.game_type_id = gt.id
      JOIN Organizers o ON s.organizer_id = o.id
-     WHERE g.app_id = ? AND o.id = ?
-     AND (
-       (s.start_date <= NOW() AND (s.end_date IS NULL OR s.end_date >= NOW()))
-       OR
-       (s.signup_start_date <= NOW() AND (s.signup_end_date IS NULL OR s.signup_end_date >= NOW()) AND s.start_date > NOW())
-     )
-     ORDER BY 
-       CASE 
+     WHERE g.app_id = ? AND o.id = ? AND LOWER(gt.name) = LOWER(?)
+       AND (
+         (s.start_date <= NOW() AND (s.end_date IS NULL OR s.end_date >= NOW()))
+         OR
+         (s.start_date > NOW() AND s.signup_start_date <= NOW() AND (s.signup_end_date IS NULL OR s.signup_end_date >= NOW()))
+       )
+     ORDER BY s.id DESC
+     LIMIT 1;`,
+    [app_id, organizer_id, gametype ?? "comp"]
+  );
+
+  if (activeSeason) {
+    await redisClient.set(
+      redisKey,
+      JSON.stringify(activeSeason),
+      "EX",
+      expireInOneDay
+    );
+  }
+
+  return activeSeason;
+};
+
+/**
+ * Gets the currently running season for a given organizer, app, and game type,
+ * falling back to the most recently finished season when none is running.
+ *
+ * Unlike {@link getOrganizerActiveSeasonForAppId} (which matches a running *or*
+ * signup-open season and prefers the newest), this prefers the running season
+ * and never returns a not-yet-started signup-only season; when nothing is
+ * running it returns the most recent finished season.
+ *
+ * It backs the "what season's data do we display" surfaces (`/seasons/active`,
+ * the calendar, the kana-elo leaderboard, the filters cache guard) so they keep
+ * showing the last finished season between seasons instead of 404ing, and never
+ * jump to an upcoming season that has no matches yet.
+ *
+ * @param organizer_id - The organizer ID
+ * @param app_id - The app ID
+ * @param gametype - The game type (default: "comp")
+ * @returns The running or most recent finished season, or undefined if none exists
+ */
+export const getOrganizerActiveOrLatestSeasonForAppId = async (
+  organizer_id: number,
+  app_id: number,
+  gametype?: string
+) => {
+  const redisKey = `${organizer_id}-${app_id}-${(gametype ?? "comp").toLowerCase()}-active-or-latest-season`;
+  const cachedData = await redisClient.get(redisKey);
+  if (cachedData) {
+    return JSON.parse(cachedData);
+  }
+
+  const [season] = await runQuery<
+    Array<ActiveSignupOrSeasonForAppId | undefined>
+  >(
+    `SELECT s.id AS season_id, s.platform, s.signup_start_date, s.signup_end_date, s.start_date, s.end_date, s.full_name
+     FROM Seasons s
+     JOIN Games g ON s.game_id = g.id
+     JOIN GameTypes gt ON s.game_type_id = gt.id
+     JOIN Organizers o ON s.organizer_id = o.id
+     WHERE g.app_id = ? AND o.id = ? AND LOWER(gt.name) = LOWER(?)
+       AND (
+         (s.start_date <= NOW() AND (s.end_date IS NULL OR s.end_date >= NOW()))
+         OR
+         s.id = (
+           SELECT MAX(s2.id)
+           FROM Seasons s2
+           JOIN Games g2 ON s2.game_id = g2.id
+           JOIN GameTypes gt2 ON s2.game_type_id = gt2.id
+           JOIN Organizers o2 ON s2.organizer_id = o2.id
+           WHERE g2.app_id = ? AND o2.id = ? AND LOWER(gt2.name) = LOWER(?)
+             AND s2.end_date IS NOT NULL AND s2.end_date < NOW()
+         )
+       )
+     ORDER BY
+       CASE
          WHEN s.start_date <= NOW() AND (s.end_date IS NULL OR s.end_date >= NOW()) THEN 0
          ELSE 1
        END,
        s.id DESC
      LIMIT 1;`,
-    [app_id, organizer_id]
+    [
+      app_id,
+      organizer_id,
+      gametype ?? "comp",
+      app_id,
+      organizer_id,
+      gametype ?? "comp"
+    ]
   );
-  return activeSignupOrActiveSeason;
+
+  if (season) {
+    await redisClient.set(
+      redisKey,
+      JSON.stringify(season),
+      "EX",
+      expireInOneDay
+    );
+  }
+
+  return season;
 };
 
 /**

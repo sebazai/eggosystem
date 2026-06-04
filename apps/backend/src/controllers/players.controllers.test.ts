@@ -1,18 +1,23 @@
 import { type Request, type Response, type NextFunction } from "express";
 import {
   getPlayerOldKanaEloController,
+  getPlayerSeasonsContextController,
   setPlayerKanaEloController,
   resolveSteamIdController
 } from "../controllers/players.controllers";
 import * as playerModels from "../models/player.models";
 import * as steamServices from "../services/steam.services";
+import * as playerHistoricalModels from "../models/player-historical.models";
 import { normalizeSteamId } from "../utils/steam-id-validator";
 import type { RequestWithParams } from "@eggosystem/types";
 // Mock the player models
 jest.mock("../models/player.models");
 jest.mock("../services/steam.services");
 jest.mock("../utils/steam-id-validator");
+jest.mock("../models/player-historical.models");
+
 const mockedPlayerModels = jest.mocked(playerModels);
+const mockedPlayerHistoricalModels = jest.mocked(playerHistoricalModels);
 const mockedNormalizeSteamId = normalizeSteamId as jest.MockedFunction<
   typeof normalizeSteamId
 >;
@@ -695,5 +700,173 @@ describe("resolveSteamIdController", () => {
       // Assert - Should trim before searching
       expect(mockGetPlayerSteamIdByNickname).toHaveBeenCalledWith("heppajpg");
     });
+  });
+});
+
+describe("getPlayerSeasonsContextController", () => {
+  let req: Partial<Request>;
+  let res: Partial<Response>;
+  let mockJson: jest.Mock;
+  let mockStatus: jest.Mock;
+
+  const defaultQuery = {
+    organizer_id: "1",
+    app_id: "730",
+    gametype: "comp"
+  };
+
+  beforeEach(() => {
+    mockJson = jest.fn();
+    mockStatus = jest.fn().mockReturnValue({ json: mockJson });
+
+    req = {
+      params: { steam_id: "76561198012345678" },
+      query: { ...defaultQuery }
+    };
+    res = {
+      status: mockStatus,
+      json: mockJson
+    };
+
+    jest.clearAllMocks();
+  });
+
+  it("should return player's season context when data exists", async () => {
+    const expectedSeasons = {
+      current_season: {
+        season_id: 123,
+        full_name: "Spring 2024 Season",
+        start_date: "2024-03-01",
+        end_date: null
+      },
+      last_season: {
+        season_id: 122,
+        full_name: "Winter 2023 Season",
+        start_date: "2023-10-01",
+        end_date: "2024-02-29"
+      }
+    };
+
+    mockedPlayerHistoricalModels.getPlayerSeasonsContext.mockResolvedValue(
+      expectedSeasons
+    );
+
+    const mockNext = jest.fn();
+    await getPlayerSeasonsContextController(
+      req as Request,
+      res as Response,
+      mockNext
+    );
+
+    expect(
+      mockedPlayerHistoricalModels.getPlayerSeasonsContext
+    ).toHaveBeenCalledWith("76561198012345678", {
+      organizer_id: 1,
+      app_id: 730,
+      gametype: "comp"
+    });
+    expect(mockJson).toHaveBeenCalledWith(expectedSeasons);
+    expect(mockNext).not.toHaveBeenCalled();
+  });
+
+  it("should return null for both seasons when player has no match history", async () => {
+    const expectedSeasons = {
+      current_season: null,
+      last_season: null
+    };
+
+    mockedPlayerHistoricalModels.getPlayerSeasonsContext.mockResolvedValue(
+      expectedSeasons
+    );
+
+    const mockNext = jest.fn();
+    await getPlayerSeasonsContextController(
+      req as Request,
+      res as Response,
+      mockNext
+    );
+
+    expect(mockJson).toHaveBeenCalledWith(expectedSeasons);
+  });
+
+  it("should pass organizer_id, app_id, and gametype through to the model", async () => {
+    req.query = {
+      organizer_id: "2",
+      app_id: "578080",
+      gametype: "duo"
+    };
+
+    mockedPlayerHistoricalModels.getPlayerSeasonsContext.mockResolvedValue({
+      current_season: null,
+      last_season: null
+    });
+
+    const mockNext = jest.fn();
+    await getPlayerSeasonsContextController(
+      req as Request,
+      res as Response,
+      mockNext
+    );
+
+    expect(
+      mockedPlayerHistoricalModels.getPlayerSeasonsContext
+    ).toHaveBeenCalledWith("76561198012345678", {
+      organizer_id: 2,
+      app_id: 578080,
+      gametype: "duo"
+    });
+  });
+
+  it("should return 400 when context query params are missing", async () => {
+    req.query = {};
+
+    const mockNext = jest.fn();
+    await getPlayerSeasonsContextController(
+      req as Request,
+      res as Response,
+      mockNext
+    );
+
+    expect(mockNext).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: expect.stringContaining("organizer_id, app_id, and gametype"),
+        status: 400
+      })
+    );
+    expect(mockJson).not.toHaveBeenCalled();
+  });
+
+  it("should return 400 when steam_id parameter is missing", async () => {
+    req.params = {};
+
+    const mockNext = jest.fn();
+    await getPlayerSeasonsContextController(
+      req as Request,
+      res as Response,
+      mockNext
+    );
+
+    expect(mockNext).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: "Steam ID is required",
+        status: 400
+      })
+    );
+    expect(mockJson).not.toHaveBeenCalled();
+  });
+
+  it("should handle database errors gracefully", async () => {
+    mockedPlayerHistoricalModels.getPlayerSeasonsContext.mockRejectedValue(
+      new Error("Database error")
+    );
+
+    const mockNext = jest.fn();
+    await getPlayerSeasonsContextController(
+      req as Request,
+      res as Response,
+      mockNext
+    );
+
+    expect(mockNext).toHaveBeenCalledWith(new Error("Database error"));
   });
 });

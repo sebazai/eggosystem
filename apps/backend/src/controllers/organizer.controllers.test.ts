@@ -1,50 +1,36 @@
 import { type Response } from "express";
 import {
-  getActiveOrLatestSeasonForAppId,
-  getActiveSignupSeasonForAppId,
-  getActiveSignupOrActiveSeasonForAppId
+  getOrganizerActiveSeasonForAppId,
+  getOrganizerActiveOrLatestSeasonForAppId
 } from "../models/season.models";
-import { redisClient } from "../utils/redisClient";
 import type { RequestWithParams } from "@eggosystem/types";
 import { SeasonPlatform } from "@eggosystem/types";
-import { createMockActiveSignupOrSeasonForAppId } from "@eggosystem/types";
 import {
   getActiveSeasonForApp,
   getActiveSignupOrActiveSeasonForAppController,
-  getActiveSignupSeasonForApp
+  redirectToActiveSignup
 } from "./organizer.controllers";
 
 // Mock the models and Redis
 jest.mock("../models/season.models");
+jest.mock("../models/game.models");
 jest.mock("../utils/redisClient");
 
-const mockGetActiveOrLatestSeasonForAppId =
-  getActiveOrLatestSeasonForAppId as jest.MockedFunction<
-    typeof getActiveOrLatestSeasonForAppId
+const mockGetActiveSeason =
+  getOrganizerActiveSeasonForAppId as jest.MockedFunction<
+    typeof getOrganizerActiveSeasonForAppId
   >;
-const mockGetActiveSignupSeasonForAppId =
-  getActiveSignupSeasonForAppId as jest.MockedFunction<
-    typeof getActiveSignupSeasonForAppId
-  >;
-const mockGetActiveSignupOrActiveSeasonForAppId =
-  getActiveSignupOrActiveSeasonForAppId as jest.MockedFunction<
-    typeof getActiveSignupOrActiveSeasonForAppId
-  >;
-const mockRedisClient = redisClient as jest.Mocked<typeof redisClient>;
 
-const mockActiveSeason = createMockActiveSignupOrSeasonForAppId({
-  season_id: 456,
-  platform: SeasonPlatform.FACEIT,
-  signup_end_date: "2024-12-31",
-  signup_start_date: "2024-12-01",
-  start_date: "2024-12-31",
-  end_date: "2025-03-31"
-});
+const mockGetActiveOrLatestSeason =
+  getOrganizerActiveOrLatestSeasonForAppId as jest.MockedFunction<
+    typeof getOrganizerActiveOrLatestSeasonForAppId
+  >;
 
 // Type definitions for test requests
 type TestRequestWithParams<P = Record<string, string>> =
   RequestWithParams<P> & {
     parsedParams?: Record<string, unknown>;
+    query?: Record<string, string | string[] | undefined>;
   };
 
 describe("Seasons Controllers", () => {
@@ -53,6 +39,7 @@ describe("Seasons Controllers", () => {
   let mockJson: jest.MockedFunction<Response["json"]>;
   let mockStatus: jest.MockedFunction<Response["status"]>;
   let mockSet: jest.MockedFunction<Response["set"]>;
+  let mockRedirect: jest.MockedFunction<Response["redirect"]>;
 
   beforeEach(() => {
     mockRequest = {
@@ -63,19 +50,28 @@ describe("Seasons Controllers", () => {
     mockJson = jest.fn().mockReturnThis();
     mockStatus = jest.fn().mockReturnThis();
     mockSet = jest.fn().mockReturnThis();
+    mockRedirect = jest.fn().mockReturnThis();
 
     mockResponse = {
       json: mockJson,
       status: mockStatus,
-      set: mockSet
+      set: mockSet,
+      redirect: mockRedirect
     } as unknown as Response;
 
     jest.clearAllMocks();
   });
   describe("getActiveSeasonForApp", () => {
-    it("should return cached season if available", async () => {
+    it("should return the full active season object from the model", async () => {
       mockRequest.params = { app_id: "730", organizer_id: "1" };
-      mockRedisClient.get.mockResolvedValue("456");
+      mockRequest.query = {};
+      const season = {
+        season_id: 456,
+        platform: SeasonPlatform.Kanaliiga,
+        signup_end_date: "2024-12-31T23:59:59Z",
+        full_name: "Test Season"
+      };
+      mockGetActiveOrLatestSeason.mockResolvedValue(season);
 
       const mockNext = jest.fn();
       await getActiveSeasonForApp(
@@ -87,14 +83,21 @@ describe("Seasons Controllers", () => {
         mockNext
       );
 
-      expect(mockRedisClient.get).toHaveBeenCalledWith("1-730-active-season");
-      expect(mockJson).toHaveBeenCalledWith({ season_id: 456 });
+      expect(mockGetActiveOrLatestSeason).toHaveBeenCalledWith(1, 730, "comp");
+      expect(mockJson).toHaveBeenCalledWith(season);
+      expect(mockNext).not.toHaveBeenCalled();
     });
 
-    it("should fetch and cache season if not cached", async () => {
+    it("should pass the gametype query parameter to the model", async () => {
       mockRequest.params = { app_id: "730", organizer_id: "1" };
-      mockRedisClient.get.mockResolvedValue(null);
-      mockGetActiveOrLatestSeasonForAppId.mockResolvedValue(mockActiveSeason);
+      mockRequest.query = { gametype: "wingman" };
+      const season = {
+        season_id: 789,
+        platform: SeasonPlatform.Kanaliiga,
+        signup_end_date: "2024-12-31T23:59:59Z",
+        full_name: "Wingman Season"
+      };
+      mockGetActiveOrLatestSeason.mockResolvedValue(season);
 
       const mockNext = jest.fn();
       await getActiveSeasonForApp(
@@ -106,20 +109,18 @@ describe("Seasons Controllers", () => {
         mockNext
       );
 
-      expect(mockGetActiveOrLatestSeasonForAppId).toHaveBeenCalledWith(1, 730);
-      expect(mockRedisClient.set).toHaveBeenCalledWith(
-        "1-730-active-season",
-        456,
-        "EX",
-        86400
+      expect(mockGetActiveOrLatestSeason).toHaveBeenCalledWith(
+        1,
+        730,
+        "wingman"
       );
-      expect(mockJson).toHaveBeenCalledWith(mockActiveSeason);
+      expect(mockJson).toHaveBeenCalledWith(season);
     });
 
-    it("should return 404 when no active season found", async () => {
+    it("should return 404 when no active season is found", async () => {
       mockRequest.params = { app_id: "730", organizer_id: "1" };
-      mockRedisClient.get.mockResolvedValue(null);
-      mockGetActiveOrLatestSeasonForAppId.mockResolvedValue(undefined);
+      mockRequest.query = {};
+      mockGetActiveOrLatestSeason.mockResolvedValue(undefined);
 
       const mockNext = jest.fn();
       await getActiveSeasonForApp(
@@ -131,45 +132,31 @@ describe("Seasons Controllers", () => {
         mockNext
       );
 
+      expect(mockGetActiveOrLatestSeason).toHaveBeenCalledWith(1, 730, "comp");
       expect(mockNext).toHaveBeenCalledWith(
         expect.objectContaining({
           message: "No active season found for app 730 and organizer 1",
           status: 404
         })
       );
-    });
-
-    it("should handle invalid app ID", async () => {
-      mockRequest.params = { app_id: "invalid", organizer_id: "1" };
-      mockGetActiveOrLatestSeasonForAppId.mockResolvedValue(undefined);
-
-      const mockNext = jest.fn();
-      await getActiveSeasonForApp(
-        mockRequest as TestRequestWithParams<{
-          app_id: string;
-          organizer_id: string;
-        }>,
-        mockResponse as Response,
-        mockNext
-      );
-
-      expect(mockGetActiveOrLatestSeasonForAppId).toHaveBeenCalledWith(1, NaN);
-      expect(mockNext).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message: "No active season found for app NaN and organizer 1",
-          status: 404
-        })
-      );
+      expect(mockJson).not.toHaveBeenCalled();
     });
   });
 
-  describe("getActiveSignupSeasonForApp", () => {
-    it("should return 404 when no active signup season found", async () => {
+  describe("getActiveSignupOrActiveSeasonForAppController", () => {
+    it("should return the season object from the model", async () => {
       mockRequest.params = { app_id: "730", organizer_id: "1" };
-      mockGetActiveSignupSeasonForAppId.mockResolvedValue(undefined);
+      mockRequest.query = { gametype: "comp" };
+      const season = {
+        season_id: 321,
+        platform: SeasonPlatform.Kanaliiga,
+        signup_end_date: "2024-12-31T23:59:59Z",
+        full_name: "Test Season"
+      };
+      mockGetActiveSeason.mockResolvedValue(season);
 
       const mockNext = jest.fn();
-      await getActiveSignupSeasonForApp(
+      await getActiveSignupOrActiveSeasonForAppController(
         mockRequest as TestRequestWithParams<{
           app_id: string;
           organizer_id: string;
@@ -178,45 +165,17 @@ describe("Seasons Controllers", () => {
         mockNext
       );
 
-      expect(mockNext).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message: "No active signup season found for app 730 and organizer 1",
-          status: 404
-        })
-      );
+      expect(mockGetActiveSeason).toHaveBeenCalledWith(1, 730, "comp");
+      expect(mockJson).toHaveBeenCalledWith(season);
+      expect(mockNext).not.toHaveBeenCalled();
     });
 
-    it("should handle invalid app ID", async () => {
-      mockRequest.params = { app_id: "invalid", organizer_id: "invalid" };
-      mockGetActiveSignupSeasonForAppId.mockResolvedValue(undefined);
+    it("should respond with a null body when the model returns undefined", async () => {
+      mockRequest.params = { app_id: "730", organizer_id: "1" };
+      mockRequest.query = { gametype: "comp" };
+      mockGetActiveSeason.mockResolvedValue(undefined);
 
       const mockNext = jest.fn();
-      await getActiveSignupSeasonForApp(
-        mockRequest as TestRequestWithParams<{
-          app_id: string;
-          organizer_id: string;
-        }>,
-        mockResponse as Response,
-        mockNext
-      );
-
-      expect(mockGetActiveSignupSeasonForAppId).toHaveBeenCalledWith(NaN, NaN);
-      expect(mockNext).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message:
-            "No active signup season found for app NaN and organizer NaN",
-          status: 404
-        })
-      );
-    });
-  });
-
-  describe("GetActiveSignupOrActiveSeasonForAppId", () => {
-    const mockNext = jest.fn();
-    it("should return undefined when no signup end date found", async () => {
-      mockRequest.params = { app_id: "730", organizer_id: "1" };
-      mockGetActiveSignupOrActiveSeasonForAppId.mockResolvedValue(undefined);
-
       await getActiveSignupOrActiveSeasonForAppController(
         mockRequest as TestRequestWithParams<{
           app_id: string;
@@ -227,33 +186,14 @@ describe("Seasons Controllers", () => {
       );
 
       expect(mockJson).toHaveBeenCalledWith(null);
+      expect(mockNext).not.toHaveBeenCalled();
     });
 
-    it("should return season when found", async () => {
-      mockRequest.params = { app_id: "730", organizer_id: "1" };
-      mockGetActiveSignupOrActiveSeasonForAppId.mockResolvedValue(
-        mockActiveSeason
-      );
-
-      await getActiveSignupOrActiveSeasonForAppController(
-        mockRequest as TestRequestWithParams<{
-          app_id: string;
-          organizer_id: string;
-        }>,
-        mockResponse as Response,
-        mockNext
-      );
-
-      expect(mockGetActiveSignupOrActiveSeasonForAppId).toHaveBeenCalledWith(
-        1,
-        730
-      );
-      expect(mockJson).toHaveBeenCalledWith(mockActiveSeason);
-    });
-
-    it("should handle invalid app ID", async () => {
+    it("should return 400 when app_id is invalid", async () => {
       mockRequest.params = { app_id: "invalid", organizer_id: "1" };
+      mockRequest.query = {};
 
+      const mockNext = jest.fn();
       await getActiveSignupOrActiveSeasonForAppController(
         mockRequest as TestRequestWithParams<{
           app_id: string;
@@ -263,15 +203,39 @@ describe("Seasons Controllers", () => {
         mockNext
       );
 
-      expect(
-        mockGetActiveSignupOrActiveSeasonForAppId
-      ).not.toHaveBeenCalledWith(1, NaN);
+      expect(mockNext).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: "Invalid app ID or organizer ID: app_id=NaN, organizer_id=1",
+          status: 400
+        })
+      );
+      expect(mockGetActiveSeason).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("redirectToActiveSignup", () => {
+    const originalEnv = process.env.FRONTEND_URL;
+
+    beforeEach(() => {
+      process.env.FRONTEND_URL = "https://example.com";
     });
 
-    it("should handle negative app ID", async () => {
-      mockRequest.params = { app_id: "-730", organizer_id: "1" };
+    afterEach(() => {
+      process.env.FRONTEND_URL = originalEnv;
+    });
 
-      await getActiveSignupOrActiveSeasonForAppController(
+    it("should redirect to signup page when active season is found", async () => {
+      mockRequest.params = { app_id: "730", organizer_id: "1" };
+      mockRequest.query = { gametype: "comp" };
+      mockGetActiveSeason.mockResolvedValue({
+        season_id: 123,
+        platform: SeasonPlatform.Kanaliiga,
+        signup_end_date: "2024-12-31T23:59:59Z",
+        full_name: "Test Season"
+      });
+
+      const mockNext = jest.fn();
+      await redirectToActiveSignup(
         mockRequest as TestRequestWithParams<{
           app_id: string;
           organizer_id: string;
@@ -280,9 +244,238 @@ describe("Seasons Controllers", () => {
         mockNext
       );
 
-      expect(
-        mockGetActiveSignupOrActiveSeasonForAppId
-      ).not.toHaveBeenCalledWith(1, -730);
+      expect(mockGetActiveSeason).toHaveBeenCalledWith(1, 730, "comp");
+      expect(mockRedirect).toHaveBeenCalledWith(
+        "https://example.com/seasons/123/signup"
+      );
+      expect(mockNext).not.toHaveBeenCalled();
+    });
+
+    it("should handle case-insensitive gametype", async () => {
+      mockRequest.params = { app_id: "730", organizer_id: "1" };
+      mockRequest.query = { gametype: "Comp" };
+      mockGetActiveSeason.mockResolvedValue({
+        season_id: 123,
+        platform: SeasonPlatform.Kanaliiga,
+        signup_end_date: "2024-12-31T23:59:59Z",
+        full_name: "Test Season"
+      });
+
+      const mockNext = jest.fn();
+      await redirectToActiveSignup(
+        mockRequest as TestRequestWithParams<{
+          app_id: string;
+          organizer_id: string;
+        }>,
+        mockResponse as Response,
+        mockNext
+      );
+
+      expect(mockGetActiveSeason).toHaveBeenCalledWith(1, 730, "Comp");
+      expect(mockRedirect).toHaveBeenCalledWith(
+        "https://example.com/seasons/123/signup"
+      );
+    });
+
+    it("should use default gametype when gametype is missing", async () => {
+      const testRequest = {
+        params: { app_id: "730", organizer_id: "1" },
+        query: { gametype: undefined }
+      } as unknown as TestRequestWithParams<{
+        app_id: string;
+        organizer_id: string;
+      }>;
+
+      mockGetActiveSeason.mockResolvedValue({
+        season_id: 123,
+        platform: SeasonPlatform.Kanaliiga,
+        signup_end_date: "2024-12-31T23:59:59Z",
+        full_name: "Test Season"
+      });
+
+      const mockNext = jest.fn();
+      await redirectToActiveSignup(
+        testRequest,
+        mockResponse as Response,
+        mockNext
+      );
+
+      expect(mockGetActiveSeason).toHaveBeenCalledWith(1, 730, "comp");
+      expect(mockRedirect).toHaveBeenCalledWith(
+        "https://example.com/seasons/123/signup"
+      );
+      expect(mockNext).not.toHaveBeenCalled();
+    });
+
+    it("should return 404 when default gametype season is not found", async () => {
+      const testRequest = {
+        params: { app_id: "730", organizer_id: "1" },
+        query: { gametype: undefined }
+      } as unknown as TestRequestWithParams<{
+        app_id: string;
+        organizer_id: string;
+      }>;
+
+      mockGetActiveSeason.mockResolvedValue(undefined);
+
+      const mockNext = jest.fn();
+      await redirectToActiveSignup(
+        testRequest,
+        mockResponse as Response,
+        mockNext
+      );
+
+      expect(mockGetActiveSeason).toHaveBeenCalledWith(1, 730, "comp");
+      expect(mockNext).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message:
+            "No active signup season found for app 730, organizer 1, and game type 'comp'",
+          status: 404
+        })
+      );
+      expect(mockRedirect).not.toHaveBeenCalled();
+    });
+
+    it("should return 404 when gametype is empty string and season not found", async () => {
+      const testRequest = {
+        params: { app_id: "730", organizer_id: "1" },
+        query: { gametype: "" }
+      } as unknown as TestRequestWithParams<{
+        app_id: string;
+        organizer_id: string;
+      }>;
+
+      mockGetActiveSeason.mockResolvedValue(undefined);
+
+      const mockNext = jest.fn();
+      await redirectToActiveSignup(
+        testRequest,
+        mockResponse as Response,
+        mockNext
+      );
+
+      expect(mockGetActiveSeason).toHaveBeenCalledWith(1, 730, "");
+      expect(mockNext).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message:
+            "No active signup season found for app 730, organizer 1, and game type ''",
+          status: 404
+        })
+      );
+    });
+
+    it("should return 404 when season is not found for gametype", async () => {
+      mockRequest.params = { app_id: "730", organizer_id: "1" };
+      mockRequest.query = { gametype: "invalid" };
+      mockGetActiveSeason.mockResolvedValue(undefined);
+
+      const mockNext = jest.fn();
+      await redirectToActiveSignup(
+        mockRequest as TestRequestWithParams<{
+          app_id: string;
+          organizer_id: string;
+        }>,
+        mockResponse as Response,
+        mockNext
+      );
+
+      expect(mockGetActiveSeason).toHaveBeenCalledWith(1, 730, "invalid");
+      expect(mockNext).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message:
+            "No active signup season found for app 730, organizer 1, and game type 'invalid'",
+          status: 404
+        })
+      );
+      expect(mockRedirect).not.toHaveBeenCalled();
+    });
+
+    it("should return 404 when no active signup season is found", async () => {
+      mockRequest.params = { app_id: "730", organizer_id: "1" };
+      mockRequest.query = { gametype: "comp" };
+      mockGetActiveSeason.mockResolvedValue(undefined);
+
+      const mockNext = jest.fn();
+      await redirectToActiveSignup(
+        mockRequest as TestRequestWithParams<{
+          app_id: string;
+          organizer_id: string;
+        }>,
+        mockResponse as Response,
+        mockNext
+      );
+
+      expect(mockGetActiveSeason).toHaveBeenCalledWith(1, 730, "comp");
+      expect(mockNext).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message:
+            "No active signup season found for app 730, organizer 1, and game type 'comp'",
+          status: 404
+        })
+      );
+      expect(mockRedirect).not.toHaveBeenCalled();
+    });
+
+    it("should return 400 when app_id is invalid", async () => {
+      mockRequest.params = { app_id: "invalid", organizer_id: "1" };
+      mockRequest.query = { gametype: "comp" };
+
+      const mockNext = jest.fn();
+      await redirectToActiveSignup(
+        mockRequest as TestRequestWithParams<{
+          app_id: string;
+          organizer_id: string;
+        }>,
+        mockResponse as Response,
+        mockNext
+      );
+
+      expect(mockNext).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: "Invalid app ID or organizer ID: app_id=NaN, organizer_id=1",
+          status: 400
+        })
+      );
+      expect(mockGetActiveSeason).not.toHaveBeenCalled();
+    });
+
+    it("should return 400 when organizer_id is invalid", async () => {
+      mockRequest.params = { app_id: "730", organizer_id: "invalid" };
+      mockRequest.query = { gametype: "comp" };
+
+      const mockNext = jest.fn();
+      await redirectToActiveSignup(
+        mockRequest as TestRequestWithParams<{
+          app_id: string;
+          organizer_id: string;
+        }>,
+        mockResponse as Response,
+        mockNext
+      );
+
+      expect(mockNext).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message:
+            "Invalid app ID or organizer ID: app_id=730, organizer_id=NaN",
+          status: 400
+        })
+      );
+    });
+
+    it("should return 400 when app_id is negative", async () => {
+      mockRequest.params = { app_id: "-730", organizer_id: "1" };
+      mockRequest.query = { gametype: "comp" };
+
+      const mockNext = jest.fn();
+      await redirectToActiveSignup(
+        mockRequest as TestRequestWithParams<{
+          app_id: string;
+          organizer_id: string;
+        }>,
+        mockResponse as Response,
+        mockNext
+      );
+
       expect(mockNext).toHaveBeenCalledWith(
         expect.objectContaining({
           message:
@@ -290,6 +483,113 @@ describe("Seasons Controllers", () => {
           status: 400
         })
       );
+    });
+
+    it("should return 400 when organizer_id is negative", async () => {
+      mockRequest.params = { app_id: "730", organizer_id: "-1" };
+      mockRequest.query = { gametype: "comp" };
+
+      const mockNext = jest.fn();
+      await redirectToActiveSignup(
+        mockRequest as TestRequestWithParams<{
+          app_id: string;
+          organizer_id: string;
+        }>,
+        mockResponse as Response,
+        mockNext
+      );
+
+      expect(mockNext).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message:
+            "Invalid app ID or organizer ID: app_id=730, organizer_id=-1",
+          status: 400
+        })
+      );
+    });
+
+    it("should pass undefined gametype for unknown app_id without throwing", async () => {
+      mockRequest.params = { app_id: "570", organizer_id: "1" };
+      mockRequest.query = {};
+      mockGetActiveSeason.mockResolvedValue(undefined);
+
+      const mockNext = jest.fn();
+      await redirectToActiveSignup(
+        mockRequest as TestRequestWithParams<{
+          app_id: string;
+          organizer_id: string;
+        }>,
+        mockResponse as Response,
+        mockNext
+      );
+
+      expect(mockGetActiveSeason).toHaveBeenCalledWith(1, 570, undefined);
+      expect(mockNext).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message:
+            "No active signup season found for app 570, organizer 1, and game type 'comp'",
+          status: 404
+        })
+      );
+    });
+
+    it("should return error when FRONTEND_URL is not set", async () => {
+      delete process.env.FRONTEND_URL;
+      mockRequest.params = { app_id: "730", organizer_id: "1" };
+      mockRequest.query = { gametype: "comp" };
+      mockGetActiveSeason.mockResolvedValue({
+        season_id: 123,
+        platform: SeasonPlatform.Kanaliiga,
+        signup_end_date: "2024-12-31T23:59:59Z",
+        full_name: "Test Season"
+      });
+
+      const mockNext = jest.fn();
+      await redirectToActiveSignup(
+        mockRequest as TestRequestWithParams<{
+          app_id: string;
+          organizer_id: string;
+        }>,
+        mockResponse as Response,
+        mockNext
+      );
+
+      expect(mockGetActiveSeason).toHaveBeenCalledWith(1, 730, "comp");
+      expect(mockNext).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: "Invalid FRONTEND_URL configuration"
+        })
+      );
+      expect(mockRedirect).not.toHaveBeenCalled();
+    });
+
+    it("should return error when FRONTEND_URL is not a valid https URL", async () => {
+      process.env.FRONTEND_URL = "http://evil.example.com";
+      mockRequest.params = { app_id: "730", organizer_id: "1" };
+      mockRequest.query = { gametype: "comp" };
+      mockGetActiveSeason.mockResolvedValue({
+        season_id: 123,
+        platform: SeasonPlatform.Kanaliiga,
+        signup_end_date: "2024-12-31T23:59:59Z",
+        full_name: "Test Season"
+      });
+
+      const mockNext = jest.fn();
+      await redirectToActiveSignup(
+        mockRequest as TestRequestWithParams<{
+          app_id: string;
+          organizer_id: string;
+        }>,
+        mockResponse as Response,
+        mockNext
+      );
+
+      expect(mockNext).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: "Invalid FRONTEND_URL configuration"
+        })
+      );
+      expect(mockRedirect).not.toHaveBeenCalled();
     });
   });
 });

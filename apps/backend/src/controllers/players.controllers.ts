@@ -19,7 +19,8 @@ import {
   getPlayerHistoricalData,
   getPlayerHistoricalAverageByRank,
   getPlayerHistoricalAverageByLevel,
-  getPlayerHistoricalAverage
+  getPlayerHistoricalAverage,
+  getPlayerSeasonsContext
 } from "../models/player-historical.models";
 
 import {
@@ -542,6 +543,65 @@ export const setPlayerKanaEloController = async (
   }
 };
 
+function parsePlayerSeasonContextQuery(
+  query: Request["query"]
+):
+  | { organizer_id: number; app_id: number; gametype: string }
+  | BadRequestError {
+  const organizerRaw = query.organizer_id;
+  const appRaw = query.app_id;
+  const gametypeRaw = query.gametype;
+
+  if (
+    organizerRaw === undefined ||
+    appRaw === undefined ||
+    gametypeRaw === undefined
+  ) {
+    return new BadRequestError(
+      "organizer_id, app_id, and gametype query parameters are required"
+    );
+  }
+
+  const organizer_id = parseInt(String(organizerRaw), 10);
+  const app_id = parseInt(String(appRaw), 10);
+  const gametype = String(gametypeRaw).trim();
+
+  if (
+    !Number.isInteger(organizer_id) ||
+    organizer_id <= 0 ||
+    !Number.isInteger(app_id) ||
+    app_id <= 0 ||
+    gametype.length === 0
+  ) {
+    return new BadRequestError(
+      "organizer_id and app_id must be positive integers; gametype must be non-empty"
+    );
+  }
+
+  return { organizer_id, app_id, gametype };
+}
+
+export const getPlayerSeasonsContextController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { steam_id } = req.params;
+    if (!steam_id) return next(new BadRequestError("Steam ID is required"));
+
+    const context = parsePlayerSeasonContextQuery(req.query);
+    if (context instanceof BadRequestError) {
+      return next(context);
+    }
+
+    const seasons = await getPlayerSeasonsContext(steam_id, context);
+    res.json(seasons);
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const getPlayerHistoricalDataController = async (
   req: Request,
   res: Response,
@@ -549,7 +609,10 @@ export const getPlayerHistoricalDataController = async (
 ): Promise<void> => {
   try {
     const { steam_id } = req.params;
-    const params = parseHistoricalParams(req.query); // No default games - returns all data
+    const params = parseHistoricalParams(req.query);
+    if (params instanceof BadRequestError) {
+      return next(params);
+    }
     const historicalData = await getPlayerHistoricalData(steam_id, params);
     res.json(historicalData);
   } catch (error) {
@@ -557,26 +620,34 @@ export const getPlayerHistoricalDataController = async (
   }
 };
 
-const parseHistoricalParams = (
-  query: { games?: string; period?: string },
+function parseHistoricalParams(
+  query: Request["query"],
   defaultGames?: number
-): HistoricalDataParams => {
-  const games = query.games ? parseInt(query.games) : defaultGames;
-  const period = query.period;
+): HistoricalDataParams | BadRequestError {
+  if (query.period !== undefined) {
+    return new BadRequestError(
+      "The period query parameter was removed; use season_id instead"
+    );
+  }
 
-  // Validate games parameter
+  const gamesRaw = query.games;
+  const games =
+    gamesRaw !== undefined ? parseInt(String(gamesRaw), 10) : defaultGames;
   const validGames = [5, 10, 15, 20, 30, 40, 50];
   const finalGames = games && validGames.includes(games) ? games : defaultGames;
 
-  // Validate period parameter
-  const finalPeriod =
-    period === "this_season" || period === "last_season" ? period : undefined;
+  const seasonIdRaw = query.season_id;
+  const parsedSeasonId =
+    seasonIdRaw !== undefined ? parseInt(String(seasonIdRaw), 10) : undefined;
+  const season_id =
+    parsedSeasonId !== undefined &&
+    Number.isInteger(parsedSeasonId) &&
+    parsedSeasonId > 0
+      ? parsedSeasonId
+      : undefined;
 
-  return {
-    games: finalGames,
-    period: finalPeriod
-  };
-};
+  return { games: finalGames, season_id };
+}
 
 export const getPlayerHistoricalAverageByRankController = async (
   req: Request,
@@ -585,7 +656,10 @@ export const getPlayerHistoricalAverageByRankController = async (
 ): Promise<void> => {
   try {
     const rank = parseInt(req.params.rank);
-    const params = parseHistoricalParams(req.query, 15); // Default to 15 games for backward compatibility with tests
+    const params = parseHistoricalParams(req.query, 15);
+    if (params instanceof BadRequestError) {
+      return next(params);
+    }
 
     const averageData = await getPlayerHistoricalAverageByRank(rank, params);
     res.json(averageData);
@@ -601,7 +675,10 @@ export const getPlayerHistoricalAverageByLevelController = async (
 ): Promise<void> => {
   try {
     const level = parseInt(req.params.level);
-    const params = parseHistoricalParams(req.query, 15); // Default to 15 games for backward compatibility with tests
+    const params = parseHistoricalParams(req.query, 15);
+    if (params instanceof BadRequestError) {
+      return next(params);
+    }
 
     const averageData = await getPlayerHistoricalAverageByLevel(level, params);
     res.json(averageData);
@@ -616,7 +693,10 @@ export const getPlayerHistoricalAverageController = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const params = parseHistoricalParams(req.query, 15); // Default to 15 games for backward compatibility with tests
+    const params = parseHistoricalParams(req.query, 15);
+    if (params instanceof BadRequestError) {
+      return next(params);
+    }
 
     const averageData = await getPlayerHistoricalAverage(params);
     res.json(averageData);

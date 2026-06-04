@@ -14,7 +14,7 @@ import {
   updateMatchStatusByMatchId
 } from "../models/match.models";
 import {
-  getActiveSeasonChampionshipIds,
+  getOngoingFaceitCSSeasonChampionshipIds,
   getSeasonChampionshipIds
 } from "../models/season-league-external-id.models";
 import { getReservationsWithEmailForMatch } from "../models/match-streams.models";
@@ -302,7 +302,7 @@ export const syncFaceitChampionshipMatches = async (
 
   const championshipIds = season_id
     ? await getSeasonChampionshipIds(season_id)
-    : await getActiveSeasonChampionshipIds();
+    : await getOngoingFaceitCSSeasonChampionshipIds();
   logger.info(
     `Found ${championshipIds.length} active season championships to sync`
   );
