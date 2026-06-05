@@ -6,6 +6,10 @@ import express from "express";
 import { expressErrorHandler } from "../../middlewares/express-error-handler";
 import sortterRouter from "../../routes/v1/dashboard/sortter.routes";
 import { heppajpgSteamId } from "@eggosystem/types";
+import {
+  deleteTestSeasonSignupSettings,
+  insertTestSeasonSignupSettings
+} from "../../__utils__/season-signup-settings-test";
 
 // Type definitions for database query results
 interface RankData {
@@ -211,6 +215,8 @@ describe("Sortter Kanaelo Workflow Issue", () => {
         testSteamId8
       ]
     );
+    await deleteTestSeasonSignupSettings(testSeasonId);
+    await deleteTestSeasonSignupSettings(testSeasonIdWithStaleData);
     await runQuery("DELETE FROM Seasons WHERE id IN (?, ?)", [
       testSeasonId,
       testSeasonIdWithStaleData
@@ -221,10 +227,12 @@ describe("Sortter Kanaelo Workflow Issue", () => {
       "INSERT INTO Seasons (id, game_id, name, full_name, start_date, platform) VALUES (?, 1, 'Test Kanaelo Season', 'Test Kanaelo Season Full', '2024-01-01', 'kanaliiga')",
       [testSeasonId]
     );
+    await insertTestSeasonSignupSettings(testSeasonId);
     await runQuery(
       "INSERT INTO Seasons (id, game_id, name, full_name, start_date, platform) VALUES (?, 1, 'Test Stale Kanaelo Season', 'Test Stale Kanaelo Season Full', '2024-01-01', 'kanaliiga')",
       [testSeasonIdWithStaleData]
     );
+    await insertTestSeasonSignupSettings(testSeasonIdWithStaleData);
 
     // Create test teams for both scenarios
     await runQuery(
@@ -405,6 +413,7 @@ describe("Sortter Kanaelo Workflow Issue", () => {
         testSteamId8
       ]
     );
+    await deleteTestSeasonSignupSettings(testSeasonId);
     await runQuery("DELETE FROM Seasons WHERE id = ?", [testSeasonId]);
   });
 

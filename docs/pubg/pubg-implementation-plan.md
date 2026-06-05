@@ -23,20 +23,20 @@
 
 ### Readiness scorecard
 
-| Capability area                         | Reusable as-is?               | Verdict                          |
-| --------------------------------------- | ----------------------------- | -------------------------------- |
-| Game / game-type / organizer registry   | ✅ PUBG already seeded        | **Ready**                        |
-| Seasons, Leagues, Stages, SeasonLeagues | ✅ keyed on `game_id`         | **Ready** (add `platform` value) |
-| Teams, Organizations, rosters           | ✅ game-agnostic              | **Ready**                        |
-| Signup / registration (dual-roster)     | ✅ Sortter-independent parts  | **Mostly ready**                 |
-| Captain roles & RBAC triggers           | ✅ steam-id based             | **Ready**                        |
-| Player identity (Steam ↔ external)      | ⚠️ no PUBG account mapping    | **Gap — new table**              |
-| Match container                         | ❌ 2-team / `best_of` shape   | **Gap — new domain**             |
-| Per-game team scores                    | ❌ rounds + CT/T              | **Gap — new table**              |
-| Player statistics                       | ❌ ~100 CS2-only columns      | **Gap — new table**              |
-| Standings / points engine               | ❌ win/loss-record based      | **Gap — new logic**              |
-| External data ingestion                 | ⚠️ webhook-shaped, not poller | **Gap — new pipeline**           |
-| Sortter / kana_elo balancing            | ❌ CS demo / CSRankker bound  | **Out of scope v1**              |
+| Capability area                         | Reusable as-is?                                   | Verdict                                           |
+| --------------------------------------- | ------------------------------------------------- | ------------------------------------------------- |
+| Game / game-type / organizer registry   | ✅ PUBG already seeded                            | **Ready**                                         |
+| Seasons, Leagues, Stages, SeasonLeagues | ✅ keyed on `game_id`                             | **Ready** (`platform='krafton'` added 2026-06-05) |
+| Teams, Organizations, rosters           | ✅ game-agnostic                                  | **Ready**                                         |
+| Signup / registration (dual-roster)     | ✅ per-season `SeasonSignupSettings` (2026-06-05) | **Ready**                                         |
+| Captain roles & RBAC triggers           | ✅ steam-id based                                 | **Ready**                                         |
+| Player identity (Steam ↔ external)      | ⚠️ no PUBG account mapping                        | **Gap — new table**                               |
+| Match container                         | ❌ 2-team / `best_of` shape                       | **Gap — new domain**                              |
+| Per-game team scores                    | ❌ rounds + CT/T                                  | **Gap — new table**                               |
+| Player statistics                       | ❌ ~100 CS2-only columns                          | **Gap — new table**                               |
+| Standings / points engine               | ❌ win/loss-record based                          | **Gap — new logic**                               |
+| External data ingestion                 | ⚠️ webhook-shaped, not poller                     | **Gap — new pipeline**                            |
+| Sortter / kana_elo balancing            | ❌ CS demo / CSRankker bound                      | **Out of scope v1**                               |
 
 ---
 
@@ -65,7 +65,7 @@ These tables are game-agnostic and require **no structural change** (only data +
 
 ### Two reuse caveats to handle in v1
 
-1. **`SeasonActiveMapPool` / `Maps`** — `Maps` is a trivial `(id, name)` lookup. Add PUBG maps (Erangel, Miramar, Taego, Vikendi, Rondo, Deston, Sanhok) as rows. The map-pool/veto flow is CS2-oriented; PUBG uses a fixed/rotating map order set by the organizer, so we store the map per PUBG match rather than running a veto.
+1. **`SeasonActiveMapPool` / `Maps`** — `Maps` gets two new columns: `code_name` (Krafton's internal map identifier, e.g. `Desert_Main`) and `game_id` (FK to `Games`). All existing CS2 maps are backfilled to `game_id = 1`; PUBG maps are seeded with `game_id = 2`. `SeasonActiveMapPool` is **CS2-only** — it feeds the veto flow, which has no PUBG equivalent. For PUBG the map is determined by the Krafton custom lobby (outside our system) and arrives in the match payload at ingestion; it is resolved via `Maps.code_name` and stored directly on `PubgMatches.map_id`. The `game_id` column keeps the CS2 map-pool picker from showing PUBG maps (and scales to future games without heuristics).
 2. **Sortter & `kana_elo`** — the balancing algorithm derives skill from CS2 demo parsing (`CSRankker`, `SteamPlayerKanaElo`, `SeasonPlayerRanks.kana_elo`). PUBG has no equivalent feed. **For v1, leagues/divisions are assigned manually** (or by prior-season placement); a PUBG ranking model is a later iteration. The registration tables don't require Sortter to function.
 
 ### `SeasonTeamPlayers` is reusable — and cross-game play is already allowed
@@ -224,22 +224,42 @@ All via Knex migrations under `apps/backend/migrations/`, with matching types + 
 
 ```sql
 -- 1. New platform value (a new platform, NOT faceit)
+-- ✅ DONE 2026-06-05: migration 20260605130000_add_krafton_platform_enum.ts + SeasonPlatform.Krafton in types
 ALTER TABLE Seasons
   MODIFY platform ENUM('kanaliiga','esportal','faceit','popflash','krafton')
   NOT NULL DEFAULT 'kanaliiga';
 
--- 2. PUBG maps. NB: the API returns internal CODE names (e.g. "Desert_Main"),
---    not display names. Maps is currently just (id, name), so either add a
---    code-name column or keep a code→display lookup in code. Recommended:
-ALTER TABLE Maps ADD COLUMN code_name VARCHAR(64) NULL UNIQUE;  -- nullable: CS2 maps have none
-INSERT INTO Maps (name, code_name) VALUES
-  ('Erangel','Baltic_Main'), ('Miramar','Desert_Main'), ('Taego','Tiger_Main'),
-  ('Vikendi','DihorOtok_Main'), ('Rondo','Neon_Main'), ('Deston','Kiki_Main'),
-  ('Sanhok','Savage_Main'), ('Karakin','Summerland_Main'), ('Paramo','Heaven_Main');
+-- 2. PUBG maps.
+--    Add game_id (FK → Games) so the CS2 map-pool picker stays game-scoped and future games
+--    can add their own maps without heuristics. Backfill existing CS2 maps to game_id = 1.
+--    Add code_name for Krafton's internal map identifiers (NULL for CS2 maps).
+--    SeasonActiveMapPool is NOT used for PUBG — it feeds the CS2 veto flow only.
+--    The map for a PUBG match comes from the Krafton payload at ingestion time.
+ALTER TABLE Maps
+  ADD COLUMN game_id   TINYINT UNSIGNED NULL,
+  ADD COLUMN code_name VARCHAR(64)      NULL UNIQUE,
+  ADD CONSTRAINT fk_maps_game FOREIGN KEY (game_id) REFERENCES Games(id) ON DELETE SET NULL;
+
+UPDATE Maps SET game_id = 1;  -- backfill all existing CS2 maps
+
+INSERT INTO Maps (name, code_name, game_id) VALUES
+  ('Erangel',  'Baltic_Main',     2),
+  ('Miramar',  'Desert_Main',     2),
+  ('Taego',    'Tiger_Main',      2),
+  ('Vikendi',  'DihorOtok_Main',  2),
+  ('Rondo',    'Neon_Main',       2),
+  ('Deston',   'Kiki_Main',       2),
+  ('Sanhok',   'Savage_Main',     2),
+  ('Karakin',  'Summerland_Main', 2),
+  ('Paramo',   'Heaven_Main',     2);
 ```
 
 > Ingestion resolves `PubgMatches.map_id` by `mapName` → `Maps.code_name`. Unknown codes
 > ingest with `map_id = NULL` (don't fail the match) and log for a follow-up seed.
+>
+> `SeasonActiveMapPool` is **CS2-only** — it supports the map-veto flow, which PUBG has no
+> equivalent for. PUBG map rotation is configured in the Krafton custom lobby (outside our
+> system); map assignment happens at ingestion, not via admin pre-configuration.
 
 > `Games`, `GameTypes` (Duo/Squad), and `OrganizerGames` for org 1 are **already seeded** — no change needed.
 
@@ -575,16 +595,16 @@ Admins can also `POST /api/v1/pubg/matches/ingest { krafton_match_id, season_id,
 
 ## 9. Phased rollout
 
-| Phase                       | Deliverable                                                                                                                                                                                                                   | Notes                                                                       |
-| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| **0. Spike**                | ✅ Mostly done — `PUBG_API_KEY` provisioned (env + GitLab CI/CD + deploy compose); a real custom match is captured in `docs/pubg/pubg_matchdata-example.json`. **Remaining:** confirm the live ~10 rpm limit against the key. | De-risks §4 assumptions before schema is frozen                             |
-| **1. Foundation**           | Migrations 6.1–6.7, types + `createMockX` factories, `platform='krafton'`                                                                                                                                                     | No behaviour change; CS2 untouched                                          |
-| **2. Identity & signup**    | `PubgPlayerIdentities`, link/verify endpoint, PUBG season + Squad registration end-to-end (reuses existing flow)                                                                                                              | Proves the reusable spine                                                   |
-| **3. Ingestion**            | `pubg-api.services` + poller + manual-ingest endpoint + `PubgMatchIngestion`; persist `PubgMatches`/rosters/stats                                                                                                             | The core engineering work                                                   |
-| **4. Scoring & standings**  | `PubgScoringRules` admin config + standings aggregation + public read endpoints                                                                                                                                               | Data-driven points                                                          |
-| **4b. Unified read view**   | `MatchEvents` view (§6.9) + point `calendar`/`match-streams` at it so PUBG appears in the cross-game calendar/casting                                                                                                         | "All matches in one place" = PUBG **results**, not upcoming fixtures (§6.9) |
-| **5. Telemetry (optional)** | Parse telemetry CDN for advanced stats (knock timelines, heat positioning)                                                                                                                                                    | Allstar-style, on demand                                                    |
-| **6. PUBG ranking (later)** | A PUBG analogue to Sortter/kana_elo for auto-division balancing                                                                                                                                                               | Out of v1                                                                   |
+| Phase                       | Deliverable                                                                                                                                                                                                                                  | Notes                                                                       |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| **0. Spike**                | ✅ Mostly done — `PUBG_API_KEY` provisioned (env + GitLab CI/CD + deploy compose); a real custom match is captured in `docs/pubg/pubg_matchdata-example.json`. **Remaining:** confirm the live ~10 rpm limit against the key.                | De-risks §4 assumptions before schema is frozen                             |
+| **1. Foundation**           | Migrations 6.1–6.7, types + `createMockX` factories, `platform='krafton'` — **`platform='krafton'` ✅ done 2026-06-05**                                                                                                                      | No behaviour change; CS2 untouched                                          |
+| **2. Identity & signup**    | `PubgPlayerIdentities`, link/verify endpoint, PUBG season + Squad registration end-to-end (reuses existing flow) — **signup player-limits infrastructure ✅ done 2026-06-05** (`SeasonSignupSettings`, per-season min/max, full stack wired) | Proves the reusable spine                                                   |
+| **3. Ingestion**            | `pubg-api.services` + poller + manual-ingest endpoint + `PubgMatchIngestion`; persist `PubgMatches`/rosters/stats                                                                                                                            | The core engineering work                                                   |
+| **4. Scoring & standings**  | `PubgScoringRules` admin config + standings aggregation + public read endpoints                                                                                                                                                              | Data-driven points                                                          |
+| **4b. Unified read view**   | `MatchEvents` view (§6.9) + point `calendar`/`match-streams` at it so PUBG appears in the cross-game calendar/casting                                                                                                                        | "All matches in one place" = PUBG **results**, not upcoming fixtures (§6.9) |
+| **5. Telemetry (optional)** | Parse telemetry CDN for advanced stats (knock timelines, heat positioning)                                                                                                                                                                   | Allstar-style, on demand                                                    |
+| **6. PUBG ranking (later)** | A PUBG analogue to Sortter/kana_elo for auto-division balancing                                                                                                                                                                              | Out of v1                                                                   |
 
 Each phase is independently shippable and gated behind `season.platform='krafton'`, so CS2 is never at risk.
 

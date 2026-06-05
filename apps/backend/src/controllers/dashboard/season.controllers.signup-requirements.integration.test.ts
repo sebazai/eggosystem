@@ -8,6 +8,10 @@ import type { PoolConnection } from "mysql2/promise";
 import { expressErrorHandler } from "../../middlewares/express-error-handler";
 import seasonRouter from "../../routes/v1/dashboard/season.routes";
 import { generateTestJWT } from "../../utils/auth-test-utils";
+import {
+  deleteTestSeasonSignupSettings,
+  insertTestSeasonSignupSettings
+} from "../../__utils__/season-signup-settings-test";
 
 // Mock the auth middleware
 jest.mock("../../middlewares/auth.middleware", () => ({
@@ -50,6 +54,7 @@ describe("Season Controllers Integration Tests - Signup Requirements", () => {
       [testSeasonId],
       connection
     );
+    await deleteTestSeasonSignupSettings(testSeasonId, connection);
     await runQuery(
       "DELETE FROM Seasons WHERE id = ?",
       [testSeasonId],
@@ -96,6 +101,7 @@ describe("Season Controllers Integration Tests - Signup Requirements", () => {
           [createdSeasonId],
           connection
         );
+        await deleteTestSeasonSignupSettings(createdSeasonId, connection);
         await runQuery(
           "DELETE FROM Seasons WHERE id = ?",
           [createdSeasonId],
@@ -146,6 +152,7 @@ describe("Season Controllers Integration Tests - Signup Requirements", () => {
           [createdSeasonId],
           connection
         );
+        await deleteTestSeasonSignupSettings(createdSeasonId, connection);
         await runQuery(
           "DELETE FROM Seasons WHERE id = ?",
           [createdSeasonId],
@@ -169,6 +176,7 @@ describe("Season Controllers Integration Tests - Signup Requirements", () => {
         [testSeasonId],
         connection
       );
+      await insertTestSeasonSignupSettings(testSeasonId, undefined, connection);
       // Add map pool
       await runQuery(
         `INSERT INTO SeasonActiveMapPool (season_id, map_id) VALUES (?, ?), (?, ?)`,
@@ -277,6 +285,7 @@ describe("Season Controllers Integration Tests - Signup Requirements", () => {
         [testSeasonId],
         connection
       );
+      await insertTestSeasonSignupSettings(testSeasonId, undefined, connection);
       // Add map pool
       await runQuery(
         `INSERT INTO SeasonActiveMapPool (season_id, map_id) VALUES (?, ?), (?, ?)`,

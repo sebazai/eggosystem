@@ -33,6 +33,8 @@ export const createMockSeasonDetails = (
     faceit_rank_required: false,
     premier_rank_required: false,
     hours_played_required: false,
+    min_players: 5,
+    max_players: 9,
     ...overrides
   } satisfies SeasonDetails;
 };

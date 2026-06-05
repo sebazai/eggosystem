@@ -2,6 +2,10 @@ import { getSeasonById } from "./season.models";
 import { runQuery } from "../db/mysqlRunQuery";
 import { getConnection } from "../db/mysqlConnection";
 import type { PoolConnection } from "mysql2/promise";
+import {
+  deleteTestSeasonSignupSettings,
+  insertTestSeasonSignupSettings
+} from "../__utils__/season-signup-settings-test";
 
 describe("Season Models Integration Tests", () => {
   let connection: PoolConnection;
@@ -43,6 +47,7 @@ describe("Season Models Integration Tests", () => {
         throw error;
       }
     }
+    await deleteTestSeasonSignupSettings(testSeasonId, connection);
     await runQuery(
       "DELETE FROM Seasons WHERE id = ?",
       [testSeasonId],
@@ -69,6 +74,8 @@ describe("Season Models Integration Tests", () => {
       ],
       connection
     );
+
+    await insertTestSeasonSignupSettings(testSeasonId, undefined, connection);
 
     // Seed active map pool (required for getSeasonById)
     try {

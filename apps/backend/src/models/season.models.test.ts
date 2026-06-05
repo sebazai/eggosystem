@@ -17,6 +17,10 @@ jest.mock("./season-active-map-pool.models", () => ({
   setActiveMapPoolForSeason: jest.fn().mockResolvedValue(undefined),
   getActiveMapPoolBySeasonId: jest.fn().mockResolvedValue([1, 2, 3])
 }));
+jest.mock("./season-signup-settings.models", () => ({
+  upsertSeasonSignupSettings: jest.fn().mockResolvedValue(undefined),
+  getSeasonSignupSettingsBySeasonId: jest.fn().mockResolvedValue(undefined)
+}));
 jest.mock("../utils/redisClient", () => ({
   redisClient: {
     get: jest.fn().mockResolvedValue(null),
@@ -221,9 +225,12 @@ describe("Season Models", () => {
       const result = await getSeasonById(999);
 
       expect(mockRunQuery).toHaveBeenCalledWith(
-        "SELECT * FROM Seasons WHERE id = ?",
+        expect.stringContaining("FROM Seasons s"),
         [999],
         undefined
+      );
+      expect(mockRunQuery.mock.calls[0][0]).toContain(
+        "INNER JOIN SeasonSignupSettings"
       );
       expect(result).toBeUndefined();
     });

@@ -9,6 +9,7 @@ import type { MatchTeamLineup, TeamStatsResponse } from "@eggosystem/types";
 import { runQuery } from "../../db/mysqlRunQuery";
 import { getConnection } from "../../db/mysqlConnection";
 import type { PoolConnection } from "mysql2/promise";
+import { insertTestSeasonSignupSettings } from "../../__utils__/season-signup-settings-test";
 
 describe("Match Routes", () => {
   let app: express.Application;
@@ -269,6 +270,7 @@ describe("Match Routes", () => {
         [],
         connection
       );
+      await insertTestSeasonSignupSettings(9999, undefined, connection);
 
       await runQuery(
         `INSERT IGNORE INTO Leagues (id, name) VALUES (9999, 'Test League')`,

@@ -15,9 +15,7 @@ import type { GameType } from "./GameType.interface";
  * // Override specific fields
  * const customGameType = createMockGameType({
  *   id: 1,
- *   name: "5v5",
- *   min_players: 5,
- *   max_players: 5
+ *   name: "Comp"
  * });
  * ```
  */
@@ -25,9 +23,7 @@ export const createMockGameType = (overrides?: Partial<GameType>): GameType => {
   return {
     id: 1,
     game_id: 1,
-    name: "5v5",
-    min_players: 5,
-    max_players: 5,
+    name: "Comp",
     ...overrides
   };
 };

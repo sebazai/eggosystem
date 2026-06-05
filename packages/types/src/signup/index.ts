@@ -1,5 +1,22 @@
 import { z } from "zod";
-import { SeasonPlatform } from "@eggosystem/types";
+import { SeasonPlatform } from "../enums";
+import type { SeasonDetails } from "../seasons/SeasonDetails.interface";
+
+export interface SignupFormSchemaContext {
+  platform: SeasonPlatform;
+  minPlayers: number;
+  maxPlayers: number;
+}
+
+export function signupFormSchemaContextFromSeason(
+  season: Pick<SeasonDetails, "platform" | "min_players" | "max_players">
+): SignupFormSchemaContext {
+  return {
+    platform: season.platform,
+    minPlayers: season.min_players,
+    maxPlayers: season.max_players
+  };
+}
 
 const playerSchema = z
   .object({
@@ -73,7 +90,7 @@ const teamExternalIdSchema = (platform: SeasonPlatform) => {
   return z.string().optional();
 };
 
-const baseSignupFormSchema = (context: { platform: SeasonPlatform }) =>
+const baseSignupFormSchema = (context: SignupFormSchemaContext) =>
   z
     .object({
       organizationId: z.number(),
@@ -88,8 +105,8 @@ const baseSignupFormSchema = (context: { platform: SeasonPlatform }) =>
       }),
       players: z
         .array(playerSchema)
-        .min(5)
-        .max(9)
+        .min(context.minPlayers)
+        .max(context.maxPlayers)
         .refine(
           (players) => {
             const captains = players.filter((p) => p.captain === true);
@@ -128,7 +145,7 @@ const baseSignupFormSchema = (context: { platform: SeasonPlatform }) =>
       }
     );
 
-const signupFormSchema = (context: { platform: SeasonPlatform }) =>
+const signupFormSchema = (context: SignupFormSchemaContext) =>
   baseSignupFormSchema(context)
     .refine(
       (data) => {
@@ -164,6 +181,30 @@ export type SignupFormValues = z.infer<ReturnType<typeof signupFormSchema>>;
 export type SignupPlayerType = z.infer<typeof playerSchema>;
 export type SignupNewOrganizationType = z.infer<typeof newOrganizationSchema>;
 export type SignupNewTeamType = z.infer<typeof newTeamSchema>;
+
+export function createEmptySignupPlayer(
+  overrides?: Partial<SignupPlayerType>
+): SignupPlayerType {
+  return {
+    accountId: 0,
+    steamId: "",
+    nickname: "",
+    discord: "",
+    captain: false,
+    coCaptain: false,
+    hasValidData: undefined,
+    hasValidWorkEmail: undefined,
+    isEmailVerified: undefined,
+    hours: undefined,
+    rank: undefined,
+    externalRank: undefined,
+    ...overrides
+  };
+}
+
+export function createEmptySignupPlayers(count: number): SignupPlayerType[] {
+  return Array.from({ length: count }, () => createEmptySignupPlayer());
+}
 
 const createMockSignupPlayer = (
   overrides?: Partial<SignupPlayerType>

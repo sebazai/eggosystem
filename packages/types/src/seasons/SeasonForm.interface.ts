@@ -106,7 +106,21 @@ export const seasonFormSchema = z
       .nullable(),
     faceit_rank_required: z.boolean(),
     premier_rank_required: z.boolean(),
-    hours_played_required: z.boolean()
+    hours_played_required: z.boolean(),
+    min_players: z
+      .number()
+      .int()
+      .min(1, "Minimum players must be at least 1")
+      .max(20, "Minimum players must be 20 or less"),
+    max_players: z
+      .number()
+      .int()
+      .min(1, "Maximum players must be at least 1")
+      .max(20, "Maximum players must be 20 or less")
+  })
+  .refine((data) => data.min_players <= data.max_players, {
+    message: "Minimum players must be less than or equal to maximum players",
+    path: ["max_players"]
   })
   .refine(
     (data) => {
@@ -212,4 +226,6 @@ export interface SeasonFormRaw {
   faceit_rank_required: boolean;
   premier_rank_required: boolean;
   hours_played_required: boolean;
+  min_players: number;
+  max_players: number;
 }

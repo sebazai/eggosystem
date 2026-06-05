@@ -59,6 +59,10 @@ export interface Season {
   faceit_rank_required: boolean;
   premier_rank_required: boolean;
   hours_played_required: boolean;
+  /** Resolved roster minimum (season override or game type default). */
+  min_players: number;
+  /** Resolved roster maximum (season override or game type default). */
+  max_players: number;
 }
 
 export interface InsertSeason {
@@ -84,4 +88,6 @@ export interface InsertSeason {
   faceit_rank_required?: boolean;
   premier_rank_required?: boolean;
   hours_played_required?: boolean;
+  min_players?: number;
+  max_players?: number;
 }

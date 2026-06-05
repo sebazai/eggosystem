@@ -123,11 +123,9 @@ describe("SeasonsPageClient", () => {
         {
           id: 1,
           name: "Competitive",
-          game_id: 1,
-          min_players: 5,
-          max_players: 5
+          game_id: 1
         },
-        { id: 2, name: "Wingman", game_id: 1, min_players: 2, max_players: 2 }
+        { id: 2, name: "Wingman", game_id: 1 }
       ],
       isLoading: false,
       isError: undefined,

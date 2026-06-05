@@ -31,7 +31,8 @@ import {
   type SeasonFormRaw,
   type Season,
   SeasonPlatform,
-  isSeasonPlatform
+  isSeasonPlatform,
+  getDefaultSignupPlayerLimitsForGameTypeId
 } from "@eggosystem/types";
 import { useGames } from "@/hooks/data/useGames";
 import { useGameTypes } from "@/hooks/data/useGameTypes";
@@ -92,7 +93,9 @@ export function SeasonForm({
       discord_link: season.discord_link || null,
       faceit_rank_required: season.faceit_rank_required,
       premier_rank_required: season.premier_rank_required,
-      hours_played_required: season.hours_played_required
+      hours_played_required: season.hours_played_required,
+      min_players: season.min_players,
+      max_players: season.max_players
     };
   };
 
@@ -120,7 +123,9 @@ export function SeasonForm({
       discord_link: null,
       faceit_rank_required: false,
       premier_rank_required: false,
-      hours_played_required: false
+      hours_played_required: false,
+      min_players: 5,
+      max_players: 9
     },
     mode: "onTouched"
   });
@@ -151,6 +156,12 @@ export function SeasonForm({
   const filteredGameTypes = gameTypes.filter(
     (gameType) => gameType.game_id === selectedGameId
   );
+
+  function applyGameTypePlayerLimits(gameTypeId: number) {
+    const limits = getDefaultSignupPlayerLimitsForGameTypeId(gameTypeId);
+    form.setValue("min_players", limits.min_players, { shouldValidate: true });
+    form.setValue("max_players", limits.max_players, { shouldValidate: true });
+  }
 
   const handleSubmit = async (data: SeasonFormValues) => {
     if (!onSubmit) return;
@@ -193,7 +204,9 @@ export function SeasonForm({
         discord_link: data.discord_link || null,
         faceit_rank_required: data.faceit_rank_required ?? false,
         premier_rank_required: data.premier_rank_required ?? false,
-        hours_played_required: data.hours_played_required ?? false
+        hours_played_required: data.hours_played_required ?? false,
+        min_players: data.min_players,
+        max_players: data.max_players
       };
 
       await onSubmit(rawData);
@@ -242,8 +255,12 @@ export function SeasonForm({
                     <Select
                       onValueChange={(value) => {
                         field.onChange(parseInt(value, 10));
-                        // Reset game type when game changes
-                        form.setValue("game_type_id", 1);
+                        const firstType = gameTypes.find(
+                          (gt) => gt.game_id === parseInt(value, 10)
+                        );
+                        const nextTypeId = firstType?.id ?? 1;
+                        form.setValue("game_type_id", nextTypeId);
+                        applyGameTypePlayerLimits(nextTypeId);
                       }}
                       value={field.value?.toString()}
                       disabled={isFormDisabled}
@@ -274,9 +291,11 @@ export function SeasonForm({
                   <FormItem>
                     <RequiredFormLabel required>Game Type</RequiredFormLabel>
                     <Select
-                      onValueChange={(value) =>
-                        field.onChange(parseInt(value, 10))
-                      }
+                      onValueChange={(value) => {
+                        const gameTypeId = parseInt(value, 10);
+                        field.onChange(gameTypeId);
+                        applyGameTypePlayerLimits(gameTypeId);
+                      }}
                       value={field.value?.toString()}
                       disabled={
                         isFormDisabled || filteredGameTypes.length === 0
@@ -302,6 +321,65 @@ export function SeasonForm({
                   </FormItem>
                 )}
               />
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="min_players"
+                  render={({ field }) => (
+                    <FormItem>
+                      <RequiredFormLabel required>
+                        Minimum players
+                      </RequiredFormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min={1}
+                          max={20}
+                          {...field}
+                          value={field.value ?? ""}
+                          onChange={(e) =>
+                            field.onChange(parseInt(e.target.value, 10) || 1)
+                          }
+                          disabled={isFormDisabled}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Minimum roster size for signup for this season.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="max_players"
+                  render={({ field }) => (
+                    <FormItem>
+                      <RequiredFormLabel required>
+                        Maximum players
+                      </RequiredFormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min={1}
+                          max={20}
+                          {...field}
+                          value={field.value ?? ""}
+                          onChange={(e) =>
+                            field.onChange(parseInt(e.target.value, 10) || 1)
+                          }
+                          disabled={isFormDisabled}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Maximum roster size for signup for this season.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
               {/* Season Name */}
               <FormField

@@ -5,17 +5,11 @@ import { BadRequestError } from "../utils/errors";
 export const ensureSeasonMaxPlayersForTeam = async (
   seasonId: number,
   teamId: number,
-  {
-    maxPlayers = 9,
-    excludeSteamId = false
-  }: { maxPlayers?: number; excludeSteamId?: boolean } = {}
+  { excludeSteamId = false }: { excludeSteamId?: boolean } = {}
 ) => {
   const primaryPlayers = await getPrimaryPlayersForTeam(teamId, seasonId);
   const season = await getSeasonByIdOrThrow(seasonId);
-
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-expect-error
-  const maxPlayersForSeason = season.max_players ?? maxPlayers;
+  const maxPlayersForSeason = season.max_players;
 
   if (primaryPlayers.length - (excludeSteamId ? 1 : 0) >= maxPlayersForSeason) {
     throw new BadRequestError(

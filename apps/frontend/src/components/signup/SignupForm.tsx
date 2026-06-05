@@ -29,10 +29,12 @@ import { ApiError, clientApiFetch } from "@/lib/apiClient";
 import {
   SeasonPlatform,
   type FaceITTeamDetails,
+  type SeasonDetails,
   type SignupFormValues,
-  type SignupPlayerType,
   signupFormSchema,
-  baseSignupFormSchema
+  signupFormSchemaContextFromSeason,
+  baseSignupFormSchema,
+  createEmptySignupPlayers
 } from "@eggosystem/types";
 import { CopyInput } from "@/components/inputs/CopyInput";
 import { envConfig } from "@/configs/env";
@@ -71,41 +73,51 @@ const validateExternalPlaformId = async (
   }
 };
 
-const defaultValues = {
-  organizationId: undefined,
-  teamId: undefined,
-  newOrganization: undefined,
-  newTeam: undefined,
-  teamExternalId: "",
-  captainHasReadTermAndConditions: false,
-  players: Array(5).fill({
-    accountId: 0,
-    steamId: "",
-    nickname: "",
-    discord: "",
-    captain: false,
-    coCaptain: false,
-    hasValidData: undefined,
-    hasValidWorkEmail: undefined,
-    isEmailVerified: undefined,
-    hours: undefined,
-    rank: undefined,
-    externalRank: undefined
-  } satisfies SignupPlayerType)
-};
+function buildSignupFormDefaultValues(
+  seasonDetails: SeasonDetails,
+  draft?: SignupFormValues,
+  editValues?: SignupFormValues
+): SignupFormValues {
+  if (editValues) return editValues;
+  if (draft) return draft;
+  return {
+    organizationId: undefined as unknown as number,
+    teamId: undefined as unknown as number,
+    newOrganization: undefined,
+    newTeam: undefined,
+    teamExternalId: "",
+    captainHasReadTermAndConditions: false,
+    players: createEmptySignupPlayers(seasonDetails.min_players)
+  } satisfies SignupFormValues;
+}
 
-export const SignupForm = ({
-  seasonId,
+interface SignupFormWithSeasonProps extends SignupFormProps {
+  seasonDetails: SeasonDetails;
+  effectiveSeasonId: string;
+}
+
+function SignupFormWithSeason({
+  seasonId: _seasonId,
   platform,
   draft,
   editValues,
   onDraftSaved,
   isAdminMode = false,
-  selectedSeasonId
-}: SignupFormProps) => {
-  const { user, loading: loadingUser } = useAuth();
-  const schema = signupFormSchema({ platform });
-  const baseSchema = baseSignupFormSchema({ platform });
+  seasonDetails,
+  effectiveSeasonId
+}: SignupFormWithSeasonProps) {
+  const signupSchemaContext = useMemo(
+    () => signupFormSchemaContextFromSeason(seasonDetails),
+    [seasonDetails]
+  );
+  const schema = useMemo(
+    () => signupFormSchema(signupSchemaContext),
+    [signupSchemaContext]
+  );
+  const baseSchema = useMemo(
+    () => baseSignupFormSchema(signupSchemaContext),
+    [signupSchemaContext]
+  );
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [editUrl, setEditUrl] = useState<string>("");
   const [fetchingExternalData, setFetchingExternalData] = useState(false);
@@ -116,13 +128,13 @@ export const SignupForm = ({
 
   const isEditMode = !!editValues;
 
-  // Use selectedSeasonId for admin mode, otherwise use seasonId from props
-  const effectiveSeasonId =
-    isAdminMode && selectedSeasonId ? selectedSeasonId : seasonId;
-
   const form = useForm({
     resolver: zodResolver(schema),
-    defaultValues: editValues ?? draft ?? defaultValues,
+    defaultValues: buildSignupFormDefaultValues(
+      seasonDetails,
+      draft,
+      editValues
+    ),
     mode: "onTouched"
   });
 
@@ -144,9 +156,6 @@ export const SignupForm = ({
   const watchExternalTeamId = useWatch({ control, name: "teamExternalId" });
   const watchNewTeam = useWatch({ control, name: "newTeam" });
   const watchPlayers = useWatch({ control, name: "players" });
-
-  const { seasonDetails, isLoading, isError } =
-    useSeasonDetails(effectiveSeasonId);
 
   const validOrgId = useMemo(
     () =>
@@ -441,30 +450,6 @@ export const SignupForm = ({
       setValue
     });
 
-  if (!user && !isAdminMode) {
-    return <RequiresSteamLogin />;
-  }
-
-  // Initial load only: SWR sets isValidating during background revalidation; the
-  // old hook always returned false for validating—gating on it hid the form (E2E flakiness).
-  if (isLoading || loadingUser) {
-    return (
-      <div className="w-full space-y-4">
-        <CardSkeleton showHeader={true} contentLines={4} />
-        <CardSkeleton showHeader={true} contentLines={6} />
-        <CardSkeleton showHeader={true} contentLines={5} />
-      </div>
-    );
-  }
-
-  if (isError || !seasonDetails) {
-    return (
-      <ContentContainer>
-        {isError?.message ?? "Something went wrong..."}
-      </ContentContainer>
-    );
-  }
-
   const onNext = async (value: string) => {
     if (
       value === "team" &&
@@ -707,7 +692,13 @@ export const SignupForm = ({
               onOpenChange={setShowResetConfirmation}
               onConfirm={() => {
                 setActiveTab("organization");
-                form.reset(defaultValues);
+                form.reset(
+                  buildSignupFormDefaultValues(
+                    seasonDetails,
+                    undefined,
+                    undefined
+                  )
+                );
               }}
               title="Reset Form"
               description="The form will be completely wiped. Do you want to continue?"
@@ -720,4 +711,44 @@ export const SignupForm = ({
       </form>
     </FormProvider>
   );
-};
+}
+
+export function SignupForm(props: SignupFormProps) {
+  const { user, loading: loadingUser } = useAuth();
+  const effectiveSeasonId =
+    props.isAdminMode && props.selectedSeasonId
+      ? props.selectedSeasonId
+      : props.seasonId;
+  const { seasonDetails, isLoading, isError } =
+    useSeasonDetails(effectiveSeasonId);
+
+  if (!user && !props.isAdminMode) {
+    return <RequiresSteamLogin />;
+  }
+
+  if (isLoading || loadingUser) {
+    return (
+      <div className="w-full space-y-4">
+        <CardSkeleton showHeader={true} contentLines={4} />
+        <CardSkeleton showHeader={true} contentLines={6} />
+        <CardSkeleton showHeader={true} contentLines={5} />
+      </div>
+    );
+  }
+
+  if (isError || !seasonDetails) {
+    return (
+      <ContentContainer>
+        {isError?.message ?? "Something went wrong..."}
+      </ContentContainer>
+    );
+  }
+
+  return (
+    <SignupFormWithSeason
+      {...props}
+      seasonDetails={seasonDetails}
+      effectiveSeasonId={effectiveSeasonId}
+    />
+  );
+}

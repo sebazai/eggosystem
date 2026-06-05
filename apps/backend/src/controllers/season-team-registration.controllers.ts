@@ -80,7 +80,11 @@ export const updateTeamSignupDetails = async (
   const season = await getValidSeason(seasonId);
   const formData = req.body;
 
-  signupFormSchema({ platform: season.platform }).parse(formData);
+  signupFormSchema({
+    platform: season.platform,
+    minPlayers: season.min_players,
+    maxPlayers: season.max_players
+  }).parse(formData);
 
   await checkExternalId(season.platform, formData.teamExternalId);
 
@@ -101,7 +105,11 @@ export const addSignupForSeasonController = async (
   const season = await getValidSeason(id);
   const formData = req.body;
 
-  signupFormSchema({ platform: season.platform }).parse(formData);
+  signupFormSchema({
+    platform: season.platform,
+    minPlayers: season.min_players,
+    maxPlayers: season.max_players
+  }).parse(formData);
 
   await checkExternalId(season.platform, formData.teamExternalId);
 

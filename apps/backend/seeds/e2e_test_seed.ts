@@ -106,8 +106,13 @@ export async function seed(knex: Knex): Promise<void> {
     await knex("SeasonTeamPlayers").where({ season_id: sid }).del();
     await knex("SeasonTeamRegistrationPlayers").where({ season_id: sid }).del();
     await knex("SeasonTeamRegistrations").where({ season_id: sid }).del();
+    await knex("SeasonSignupSettings").where({ season_id: sid }).del();
   }
-  await knex("Seasons").whereIn("id", [991, 992, 993, 996]).del();
+  await knex("SeasonTeamPlayers").where({ season_id: 995 }).del();
+  await knex("SeasonTeamRegistrationPlayers").where({ season_id: 995 }).del();
+  await knex("SeasonTeamRegistrations").where({ season_id: 995 }).del();
+  await knex("SeasonSignupSettings").where({ season_id: 995 }).del();
+  await knex("Seasons").whereIn("id", [991, 992, 993, 995, 996]).del();
   await knex("Seasons").where({ id: 16 }).del();
 
   // Clean up NEW test accounts and related data if they exist
@@ -149,6 +154,7 @@ export async function seed(knex: Knex): Promise<void> {
   await knex("Seasons").insert({
     id: 16,
     game_id: 1,
+    game_type_id: 1,
     name: "Season 4",
     full_name: "CS2 Season 4",
     signup_start_date: now,
@@ -161,11 +167,40 @@ export async function seed(knex: Knex): Promise<void> {
     hours_played_required: 1
   });
 
+  await knex("SeasonSignupSettings").insert({
+    season_id: 16,
+    min_players: 5,
+    max_players: 9
+  });
+
+  // Custom roster limits (3–4) for signup form E2E
+  await knex("Seasons").insert({
+    id: 995,
+    game_id: 1,
+    game_type_id: 1,
+    name: "E2E Season Custom roster",
+    full_name: "E2E CS2 Custom roster limits",
+    signup_start_date: now,
+    signup_end_date: tomorrow,
+    start_date: tenDaysLater,
+    end_date: sixtyDaysLater,
+    platform: "faceit",
+    faceit_rank_required: 0,
+    premier_rank_required: 0,
+    hours_played_required: 0
+  });
+  await knex("SeasonSignupSettings").insert({
+    season_id: 995,
+    min_players: 3,
+    max_players: 4
+  });
+
   // Dedicated season for end-to-end “all signup requirements OFF” flows (matches production DB flags;
   // does not rely on route-mocking `/seasons/*/details`).
   await knex("Seasons").insert({
     id: 996,
     game_id: 1,
+    game_type_id: 1,
     name: "E2E Season Relaxed signup reqs",
     full_name: "E2E CS2 Relaxed signup requirements",
     signup_start_date: now,
@@ -176,6 +211,11 @@ export async function seed(knex: Knex): Promise<void> {
     faceit_rank_required: 0,
     premier_rank_required: 0,
     hours_played_required: 0
+  });
+  await knex("SeasonSignupSettings").insert({
+    season_id: 996,
+    min_players: 5,
+    max_players: 9
   });
 
   // Per-flag optional seasons for S1-AC-4 (same window as 16; no Playwright mock of `/details`).
@@ -189,6 +229,7 @@ export async function seed(knex: Knex): Promise<void> {
   };
   await knex("Seasons").insert({
     ...optionalSeasonBase,
+    game_type_id: 1,
     id: 991,
     name: "E2E Season FaceIT rank optional",
     full_name: "E2E CS2 FaceIT rank optional",
@@ -198,6 +239,7 @@ export async function seed(knex: Knex): Promise<void> {
   });
   await knex("Seasons").insert({
     ...optionalSeasonBase,
+    game_type_id: 1,
     id: 992,
     name: "E2E Season Premier rank optional",
     full_name: "E2E CS2 Premier rank optional",
@@ -207,6 +249,7 @@ export async function seed(knex: Knex): Promise<void> {
   });
   await knex("Seasons").insert({
     ...optionalSeasonBase,
+    game_type_id: 1,
     id: 993,
     name: "E2E Season Hours optional",
     full_name: "E2E CS2 Hours optional",
@@ -214,6 +257,13 @@ export async function seed(knex: Knex): Promise<void> {
     premier_rank_required: 1,
     hours_played_required: 0
   });
+  for (const sid of [991, 992, 993] as const) {
+    await knex("SeasonSignupSettings").insert({
+      season_id: sid,
+      min_players: 5,
+      max_players: 9
+    });
+  }
 
   // Update user emails in the Accounts table for NEW account IDs
   const users = [

@@ -720,11 +720,12 @@ export const TabPlayers = ({
     }
   };
 
+  const minPlayers = seasonDetails.min_players;
+  const maxPlayers = seasonDetails.max_players;
+
   const handleRosterImport = (players: SignupPlayerType[]) => {
     // Set the imported players into the form
     // We need to ensure we have the right number of player slots
-    const minPlayers = 5;
-    const maxPlayers = 9;
     const importedCount = Math.min(players.length, maxPlayers);
 
     // Calculate how many slots we need
@@ -1230,7 +1231,7 @@ export const TabPlayers = ({
                     }}
                     type="button"
                     className="w-full mt-1 sm:mt-4"
-                    disabled={fields.length <= 5} // Disable if less than 5 players
+                    disabled={fields.length <= minPlayers}
                     data-testid={`remove-player-button-${index}`}
                   >
                     Remove Player
@@ -1240,7 +1241,7 @@ export const TabPlayers = ({
             );
           })}
         </Accordion>
-        {fields.length < 9 && (
+        {fields.length < maxPlayers && (
           <Button
             type="button"
             onClick={() => {
@@ -1262,7 +1263,7 @@ export const TabPlayers = ({
         )}
 
         {/* Show captain/co-captain validation error in real-time */}
-        {!validCaptainSelection && watchPlayers.length >= 5 && (
+        {!validCaptainSelection && watchPlayers.length >= minPlayers && (
           <div
             className="text-red-500 text-xs mt-2"
             data-testid="captain-validation-error"

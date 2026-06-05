@@ -143,7 +143,9 @@ export const createSeasonController = async (
       discord_link: validatedData.discord_link || null,
       faceit_rank_required: validatedData.faceit_rank_required ?? false,
       premier_rank_required: validatedData.premier_rank_required ?? false,
-      hours_played_required: validatedData.hours_played_required ?? false
+      hours_played_required: validatedData.hours_played_required ?? false,
+      min_players: validatedData.min_players,
+      max_players: validatedData.max_players
     };
 
     // Create the season in the database
@@ -212,7 +214,9 @@ export const updateSeasonController = async (
       discord_link: validatedData.discord_link || null,
       faceit_rank_required: validatedData.faceit_rank_required ?? false,
       premier_rank_required: validatedData.premier_rank_required ?? false,
-      hours_played_required: validatedData.hours_played_required ?? false
+      hours_played_required: validatedData.hours_played_required ?? false,
+      min_players: validatedData.min_players,
+      max_players: validatedData.max_players
     };
 
     // Update the season in the database

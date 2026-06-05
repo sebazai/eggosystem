@@ -2,7 +2,8 @@ export const SeasonPlatform = {
   Kanaliiga: "kanaliiga",
   FACEIT: "faceit",
   Esportal: "esportal",
-  PopFlash: "popflash"
+  PopFlash: "popflash",
+  Krafton: "krafton"
 } as const;
 
 export type SeasonPlatform =

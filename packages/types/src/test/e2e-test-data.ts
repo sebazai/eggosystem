@@ -6,6 +6,9 @@
 /** Matches `Seasons.id` inserted by `apps/backend/seeds/e2e_test_seed.ts` (relaxed signup flags). */
 export const E2E_SIGNUP_SEASON_RELAXED_REQUIREMENTS_ID = 996;
 
+/** Season with signup roster limits min 3 / max 4 (`SeasonSignupSettings`). */
+export const E2E_SIGNUP_SEASON_CUSTOM_ROSTER_LIMITS_ID = 995;
+
 /** Same signup window as season 16; `faceit_rank_required` off, premier + hours on. */
 export const E2E_SIGNUP_SEASON_FACEIT_RANK_OPTIONAL_ID = 991;
 

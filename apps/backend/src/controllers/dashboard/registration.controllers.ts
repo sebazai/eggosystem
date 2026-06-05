@@ -226,7 +226,11 @@ export const addSignupForSeasonAdminController = async (
   const formData = req.body;
 
   // Validate form data
-  signupFormSchema({ platform: season.platform }).parse(formData);
+  signupFormSchema({
+    platform: season.platform,
+    minPlayers: season.min_players,
+    maxPlayers: season.max_players
+  }).parse(formData);
 
   // Check external ID validity
   await checkExternalId(season.platform, formData.teamExternalId);

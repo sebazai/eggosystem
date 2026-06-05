@@ -93,7 +93,7 @@ describe("Season Models", () => {
         "SELECT steam_id FROM SeasonTeamPlayers"
       );
       expect(mockRunQuery.mock.calls[2][0]).toContain(
-        "SELECT * FROM Seasons WHERE id = ?"
+        "INNER JOIN SeasonSignupSettings"
       );
       expect(mockRunQuery.mock.calls[3][0]).toContain("SELECT map_id");
       expect(mockRunQuery.mock.calls[4][0]).toContain(

@@ -57,9 +57,7 @@ describe("SeasonForm - Timezone Conversion", () => {
         {
           id: 1,
           name: "Competitive",
-          game_id: 1,
-          min_players: 5,
-          max_players: 5
+          game_id: 1
         }
       ],
       isLoading: false,

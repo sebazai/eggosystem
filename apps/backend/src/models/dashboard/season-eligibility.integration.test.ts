@@ -2,6 +2,10 @@ import { checkPlayerAdditionEligibility } from "./season.models";
 import { runQuery } from "../../db/mysqlRunQuery";
 import { getConnection } from "../../db/mysqlConnection";
 import type { PoolConnection } from "mysql2/promise";
+import {
+  deleteTestSeasonSignupSettings,
+  insertTestSeasonSignupSettings
+} from "../../__utils__/season-signup-settings-test";
 
 describe("Season Eligibility Integration Tests", () => {
   let connection: PoolConnection;
@@ -63,6 +67,7 @@ describe("Season Eligibility Integration Tests", () => {
 
     await runQuery("DELETE FROM Leagues WHERE id = 999", [], connection);
 
+    await deleteTestSeasonSignupSettings(999, connection);
     await runQuery("DELETE FROM Seasons WHERE id = 999", [], connection);
 
     await runQuery(
@@ -82,6 +87,7 @@ describe("Season Eligibility Integration Tests", () => {
       [],
       connection
     );
+    await insertTestSeasonSignupSettings(999, undefined, connection);
 
     // Insert test league
     await runQuery(

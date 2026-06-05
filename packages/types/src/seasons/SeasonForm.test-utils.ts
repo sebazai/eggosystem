@@ -32,6 +32,8 @@ export function createMockSeasonFormRequestBody(
     faceit_rank_required: false,
     premier_rank_required: false,
     hours_played_required: false,
+    min_players: 5,
+    max_players: 9,
     ...overrides
   };
 }
@@ -78,6 +80,8 @@ export const createMockSeasonFormValues = (
     faceit_rank_required: false,
     premier_rank_required: false,
     hours_played_required: false,
+    min_players: 5,
+    max_players: 9,
     ...overrides
   };
 };
@@ -128,6 +132,8 @@ export const createMockSeasonFormRaw = (
     faceit_rank_required: false,
     premier_rank_required: false,
     hours_played_required: false,
+    min_players: 5,
+    max_players: 9,
     ...overrides
   };
 };

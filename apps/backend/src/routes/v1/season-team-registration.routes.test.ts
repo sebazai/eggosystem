@@ -18,6 +18,8 @@ const mockSeasonWith = (returnValue: Partial<SeasonDetails> | undefined) => {
       ? ({
           app_id: 730,
           platform: SeasonPlatform.FACEIT,
+          min_players: 5,
+          max_players: 9,
           ...returnValue
         } as SeasonDetails)
       : undefined
@@ -96,6 +98,43 @@ describe("POST /:id/signup", () => {
           })
         ])
       });
+    });
+
+    it("should return 400 when player count is below season min_players", async () => {
+      mockSeasonWith({
+        signup_start_date: "2024-01-01T00:00:00Z",
+        min_players: 3,
+        max_players: 4
+      });
+      const tooFewPlayers = {
+        ...validSignupData,
+        players: validSignupData.players.slice(0, 2)
+      };
+      const res = await agent.post("/season/123/signup").send(tooFewPlayers);
+      expect(res.status).toBe(400);
+      expect(res.body.detail).toContain(">=3 items");
+    });
+
+    it("should return 400 when player count exceeds season max_players", async () => {
+      mockSeasonWith({
+        signup_start_date: "2024-01-01T00:00:00Z",
+        min_players: 3,
+        max_players: 4
+      });
+      const tooManyPlayers = {
+        ...validSignupData,
+        players: [
+          ...validSignupData.players,
+          {
+            accountId: 99994,
+            steamId: "12345678901234571",
+            nickname: "Player Six"
+          }
+        ]
+      };
+      const res = await agent.post("/season/123/signup").send(tooManyPlayers);
+      expect(res.status).toBe(400);
+      expect(res.body.detail).toContain("<=4 items");
     });
   });
 

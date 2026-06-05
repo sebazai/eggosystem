@@ -5,6 +5,10 @@ import IORedis from "ioredis";
 import express from "express";
 import { expressErrorHandler } from "../../middlewares/express-error-handler";
 import sortterRouter from "../../routes/v1/dashboard/sortter.routes";
+import {
+  deleteTestSeasonSignupSettings,
+  insertTestSeasonSignupSettings
+} from "../../__utils__/season-signup-settings-test";
 
 jest.mock("../../services/email.services", () => ({
   ...jest.requireActual("../../services/email.services"),
@@ -62,6 +66,7 @@ describe("Enhanced Finalize Team Placements", () => {
       testSteamId3,
       testSteamId4
     ]);
+    await deleteTestSeasonSignupSettings(testSeasonId);
     await runQuery("DELETE FROM Seasons WHERE id = ?", [testSeasonId]);
 
     // Create test season
@@ -69,6 +74,7 @@ describe("Enhanced Finalize Team Placements", () => {
       "INSERT INTO Seasons (id, game_id, name, full_name, start_date, platform) VALUES (?, 1, 'Test Season', 'Test Season Full', '2024-01-01', 'faceit')",
       [testSeasonId]
     );
+    await insertTestSeasonSignupSettings(testSeasonId);
 
     // Create test teams
     await runQuery(
@@ -186,6 +192,7 @@ describe("Enhanced Finalize Team Placements", () => {
       testSteamId3,
       testSteamId4
     ]);
+    await deleteTestSeasonSignupSettings(testSeasonId);
     await runQuery("DELETE FROM Seasons WHERE id = ?", [testSeasonId]);
   });
 

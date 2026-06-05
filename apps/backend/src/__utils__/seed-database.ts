@@ -3,13 +3,22 @@ import { buildInsertQueryParts } from "../db/utils";
 import { runQuery } from "../db/mysqlRunQuery";
 import { type ResultSetHeader } from "mysql2/promise";
 import { validSignupData } from "@eggosystem/shared-msw";
+import {
+  deleteTestSeasonSignupSettings,
+  insertTestSeasonSignupSettings
+} from "./season-signup-settings-test";
 
-export const insertTestSeason = (data: InsertSeason) => {
+export const insertTestSeason = async (
+  data: InsertSeason,
+  signupLimits?: { min_players: number; max_players: number }
+) => {
   const insertQuery = buildInsertQueryParts(data);
-  return runQuery(
+  const result = await runQuery<ResultSetHeader>(
     `INSERT IGNORE INTO Seasons (${insertQuery.columns.join(", ")}) VALUES (${insertQuery.placeholders})`,
     insertQuery.values
   );
+  await insertTestSeasonSignupSettings(data.id, signupLimits);
+  return result;
 };
 
 const insertAccountWithSteamId = async (
@@ -97,6 +106,7 @@ export const cleanUpTestUser = async (accountId: number) => {
 };
 
 export const removeTestSeason = async (seasonId: number) => {
+  await deleteTestSeasonSignupSettings(seasonId);
   await runQuery("DELETE FROM Seasons WHERE id = ?", [seasonId]);
 };
 

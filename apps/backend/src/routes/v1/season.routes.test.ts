@@ -8,6 +8,10 @@ import seasonRouter from "./season.routes";
 import { runQuery } from "../../db/mysqlRunQuery";
 import { getConnection } from "../../db/mysqlConnection";
 import type { PoolConnection } from "mysql2/promise";
+import {
+  deleteTestSeasonSignupSettings,
+  insertTestSeasonSignupSettings
+} from "../../__utils__/season-signup-settings-test";
 import * as playoffControllers from "../../controllers/playoff.controllers";
 
 // Mock the logger
@@ -193,6 +197,7 @@ describe("Season Routes - Integration Tests", () => {
       ).catch(() => {
         // Ignore if table doesn't exist
       });
+      await deleteTestSeasonSignupSettings(testSeasonId, connection);
       await runQuery(
         "DELETE FROM Seasons WHERE id = ?",
         [testSeasonId],
@@ -217,6 +222,7 @@ describe("Season Routes - Integration Tests", () => {
         ],
         connection
       );
+      await insertTestSeasonSignupSettings(testSeasonId, undefined, connection);
 
       // Seed active map pool (required for getSeasonById)
       await runQuery(
@@ -237,6 +243,7 @@ describe("Season Routes - Integration Tests", () => {
       ).catch(() => {
         // Ignore if table doesn't exist
       });
+      await deleteTestSeasonSignupSettings(testSeasonId, connection);
       await runQuery(
         "DELETE FROM Seasons WHERE id = ?",
         [testSeasonId],

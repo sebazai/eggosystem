@@ -13,10 +13,19 @@ import {
   setActiveMapPoolForSeason,
   getActiveMapPoolBySeasonId
 } from "./season-active-map-pool.models";
+import { upsertSeasonSignupSettings } from "./season-signup-settings.models";
+
+const SEASON_PLAYER_LIMITS_SQL = `
+  sss.min_players AS min_players,
+  sss.max_players AS max_players
+`;
 
 export const getSeasons = async () => {
-  const seasons = await runQuery<Season[]>("SELECT * FROM Seasons");
-  // Express res.json() will automatically serialize Date objects to ISO strings
+  const seasons = await runQuery<Season[]>(`
+    SELECT s.*, ${SEASON_PLAYER_LIMITS_SQL}
+    FROM Seasons s
+    INNER JOIN SeasonSignupSettings sss ON sss.season_id = s.id
+  `);
   return seasons;
 };
 
@@ -25,7 +34,12 @@ export const getSeasonById = async (
   connection?: PoolConnection
 ) => {
   const [data] = await runQuery<Array<Season | undefined>>(
-    "SELECT * FROM Seasons WHERE id = ?",
+    `
+    SELECT s.*, ${SEASON_PLAYER_LIMITS_SQL}
+    FROM Seasons s
+    INNER JOIN SeasonSignupSettings sss ON sss.season_id = s.id
+    WHERE s.id = ?
+    `,
     [id],
     connection
   );
@@ -68,7 +82,13 @@ export const getOrganizerIdBySeasonId = async (
 
 export const getSeasonDetailsById = async (id: number) => {
   const [data] = await runQuery<Array<SeasonDetails | undefined>>(
-    "SELECT s.*, g.app_id FROM Seasons s JOIN Games g ON s.game_id = g.id WHERE s.id = ?",
+    `
+    SELECT s.*, g.app_id, ${SEASON_PLAYER_LIMITS_SQL}
+    FROM Seasons s
+    JOIN Games g ON s.game_id = g.id
+    INNER JOIN SeasonSignupSettings sss ON sss.season_id = s.id
+    WHERE s.id = ?
+    `,
     [id]
   );
   // Express res.json() will automatically serialize Date objects to ISO strings
@@ -319,6 +339,15 @@ const createSeasonWithMapPool = async (
     connection
   );
 
+  await upsertSeasonSignupSettings(
+    result.insertId,
+    {
+      min_players: seasonData.min_players,
+      max_players: seasonData.max_players
+    },
+    connection
+  );
+
   return result;
 };
 
@@ -423,6 +452,15 @@ const updateSeasonWithMapPool = async (
   await setActiveMapPoolForSeason(
     seasonId,
     seasonData.active_map_pool,
+    connection
+  );
+
+  await upsertSeasonSignupSettings(
+    seasonId,
+    {
+      min_players: seasonData.min_players,
+      max_players: seasonData.max_players
+    },
     connection
   );
 

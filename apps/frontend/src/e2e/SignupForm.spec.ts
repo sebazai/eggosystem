@@ -24,6 +24,7 @@ import {
   E2E_SIGNUP_SEASON_HOURS_OPTIONAL_ID,
   E2E_SIGNUP_SEASON_PREMIER_RANK_OPTIONAL_ID,
   E2E_SIGNUP_SEASON_RELAXED_REQUIREMENTS_ID,
+  E2E_SIGNUP_SEASON_CUSTOM_ROSTER_LIMITS_ID,
   heppajpgSteamId,
   HoolyzSteamId,
   IncompleteDetailsPlayerSteamId,
@@ -2314,6 +2315,43 @@ test.describe("Signup Form", () => {
       expect(response.status()).toBeGreaterThanOrEqual(200);
       expect(response.status()).toBeLessThan(300);
       await expectPublicSignupSuccessUi(page);
+    });
+
+    test("renders signup player slots from season min/max roster settings", async ({
+      page
+    }) => {
+      const seasonId = E2E_SIGNUP_SEASON_CUSTOM_ROSTER_LIMITS_ID;
+
+      await setupAuthForUser(
+        page,
+        15007,
+        ValidWorkEmail1SteamId,
+        "ValidWorkEmail1"
+      );
+
+      await page.goto(`/seasons/${seasonId}/signup/registration`);
+      await expect(
+        page.getByText("Checking your registration status")
+      ).toBeHidden({ timeout: 60000 });
+
+      await navigateToPlayersTab(page);
+
+      const triggers = page.locator(
+        '[data-testid="player-accordion-triggers"]'
+      );
+      await expect(triggers).toHaveCount(3);
+
+      await page.locator('[data-testid="add-player-button"]').click();
+      await expect(triggers).toHaveCount(4);
+      await expect(
+        page.locator('[data-testid="add-player-button"]')
+      ).toBeHidden();
+
+      await page.locator('[data-testid="remove-player-button-3"]').click();
+      await expect(triggers).toHaveCount(3);
+      await expect(
+        page.locator('[data-testid="remove-player-button-0"]')
+      ).toBeDisabled();
     });
   });
 });
