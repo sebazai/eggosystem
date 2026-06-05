@@ -746,6 +746,7 @@ export function SignupForm(props: SignupFormProps) {
 
   return (
     <SignupFormWithSeason
+      key={effectiveSeasonId}
       {...props}
       seasonDetails={seasonDetails}
       effectiveSeasonId={effectiveSeasonId}

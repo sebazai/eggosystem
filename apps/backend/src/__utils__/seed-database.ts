@@ -1,4 +1,7 @@
-import { type InsertSeason } from "@eggosystem/types";
+import {
+  type InsertSeason,
+  getDefaultSignupPlayerLimitsForGameTypeId
+} from "@eggosystem/types";
 import { buildInsertQueryParts } from "../db/utils";
 import { runQuery } from "../db/mysqlRunQuery";
 import { type ResultSetHeader } from "mysql2/promise";
@@ -19,7 +22,10 @@ export const insertTestSeason = async (
     `INSERT IGNORE INTO Seasons (${insertQuery.columns.join(", ")}) VALUES (${insertQuery.placeholders})`,
     insertQuery.values
   );
-  await insertTestSeasonSignupSettings(data.id, signupLimits);
+  const resolvedLimits =
+    signupLimits ??
+    getDefaultSignupPlayerLimitsForGameTypeId(data.game_type_id);
+  await insertTestSeasonSignupSettings(data.id, resolvedLimits);
   await insertTestCSSeasonSettings(data.id, csSettings);
   return result;
 };
