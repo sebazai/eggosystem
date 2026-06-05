@@ -238,26 +238,10 @@ async function waitForPlayerSteamIdValidated(
 }
 
 /** Waits until the registration form organization step is interactive. */
-async function waitForRegistrationOrganizationStep(
-  page: Page,
-  seasonId?: number
-) {
+async function waitForRegistrationOrganizationStep(page: Page) {
   await expect(page.getByText("Checking your registration status")).toBeHidden({
     timeout: 60000
   });
-
-  if (seasonId !== undefined) {
-    await page
-      .waitForResponse(
-        (res) =>
-          res.url().includes(`/api/v1/seasons/${seasonId}/details`) &&
-          res.request().method() === "GET" &&
-          res.status() >= 200 &&
-          res.status() < 300,
-        { timeout: 60000 }
-      )
-      .catch(() => undefined);
-  }
 
   const orgDropdown = page.locator(
     '[data-testid="organizations-dropdown-toggle"]'
@@ -473,7 +457,7 @@ async function setupFormToPlayersSectionWithTeam(
     return;
   }
 
-  await waitForRegistrationOrganizationStep(page, seasonId);
+  await waitForRegistrationOrganizationStep(page);
 
   const orgDropdown = page.locator(
     '[data-testid="organizations-dropdown-toggle"]'
@@ -522,7 +506,7 @@ async function setupCompleteRegistrationForm(
     organizationsPromise.catch(() => undefined),
     seasonDetailsPromise.catch(() => undefined)
   ]);
-  await waitForRegistrationOrganizationStep(page, seasonId);
+  await waitForRegistrationOrganizationStep(page);
 
   // Complete organization selection
   await page.locator('[data-testid="organizations-dropdown-toggle"]').click();
@@ -2380,8 +2364,13 @@ test.describe("Signup Form", () => {
         page.locator('[data-testid="add-player-button"]')
       ).toBeHidden();
 
+      // Open player 3 accordion so the remove button is visible
+      await triggers.nth(3).click();
       await page.locator('[data-testid="remove-player-button-3"]').click();
       await expect(triggers).toHaveCount(3);
+
+      // Open player 0 accordion to verify its remove button is disabled
+      await triggers.nth(0).click();
       await expect(
         page.locator('[data-testid="remove-player-button-0"]')
       ).toBeDisabled();
