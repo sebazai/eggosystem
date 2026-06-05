@@ -23,7 +23,7 @@ const SEASON_PLAYER_LIMITS_SQL = `
 
 const SEASON_CS_SETTINGS_SQL = `
   COALESCE(css.is_round_robin_bo2_as_2xbo1, false) AS is_round_robin_bo2_as_2xbo1,
-  COALESCE(css.grand_final_round_one_only, false)   AS grand_final_round_one_only,
+  COALESCE(css.grand_final_round_one_only, true)    AS grand_final_round_one_only,
   COALESCE(css.faceit_rank_required, false)         AS faceit_rank_required,
   COALESCE(css.premier_rank_required, false)        AS premier_rank_required,
   COALESCE(css.hours_played_required, false)        AS hours_played_required
@@ -361,6 +361,7 @@ const createSeasonWithMapPool = async (
     result.insertId,
     {
       is_round_robin_bo2_as_2xbo1: seasonData.is_round_robin_bo2_as_2xbo1,
+      grand_final_round_one_only: seasonData.grand_final_round_one_only ?? true,
       faceit_rank_required: seasonData.faceit_rank_required ?? false,
       premier_rank_required: seasonData.premier_rank_required ?? false,
       hours_played_required: seasonData.hours_played_required ?? false
@@ -480,6 +481,7 @@ const updateSeasonWithMapPool = async (
     seasonId,
     {
       is_round_robin_bo2_as_2xbo1: seasonData.is_round_robin_bo2_as_2xbo1,
+      grand_final_round_one_only: seasonData.grand_final_round_one_only ?? true,
       faceit_rank_required: seasonData.faceit_rank_required ?? false,
       premier_rank_required: seasonData.premier_rank_required ?? false,
       hours_played_required: seasonData.hours_played_required ?? false

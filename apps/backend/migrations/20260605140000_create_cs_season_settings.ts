@@ -13,7 +13,7 @@ export async function up(knex: Knex): Promise<void> {
       .onUpdate("CASCADE")
       .onDelete("CASCADE");
     table.boolean("is_round_robin_bo2_as_2xbo1").notNullable().defaultTo(false);
-    table.boolean("grand_final_round_one_only").notNullable().defaultTo(false);
+    table.boolean("grand_final_round_one_only").notNullable().defaultTo(true);
     table.boolean("faceit_rank_required").notNullable().defaultTo(false);
     table.boolean("premier_rank_required").notNullable().defaultTo(false);
     table.boolean("hours_played_required").notNullable().defaultTo(false);

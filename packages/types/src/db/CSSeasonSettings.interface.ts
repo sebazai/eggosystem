@@ -11,6 +11,7 @@ export interface CSSeasonSettings {
 
 export interface CSSeasonSettingsInput {
   is_round_robin_bo2_as_2xbo1: boolean;
+  grand_final_round_one_only: boolean;
   faceit_rank_required: boolean;
   premier_rank_required: boolean;
   hours_played_required: boolean;
@@ -21,7 +22,7 @@ export const createMockCSSeasonSettings = (
 ): CSSeasonSettings => ({
   season_id: 1,
   is_round_robin_bo2_as_2xbo1: false,
-  grand_final_round_one_only: false,
+  grand_final_round_one_only: true,
   faceit_rank_required: false,
   premier_rank_required: false,
   hours_played_required: false,

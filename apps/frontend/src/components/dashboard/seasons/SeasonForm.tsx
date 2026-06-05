@@ -81,6 +81,7 @@ export function SeasonForm({
       end_date: formatDateForInput(season.end_date),
       platform: season.platform,
       is_round_robin_bo2_as_2xbo1: season.is_round_robin_bo2_as_2xbo1,
+      grand_final_round_one_only: season.grand_final_round_one_only,
       payment_link: season.payment_link || null,
       registration_price: season.registration_price ?? null,
       has_vat: season.has_vat,
@@ -113,6 +114,7 @@ export function SeasonForm({
       end_date: null,
       platform: SeasonPlatform.Kanaliiga,
       is_round_robin_bo2_as_2xbo1: false,
+      grand_final_round_one_only: true,
       payment_link: null,
       registration_price: null,
       has_vat: true,
@@ -184,6 +186,7 @@ export function SeasonForm({
         end_date: data.end_date || null,
         platform: data.platform,
         is_round_robin_bo2_as_2xbo1: data.is_round_robin_bo2_as_2xbo1,
+        grand_final_round_one_only: data.grand_final_round_one_only ?? true,
         payment_link: data.payment_link || null,
         registration_price:
           data.registration_price !== undefined &&
@@ -568,6 +571,29 @@ export function SeasonForm({
                       <FormDescription>
                         Treat round robin BO2 matches as two separate BO1
                         matches
+                      </FormDescription>
+                    </div>
+                  </FormItem>
+                )}
+              />
+
+              {/* Grand Final Round One Only Checkbox */}
+              <FormField
+                control={form.control}
+                name="grand_final_round_one_only"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        disabled={isFormDisabled}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>Grand Final Round One Only</FormLabel>
+                      <FormDescription>
+                        Play only round one in the grand final
                       </FormDescription>
                     </div>
                   </FormItem>

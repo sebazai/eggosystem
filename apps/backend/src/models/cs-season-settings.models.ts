@@ -12,12 +12,14 @@ export const upsertCSSeasonSettings = async (
     INSERT INTO CSSeasonSettings (
       season_id,
       is_round_robin_bo2_as_2xbo1,
+      grand_final_round_one_only,
       faceit_rank_required,
       premier_rank_required,
       hours_played_required
-    ) VALUES (?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?)
     ON DUPLICATE KEY UPDATE
       is_round_robin_bo2_as_2xbo1 = VALUES(is_round_robin_bo2_as_2xbo1),
+      grand_final_round_one_only  = VALUES(grand_final_round_one_only),
       faceit_rank_required        = VALUES(faceit_rank_required),
       premier_rank_required       = VALUES(premier_rank_required),
       hours_played_required       = VALUES(hours_played_required)
@@ -25,6 +27,7 @@ export const upsertCSSeasonSettings = async (
     [
       seasonId,
       settings.is_round_robin_bo2_as_2xbo1,
+      settings.grand_final_round_one_only,
       settings.faceit_rank_required,
       settings.premier_rank_required,
       settings.hours_played_required
