@@ -22,7 +22,7 @@ RUN curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR="/usr/local/
 
 # Clone upstream MariaDB MCP at build time; heavy Python deps install at container startup (scripts/install-mariadb-mcp-local-venv.sh).
 # Keep MCP tree owned by node; uv-managed Pythons live under /home/node (avoid root-created .venv pointing at /root).
-RUN apt-get update && apt-get install -y --no-install-recommends git xvfb xauth && rm -rf /var/lib/apt/lists/* && \
+RUN apt-get update && apt-get install -y --no-install-recommends git vim xvfb xauth && rm -rf /var/lib/apt/lists/* && \
     git clone --depth 1 https://github.com/MariaDB/mcp.git /usr/local/mariadb-mcp && \
     chown -R node:node /usr/local/mariadb-mcp
 
@@ -34,6 +34,7 @@ ENV PATH="/home/node/.local/bin:${PATH}"
 # Install in background after container start: scripts/install-mariadb-mcp-local-venv.sh (see post-start + run-mariadb-mcp.sh).
 RUN uv python install 3.11
 RUN mkdir -p /home/node/.claude /home/node/.cursor && rtk init -g && rtk init -g --agent cursor
+RUN git config --global core.editor vim
 
 # Scripts (e.g. setup-mariadb-mcp-server.sh) expect python3.11 on PATH; uv-managed Pythons live under ~/.local/share/uv.
 USER root

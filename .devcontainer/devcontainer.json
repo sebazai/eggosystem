@@ -10,12 +10,14 @@
     "NEXT_DEV_POLLING": "true"
   },
   "remoteEnv": {
-    "PATH": "/usr/local/bin:/usr/local/share/npm-global/bin:/home/node/.local/bin:${containerEnv:PATH}"
+    "PATH": "/usr/local/bin:/usr/local/share/npm-global/bin:/home/node/.local/bin:${containerEnv:PATH}",
+    "GIT_EDITOR": "vim"
   },
   "customizations": {
     // Configure properties specific to VS Code.
     "vscode": {
       "settings": {
+        "git.useEditorAsCommitInput": false,
         "editor.formatOnSave": true,
         "editor.defaultFormatter": "esbenp.prettier-vscode",
         "editor.codeActionsOnSave": {
@@ -57,7 +59,7 @@
       ]
     }
   },
-  "postCreateCommand": "pnpm install",
+  "postCreateCommand": "git config --global core.editor vim && pnpm install",
   // Use 'forwardPorts' to make a list of ports inside the container available locally.
   "forwardPorts": [3000, 3001],
   // Use 'portsAttributes' to set default properties for specific forwarded ports.
