@@ -5,7 +5,7 @@ import useSWR from "swr";
 import { clientApiFetch } from "@/lib/apiClient";
 import type {
   PlayerSortterValues,
-  Season,
+  SeasonWithSettings,
   TeamPlacement,
   TeamSortterValues
 } from "@eggosystem/types";
@@ -51,7 +51,7 @@ export function useSortter(placeTeamsInDivision: number) {
     error: seasonsError,
     isLoading: isLoadingSeasons,
     isValidating: isValidatingSeasons
-  } = useSWR<Season[]>("/api/v1/seasons", clientApiFetch, {
+  } = useSWR<SeasonWithSettings[]>("/api/v1/seasons", clientApiFetch, {
     revalidateOnFocus: false
   });
 

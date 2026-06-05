@@ -1,6 +1,6 @@
 import type {
   SeasonDetails,
-  Season,
+  SeasonWithSettings,
   ActiveSignupOrSeasonForAppId,
   SeasonFormRaw,
   SeasonPlatform
@@ -30,7 +30,7 @@ const SEASON_CS_SETTINGS_SQL = `
 `;
 
 export const getSeasons = async () => {
-  const seasons = await runQuery<Season[]>(`
+  const seasons = await runQuery<SeasonWithSettings[]>(`
     SELECT s.*, ${SEASON_PLAYER_LIMITS_SQL}, ${SEASON_CS_SETTINGS_SQL}
     FROM Seasons s
     INNER JOIN SeasonSignupSettings sss ON sss.season_id = s.id
@@ -43,7 +43,7 @@ export const getSeasonById = async (
   id: number,
   connection?: PoolConnection
 ) => {
-  const [data] = await runQuery<Array<Season | undefined>>(
+  const [data] = await runQuery<Array<SeasonWithSettings | undefined>>(
     `
     SELECT s.*, ${SEASON_PLAYER_LIMITS_SQL}, ${SEASON_CS_SETTINGS_SQL}
     FROM Seasons s

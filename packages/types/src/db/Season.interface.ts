@@ -5,7 +5,10 @@ import {
   GameType,
   Organizer
 } from "@eggosystem/types";
+import type { CSSeasonSettingsInput } from "./CSSeasonSettings.interface";
+import type { SeasonSignupSettingsInput } from "./SeasonSignupSettings.interface";
 
+/** Row shape for the `Seasons` table (serialized API format). */
 export interface Season {
   id: number;
   game_id: Game["id"];
@@ -32,8 +35,6 @@ export interface Season {
    * End date as DATE (YYYY-MM-DD format) or null
    */
   end_date: string | null;
-  is_round_robin_bo2_as_2xbo1: boolean;
-  grand_final_round_one_only: boolean;
   payment_link: string | null;
   registration_price: number | null;
   has_vat: boolean;
@@ -44,11 +45,6 @@ export interface Season {
    */
   early_bird_price_discount_end_date: string | null;
   /**
-   * Active map pool - array of map IDs that are active for this season
-   * Must contain at least one map ID
-   */
-  active_map_pool: number[];
-  /**
    * Rulebook URL for the season (nullable)
    */
   rulebook_url: string | null;
@@ -56,14 +52,38 @@ export interface Season {
    * Discord link for the season (nullable)
    */
   discord_link: string | null;
-  faceit_rank_required: boolean;
-  premier_rank_required: boolean;
-  hours_played_required: boolean;
-  /** Resolved roster minimum (season override or game type default). */
-  min_players: number;
-  /** Resolved roster maximum (season override or game type default). */
-  max_players: number;
 }
+
+/** Resolved player limits from `SeasonSignupSettings`. */
+export type SeasonSignupSettingsFields = SeasonSignupSettingsInput;
+
+/** CS-specific settings from `CSSeasonSettings` (defaults applied when row is missing). */
+export type CSSeasonSettingsFields = CSSeasonSettingsInput;
+
+/** Denormalized active map pool from `SeasonActiveMapPool` rows. */
+export interface SeasonActiveMapPoolFields {
+  /**
+   * Active map pool - array of map IDs that are active for this season
+   * Must contain at least one map ID
+   */
+  active_map_pool: number[];
+}
+
+export interface SeasonWithSignupSettings
+  extends Season, SeasonSignupSettingsFields {}
+
+export interface SeasonWithCSSettings extends Season, CSSeasonSettingsFields {}
+
+/**
+ * Full season payload returned by season read APIs: base row plus joined
+ * signup settings, CS settings, and active map pool.
+ */
+export interface SeasonWithSettings
+  extends
+    Season,
+    SeasonSignupSettingsFields,
+    CSSeasonSettingsFields,
+    SeasonActiveMapPoolFields {}
 
 export interface InsertSeason {
   id: number;

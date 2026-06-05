@@ -14,7 +14,7 @@ import {
 import { getTeamCaptainsBySeasonId } from "../models/team.models";
 import { getFaceitLinksForSeason } from "../models/faceit.models";
 import type { RequestWithParams } from "@eggosystem/types";
-import type { Season, SeasonDetails } from "@eggosystem/types";
+import type { SeasonWithSettings, SeasonDetails } from "@eggosystem/types";
 import { SeasonPlatform, createMockSeason } from "@eggosystem/types";
 
 // Mock the models and Redis
@@ -58,7 +58,7 @@ const mockSeasonDetails = {
   app_id: 730
 } satisfies SeasonDetails;
 
-const mockSeasons = [mockSeason] satisfies Season[];
+const mockSeasons = [mockSeason] satisfies SeasonWithSettings[];
 
 // Type definitions for test requests
 type TestRequestWithParams<P = Record<string, string>> =

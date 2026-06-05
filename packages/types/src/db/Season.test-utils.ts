@@ -1,12 +1,12 @@
 import { SeasonPlatform } from "../enums";
-import type { InsertSeason, Season } from "./Season.interface";
+import type { InsertSeason, SeasonWithSettings } from "./Season.interface";
 
 /**
  * Creates a mock Season object with sensible defaults.
  * Accepts partial overrides to customize specific fields.
  *
- * @param overrides - Partial Season object to override defaults
- * @returns Complete Season object with defaults and overrides applied
+ * @param overrides - Partial SeasonWithSettings object to override defaults
+ * @returns Complete SeasonWithSettings object with defaults and overrides applied
  *
  * @example
  * ```typescript
@@ -21,7 +21,9 @@ import type { InsertSeason, Season } from "./Season.interface";
  * });
  * ```
  */
-export const createMockSeason = (overrides?: Partial<Season>): Season => {
+export const createMockSeason = (
+  overrides?: Partial<SeasonWithSettings>
+): SeasonWithSettings => {
   return {
     id: 1,
     game_id: 1,

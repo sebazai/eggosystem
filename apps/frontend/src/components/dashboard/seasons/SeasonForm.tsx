@@ -29,7 +29,7 @@ import {
   seasonFormSchema,
   type SeasonFormValues,
   type SeasonFormRaw,
-  type Season,
+  type SeasonWithSettings,
   SeasonPlatform,
   isSeasonPlatform,
   getDefaultSignupPlayerLimitsForGameTypeId
@@ -66,7 +66,7 @@ export function SeasonForm({
   // Convert Season to SeasonFormValues for editing
   // Backend returns UTC ISO strings (e.g., "2024-01-15T18:30:00.000Z")
   // We convert them to local time for display in datetime-local inputs
-  const getInitialValues = (season: Season): SeasonFormValues => {
+  const getInitialValues = (season: SeasonWithSettings): SeasonFormValues => {
     return {
       game_id: season.game_id,
       game_type_id: season.game_type_id,

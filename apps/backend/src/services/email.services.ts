@@ -4,7 +4,7 @@ import { getGameById, getGameByIdOrFail } from "../models/game.models";
 import { getFinalizedPlayersWithEmailsAndConsent } from "./sortter-placements.services";
 import { getMapNamesByIds } from "./maps.services";
 import { logger } from "../utils/app-logger";
-import type { Season } from "@eggosystem/types";
+import type { SeasonWithSettings } from "@eggosystem/types";
 import { getOrganizerByIdOrFail } from "../models/organizer.models";
 import { enqueueBulkSeasonWelcomeEmails } from "./email-queue.services";
 
@@ -601,7 +601,7 @@ export const sendMatchScheduleChangeEmail = async (
  */
 export const enqueueSeasonFinalizationWelcomeEmails = async (
   seasonId: number,
-  season: Season
+  season: SeasonWithSettings
 ): Promise<void> => {
   try {
     logger.info(

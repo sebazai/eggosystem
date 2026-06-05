@@ -4,7 +4,7 @@ import {
   type Match,
   type StandingsFaceitTeamStats,
   type StandingsLeagues,
-  type Season,
+  type CSSeasonSettingsFields,
   MatchStatus
 } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
@@ -30,7 +30,7 @@ interface FaceitMatchResponse {
 const FACEIT_API_TOKEN = process.env.FACEIT_API_KEY;
 
 interface FaceitMatchFromDb extends Match {
-  is_round_robin_bo2_as_2xbo1: Season["is_round_robin_bo2_as_2xbo1"];
+  is_round_robin_bo2_as_2xbo1: CSSeasonSettingsFields["is_round_robin_bo2_as_2xbo1"];
 }
 
 const getFaceitMatchesFromDbForFaceitLeague = async (

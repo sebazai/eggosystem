@@ -10,6 +10,8 @@ import { getConnection } from "../db/mysqlConnection";
 import { redisClient } from "../utils/redisClient";
 import { SeasonPlatform, createMockSeasonFormRaw } from "@eggosystem/types";
 import type { PoolConnection } from "mysql2/promise";
+import { upsertCSSeasonSettings } from "./cs-season-settings.models";
+import { upsertSeasonSignupSettings } from "./season-signup-settings.models";
 
 jest.mock("../db/mysqlRunQuery");
 jest.mock("../db/mysqlConnection");
@@ -37,6 +39,12 @@ const mockGetConnection = getConnection as jest.MockedFunction<
   typeof getConnection
 >;
 const mockRedisClient = redisClient as jest.Mocked<typeof redisClient>;
+const mockUpsertCSSeasonSettings =
+  upsertCSSeasonSettings as jest.MockedFunction<typeof upsertCSSeasonSettings>;
+const mockUpsertSeasonSignupSettings =
+  upsertSeasonSignupSettings as jest.MockedFunction<
+    typeof upsertSeasonSignupSettings
+  >;
 
 function getMockConnection(): PoolConnection {
   return {
@@ -93,9 +101,44 @@ describe("Season Models", () => {
         ],
         mockConnection
       );
+      expect(mockUpsertSeasonSignupSettings).toHaveBeenCalledWith(
+        123,
+        {
+          min_players: seasonData.min_players,
+          max_players: seasonData.max_players
+        },
+        mockConnection
+      );
+      expect(mockUpsertCSSeasonSettings).toHaveBeenCalledWith(
+        123,
+        {
+          is_round_robin_bo2_as_2xbo1: seasonData.is_round_robin_bo2_as_2xbo1,
+          grand_final_round_one_only:
+            seasonData.grand_final_round_one_only ?? true,
+          faceit_rank_required: seasonData.faceit_rank_required ?? false,
+          premier_rank_required: seasonData.premier_rank_required ?? false,
+          hours_played_required: seasonData.hours_played_required ?? false
+        },
+        mockConnection
+      );
       expect(mockConnection.commit).toHaveBeenCalled();
       expect(mockConnection.release).toHaveBeenCalled();
       expect(result).toEqual({ insertId: 123 });
+    });
+
+    it("should default grand_final_round_one_only to true when the field is undefined", async () => {
+      const seasonData = createMockSeasonFormRaw({
+        grand_final_round_one_only: undefined as unknown as boolean
+      });
+      mockRunQuery.mockResolvedValue({ insertId: 789 });
+
+      await createSeason(seasonData);
+
+      expect(mockUpsertCSSeasonSettings).toHaveBeenCalledWith(
+        789,
+        expect.objectContaining({ grand_final_round_one_only: true }),
+        mockConnection
+      );
     });
 
     it("should create a season with null optional fields", async () => {
@@ -172,6 +215,26 @@ describe("Season Models", () => {
           seasonData.discord_link,
           seasonId
         ],
+        mockConnection
+      );
+      expect(mockUpsertSeasonSignupSettings).toHaveBeenCalledWith(
+        seasonId,
+        {
+          min_players: seasonData.min_players,
+          max_players: seasonData.max_players
+        },
+        mockConnection
+      );
+      expect(mockUpsertCSSeasonSettings).toHaveBeenCalledWith(
+        seasonId,
+        {
+          is_round_robin_bo2_as_2xbo1: seasonData.is_round_robin_bo2_as_2xbo1,
+          grand_final_round_one_only:
+            seasonData.grand_final_round_one_only ?? true,
+          faceit_rank_required: seasonData.faceit_rank_required ?? false,
+          premier_rank_required: seasonData.premier_rank_required ?? false,
+          hours_played_required: seasonData.hours_played_required ?? false
+        },
         mockConnection
       );
       expect(mockConnection.commit).toHaveBeenCalled();

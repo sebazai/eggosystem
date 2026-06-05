@@ -1,5 +1,9 @@
 import { envConfig } from "@/configs/env";
-import type { Season, SeasonDetails, Team } from "@eggosystem/types";
+import type {
+  SeasonWithSettings,
+  SeasonDetails,
+  Team
+} from "@eggosystem/types";
 import { SignupEditForm } from "@/components/signup/SignupEditForm";
 import type { Metadata } from "next";
 import { createPageMetadata } from "@/lib/metadata";
@@ -43,7 +47,7 @@ export default async function TeamSignupEditPage({
   const seasonResult = await fetch(
     `${envConfig.API_URL}/api/v1/seasons/${season}`
   );
-  const data: Season = await seasonResult.json();
+  const data: SeasonWithSettings = await seasonResult.json();
   return (
     <div>
       <div className="flex flex-col-reverse lg:flex-row gap-y-4 md:gap-x-4">

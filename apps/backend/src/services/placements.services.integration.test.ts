@@ -24,6 +24,7 @@ import faceitRouter from "../routes/v1/faceit.routes";
 import { expressErrorHandler } from "../middlewares/express-error-handler";
 import { runQuery } from "../db/mysqlRunQuery";
 import { type ResultSetHeader } from "mysql2/promise";
+import { insertTestSeasonSignupSettings } from "../__utils__/season-signup-settings-test";
 import * as faceitMatchModule from "./faceit-match.services";
 import {
   assignGrandFinalPlacementsForFinishedMatch,
@@ -102,6 +103,7 @@ async function seed(
     `INSERT INTO CSSeasonSettings (season_id, is_round_robin_bo2_as_2xbo1, grand_final_round_one_only) VALUES (?, 0, 1)`,
     [S_ID]
   );
+  await insertTestSeasonSignupSettings(S_ID);
   await runQuery(
     `INSERT INTO Leagues (id, name, sort_priority) VALUES (?, 'Test Playoff League 9901', 0)`,
     [L_ID]

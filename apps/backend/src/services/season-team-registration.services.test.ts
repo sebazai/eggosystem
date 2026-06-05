@@ -47,7 +47,10 @@ import { runQuery } from "../db/mysqlRunQuery";
 import { redisClient } from "../utils/redisClient";
 import { faceitEloToLevel } from "../utils/faceit-utils";
 import { getConnection } from "../db/mysqlConnection";
-import { insertTestSeasonSignupSettings } from "../__utils__/season-signup-settings-test";
+import {
+  deleteTestSeasonSignupSettings,
+  insertTestSeasonSignupSettings
+} from "../__utils__/season-signup-settings-test";
 
 describe("Season team registration services", () => {
   process.env.PRIVACY_POLICY_VERSION = "1";
@@ -98,6 +101,9 @@ describe("Season team registration services", () => {
 
   beforeEach(async () => {
     await insertTestSeasonSignupSettings(insertSeason.id);
+  });
+  afterEach(async () => {
+    await deleteTestSeasonSignupSettings(insertSeason.id);
   });
   afterAll(async () => {
     await removeTestSeason(1);

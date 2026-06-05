@@ -1,6 +1,6 @@
-import { Game, Season, SeasonPlatform } from "@eggosystem/types";
+import { Game, SeasonPlatform, SeasonWithSettings } from "@eggosystem/types";
 
-export interface SeasonDetails extends Season {
+export interface SeasonDetails extends SeasonWithSettings {
   app_id: Game["app_id"];
 }
 

@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { SeasonForm } from "@/components/dashboard/seasons/SeasonForm";
-import { type SeasonFormRaw, type Season } from "@eggosystem/types";
+import { type SeasonFormRaw, type SeasonWithSettings } from "@eggosystem/types";
 import { toast } from "sonner";
 import { clientApiFetch } from "@/lib/apiClient";
 import { useAllSeasons } from "@/hooks/data/useAllSeasons";
@@ -23,7 +23,7 @@ export function SeasonsPageClient() {
     setIsCreating(true);
   };
 
-  const handleEdit = (season: Season) => {
+  const handleEdit = (season: SeasonWithSettings) => {
     setSelectedSeasonId(season.id);
     setIsCreating(false);
   };
@@ -73,9 +73,9 @@ export function SeasonsPageClient() {
     if (!seasons) return null;
 
     const now = new Date();
-    const currentSeasons: Season[] = [];
-    const upcomingSeasons: Season[] = [];
-    const pastSeasons: Season[] = [];
+    const currentSeasons: SeasonWithSettings[] = [];
+    const upcomingSeasons: SeasonWithSettings[] = [];
+    const pastSeasons: SeasonWithSettings[] = [];
 
     seasons.forEach((season) => {
       const startDate = new Date(season.start_date);
@@ -139,7 +139,7 @@ export function SeasonsPageClient() {
 
   // Render a season card
   const renderSeasonCard = (
-    season: Season,
+    season: SeasonWithSettings,
     badgeText?: string,
     badgeVariant?: "default" | "secondary" | "outline" | "destructive"
   ) => (

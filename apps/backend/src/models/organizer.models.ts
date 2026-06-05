@@ -1,4 +1,8 @@
-import { type Season, type Organizer, SeasonPlatform } from "@eggosystem/types";
+import {
+  type SeasonWithCSSettings,
+  type Organizer,
+  SeasonPlatform
+} from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
 import { NotFoundError } from "../utils/errors";
 
@@ -55,10 +59,17 @@ export const getOrganizerFaceitSeasonForApp = async (
     patterns.length > 0
       ? ` AND (${patterns.map(() => "(s.name LIKE ? OR s.full_name LIKE ?)").join(" OR ")})`
       : "";
-  const query = `SELECT s.* FROM Games g
+  const query = `SELECT s.*,
+    COALESCE(css.is_round_robin_bo2_as_2xbo1, false) AS is_round_robin_bo2_as_2xbo1,
+    COALESCE(css.grand_final_round_one_only, true)    AS grand_final_round_one_only,
+    COALESCE(css.faceit_rank_required, false)         AS faceit_rank_required,
+    COALESCE(css.premier_rank_required, false)        AS premier_rank_required,
+    COALESCE(css.hours_played_required, false)        AS hours_played_required
+    FROM Games g
     JOIN OrganizerGames og ON g.id = og.game_id
     JOIN Organizers o ON og.organizer_id = o.id
     JOIN Seasons s ON o.id = s.organizer_id AND s.game_id = g.id
+    LEFT JOIN CSSeasonSettings css ON css.season_id = s.id
     WHERE o.faceit_id = ? AND g.app_id = ? AND s.platform = ?
     ${seasonNameCondition}
     ORDER BY s.id DESC
@@ -71,6 +82,9 @@ export const getOrganizerFaceitSeasonForApp = async (
   for (const pattern of patterns) {
     params.push(pattern, pattern);
   }
-  const [season] = await runQuery<Array<Season | undefined>>(query, params);
+  const [season] = await runQuery<Array<SeasonWithCSSettings | undefined>>(
+    query,
+    params
+  );
   return season;
 };

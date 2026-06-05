@@ -1,13 +1,13 @@
 "use client";
 
 import { clientApiFetch } from "@/lib/apiClient";
-import type { Season } from "@eggosystem/types";
+import type { SeasonWithSettings } from "@eggosystem/types";
 import useSWR from "swr";
 
 export const useAllSeasons = () => {
   const apiUrl = "/api/v1/seasons";
 
-  const { data, error, isValidating, isLoading } = useSWR<Season[]>(
+  const { data, error, isValidating, isLoading } = useSWR<SeasonWithSettings[]>(
     apiUrl,
     clientApiFetch,
     {

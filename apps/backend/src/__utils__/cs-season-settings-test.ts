@@ -3,7 +3,7 @@ import type { PoolConnection } from "mysql2/promise";
 
 const DEFAULT_TEST_CS_SEASON_SETTINGS = {
   is_round_robin_bo2_as_2xbo1: false,
-  grand_final_round_one_only: false,
+  grand_final_round_one_only: true, // matches DB DDL default
   faceit_rank_required: false,
   premier_rank_required: false,
   hours_played_required: false

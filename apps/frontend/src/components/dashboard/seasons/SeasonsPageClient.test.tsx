@@ -15,7 +15,7 @@ import { clientApiFetch } from "@/lib/apiClient";
 import { toast } from "sonner";
 import {
   SeasonPlatform,
-  type Season,
+  type SeasonWithSettings,
   createMockSeason
 } from "@eggosystem/types";
 import { renderWithSWR, clearAllMocks } from "@/test-utils/test-utils";
@@ -66,7 +66,7 @@ const mockToast = toast as jest.Mocked<typeof toast>;
 const mockMutate = mutate as jest.MockedFunction<typeof mutate>;
 
 describe("SeasonsPageClient", () => {
-  const mockSeasons: Season[] = [
+  const mockSeasons: SeasonWithSettings[] = [
     createMockSeason({
       name: "Season 1",
       full_name: "Full Season 1 Name",
