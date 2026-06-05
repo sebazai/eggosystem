@@ -7,10 +7,12 @@ import {
   deleteTestSeasonSignupSettings,
   insertTestSeasonSignupSettings
 } from "./season-signup-settings-test";
+import { insertTestCSSeasonSettings } from "./cs-season-settings-test";
 
 export const insertTestSeason = async (
   data: InsertSeason,
-  signupLimits?: { min_players: number; max_players: number }
+  signupLimits?: { min_players: number; max_players: number },
+  csSettings?: Parameters<typeof insertTestCSSeasonSettings>[1]
 ) => {
   const insertQuery = buildInsertQueryParts(data);
   const result = await runQuery<ResultSetHeader>(
@@ -18,6 +20,7 @@ export const insertTestSeason = async (
     insertQuery.values
   );
   await insertTestSeasonSignupSettings(data.id, signupLimits);
+  await insertTestCSSeasonSettings(data.id, csSettings);
   return result;
 };
 

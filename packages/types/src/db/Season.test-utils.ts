@@ -88,15 +88,11 @@ export const createMockInsertSeason = (
     platform: SeasonPlatform.Kanaliiga,
     start_date: new Date("2024-02-01"),
     end_date: null,
-    is_round_robin_bo2_as_2xbo1: false,
     payment_link: null,
     registration_price: null,
     has_vat: true,
     early_bird_price_discount: null,
     early_bird_price_discount_end_date: null,
-    faceit_rank_required: false,
-    premier_rank_required: false,
-    hours_played_required: false,
     ...overrides
   };
 };

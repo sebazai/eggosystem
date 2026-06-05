@@ -6,6 +6,10 @@ import {
   deleteTestSeasonSignupSettings,
   insertTestSeasonSignupSettings
 } from "../__utils__/season-signup-settings-test";
+import {
+  deleteTestCSSeasonSettings,
+  insertTestCSSeasonSettings
+} from "../__utils__/cs-season-settings-test";
 
 describe("Season Models Integration Tests", () => {
   let connection: PoolConnection;
@@ -47,6 +51,7 @@ describe("Season Models Integration Tests", () => {
         throw error;
       }
     }
+    await deleteTestCSSeasonSettings(testSeasonId, connection);
     await deleteTestSeasonSignupSettings(testSeasonId, connection);
     await runQuery(
       "DELETE FROM Seasons WHERE id = ?",
@@ -61,10 +66,10 @@ describe("Season Models Integration Tests", () => {
       `INSERT INTO Seasons (
         id, game_id, game_type_id, organizer_id, name, full_name,
         signup_start_date, signup_end_date, start_date, end_date,
-        platform, is_round_robin_bo2_as_2xbo1, has_vat, registration_price
+        platform, has_vat, registration_price
       ) VALUES (?, 1, 1, 1, 'Test Season', 'Test Season Full Name',
         ?, ?, '2024-02-01', ?,
-        'faceit', false, true, ?)`,
+        'faceit', true, ?)`,
       [
         testSeasonId,
         "2024-01-01 00:00:00", // UTC datetime
@@ -76,6 +81,7 @@ describe("Season Models Integration Tests", () => {
     );
 
     await insertTestSeasonSignupSettings(testSeasonId, undefined, connection);
+    await insertTestCSSeasonSettings(testSeasonId, undefined, connection);
 
     // Seed active map pool (required for getSeasonById)
     try {

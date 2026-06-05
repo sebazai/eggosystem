@@ -209,10 +209,10 @@ describe("Season Routes - Integration Tests", () => {
         `INSERT INTO Seasons (
           id, game_id, game_type_id, organizer_id, name, full_name,
           signup_start_date, signup_end_date, start_date, end_date,
-          platform, is_round_robin_bo2_as_2xbo1, has_vat, registration_price
+          platform, has_vat, registration_price
         ) VALUES (?, 1, 1, 1, 'Test Season', 'Test Season Full Name',
           ?, ?, '2024-02-01', ?,
-          'faceit', false, true, ?)`,
+          'faceit', true, ?)`,
         [
           testSeasonId,
           "2024-01-01 10:30:00", // UTC datetime with time

@@ -17,6 +17,7 @@ export * from "./Reservation.interface";
 export * from "./Season.interface";
 export * from "./Season.test-utils";
 export * from "./SeasonSignupSettings.interface";
+export * from "./CSSeasonSettings.interface";
 export * from "./SeasonActiveMapPool.interface";
 export * from "./SeasonActiveMapPool.test-utils";
 export * from "./SteamPlayer.test-utils";

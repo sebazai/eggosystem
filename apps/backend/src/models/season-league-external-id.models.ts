@@ -26,8 +26,10 @@ export const getSeasonLeagueExternalIdByExternalIdWithSeasonSettings = async (
   externalId: string,
   connection?: PoolConnection
 ) => {
-  const query = `SELECT slei.*, s.is_round_robin_bo2_as_2xbo1 FROM SeasonLeagueExternalIds slei
+  const query = `SELECT slei.*, COALESCE(css.is_round_robin_bo2_as_2xbo1, false) AS is_round_robin_bo2_as_2xbo1
+    FROM SeasonLeagueExternalIds slei
     JOIN Seasons s ON slei.season_id = s.id
+    LEFT JOIN CSSeasonSettings css ON css.season_id = s.id
     WHERE slei.external_id = ?`;
   const [seasonLeagueExternaMatchRoomResult] = await runQuery<
     Array<
@@ -72,9 +74,10 @@ export const getSeasonChampionshipIds = async (
   season_id: number
 ): Promise<{ external_id: string; is_round_robin_bo2_as_2xbo1: boolean }[]> => {
   const query = `
-    SELECT slei.external_id, s.is_round_robin_bo2_as_2xbo1
+    SELECT slei.external_id, COALESCE(css.is_round_robin_bo2_as_2xbo1, false) AS is_round_robin_bo2_as_2xbo1
     FROM SeasonLeagueExternalIds slei
     JOIN Seasons s ON slei.season_id = s.id
+    LEFT JOIN CSSeasonSettings css ON css.season_id = s.id
     WHERE slei.season_id = ?
   `;
   const results = await runQuery<
@@ -87,10 +90,11 @@ export const getOngoingFaceitCSSeasonChampionshipIds = async (): Promise<
   { external_id: string; is_round_robin_bo2_as_2xbo1: boolean }[]
 > => {
   const query = `
-    SELECT slei.external_id, s.is_round_robin_bo2_as_2xbo1
+    SELECT slei.external_id, COALESCE(css.is_round_robin_bo2_as_2xbo1, false) AS is_round_robin_bo2_as_2xbo1
     FROM SeasonLeagueExternalIds slei
     JOIN Seasons s ON slei.season_id = s.id
     JOIN Games g ON s.game_id = g.id
+    LEFT JOIN CSSeasonSettings css ON css.season_id = s.id
     WHERE (
       -- Active seasons (between start_date and end_date)
       (s.start_date <= NOW() AND (s.end_date IS NULL OR s.end_date >= NOW()))

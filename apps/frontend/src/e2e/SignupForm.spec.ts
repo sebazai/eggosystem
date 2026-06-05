@@ -238,15 +238,34 @@ async function waitForPlayerSteamIdValidated(
 }
 
 /** Waits until the registration form organization step is interactive. */
-async function waitForRegistrationOrganizationStep(page: Page) {
+async function waitForRegistrationOrganizationStep(
+  page: Page,
+  seasonId?: number
+) {
   await expect(page.getByText("Checking your registration status")).toBeHidden({
     timeout: 60000
   });
+
+  if (seasonId !== undefined) {
+    await page
+      .waitForResponse(
+        (res) =>
+          res.url().includes(`/api/v1/seasons/${seasonId}/details`) &&
+          res.request().method() === "GET" &&
+          res.status() >= 200 &&
+          res.status() < 300,
+        { timeout: 60000 }
+      )
+      .catch(() => undefined);
+  }
 
   const orgDropdown = page.locator(
     '[data-testid="organizations-dropdown-toggle"]'
   );
   const orgTab = page.getByRole("tab", { name: /Organization/i });
+  const signupFormHeading = page.getByRole("heading", {
+    name: /Sign up Form/i
+  });
   const redirecting = page.getByText("Redirecting to your team edit page");
 
   await expect
@@ -261,8 +280,11 @@ async function waitForRegistrationOrganizationStep(page: Page) {
         if (await orgDropdown.isVisible().catch(() => false)) {
           return true;
         }
-        if (await orgTab.isVisible().catch(() => false)) {
-          await orgTab.click();
+        // SignupForm shows CardSkeleton until season details resolve.
+        if (await signupFormHeading.isVisible().catch(() => false)) {
+          if (await orgTab.isVisible().catch(() => false)) {
+            await orgTab.click();
+          }
         }
         return false;
       },
@@ -451,7 +473,7 @@ async function setupFormToPlayersSectionWithTeam(
     return;
   }
 
-  await waitForRegistrationOrganizationStep(page);
+  await waitForRegistrationOrganizationStep(page, seasonId);
 
   const orgDropdown = page.locator(
     '[data-testid="organizations-dropdown-toggle"]'
@@ -476,20 +498,31 @@ async function setupCompleteRegistrationForm(
   teamName: string,
   seasonId: number = 16
 ) {
+  const organizationsPromise = page.waitForResponse(
+    (res) =>
+      res.url().includes("/api/v1/organizations") &&
+      res.request().method() === "GET" &&
+      res.status() >= 200 &&
+      res.status() < 300,
+    { timeout: 60000 }
+  );
+  const seasonDetailsPromise = page.waitForResponse(
+    (res) =>
+      res.url().includes(`/api/v1/seasons/${seasonId}/details`) &&
+      res.request().method() === "GET" &&
+      res.status() >= 200 &&
+      res.status() < 300,
+    { timeout: 60000 }
+  );
+
   await page.goto(`/seasons/${seasonId}/signup/registration`, {
     waitUntil: "domcontentloaded"
   });
-  await page
-    .waitForResponse(
-      (res) =>
-        res.url().includes("/api/v1/organizations") &&
-        res.request().method() === "GET" &&
-        res.status() >= 200 &&
-        res.status() < 300,
-      { timeout: 60000 }
-    )
-    .catch(() => undefined);
-  await waitForRegistrationOrganizationStep(page);
+  await Promise.all([
+    organizationsPromise.catch(() => undefined),
+    seasonDetailsPromise.catch(() => undefined)
+  ]);
+  await waitForRegistrationOrganizationStep(page, seasonId);
 
   // Complete organization selection
   await page.locator('[data-testid="organizations-dropdown-toggle"]').click();
@@ -2329,12 +2362,12 @@ test.describe("Signup Form", () => {
         "ValidWorkEmail1"
       );
 
-      await page.goto(`/seasons/${seasonId}/signup/registration`);
-      await expect(
-        page.getByText("Checking your registration status")
-      ).toBeHidden({ timeout: 60000 });
-
-      await navigateToPlayersTab(page);
+      await setupCompleteRegistrationForm(
+        page,
+        generateUniqueOrgName("Custom Roster Org"),
+        generateUniqueTeamName("Custom Roster Team"),
+        seasonId
+      );
 
       const triggers = page.locator(
         '[data-testid="player-accordion-triggers"]'

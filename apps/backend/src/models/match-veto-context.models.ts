@@ -29,9 +29,10 @@ export const getMatchVetoSeasonMeta = async (
       m.status,
       m.stage,
       m.external_match_room_id,
-      s.is_round_robin_bo2_as_2xbo1
+      COALESCE(css.is_round_robin_bo2_as_2xbo1, false) AS is_round_robin_bo2_as_2xbo1
     FROM Matches m
     JOIN Seasons s ON s.id = m.season_id
+    LEFT JOIN CSSeasonSettings css ON css.season_id = s.id
     WHERE m.id = ?`,
     [matchId]
   );

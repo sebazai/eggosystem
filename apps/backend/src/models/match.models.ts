@@ -1635,8 +1635,9 @@ export const getGrandFinalMatchBySeasonAndLeague = async (
   return runQuery<Match[]>(
     `SELECT m.* FROM Matches m
      JOIN Seasons s ON m.season_id = s.id
+     LEFT JOIN CSSeasonSettings css ON css.season_id = s.id
      WHERE m.season_id = ? AND m.league_id = ? AND m.\`group\` = 3
-       AND m.round = CASE WHEN s.grand_final_round_one_only = 1 THEN 1 ELSE 2 END
+       AND m.round = CASE WHEN COALESCE(css.grand_final_round_one_only, 0) = 1 THEN 1 ELSE 2 END
      ORDER BY m.id ASC
      LIMIT 1`,
     [seasonId, leagueId],

@@ -134,8 +134,8 @@ describe("Season Controllers Integration Tests - Active Map Pool", () => {
     beforeEach(async () => {
       // Create a test season
       await runQuery(
-        `INSERT INTO Seasons (id, game_id, game_type_id, organizer_id, name, full_name, start_date, end_date, platform, is_round_robin_bo2_as_2xbo1, has_vat)
-         VALUES (?, 1, 1, 1, 'Test Season', 'Test Season Full Name', '2024-01-01', '2024-12-31', 'faceit', false, true)`,
+        `INSERT INTO Seasons (id, game_id, game_type_id, organizer_id, name, full_name, start_date, end_date, platform, has_vat)
+         VALUES (?, 1, 1, 1, 'Test Season', 'Test Season Full Name', '2024-01-01', '2024-12-31', 'faceit', true)`,
         [testSeasonId],
         connection
       );
@@ -200,8 +200,8 @@ describe("Season Controllers Integration Tests - Active Map Pool", () => {
     beforeEach(async () => {
       // Create a test season
       await runQuery(
-        `INSERT INTO Seasons (id, game_id, game_type_id, organizer_id, name, full_name, start_date, end_date, platform, is_round_robin_bo2_as_2xbo1, has_vat)
-         VALUES (?, 1, 1, 1, 'Test Season', 'Test Season Full Name', '2024-01-01', '2024-12-31', 'faceit', false, true)`,
+        `INSERT INTO Seasons (id, game_id, game_type_id, organizer_id, name, full_name, start_date, end_date, platform, has_vat)
+         VALUES (?, 1, 1, 1, 'Test Season', 'Test Season Full Name', '2024-01-01', '2024-12-31', 'faceit', true)`,
         [testSeasonId],
         connection
       );
@@ -360,10 +360,10 @@ describe("Season Controllers Integration Tests - Date/Time UTC Conversion", () =
         `INSERT INTO Seasons (
           id, game_id, game_type_id, organizer_id, name, full_name,
           signup_start_date, signup_end_date, start_date, end_date,
-          platform, is_round_robin_bo2_as_2xbo1, has_vat
+          platform, has_vat
         ) VALUES (?, 1, 1, 1, 'Test Season', 'Test Season Full Name',
           '2024-01-01 10:00:00', '2024-01-15 12:00:00', '2024-02-01', '2024-12-31',
-          'faceit', false, true)`,
+          'faceit', true)`,
         [testSeasonId],
         connection
       );

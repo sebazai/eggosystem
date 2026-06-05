@@ -208,14 +208,16 @@ export async function runFaceitWebhookIntegrationSeed(): Promise<void> {
     if (seasonRow?.id != null) {
       seasonId = seasonRow.id;
       await runQuery(
-        "UPDATE Seasons SET is_round_robin_bo2_as_2xbo1 = 1 WHERE id = ?",
+        `INSERT INTO CSSeasonSettings (season_id, is_round_robin_bo2_as_2xbo1)
+         VALUES (?, 1)
+         ON DUPLICATE KEY UPDATE is_round_robin_bo2_as_2xbo1 = 1`,
         [seasonId],
         trx
       );
     } else {
       const ins = await runQuery<ResultSetHeader>(
-        `INSERT INTO Seasons (game_id, organizer_id, name, full_name, start_date, platform, is_round_robin_bo2_as_2xbo1)
-         VALUES (?, ?, ?, ?, ?, 'faceit', 1)`,
+        `INSERT INTO Seasons (game_id, organizer_id, name, full_name, start_date, platform)
+         VALUES (?, ?, ?, ?, ?, 'faceit')`,
         [
           gameId,
           organizerId,
@@ -226,6 +228,11 @@ export async function runFaceitWebhookIntegrationSeed(): Promise<void> {
         trx
       );
       seasonId = ins.insertId as number;
+      await runQuery(
+        `INSERT INTO CSSeasonSettings (season_id, is_round_robin_bo2_as_2xbo1) VALUES (?, 1)`,
+        [seasonId],
+        trx
+      );
     }
 
     // 5. Leagues — one per entity_id so each entity_id resolves to a
@@ -406,7 +413,11 @@ export async function runFaceitWebhookIntegrationSeed(): Promise<void> {
 
     // 11. Normal league (single Match per room: BO1 or BO3, is_round_robin_bo2_as_2xbo1 = 0)
     const [normalSeasonRow] = await runQuery<Array<{ id: number }>>(
-      "SELECT id FROM Seasons WHERE organizer_id = ? AND platform = 'faceit' AND is_round_robin_bo2_as_2xbo1 = 0 LIMIT 1",
+      `SELECT s.id FROM Seasons s
+       LEFT JOIN CSSeasonSettings css ON css.season_id = s.id
+       WHERE s.organizer_id = ? AND s.platform = 'faceit'
+         AND COALESCE(css.is_round_robin_bo2_as_2xbo1, 0) = 0
+       LIMIT 1`,
       [organizerId],
       trx
     );
@@ -415,8 +426,8 @@ export async function runFaceitWebhookIntegrationSeed(): Promise<void> {
       normalSeasonId = normalSeasonRow.id;
     } else {
       const ins = await runQuery<ResultSetHeader>(
-        `INSERT INTO Seasons (game_id, organizer_id, name, full_name, start_date, platform, is_round_robin_bo2_as_2xbo1)
-         VALUES (?, ?, ?, ?, ?, 'faceit', 0)`,
+        `INSERT INTO Seasons (game_id, organizer_id, name, full_name, start_date, platform)
+         VALUES (?, ?, ?, ?, ?, 'faceit')`,
         [
           gameId,
           organizerId,
@@ -427,6 +438,11 @@ export async function runFaceitWebhookIntegrationSeed(): Promise<void> {
         trx
       );
       normalSeasonId = ins.insertId as number;
+      await runQuery(
+        `INSERT INTO CSSeasonSettings (season_id, is_round_robin_bo2_as_2xbo1) VALUES (?, 0)`,
+        [normalSeasonId],
+        trx
+      );
     }
 
     const [normalLeagueRow] = await runQuery<Array<{ id: number }>>(

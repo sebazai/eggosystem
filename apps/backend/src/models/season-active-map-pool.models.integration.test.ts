@@ -57,8 +57,8 @@ describe("Season Active Map Pool Integration Tests", () => {
   const seedTestData = async () => {
     // Insert test season
     await runQuery(
-      `INSERT INTO Seasons (id, game_id, game_type_id, organizer_id, name, full_name, start_date, end_date, platform, is_round_robin_bo2_as_2xbo1, has_vat)
-       VALUES (?, 1, 1, 1, 'Test Season', 'Test Season Full Name', '2024-01-01', '2024-12-31', 'faceit', false, true)`,
+      `INSERT INTO Seasons (id, game_id, game_type_id, organizer_id, name, full_name, start_date, end_date, platform, has_vat)
+       VALUES (?, 1, 1, 1, 'Test Season', 'Test Season Full Name', '2024-01-01', '2024-12-31', 'faceit', true)`,
       [testSeasonId],
       connection
     );

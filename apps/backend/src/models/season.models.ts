@@ -14,17 +14,27 @@ import {
   getActiveMapPoolBySeasonId
 } from "./season-active-map-pool.models";
 import { upsertSeasonSignupSettings } from "./season-signup-settings.models";
+import { upsertCSSeasonSettings } from "./cs-season-settings.models";
 
 const SEASON_PLAYER_LIMITS_SQL = `
   sss.min_players AS min_players,
   sss.max_players AS max_players
 `;
 
+const SEASON_CS_SETTINGS_SQL = `
+  COALESCE(css.is_round_robin_bo2_as_2xbo1, false) AS is_round_robin_bo2_as_2xbo1,
+  COALESCE(css.grand_final_round_one_only, false)   AS grand_final_round_one_only,
+  COALESCE(css.faceit_rank_required, false)         AS faceit_rank_required,
+  COALESCE(css.premier_rank_required, false)        AS premier_rank_required,
+  COALESCE(css.hours_played_required, false)        AS hours_played_required
+`;
+
 export const getSeasons = async () => {
   const seasons = await runQuery<Season[]>(`
-    SELECT s.*, ${SEASON_PLAYER_LIMITS_SQL}
+    SELECT s.*, ${SEASON_PLAYER_LIMITS_SQL}, ${SEASON_CS_SETTINGS_SQL}
     FROM Seasons s
     INNER JOIN SeasonSignupSettings sss ON sss.season_id = s.id
+    LEFT JOIN CSSeasonSettings css ON css.season_id = s.id
   `);
   return seasons;
 };
@@ -35,9 +45,10 @@ export const getSeasonById = async (
 ) => {
   const [data] = await runQuery<Array<Season | undefined>>(
     `
-    SELECT s.*, ${SEASON_PLAYER_LIMITS_SQL}
+    SELECT s.*, ${SEASON_PLAYER_LIMITS_SQL}, ${SEASON_CS_SETTINGS_SQL}
     FROM Seasons s
     INNER JOIN SeasonSignupSettings sss ON sss.season_id = s.id
+    LEFT JOIN CSSeasonSettings css ON css.season_id = s.id
     WHERE s.id = ?
     `,
     [id],
@@ -53,6 +64,11 @@ export const getSeasonById = async (
   // Express res.json() will automatically serialize Date objects to ISO strings
   return {
     ...data,
+    is_round_robin_bo2_as_2xbo1: Boolean(data.is_round_robin_bo2_as_2xbo1),
+    grand_final_round_one_only: Boolean(data.grand_final_round_one_only),
+    faceit_rank_required: Boolean(data.faceit_rank_required),
+    premier_rank_required: Boolean(data.premier_rank_required),
+    hours_played_required: Boolean(data.hours_played_required),
     active_map_pool: activeMapPool
   };
 };
@@ -83,10 +99,11 @@ export const getOrganizerIdBySeasonId = async (
 export const getSeasonDetailsById = async (id: number) => {
   const [data] = await runQuery<Array<SeasonDetails | undefined>>(
     `
-    SELECT s.*, g.app_id, ${SEASON_PLAYER_LIMITS_SQL}
+    SELECT s.*, g.app_id, ${SEASON_PLAYER_LIMITS_SQL}, ${SEASON_CS_SETTINGS_SQL}
     FROM Seasons s
     JOIN Games g ON s.game_id = g.id
     INNER JOIN SeasonSignupSettings sss ON sss.season_id = s.id
+    LEFT JOIN CSSeasonSettings css ON css.season_id = s.id
     WHERE s.id = ?
     `,
     [id]
@@ -110,7 +127,7 @@ export const getSeasonGrandFinalRoundOneOnly = async (
   const [row] = await runQuery<
     Array<{ grand_final_round_one_only: boolean | null }>
   >(
-    `SELECT grand_final_round_one_only FROM Seasons WHERE id = ?`,
+    `SELECT grand_final_round_one_only FROM CSSeasonSettings WHERE season_id = ?`,
     [seasonId],
     connection
   );
@@ -290,18 +307,14 @@ const createSeasonWithMapPool = async (
       start_date,
       end_date,
       platform,
-      is_round_robin_bo2_as_2xbo1,
       payment_link,
       registration_price,
       has_vat,
       early_bird_price_discount,
       early_bird_price_discount_end_date,
       rulebook_url,
-      discord_link,
-      faceit_rank_required,
-      premier_rank_required,
-      hours_played_required
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      discord_link
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   const result = await runQuery<ResultSetHeader>(
@@ -317,17 +330,13 @@ const createSeasonWithMapPool = async (
       seasonData.start_date,
       seasonData.end_date,
       seasonData.platform,
-      seasonData.is_round_robin_bo2_as_2xbo1,
       seasonData.payment_link,
       seasonData.registration_price,
       seasonData.has_vat,
       seasonData.early_bird_price_discount,
       seasonData.early_bird_price_discount_end_date,
       seasonData.rulebook_url,
-      seasonData.discord_link,
-      seasonData.faceit_rank_required ?? false,
-      seasonData.premier_rank_required ?? false,
-      seasonData.hours_played_required ?? false
+      seasonData.discord_link
     ],
     connection
   );
@@ -344,6 +353,17 @@ const createSeasonWithMapPool = async (
     {
       min_players: seasonData.min_players,
       max_players: seasonData.max_players
+    },
+    connection
+  );
+
+  await upsertCSSeasonSettings(
+    result.insertId,
+    {
+      is_round_robin_bo2_as_2xbo1: seasonData.is_round_robin_bo2_as_2xbo1,
+      faceit_rank_required: seasonData.faceit_rank_required ?? false,
+      premier_rank_required: seasonData.premier_rank_required ?? false,
+      hours_played_required: seasonData.hours_played_required ?? false
     },
     connection
   );
@@ -405,17 +425,13 @@ const updateSeasonWithMapPool = async (
       start_date = ?,
       end_date = ?,
       platform = ?,
-      is_round_robin_bo2_as_2xbo1 = ?,
       payment_link = ?,
       registration_price = ?,
       has_vat = ?,
       early_bird_price_discount = ?,
       early_bird_price_discount_end_date = ?,
       rulebook_url = ?,
-      discord_link = ?,
-      faceit_rank_required = ?,
-      premier_rank_required = ?,
-      hours_played_required = ?
+      discord_link = ?
     WHERE id = ?
   `;
 
@@ -432,7 +448,6 @@ const updateSeasonWithMapPool = async (
       seasonData.start_date,
       seasonData.end_date,
       seasonData.platform,
-      seasonData.is_round_robin_bo2_as_2xbo1,
       seasonData.payment_link,
       seasonData.registration_price,
       seasonData.has_vat,
@@ -440,9 +455,6 @@ const updateSeasonWithMapPool = async (
       seasonData.early_bird_price_discount_end_date,
       seasonData.rulebook_url,
       seasonData.discord_link,
-      seasonData.faceit_rank_required ?? false,
-      seasonData.premier_rank_required ?? false,
-      seasonData.hours_played_required ?? false,
       seasonId
     ],
     connection
@@ -460,6 +472,17 @@ const updateSeasonWithMapPool = async (
     {
       min_players: seasonData.min_players,
       max_players: seasonData.max_players
+    },
+    connection
+  );
+
+  await upsertCSSeasonSettings(
+    seasonId,
+    {
+      is_round_robin_bo2_as_2xbo1: seasonData.is_round_robin_bo2_as_2xbo1,
+      faceit_rank_required: seasonData.faceit_rank_required ?? false,
+      premier_rank_required: seasonData.premier_rank_required ?? false,
+      hours_played_required: seasonData.hours_played_required ?? false
     },
     connection
   );

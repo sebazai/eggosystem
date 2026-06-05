@@ -265,8 +265,8 @@ describe("Match Routes", () => {
       // Seed test match with specific timestamps in UTC
       // Need to insert into Seasons and Leagues first for foreign key constraints
       await runQuery(
-        `INSERT IGNORE INTO Seasons (id, game_id, game_type_id, organizer_id, name, full_name, start_date, platform, is_round_robin_bo2_as_2xbo1, has_vat)
-         VALUES (9999, 1, 1, 1, 'Test Season', 'Test Season', '2024-01-01', 'faceit', false, true)`,
+        `INSERT IGNORE INTO Seasons (id, game_id, game_type_id, organizer_id, name, full_name, start_date, platform, has_vat)
+         VALUES (9999, 1, 1, 1, 'Test Season', 'Test Season', '2024-01-01', 'faceit', true)`,
         [],
         connection
       );

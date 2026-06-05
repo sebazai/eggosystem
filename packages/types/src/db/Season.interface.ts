@@ -77,7 +77,6 @@ export interface InsertSeason {
   platform: SeasonPlatform;
   start_date: Date; // DATE stored as string (ISO format)
   end_date: Nullable<Date>;
-  is_round_robin_bo2_as_2xbo1?: boolean;
   payment_link?: Nullable<string>;
   registration_price?: Nullable<number>;
   has_vat?: boolean;
@@ -85,9 +84,6 @@ export interface InsertSeason {
   early_bird_price_discount_end_date?: Nullable<Date>;
   rulebook_url?: Nullable<string>;
   discord_link?: Nullable<string>;
-  faceit_rank_required?: boolean;
-  premier_rank_required?: boolean;
-  hours_played_required?: boolean;
   min_players?: number;
   max_players?: number;
 }

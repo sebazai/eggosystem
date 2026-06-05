@@ -23,20 +23,20 @@
 
 ### Readiness scorecard
 
-| Capability area                         | Reusable as-is?                                   | Verdict                                           |
-| --------------------------------------- | ------------------------------------------------- | ------------------------------------------------- |
-| Game / game-type / organizer registry   | ✅ PUBG already seeded                            | **Ready**                                         |
-| Seasons, Leagues, Stages, SeasonLeagues | ✅ keyed on `game_id`                             | **Ready** (`platform='krafton'` added 2026-06-05) |
-| Teams, Organizations, rosters           | ✅ game-agnostic                                  | **Ready**                                         |
-| Signup / registration (dual-roster)     | ✅ per-season `SeasonSignupSettings` (2026-06-05) | **Ready**                                         |
-| Captain roles & RBAC triggers           | ✅ steam-id based                                 | **Ready**                                         |
-| Player identity (Steam ↔ external)      | ⚠️ no PUBG account mapping                        | **Gap — new table**                               |
-| Match container                         | ❌ 2-team / `best_of` shape                       | **Gap — new domain**                              |
-| Per-game team scores                    | ❌ rounds + CT/T                                  | **Gap — new table**                               |
-| Player statistics                       | ❌ ~100 CS2-only columns                          | **Gap — new table**                               |
-| Standings / points engine               | ❌ win/loss-record based                          | **Gap — new logic**                               |
-| External data ingestion                 | ⚠️ webhook-shaped, not poller                     | **Gap — new pipeline**                            |
-| Sortter / kana_elo balancing            | ❌ CS demo / CSRankker bound                      | **Out of scope v1**                               |
+| Capability area                         | Reusable as-is?                                   | Verdict                                                                                |
+| --------------------------------------- | ------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| Game / game-type / organizer registry   | ✅ PUBG already seeded                            | **Ready**                                                                              |
+| Seasons, Leagues, Stages, SeasonLeagues | ✅ keyed on `game_id`; CS settings extracted      | **Ready** (`platform='krafton'` added 2026-06-05; `CSSeasonSettings` added 2026-06-05) |
+| Teams, Organizations, rosters           | ✅ game-agnostic                                  | **Ready**                                                                              |
+| Signup / registration (dual-roster)     | ✅ per-season `SeasonSignupSettings` (2026-06-05) | **Ready**                                                                              |
+| Captain roles & RBAC triggers           | ✅ steam-id based                                 | **Ready**                                                                              |
+| Player identity (Steam ↔ external)      | ⚠️ no PUBG account mapping                        | **Gap — new table**                                                                    |
+| Match container                         | ❌ 2-team / `best_of` shape                       | **Gap — new domain**                                                                   |
+| Per-game team scores                    | ❌ rounds + CT/T                                  | **Gap — new table**                                                                    |
+| Player statistics                       | ❌ ~100 CS2-only columns                          | **Gap — new table**                                                                    |
+| Standings / points engine               | ❌ win/loss-record based                          | **Gap — new logic**                                                                    |
+| External data ingestion                 | ⚠️ webhook-shaped, not poller                     | **Gap — new pipeline**                                                                 |
+| Sortter / kana_elo balancing            | ❌ CS demo / CSRankker bound                      | **Out of scope v1**                                                                    |
 
 ---
 

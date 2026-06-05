@@ -38,8 +38,9 @@ const getFaceitMatchesFromDbForFaceitLeague = async (
   group?: string
 ) => {
   let query = `
-    SELECT m.*, s.is_round_robin_bo2_as_2xbo1 FROM Matches m
+    SELECT m.*, COALESCE(css.is_round_robin_bo2_as_2xbo1, 0) AS is_round_robin_bo2_as_2xbo1 FROM Matches m
     JOIN Seasons s ON m.season_id = s.id
+    LEFT JOIN CSSeasonSettings css ON css.season_id = s.id
     JOIN SeasonLeagueExternalIds slei ON m.season_id = slei.season_id
       AND m.league_id = slei.league_id AND m.stage = slei.stage_id
       AND (m.group = slei.manual_group OR (m.group IS NULL AND slei.manual_group IS NULL))
@@ -54,11 +55,11 @@ const getFaceitMatchesFromDbForFaceitLeague = async (
 
   // Group by external_match_room_id when best_of = 1 and is_round_robin_bo2_as_2xbo1 is true
   query += `
-    GROUP BY 
-      CASE 
-        WHEN m.best_of = 1 AND s.is_round_robin_bo2_as_2xbo1 = true AND m.status = 'FINISHED'
-        THEN m.external_match_room_id 
-        ELSE m.id 
+    GROUP BY
+      CASE
+        WHEN m.best_of = 1 AND COALESCE(css.is_round_robin_bo2_as_2xbo1, 0) = 1 AND m.status = 'FINISHED'
+        THEN m.external_match_room_id
+        ELSE m.id
       END
   `;
 
@@ -334,10 +335,11 @@ export const getDivStandings = async (
 
 export const getStandingsLeagues = async (seasonId: number) => {
   const query = `
-    SELECT l.name AS league_name, sl.tier, slei.*, s.is_round_robin_bo2_as_2xbo1 FROM SeasonLeagueExternalIds slei
+    SELECT l.name AS league_name, sl.tier, slei.*, COALESCE(css.is_round_robin_bo2_as_2xbo1, 0) AS is_round_robin_bo2_as_2xbo1 FROM SeasonLeagueExternalIds slei
      JOIN SeasonLeagues sl ON slei.season_id = sl.season_id AND slei.league_id = sl.league_id
      JOIN Leagues l ON sl.league_id = l.id
      JOIN Seasons s ON slei.season_id = s.id
+     LEFT JOIN CSSeasonSettings css ON css.season_id = s.id
     WHERE slei.season_id = ? AND slei.stage_id = 1
     ORDER BY l.sort_priority ASC, slei.external_league_name ASC
   `;

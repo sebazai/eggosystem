@@ -21,6 +21,9 @@ jest.mock("./season-signup-settings.models", () => ({
   upsertSeasonSignupSettings: jest.fn().mockResolvedValue(undefined),
   getSeasonSignupSettingsBySeasonId: jest.fn().mockResolvedValue(undefined)
 }));
+jest.mock("./cs-season-settings.models", () => ({
+  upsertCSSeasonSettings: jest.fn().mockResolvedValue(undefined)
+}));
 jest.mock("../utils/redisClient", () => ({
   redisClient: {
     get: jest.fn().mockResolvedValue(null),
@@ -80,17 +83,13 @@ describe("Season Models", () => {
           seasonData.start_date,
           seasonData.end_date,
           seasonData.platform,
-          seasonData.is_round_robin_bo2_as_2xbo1,
           seasonData.payment_link,
           seasonData.registration_price,
           seasonData.has_vat,
           seasonData.early_bird_price_discount,
           seasonData.early_bird_price_discount_end_date,
           seasonData.rulebook_url,
-          seasonData.discord_link,
-          true,
-          true,
-          true
+          seasonData.discord_link
         ],
         mockConnection
       );
@@ -164,7 +163,6 @@ describe("Season Models", () => {
           seasonData.start_date,
           seasonData.end_date,
           seasonData.platform,
-          seasonData.is_round_robin_bo2_as_2xbo1,
           seasonData.payment_link,
           seasonData.registration_price,
           seasonData.has_vat,
@@ -172,9 +170,6 @@ describe("Season Models", () => {
           seasonData.early_bird_price_discount_end_date,
           seasonData.rulebook_url,
           seasonData.discord_link,
-          true,
-          true,
-          true,
           seasonId
         ],
         mockConnection

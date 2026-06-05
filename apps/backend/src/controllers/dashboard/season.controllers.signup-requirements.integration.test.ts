@@ -12,6 +12,10 @@ import {
   deleteTestSeasonSignupSettings,
   insertTestSeasonSignupSettings
 } from "../../__utils__/season-signup-settings-test";
+import {
+  deleteTestCSSeasonSettings,
+  insertTestCSSeasonSettings
+} from "../../__utils__/cs-season-settings-test";
 
 // Mock the auth middleware
 jest.mock("../../middlewares/auth.middleware", () => ({
@@ -85,7 +89,7 @@ describe("Season Controllers Integration Tests - Signup Requirements", () => {
             hours_played_required: boolean;
           }>
         >(
-          "SELECT faceit_rank_required, premier_rank_required, hours_played_required FROM Seasons WHERE id = ?",
+          "SELECT faceit_rank_required, premier_rank_required, hours_played_required FROM CSSeasonSettings WHERE season_id = ?",
           [createdSeasonId],
           connection
         );
@@ -101,6 +105,7 @@ describe("Season Controllers Integration Tests - Signup Requirements", () => {
           [createdSeasonId],
           connection
         );
+        await deleteTestCSSeasonSettings(createdSeasonId, connection);
         await deleteTestSeasonSignupSettings(createdSeasonId, connection);
         await runQuery(
           "DELETE FROM Seasons WHERE id = ?",
@@ -136,7 +141,7 @@ describe("Season Controllers Integration Tests - Signup Requirements", () => {
             hours_played_required: boolean;
           }>
         >(
-          "SELECT faceit_rank_required, premier_rank_required, hours_played_required FROM Seasons WHERE id = ?",
+          "SELECT faceit_rank_required, premier_rank_required, hours_played_required FROM CSSeasonSettings WHERE season_id = ?",
           [createdSeasonId],
           connection
         );
@@ -152,6 +157,7 @@ describe("Season Controllers Integration Tests - Signup Requirements", () => {
           [createdSeasonId],
           connection
         );
+        await deleteTestCSSeasonSettings(createdSeasonId, connection);
         await deleteTestSeasonSignupSettings(createdSeasonId, connection);
         await runQuery(
           "DELETE FROM Seasons WHERE id = ?",
@@ -168,14 +174,13 @@ describe("Season Controllers Integration Tests - Signup Requirements", () => {
       await runQuery(
         `INSERT INTO Seasons (
           id, game_id, game_type_id, organizer_id, name, full_name,
-          start_date, end_date, platform, is_round_robin_bo2_as_2xbo1, has_vat,
-          faceit_rank_required, premier_rank_required, hours_played_required
+          start_date, end_date, platform, has_vat
         ) VALUES (?, 1, 1, 1, 'Test Season', 'Test Season Full Name',
-          '2024-01-01', '2024-12-31', 'faceit', false, true,
-          false, false, false)`,
+          '2024-01-01', '2024-12-31', 'faceit', true)`,
         [testSeasonId],
         connection
       );
+      await insertTestCSSeasonSettings(testSeasonId, undefined, connection);
       await insertTestSeasonSignupSettings(testSeasonId, undefined, connection);
       // Add map pool
       await runQuery(
@@ -211,7 +216,7 @@ describe("Season Controllers Integration Tests - Signup Requirements", () => {
           hours_played_required: boolean;
         }>
       >(
-        "SELECT faceit_rank_required, premier_rank_required, hours_played_required FROM Seasons WHERE id = ?",
+        "SELECT faceit_rank_required, premier_rank_required, hours_played_required FROM CSSeasonSettings WHERE season_id = ?",
         [testSeasonId],
         connection
       );
@@ -224,13 +229,13 @@ describe("Season Controllers Integration Tests - Signup Requirements", () => {
 
     it("should update signup requirements to false", async () => {
       const adminJWT = generateTestJWT();
-      // First, create a season with all requirements true
+      // First, set all requirements to true
       await runQuery(
-        `UPDATE Seasons SET 
+        `UPDATE CSSeasonSettings SET
           faceit_rank_required = true,
           premier_rank_required = true,
           hours_played_required = true
-        WHERE id = ?`,
+        WHERE season_id = ?`,
         [testSeasonId],
         connection
       );
@@ -259,7 +264,7 @@ describe("Season Controllers Integration Tests - Signup Requirements", () => {
           hours_played_required: boolean;
         }>
       >(
-        "SELECT faceit_rank_required, premier_rank_required, hours_played_required FROM Seasons WHERE id = ?",
+        "SELECT faceit_rank_required, premier_rank_required, hours_played_required FROM CSSeasonSettings WHERE season_id = ?",
         [testSeasonId],
         connection
       );
@@ -277,12 +282,19 @@ describe("Season Controllers Integration Tests - Signup Requirements", () => {
       await runQuery(
         `INSERT INTO Seasons (
           id, game_id, game_type_id, organizer_id, name, full_name,
-          start_date, end_date, platform, is_round_robin_bo2_as_2xbo1, has_vat,
-          faceit_rank_required, premier_rank_required, hours_played_required
+          start_date, end_date, platform, has_vat
         ) VALUES (?, 1, 1, 1, 'Test Season', 'Test Season Full Name',
-          '2024-01-01', '2024-12-31', 'faceit', false, true,
-          true, false, false)`,
+          '2024-01-01', '2024-12-31', 'faceit', true)`,
         [testSeasonId],
+        connection
+      );
+      await insertTestCSSeasonSettings(
+        testSeasonId,
+        {
+          faceit_rank_required: true,
+          premier_rank_required: false,
+          hours_played_required: false
+        },
         connection
       );
       await insertTestSeasonSignupSettings(testSeasonId, undefined, connection);

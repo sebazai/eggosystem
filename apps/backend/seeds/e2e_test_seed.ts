@@ -161,19 +161,21 @@ export async function seed(knex: Knex): Promise<void> {
     signup_end_date: tomorrow,
     start_date: tenDaysLater,
     end_date: sixtyDaysLater,
-    platform: "faceit",
+    platform: "faceit"
+  });
+  await knex("CSSeasonSettings").insert({
+    season_id: 16,
     faceit_rank_required: 1,
     premier_rank_required: 1,
     hours_played_required: 1
   });
-
   await knex("SeasonSignupSettings").insert({
     season_id: 16,
     min_players: 5,
     max_players: 9
   });
 
-  // Custom roster limits (3–4) for signup form E2E
+  // Custom roster limits (3-4) for signup form E2E
   await knex("Seasons").insert({
     id: 995,
     game_id: 1,
@@ -184,18 +186,16 @@ export async function seed(knex: Knex): Promise<void> {
     signup_end_date: tomorrow,
     start_date: tenDaysLater,
     end_date: sixtyDaysLater,
-    platform: "faceit",
-    faceit_rank_required: 0,
-    premier_rank_required: 0,
-    hours_played_required: 0
+    platform: "faceit"
   });
+  await knex("CSSeasonSettings").insert({ season_id: 995 });
   await knex("SeasonSignupSettings").insert({
     season_id: 995,
     min_players: 3,
     max_players: 4
   });
 
-  // Dedicated season for end-to-end “all signup requirements OFF” flows (matches production DB flags;
+  // Dedicated season for end-to-end "all signup requirements OFF" flows (matches production DB flags;
   // does not rely on route-mocking `/seasons/*/details`).
   await knex("Seasons").insert({
     id: 996,
@@ -207,11 +207,9 @@ export async function seed(knex: Knex): Promise<void> {
     signup_end_date: tomorrow,
     start_date: tenDaysLater,
     end_date: sixtyDaysLater,
-    platform: "faceit",
-    faceit_rank_required: 0,
-    premier_rank_required: 0,
-    hours_played_required: 0
+    platform: "faceit"
   });
+  await knex("CSSeasonSettings").insert({ season_id: 996 });
   await knex("SeasonSignupSettings").insert({
     season_id: 996,
     min_players: 5,
@@ -232,7 +230,10 @@ export async function seed(knex: Knex): Promise<void> {
     game_type_id: 1,
     id: 991,
     name: "E2E Season FaceIT rank optional",
-    full_name: "E2E CS2 FaceIT rank optional",
+    full_name: "E2E CS2 FaceIT rank optional"
+  });
+  await knex("CSSeasonSettings").insert({
+    season_id: 991,
     faceit_rank_required: 0,
     premier_rank_required: 1,
     hours_played_required: 1
@@ -242,7 +243,10 @@ export async function seed(knex: Knex): Promise<void> {
     game_type_id: 1,
     id: 992,
     name: "E2E Season Premier rank optional",
-    full_name: "E2E CS2 Premier rank optional",
+    full_name: "E2E CS2 Premier rank optional"
+  });
+  await knex("CSSeasonSettings").insert({
+    season_id: 992,
     faceit_rank_required: 1,
     premier_rank_required: 0,
     hours_played_required: 1
@@ -252,7 +256,10 @@ export async function seed(knex: Knex): Promise<void> {
     game_type_id: 1,
     id: 993,
     name: "E2E Season Hours optional",
-    full_name: "E2E CS2 Hours optional",
+    full_name: "E2E CS2 Hours optional"
+  });
+  await knex("CSSeasonSettings").insert({
+    season_id: 993,
     faceit_rank_required: 1,
     premier_rank_required: 1,
     hours_played_required: 0
@@ -543,7 +550,7 @@ export async function seed(knex: Knex): Promise<void> {
   // Wrongful-data-for-test: we inject initial state so E2E can assert "see error → fix (admin or DB) → see green".
   // We set work_email, work_email_verified, full_name, etc. here; we do not simulate full profile flows.
   // The fix step is done in the test: A1/A2 use the admin panel (manual approval, manual rank), which writes
-  // SeasonPlayerApprovals / SeasonPlayerRanks – that is enough for backend validation, so no mid-test DB injection.
+  // SeasonPlayerApprovals / SeasonPlayerRanks - that is enough for backend validation, so no mid-test DB injection.
   const manualApprovalAccountId = getE2ESteamPlayerBySteamId(
     ManualApprovalTargetSteamId
   )?.account_id;
