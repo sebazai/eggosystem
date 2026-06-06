@@ -315,14 +315,11 @@ export const addPlayersForTeamInSeason = async (
 };
 
 const isValidExternalId = async (platform: SeasonPlatform, id?: string) => {
-  if (platform === SeasonPlatform.Kanaliiga) {
-    return true;
-  }
-  if (platform === SeasonPlatform.FACEIT && id) {
-    const data = await getFaceITTeamDetails(id);
+  if (platform === SeasonPlatform.FACEIT) {
+    const data = id ? await getFaceITTeamDetails(id) : null;
     return !!data;
   }
-  return false;
+  return true;
 };
 
 export const validatePlayersFromDBForSignup = async (

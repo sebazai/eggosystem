@@ -228,7 +228,7 @@ export const TabTeam = ({
         </div>
       )}
 
-      {platform !== SeasonPlatform.Kanaliiga && (
+      {platform === SeasonPlatform.FACEIT && (
         <FormField
           control={control}
           name="teamExternalId"

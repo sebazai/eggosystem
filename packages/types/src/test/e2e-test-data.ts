@@ -18,6 +18,9 @@ export const E2E_SIGNUP_SEASON_PREMIER_RANK_OPTIONAL_ID = 992;
 /** Same signup window as season 16; `hours_played_required` off, faceit + premier on. */
 export const E2E_SIGNUP_SEASON_HOURS_OPTIONAL_ID = 993;
 
+/** PUBG Squad season (platform='krafton', game_type_id=4, min=3, max=10). No CSSeasonSettings row. */
+export const E2E_SIGNUP_SEASON_PUBG_SQUAD_ID = 997;
+
 import {
   AabeSteamId,
   AddTeamSignupSteamId1,

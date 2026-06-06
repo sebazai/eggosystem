@@ -112,7 +112,10 @@ export async function seed(knex: Knex): Promise<void> {
   await knex("SeasonTeamRegistrationPlayers").where({ season_id: 995 }).del();
   await knex("SeasonTeamRegistrations").where({ season_id: 995 }).del();
   await knex("SeasonSignupSettings").where({ season_id: 995 }).del();
-  await knex("Seasons").whereIn("id", [991, 992, 993, 995, 996]).del();
+  await knex("SeasonTeamRegistrationPlayers").where({ season_id: 997 }).del();
+  await knex("SeasonTeamRegistrations").where({ season_id: 997 }).del();
+  await knex("SeasonSignupSettings").where({ season_id: 997 }).del();
+  await knex("Seasons").whereIn("id", [991, 992, 993, 995, 996, 997]).del();
   await knex("Seasons").where({ id: 16 }).del();
 
   // Clean up NEW test accounts and related data if they exist
@@ -214,6 +217,26 @@ export async function seed(knex: Knex): Promise<void> {
     season_id: 996,
     min_players: 5,
     max_players: 9
+  });
+
+  // PUBG Squad season for cross-game registration e2e tests.
+  // No CSSeasonSettings row (PUBG has no CS-specific flags); all CS fields default to false via COALESCE.
+  await knex("Seasons").insert({
+    id: 997,
+    game_id: 2, // PUBG: Battlegrounds
+    game_type_id: 4, // Squad
+    name: "E2E PUBG Squad Season",
+    full_name: "E2E PUBG Squad Season",
+    signup_start_date: now,
+    signup_end_date: tomorrow,
+    start_date: tenDaysLater,
+    end_date: sixtyDaysLater,
+    platform: "krafton"
+  });
+  await knex("SeasonSignupSettings").insert({
+    season_id: 997,
+    min_players: 3,
+    max_players: 10
   });
 
   // Per-flag optional seasons for S1-AC-4 (same window as 16; no Playwright mock of `/details`).

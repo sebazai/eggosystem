@@ -122,7 +122,7 @@ function SignupFormWithSeason({
   const [editUrl, setEditUrl] = useState<string>("");
   const [fetchingExternalData, setFetchingExternalData] = useState(false);
   const [validExternalTeamId, setValidExternalTeamId] = useState(
-    platform !== SeasonPlatform.Kanaliiga ? null : true
+    platform === SeasonPlatform.FACEIT ? null : true
   );
   const [showResetConfirmation, setShowResetConfirmation] = useState(false);
 

@@ -130,7 +130,7 @@ const baseSignupFormSchema = (context: SignupFormSchemaContext) =>
     })
     .refine(
       (data) => {
-        if (context.platform !== SeasonPlatform.Kanaliiga) {
+        if (context.platform === SeasonPlatform.FACEIT) {
           return (
             typeof data.teamExternalId === "string" &&
             data.teamExternalId.length >= 2 &&

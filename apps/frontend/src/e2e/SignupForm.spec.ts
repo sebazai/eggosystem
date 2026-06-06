@@ -25,6 +25,7 @@ import {
   E2E_SIGNUP_SEASON_PREMIER_RANK_OPTIONAL_ID,
   E2E_SIGNUP_SEASON_RELAXED_REQUIREMENTS_ID,
   E2E_SIGNUP_SEASON_CUSTOM_ROSTER_LIMITS_ID,
+  E2E_SIGNUP_SEASON_PUBG_SQUAD_ID,
   heppajpgSteamId,
   HoolyzSteamId,
   IncompleteDetailsPlayerSteamId,
@@ -525,9 +526,12 @@ async function setupCompleteRegistrationForm(
   await page.locator('[data-testid="teams-dropdown-toggle"]').click();
   await page.locator('[data-testid="teams-add-new"]').click();
   await page.locator('[data-testid="team-name-input"]').fill(teamName);
-  await page
-    .locator('[data-testid="team-external-id-input"]')
-    .fill(generateUniqueFaceitTeamId());
+  const externalIdInput = page.locator(
+    '[data-testid="team-external-id-input"]'
+  );
+  if (await externalIdInput.isVisible().catch(() => false)) {
+    await externalIdInput.fill(generateUniqueFaceitTeamId());
+  }
 
   // Navigate to players section
   await page.locator('[data-testid="go-to-lineup-button"]').click();
@@ -2375,5 +2379,63 @@ test.describe("Signup Form", () => {
         page.locator('[data-testid="remove-player-button-0"]')
       ).toBeDisabled();
     });
+  });
+});
+
+test.describe("PUBG Squad signup", () => {
+  test.beforeEach(async ({ page }) => {
+    await installE2eApiAuthRoute(page);
+    await setupAuthForUser(page, 15005, QuattraSteamId, "Quattra");
+  });
+
+  test("cross-season player (CS season 16 team) submits min-3 PUBG Squad registration", async ({
+    page
+  }) => {
+    const signupPromise = page.waitForResponse(
+      (res) =>
+        res
+          .url()
+          .includes(
+            `/api/v1/registrations/season/${E2E_SIGNUP_SEASON_PUBG_SQUAD_ID}/signup`
+          ) &&
+        !res.url().includes("/signup/team/") &&
+        res.request().method() === "POST"
+    );
+
+    await setupCompleteRegistrationForm(
+      page,
+      generateUniqueOrgName("PUBG Squad Org"),
+      generateUniqueTeamName("PUBG Squad Team"),
+      E2E_SIGNUP_SEASON_PUBG_SQUAD_ID
+    );
+
+    // QuattraSteamId and ValidWorkEmail1/2 are all seeded with valid work emails and discord.
+    // QuattraSteamId is also in CS season 16 team 999, verifying cross-season registration works.
+    await fillSteamIdLineup(page, [
+      QuattraSteamId, // account 15005 — in CS season 16, valid work email
+      ValidWorkEmail1SteamId, // account 15007
+      ValidWorkEmail2SteamId // account 15015
+    ]);
+
+    // Player 0 (Quattra) = captain, player 1 (ValidWorkEmail1) = co-captain
+    await assignCaptain(page);
+
+    const termsCheckbox = page.locator(
+      '[data-testid="terms-conditions-checkbox"]'
+    );
+    if (!(await termsCheckbox.isChecked().catch(() => false))) {
+      await termsCheckbox.click();
+    }
+
+    const submitButton = page
+      .locator('button[type="submit"]')
+      .filter({ hasText: /Submit/i });
+    await expect(submitButton).toBeEnabled({ timeout: 15000 });
+    await submitButton.click();
+
+    const response = await signupPromise;
+    expect(response.status()).toBeGreaterThanOrEqual(200);
+    expect(response.status()).toBeLessThan(300);
+    await expectPublicSignupSuccessUi(page);
   });
 });
