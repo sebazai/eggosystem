@@ -1,5 +1,8 @@
 image: node:26-slim
 
+default:
+  interruptible: true
+
 variables:
   # Docker configuration
   DOCKER_HOST: tcp://docker:2375
@@ -163,6 +166,7 @@ stages:
   - install
   - lint
   - security
+  - package-build
   - test
   - build
   - test-e2e
@@ -196,7 +200,7 @@ typecheck:
 
 lint-all:
   stage: lint
-  extends: [.prepare-pnpm, .mr-frontend, .mr-backend]
+  extends: [.prepare-pnpm, .mr-all-app]
   script:
     - npx turbo run lint --continue
 
@@ -218,9 +222,19 @@ format:check:
 audit:
   stage: security
   extends: [.prepare-pnpm, .mr-all-app]
+  before_script:
+    - npm install -g corepack --force
+    - corepack enable
+    - corepack prepare pnpm@11.5.0 --activate
+    - pnpm config set store-dir $PNPM_STORE_PATH
+    - pnpm config set registry http://172.17.0.1:4873
+    - pnpm config set network-concurrency 64
+    - pnpm config set fetch-retries 0
+    - pnpm config set verify-store-integrity false
+    - pnpm install --frozen-lockfile
+    - apt-get update -qq && apt-get install -y -qq jq curl
   script:
     - pnpm audit --json > gl-dependency-scanning-report.json || true
-    - apt update && apt install -y jq curl
     - ./scripts/audit.sh
     - |
       # Count vulnerabilities by severity
@@ -286,15 +300,21 @@ audit:
 
 secrets_scan:
   stage: security
-  image: python:3.14
+  image:
+    name: trufflesecurity/trufflehog:3.95.5
+    entrypoint: [""]
   extends: [.mr-all-app]
   script:
-    - pip install trufflehog
-    - trufflehog --regex --entropy=False .
+    - trufflehog filesystem . --no-update
 
 test:backend:
   stage: test
   extends: [.mr-backend]
+  needs:
+    - job: build:types
+      artifacts: true
+    - job: build:shared-msw
+      artifacts: true
   services:
     - name: mariadb:$MARIADB_TAG
       alias: eggo-devdb
@@ -312,7 +332,6 @@ test:backend:
     - pnpm config set fetch-retries 0
     - pnpm config set verify-store-integrity false
     - pnpm install --frozen-lockfile
-    - npx turbo run build --filter='@eggosystem/shared-msw'
     - export $(grep -v '^#' .env.development | xargs)
     - pnpm --filter=backend seed
     - pnpm migrate
@@ -359,6 +378,9 @@ test:backend:coverage-merge:
 test:frontend:
   stage: test
   extends: [.mr-frontend]
+  needs:
+    - job: build:types
+      artifacts: true
   before_script:
     - npm install -g corepack --force
     - corepack enable
@@ -368,7 +390,6 @@ test:frontend:
     - pnpm config set fetch-retries 0
     - pnpm config set verify-store-integrity false
     - pnpm install --frozen-lockfile
-    - pnpm --filter=@eggosystem/types build
   script:
     - pnpm --filter=frontend test --runInBand --coverage
   coverage: '/Statements\s+:\s+([\d.]+)%/'
@@ -386,7 +407,7 @@ test:frontend:
       - apps/frontend/coverage/cobertura-coverage.xml
 
 build:types:
-  stage: build
+  stage: package-build
   extends: [.prepare-pnpm, .mr-all-app]
   script:
     - npx turbo run build --filter='@eggosystem/types'
@@ -396,7 +417,7 @@ build:types:
       - packages/types/dist/
 
 build:shared-msw:
-  stage: build
+  stage: package-build
   extends: [.prepare-pnpm, .mr-all-app]
   script:
     - npx turbo run build --filter='@eggosystem/shared-msw'
@@ -408,6 +429,11 @@ build:shared-msw:
 build:frontend:
   stage: build
   extends: [.prepare-pnpm, .mr-all-app]
+  needs:
+    - job: build:types
+      artifacts: true
+    - job: build:shared-msw
+      artifacts: true
   script:
     - npx turbo run build --filter='!backend'
   artifacts:
@@ -418,6 +444,11 @@ build:frontend:
 build:backend:
   stage: build
   extends: [.prepare-pnpm, .mr-all-app]
+  needs:
+    - job: build:types
+      artifacts: true
+    - job: build:shared-msw
+      artifacts: true
   script:
     - npx turbo run build --filter='!frontend'
   artifacts:
@@ -428,11 +459,15 @@ build:backend:
 test-e2e:frontend:
   image: mcr.microsoft.com/playwright:v1.60.0-jammy
   stage: test-e2e
-  dependencies:
-    - build:backend
-    - build:frontend
-    - build:types
-    - build:shared-msw
+  needs:
+    - job: build:backend
+      artifacts: true
+    - job: build:frontend
+      artifacts: true
+    - job: build:types
+      artifacts: true
+    - job: build:shared-msw
+      artifacts: true
   services:
     - name: mariadb:$MARIADB_TAG
       alias: eggo-devdb
@@ -705,6 +740,7 @@ deploy-prod:
   image: alpine:latest
   stage: deploy
   extends: [.main-all-app]
+  interruptible: false
   resource_group: production
   when: manual
   needs:
@@ -741,6 +777,7 @@ deploy-stage:
   image: alpine:latest
   stage: deploy
   extends: [.main-all-app]
+  interruptible: false
   resource_group: stage
   environment:
     name: stage
@@ -787,6 +824,7 @@ deploy-dev:
   image: alpine:latest
   stage: deploy
   extends: [.dev-all-app]
+  interruptible: false
   resource_group: dev
   environment:
     name: dev
@@ -823,6 +861,7 @@ deploy-dev:
 deploy-ondemand:
   <<: *docker-build-base
   image: docker:$DOCKER_IMAGE_TAG
+  interruptible: false
   tags:
     - hub # use this so we have whitelisted runner for portainer
   stage: on-demand-env
