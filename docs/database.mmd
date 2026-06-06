@@ -45,7 +45,6 @@ erDiagram
 "CasterApplications" }o--o| "Accounts" : ""
 "CasterApplications" }o--|| "Organizers" : ""
 "CasterApplications" }o--o| "Accounts" : ""
-"CSSeasonSettings" |o--|| "Seasons" : ""
 "FantasyLeaderboard" }o--|| "FantasyTeams" : ""
 "FantasyLeaderboard" }o--|| "Leagues" : ""
 "FantasyLeaderboard" }o--|| "Seasons" : ""
@@ -116,7 +115,6 @@ erDiagram
 "Seasons" }o--|| "Games" : ""
 "Seasons" }o--o| "GameTypes" : ""
 "Seasons" }o--|| "Organizers" : ""
-"SeasonSignupSettings" |o--|| "Seasons" : ""
 "SeasonTeamPlayers" }o--o| "Matches" : ""
 "SeasonTeamPlayers" }o--o| "SteamPlayers" : ""
 "SeasonTeamPlayers" }o--|| "Seasons" : ""
@@ -129,6 +127,7 @@ erDiagram
 "SeasonTeamRegistrations" }o--|| "Seasons" : ""
 "SeasonTeamRegistrations" }o--|| "Teams" : ""
 "SetupEvents" }o--|| "MatchGames" : ""
+"SteamPlayerKanaElo" |o--|| "SteamPlayers" : ""
 "SteamPlayers" }o--o| "Accounts" : ""
 "TeamGameScores" }o--|| "MatchGames" : ""
 "TeamGameScores" }o--|| "MatchTeams" : ""
@@ -142,7 +141,6 @@ erDiagram
 "TrophyAssignments" }o--o| "Teams" : ""
 "TrophyAssignments" }o--|| "Trophies" : ""
 "UserPolicyAcceptances" }o--|| "Accounts" : ""
-"UtilityThrowEvents" }o--|| "MatchGames" : ""
 "WastedUtilityEvents" }o--|| "MatchGames" : ""
 
 "AccountCasterUrls" {
@@ -174,9 +172,6 @@ erDiagram
   int_10__unsigned account_id FK
   int_10__unsigned approved_by FK
   int_10__unsigned rejected_by FK
-}
-"CSSeasonSettings" {
-  int_10__unsigned season_id PK
 }
 "FaceitWebhooks" {
   int_10__unsigned id PK
@@ -397,9 +392,6 @@ erDiagram
   int_10__unsigned game_type_id FK
   int_10__unsigned organizer_id FK
 }
-"SeasonSignupSettings" {
-  int_10__unsigned season_id PK
-}
 "SeasonTeamPlayers" {
   int_10__unsigned season_id FK
   int_10__unsigned team_id FK
@@ -425,6 +417,10 @@ erDiagram
 }
 "Stages" {
   int_10__unsigned id PK
+}
+"SteamPlayerKanaElo" {
+  int_10__unsigned id PK
+  bigint_20_ steam_id FK
 }
 "SteamPlayers" {
   bigint_20_ steam_id PK
@@ -459,10 +455,6 @@ erDiagram
 "UserPolicyAcceptances" {
   int_10__unsigned id PK
   int_10__unsigned account_id FK
-}
-"UtilityThrowEvents" {
-  bigint_20__unsigned id PK
-  int_10__unsigned match_game_id FK
 }
 "WastedUtilityEvents" {
   bigint_20__unsigned id PK
