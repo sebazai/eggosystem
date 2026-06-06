@@ -433,12 +433,16 @@ function WeaponDonut({ weapons }: { weapons: WeaponStat[] }) {
 const UTILITY_VIZ_COLORS = {
   flash: "var(--weapon-viz-1)",
   smoke: "var(--weapon-viz-5)",
+  he: "var(--weapon-viz-7)",
+  molotov: "var(--weapon-viz-2)",
   wasted: NEUTRAL_COLOR
 } as const;
 
 function UtilityDonut({
   flashesThrown,
   smokesThrown,
+  heThrown,
+  molotovThrown,
   wasted,
   utilityDamage,
   enemiesBlinded,
@@ -447,6 +451,8 @@ function UtilityDonut({
 }: {
   flashesThrown: number;
   smokesThrown: number;
+  heThrown: number;
+  molotovThrown: number;
   wasted: number;
   utilityDamage: number;
   enemiesBlinded: number;
@@ -456,6 +462,12 @@ function UtilityDonut({
   const segments = [
     { label: "Flashes", value: flashesThrown, color: UTILITY_VIZ_COLORS.flash },
     { label: "Smokes", value: smokesThrown, color: UTILITY_VIZ_COLORS.smoke },
+    { label: "HE grenades", value: heThrown, color: UTILITY_VIZ_COLORS.he },
+    {
+      label: "Molotovs",
+      value: molotovThrown,
+      color: UTILITY_VIZ_COLORS.molotov
+    },
     ...(wasted > 0
       ? [{ label: "Wasted", value: wasted, color: UTILITY_VIZ_COLORS.wasted }]
       : [])
@@ -2358,12 +2370,16 @@ function FlashSection({
   const hasData =
     (us?.flashes_thrown ?? 0) > 0 ||
     (us?.smokes_thrown ?? 0) > 0 ||
+    (us?.he_thrown ?? 0) > 0 ||
+    (us?.molotov_thrown ?? 0) > 0 ||
     (us?.utility_damage ?? 0) > 0 ||
     roundsWithActivity.length > 0;
   const flashesThrown = us?.flashes_thrown ?? 0;
   const utilDmg = us?.utility_damage ?? 0;
   const wasted = us?.wasted_utility ?? 0;
   const smokes = us?.smokes_thrown ?? 0;
+  const heThrown = us?.he_thrown ?? 0;
+  const molotovThrown = us?.molotov_thrown ?? 0;
   const teammatesFlashed = us?.teammates_flashed ?? 0;
   const avgBlindSec =
     totalEnemyFlashCount > 0 ? totalFlashDuration / totalEnemyFlashCount : null;
@@ -2383,6 +2399,8 @@ function FlashSection({
         <UtilityDonut
           flashesThrown={flashesThrown}
           smokesThrown={smokes}
+          heThrown={heThrown}
+          molotovThrown={molotovThrown}
           wasted={wasted}
           utilityDamage={utilDmg}
           enemiesBlinded={totalEnemyFlashCount}
@@ -3073,6 +3091,21 @@ export function PlayerMatchGameView({
     [tradeStats, steamId]
   );
 
+  // Derive FD trade breakdown from opening-duel data so Trade Performance and
+  // the FKFDSection always agree (PlayerStats.first_death_trade_opportunities
+  // is parser-computed and can diverge from computeTradeStatus).
+  const { fdTradedFromDuels, fdTradeableFromDuels } = useMemo(() => {
+    const fdDuels = openingDuels.filter(
+      (d) => String(d.victim_steam_id) === String(steamId)
+    );
+    return {
+      fdTradedFromDuels: fdDuels.filter((d) => d.trade === "converted").length,
+      fdTradeableFromDuels: fdDuels.filter(
+        (d) => d.trade === "converted" || d.trade === "attempted"
+      ).length
+    };
+  }, [openingDuels, steamId]);
+
   const duelByRound = useMemo(() => {
     const map = new Map<number, MatchGameOpeningDuel>();
     for (const d of openingDuels) map.set(d.round_number, d);
@@ -3287,16 +3320,11 @@ export function PlayerMatchGameView({
             const attRate = pct(p.trade_attempts, p.trade_opportunities);
             const convRate = pct(p.trades, p.trade_attempts);
             const deathTradedRate = pct(p.traded, p.deaths);
-            const fdTradedRate = pct(
-              p.first_death_traded,
-              p.first_death_trade_opportunities
-            );
+            const fdTradedRate = pct(fdTradedFromDuels, fdTradeableFromDuels);
             const ignored = p.trade_opportunities - p.trade_attempts;
             const failed = p.trade_attempts - p.trades;
-            const fdIgnored =
-              p.first_deaths - p.first_death_trade_opportunities;
-            const fdFailed =
-              p.first_death_trade_opportunities - p.first_death_traded;
+            const fdIgnored = p.first_deaths - fdTradeableFromDuels;
+            const fdFailed = fdTradeableFromDuels - fdTradedFromDuels;
 
             const notTraded = p.deaths - p.traded;
 
@@ -3403,7 +3431,7 @@ export function PlayerMatchGameView({
                       <StatChip
                         value={`${fdTradedRate}%`}
                         label="FD traded rate"
-                        note={`${p.first_death_traded}/${p.first_death_trade_opportunities} tradeable`}
+                        note={`${fdTradedFromDuels}/${fdTradeableFromDuels} tradeable`}
                       />
                     </div>
                   </div>
@@ -3418,11 +3446,8 @@ export function PlayerMatchGameView({
                     <div className="grid grid-cols-4 gap-2">
                       {[
                         { v: p.first_deaths, l: "Total FDs" },
-                        {
-                          v: p.first_death_trade_opportunities,
-                          l: "Tradeable"
-                        },
-                        { v: p.first_death_traded, l: "Traded" },
+                        { v: fdTradeableFromDuels, l: "Tradeable" },
+                        { v: fdTradedFromDuels, l: "Traded" },
                         { v: Math.max(0, fdIgnored), l: "Not tradeable" }
                       ].map((s) => (
                         <div key={s.l} className="text-center">
@@ -3442,7 +3467,7 @@ export function PlayerMatchGameView({
                         segments={[
                           {
                             label: "Traded",
-                            value: p.first_death_traded,
+                            value: fdTradedFromDuels,
                             color: GOOD_COLOR
                           },
                           {

@@ -871,7 +871,7 @@ export const getPlayerGameUtilityStats = async (
   // These three reads are non-transactional. A concurrent saveParsedDemoDataForGame
   // (delete+reinsert) could interleave with them under READ COMMITTED, producing a
   // mixed-parse response. Accepted as low-risk given parse frequency.
-  const [summary, wasted, flashCounts] = await Promise.all([
+  const [summary, wasted, flashCounts, throwCounts] = await Promise.all([
     runQuery<
       {
         flashes_thrown: number;
@@ -900,6 +900,14 @@ export const getPlayerGameUtilityStats = async (
        FROM FlashEvents
        WHERE match_game_id = ? AND thrower_steam_id = ?`,
       [match_game_id, steam_id]
+    ),
+    runQuery<{ he_thrown: number; molotov_thrown: number }[]>(
+      `SELECT
+        SUM(utility_type = 'he')      AS he_thrown,
+        SUM(utility_type = 'molotov') AS molotov_thrown
+       FROM UtilityThrowEvents
+       WHERE match_game_id = ? AND thrower_steam_id = ?`,
+      [match_game_id, steam_id]
     )
   ]);
 
@@ -913,6 +921,8 @@ export const getPlayerGameUtilityStats = async (
     enemies_flashed: Number(flashCounts[0]?.enemies_flashed ?? 0),
     teammates_flashed: Number(flashCounts[0]?.teammates_flashed ?? 0),
     smokes_thrown: Number(s.smokes_thrown ?? 0),
+    he_thrown: Number(throwCounts[0]?.he_thrown ?? 0),
+    molotov_thrown: Number(throwCounts[0]?.molotov_thrown ?? 0),
     utility_damage: Number(s.utility_damage ?? 0),
     wasted_utility: Number(wasted[0]?.wasted ?? 0)
   };

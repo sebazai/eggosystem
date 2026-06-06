@@ -732,6 +732,7 @@ deploy-prod:
     - rsync -v ./conf/mariadb/maxscale.subst.yml ubuntu@$HUB_PROD_IP:~/docker/eggosystem/maxscale.cnf
     - rsync -v ./docker-compose.prod.subst.yml ubuntu@$HUB_PROD_IP:~/docker/eggosystem/docker-compose.yml
     - rsync -v ./conf/mariadb/my.cnf ubuntu@$HUB_PROD_IP:~/docker/eggosystem/my.cnf
+    - rsync -v ./conf/mariadb/backup.sh ubuntu@$HUB_PROD_IP:~/docker/eggosystem/backup.sh
     - ssh ubuntu@$HUB_PROD_IP "docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY"
     - ssh ubuntu@$HUB_PROD_IP "docker compose -f ~/docker/eggosystem/docker-compose.yml pull"
     - ssh ubuntu@$HUB_PROD_IP "docker compose -f ~/docker/eggosystem/docker-compose.yml up -d"

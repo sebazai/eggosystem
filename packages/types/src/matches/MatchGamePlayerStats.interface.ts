@@ -103,6 +103,8 @@ export interface PlayerGameUtilityStats {
   enemies_flashed: number;
   teammates_flashed: number;
   smokes_thrown: number;
+  he_thrown: number;
+  molotov_thrown: number;
   utility_damage: number;
   wasted_utility: number;
 }
