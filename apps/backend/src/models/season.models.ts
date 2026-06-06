@@ -290,11 +290,6 @@ const createSeasonWithMapPool = async (
   seasonData: SeasonFormRaw,
   connection: PoolConnection
 ): Promise<ResultSetHeader> => {
-  // Validate active_map_pool
-  if (!seasonData.active_map_pool || seasonData.active_map_pool.length === 0) {
-    throw new Error("Active map pool must contain at least one map");
-  }
-
   const query = `
     INSERT INTO Seasons (
       game_id,
@@ -342,12 +337,6 @@ const createSeasonWithMapPool = async (
   );
 
   // Set active map pool
-  await setActiveMapPoolForSeason(
-    result.insertId,
-    seasonData.active_map_pool,
-    connection
-  );
-
   await upsertSeasonSignupSettings(
     result.insertId,
     {
@@ -357,17 +346,26 @@ const createSeasonWithMapPool = async (
     connection
   );
 
-  await upsertCSSeasonSettings(
-    result.insertId,
-    {
-      is_round_robin_bo2_as_2xbo1: seasonData.is_round_robin_bo2_as_2xbo1,
-      grand_final_round_one_only: seasonData.grand_final_round_one_only ?? true,
-      faceit_rank_required: seasonData.faceit_rank_required ?? false,
-      premier_rank_required: seasonData.premier_rank_required ?? false,
-      hours_played_required: seasonData.hours_played_required ?? false
-    },
-    connection
-  );
+  if (seasonData.active_map_pool.length > 0) {
+    await setActiveMapPoolForSeason(
+      result.insertId,
+      seasonData.active_map_pool,
+      connection
+    );
+
+    await upsertCSSeasonSettings(
+      result.insertId,
+      {
+        is_round_robin_bo2_as_2xbo1: seasonData.is_round_robin_bo2_as_2xbo1,
+        grand_final_round_one_only:
+          seasonData.grand_final_round_one_only ?? true,
+        faceit_rank_required: seasonData.faceit_rank_required ?? false,
+        premier_rank_required: seasonData.premier_rank_required ?? false,
+        hours_played_required: seasonData.hours_played_required ?? false
+      },
+      connection
+    );
+  }
 
   return result;
 };
@@ -409,11 +407,6 @@ const updateSeasonWithMapPool = async (
   seasonData: SeasonFormRaw,
   connection: PoolConnection
 ): Promise<ResultSetHeader> => {
-  // Validate active_map_pool
-  if (!seasonData.active_map_pool || seasonData.active_map_pool.length === 0) {
-    throw new Error("Active map pool must contain at least one map");
-  }
-
   const query = `
     UPDATE Seasons SET
       game_id = ?,
@@ -461,13 +454,6 @@ const updateSeasonWithMapPool = async (
     connection
   );
 
-  // Set active map pool
-  await setActiveMapPoolForSeason(
-    seasonId,
-    seasonData.active_map_pool,
-    connection
-  );
-
   await upsertSeasonSignupSettings(
     seasonId,
     {
@@ -477,17 +463,26 @@ const updateSeasonWithMapPool = async (
     connection
   );
 
-  await upsertCSSeasonSettings(
-    seasonId,
-    {
-      is_round_robin_bo2_as_2xbo1: seasonData.is_round_robin_bo2_as_2xbo1,
-      grand_final_round_one_only: seasonData.grand_final_round_one_only ?? true,
-      faceit_rank_required: seasonData.faceit_rank_required ?? false,
-      premier_rank_required: seasonData.premier_rank_required ?? false,
-      hours_played_required: seasonData.hours_played_required ?? false
-    },
-    connection
-  );
+  if (seasonData.active_map_pool.length > 0) {
+    await setActiveMapPoolForSeason(
+      seasonId,
+      seasonData.active_map_pool,
+      connection
+    );
+
+    await upsertCSSeasonSettings(
+      seasonId,
+      {
+        is_round_robin_bo2_as_2xbo1: seasonData.is_round_robin_bo2_as_2xbo1,
+        grand_final_round_one_only:
+          seasonData.grand_final_round_one_only ?? true,
+        faceit_rank_required: seasonData.faceit_rank_required ?? false,
+        premier_rank_required: seasonData.premier_rank_required ?? false,
+        hours_played_required: seasonData.hours_played_required ?? false
+      },
+      connection
+    );
+  }
 
   return result;
 };

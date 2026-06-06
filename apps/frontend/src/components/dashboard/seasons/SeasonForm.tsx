@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
@@ -153,11 +153,59 @@ export function SeasonForm({
   }, [form, mode, season]);
 
   const selectedGameId = form.watch("game_id");
+  const selectedPlatform = form.watch("platform");
 
   // Filter game types based on selected game
   const filteredGameTypes = gameTypes.filter(
     (gameType) => gameType.game_id === selectedGameId
   );
+
+  const selectedGame = games.find((g) => g.id === selectedGameId);
+  // Default to showing CS fields while games are still loading
+  const isCsGame =
+    gamesLoading || !selectedGame
+      ? true
+      : selectedGame.abbreviation.toUpperCase() === "CS2";
+  const isFaceitPlatform = selectedPlatform === SeasonPlatform.FACEIT;
+  const showFaceitCsSettings = isCsGame && isFaceitPlatform;
+
+  // Platforms available per game — CS2 uses everything except Krafton; PUBG uses only Krafton
+  const availablePlatforms: SeasonPlatform[] =
+    gamesLoading || !selectedGame
+      ? Object.values(SeasonPlatform)
+      : isCsGame
+        ? Object.values(SeasonPlatform).filter(
+            (p) => p !== SeasonPlatform.Krafton
+          )
+        : [SeasonPlatform.Krafton];
+
+  // When the game changes, reset platform to first valid option if current is no longer available
+  useEffect(() => {
+    if (gamesLoading) return;
+    if (!availablePlatforms.includes(selectedPlatform as SeasonPlatform)) {
+      form.setValue("platform", availablePlatforms[0]!, {
+        shouldValidate: true
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedGameId, gamesLoading]);
+
+  // When platform changes away from FACEIT, clear FACEIT-specific CS settings so
+  // the DB receives false on save and the checkboxes don't reappear if FACEIT is re-selected.
+  const prevPlatformRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (
+      prevPlatformRef.current !== null &&
+      prevPlatformRef.current !== selectedPlatform
+    ) {
+      if (selectedPlatform !== SeasonPlatform.FACEIT) {
+        form.setValue("is_round_robin_bo2_as_2xbo1", false);
+        form.setValue("faceit_rank_required", false);
+        form.setValue("grand_final_round_one_only", true);
+      }
+    }
+    prevPlatformRef.current = selectedPlatform;
+  }, [selectedPlatform, form]);
 
   function applyGameTypePlayerLimits(gameTypeId: number) {
     const limits = getDefaultSignupPlayerLimitsForGameTypeId(gameTypeId);
@@ -167,6 +215,14 @@ export function SeasonForm({
 
   const handleSubmit = async (data: SeasonFormValues) => {
     if (!onSubmit) return;
+
+    // CS-specific validation for map pool
+    if (isCsGame && data.active_map_pool.length === 0) {
+      form.setError("active_map_pool", {
+        message: "At least one map must be selected"
+      });
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -185,8 +241,12 @@ export function SeasonForm({
         start_date: data.start_date,
         end_date: data.end_date || null,
         platform: data.platform,
-        is_round_robin_bo2_as_2xbo1: data.is_round_robin_bo2_as_2xbo1,
-        grand_final_round_one_only: data.grand_final_round_one_only ?? true,
+        is_round_robin_bo2_as_2xbo1: showFaceitCsSettings
+          ? data.is_round_robin_bo2_as_2xbo1
+          : false,
+        grand_final_round_one_only: showFaceitCsSettings
+          ? (data.grand_final_round_one_only ?? true)
+          : true,
         payment_link: data.payment_link || null,
         registration_price:
           data.registration_price !== undefined &&
@@ -202,12 +262,18 @@ export function SeasonForm({
         early_bird_price_discount_end_date: convertLocalDateTimeToISO(
           data.early_bird_price_discount_end_date ?? null
         ),
-        active_map_pool: data.active_map_pool,
+        active_map_pool: isCsGame ? data.active_map_pool : [],
         rulebook_url: data.rulebook_url || null,
         discord_link: data.discord_link || null,
-        faceit_rank_required: data.faceit_rank_required ?? false,
-        premier_rank_required: data.premier_rank_required ?? false,
-        hours_played_required: data.hours_played_required ?? false,
+        faceit_rank_required: showFaceitCsSettings
+          ? (data.faceit_rank_required ?? false)
+          : false,
+        premier_rank_required: isCsGame
+          ? (data.premier_rank_required ?? false)
+          : false,
+        hours_played_required: isCsGame
+          ? (data.hours_played_required ?? false)
+          : false,
         min_players: data.min_players,
         max_players: data.max_players
       };
@@ -458,7 +524,7 @@ export function SeasonForm({
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {Object.values(SeasonPlatform).map((platform) => (
+                          {availablePlatforms.map((platform) => (
                             <SelectItem key={platform} value={platform}>
                               {platform.charAt(0).toUpperCase() +
                                 platform.slice(1)}
@@ -553,52 +619,57 @@ export function SeasonForm({
                 )}
               />
 
-              {/* Round Robin BO2 as 2xBO1 Checkbox */}
-              <FormField
-                control={form.control}
-                name="is_round_robin_bo2_as_2xbo1"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                        disabled={isFormDisabled}
-                      />
-                    </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel>Round Robin BO2 as 2xBO1</FormLabel>
-                      <FormDescription>
-                        Treat round robin BO2 matches as two separate BO1
-                        matches
-                      </FormDescription>
-                    </div>
-                  </FormItem>
-                )}
-              />
+              {/* FACEIT + CS only settings */}
+              {showFaceitCsSettings && (
+                <>
+                  {/* Round Robin BO2 as 2xBO1 Checkbox */}
+                  <FormField
+                    control={form.control}
+                    name="is_round_robin_bo2_as_2xbo1"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            disabled={isFormDisabled}
+                          />
+                        </FormControl>
+                        <div className="space-y-1 leading-none">
+                          <FormLabel>Round Robin BO2 as 2xBO1</FormLabel>
+                          <FormDescription>
+                            Treat round robin BO2 matches as two separate BO1
+                            matches
+                          </FormDescription>
+                        </div>
+                      </FormItem>
+                    )}
+                  />
 
-              {/* Grand Final Round One Only Checkbox */}
-              <FormField
-                control={form.control}
-                name="grand_final_round_one_only"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                        disabled={isFormDisabled}
-                      />
-                    </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel>Grand Final Round One Only</FormLabel>
-                      <FormDescription>
-                        Play only round one in the grand final
-                      </FormDescription>
-                    </div>
-                  </FormItem>
-                )}
-              />
+                  {/* Grand Final Round One Only Checkbox */}
+                  <FormField
+                    control={form.control}
+                    name="grand_final_round_one_only"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            disabled={isFormDisabled}
+                          />
+                        </FormControl>
+                        <div className="space-y-1 leading-none">
+                          <FormLabel>Grand Final Round One Only</FormLabel>
+                          <FormDescription>
+                            Play only round one in the grand final
+                          </FormDescription>
+                        </div>
+                      </FormItem>
+                    )}
+                  />
+                </>
+              )}
 
               {/* Payment Link */}
               <FormField
@@ -790,139 +861,150 @@ export function SeasonForm({
                 )}
               />
 
-              {/* Active Map Pool */}
-              <FormField
-                control={form.control}
-                name="active_map_pool"
-                render={({ field }) => (
-                  <FormItem>
-                    <RequiredFormLabel required>
-                      Active Map Pool
-                    </RequiredFormLabel>
-                    <div className="space-y-3">
-                      {mapsLoading ? (
-                        <div className="flex items-center space-x-2">
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          <span className="text-sm text-muted-foreground">
-                            Loading maps...
-                          </span>
+              {/* CS-only settings */}
+              {isCsGame && (
+                <>
+                  {/* Active Map Pool */}
+                  <FormField
+                    control={form.control}
+                    name="active_map_pool"
+                    render={({ field }) => (
+                      <FormItem>
+                        <RequiredFormLabel required>
+                          Active Map Pool
+                        </RequiredFormLabel>
+                        <div className="space-y-3">
+                          {mapsLoading ? (
+                            <div className="flex items-center space-x-2">
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              <span className="text-sm text-muted-foreground">
+                                Loading maps...
+                              </span>
+                            </div>
+                          ) : maps.length === 0 ? (
+                            <p className="text-sm text-muted-foreground">
+                              No maps available
+                            </p>
+                          ) : (
+                            <div className="grid grid-cols-2 gap-3">
+                              {maps.map((map) => (
+                                <FormItem
+                                  key={map.id}
+                                  className="flex flex-row items-start space-x-3 space-y-0"
+                                >
+                                  <FormControl>
+                                    <Checkbox
+                                      checked={
+                                        field.value?.includes(map.id) || false
+                                      }
+                                      onCheckedChange={(checked) => {
+                                        const currentValue = field.value || [];
+                                        if (checked) {
+                                          field.onChange([
+                                            ...currentValue,
+                                            map.id
+                                          ]);
+                                        } else {
+                                          field.onChange(
+                                            currentValue.filter(
+                                              (id) => id !== map.id
+                                            )
+                                          );
+                                        }
+                                      }}
+                                      disabled={isFormDisabled}
+                                    />
+                                  </FormControl>
+                                  <FormLabel className="normal-case font-body font-normal cursor-pointer text-foreground">
+                                    {map.name}
+                                  </FormLabel>
+                                </FormItem>
+                              ))}
+                            </div>
+                          )}
                         </div>
-                      ) : maps.length === 0 ? (
-                        <p className="text-sm text-muted-foreground">
-                          No maps available
-                        </p>
-                      ) : (
-                        <div className="grid grid-cols-2 gap-3">
-                          {maps.map((map) => (
-                            <FormItem
-                              key={map.id}
-                              className="flex flex-row items-start space-x-3 space-y-0"
-                            >
-                              <FormControl>
-                                <Checkbox
-                                  checked={
-                                    field.value?.includes(map.id) || false
-                                  }
-                                  onCheckedChange={(checked) => {
-                                    const currentValue = field.value || [];
-                                    if (checked) {
-                                      field.onChange([...currentValue, map.id]);
-                                    } else {
-                                      field.onChange(
-                                        currentValue.filter(
-                                          (id) => id !== map.id
-                                        )
-                                      );
-                                    }
-                                  }}
-                                  disabled={isFormDisabled}
-                                />
-                              </FormControl>
-                              <FormLabel className="normal-case font-body font-normal cursor-pointer text-foreground">
-                                {map.name}
-                              </FormLabel>
-                            </FormItem>
-                          ))}
-                        </div>
+                        <FormDescription>
+                          Select at least one map to be active for this season
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* FaceIt Rank Required — only when platform is FACEIT */}
+                  {isFaceitPlatform && (
+                    <FormField
+                      control={form.control}
+                      name="faceit_rank_required"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value || false}
+                              onCheckedChange={field.onChange}
+                              disabled={isFormDisabled}
+                            />
+                          </FormControl>
+                          <div className="space-y-1 leading-none">
+                            <FormLabel>Require FaceIt Rank</FormLabel>
+                            <FormDescription>
+                              Players must have a valid FaceIt rank to sign up
+                            </FormDescription>
+                          </div>
+                        </FormItem>
                       )}
-                    </div>
-                    <FormDescription>
-                      Select at least one map to be active for this season
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                    />
+                  )}
 
-              {/* FaceIt Rank Required */}
-              <FormField
-                control={form.control}
-                name="faceit_rank_required"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value || false}
-                        onCheckedChange={field.onChange}
-                        disabled={isFormDisabled}
-                      />
-                    </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel>Require FaceIt Rank</FormLabel>
-                      <FormDescription>
-                        Players must have a valid FaceIt rank to sign up
-                      </FormDescription>
-                    </div>
-                  </FormItem>
-                )}
-              />
+                  {/* Premier Rank Required */}
+                  <FormField
+                    control={form.control}
+                    name="premier_rank_required"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value || false}
+                            onCheckedChange={field.onChange}
+                            disabled={isFormDisabled}
+                          />
+                        </FormControl>
+                        <div className="space-y-1 leading-none">
+                          <FormLabel>Require Premier Rank</FormLabel>
+                          <FormDescription>
+                            Players must have a valid CS2 Premier rank to sign
+                            up
+                          </FormDescription>
+                        </div>
+                      </FormItem>
+                    )}
+                  />
 
-              {/* Premier Rank Required */}
-              <FormField
-                control={form.control}
-                name="premier_rank_required"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value || false}
-                        onCheckedChange={field.onChange}
-                        disabled={isFormDisabled}
-                      />
-                    </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel>Require Premier Rank</FormLabel>
-                      <FormDescription>
-                        Players must have a valid CS2 Premier rank to sign up
-                      </FormDescription>
-                    </div>
-                  </FormItem>
-                )}
-              />
-
-              {/* Hours Played Required */}
-              <FormField
-                control={form.control}
-                name="hours_played_required"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value || false}
-                        onCheckedChange={field.onChange}
-                        disabled={isFormDisabled}
-                      />
-                    </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel>Require Hours Played</FormLabel>
-                      <FormDescription>
-                        Players must have played sufficient hours in CS2 to sign
-                        up
-                      </FormDescription>
-                    </div>
-                  </FormItem>
-                )}
-              />
+                  {/* Hours Played Required */}
+                  <FormField
+                    control={form.control}
+                    name="hours_played_required"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value || false}
+                            onCheckedChange={field.onChange}
+                            disabled={isFormDisabled}
+                          />
+                        </FormControl>
+                        <div className="space-y-1 leading-none">
+                          <FormLabel>Require Hours Played</FormLabel>
+                          <FormDescription>
+                            Players must have played sufficient hours in CS2 to
+                            sign up
+                          </FormDescription>
+                        </div>
+                      </FormItem>
+                    )}
+                  />
+                </>
+              )}
 
               {/* Submit Button */}
               <Button

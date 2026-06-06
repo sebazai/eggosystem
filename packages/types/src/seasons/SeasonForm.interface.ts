@@ -92,9 +92,7 @@ export const seasonFormSchema = z
       })
       .optional()
       .nullable(),
-    active_map_pool: z
-      .array(z.number().int().positive())
-      .min(1, "At least one map must be selected"),
+    active_map_pool: z.array(z.number().int().positive()),
     rulebook_url: z
       .string()
       .url("Rulebook URL must be a valid URL")
@@ -166,6 +164,53 @@ export const seasonFormSchema = z
     {
       message: "Signup dates must be before season start date",
       path: ["signup_start_date"]
+    }
+  )
+  // Non-Krafton (CS) seasons must have at least one map in the pool
+  .refine(
+    (data) =>
+      data.platform === SeasonPlatform.Krafton ||
+      data.active_map_pool.length > 0,
+    {
+      message: "At least one map must be selected",
+      path: ["active_map_pool"]
+    }
+  )
+  // FACEIT-only settings: 2xBO1 and faceit_rank_required are only valid on FACEIT platform
+  .refine(
+    (data) =>
+      data.platform === SeasonPlatform.FACEIT ||
+      !data.is_round_robin_bo2_as_2xbo1,
+    {
+      message:
+        "Round robin BO2 as 2xBO1 is only available for FACEIT platform seasons",
+      path: ["is_round_robin_bo2_as_2xbo1"]
+    }
+  )
+  .refine(
+    (data) =>
+      data.platform === SeasonPlatform.FACEIT || !data.faceit_rank_required,
+    {
+      message:
+        "FaceIT rank requirement is only available for FACEIT platform seasons",
+      path: ["faceit_rank_required"]
+    }
+  )
+  // Krafton (PUBG) seasons do not support CS2-specific rank/hours requirements
+  .refine(
+    (data) =>
+      data.platform !== SeasonPlatform.Krafton || !data.premier_rank_required,
+    {
+      message: "Premier rank requirement is only available for CS2 seasons",
+      path: ["premier_rank_required"]
+    }
+  )
+  .refine(
+    (data) =>
+      data.platform !== SeasonPlatform.Krafton || !data.hours_played_required,
+    {
+      message: "Hours played requirement is only available for CS2 seasons",
+      path: ["hours_played_required"]
     }
   );
 
