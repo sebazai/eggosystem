@@ -48,6 +48,9 @@ const ASSIGNMENTS: [number, bigint, number][] = [
 ];
 
 export async function up(knex: Knex): Promise<void> {
+  const season = await knex("Seasons").where("id", SEASON_ID).first();
+  if (!season) return;
+
   const trophies = await knex("Trophies")
     .select("id", "placement")
     .whereIn("name", ["kanarating_top1", "kanarating_top2", "kanarating_top3"]);
