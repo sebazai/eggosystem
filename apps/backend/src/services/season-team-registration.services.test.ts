@@ -2125,5 +2125,40 @@ describe("Season team registration services", () => {
         registrationServices.checkExternalId(SeasonPlatform.Esportal, undefined)
       ).resolves.toBeUndefined();
     });
+
+    it("does not call fetchAndSavePlayerRankForCSSeason (rank fetchers never invoked) for Krafton signup", async () => {
+      const mockAppRank = jest.spyOn(playerRanksServices, "getPlayerAppIdRank");
+      const mockHours = jest.spyOn(
+        playerRanksServices,
+        "getPlayerHoursForSteamAppId"
+      );
+      const mockPlatformRank = jest.spyOn(
+        playerRanksServices,
+        "getPlayerRankForPlatform"
+      );
+
+      const formData = _.cloneDeep(validSignupData);
+      const squadPlayers = formData.players.slice(0, 3).map((player) => ({
+        steam_id: player.steamId,
+        is_captain: Boolean(player.captain),
+        is_co_captain: Boolean(player.coCaptain)
+      }));
+
+      await registrationServices.addPlayersForTeamInSeason(
+        pubgSeasonId,
+        578080,
+        SeasonPlatform.Krafton,
+        formData.teamId,
+        squadPlayers
+      );
+
+      expect(mockAppRank).not.toHaveBeenCalled();
+      expect(mockHours).not.toHaveBeenCalled();
+      expect(mockPlatformRank).not.toHaveBeenCalled();
+
+      mockAppRank.mockRestore();
+      mockHours.mockRestore();
+      mockPlatformRank.mockRestore();
+    });
   });
 });
