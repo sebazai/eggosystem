@@ -1,6 +1,10 @@
 import { runQuery } from "../db/mysqlRunQuery";
 import { getMatchesByExternalId } from "../models/match.models";
 import { validateAndUpdateScheduledMatchTeams } from "./cron-scheduler.services";
+import {
+  insertTestSeasonSignupSettings,
+  deleteTestSeasonSignupSettings
+} from "../__utils__/season-signup-settings-test";
 
 // Test constants
 const TEST_SEASON_ID = 99999;
@@ -49,6 +53,7 @@ describe("Match Team Validation Integration Test", () => {
       TEST_TEAM_C_ID
     ]);
     await runQuery("DELETE FROM Leagues WHERE id = ?", [TEST_LEAGUE_ID]);
+    await deleteTestSeasonSignupSettings(TEST_SEASON_ID);
     await runQuery("DELETE FROM Seasons WHERE id = ?", [TEST_SEASON_ID]);
   };
 
@@ -59,6 +64,7 @@ describe("Match Team Validation Integration Test", () => {
        VALUES (?, 1, 'Test Season', 'Test Season Full Name', '2024-01-01', '2025-12-31', 'faceit')`,
       [TEST_SEASON_ID]
     );
+    await insertTestSeasonSignupSettings(TEST_SEASON_ID);
 
     // Insert test league
     await runQuery(

@@ -587,35 +587,34 @@ describe("Player Ranks Services", () => {
 
     describe("when platform is Esportal", () => {
       it("should throw BadRequestError (no rank integration yet)", async () => {
-        const result = await getPlayerRankForPlatform(
-          mockSteamId,
-          SeasonPlatform.Esportal,
-          mockSeasonId
-        );
-        expect(result).toThrow("Unknown platform");
+        await expect(
+          getPlayerRankForPlatform(
+            mockSteamId,
+            SeasonPlatform.Esportal,
+            mockSeasonId
+          )
+        ).rejects.toThrow("Unknown platform");
       });
     });
 
     describe("when platform is PopFlash", () => {
       it("should throw BadRequestError (no rank integration yet)", async () => {
-        const result = await getPlayerRankForPlatform(
-          mockSteamId,
-          SeasonPlatform.PopFlash,
-          mockSeasonId
-        );
-        expect(result).toThrow("Unknown platform");
+        await expect(
+          getPlayerRankForPlatform(
+            mockSteamId,
+            SeasonPlatform.PopFlash,
+            mockSeasonId
+          )
+        ).rejects.toThrow("Unknown platform");
       });
     });
 
     describe("when platform is unknown (not a valid SeasonPlatform value)", () => {
       it("should throw BadRequestError for unrecognised platform string", async () => {
         const unknownPlatform = "UNKNOWN" as SeasonPlatform;
-        const result = await getPlayerRankForPlatform(
-          mockSteamId,
-          unknownPlatform,
-          mockSeasonId
-        );
-        expect(result).toThrow("Unknown platform");
+        await expect(
+          getPlayerRankForPlatform(mockSteamId, unknownPlatform, mockSeasonId)
+        ).rejects.toThrow("Unknown platform");
         expect(mockGetFaceITCS2Rank).not.toHaveBeenCalled();
         expect(mockGetPlayerKanaElo).not.toHaveBeenCalled();
       });

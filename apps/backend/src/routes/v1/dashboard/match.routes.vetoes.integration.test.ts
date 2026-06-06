@@ -9,6 +9,10 @@ import {
   checkPermissions
 } from "../../../middlewares/auth.middleware";
 import { runQuery } from "../../../db/mysqlRunQuery";
+import {
+  insertTestSeasonSignupSettings,
+  deleteTestSeasonSignupSettings
+} from "../../../__utils__/season-signup-settings-test";
 import matchRouter from "./match.routes";
 
 jest.mock("../../../middlewares/auth.middleware", () => ({
@@ -165,6 +169,7 @@ describe("dashboard match veto routes (integration)", () => {
       TEST_SEASON_ID
     ]);
     await runQuery("DELETE FROM Leagues WHERE id = ?", [TEST_LEAGUE_ID]);
+    await deleteTestSeasonSignupSettings(TEST_SEASON_ID);
     await runQuery("DELETE FROM Seasons WHERE id = ?", [TEST_SEASON_ID]);
   }
 
@@ -174,6 +179,7 @@ describe("dashboard match veto routes (integration)", () => {
        VALUES (?, 1, 'Veto IT Season', 'Veto IT Season', '2024-01-01', '2025-12-31', 'faceit')`,
       [TEST_SEASON_ID]
     );
+    await insertTestSeasonSignupSettings(TEST_SEASON_ID);
     await runQuery(
       `INSERT INTO Leagues (id, name, sort_priority) VALUES (?, 'Veto IT League', 1)`,
       [TEST_LEAGUE_ID]

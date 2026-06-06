@@ -1,6 +1,10 @@
 import { upsertCSSeasonSettings } from "./cs-season-settings.models";
 import { runQuery } from "../db/mysqlRunQuery";
 import { getConnection } from "../db/mysqlConnection";
+import {
+  insertTestSeasonSignupSettings,
+  deleteTestSeasonSignupSettings
+} from "../__utils__/season-signup-settings-test";
 import type { PoolConnection } from "mysql2/promise";
 
 interface CSSettingsRow {
@@ -35,6 +39,7 @@ describe("upsertCSSeasonSettings integration tests", () => {
       [testSeasonId],
       connection
     );
+    await insertTestSeasonSignupSettings(testSeasonId, undefined, connection);
   });
 
   afterAll(async () => {
@@ -43,6 +48,7 @@ describe("upsertCSSeasonSettings integration tests", () => {
       [testSeasonId],
       connection
     );
+    await deleteTestSeasonSignupSettings(testSeasonId, connection);
     await runQuery(
       "DELETE FROM Seasons WHERE id = ?",
       [testSeasonId],

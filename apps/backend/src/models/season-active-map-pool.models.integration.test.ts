@@ -4,6 +4,10 @@ import {
 } from "./season-active-map-pool.models";
 import { runQuery } from "../db/mysqlRunQuery";
 import { getConnection } from "../db/mysqlConnection";
+import {
+  insertTestSeasonSignupSettings,
+  deleteTestSeasonSignupSettings
+} from "../__utils__/season-signup-settings-test";
 import type { PoolConnection } from "mysql2/promise";
 
 describe("Season Active Map Pool Integration Tests", () => {
@@ -47,6 +51,7 @@ describe("Season Active Map Pool Integration Tests", () => {
         throw error;
       }
     }
+    await deleteTestSeasonSignupSettings(testSeasonId, connection);
     await runQuery(
       "DELETE FROM Seasons WHERE id = ?",
       [testSeasonId],
@@ -62,6 +67,7 @@ describe("Season Active Map Pool Integration Tests", () => {
       [testSeasonId],
       connection
     );
+    await insertTestSeasonSignupSettings(testSeasonId, undefined, connection);
   };
 
   describe("getActiveMapPoolBySeasonId", () => {

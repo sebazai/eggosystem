@@ -3,6 +3,10 @@ import {
   getMatchPlayerStats
 } from "./match.models";
 import { runQuery } from "../db/mysqlRunQuery";
+import {
+  insertTestSeasonSignupSettings,
+  deleteTestSeasonSignupSettings
+} from "../__utils__/season-signup-settings-test";
 
 describe("getMatchesBySeasonAndLeagueWithStreamUrls - Integration Tests", () => {
   it("should return real matches from season 11, league 1", async () => {
@@ -251,6 +255,7 @@ async function cleanupPlayerStatsIntegrationTestData(): Promise<void> {
   await runQuery("DELETE FROM SeasonLeagues WHERE season_id = ?", [
     SEED_SEASON_ID
   ]);
+  await deleteTestSeasonSignupSettings(SEED_SEASON_ID);
   await runQuery("DELETE FROM Seasons WHERE id = ?", [SEED_SEASON_ID]);
   await runQuery("DELETE FROM Leagues WHERE id = ?", [SEED_LEAGUE_ID]);
   await runQuery("DELETE FROM Teams WHERE id IN (?, ?)", [
@@ -269,6 +274,7 @@ async function seedPlayerStatsIntegrationTestData(): Promise<void> {
      VALUES (?, 1, 'Test Season', 'Test Season Full Name', '2024-01-01', '2024-12-31')`,
     [SEED_SEASON_ID]
   );
+  await insertTestSeasonSignupSettings(SEED_SEASON_ID);
   await runQuery(
     `INSERT INTO Teams (id, organization_id, name, team_logo)
      VALUES (?, ?, ?, 'team_a.png'), (?, ?, ?, 'team_b.png')`,

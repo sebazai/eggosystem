@@ -10,6 +10,10 @@ import {
 } from "../__mocks__/demo-parsed-json/mock-parsed-demo";
 import { getConnection } from "../db/mysqlConnection";
 import { runQuery } from "../db/mysqlRunQuery";
+import {
+  insertTestSeasonSignupSettings,
+  deleteTestSeasonSignupSettings
+} from "../__utils__/season-signup-settings-test";
 import { type ResultSetHeader } from "mysql2/promise";
 
 const SEED_SEASON_ID = 900099;
@@ -201,6 +205,7 @@ async function cleanupMatchGameIntegrationTestData(): Promise<void> {
   await runQuery("DELETE FROM SeasonLeagues WHERE season_id = ?", [
     SEED_SEASON_ID
   ]);
+  await deleteTestSeasonSignupSettings(SEED_SEASON_ID);
   await runQuery("DELETE FROM Seasons WHERE id = ?", [SEED_SEASON_ID]);
   await runQuery("DELETE FROM Leagues WHERE id = ?", [SEED_LEAGUE_ID]);
   await runQuery(`DELETE FROM Teams WHERE id IN (?, ?)`, [
@@ -219,6 +224,7 @@ async function seedMatchGameIntegrationTestData(): Promise<void> {
      VALUES (?, 1, 'Test Season', 'Test Season Full Name', '2024-01-01', '2024-12-31')`,
     [SEED_SEASON_ID]
   );
+  await insertTestSeasonSignupSettings(SEED_SEASON_ID);
   await runQuery(
     `INSERT INTO Teams (id, organization_id, name, team_logo)
      VALUES (?, ?, 'Team A', 'team_a.png'), (?, ?, 'Team B', 'team_b.png')`,
