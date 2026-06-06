@@ -352,6 +352,8 @@ export const getPlayerRankForPlatform = async (
       }
       return null;
     }
+    case SeasonPlatform.Krafton:
+      return null;
     default:
       throw new BadRequestError("Unknown platform");
   }
@@ -503,12 +505,12 @@ export const ensurePlayerRankDataExists = async (
       );
     }
 
-    // Validate external rank (FaceIT) - optional for Kanaliiga platform
+    // Validate external rank (FaceIT)
     if (
       externalRank &&
       "faceit_elo" in externalRank &&
       externalRank.faceit_elo === -1 &&
-      platform !== SeasonPlatform.Kanaliiga
+      platform === SeasonPlatform.FACEIT
     ) {
       throw new BadRequestError(`Player ${steamId} has no ${platform} rank.`);
     }

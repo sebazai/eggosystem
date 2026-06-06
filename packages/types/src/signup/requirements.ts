@@ -44,7 +44,7 @@ export function isFaceitRankEnforcedForSignup(
 ): boolean {
   return (
     !!seasonDetails?.faceit_rank_required &&
-    seasonDetails.platform !== SeasonPlatform.Kanaliiga
+    seasonDetails.platform === SeasonPlatform.FACEIT
   );
 }
 

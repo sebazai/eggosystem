@@ -11,7 +11,6 @@ import { runQuery } from "../db/mysqlRunQuery";
 import { getPlayerKanaElo } from "../models/season-player-ranks.models";
 import { getFaceITCS2Rank } from "./faceit.services";
 import { SeasonPlatform } from "@eggosystem/types";
-import { BadRequestError } from "../utils/errors";
 
 // Mock all external dependencies
 jest.mock("./leetify.services");
@@ -573,16 +572,52 @@ describe("Player Ranks Services", () => {
       });
     });
 
-    describe("when platform is unknown", () => {
-      it("should throw BadRequestError for unknown platform", async () => {
-        const unknownPlatform = "UNKNOWN" as SeasonPlatform;
+    describe("when platform is Krafton (PUBG)", () => {
+      it("should return null without calling any rank API", async () => {
+        const result = await getPlayerRankForPlatform(
+          mockSteamId,
+          SeasonPlatform.Krafton,
+          mockSeasonId
+        );
+        expect(result).toBeNull();
+        expect(mockGetFaceITCS2Rank).not.toHaveBeenCalled();
+        expect(mockGetPlayerKanaElo).not.toHaveBeenCalled();
+      });
+    });
 
-        await expect(
-          getPlayerRankForPlatform(mockSteamId, unknownPlatform, mockSeasonId)
-        ).rejects.toThrow(BadRequestError);
-        await expect(
-          getPlayerRankForPlatform(mockSteamId, unknownPlatform, mockSeasonId)
-        ).rejects.toThrow("Unknown platform");
+    describe("when platform is Esportal", () => {
+      it("should throw BadRequestError (no rank integration yet)", async () => {
+        const result = await getPlayerRankForPlatform(
+          mockSteamId,
+          SeasonPlatform.Esportal,
+          mockSeasonId
+        );
+        expect(result).toThrow("Unknown platform");
+      });
+    });
+
+    describe("when platform is PopFlash", () => {
+      it("should throw BadRequestError (no rank integration yet)", async () => {
+        const result = await getPlayerRankForPlatform(
+          mockSteamId,
+          SeasonPlatform.PopFlash,
+          mockSeasonId
+        );
+        expect(result).toThrow("Unknown platform");
+      });
+    });
+
+    describe("when platform is unknown (not a valid SeasonPlatform value)", () => {
+      it("should throw BadRequestError for unrecognised platform string", async () => {
+        const unknownPlatform = "UNKNOWN" as SeasonPlatform;
+        const result = await getPlayerRankForPlatform(
+          mockSteamId,
+          unknownPlatform,
+          mockSeasonId
+        );
+        expect(result).toThrow("Unknown platform");
+        expect(mockGetFaceITCS2Rank).not.toHaveBeenCalled();
+        expect(mockGetPlayerKanaElo).not.toHaveBeenCalled();
       });
     });
 

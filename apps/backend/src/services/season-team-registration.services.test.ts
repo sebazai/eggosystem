@@ -2025,4 +2025,105 @@ describe("Season team registration services", () => {
       }
     });
   });
+
+  describe("PUBG Squad signup (platform=Krafton, app_id=578080)", () => {
+    const pubgSeasonId = 888;
+    const pubgInsertSeason = createMockInsertSeason({
+      id: pubgSeasonId,
+      game_id: 1, // CS game_id safe for FK; app_id passed directly to addPlayersForTeamInSeason
+      game_type_id: 4, // Squad
+      name: "Test PUBG Squad Season",
+      full_name: "Test PUBG Squad Season Full Name",
+      signup_start_date: new Date(now.getTime() - 24 * 60 * 60 * 1000),
+      signup_end_date: new Date(now.getTime() + 24 * 60 * 60 * 1000),
+      platform: SeasonPlatform.Krafton,
+      start_date: new Date(now.getTime() + 24 * 60 * 60 * 1000)
+    });
+
+    beforeAll(async () => {
+      await insertTestSeason(pubgInsertSeason, {
+        min_players: 3,
+        max_players: 10
+      });
+    });
+    beforeEach(async () => {
+      await unsetSeasonTeamRegistration(pubgSeasonId);
+      await setSeasonTeamRegistration(pubgSeasonId);
+      await clearSeasonPlayerRanks(pubgSeasonId);
+    });
+    afterEach(async () => {
+      await runQuery(
+        "DELETE FROM SeasonTeamRegistrationPlayers WHERE season_id = ?",
+        [pubgSeasonId]
+      );
+      await unsetSeasonTeamRegistration(pubgSeasonId);
+      await clearSeasonPlayerRanks(pubgSeasonId);
+    });
+    afterAll(async () => {
+      await removeTestSeason(pubgSeasonId);
+    });
+
+    it("adds 3 squad players and inserts SeasonTeamRegistrationPlayers rows", async () => {
+      const formData = _.cloneDeep(validSignupData);
+      const squadPlayers = formData.players.slice(0, 3).map((player) => ({
+        steam_id: player.steamId,
+        is_captain: Boolean(player.captain),
+        is_co_captain: Boolean(player.coCaptain)
+      }));
+
+      await registrationServices.addPlayersForTeamInSeason(
+        pubgSeasonId,
+        578080, // PUBG app_id — skips CS rank/hours path entirely
+        SeasonPlatform.Krafton,
+        formData.teamId,
+        squadPlayers
+      );
+
+      const rows = await runQuery<{ steam_id: string }[]>(
+        "SELECT steam_id FROM SeasonTeamRegistrationPlayers WHERE season_id = ?",
+        [pubgSeasonId]
+      );
+      expect(rows).toHaveLength(3);
+      expect(rows.map((r) => r.steam_id)).toContain(
+        formData.players[0].steamId
+      );
+    });
+
+    it("does not create SeasonPlayerRanks rows for PUBG players (no CS rank integration)", async () => {
+      const formData = _.cloneDeep(validSignupData);
+      const squadPlayers = formData.players.slice(0, 3).map((player) => ({
+        steam_id: player.steamId,
+        is_captain: Boolean(player.captain),
+        is_co_captain: Boolean(player.coCaptain)
+      }));
+
+      await registrationServices.addPlayersForTeamInSeason(
+        pubgSeasonId,
+        578080,
+        SeasonPlatform.Krafton,
+        formData.teamId,
+        squadPlayers
+      );
+
+      for (const player of squadPlayers) {
+        const rows = await runQuery<SeasonPlayerRank[]>(
+          "SELECT * FROM SeasonPlayerRanks WHERE season_id = ? AND steam_id = ?",
+          [pubgSeasonId, player.steam_id]
+        );
+        expect(rows).toHaveLength(0);
+      }
+    });
+
+    it("checkExternalId resolves without error for Krafton platform", async () => {
+      await expect(
+        registrationServices.checkExternalId(SeasonPlatform.Krafton, undefined)
+      ).resolves.toBeUndefined();
+    });
+
+    it("checkExternalId resolves without error for Esportal platform", async () => {
+      await expect(
+        registrationServices.checkExternalId(SeasonPlatform.Esportal, undefined)
+      ).resolves.toBeUndefined();
+    });
+  });
 });

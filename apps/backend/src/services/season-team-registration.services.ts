@@ -186,7 +186,9 @@ const updatePlayersFaceitData = async (
  * This includes fetching rank data, validating it, and optionally updating FaceIT data.
  * Used by both initial signup and team edit flows.
  */
-const createAndSavePlayerRankForSeason = async (
+const CS_APP_ID = 730;
+
+const fetchAndSavePlayerRankForCSSeason = async (
   steamId: string,
   seasonId: number,
   appId: number,
@@ -194,7 +196,7 @@ const createAndSavePlayerRankForSeason = async (
   requirements: SeasonSignupRankRequirements,
   connection?: PoolConnection
 ): Promise<void> => {
-  // Fetch rank, hours, and external rank
+  // Rank and hours fetching is CS-only; other games have no equivalent API yet.
   const [rank, { hours }, externalRank] = await Promise.all([
     getPlayerAppIdRank(steamId, appId, seasonId),
     getPlayerHoursForSteamAppId(steamId, appId, seasonId),
@@ -224,7 +226,7 @@ const createAndSavePlayerRankForSeason = async (
   const csHoursToStore = hours === -1 ? null : hours;
 
   const mustHaveFaceitRank =
-    requirements.faceit_rank_required && platform !== SeasonPlatform.Kanaliiga;
+    requirements.faceit_rank_required && platform === SeasonPlatform.FACEIT;
 
   if (
     mustHaveFaceitRank &&
@@ -302,15 +304,16 @@ export const addPlayersForTeamInSeason = async (
       connection
     );
 
-    // Create and save player rank using shared helper
-    await createAndSavePlayerRankForSeason(
-      player.steam_id,
-      seasonId,
-      appId,
-      platform,
-      signupRankRequirements,
-      connection
-    );
+    if (appId === CS_APP_ID) {
+      await fetchAndSavePlayerRankForCSSeason(
+        player.steam_id,
+        seasonId,
+        appId,
+        platform,
+        signupRankRequirements,
+        connection
+      );
+    }
   }
 };
 
@@ -430,14 +433,16 @@ const handleUpdateSeasonTeamRegistration = async (
       }
 
       // Create and save player rank using shared helper
-      await createAndSavePlayerRankForSeason(
-        newPlayerSteamId,
-        seasonId,
-        appId,
-        platform,
-        signupRankRequirements,
-        connection
-      );
+      if (appId === CS_APP_ID) {
+        await fetchAndSavePlayerRankForCSSeason(
+          newPlayerSteamId,
+          seasonId,
+          appId,
+          platform,
+          signupRankRequirements,
+          connection
+        );
+      }
     }
   }
 
@@ -679,6 +684,11 @@ export const handleSignupFormForSeason = async (
 
     // If new organization, and an existing team from older seasons that does not have an org.
     if (rogueTeam) {
+      if (season.app_id !== CS_APP_ID) {
+        throw new BadRequestError(
+          "These teams without organization are only allowed for old CS teams."
+        );
+      }
       await runQuery(
         "UPDATE Teams SET organization_id = ? WHERE id = ?",
         [newOrg.insertId, formData.teamId],

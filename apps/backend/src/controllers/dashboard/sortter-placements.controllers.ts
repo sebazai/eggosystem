@@ -467,7 +467,7 @@ export const finalizeTeamPlacementsController = async (
       logger.info(
         `Inserting team ${placement.team_id} into league ${leagueName} (ID: ${leagueId})`
       );
-      if (season.platform !== SeasonPlatform.Kanaliiga) {
+      if (season.platform === SeasonPlatform.FACEIT) {
         if (!externalPlatformId) {
           return next(
             new BadRequestError(
