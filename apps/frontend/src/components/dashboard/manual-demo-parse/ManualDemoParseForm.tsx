@@ -50,6 +50,10 @@ export function ManualDemoParseForm() {
 
   const sourceLabel = mode === "external_match_room_id" ? "faceit" : "manual";
 
+  // URL is required for external_match_room_id, or when not reparsing
+  const urlRequired =
+    mode === "external_match_room_id" || !reparse || downloadUrl.trim() !== "";
+
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -68,6 +72,20 @@ export function ManualDemoParseForm() {
       return;
     }
 
+    const trimmedUrl = downloadUrl.trim();
+    if (mode === "external_match_room_id" && !trimmedUrl) {
+      setError("download_url is required when using FACEIT match id");
+      setSubmitting(false);
+      return;
+    }
+    if (!reparse && !trimmedUrl) {
+      setError(
+        "download_url is required unless reparse is checked (omit URL to reuse stored demofile)"
+      );
+      setSubmitting(false);
+      return;
+    }
+
     try {
       const body = {
         ...(mode === "match_game_id"
@@ -81,7 +99,7 @@ export function ManualDemoParseForm() {
                 external_match_room_id: externalMatchRoomId.trim()
                 // No best_of needed: we infer 2xBO1 via DB state (two hub matches)
               }),
-        download_url: downloadUrl.trim(),
+        ...(trimmedUrl ? { download_url: trimmedUrl } : {}),
         ...(Number.isFinite(priNum) ? { priority: priNum } : {}),
         reparse,
         mark_finished: markFinished,
@@ -267,17 +285,36 @@ export function ManualDemoParseForm() {
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="download_url">Demo download URL (HTTPS)</Label>
+            <Label htmlFor="download_url">
+              Demo download URL (HTTPS)
+              {mode !== "external_match_room_id" && reparse ? (
+                <span className="ml-1 font-normal text-muted-foreground">
+                  — optional when reparsing
+                </span>
+              ) : null}
+            </Label>
             <Input
               id="download_url"
               name="download_url"
               type="url"
-              required
+              required={urlRequired}
               value={downloadUrl}
               onChange={(ev) => setDownloadUrl(ev.target.value)}
-              placeholder="https://…"
+              placeholder={
+                mode !== "external_match_room_id" && reparse
+                  ? "Leave empty to reuse stored demofile"
+                  : "https://…"
+              }
               autoComplete="off"
             />
+            {mode !== "external_match_room_id" &&
+            reparse &&
+            !downloadUrl.trim() ? (
+              <p className="text-xs text-muted-foreground">
+                The parser will use the demofile already stored on this match
+                game.
+              </p>
+            ) : null}
           </div>
 
           <div className="space-y-2">

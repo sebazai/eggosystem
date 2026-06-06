@@ -10,6 +10,10 @@ import {
   getFailedParseMessagesStats,
   requeue2ddataFailedMessages
 } from "../../../models/failed-parse.models";
+import {
+  getMatchGameDemofileById,
+  getMatchGameByMatchIdAndMapOrder
+} from "../../../models/match-game.models";
 import type { ReparseRequest } from "@eggosystem/types";
 import type { Requeue2ddataRequest } from "@eggosystem/types";
 import {
@@ -47,7 +51,14 @@ const manualParseQueueBodySchema = z
     match_id: z.coerce.number().int().positive().optional(),
     map_order: z.coerce.number().int().min(1).optional(),
     external_match_room_id: z.string().min(1).optional(),
-    download_url: httpsUrlSchema,
+    /**
+     * Demo download URL (HTTPS). Optional when `reparse` is true and the
+     * identifier is `match_game_id` or `match_id`+`map_order` — the backend
+     * will use the `demofile` already stored on the MatchGame row.
+     * Required when `external_match_room_id` is used (no pre-existing MatchGame
+     * to fall back on in all cases).
+     */
+    download_url: httpsUrlSchema.optional(),
     priority: z.number().int().min(1).max(10).optional().default(5),
     reparse: z.boolean().optional().default(false),
     /**
@@ -91,6 +102,26 @@ const manualParseQueueBodySchema = z
         message: "map_order is required when match_id is provided",
         path: ["map_order"]
       });
+    }
+
+    // download_url is required when using external_match_room_id (no stored
+    // demofile to fall back on in all cases), or when not reparsing.
+    if (!val.download_url) {
+      if (val.external_match_room_id) {
+        ctx.addIssue({
+          code: "custom",
+          message:
+            "download_url is required when external_match_room_id is provided",
+          path: ["download_url"]
+        });
+      } else if (!val.reparse) {
+        ctx.addIssue({
+          code: "custom",
+          message:
+            "download_url is required unless reparse is true (omit URL to reuse the stored demofile)",
+          path: ["download_url"]
+        });
+      }
     }
   });
 
@@ -205,7 +236,7 @@ router.post(
     }
 
     const {
-      download_url,
+      download_url: rawDownloadUrl,
       priority,
       reparse,
       mark_finished,
@@ -216,22 +247,72 @@ router.post(
       identifiers;
 
     let matchGameId: number;
+    let download_url: string;
     /** When set, finishes these internal Matches.id values (multi-row for external hub rows). */
     let finishMatchIds: number[] | undefined = undefined;
     const source = external_match_room_id ? "faceit" : "manual";
     if (match_game_id != null) {
       matchGameId = match_game_id;
+      if (rawDownloadUrl) {
+        download_url = rawDownloadUrl;
+      } else {
+        // Reparse without URL: use the demofile stored on the existing MatchGame.
+        const stored = await getMatchGameDemofileById(match_game_id);
+        if (!stored) {
+          return next(
+            new NotFoundError(
+              `MatchGame ${match_game_id} has no stored demofile; provide download_url`
+            )
+          );
+        }
+        download_url = stored;
+      }
     } else if (match_id != null) {
-      matchGameId = await resolveOrCreateMatchGameIdForHubMatchDemo({
-        matchId: match_id,
-        demoUrl: download_url,
-        mapOrder: map_order
-      });
+      if (rawDownloadUrl) {
+        matchGameId = await resolveOrCreateMatchGameIdForHubMatchDemo({
+          matchId: match_id,
+          demoUrl: rawDownloadUrl,
+          mapOrder: map_order
+        });
+        download_url = rawDownloadUrl;
+      } else {
+        // Reparse without URL: look up the existing MatchGame by match_id + map_order.
+        const existing = await getMatchGameByMatchIdAndMapOrder(
+          match_id,
+          map_order!
+        );
+        if (!existing) {
+          return next(
+            new NotFoundError(
+              `No MatchGame found for match_id=${match_id} map_order=${map_order}; provide download_url`
+            )
+          );
+        }
+        if (!existing.demofile) {
+          return next(
+            new NotFoundError(
+              `MatchGame for match_id=${match_id} map_order=${map_order} has no stored demofile; provide download_url`
+            )
+          );
+        }
+        matchGameId = existing.id;
+        download_url = existing.demofile;
+      }
       finishMatchIds = [match_id];
     } else {
       if (!external_match_room_id) {
         return next(new BadRequestError("Missing match identifier"));
       }
+
+      if (!rawDownloadUrl) {
+        // Schema validation already rejects this case, guard for safety.
+        return next(
+          new BadRequestError(
+            "download_url is required when external_match_room_id is provided"
+          )
+        );
+      }
+      download_url = rawDownloadUrl;
 
       // Mirror FACEIT `match_demo_ready` using provided external match room id + demo url.
       // Requires MatchTeamMapVetoes to exist for the hub match (same dependency as the webhook path).

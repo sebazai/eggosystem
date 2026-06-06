@@ -6,7 +6,12 @@ export interface ManualDemoParseRequest {
   match_id?: number;
   map_order?: number;
   external_match_room_id?: string;
-  download_url: string;
+  /**
+   * HTTPS URL to the demo file. Optional when `reparse` is true and a
+   * `match_game_id` or `match_id`+`map_order` is provided — the backend will
+   * use the `demofile` already stored on the MatchGame row.
+   */
+  download_url?: string;
   priority?: number;
   reparse?: boolean;
   /**
