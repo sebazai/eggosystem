@@ -275,6 +275,33 @@ export const getMatchIdByGameId = async (
   );
 };
 
+export const getMatchGameDemofileById = async (
+  matchGameId: number,
+  connection?: PoolConnection
+): Promise<string | null> => {
+  const query = `SELECT demofile FROM MatchGames WHERE id = ? LIMIT 1`;
+  const [row] = await runQuery<Array<{ demofile: string | null }>>(
+    query,
+    [matchGameId],
+    connection
+  );
+  return row?.demofile ?? null;
+};
+
+export const getMatchGameByMatchIdAndMapOrder = async (
+  matchId: number,
+  mapOrder: number,
+  connection?: PoolConnection
+): Promise<{ id: number; demofile: string | null } | null> => {
+  const query = `SELECT id, demofile FROM MatchGames WHERE match_id = ? AND map_order = ? LIMIT 1`;
+  const [row] = await runQuery<Array<{ id: number; demofile: string | null }>>(
+    query,
+    [matchId, mapOrder],
+    connection
+  );
+  return row ?? null;
+};
+
 export const isChampionshipMatchGame = async (
   matchGameId: number,
   connection?: PoolConnection
