@@ -1,4 +1,3 @@
-import { KanaEloCalculateButton } from "@/components/dashboard/KanaEloCalculateButton";
 import { GrandFinalPlacementsReplaySection } from "@/components/dashboard/GrandFinalPlacementsReplaySection";
 import { FaceitSyncSection } from "./FaceitSyncSection";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,25 +15,13 @@ export default async function Page() {
       </div>
 
       {/* Tool panels */}
-      <div className="grid auto-rows-min gap-4 md:grid-cols-3">
+      <div className="grid auto-rows-min gap-4 md:grid-cols-2">
         <Card className="shadow-sm">
           <CardHeader>
             <CardTitle className="text-base">FACEIT Integration</CardTitle>
           </CardHeader>
           <CardContent>
             <FaceitSyncSection />
-          </CardContent>
-        </Card>
-        <Card className="shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-base">KanaElo Calculation</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="mb-4 text-sm text-muted-foreground">
-              Calculate kana_elo for all players using CSRankker API and update
-              SeasonPlayerRanks
-            </p>
-            <KanaEloCalculateButton />
           </CardContent>
         </Card>
         <Card className="shadow-sm">

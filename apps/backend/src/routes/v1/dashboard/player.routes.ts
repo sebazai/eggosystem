@@ -8,7 +8,6 @@ import {
 } from "../../../controllers/dashboard/player.controllers";
 import { validateNumericParams } from "../../../middlewares/validate-numeric-params";
 import { getPlayerBySteamIdController } from "../../../controllers/players.controllers";
-import { calculateKanaEloForAllPlayersController } from "../../../controllers/kanaelo.controllers";
 import { checkPermissions } from "../../../middlewares/auth.middleware";
 
 const router = Router();
@@ -43,15 +42,6 @@ router.post(
     fallbackRoles: ["admin", "helpdesk"]
   }),
   discardPlayerController
-);
-
-// POST /api/v1/dashboard/players/kanaelo/bulk
-router.post(
-  "/kanaelo/bulk",
-  checkPermissions({
-    fallbackRoles: ["admin"]
-  }),
-  calculateKanaEloForAllPlayersController
 );
 
 export default router;
