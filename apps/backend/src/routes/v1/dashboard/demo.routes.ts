@@ -34,6 +34,25 @@ import { attachFailedParseJobSse } from "../../../services/failed-parse-sse.serv
 
 const router = Router();
 
+/**
+ * Ensures a stored demofile value is usable as a parse-queue `download_url`.
+ *
+ * The Go parser's `generateDemoFilename(url, matchGameID)` extracts the local
+ * filename by splitting on the last `/`. When `demofile` is a bare FACEIT
+ * filename like `1-23917fab-...-1-1.dem` (no scheme/slash), the split has no
+ * right-hand side and the parser falls back to `match_{matchGameID}.dem` —
+ * the wrong name — so it cannot find the file in its data folder and falls
+ * through to a (potentially expired) re-download.
+ *
+ * Wrapping the bare filename in a synthetic FACEIT-style URL gives the parser
+ * a slash to split on, producing the correct FACEIT filename for local lookup.
+ * When the file is already on disk the download URL is never used.
+ */
+function normalizeDemofileToDownloadUrl(demofile: string): string {
+  if (demofile.includes("://")) return demofile;
+  return `https://cdn.faceit.com/cs2/${demofile}`;
+}
+
 const httpsUrlSchema = z
   .string()
   .min(1)
@@ -265,7 +284,7 @@ router.post(
             )
           );
         }
-        download_url = stored;
+        download_url = normalizeDemofileToDownloadUrl(stored);
       }
     } else if (match_id != null) {
       if (rawDownloadUrl) {
@@ -296,7 +315,7 @@ router.post(
           );
         }
         matchGameId = existing.id;
-        download_url = existing.demofile;
+        download_url = normalizeDemofileToDownloadUrl(existing.demofile);
       }
       finishMatchIds = [match_id];
     } else {
