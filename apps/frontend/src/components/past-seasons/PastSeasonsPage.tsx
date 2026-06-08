@@ -2,13 +2,12 @@
 
 import Link from "next/link";
 import { CalendarDays, ExternalLink } from "lucide-react";
-import { useAllSeasons } from "@/hooks/data/useAllSeasons";
+import { usePastSeasons } from "@/hooks/data/usePastSeasons";
 import { CardContainer } from "@/components/layout/CardContainer";
 import { ContentContainer } from "@/components/layout/ContentContainer";
 import { CardSkeleton } from "@/components/loading";
 import {
   formatSeasonDisplayLabel,
-  getPastCs2Seasons,
   getSeasonPageLinks,
   type SeasonPageLink
 } from "@/lib/season-utils";
@@ -40,8 +39,7 @@ function SeasonLinkButton({ link }: { link: SeasonPageLink }) {
 }
 
 export function PastSeasonsPage() {
-  const { seasons, isLoading, isError } = useAllSeasons();
-  const pastSeasons = seasons ? getPastCs2Seasons(seasons) : [];
+  const { seasons: pastSeasons, isLoading, isError } = usePastSeasons();
 
   if (isError) {
     return <ContentContainer>Failed to load past seasons.</ContentContainer>;
@@ -65,7 +63,7 @@ export function PastSeasonsPage() {
           <CardSkeleton showHeader={true} contentLines={4} />
           <CardSkeleton showHeader={true} contentLines={4} />
         </div>
-      ) : pastSeasons.length === 0 ? (
+      ) : !pastSeasons || pastSeasons.length === 0 ? (
         <ContentContainer classNames="min-h-[30vh]">
           No past seasons available yet.
         </ContentContainer>
@@ -77,7 +75,7 @@ export function PastSeasonsPage() {
                 {formatSeasonDisplayLabel(season.full_name)}
               </h2>
               <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                {getSeasonPageLinks(season.id).map((link) => (
+                {getSeasonPageLinks(season).map((link) => (
                   <SeasonLinkButton key={link.href} link={link} />
                 ))}
                 <Link

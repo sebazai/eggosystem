@@ -35,8 +35,14 @@ const MATCH_HISTORY_LINK: MenuItemLink = {
   hasFilters: true
 };
 
-function mapSeasonPageLinksToMenuItems(seasonId: number): MenuItemLink[] {
-  return getSeasonPageLinks(seasonId).flatMap((link) => {
+function mapSeasonPageLinksToMenuItems(
+  season: ActiveSignupOrSeasonForAppId
+): MenuItemLink[] {
+  const seasonId = season.season_id;
+  return getSeasonPageLinks({
+    id: seasonId,
+    platform: season.platform
+  }).flatMap((link) => {
     if (link.title === "Fantasy Leaderboard") {
       return [];
     }
@@ -96,9 +102,10 @@ function mapSeasonPageLinksToMenuItems(seasonId: number): MenuItemLink[] {
 }
 
 function buildActiveSeasonMenuItems(
-  seasonId: number,
+  signupOrActiveSeason: ActiveSignupOrSeasonForAppId,
   options?: { includeRegister?: boolean }
 ): MenuItemLink[] {
+  const seasonId = signupOrActiveSeason.season_id;
   const items: MenuItemLink[] = [];
 
   if (options?.includeRegister) {
@@ -115,7 +122,7 @@ function buildActiveSeasonMenuItems(
       url: `/seasons/${seasonId}/standings`,
       hasFilters: false
     },
-    ...mapSeasonPageLinksToMenuItems(seasonId).filter(
+    ...mapSeasonPageLinksToMenuItems(signupOrActiveSeason).filter(
       (item) => item.title !== "Standings"
     ),
     PAST_SEASONS_LINK
@@ -232,7 +239,7 @@ export function getSeasonMenuItem(
         title: seasonTitle,
         url: "#",
         hasFilters: false,
-        items: buildActiveSeasonMenuItems(seasonId, {
+        items: buildActiveSeasonMenuItems(signupOrActiveSeason, {
           includeRegister: isSignupStillOpen(signupOrActiveSeason, now)
         })
       };

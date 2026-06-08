@@ -60,7 +60,7 @@ describe("navigation-menu-items", () => {
 
     expect(seasonMenu.title).toBe("CS2 Season 5");
     expect(seasonMenu.items?.map((item) => item.title)).toEqual(
-      expect.arrayContaining(["Standings", "Past Seasons", "Schedule"])
+      expect.arrayContaining(["Standings", "Past Seasons"])
     );
     expect(seasonMenu.items?.map((item) => item.title)).not.toContain(
       "Match History"

@@ -42,15 +42,125 @@ describe("season-utils", () => {
     expect(formatSeasonDisplayLabel("  ")).toBe("Season");
   });
 
-  it("includes the external schedule link in season page links", () => {
-    const links = getSeasonPageLinks(11);
-    const scheduleLink = links.find((link) => link.title === "Schedule");
-
-    expect(scheduleLink).toEqual({
-      title: "Schedule",
-      href: "https://kanaliiga.fi/pelit/counter-strike-2",
-      isExternal: true
+  it("always includes Calendar", () => {
+    const links = getSeasonPageLinks({
+      id: 11,
+      platform: "kanaliiga",
+      has_standings: false,
+      has_fantasy: false,
+      has_playoff: false,
+      has_captains: false
     });
+    expect(links.map((l) => l.title)).toEqual(["Calendar"]);
+  });
+
+  it("includes Standings only when season has standings data", () => {
+    const withStandings = getSeasonPageLinks({
+      id: 11,
+      platform: "kanaliiga",
+      has_standings: true
+    });
+    expect(withStandings.some((l) => l.title === "Standings")).toBe(true);
+
+    const withoutStandings = getSeasonPageLinks({
+      id: 11,
+      platform: "kanaliiga",
+      has_standings: false
+    });
+    expect(withoutStandings.some((l) => l.title === "Standings")).toBe(false);
+  });
+
+  it("includes Captains only when season has captains", () => {
+    const withCaptains = getSeasonPageLinks({
+      id: 11,
+      platform: "kanaliiga",
+      has_captains: true
+    });
+    expect(withCaptains.some((l) => l.title === "Captains")).toBe(true);
+
+    const withoutCaptains = getSeasonPageLinks({
+      id: 11,
+      platform: "kanaliiga",
+      has_captains: false
+    });
+    expect(withoutCaptains.some((l) => l.title === "Captains")).toBe(false);
+  });
+
+  it("includes Playoff Bracket only when season has playoff data", () => {
+    const withPlayoff = getSeasonPageLinks({
+      id: 11,
+      platform: "kanaliiga",
+      has_playoff: true
+    });
+    expect(withPlayoff.some((l) => l.title === "Playoff Bracket")).toBe(true);
+
+    const withoutPlayoff = getSeasonPageLinks({
+      id: 11,
+      platform: "kanaliiga",
+      has_playoff: false
+    });
+    expect(withoutPlayoff.some((l) => l.title === "Playoff Bracket")).toBe(
+      false
+    );
+  });
+
+  it("defaults all optional flags to true when not provided", () => {
+    const links = getSeasonPageLinks({ id: 11, platform: "kanaliiga" });
+    expect(links.some((l) => l.title === "Standings")).toBe(true);
+    expect(links.some((l) => l.title === "Playoff Bracket")).toBe(true);
+    expect(links.some((l) => l.title === "Fantasy League")).toBe(true);
+    expect(links.some((l) => l.title === "Captains")).toBe(true);
+  });
+
+  it("includes Faceit Links only for faceit platform seasons", () => {
+    const faceitLinks = getSeasonPageLinks({
+      id: 11,
+      platform: "faceit",
+      has_fantasy: false,
+      has_playoff: false
+    });
+    expect(faceitLinks.some((l) => l.title === "Faceit Links")).toBe(true);
+
+    const kanaliigaLinks = getSeasonPageLinks({
+      id: 11,
+      platform: "kanaliiga",
+      has_fantasy: false,
+      has_playoff: false
+    });
+    expect(kanaliigaLinks.some((l) => l.title === "Faceit Links")).toBe(false);
+  });
+
+  it("includes Fantasy links only when season has fantasy", () => {
+    const withFantasy = getSeasonPageLinks({
+      id: 11,
+      platform: "kanaliiga",
+      has_fantasy: true,
+      has_playoff: false
+    });
+    expect(withFantasy.some((l) => l.title === "Fantasy League")).toBe(true);
+    expect(withFantasy.some((l) => l.title === "Fantasy Leaderboard")).toBe(
+      true
+    );
+
+    const withoutFantasy = getSeasonPageLinks({
+      id: 11,
+      platform: "kanaliiga",
+      has_fantasy: false,
+      has_playoff: false
+    });
+    expect(withoutFantasy.some((l) => l.title === "Fantasy League")).toBe(
+      false
+    );
+  });
+
+  it("never includes a Schedule link", () => {
+    const links = getSeasonPageLinks({
+      id: 11,
+      platform: "faceit",
+      has_fantasy: true,
+      has_playoff: true
+    });
+    expect(links.some((l) => l.title === "Schedule")).toBe(false);
   });
 
   it("returns only past CS2 seasons sorted by newest first", () => {

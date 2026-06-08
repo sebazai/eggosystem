@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   getSeasonsController,
+  getPastSeasonsController,
   getSeasonByIdController,
   getSeasonDetailsByIdController,
   getFaceitLinksForSeasonController,
@@ -31,6 +32,7 @@ import { getPlayoffBracketController } from "../../controllers/playoff.controlle
 const router = Router();
 
 router.get("/", getSeasonsController);
+router.get("/past", getPastSeasonsController);
 router.get("/:season_id", validateNumericParams(), getSeasonByIdController);
 router.get(
   "/:season_id/details",

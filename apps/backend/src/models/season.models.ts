@@ -2,6 +2,7 @@ import type {
   SeasonDetails,
   SeasonWithSettings,
   ActiveSignupOrSeasonForAppId,
+  PastSeason,
   SeasonFormRaw,
   SeasonPlatform
 } from "@eggosystem/types";
@@ -37,6 +38,45 @@ export const getSeasons = async () => {
     LEFT JOIN CSSeasonSettings css ON css.season_id = s.id
   `);
   return seasons;
+};
+
+/** Stage id for playoff (double elimination) in SeasonLeagueExternalIds. */
+const STAGE_ID_PLAYOFF = 2;
+
+type RawPastSeason = Omit<
+  PastSeason,
+  "has_standings" | "has_fantasy" | "has_playoff" | "has_captains"
+> & {
+  has_standings: 0 | 1;
+  has_fantasy: 0 | 1;
+  has_playoff: 0 | 1;
+  has_captains: 0 | 1;
+};
+
+export const getPastSeasons = async (): Promise<PastSeason[]> => {
+  const rows = await runQuery<Array<RawPastSeason>>(
+    `SELECT s.id, s.game_id, s.game_type_id, s.organizer_id, s.name, s.full_name,
+       s.signup_start_date, s.signup_end_date, s.platform,
+       s.start_date, s.end_date,
+       s.payment_link, s.registration_price, s.has_vat,
+       s.early_bird_price_discount, s.early_bird_price_discount_end_date,
+       s.rulebook_url, s.discord_link,
+       EXISTS(SELECT 1 FROM SeasonLeagueTeams slt WHERE slt.season_id = s.id AND slt.playoff_seed IS NOT NULL) AS has_standings,
+       EXISTS(SELECT 1 FROM FantasyTeams ft WHERE ft.season_id = s.id) AS has_fantasy,
+       EXISTS(SELECT 1 FROM SeasonLeagueExternalIds slei WHERE slei.season_id = s.id AND slei.stage_id = ?) AS has_playoff,
+       EXISTS(SELECT 1 FROM SeasonTeamPlayers stp WHERE stp.season_id = s.id AND stp.is_captain = 1 AND stp.discarded_at IS NULL) AS has_captains
+     FROM Seasons s
+     WHERE s.end_date IS NOT NULL AND s.end_date < CURDATE()
+     ORDER BY s.id DESC`,
+    [STAGE_ID_PLAYOFF]
+  );
+  return rows.map((r) => ({
+    ...r,
+    has_standings: Boolean(r.has_standings),
+    has_fantasy: Boolean(r.has_fantasy),
+    has_playoff: Boolean(r.has_playoff),
+    has_captains: Boolean(r.has_captains)
+  }));
 };
 
 export const getSeasonById = async (

@@ -2,7 +2,8 @@ import { type Request, type Response, type NextFunction } from "express";
 import {
   getSeasons,
   getSeasonById,
-  getSeasonDetailsById
+  getSeasonDetailsById,
+  getPastSeasons
 } from "../models/season.models";
 import _ from "lodash";
 import { NotFoundError } from "../utils/errors";
@@ -13,6 +14,14 @@ import type { RequestWithParams } from "@eggosystem/types";
 export const getSeasonsController = async (_req: Request, res: Response) => {
   const allSeasons = await getSeasons();
   res.json(allSeasons);
+};
+
+export const getPastSeasonsController = async (
+  _req: Request,
+  res: Response
+) => {
+  const pastSeasons = await getPastSeasons();
+  res.json(pastSeasons);
 };
 
 export const getSeasonByIdController = async (
