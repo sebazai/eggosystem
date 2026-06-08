@@ -61,6 +61,7 @@ export const getPastSeasons = async (): Promise<PastSeason[]> => {
        s.payment_link, s.registration_price, s.has_vat,
        s.early_bird_price_discount, s.early_bird_price_discount_end_date,
        s.rulebook_url, s.discord_link,
+       (SELECT DATE(MIN(m.start_timestamp)) FROM Matches m WHERE m.season_id = s.id) AS first_match_date,
        EXISTS(SELECT 1 FROM SeasonLeagueTeams slt WHERE slt.season_id = s.id AND slt.playoff_seed IS NOT NULL) AS has_standings,
        EXISTS(SELECT 1 FROM FantasyTeams ft WHERE ft.season_id = s.id) AS has_fantasy,
        EXISTS(SELECT 1 FROM SeasonLeagueExternalIds slei WHERE slei.season_id = s.id AND slei.stage_id = ?) AS has_playoff,

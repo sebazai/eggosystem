@@ -12,6 +12,8 @@ export interface SeasonPageLink {
 type SeasonLinkContext = {
   id: number;
   platform: SeasonPlatform;
+  /** YYYY-MM-DD date of the first match; sets the calendar's initial view date. */
+  first_match_date?: string | null;
   /** When undefined (e.g. current-season nav), defaults to true (show the link). */
   has_standings?: boolean;
   /** When undefined (e.g. current-season nav), defaults to true (show the link). */
@@ -31,6 +33,9 @@ export function getSeasonPageLinks(
   season: SeasonLinkContext
 ): SeasonPageLink[] {
   const { id, platform } = season;
+  const calendarHref = season.first_match_date
+    ? `/seasons/${id}/calendar?date=${season.first_match_date}`
+    : `/seasons/${id}/calendar`;
   const has_standings = season.has_standings ?? true;
   const has_fantasy = season.has_fantasy ?? true;
   const has_playoff = season.has_playoff ?? true;
@@ -47,7 +52,7 @@ export function getSeasonPageLinks(
 
   links.push({
     title: "Calendar",
-    href: `/seasons/${id}/calendar`
+    href: calendarHref
   });
 
   if (has_playoff) {

@@ -216,6 +216,8 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
     return urlView === "week" ? "timeGridWeek" : "dayGridMonth";
   });
 
+  const initialDate = searchParams.get("date") ?? undefined;
+
   const [selectedEvent, setSelectedEvent] = useState<EventDetails | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -280,6 +282,7 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
     () => ({
       plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
       initialView: view,
+      ...(initialDate ? { initialDate } : {}),
       headerToolbar: {
         left: "prev,next today",
         center: "title",
